@@ -33,10 +33,8 @@ export interface PreTradeAnalysis {
   session: Session;
   bias: Bias;
   thesis: string;
-  key_levels: string[];        // optional — array may be empty
-  planned_setup: string;
-  confluences: string[];
-  invalidation: string;
+  long_scenario: string;
+  short_scenario: string;
   notes: string;
   screenshot_groups: ScreenshotGroup[];
   used_for_trade: boolean;
@@ -53,6 +51,8 @@ export interface TradeJournalEntry {
   instrument: string;
   market: Market;
   session: Session;
+  /** Timeframe(s) used e.g. "1H / 15m" */
+  timeframe: string;
   direction: Direction;
   confluences: string[];
   rr: number;
@@ -74,8 +74,11 @@ export interface FundedAccount {
   account_type: string;
   phase: AccountPhase;
   account_size: number;
+  /** Real out-of-pocket cost paid to the prop firm (e.g. $149 eval fee) */
+  purchase_cost: number;
   start_balance: number;
   current_balance: number;
+  /** ROI based on purchase_cost, not account size */
   roi: number;
   max_drawdown: number;
   trailing_drawdown?: number;

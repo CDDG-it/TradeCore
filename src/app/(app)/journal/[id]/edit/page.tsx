@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
 const MARKETS: Market[] = ["futures", "commodities"];
+const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "Daily"];
 
 export default function EditTradePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -37,12 +38,13 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [form, setForm] = useState({
     date_time: trade.date_time.slice(0, 10),
     instrument: trade.instrument,
-    market: trade.market,
-    session: trade.session,
-    direction: trade.direction,
+    market: trade.market as Market,
+    session: trade.session as Session,
+    timeframe: trade.timeframe ?? "",
+    direction: trade.direction as Direction,
     confluences: [...trade.confluences],
     rr: trade.rr,
-    result: trade.result,
+    result: trade.result as TradeResult,
     screenshot_groups: trade.screenshot_groups ?? [],
     execution_notes: trade.execution_notes,
     psychology_notes: trade.psychology_notes,
@@ -141,16 +143,38 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">Session</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {SESSIONS.map((s) => (
-                  <button key={s} type="button" onClick={() => set("session", s)}
-                    className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                      form.session === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                    {s}
-                  </button>
-                ))}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Session</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {SESSIONS.map((s) => (
+                    <button key={s} type="button" onClick={() => set("session", s)}
+                      className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                        form.session === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Timeframe</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {TIMEFRAMES.map((tf) => (
+                    <button key={tf} type="button"
+                      onClick={() => {
+                        const parts = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : [];
+                        const idx = parts.indexOf(tf);
+                        const next = idx >= 0 ? parts.filter((p) => p !== tf) : [...parts, tf];
+                        set("timeframe", next.join(" / "));
+                      }}
+                      className={cn("px-2.5 py-1 rounded-lg text-xs font-medium transition-all font-mono",
+                        form.timeframe?.split(" / ").includes(tf)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:text-foreground")}>
+                      {tf}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -198,9 +222,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                   <span key={c} className="inline-flex items-center gap-1 text-xs bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg border border-border/50">
                     {c}
                     <button type="button" onClick={() => set("confluences", form.confluences.filter((x) => x !== c))}
-                      className="hover:text-destructive transition-colors">
-                      <X className="w-3 h-3" />
-                    </button>
+                      className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
                   </span>
                 ))}
               </div>

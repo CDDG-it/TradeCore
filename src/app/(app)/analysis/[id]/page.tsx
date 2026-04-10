@@ -9,13 +9,9 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  MapPin,
-  AlertTriangle,
   BookOpen,
-  CheckCircle2,
   LinkIcon,
   Calendar,
-
   Pencil,
   Trash2,
 } from "lucide-react";
@@ -69,7 +65,7 @@ export default function AnalysisDetailPage({
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Back + header */}
+      {/* Header */}
       <div>
         <Link
           href="/analysis"
@@ -106,47 +102,33 @@ export default function AnalysisDetailPage({
             <Calendar className="w-3.5 h-3.5" />
             {format(new Date(analysis.date), "EEEE, MMMM d, yyyy")}
           </span>
-          <span className="flex items-center gap-1.5">
-{analysis.session} session
-          </span>
+          <span>{analysis.session} session</span>
           <span className="text-muted-foreground/50">
             Created {format(new Date(analysis.created_at), "MMM d 'at' h:mm a")}
           </span>
         </div>
 
-        {/* Action buttons */}
         <div className="flex items-center gap-2 mt-4">
           <Link href={`/analysis/${id}/edit`}>
             <Button variant="outline" size="sm" className="gap-1.5">
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
+              <Pencil className="w-3.5 h-3.5" /> Edit
             </Button>
           </Link>
           {!confirmDelete ? (
-            <Button
-              variant="outline"
-              size="sm"
+            <Button variant="outline" size="sm"
               className="gap-1.5 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5"
-              onClick={() => setConfirmDelete(true)}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Delete
+              onClick={() => setConfirmDelete(true)}>
+              <Trash2 className="w-3.5 h-3.5" /> Delete
             </Button>
           ) : (
             <div className="flex items-center gap-2">
               <span className="text-xs text-destructive font-medium">Delete this analysis?</span>
-              <Button
-                variant="outline"
-                size="sm"
+              <Button variant="outline" size="sm"
                 className="bg-destructive text-white hover:bg-destructive/90 border-destructive"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
+                onClick={handleDelete} disabled={deleting}>
                 {deleting ? "Deleting..." : "Yes, delete"}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>
-                Cancel
-              </Button>
+              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>Cancel</Button>
             </div>
           )}
         </div>
@@ -165,6 +147,38 @@ export default function AnalysisDetailPage({
         </CardContent>
       </Card>
 
+      {/* Long + Short scenarios */}
+      {(analysis.long_scenario || analysis.short_scenario) && (
+        <div className="grid sm:grid-cols-2 gap-4">
+          {analysis.long_scenario && (
+            <Card className="bg-success/4 border-success/20 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-success flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Long Scenario
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed text-foreground/90">{analysis.long_scenario}</p>
+              </CardContent>
+            </Card>
+          )}
+          {analysis.short_scenario && (
+            <Card className="bg-destructive/4 border-destructive/20 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-destructive flex items-center gap-2">
+                  <TrendingDown className="w-4 h-4" />
+                  Short Scenario
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed text-foreground/90">{analysis.short_scenario}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
       {/* Screenshots */}
       {(analysis.screenshot_groups ?? []).some((g) => g.urls.length > 0) && (
         <Card className="shadow-sm">
@@ -173,67 +187,6 @@ export default function AnalysisDetailPage({
           </CardHeader>
           <CardContent>
             <ScreenshotUpload groups={analysis.screenshot_groups ?? []} onChange={() => {}} readOnly />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Key levels + setup */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gold" />
-              Key Levels
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {analysis.key_levels.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No key levels set.</p>
-              ) : (
-                analysis.key_levels.map((level, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
-                  >
-                    <span className="text-xs text-muted-foreground">Level {i + 1}</span>
-                    <span className="font-mono text-sm font-medium text-primary">{level}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold">Planned Setup</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-foreground/90 mb-4">{analysis.planned_setup || "—"}</p>
-            <div className="space-y-2">
-              {analysis.confluences.map((c, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-                  <span className="text-sm text-foreground/80">{c}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Invalidation */}
-      {analysis.invalidation && (
-        <Card className="bg-destructive/5 border-destructive/20 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-semibold text-destructive mb-1">Invalidation</p>
-                <p className="text-sm text-foreground/90">{analysis.invalidation}</p>
-              </div>
-            </div>
           </CardContent>
         </Card>
       )}

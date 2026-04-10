@@ -26,6 +26,7 @@ export default function NewAccountPage() {
     account_type: "futures",
     phase: "funded",
     account_size: 50000,
+    purchase_cost: 149,
     start_balance: 50000,
     current_balance: 50000,
     roi: 0,
@@ -41,13 +42,18 @@ export default function NewAccountPage() {
   function set<K extends keyof FundedAccountInput>(key: K, value: FundedAccountInput[K]) {
     setForm((prev) => {
       const next = { ...prev, [key]: value };
-      // Auto-calculate ROI when balance changes
-      if (key === "current_balance" || key === "start_balance") {
-        const start = key === "start_balance" ? (value as number) : prev.start_balance;
-        const current = key === "current_balance" ? (value as number) : prev.current_balance;
-        if (start > 0) {
-          next.roi = Math.round(((current - start) / start) * 10000) / 100;
-        }
+      // Auto-calculate ROI on purchase cost whenever relevant fields change
+      const cost = key === "purchase_cost" ? (value as number) : prev.purchase_cost;
+      const start = key === "start_balance" ? (value as number) : prev.start_balance;
+      const current = key === "current_balance" ? (value as number) : prev.current_balance;
+      if (cost > 0) {
+        next.roi = Math.round(((current - start) / cost) * 10000) / 100;
+      }
+      // Keep account_size + start_balance in sync when account_size changes
+      if (key === "account_size") {
+        next.start_balance = value as number;
+        next.current_balance = value as number;
+        if (cost > 0) next.roi = 0;
       }
       return next;
     });
@@ -62,6 +68,8 @@ export default function NewAccountPage() {
     router.push(`/accounts/${created.id}`);
   }
 
+  const profitGained = form.current_balance - form.start_balance;
+
   return (
     <div className="max-w-2xl space-y-6">
       <div>
@@ -73,7 +81,7 @@ export default function NewAccountPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Firm info */}
+        {/* Account Info */}
         <Card className="shadow-sm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Account Info</CardTitle></CardHeader>
           <CardContent className="space-y-4">
@@ -89,7 +97,6 @@ export default function NewAccountPage() {
                   placeholder="e.g. 50K Futures" className="h-9 text-sm" required />
               </div>
             </div>
-
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Account Type</Label>
@@ -120,7 +127,6 @@ export default function NewAccountPage() {
                 </div>
               </div>
             </div>
-
             <div className="space-y-1.5">
               <Label className="text-xs">Status</Label>
               <div className="flex gap-1.5">
@@ -140,42 +146,60 @@ export default function NewAccountPage() {
           </CardContent>
         </Card>
 
-        {/* Balance & drawdown */}
+        {/* Financials */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Balance & Drawdown</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Financials</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid sm:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Account Size ($) *</Label>
                 <Input type="number" value={form.account_size}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    set("account_size", v);
-                    set("start_balance", v);
-                    set("current_balance", v);
-                  }}
+                  onChange={(e) => set("account_size", parseFloat(e.target.value) || 0)}
                   className="h-9 text-sm font-mono" required />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Current Balance ($) *</Label>
-                <Input type="number" step="0.01" value={form.current_balance}
-                  onChange={(e) => set("current_balance", parseFloat(e.target.value))}
-                  className="h-9 text-sm font-mono" required />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">ROI (%)</Label>
-                <Input type="number" step="0.01" value={form.roi}
-                  readOnly
-                  className="h-9 text-sm font-mono bg-muted cursor-not-allowed"
-                  title="Auto-calculated from balance" />
+                <Label className="text-xs">
+                  Purchase Cost ($) *
+                  <span className="ml-1 text-muted-foreground/60 font-normal">— real money paid</span>
+                </Label>
+                <Input type="number" step="0.01" value={form.purchase_cost}
+                  onChange={(e) => set("purchase_cost", parseFloat(e.target.value) || 0)}
+                  placeholder="e.g. 149" className="h-9 text-sm font-mono" required />
               </div>
             </div>
 
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Current Balance ($) *</Label>
+                <Input type="number" step="0.01" value={form.current_balance}
+                  onChange={(e) => set("current_balance", parseFloat(e.target.value) || 0)}
+                  className="h-9 text-sm font-mono" required />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">ROI on Purchase Cost (%)</Label>
+                <div className="relative">
+                  <Input type="number" step="0.01" value={form.roi} readOnly
+                    className="h-9 text-sm font-mono bg-muted cursor-not-allowed pr-24"
+                    title="Auto-calculated: (profit / purchase cost) × 100" />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/70">
+                    {profitGained >= 0 ? "+" : ""}${profitGained.toFixed(0)} profit
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground/60">Based on purchase cost, not account size</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Drawdown */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Drawdown</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Max Drawdown ($) *</Label>
                 <Input type="number" value={form.max_drawdown}
-                  onChange={(e) => set("max_drawdown", parseFloat(e.target.value))}
+                  onChange={(e) => set("max_drawdown", parseFloat(e.target.value) || 0)}
                   className="h-9 text-sm font-mono" required />
               </div>
               <div className="space-y-1.5">
@@ -187,7 +211,7 @@ export default function NewAccountPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs">Drawdown Used ($)</Label>
                 <Input type="number" step="0.01" value={form.drawdown_used}
-                  onChange={(e) => set("drawdown_used", parseFloat(e.target.value))}
+                  onChange={(e) => set("drawdown_used", parseFloat(e.target.value) || 0)}
                   className="h-9 text-sm font-mono" />
               </div>
             </div>
@@ -202,13 +226,13 @@ export default function NewAccountPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs">Total Paid Out ($)</Label>
                 <Input type="number" step="0.01" value={form.payout_total}
-                  onChange={(e) => set("payout_total", parseFloat(e.target.value))}
+                  onChange={(e) => set("payout_total", parseFloat(e.target.value) || 0)}
                   className="h-9 text-sm font-mono" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Next Payout Target ($)</Label>
                 <Input type="number" value={form.next_payout_target}
-                  onChange={(e) => set("next_payout_target", parseFloat(e.target.value))}
+                  onChange={(e) => set("next_payout_target", parseFloat(e.target.value) || 0)}
                   className="h-9 text-sm font-mono" />
               </div>
             </div>

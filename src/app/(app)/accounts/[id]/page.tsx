@@ -150,7 +150,12 @@ export default function AccountDetailPage({
                 {account.roi >= 0 ? "+" : ""}{account.roi}%
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">ROI</p>
+            <p className="text-xs text-muted-foreground">ROI on purchase cost</p>
+            {account.purchase_cost > 0 && (
+              <p className="text-xs text-muted-foreground/60 mt-0.5">
+                Paid ${account.purchase_cost.toLocaleString()}
+              </p>
+            )}
           </div>
           </div>
         </div>
@@ -160,7 +165,7 @@ export default function AccountDetailPage({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Current Balance", value: `$${account.current_balance.toLocaleString()}`, icon: DollarSign },
-          { label: "Start Balance", value: `$${account.start_balance.toLocaleString()}`, icon: DollarSign },
+          { label: "Purchase Cost", value: `$${(account.purchase_cost ?? 0).toLocaleString()}`, icon: DollarSign },
           { label: "P&L Gained", value: `${profitGained >= 0 ? "+" : ""}$${profitGained.toLocaleString()}`, icon: profitGained >= 0 ? TrendingUp : TrendingDown },
           { label: "Total Payouts", value: `$${account.payout_total.toLocaleString()}`, icon: DollarSign },
         ].map(({ label, value, icon: Icon }) => (

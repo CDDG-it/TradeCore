@@ -80,7 +80,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
                 <Calendar className="w-3.5 h-3.5" />
                 {format(new Date(trade.date_time.slice(0, 10) + "T12:00:00"), "EEEE, MMMM d, yyyy")}
               </span>
-              <span>{trade.session} session</span>
+              <span>{trade.session} session{trade.timeframe ? ` · ${trade.timeframe}` : ""}</span>
             </div>
           </div>
 

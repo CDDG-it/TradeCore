@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
 const MARKETS: Market[] = ["futures", "commodities"];
+const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "Daily"];
 
 export default function NewTradePage() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function NewTradePage() {
     instrument: "",
     market: "futures",
     session: "New York",
+    timeframe: "",
     direction: "long",
     confluences: [],
     rr: 2,
@@ -135,16 +137,48 @@ export default function NewTradePage() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">Session</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {SESSIONS.map((s) => (
-                  <button key={s} type="button" onClick={() => set("session", s)}
-                    className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                      form.session === s ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                    {s}
-                  </button>
-                ))}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Session</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {SESSIONS.map((s) => (
+                    <button key={s} type="button" onClick={() => set("session", s)}
+                      className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                        form.session === s ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Timeframe</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {TIMEFRAMES.map((tf) => (
+                    <button key={tf} type="button"
+                      onClick={() => {
+                        // Toggle: if already selected in the string, remove; otherwise add
+                        const parts = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : [];
+                        const idx = parts.indexOf(tf);
+                        const next = idx >= 0 ? parts.filter((p) => p !== tf) : [...parts, tf];
+                        set("timeframe", next.join(" / "));
+                      }}
+                      className={cn("px-2.5 py-1 rounded-lg text-xs font-medium transition-all font-mono",
+                        form.timeframe?.split(" / ").includes(tf)
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-muted text-muted-foreground hover:text-foreground")}>
+                      {tf}
+                    </button>
+                  ))}
+                  <Input
+                    value={form.timeframe?.split(" / ").filter(t => !TIMEFRAMES.includes(t)).join(" / ") ?? ""}
+                    onChange={(e) => {
+                      const presets = form.timeframe?.split(" / ").filter(t => TIMEFRAMES.includes(t)) ?? [];
+                      const custom = e.target.value.trim();
+                      set("timeframe", [...presets, ...(custom ? [custom] : [])].join(" / "));
+                    }}
+                    placeholder="Custom..."
+                    className="h-7 text-xs bg-background/50 w-24 font-mono" />
+                </div>
               </div>
             </div>
 

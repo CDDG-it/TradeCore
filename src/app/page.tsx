@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, BarChart2, Wallet, ArrowRight, CheckCircle, TrendingUp } from "lucide-react";
+import { BookOpen, BarChart2, Wallet, ArrowRight, CheckCircle, TrendingUp, ChevronRight } from "lucide-react";
 import { Logo, LogoMark } from "@/components/logo";
 
 const features = [
@@ -7,33 +7,37 @@ const features = [
     icon: BookOpen,
     title: "Trade Journal",
     description:
-      "Log every trade with setup, confluences, R:R, psychology notes, and screenshots. Build a systematic record of your edge.",
+      "Log every trade with confluences, R:R, psychology notes, and screenshots. Build a systematic record of your edge.",
     accent: "text-primary",
     glow: "bg-primary/8",
+    href: "/journal",
   },
   {
     icon: TrendingUp,
     title: "Pre-Trade Analysis",
     description:
-      "Write structured pre-market analysis with bias, key levels, planned setups, and invalidation before you trade.",
+      "Write structured pre-market analysis with bias, long and short scenarios before you trade.",
     accent: "text-gold",
     glow: "bg-gold/8",
+    href: "/analysis",
   },
   {
     icon: BarChart2,
     title: "Performance Analytics",
     description:
-      "Visualise win rate, R:R distribution, setup performance, and equity curve. Know exactly where your edge lives.",
+      "Visualise win rate, R:R distribution, and equity curve. Know exactly where your edge lives.",
     accent: "text-primary",
     glow: "bg-primary/8",
+    href: "/analytics",
   },
   {
     icon: Wallet,
     title: "Funded Accounts",
     description:
-      "Monitor ROI, drawdown, and payout progress across all your prop firm accounts in one clean dashboard.",
+      "Monitor real ROI, drawdown, and payout progress across all your prop firm accounts in one clean dashboard.",
     accent: "text-gold",
     glow: "bg-gold/8",
+    href: "/accounts",
   },
 ];
 
@@ -49,17 +53,14 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* ── Background decoration ─────────────────── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-        {/* Navy top-left orb */}
         <div
           className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full opacity-[0.04]"
           style={{ background: "radial-gradient(circle, oklch(0.22 0.08 252), transparent 70%)" }}
         />
-        {/* Gold bottom-right orb */}
         <div
           className="absolute -bottom-48 -right-24 w-[700px] h-[700px] rounded-full opacity-[0.06]"
           style={{ background: "radial-gradient(circle, oklch(0.70 0.13 82), transparent 65%)" }}
         />
-        {/* Subtle grid */}
         <div
           className="absolute inset-0 opacity-[0.015]"
           style={{
@@ -97,7 +98,6 @@ export default function LandingPage() {
       {/* ── Hero ──────────────────────────────────── */}
       <section className="relative z-10 px-6 pt-20 pb-24 text-center">
         <div className="mx-auto max-w-3xl">
-          {/* Badge */}
           <div
             className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-gold/25 bg-gold/6 px-4 py-1.5 text-xs font-medium text-gold mb-10"
             style={{ animationDelay: "0ms" }}
@@ -106,7 +106,6 @@ export default function LandingPage() {
             Built for futures and commodities traders
           </div>
 
-          {/* Logo mark — floating */}
           <div
             className="animate-fade-up animate-float flex justify-center mb-8"
             style={{ animationDelay: "80ms" }}
@@ -114,7 +113,6 @@ export default function LandingPage() {
             <LogoMark variant="light" size={80} />
           </div>
 
-          {/* Wordmark */}
           <h1
             className="animate-fade-up text-6xl sm:text-7xl font-extrabold tracking-tight leading-none mb-4"
             style={{ animationDelay: "160ms" }}
@@ -123,7 +121,6 @@ export default function LandingPage() {
             <span className="animate-shimmer-gold">On</span>
           </h1>
 
-          {/* Tagline */}
           <p
             className="animate-fade-up text-xl text-muted-foreground mb-4"
             style={{ animationDelay: "240ms" }}
@@ -132,7 +129,6 @@ export default function LandingPage() {
             <span className="font-semibold text-foreground">organized.</span>
           </p>
 
-          {/* Description */}
           <p
             className="animate-fade-up text-base text-muted-foreground/80 max-w-lg mx-auto mb-12 leading-relaxed"
             style={{ animationDelay: "300ms" }}
@@ -141,7 +137,6 @@ export default function LandingPage() {
             track funded accounts, and scan markets — all in one focused workspace.
           </p>
 
-          {/* CTAs */}
           <div
             className="animate-fade-up flex flex-col sm:flex-row items-center justify-center gap-3"
             style={{ animationDelay: "380ms" }}
@@ -196,21 +191,52 @@ export default function LandingPage() {
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {features.map(({ icon: Icon, title, description, accent, glow }, i) => (
-              <div
+            {features.map(({ icon: Icon, title, description, accent, glow, href }, i) => (
+              <Link
                 key={title}
-                className="animate-fade-up group rounded-2xl border border-border/50 bg-card p-6 hover:border-primary/25 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                href={href}
+                className="animate-fade-up group rounded-2xl border border-border/50 bg-card p-6 hover:border-primary/30 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer block relative overflow-hidden"
                 style={{ animationDelay: `${560 + i * 60}ms` }}
               >
-                <div
-                  className={`w-10 h-10 rounded-xl ${glow} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}
-                >
+                {/* Subtle inner glow on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"
+                  style={{ background: "radial-gradient(ellipse at 50% 0%, oklch(0.22 0.08 252 / 0.05), transparent 70%)" }} />
+
+                <div className={`relative w-10 h-10 rounded-xl ${glow} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
                   <Icon className={`w-5 h-5 ${accent}`} />
                 </div>
-                <h3 className="font-semibold text-sm mb-2">{title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
-              </div>
+                <h3 className="relative font-semibold text-sm mb-2 group-hover:text-foreground transition-colors">{title}</h3>
+                <p className="relative text-xs text-muted-foreground leading-relaxed mb-4">{description}</p>
+                <div className={`relative inline-flex items-center gap-1 text-xs font-medium ${accent} opacity-0 group-hover:opacity-100 transition-all duration-200 -translate-x-1 group-hover:translate-x-0`}>
+                  Open <ChevronRight className="w-3 h-3" />
+                </div>
+              </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Quick links bar ───────────────────────── */}
+      <section className="relative z-10 px-6 pb-16">
+        <div className="mx-auto max-w-4xl">
+          <div className="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm p-6">
+            <p className="text-xs text-muted-foreground text-center mb-5 uppercase tracking-wider font-medium">Jump straight in</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { href: "/journal/new", label: "Log a Trade", icon: BookOpen, accent: "text-primary", bg: "bg-primary/8 group-hover:bg-primary/15" },
+                { href: "/analysis/new", label: "New Analysis", icon: TrendingUp, accent: "text-gold", bg: "bg-gold/8 group-hover:bg-gold/15" },
+                { href: "/analytics", label: "View Analytics", icon: BarChart2, accent: "text-primary", bg: "bg-primary/8 group-hover:bg-primary/15" },
+                { href: "/accounts/new", label: "Add Account", icon: Wallet, accent: "text-gold", bg: "bg-gold/8 group-hover:bg-gold/15" },
+              ].map(({ href, label, icon: Icon, accent, bg }) => (
+                <Link key={href} href={href}
+                  className="group flex flex-col items-center gap-2.5 rounded-xl p-4 transition-all hover:-translate-y-0.5 hover:shadow-sm border border-transparent hover:border-border/60">
+                  <div className={`w-9 h-9 rounded-xl ${bg} transition-colors flex items-center justify-center`}>
+                    <Icon className={`w-4 h-4 ${accent}`} />
+                  </div>
+                  <span className="text-xs font-medium text-center leading-tight">{label}</span>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -222,7 +248,6 @@ export default function LandingPage() {
             className="animate-fade-up relative rounded-3xl border border-gold/20 overflow-hidden"
             style={{ animationDelay: "700ms" }}
           >
-            {/* Inner glow */}
             <div
               className="absolute inset-0 opacity-40"
               style={{

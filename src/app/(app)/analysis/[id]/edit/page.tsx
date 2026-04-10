@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,6 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
   const router = useRouter();
   const analysis = getAnalysisById(id);
   const [saving, setSaving] = useState(false);
-  const [confluenceInput, setConfluenceInput] = useState("");
-  const [keyLevelInput, setKeyLevelInput] = useState("");
 
   if (!analysis) {
     return (
@@ -39,14 +37,12 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
     title: analysis.title,
     date: analysis.date,
     instrument: analysis.instrument,
-    market: analysis.market,
-    session: analysis.session,
-    bias: analysis.bias,
+    market: analysis.market as Market,
+    session: analysis.session as Session,
+    bias: analysis.bias as Bias,
     thesis: analysis.thesis,
-    key_levels: [...analysis.key_levels],
-    planned_setup: analysis.planned_setup,
-    confluences: [...analysis.confluences],
-    invalidation: analysis.invalidation,
+    long_scenario: analysis.long_scenario ?? "",
+    short_scenario: analysis.short_scenario ?? "",
     notes: analysis.notes,
     screenshot_groups: analysis.screenshot_groups ?? [],
     used_for_trade: analysis.used_for_trade,
@@ -54,15 +50,6 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function addConfluence() {
-    const t = confluenceInput.trim();
-    if (t && !form.confluences.includes(t)) { set("confluences", [...form.confluences, t]); setConfluenceInput(""); }
-  }
-  function addKeyLevel() {
-    const t = keyLevelInput.trim();
-    if (t && !form.key_levels.includes(t)) { set("key_levels", [...form.key_levels, t]); setKeyLevelInput(""); }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -153,53 +140,25 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
               <Label className="text-xs">Thesis</Label>
               <Textarea value={form.thesis} onChange={(e) => set("thesis", e.target.value)} className="text-sm min-h-24 resize-none" required />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Planned Setup</Label>
-              <Input value={form.planned_setup} onChange={(e) => set("planned_setup", e.target.value)} className="h-9 text-sm" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Key Levels <span className="text-muted-foreground/60 font-normal">(optional)</span></Label>
-              <div className="flex gap-2">
-                <Input value={keyLevelInput} onChange={(e) => setKeyLevelInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addKeyLevel())}
-                  placeholder="e.g. 3328.5" className="h-9 text-sm font-mono" />
-                <Button type="button" variant="outline" size="sm" onClick={addKeyLevel}><Plus className="w-3.5 h-3.5" /></Button>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Long Scenario
+                  <span className="ml-1.5 text-success text-[10px] font-semibold uppercase tracking-wide">↑</span>
+                </Label>
+                <Textarea value={form.long_scenario} onChange={(e) => set("long_scenario", e.target.value)}
+                  placeholder="What triggers a long? Entry conditions, levels, targets..."
+                  className="text-sm min-h-28 resize-none border-success/25 focus-visible:ring-success/30" />
               </div>
-              {form.key_levels.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {form.key_levels.map((l) => (
-                    <span key={l} className="inline-flex items-center gap-1 text-xs font-mono bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg border border-border/50">
-                      {l}
-                      <button type="button" onClick={() => set("key_levels", form.key_levels.filter((x) => x !== l))}
-                        className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Confluences</Label>
-              <div className="flex gap-2">
-                <Input value={confluenceInput} onChange={(e) => setConfluenceInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addConfluence())}
-                  placeholder="Add confluence..." className="h-9 text-sm" />
-                <Button type="button" variant="outline" size="sm" onClick={addConfluence}><Plus className="w-3.5 h-3.5" /></Button>
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Short Scenario
+                  <span className="ml-1.5 text-destructive text-[10px] font-semibold uppercase tracking-wide">↓</span>
+                </Label>
+                <Textarea value={form.short_scenario} onChange={(e) => set("short_scenario", e.target.value)}
+                  placeholder="What triggers a short? Entry conditions, levels, targets..."
+                  className="text-sm min-h-28 resize-none border-destructive/25 focus-visible:ring-destructive/30" />
               </div>
-              {form.confluences.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {form.confluences.map((c) => (
-                    <span key={c} className="inline-flex items-center gap-1 text-xs bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg border border-border/50">
-                      {c}
-                      <button type="button" onClick={() => set("confluences", form.confluences.filter((x) => x !== c))}
-                        className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Invalidation</Label>
-              <Input value={form.invalidation} onChange={(e) => set("invalidation", e.target.value)} className="h-9 text-sm" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Notes</Label>

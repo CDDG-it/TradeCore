@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,8 +21,6 @@ const BIASES: Bias[] = ["bullish", "bearish", "neutral"];
 export default function NewAnalysisPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [confluenceInput, setConfluenceInput] = useState("");
-  const [keyLevelInput, setKeyLevelInput] = useState("");
 
   const [form, setForm] = useState<PreTradeAnalysisInput>({
     title: "",
@@ -32,10 +30,8 @@ export default function NewAnalysisPage() {
     session: "New York",
     bias: "bullish",
     thesis: "",
-    key_levels: [],
-    planned_setup: "",
-    confluences: [],
-    invalidation: "",
+    long_scenario: "",
+    short_scenario: "",
     notes: "",
     screenshot_groups: [],
     used_for_trade: false,
@@ -43,15 +39,6 @@ export default function NewAnalysisPage() {
 
   function set<K extends keyof PreTradeAnalysisInput>(key: K, value: PreTradeAnalysisInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function addConfluence() {
-    const t = confluenceInput.trim();
-    if (t && !form.confluences.includes(t)) { set("confluences", [...form.confluences, t]); setConfluenceInput(""); }
-  }
-  function addKeyLevel() {
-    const t = keyLevelInput.trim();
-    if (t && !form.key_levels.includes(t)) { set("key_levels", [...form.key_levels, t]); setKeyLevelInput(""); }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -90,14 +77,12 @@ export default function NewAnalysisPage() {
                   onChange={(e) => set("date", e.target.value)} className="h-9 text-sm bg-background/50" required />
               </div>
             </div>
-
             <div className="space-y-1.5">
               <Label htmlFor="title" className="text-xs">Title *</Label>
               <Input id="title" value={form.title}
                 onChange={(e) => set("title", e.target.value)}
                 placeholder="e.g. Gold London continuation setup" className="h-9 text-sm bg-background/50" required />
             </div>
-
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Market</Label>
@@ -149,80 +134,36 @@ export default function NewAnalysisPage() {
             <div className="space-y-1.5">
               <Label htmlFor="thesis" className="text-xs">Thesis *</Label>
               <Textarea id="thesis" value={form.thesis} onChange={(e) => set("thesis", e.target.value)}
-                placeholder="What is your read on this market? Why are you looking at this trade?"
+                placeholder="What is your read on this market? What is the overall context?"
                 className="text-sm bg-background/50 min-h-24 resize-none" required />
             </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="setup" className="text-xs">Planned Setup</Label>
-              <Input id="setup" value={form.planned_setup}
-                onChange={(e) => set("planned_setup", e.target.value)}
-                placeholder="e.g. Pullback continuation, supply zone rejection..."
-                className="h-9 text-sm bg-background/50" />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Key Levels <span className="text-muted-foreground/60 font-normal">(optional)</span></Label>
-              <div className="flex gap-2">
-                <Input value={keyLevelInput} onChange={(e) => setKeyLevelInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addKeyLevel())}
-                  placeholder="e.g. 3328.5" className="h-9 text-sm bg-background/50 font-mono" />
-                <Button type="button" variant="outline" size="sm" onClick={addKeyLevel}>
-                  <Plus className="w-3.5 h-3.5" />
-                </Button>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="long_scenario" className="text-xs">
+                  Long Scenario
+                  <span className="ml-1.5 text-success text-[10px] font-semibold uppercase tracking-wide">↑</span>
+                </Label>
+                <Textarea id="long_scenario" value={form.long_scenario}
+                  onChange={(e) => set("long_scenario", e.target.value)}
+                  placeholder="What triggers a long? Entry conditions, levels, targets..."
+                  className="text-sm bg-background/50 min-h-28 resize-none border-success/25 focus-visible:ring-success/30" />
               </div>
-              {form.key_levels.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {form.key_levels.map((l) => (
-                    <span key={l} className="inline-flex items-center gap-1 text-xs font-mono bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg border border-border/50">
-                      {l}
-                      <button type="button" onClick={() => set("key_levels", form.key_levels.filter((x) => x !== l))}
-                        className="hover:text-destructive transition-colors">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Confluences</Label>
-              <div className="flex gap-2">
-                <Input value={confluenceInput} onChange={(e) => setConfluenceInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addConfluence())}
-                  placeholder="e.g. Support reclaim, volume confirmation..."
-                  className="h-9 text-sm bg-background/50" />
-                <Button type="button" variant="outline" size="sm" onClick={addConfluence}>
-                  <Plus className="w-3.5 h-3.5" />
-                </Button>
+              <div className="space-y-1.5">
+                <Label htmlFor="short_scenario" className="text-xs">
+                  Short Scenario
+                  <span className="ml-1.5 text-destructive text-[10px] font-semibold uppercase tracking-wide">↓</span>
+                </Label>
+                <Textarea id="short_scenario" value={form.short_scenario}
+                  onChange={(e) => set("short_scenario", e.target.value)}
+                  placeholder="What triggers a short? Entry conditions, levels, targets..."
+                  className="text-sm bg-background/50 min-h-28 resize-none border-destructive/25 focus-visible:ring-destructive/30" />
               </div>
-              {form.confluences.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {form.confluences.map((c) => (
-                    <span key={c} className="inline-flex items-center gap-1 text-xs bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg border border-border/50">
-                      {c}
-                      <button type="button" onClick={() => set("confluences", form.confluences.filter((x) => x !== c))}
-                        className="hover:text-destructive transition-colors">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
-
             <div className="space-y-1.5">
-              <Label htmlFor="invalidation" className="text-xs">Invalidation</Label>
-              <Input id="invalidation" value={form.invalidation}
-                onChange={(e) => set("invalidation", e.target.value)}
-                placeholder="What would invalidate this setup?" className="h-9 text-sm bg-background/50" />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="notes" className="text-xs">Additional Notes</Label>
+              <Label htmlFor="notes" className="text-xs">Notes <span className="text-muted-foreground/60 font-normal">(optional)</span></Label>
               <Textarea id="notes" value={form.notes} onChange={(e) => set("notes", e.target.value)}
-                placeholder="Any other relevant observations..." className="text-sm bg-background/50 min-h-20 resize-none" />
+                placeholder="Any other context, reminders, or observations..."
+                className="text-sm bg-background/50 min-h-20 resize-none" />
             </div>
           </CardContent>
         </Card>

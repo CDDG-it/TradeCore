@@ -175,21 +175,14 @@ export default function AnalysisPage() {
                     </div>
                   </div>
 
-                  {/* Confluences */}
-                  {analysis.confluences.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-3">
-                      {analysis.confluences.slice(0, 3).map((c) => (
-                        <span
-                          key={c}
-                          className="text-xs bg-muted/60 text-muted-foreground px-2 py-0.5 rounded-md"
-                        >
-                          {c}
-                        </span>
-                      ))}
-                      {analysis.confluences.length > 3 && (
-                        <span className="text-xs text-muted-foreground/60">
-                          +{analysis.confluences.length - 3}
-                        </span>
+                  {/* Scenario indicators */}
+                  {(analysis.long_scenario || analysis.short_scenario) && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {analysis.long_scenario && (
+                        <span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-md font-medium">↑ Long</span>
+                      )}
+                      {analysis.short_scenario && (
+                        <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-md font-medium">↓ Short</span>
                       )}
                     </div>
                   )}
