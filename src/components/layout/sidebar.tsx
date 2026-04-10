@@ -12,10 +12,10 @@ import {
   Settings,
   User,
   LogOut,
-  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { Logo } from "@/components/logo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -30,6 +30,39 @@ const bottomItems = [
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/profile", label: "Profile", icon: User },
 ];
+
+function NavItem({
+  href,
+  label,
+  icon: Icon,
+  isActive,
+  onClick,
+}: {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  isActive: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+        isActive
+          ? "bg-sidebar-accent text-sidebar-primary"
+          : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+      )}
+    >
+      {isActive && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-sidebar-primary rounded-r-full" />
+      )}
+      <Icon className="w-4 h-4 shrink-0" />
+      {label}
+    </Link>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -46,71 +79,45 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 h-screen w-60 bg-sidebar border-r border-sidebar-border flex flex-col z-40">
       {/* Logo */}
       <div className="h-14 flex items-center px-5 border-b border-sidebar-border shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
-            <TrendingUp className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <span className="font-semibold text-sm tracking-wide text-sidebar-foreground">
-            TradingHub
-          </span>
-        </div>
+        <Link href="/" className="hover:opacity-80 transition-opacity">
+          <Logo variant="dark" size={26} />
+        </Link>
       </div>
 
       {/* Main nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive =
-            pathname === href || pathname.startsWith(href + "/");
+        {navItems.map(({ href, label, icon }) => {
+          const isActive = pathname === href || pathname.startsWith(href + "/");
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-              )}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-            </Link>
+            <div key={href} className="relative">
+              <NavItem href={href} label={label} icon={icon} isActive={isActive} />
+            </div>
           );
         })}
       </nav>
 
       {/* Bottom nav + user */}
       <div className="px-3 pb-3 space-y-0.5 border-t border-sidebar-border pt-3 shrink-0">
-        {bottomItems.map(({ href, label, icon: Icon }) => {
+        {bottomItems.map(({ href, label, icon }) => {
           const isActive = pathname === href;
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-              )}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-            </Link>
+            <div key={href} className="relative">
+              <NavItem href={href} label={label} icon={icon} isActive={isActive} />
+            </div>
           );
         })}
 
         {/* User */}
         <div className="pt-2 mt-1 border-t border-sidebar-border">
           <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg group">
-            <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-              <span className="text-xs font-semibold text-primary">{initials}</span>
+            <div className="w-7 h-7 rounded-full bg-sidebar-primary/20 flex items-center justify-center shrink-0">
+              <span className="text-xs font-semibold text-sidebar-primary">{initials}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-sidebar-foreground truncate">
                 {user?.full_name || "Demo Trader"}
               </p>
-              <p className="text-xs text-sidebar-foreground/40 truncate">
+              <p className="text-xs text-sidebar-foreground/35 truncate">
                 {user?.email || "demo@tradinghub.app"}
               </p>
             </div>

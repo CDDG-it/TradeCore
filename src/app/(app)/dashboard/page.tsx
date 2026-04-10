@@ -11,10 +11,11 @@ import {
   Wallet,
   Newspaper,
   ArrowRight,
-  Trophy,
   Target,
   Activity,
   DollarSign,
+  Plus,
+  Zap,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,24 +24,12 @@ import { getDashboardStats, getTrades, getAccounts, getFeaturedNews } from "@/li
 import { cn } from "@/lib/utils";
 import type { TradeResult } from "@/lib/types";
 
-function resultBadge(result: TradeResult) {
+function ResultBadge({ result }: { result: TradeResult }) {
   if (result === "win")
-    return (
-      <Badge className="bg-success/15 text-success border-success/20 text-xs">W</Badge>
-    );
+    return <Badge className="bg-success/15 text-success border-success/20 text-xs">W</Badge>;
   if (result === "loss")
-    return (
-      <Badge className="bg-destructive/15 text-destructive border-destructive/20 text-xs">L</Badge>
-    );
-  return (
-    <Badge className="bg-warning/15 text-warning border-warning/20 text-xs">BE</Badge>
-  );
-}
-
-function pnlColor(pnl: number) {
-  if (pnl > 0) return "text-success";
-  if (pnl < 0) return "text-destructive";
-  return "text-muted-foreground";
+    return <Badge className="bg-destructive/15 text-destructive border-destructive/20 text-xs">L</Badge>;
+  return <Badge className="bg-warning/15 text-warning border-warning/20 text-xs">BE</Badge>;
 }
 
 export default function DashboardPage() {
@@ -58,11 +47,11 @@ export default function DashboardPage() {
       color: "text-primary",
     },
     {
-      label: "Total P&L",
-      value: `$${stats.total_pnl.toLocaleString()}`,
-      icon: DollarSign,
-      sub: `Avg ${stats.average_rr}R per trade`,
-      color: stats.total_pnl >= 0 ? "text-success" : "text-destructive",
+      label: "Avg R:R",
+      value: `${stats.average_rr}R`,
+      icon: Zap,
+      sub: `${stats.break_even_rate}% break-even rate`,
+      color: "text-primary",
     },
     {
       label: "Active Accounts",
@@ -120,7 +109,7 @@ export default function DashboardPage() {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Recent trades */}
         <div className="lg:col-span-2">
-          <Card className="bg-card border-border/50">
+          <Card className="bg-card border-border/50 shadow-sm">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-semibold">Recent Trades</CardTitle>
               <Link
@@ -131,6 +120,17 @@ export default function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent className="p-0">
+              {recentTrades.length === 0 && (
+                <div className="px-6 py-10 text-center">
+                  <p className="text-sm text-muted-foreground mb-3">No trades logged yet.</p>
+                  <Link
+                    href="/journal/new"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Log your first trade
+                  </Link>
+                </div>
+              )}
               <div className="divide-y divide-border/40">
                 {recentTrades.map((trade) => (
                   <Link
@@ -138,31 +138,36 @@ export default function DashboardPage() {
                     href={`/journal/${trade.id}`}
                     className="flex items-center gap-4 px-6 py-3.5 hover:bg-muted/30 transition-colors"
                   >
-                    <div className="flex items-center gap-2 w-20 shrink-0">
-                      {resultBadge(trade.result)}
-                      <span
-                        className={cn(
-                          "text-xs font-medium uppercase",
-                          trade.direction === "long" ? "text-success" : "text-destructive"
-                        )}
-                      >
-                        {trade.direction === "long" ? (
-                          <TrendingUp className="w-3.5 h-3.5" />
-                        ) : (
-                          <TrendingDown className="w-3.5 h-3.5" />
-                        )}
-                      </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <ResultBadge result={trade.result} />
+                      {trade.direction === "long" ? (
+                        <TrendingUp className="w-3.5 h-3.5 text-success" />
+                      ) : (
+                        <TrendingDown className="w-3.5 h-3.5 text-destructive" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{trade.instrument}</p>
-                      <p className="text-xs text-muted-foreground truncate">{trade.setup}</p>
+                      <p className="text-xs text-muted-foreground truncate capitalize">
+                        {trade.session} · {trade.market}
+                      </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className={cn("text-sm font-semibold", pnlColor(trade.pnl))}>
-                        {trade.pnl > 0 ? "+" : ""}${trade.pnl.toLocaleString()}
+                      <p
+                        className={cn(
+                          "text-sm font-semibold",
+                          trade.result === "win"
+                            ? "text-success"
+                            : trade.result === "loss"
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        {trade.result === "win" ? "+" : trade.result === "loss" ? "-" : ""}
+                        {trade.rr}R
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(trade.date_time), "MMM d")}
+                        {format(new Date(trade.date_time.slice(0, 10) + "T12:00:00"), "MMM d")}
                       </p>
                     </div>
                   </Link>
@@ -183,6 +188,19 @@ export default function DashboardPage() {
               View all <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
+          {accounts.length === 0 && (
+            <Card className="bg-card border-border/50 shadow-sm">
+              <CardContent className="p-6 text-center">
+                <p className="text-sm text-muted-foreground mb-3">No accounts added yet.</p>
+                <Link
+                  href="/accounts/new"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add funded account
+                </Link>
+              </CardContent>
+            </Card>
+          )}
           {accounts.map((acct) => {
             const drawdownPct = Math.round((acct.drawdown_used / acct.max_drawdown) * 100);
             const payoutPct = Math.min(
@@ -191,7 +209,7 @@ export default function DashboardPage() {
             );
             return (
               <Link key={acct.id} href={`/accounts/${acct.id}`}>
-                <Card className="bg-card border-border/50 hover:border-primary/30 transition-colors">
+                <Card className="bg-card border-border/50 hover:border-primary/30 transition-colors cursor-pointer">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -244,7 +262,10 @@ export default function DashboardPage() {
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>Payout progress</span>
-                        <span>${acct.payout_total.toLocaleString()} / ${acct.next_payout_target.toLocaleString()}</span>
+                        <span>
+                          ${acct.payout_total.toLocaleString()} / $
+                          {acct.next_payout_target.toLocaleString()}
+                        </span>
                       </div>
                       <Progress value={payoutPct} className="h-1.5 [&>div]:bg-primary" />
                     </div>
@@ -262,7 +283,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {quickLinks.map(({ href, label, icon: Icon, desc }) => (
             <Link key={href} href={href}>
-              <Card className="bg-card border-border/50 hover:border-primary/30 transition-colors group">
+              <Card className="bg-card border-border/50 hover:border-primary/30 transition-colors group cursor-pointer">
                 <CardContent className="p-4">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
                     <Icon className="w-4 h-4 text-primary" />

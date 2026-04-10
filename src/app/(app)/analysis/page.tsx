@@ -35,8 +35,6 @@ function MarketBadge({ market }: { market: Market }) {
   const colors: Record<Market, string> = {
     futures: "bg-primary/10 text-primary border-primary/20",
     commodities: "bg-warning/10 text-warning border-warning/20",
-    forex: "bg-chart-2/10 text-blue-400 border-blue-400/20",
-    crypto: "bg-chart-5/10 text-purple-400 border-purple-400/20",
   };
   return (
     <Badge className={cn("text-xs capitalize", colors[market])}>

@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
-  TrendingUp,
   LayoutDashboard,
   BookOpen,
   LineChart,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { Logo } from "@/components/logo";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -47,12 +47,9 @@ export function MobileHeader() {
     <>
       {/* Header bar */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-sidebar border-b border-sidebar-border flex items-center justify-between px-4 z-50">
-        <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
-            <TrendingUp className="w-3.5 h-3.5 text-primary-foreground" />
-          </div>
-          <span className="font-semibold text-sm text-sidebar-foreground">TradingHub</span>
-        </div>
+        <Link href="/" className="hover:opacity-80 transition-opacity">
+          <Logo variant="dark" size={24} />
+        </Link>
         <button
           onClick={() => setOpen(true)}
           className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
@@ -77,12 +74,9 @@ export function MobileHeader() {
         )}
       >
         <div className="h-14 flex items-center justify-between px-5 border-b border-sidebar-border">
-          <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
-              <TrendingUp className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-sm text-sidebar-foreground">TradingHub</span>
-          </div>
+          <Link href="/" className="hover:opacity-80 transition-opacity" onClick={() => setOpen(false)}>
+            <Logo variant="dark" size={24} />
+          </Link>
           <button
             onClick={() => setOpen(false)}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors"

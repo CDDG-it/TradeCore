@@ -51,10 +51,13 @@ export default function AccountsPage() {
             {accounts.length} accounts · {activeCount} active
           </p>
         </div>
-        <button className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors opacity-50 cursor-not-allowed shrink-0">
+        <Link
+          href="/accounts/new"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+        >
           <Plus className="w-4 h-4" />
           Add account
-        </button>
+        </Link>
       </div>
 
       {/* Summary stats */}

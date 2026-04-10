@@ -1,8 +1,8 @@
 export type Bias = "bullish" | "bearish" | "neutral";
 export type Direction = "long" | "short";
 export type TradeResult = "win" | "loss" | "break-even";
-export type Market = "futures" | "commodities" | "forex" | "crypto";
-export type Session = "London" | "New York" | "Asia" | "Pre-market" | "Post-market";
+export type Market = "futures" | "commodities";
+export type Session = "London" | "New York" | "Asia";
 export type AccountPhase = "evaluation" | "funded" | "payout";
 export type AccountStatus = "active" | "inactive" | "blown" | "passed";
 export type PayoutStatus = "pending" | "paid" | "rejected";
@@ -17,6 +17,12 @@ export interface User {
   updated_at: string;
 }
 
+/** A labeled group of screenshots (e.g. "HTF", "LTF", "Entry") */
+export interface ScreenshotGroup {
+  label: string;
+  urls: string[];
+}
+
 export interface PreTradeAnalysis {
   id: string;
   user_id: string;
@@ -27,12 +33,12 @@ export interface PreTradeAnalysis {
   session: Session;
   bias: Bias;
   thesis: string;
-  key_levels: string[];
+  key_levels: string[];        // optional — array may be empty
   planned_setup: string;
   confluences: string[];
   invalidation: string;
   notes: string;
-  screenshot_urls: string[];
+  screenshot_groups: ScreenshotGroup[];
   used_for_trade: boolean;
   created_at: string;
   updated_at: string;
@@ -42,20 +48,16 @@ export interface TradeJournalEntry {
   id: string;
   user_id: string;
   linked_analysis_id?: string;
+  /** ISO date string (date only, e.g. "2026-04-09") */
   date_time: string;
   instrument: string;
   market: Market;
   session: Session;
   direction: Direction;
-  setup: string;
   confluences: string[];
-  entry_price?: number;
-  stop_loss?: number;
-  take_profit?: number;
   rr: number;
   result: TradeResult;
-  pnl: number;
-  screenshot_urls: string[];
+  screenshot_groups: ScreenshotGroup[];
   execution_notes: string;
   psychology_notes: string;
   mistakes: string;
@@ -120,7 +122,6 @@ export interface DashboardStats {
   win_rate: number;
   break_even_rate: number;
   average_rr: number;
-  total_pnl: number;
   active_accounts: number;
   total_payouts: number;
   total_drawdown_used: number;

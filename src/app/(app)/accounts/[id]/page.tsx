@@ -1,7 +1,8 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
   ArrowLeft,
@@ -13,12 +14,15 @@ import {
   Calendar,
   CheckCircle,
   Clock,
+  Trash2,
   XCircle,
+  Pencil,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { getAccountById, getPayoutsByAccountId } from "@/lib/mock/store";
+import { getAccountById, getPayoutsByAccountId, deleteAccount } from "@/lib/mock/store";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PayoutStatus } from "@/lib/types";
 
@@ -43,7 +47,17 @@ export default function AccountDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const account = getAccountById(id);
+
+  async function handleDelete() {
+    setDeleting(true);
+    await new Promise((r) => setTimeout(r, 300));
+    deleteAccount(id);
+    router.push("/accounts");
+  }
 
   if (!account) {
     return (
@@ -103,7 +117,29 @@ export default function AccountDetailPage({
               </span>
             </div>
           </div>
-          <div className="text-right shrink-0">
+          {/* Edit + Delete buttons */}
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          {!confirmDelete ? (
+            <div className="flex items-center gap-2">
+              <Link href={`/accounts/${id}/edit`}>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Pencil className="w-3.5 h-3.5" /> Edit
+                </Button>
+              </Link>
+              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => setConfirmDelete(true)}>
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-destructive font-medium">Delete this account?</span>
+              <Button variant="outline" size="sm" className="bg-destructive text-white hover:bg-destructive/90 border-destructive" onClick={handleDelete} disabled={deleting}>
+                {deleting ? "Deleting..." : "Yes, delete"}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+            </div>
+          )}
+          <div className="text-right">
             <div className="flex items-center gap-1.5 justify-end">
               {account.roi >= 0 ? (
                 <TrendingUp className="w-5 h-5 text-success" />
@@ -115,6 +151,7 @@ export default function AccountDetailPage({
               </span>
             </div>
             <p className="text-xs text-muted-foreground">ROI</p>
+          </div>
           </div>
         </div>
       </div>

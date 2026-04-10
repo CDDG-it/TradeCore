@@ -43,7 +43,7 @@ export default function ProfilePage() {
     ? format(new Date(user.created_at), "MMMM yyyy")
     : "January 2026";
 
-  const bestTrade = [...trades].sort((a, b) => b.pnl - a.pnl)[0];
+  const bestTrade = [...trades].filter((t) => t.result === "win").sort((a, b) => b.rr - a.rr)[0];
   const totalPayouts = accounts.reduce((s, a) => s + a.payout_total, 0);
 
   return (
@@ -88,7 +88,7 @@ export default function ProfilePage() {
         {[
           { label: "Total Trades", value: stats.total_trades.toString() },
           { label: "Win Rate", value: `${stats.win_rate}%` },
-          { label: "Total P&L", value: `$${stats.total_pnl.toLocaleString()}` },
+          { label: "Avg R:R", value: `${stats.average_rr}R` },
           { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}` },
         ].map(({ label, value }) => (
           <div key={label} className="bg-card border border-border/50 rounded-xl p-4 text-center">
@@ -108,12 +108,12 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground/80">
-                {bestTrade.instrument} · {bestTrade.setup}
+                {bestTrade.instrument} · {bestTrade.session}
               </span>
-              <span className="font-bold text-success">+${bestTrade.pnl.toLocaleString()}</span>
+              <span className="font-bold text-success">+{bestTrade.rr}R</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {format(new Date(bestTrade.date_time), "MMMM d, yyyy")} · {bestTrade.rr}R
+              {format(new Date(bestTrade.date_time.slice(0, 10) + "T12:00:00"), "MMMM d, yyyy")}
             </p>
           </CardContent>
         </Card>
