@@ -5,6 +5,8 @@ import type {
   PayoutEvent,
   NewsItem,
   User,
+  Habit,
+  HabitCompletion,
 } from "@/lib/types";
 
 export const mockUser: User = {
@@ -310,6 +312,103 @@ export const mockPayouts: PayoutEvent[] = [
     notes: "Pending review.",
   },
 ];
+
+export const mockHabits: Habit[] = [
+  {
+    id: "habit_1",
+    user_id: "user_1",
+    name: "Morning journaling",
+    description: "Write 3 intentions and 1 trading focus for the day",
+    category: "mindset",
+    frequency: "daily",
+    target_days: 7,
+    color: "oklch(0.74 0.13 82)",
+    icon: "✍️",
+    created_at: "2026-03-01T08:00:00Z",
+    updated_at: "2026-04-01T08:00:00Z",
+  },
+  {
+    id: "habit_2",
+    user_id: "user_1",
+    name: "Pre-market analysis",
+    description: "Complete pre-trade analysis before the open",
+    category: "research",
+    frequency: "weekdays",
+    target_days: 5,
+    color: "oklch(0.72 0.14 220)",
+    icon: "📊",
+    created_at: "2026-03-01T08:00:00Z",
+    updated_at: "2026-04-01T08:00:00Z",
+  },
+  {
+    id: "habit_3",
+    user_id: "user_1",
+    name: "Post-trade review",
+    description: "Review every trade taken — win or lose",
+    category: "review",
+    frequency: "daily",
+    target_days: 7,
+    color: "oklch(0.58 0.17 145)",
+    icon: "🔍",
+    created_at: "2026-03-01T08:00:00Z",
+    updated_at: "2026-04-01T08:00:00Z",
+  },
+  {
+    id: "habit_4",
+    user_id: "user_1",
+    name: "30 min exercise",
+    description: "Physical training improves discipline and focus",
+    category: "health",
+    frequency: "daily",
+    target_days: 7,
+    color: "oklch(0.58 0.22 25)",
+    icon: "💪",
+    created_at: "2026-03-01T08:00:00Z",
+    updated_at: "2026-04-01T08:00:00Z",
+  },
+  {
+    id: "habit_5",
+    user_id: "user_1",
+    name: "Weekly performance review",
+    description: "Review stats, trades, and areas to improve",
+    category: "review",
+    frequency: "weekends",
+    target_days: 1,
+    color: "oklch(0.70 0.16 72)",
+    icon: "📈",
+    created_at: "2026-03-01T08:00:00Z",
+    updated_at: "2026-04-01T08:00:00Z",
+  },
+];
+
+// Simulate last 14 days of completions
+function buildCompletions(): HabitCompletion[] {
+  const completions: HabitCompletion[] = [];
+  const today = new Date("2026-04-10T12:00:00Z");
+  const habitPatterns: Record<string, number[]> = {
+    habit_1: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 14],
+    habit_2: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11],
+    habit_3: [1, 2, 4, 5, 7, 8, 9, 11, 12, 14],
+    habit_4: [1, 2, 3, 5, 6, 7, 8, 9, 10, 12, 13, 14],
+    habit_5: [6, 13],
+  };
+  for (const [habitId, daysAgo] of Object.entries(habitPatterns)) {
+    for (const d of daysAgo) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - d);
+      const dateStr = date.toISOString().slice(0, 10);
+      completions.push({
+        id: `hc_${habitId}_${dateStr}`,
+        habit_id: habitId,
+        date: dateStr,
+        completed: true,
+      });
+    }
+  }
+  return completions;
+}
+
+export const mockHabitCompletions: HabitCompletion[] = buildCompletions();
 
 export const mockNews: NewsItem[] = [
   {

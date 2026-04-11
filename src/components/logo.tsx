@@ -1,26 +1,22 @@
 /**
- * TradeOn logo components.
- * LogoMark  — just the icon (M zigzag + gold arrow)
+ * TradeOn logo components — dark luxury edition.
+ * LogoMark  — standalone icon (M zigzag + gold arrow)
  * Logo      — icon + "TradeOn" wordmark side by side
- * LogoFull  — stacked: icon above wordmark (for landing page hero)
+ * LogoStacked — stacked version for landing page hero
  */
 
 interface LogoProps {
-  /** "dark" = rendered on a dark (navy) background → white mark + gold arrow
-   *  "light" = rendered on a light (white) background → navy mark + gold arrow */
+  /** "dark" = on dark background (default) → white/light mark + gold arrow
+   *  "light" = on light background → charcoal mark + gold arrow */
   variant?: "dark" | "light";
   size?: number;
 }
 
 /** The standalone icon mark */
-export function LogoMark({ variant = "light", size = 32 }: LogoProps) {
-  const markColor = variant === "dark" ? "#FFFFFF" : "#1E3461";
-  const goldColor = "#C4952A";
-
-  // ViewBox: 100 × 90
-  // Navy/white zigzag: 4 points forming an M/price-chart shape
-  // Gold arrow: diagonal shaft + open arrowhead (two lines)
-  // They share the same diagonal trajectory but are offset so they interleave.
+export function LogoMark({ variant = "dark", size = 32 }: LogoProps) {
+  const markColor = variant === "dark" ? "#E8E8F0" : "#1A1B2E";
+  const goldColor = "#C8982A";
+  const iceColor = "#7EC8E3";
 
   return (
     <svg
@@ -31,18 +27,17 @@ export function LogoMark({ variant = "light", size = 32 }: LogoProps) {
       xmlns="http://www.w3.org/2000/svg"
       aria-label="TradeOn logo mark"
     >
-      {/* ── Navy / white M zigzag ──────────────────────────── */}
-      {/* From bottom-left → first peak → valley → second peak */}
+      {/* ── Mark / zigzag chart line ──────────────── */}
       <polyline
         points="6,82 28,38 46,58 68,16"
         stroke={markColor}
         strokeWidth="9"
         strokeLinecap="round"
         strokeLinejoin="round"
+        opacity="0.9"
       />
 
-      {/* ── Gold upward arrow ─────────────────────────────── */}
-      {/* Shaft — starts slightly right of the M start, ends upper-right */}
+      {/* ── Gold upward arrow shaft ───────────────── */}
       <line
         x1="22"
         y1="82"
@@ -52,7 +47,7 @@ export function LogoMark({ variant = "light", size = 32 }: LogoProps) {
         strokeWidth="8"
         strokeLinecap="round"
       />
-      {/* Arrowhead — two lines forming an open ">" at the tip */}
+      {/* Arrowhead */}
       <polyline
         points="60,8 80,12 75,32"
         stroke={goldColor}
@@ -67,12 +62,11 @@ export function LogoMark({ variant = "light", size = 32 }: LogoProps) {
 
 /** Horizontal lockup: icon + wordmark */
 export function Logo({
-  variant = "light",
+  variant = "dark",
   size = 28,
   className = "",
 }: LogoProps & { className?: string }) {
-  const wordmarkNavy = variant === "dark" ? "text-white" : "text-[#1E3461]";
-
+  const wordmarkColor = variant === "dark" ? "#E8E8F0" : "#1A1B2E";
   const textSize =
     size <= 24 ? "text-sm" : size <= 32 ? "text-[15px]" : "text-lg";
 
@@ -80,23 +74,23 @@ export function Logo({
     <div className={`flex items-center gap-2.5 ${className}`}>
       <LogoMark variant={variant} size={size} />
       <span className={`font-bold tracking-tight leading-none ${textSize}`}>
-        <span className={wordmarkNavy}>Trade</span>
-        <span style={{ color: "#C4952A" }}>On</span>
+        <span style={{ color: wordmarkColor }}>Trade</span>
+        <span style={{ color: "#C8982A" }}>On</span>
       </span>
     </div>
   );
 }
 
 /** Stacked lockup: icon above wordmark (landing page hero) */
-export function LogoStacked({ variant = "light", size = 72 }: LogoProps) {
-  const wordmarkNavy = variant === "dark" ? "text-white" : "text-[#1E3461]";
+export function LogoStacked({ variant = "dark", size = 72 }: LogoProps) {
+  const wordmarkColor = variant === "dark" ? "#E8E8F0" : "#1A1B2E";
 
   return (
     <div className="flex flex-col items-center gap-3">
       <LogoMark variant={variant} size={size} />
       <span className="text-3xl font-bold tracking-tight leading-none">
-        <span className={wordmarkNavy}>Trade</span>
-        <span style={{ color: "#C4952A" }}>On</span>
+        <span style={{ color: wordmarkColor }}>Trade</span>
+        <span style={{ color: "#C8982A" }}>On</span>
       </span>
     </div>
   );

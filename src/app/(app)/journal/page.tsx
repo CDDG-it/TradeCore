@@ -93,8 +93,15 @@ export default function JournalPage() {
             {allTrades.length} trades logged
           </p>
         </div>
-        <Link href="/journal/new"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all hover:-translate-y-px hover:shadow-sm shrink-0">
+        <Link
+          href="/journal/new"
+          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
+          style={{
+            background: "oklch(0.74 0.13 82)",
+            color: "oklch(0.08 0.014 252)",
+            boxShadow: "0 4px 14px oklch(0.74 0.13 82 / 0.30)",
+          }}
+        >
           <Plus className="w-4 h-4" /> Log trade
         </Link>
       </div>

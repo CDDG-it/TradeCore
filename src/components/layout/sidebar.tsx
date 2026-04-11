@@ -12,6 +12,7 @@ import {
   Settings,
   User,
   LogOut,
+  CheckSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/analysis", label: "Analysis", icon: LineChart },
   { href: "/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/accounts", label: "Accounts", icon: Wallet },
+  { href: "/habits", label: "Habits", icon: CheckSquare },
   { href: "/news", label: "News", icon: Newspaper },
 ];
 
@@ -49,17 +51,26 @@ function NavItem({
       href={href}
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 relative",
         isActive
-          ? "bg-sidebar-accent text-sidebar-primary"
-          : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          ? "bg-sidebar-accent text-sidebar-foreground"
+          : "text-sidebar-foreground/40 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
       )}
     >
+      {/* Active indicator bar */}
       {isActive && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-sidebar-primary rounded-r-full" />
+        <span
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+          style={{ background: "oklch(0.74 0.13 82)" }}
+        />
       )}
-      <Icon className="w-4 h-4 shrink-0" />
-      {label}
+      <Icon
+        className={cn(
+          "w-4 h-4 shrink-0 transition-colors",
+          isActive ? "text-sidebar-primary" : ""
+        )}
+      />
+      <span className={isActive ? "text-sidebar-foreground" : ""}>{label}</span>
     </Link>
   );
 }
@@ -76,9 +87,18 @@ export function Sidebar() {
       .toUpperCase() || "DT";
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-60 bg-sidebar border-r border-sidebar-border flex flex-col z-40">
+    <aside
+      className="fixed left-0 top-0 h-screen w-60 flex flex-col z-40"
+      style={{
+        background: "var(--sidebar)",
+        borderRight: "1px solid oklch(1 0 0 / 5%)",
+      }}
+    >
       {/* Logo */}
-      <div className="h-14 flex items-center px-5 border-b border-sidebar-border shrink-0">
+      <div
+        className="h-14 flex items-center px-5 shrink-0"
+        style={{ borderBottom: "1px solid oklch(1 0 0 / 5%)" }}
+      >
         <Link href="/" className="hover:opacity-80 transition-opacity">
           <Logo variant="dark" size={26} />
         </Link>
@@ -97,7 +117,10 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom nav + user */}
-      <div className="px-3 pb-3 space-y-0.5 border-t border-sidebar-border pt-3 shrink-0">
+      <div
+        className="px-3 pb-3 space-y-0.5 pt-3 shrink-0"
+        style={{ borderTop: "1px solid oklch(1 0 0 / 5%)" }}
+      >
         {bottomItems.map(({ href, label, icon }) => {
           const isActive = pathname === href;
           return (
@@ -107,23 +130,38 @@ export function Sidebar() {
           );
         })}
 
-        {/* User */}
-        <div className="pt-2 mt-1 border-t border-sidebar-border">
+        {/* User row */}
+        <div
+          className="pt-2 mt-1"
+          style={{ borderTop: "1px solid oklch(1 0 0 / 5%)" }}
+        >
           <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg group">
-            <div className="w-7 h-7 rounded-full bg-sidebar-primary/20 flex items-center justify-center shrink-0">
-              <span className="text-xs font-semibold text-sidebar-primary">{initials}</span>
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+              style={{ background: "oklch(0.74 0.13 82 / 18%)" }}
+            >
+              <span
+                className="text-xs font-bold"
+                style={{ color: "oklch(0.74 0.13 82)" }}
+              >
+                {initials}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-sidebar-foreground truncate">
                 {user?.full_name || "Demo Trader"}
               </p>
-              <p className="text-xs text-sidebar-foreground/35 truncate">
+              <p
+                className="text-xs truncate"
+                style={{ color: "oklch(0.88 0.008 252 / 35%)" }}
+              >
                 {user?.email || "demo@tradinghub.app"}
               </p>
             </div>
             <button
               onClick={signOut}
-              className="text-sidebar-foreground/30 hover:text-sidebar-foreground transition-colors opacity-0 group-hover:opacity-100"
+              className="transition-colors opacity-0 group-hover:opacity-100"
+              style={{ color: "oklch(0.88 0.008 252 / 35%)" }}
               title="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />

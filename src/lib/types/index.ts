@@ -114,6 +114,48 @@ export interface NewsItem {
   is_featured: boolean;
 }
 
+// ── Habit Tracker ─────────────────────────────────────────────
+export type HabitFrequency = "daily" | "weekdays" | "weekends";
+export type HabitCategory =
+  | "mindset"
+  | "routine"
+  | "research"
+  | "health"
+  | "review"
+  | "other";
+
+export interface Habit {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  category: HabitCategory;
+  frequency: HabitFrequency;
+  target_days: number; // days per week (for display)
+  color: string; // oklch color string for accent
+  icon: string; // emoji or icon name
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HabitCompletion {
+  id: string;
+  habit_id: string;
+  date: string; // ISO date "2026-04-10"
+  completed: boolean;
+  notes?: string;
+}
+
+export interface DailyTask {
+  id: string;
+  user_id: string;
+  date: string; // ISO date
+  text: string;
+  completed: boolean;
+  priority: "high" | "medium" | "low";
+  created_at: string;
+}
+
 // Form types for create/edit
 export type PreTradeAnalysisInput = Omit<PreTradeAnalysis, "id" | "user_id" | "created_at" | "updated_at">;
 export type TradeJournalEntryInput = Omit<TradeJournalEntry, "id" | "user_id" | "created_at" | "updated_at">;
