@@ -9,20 +9,46 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { createTrade, getAnalyses } from "@/lib/mock/store";
+import { createTrade, getAnalyses, computeDisciplineScore } from "@/lib/mock/store";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
-import type { TradeJournalEntryInput, Direction, TradeResult, Market, Session } from "@/lib/types";
+import type { TradeJournalEntryInput, Direction, TradeResult, Market, Session, TradeDiscipline, TradeMarketContext, Bias, MarketRegime, VolatilityLevel } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
 const MARKETS: Market[] = ["futures", "commodities"];
 const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "Daily"];
 
+const DISCIPLINE_CHECKS: { key: keyof TradeDiscipline; label: string }[] = [
+  { key: "followed_plan",        label: "Followed my trading plan" },
+  { key: "traded_in_session",    label: "Traded in my allowed session" },
+  { key: "respected_risk",       label: "Respected risk rules (size, %, stop)" },
+  { key: "respected_max_trades", label: "Respected max trades for today" },
+  { key: "matched_a_plus",       label: "Setup matched A+ criteria" },
+  { key: "no_impulsive_entry",   label: "No impulsive entry (waited for confirmation)" },
+  { key: "no_revenge_trade",     label: "This was NOT a revenge trade" },
+  { key: "respected_stop_loss",  label: "Respected the stop loss" },
+  { key: "journal_completed",    label: "Journal entry fully completed" },
+];
+
+const DEFAULT_DISCIPLINE: TradeDiscipline = {
+  followed_plan: false, traded_in_session: true, respected_risk: true,
+  respected_max_trades: true, matched_a_plus: false, no_impulsive_entry: true,
+  no_revenge_trade: true, respected_stop_loss: true, journal_completed: true,
+  score: 0, notes: "",
+};
+
+const DEFAULT_CONTEXT: TradeMarketContext = {
+  regime: "trending", volatility: "medium", news_day: false,
+  major_event: false, htf_bias: "bullish", confidence: 3, notes: "",
+};
+
 export default function NewTradePage() {
   const router = useRouter();
   const analyses = getAnalyses();
   const [saving, setSaving] = useState(false);
   const [confluenceInput, setConfluenceInput] = useState("");
+  const [showDiscipline, setShowDiscipline] = useState(true);
+  const [showContext, setShowContext] = useState(true);
 
   const [form, setForm] = useState<TradeJournalEntryInput>({
     date_time: new Date().toISOString().split("T")[0],
@@ -40,10 +66,29 @@ export default function NewTradePage() {
     mistakes: "",
     lessons: "",
     linked_analysis_id: undefined,
+    discipline: { ...DEFAULT_DISCIPLINE },
+    market_context: { ...DEFAULT_CONTEXT },
   });
 
   function set<K extends keyof TradeJournalEntryInput>(key: K, value: TradeJournalEntryInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function setDiscipline(key: keyof TradeDiscipline, value: boolean | string) {
+    setForm((prev) => {
+      const updated = { ...(prev.discipline ?? DEFAULT_DISCIPLINE), [key]: value };
+      if (key !== "score" && key !== "notes") {
+        updated.score = computeDisciplineScore(updated);
+      }
+      return { ...prev, discipline: updated };
+    });
+  }
+
+  function setContext(key: keyof TradeMarketContext, value: unknown) {
+    setForm((prev) => ({
+      ...prev,
+      market_context: { ...(prev.market_context ?? DEFAULT_CONTEXT), [key as string]: value },
+    }));
   }
 
   function addConfluence() {
@@ -256,6 +301,138 @@ export default function NewTradePage() {
               </div>
             ))}
           </CardContent>
+        </Card>
+
+        {/* ── Market Context ─────────────────────────────────── */}
+        <Card className="bg-card border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold">Market Context</CardTitle>
+              <button type="button" onClick={() => setShowContext(!showContext)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                {showContext ? "Collapse" : "Expand"}
+              </button>
+            </div>
+          </CardHeader>
+          {showContext && (
+            <CardContent className="space-y-4">
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Market Regime</Label>
+                  <div className="flex flex-col gap-1">
+                    {(["trending", "ranging", "choppy"] as MarketRegime[]).map((r) => (
+                      <button key={r} type="button" onClick={() => setContext("regime", r)}
+                        className={cn("py-1.5 rounded-lg text-xs font-medium capitalize transition-all",
+                          form.market_context?.regime === r ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Volatility</Label>
+                  <div className="flex flex-col gap-1">
+                    {(["low", "medium", "high", "extreme"] as VolatilityLevel[]).map((v) => (
+                      <button key={v} type="button" onClick={() => setContext("volatility", v)}
+                        className={cn("py-1.5 rounded-lg text-xs font-medium capitalize transition-all",
+                          form.market_context?.volatility === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">HTF Bias</Label>
+                    <div className="flex gap-1">
+                      {(["bullish", "bearish", "neutral"] as Bias[]).map((b) => (
+                        <button key={b} type="button" onClick={() => setContext("htf_bias", b)}
+                          className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium capitalize transition-all",
+                            form.market_context?.htf_bias === b
+                              ? b === "bullish" ? "bg-success text-success-foreground"
+                                : b === "bearish" ? "bg-destructive text-white"
+                                : "bg-muted text-foreground"
+                              : "bg-muted text-muted-foreground hover:text-foreground")}>
+                          {b === "bullish" ? "↑" : b === "bearish" ? "↓" : "—"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Confidence (1–5)</Label>
+                    <div className="flex gap-1">
+                      {[1,2,3,4,5].map((n) => (
+                        <button key={n} type="button" onClick={() => setContext("confidence", n)}
+                          className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold tabular-nums transition-all",
+                            form.market_context?.confidence === n ? "bg-gold text-gold-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    {[
+                      { key: "news_day" as const, label: "News day" },
+                      { key: "major_event" as const, label: "Major event" },
+                    ].map(({ key, label }) => (
+                      <label key={key} className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" checked={!!form.market_context?.[key]} onChange={(e) => setContext(key, e.target.checked)}
+                          className="w-3.5 h-3.5 rounded" />
+                        <span className="text-xs text-muted-foreground">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Context Notes</Label>
+                <Input value={form.market_context?.notes ?? ""} onChange={(e) => setContext("notes", e.target.value)}
+                  placeholder="Any notes on the market conditions..." className="h-9 text-sm bg-background/50" />
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* ── Discipline Check ────────────────────────────────── */}
+        <Card className="bg-card border-border/50 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-sm font-semibold">Discipline Check</CardTitle>
+                {form.discipline && (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full tabular-nums"
+                    style={{
+                      background: form.discipline.score >= 80 ? "oklch(0.58 0.17 145 / 0.15)" : form.discipline.score >= 60 ? "oklch(0.70 0.16 72 / 0.15)" : "oklch(0.58 0.22 25 / 0.15)",
+                      color: form.discipline.score >= 80 ? "oklch(0.58 0.17 145)" : form.discipline.score >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
+                    }}>
+                    {form.discipline.score}%
+                  </span>
+                )}
+              </div>
+              <button type="button" onClick={() => setShowDiscipline(!showDiscipline)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                {showDiscipline ? "Collapse" : "Expand"}
+              </button>
+            </div>
+          </CardHeader>
+          {showDiscipline && (
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                {DISCIPLINE_CHECKS.map(({ key, label }) => (
+                  <label key={key} className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-muted/30">
+                    <input type="checkbox"
+                      checked={!!(form.discipline?.[key])}
+                      onChange={(e) => setDiscipline(key, e.target.checked)}
+                      className="w-4 h-4 rounded shrink-0" />
+                    <span className={cn("text-sm", form.discipline?.[key] ? "text-foreground" : "text-muted-foreground")}>{label}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Discipline Notes</Label>
+                <Input value={form.discipline?.notes ?? ""} onChange={(e) => setDiscipline("notes", e.target.value)}
+                  placeholder="Any notes on your process or mindset..." className="h-9 text-sm bg-background/50" />
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         <Card className="bg-card border-border/50 shadow-sm">

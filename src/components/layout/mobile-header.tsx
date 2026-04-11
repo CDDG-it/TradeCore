@@ -16,18 +16,24 @@ import {
   User,
   LogOut,
   CheckSquare,
+  Compass,
+  Brain,
+  BookMarked,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { Logo } from "@/components/logo";
 
 const navItems = [
+  { href: "/command", label: "Command Center", icon: Compass },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/journal", label: "Journal", icon: BookOpen },
   { href: "/analysis", label: "Analysis", icon: LineChart },
   { href: "/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/habits", label: "Habits", icon: CheckSquare },
+  { href: "/playbook", label: "Playbook", icon: BookMarked },
+  { href: "/coaching", label: "Coaching", icon: Brain },
   { href: "/news", label: "News", icon: Newspaper },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/profile", label: "Profile", icon: User },

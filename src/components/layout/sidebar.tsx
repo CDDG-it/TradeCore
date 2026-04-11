@@ -13,19 +13,45 @@ import {
   User,
   LogOut,
   CheckSquare,
+  Compass,
+  Brain,
+  BookMarked,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { Logo } from "@/components/logo";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/journal", label: "Journal", icon: BookOpen },
-  { href: "/analysis", label: "Analysis", icon: LineChart },
-  { href: "/analytics", label: "Analytics", icon: BarChart2 },
-  { href: "/accounts", label: "Accounts", icon: Wallet },
-  { href: "/habits", label: "Habits", icon: CheckSquare },
-  { href: "/news", label: "News", icon: Newspaper },
+const navGroups = [
+  {
+    label: null,
+    items: [
+      { href: "/command", label: "Command Center", icon: Compass, highlight: true },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: "Trading",
+    items: [
+      { href: "/journal", label: "Journal", icon: BookOpen },
+      { href: "/analysis", label: "Analysis", icon: LineChart },
+      { href: "/analytics", label: "Analytics", icon: BarChart2 },
+      { href: "/accounts", label: "Accounts", icon: Wallet },
+    ],
+  },
+  {
+    label: "Mindset",
+    items: [
+      { href: "/habits", label: "Habits", icon: CheckSquare },
+      { href: "/playbook", label: "Playbook", icon: BookMarked },
+      { href: "/coaching", label: "Coaching", icon: Brain },
+    ],
+  },
+  {
+    label: "Other",
+    items: [
+      { href: "/news", label: "News", icon: Newspaper },
+    ],
+  },
 ];
 
 const bottomItems = [
@@ -38,12 +64,14 @@ function NavItem({
   label,
   icon: Icon,
   isActive,
+  highlight,
   onClick,
 }: {
   href: string;
   label: string;
   icon: React.ElementType;
   isActive: boolean;
+  highlight?: boolean;
   onClick?: () => void;
 }) {
   return (
@@ -57,7 +85,6 @@ function NavItem({
           : "text-sidebar-foreground/40 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
       )}
     >
-      {/* Active indicator bar */}
       {isActive && (
         <span
           className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
@@ -65,12 +92,29 @@ function NavItem({
         />
       )}
       <Icon
-        className={cn(
-          "w-4 h-4 shrink-0 transition-colors",
-          isActive ? "text-sidebar-primary" : ""
-        )}
+        className={cn("w-4 h-4 shrink-0 transition-colors")}
+        style={
+          isActive
+            ? { color: "oklch(0.74 0.13 82)" }
+            : highlight
+            ? { color: "oklch(0.72 0.14 220 / 0.70)" }
+            : undefined
+        }
       />
-      <span className={isActive ? "text-sidebar-foreground" : ""}>{label}</span>
+      <span style={isActive ? { color: "oklch(0.93 0.008 252)" } : undefined}>
+        {label}
+      </span>
+      {highlight && !isActive && (
+        <span
+          className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+          style={{
+            background: "oklch(0.72 0.14 220 / 0.15)",
+            color: "oklch(0.72 0.14 220)",
+          }}
+        >
+          DAILY
+        </span>
+      )}
     </Link>
   );
 }
@@ -105,15 +149,37 @@ export function Sidebar() {
       </div>
 
       {/* Main nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ href, label, icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + "/");
-          return (
-            <div key={href} className="relative">
-              <NavItem href={href} label={label} icon={icon} isActive={isActive} />
+      <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-4">
+        {navGroups.map((group) => (
+          <div key={group.label ?? "primary"}>
+            {group.label && (
+              <p
+                className="text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5"
+                style={{ color: "oklch(0.88 0.008 252 / 22%)" }}
+              >
+                {group.label}
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive =
+                  pathname === item.href || pathname.startsWith(item.href + "/");
+                const highlight = "highlight" in item ? item.highlight : false;
+                return (
+                  <div key={item.href} className="relative">
+                    <NavItem
+                      href={item.href}
+                      label={item.label}
+                      icon={item.icon}
+                      isActive={isActive}
+                      highlight={highlight}
+                    />
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </nav>
 
       {/* Bottom nav + user */}
@@ -130,7 +196,6 @@ export function Sidebar() {
           );
         })}
 
-        {/* User row */}
         <div
           className="pt-2 mt-1"
           style={{ borderTop: "1px solid oklch(1 0 0 / 5%)" }}
