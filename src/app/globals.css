@@ -123,6 +123,89 @@
   --sidebar-accent-foreground: oklch(0.93 0.008 252);
   --sidebar-border: oklch(1 0 0 / 6%);
   --sidebar-ring: oklch(0.74 0.13 82);
+
+  /* ── Theme-aware sidebar helpers ────────────────── */
+  --sidebar-separator: oklch(1 0 0 / 5%);
+  --sidebar-label-muted: oklch(0.88 0.008 252 / 22%);
+  --sidebar-text-active: oklch(0.93 0.008 252);
+  --sidebar-meta: oklch(0.88 0.008 252 / 35%);
+}
+
+/* ── Light mode overrides ────────────────────────── */
+html.light {
+  --background: oklch(0.97 0.005 252);
+  --foreground: oklch(0.12 0.014 252);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.12 0.014 252);
+
+  --popover: oklch(0.99 0.003 252);
+  --popover-foreground: oklch(0.12 0.014 252);
+
+  --primary: oklch(0.52 0.17 220);
+  --primary-foreground: oklch(0.98 0.003 252);
+
+  --secondary: oklch(0.92 0.008 252);
+  --secondary-foreground: oklch(0.22 0.02 252);
+
+  --muted: oklch(0.93 0.007 252);
+  --muted-foreground: oklch(0.48 0.05 252);
+
+  --accent: oklch(0.91 0.01 252);
+  --accent-foreground: oklch(0.18 0.02 252);
+
+  --destructive: oklch(0.52 0.22 25);
+  --success: oklch(0.46 0.17 145);
+  --success-foreground: oklch(0.98 0.003 252);
+  --warning: oklch(0.56 0.16 72);
+  --warning-foreground: oklch(0.98 0.003 252);
+
+  --gold: oklch(0.58 0.14 82);
+  --gold-foreground: oklch(0.98 0.003 252);
+
+  --ice: oklch(0.52 0.17 220);
+  --ice-foreground: oklch(0.98 0.003 252);
+
+  --border: oklch(0.87 0.012 252);
+  --input: oklch(0.94 0.007 252);
+  --ring: oklch(0.52 0.17 220);
+
+  --chart-1: oklch(0.52 0.17 220);
+  --chart-2: oklch(0.58 0.14 82);
+  --chart-3: oklch(0.56 0.16 72);
+  --chart-4: oklch(0.52 0.22 25);
+  --chart-5: oklch(0.46 0.17 145);
+
+  /* sidebar */
+  --sidebar: oklch(0.94 0.010 252);
+  --sidebar-foreground: oklch(0.18 0.018 252);
+  --sidebar-primary: oklch(0.58 0.14 82);
+  --sidebar-primary-foreground: oklch(0.98 0.003 252);
+  --sidebar-accent: oklch(0.87 0.012 252);
+  --sidebar-accent-foreground: oklch(0.12 0.014 252);
+  --sidebar-border: oklch(0 0 0 / 6%);
+  --sidebar-ring: oklch(0.58 0.14 82);
+
+  /* sidebar helpers */
+  --sidebar-separator: oklch(0 0 0 / 6%);
+  --sidebar-label-muted: oklch(0.20 0.018 252 / 30%);
+  --sidebar-text-active: oklch(0.10 0.014 252);
+  --sidebar-meta: oklch(0.20 0.018 252 / 40%);
+}
+
+/* Light mode scrollbar */
+html.light ::-webkit-scrollbar-thumb {
+  background: oklch(0.75 0.015 252);
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.65 0.02 252);
+}
+
+/* Light mode — don't invert calendar picker */
+html.light input[type="date"]::-webkit-calendar-picker-indicator,
+html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.5;
 }
 
 @layer base {

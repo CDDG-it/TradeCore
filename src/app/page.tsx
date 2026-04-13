@@ -9,6 +9,7 @@ import {
   Flame,
   CheckSquare,
   Zap,
+  Brain,
 } from "lucide-react";
 import { Logo, LogoMark } from "@/components/logo";
 
@@ -67,6 +68,17 @@ const features = [
     borderStyle: { borderColor: "oklch(0.58 0.17 145 / 0.20)" },
     iconGlowStyle: { color: "oklch(0.58 0.17 145)" },
     href: "/habits",
+  },
+  {
+    icon: Brain,
+    title: "Self-Improvement",
+    description:
+      "Daily journals, mental state check-ins, sleep tracking, personal standards, and growth correlation insights.",
+    accentClass: "text-gold",
+    glowStyle: { background: "oklch(0.74 0.13 82 / 0.10)" },
+    borderStyle: { borderColor: "oklch(0.74 0.13 82 / 0.20)" },
+    iconGlowStyle: { color: "oklch(0.74 0.13 82)" },
+    href: "/self-improvement",
   },
   {
     icon: Zap,
@@ -185,7 +197,7 @@ export default function LandingPage() {
             style={{ animationDelay: "160ms" }}
           >
             <span style={{ color: "oklch(0.93 0.008 252)" }}>Trade</span>
-            <span className="animate-shimmer-gold">On</span>
+            <span className="animate-shimmer-gold">core</span>
           </h1>
 
           <p
@@ -195,12 +207,12 @@ export default function LandingPage() {
               color: "oklch(0.72 0.06 252)",
             }}
           >
-            Your edge,{" "}
+            Where self-improvement{" "}
             <span
               className="font-semibold"
               style={{ color: "oklch(0.93 0.008 252)" }}
             >
-              organized.
+              meets trading.
             </span>
           </p>
 
@@ -211,8 +223,7 @@ export default function LandingPage() {
               color: "oklch(0.55 0.04 252)",
             }}
           >
-            A premium trading productivity platform. Journal trades, analyse setups, track funded
-            accounts, build habits — all in one focused workspace.
+            A premium performance platform for serious traders. Discipline, habits, mindset, and execution — unified in one focused workspace.
           </p>
 
           <div
@@ -284,8 +295,8 @@ export default function LandingPage() {
             <h2
               className="text-4xl font-bold tracking-tight mb-3 leading-tight"
             >
-              Everything you need.{" "}
-              <span style={{ color: "oklch(0.40 0.04 252)", fontWeight: 400 }}>Nothing you don&apos;t.</span>
+              The complete system.{" "}
+              <span style={{ color: "oklch(0.40 0.04 252)", fontWeight: 400 }}>Built for serious traders.</span>
             </h2>
             <p
               className="text-sm max-w-sm mx-auto"
@@ -466,7 +477,7 @@ export default function LandingPage() {
                   boxShadow: "0 4px 20px oklch(0.74 0.13 82 / 0.40)",
                 }}
               >
-                Open TradeOn
+                Open Tradecore
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

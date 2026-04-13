@@ -21,7 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { getAccountById, getPayoutsByAccountId, deleteAccount } from "@/lib/mock/store";
+import { getAccountById, getPayoutsByAccountId, deleteAccount, computeAccountROI } from "@/lib/mock/store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PayoutStatus } from "@/lib/types";
@@ -74,6 +74,8 @@ export default function AccountDetailPage({
   const drawdownPct = Math.min(100, Math.round((account.drawdown_used / account.max_drawdown) * 100));
   const drawdownRemaining = account.max_drawdown - account.drawdown_used;
   const profitGained = account.current_balance - account.start_balance;
+  // ROI multiple = total payout received / actual fees paid (e.g. 2.0x)
+  const roi = computeAccountROI(account.payout_total, account.purchase_cost);
   const payoutTarget = account.next_payout_target;
   const payoutProgress =
     account.phase !== "evaluation"
@@ -141,19 +143,19 @@ export default function AccountDetailPage({
           )}
           <div className="text-right">
             <div className="flex items-center gap-1.5 justify-end">
-              {account.roi >= 0 ? (
+              {roi >= 0 ? (
                 <TrendingUp className="w-5 h-5 text-success" />
               ) : (
                 <TrendingDown className="w-5 h-5 text-destructive" />
               )}
-              <span className={cn("text-3xl font-bold", account.roi >= 0 ? "text-success" : "text-destructive")}>
-                {account.roi >= 0 ? "+" : ""}{account.roi}%
+              <span className={cn("text-3xl font-bold", roi >= 1 ? "text-success" : roi > 0 ? "text-warning" : "text-destructive")}>
+                {roi}x
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">ROI on purchase cost</p>
+            <p className="text-xs text-muted-foreground">Return on fees paid</p>
             {account.purchase_cost > 0 && (
               <p className="text-xs text-muted-foreground/60 mt-0.5">
-                Paid ${account.purchase_cost.toLocaleString()}
+                Capital invested: ${account.purchase_cost.toLocaleString()}
               </p>
             )}
           </div>
@@ -165,7 +167,7 @@ export default function AccountDetailPage({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Current Balance", value: `$${account.current_balance.toLocaleString()}`, icon: DollarSign },
-          { label: "Purchase Cost", value: `$${(account.purchase_cost ?? 0).toLocaleString()}`, icon: DollarSign },
+          { label: "Fees Paid (Capital Invested)", value: `$${(account.purchase_cost ?? 0).toLocaleString()}`, icon: DollarSign },
           { label: "P&L Gained", value: `${profitGained >= 0 ? "+" : ""}$${profitGained.toLocaleString()}`, icon: profitGained >= 0 ? TrendingUp : TrendingDown },
           { label: "Total Payouts", value: `$${account.payout_total.toLocaleString()}`, icon: DollarSign },
         ].map(({ label, value, icon: Icon }) => (

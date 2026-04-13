@@ -1,7 +1,7 @@
 /**
- * TradeOn logo components — dark luxury edition.
+ * Tradecore logo components — dark luxury edition.
  * LogoMark  — standalone icon (M zigzag + gold arrow)
- * Logo      — icon + "TradeOn" wordmark side by side
+ * Logo      — icon + "Tradecore" wordmark side by side
  * LogoStacked — stacked version for landing page hero
  */
 
@@ -25,7 +25,7 @@ export function LogoMark({ variant = "dark", size = 32 }: LogoProps) {
       viewBox="0 0 100 88"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="TradeOn logo mark"
+      aria-label="Tradecore logo mark"
     >
       {/* ── Mark / zigzag chart line ──────────────── */}
       <polyline
@@ -75,7 +75,7 @@ export function Logo({
       <LogoMark variant={variant} size={size} />
       <span className={`font-bold tracking-tight leading-none ${textSize}`}>
         <span style={{ color: wordmarkColor }}>Trade</span>
-        <span style={{ color: "#C8982A" }}>On</span>
+        <span style={{ color: "#C8982A" }}>core</span>
       </span>
     </div>
   );
@@ -90,7 +90,7 @@ export function LogoStacked({ variant = "dark", size = 72 }: LogoProps) {
       <LogoMark variant={variant} size={size} />
       <span className="text-3xl font-bold tracking-tight leading-none">
         <span style={{ color: wordmarkColor }}>Trade</span>
-        <span style={{ color: "#C8982A" }}>On</span>
+        <span style={{ color: "#C8982A" }}>core</span>
       </span>
     </div>
   );

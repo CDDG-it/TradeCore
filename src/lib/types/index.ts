@@ -229,6 +229,80 @@ export interface DailyTask {
   created_at: string;
 }
 
+// ── Self-Improvement ─────────────────────────────────────────────────────────
+
+export interface DailyJournalEntry {
+  id: string;
+  user_id: string;
+  date: string; // ISO date "2026-04-13"
+  mood_note: string;
+  mental_state: string;
+  what_went_well: string;
+  what_hurt_performance: string;
+  improve_tomorrow: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DailyStateCheck {
+  id: string;
+  user_id: string;
+  date: string;
+  mood: number; // 1-10
+  energy: number;
+  focus: number;
+  stress: number;
+  confidence: number;
+  emotional_stability: number;
+  patience: number;
+  impulsiveness: number; // 1=low impulsive (good), 10=high impulsive (bad)
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SleepRecovery {
+  id: string;
+  user_id: string;
+  date: string;
+  hours_slept: number;
+  sleep_quality: number; // 1-10
+  training_movement: boolean;
+  screen_discipline: number; // 1-10 (10=great discipline)
+  rest_quality: number; // 1-10
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PersonalStandard {
+  id: string;
+  user_id: string;
+  text: string; // e.g. "I stay calm under pressure"
+  created_at: string;
+}
+
+export interface PersonalStandardScore {
+  id: string;
+  standard_id: string;
+  date: string;
+  lived: boolean; // did they live up to this standard today?
+  created_at: string;
+}
+
+export interface WeeklyReflection {
+  id: string;
+  user_id: string;
+  week_start: string; // ISO date of Monday
+  best_habits: string;
+  biggest_weakness: string;
+  emotional_patterns: string;
+  what_improved: string;
+  what_hurt_performance: string;
+  focus_next_week: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Form / Input types ───────────────────────────────────────────────────────
 export type PreTradeAnalysisInput = Omit<PreTradeAnalysis, "id" | "user_id" | "created_at" | "updated_at">;
 export type TradeJournalEntryInput = Omit<TradeJournalEntry, "id" | "user_id" | "created_at" | "updated_at">;

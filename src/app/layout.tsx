@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TradeOn — Your edge, organized",
-  description: "A premium trading productivity platform for futures and commodities traders.",
+  title: "Tradecore — Where self-improvement meets trading",
+  description: "A premium trading performance platform. Self-improvement, discipline, and trading results — unified.",
 };
 
 export default function RootLayout({

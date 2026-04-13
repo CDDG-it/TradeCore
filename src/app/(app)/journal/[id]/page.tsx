@@ -8,12 +8,23 @@ import {
   ArrowLeft, TrendingUp, TrendingDown, Calendar,
   Brain, AlertCircle, Lightbulb, CheckCircle2,
   LinkIcon, Pencil, Trash2, Target, Activity,
+  Flame, CheckSquare, Moon, ExternalLink,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
-import { getTradeById, getAnalysisById, deleteTrade, getDisciplineFieldLabel } from "@/lib/mock/store";
+import {
+  getTradeById,
+  getAnalysisById,
+  deleteTrade,
+  getDisciplineFieldLabel,
+  getDaySummary,
+  getDailyStateCheck,
+  getSleepRecovery,
+  getHabitCompletions,
+  getHabits,
+} from "@/lib/mock/store";
 import { cn } from "@/lib/utils";
 import type { TradeDiscipline, TradeMarketContext } from "@/lib/types";
 
@@ -435,6 +446,197 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
           </CardContent>
         </Card>
       )}
+
+      {/* Day Context from Self-Improvement System */}
+      <TradeDayContext tradeDate={trade.date_time.slice(0, 10)} />
+    </div>
+  );
+}
+
+// ── Day Context Component ─────────────────────────────────────────────────────
+function TradeDayContext({ tradeDate }: { tradeDate: string }) {
+  const summary = getDaySummary(tradeDate);
+  const stateCheck = getDailyStateCheck(tradeDate);
+  const sleepData = getSleepRecovery(tradeDate);
+  const habits = getHabits();
+  const completions = getHabitCompletions(undefined, tradeDate).filter((c) => c.completed);
+
+  const hasAnyData = summary.hasAnalysis || summary.hasJournal || summary.hasStateCheck || summary.hasSleep || completions.length > 0;
+
+  if (!hasAnyData) {
+    return (
+      <div
+        className="rounded-xl p-5"
+        style={{
+          background: "oklch(0.12 0.018 252)",
+          border: "1px solid oklch(0.22 0.025 252)",
+        }}
+      >
+        <div className="flex items-center gap-2.5 mb-3">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center"
+            style={{ background: "oklch(0.74 0.13 82 / 0.15)" }}
+          >
+            <Flame className="w-3.5 h-3.5" style={{ color: "oklch(0.74 0.13 82)" }} />
+          </div>
+          <p className="text-sm font-semibold">Day Context</p>
+          <Link
+            href="/self-improvement"
+            className="ml-auto text-xs flex items-center gap-1 transition-opacity hover:opacity-70"
+            style={{ color: "oklch(0.72 0.14 220)" }}
+          >
+            Add context <ExternalLink className="w-3 h-3" />
+          </Link>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          No self-improvement data logged for this day. Visit the Self-Improvement tab to add your mental state, habits, and reflections.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{
+        background: "oklch(0.12 0.018 252)",
+        border: "1px solid oklch(0.74 0.13 82 / 0.20)",
+      }}
+    >
+      <div
+        className="flex items-center gap-2.5 px-5 py-3.5"
+        style={{ borderBottom: "1px solid oklch(0.22 0.025 252)" }}
+      >
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center"
+          style={{ background: "oklch(0.74 0.13 82 / 0.15)" }}
+        >
+          <Flame className="w-3.5 h-3.5" style={{ color: "oklch(0.74 0.13 82)" }} />
+        </div>
+        <p className="text-sm font-semibold">Day Context — How You Showed Up</p>
+        <Link
+          href="/self-improvement"
+          className="ml-auto text-xs flex items-center gap-1 transition-opacity hover:opacity-70"
+          style={{ color: "oklch(0.72 0.14 220)" }}
+        >
+          Self-Improvement <ExternalLink className="w-3 h-3" />
+        </Link>
+      </div>
+
+      <div className="p-5 grid sm:grid-cols-3 gap-4">
+        {stateCheck && (
+          <div
+            className="rounded-lg p-3"
+            style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Brain className="w-3.5 h-3.5" style={{ color: "oklch(0.74 0.13 82)" }} />
+              <span className="text-xs font-semibold" style={{ color: "oklch(0.74 0.13 82)" }}>Mental State</span>
+            </div>
+            <div className="space-y-1">
+              {[
+                { label: "Mood", value: stateCheck.mood },
+                { label: "Focus", value: stateCheck.focus },
+                { label: "Confidence", value: stateCheck.confidence },
+                { label: "Stress", value: stateCheck.stress, invert: true },
+              ].map(({ label, value, invert }) => {
+                const isGood = invert ? value <= 4 : value >= 7;
+                const isNeutral = !invert && value >= 5;
+                const color = isGood
+                  ? "oklch(0.58 0.17 145)"
+                  : isNeutral
+                  ? "oklch(0.70 0.16 72)"
+                  : "oklch(0.58 0.22 25)";
+                return (
+                  <div key={label} className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{label}</span>
+                    <span className="text-xs font-bold" style={{ color }}>{value}/10</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {sleepData && (
+          <div
+            className="rounded-lg p-3"
+            style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Moon className="w-3.5 h-3.5" style={{ color: "oklch(0.58 0.17 145)" }} />
+              <span className="text-xs font-semibold" style={{ color: "oklch(0.58 0.17 145)" }}>Recovery</span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Sleep</span>
+                <span
+                  className="text-xs font-bold"
+                  style={{ color: sleepData.hours_slept >= 7.5 ? "oklch(0.58 0.17 145)" : "oklch(0.58 0.22 25)" }}
+                >
+                  {sleepData.hours_slept}h
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Quality</span>
+                <span className="text-xs font-bold" style={{ color: sleepData.sleep_quality >= 7 ? "oklch(0.58 0.17 145)" : "oklch(0.70 0.16 72)" }}>
+                  {sleepData.sleep_quality}/10
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Movement</span>
+                <span className="text-xs font-bold" style={{ color: sleepData.training_movement ? "oklch(0.58 0.17 145)" : "oklch(0.55 0.04 252)" }}>
+                  {sleepData.training_movement ? "Done" : "Skipped"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {habits.length > 0 && (
+          <div
+            className="rounded-lg p-3"
+            style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <CheckSquare className="w-3.5 h-3.5" style={{ color: "oklch(0.72 0.14 220)" }} />
+              <span className="text-xs font-semibold" style={{ color: "oklch(0.72 0.14 220)" }}>Habits</span>
+              <span
+                className="ml-auto text-xs font-bold"
+                style={{
+                  color: completions.length / habits.length >= 0.7
+                    ? "oklch(0.58 0.17 145)"
+                    : completions.length / habits.length >= 0.4
+                    ? "oklch(0.70 0.16 72)"
+                    : "oklch(0.58 0.22 25)",
+                }}
+              >
+                {completions.length}/{habits.length}
+              </span>
+            </div>
+            <div className="space-y-1">
+              {habits.slice(0, 4).map((h) => {
+                const done = completions.some((c) => c.habit_id === h.id);
+                return (
+                  <div key={h.id} className="flex items-center gap-2">
+                    <span className="text-xs">{h.icon}</span>
+                    <span
+                      className="text-xs flex-1 truncate"
+                      style={{ color: done ? "oklch(0.93 0.008 252)" : "oklch(0.40 0.03 252)" }}
+                    >
+                      {h.name}
+                    </span>
+                    {done && <CheckCircle2 className="w-3 h-3 shrink-0" style={{ color: "oklch(0.58 0.17 145)" }} />}
+                  </div>
+                );
+              })}
+              {habits.length > 4 && (
+                <p className="text-xs text-muted-foreground">+{habits.length - 4} more habits</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -21,6 +21,12 @@ import type {
   TradeDiscipline,
   DailyCommandState,
   CoachingInsight,
+  DailyJournalEntry,
+  DailyStateCheck,
+  SleepRecovery,
+  PersonalStandard,
+  PersonalStandardScore,
+  WeeklyReflection,
 } from "@/lib/types";
 import { mockNews, mockHabits, mockHabitCompletions, mockPlaybook } from "./data";
 
@@ -35,6 +41,12 @@ const KEYS = {
   dailyTasks: "th_daily_tasks",
   playbook: "th_playbook",
   dailyStates: "th_daily_states",
+  dailyJournals: "th_daily_journals",
+  dailyStateChecks: "th_daily_state_checks",
+  sleepRecovery: "th_sleep_recovery",
+  personalStandards: "th_personal_standards",
+  standardScores: "th_standard_scores",
+  weeklyReflections: "th_weekly_reflections",
 } as const;
 
 function load<T>(key: string): T[] {
@@ -828,6 +840,258 @@ export function generateCoachingInsights(
   return insights.slice(0, 9);
 }
 
+// ── ROI Utility (based on actual fees paid, not account size) ───────
+/**
+ * ROI multiple = total payout received / actual cost paid
+ * e.g. paid $500, received $1000 → ROI = 2.0x
+ */
+export function computeAccountROI(payout_total: number, purchase_cost: number): number {
+  if (!purchase_cost || purchase_cost <= 0) return 0;
+  return Math.round((payout_total / purchase_cost) * 10) / 10;
+}
+
+// ── Self-Improvement: Daily Journal ─────────────────────────────────
+let _dailyJournals: DailyJournalEntry[] | null = null;
+function DJ(): DailyJournalEntry[] {
+  if (_dailyJournals === null) _dailyJournals = load<DailyJournalEntry>(KEYS.dailyJournals);
+  return _dailyJournals;
+}
+
+export function getDailyJournal(date: string): DailyJournalEntry | undefined {
+  return DJ().find((j) => j.date === date);
+}
+
+export function saveDailyJournal(input: Omit<DailyJournalEntry, "id" | "user_id" | "created_at" | "updated_at">): DailyJournalEntry {
+  const existing = DJ().find((j) => j.date === input.date);
+  if (existing) {
+    const idx = _dailyJournals!.findIndex((j) => j.id === existing.id);
+    _dailyJournals![idx] = { ...existing, ...input, updated_at: now() };
+    save(KEYS.dailyJournals, _dailyJournals!);
+    return _dailyJournals![idx];
+  }
+  const entry: DailyJournalEntry = {
+    ...input,
+    id: generateId("dj"),
+    user_id: "user_1",
+    created_at: now(),
+    updated_at: now(),
+  };
+  _dailyJournals = [entry, ...DJ()];
+  save(KEYS.dailyJournals, _dailyJournals);
+  return entry;
+}
+
+// ── Self-Improvement: Daily State Check ─────────────────────────────
+let _dailyStateChecks: DailyStateCheck[] | null = null;
+function DSC(): DailyStateCheck[] {
+  if (_dailyStateChecks === null) _dailyStateChecks = load<DailyStateCheck>(KEYS.dailyStateChecks);
+  return _dailyStateChecks;
+}
+
+export function getDailyStateCheck(date: string): DailyStateCheck | undefined {
+  return DSC().find((s) => s.date === date);
+}
+
+export function saveDailyStateCheck(input: Omit<DailyStateCheck, "id" | "user_id" | "created_at" | "updated_at">): DailyStateCheck {
+  const existing = DSC().find((s) => s.date === input.date);
+  if (existing) {
+    const idx = _dailyStateChecks!.findIndex((s) => s.id === existing.id);
+    _dailyStateChecks![idx] = { ...existing, ...input, updated_at: now() };
+    save(KEYS.dailyStateChecks, _dailyStateChecks!);
+    return _dailyStateChecks![idx];
+  }
+  const entry: DailyStateCheck = {
+    ...input,
+    id: generateId("dsc"),
+    user_id: "user_1",
+    created_at: now(),
+    updated_at: now(),
+  };
+  _dailyStateChecks = [entry, ...DSC()];
+  save(KEYS.dailyStateChecks, _dailyStateChecks);
+  return entry;
+}
+
+// ── Self-Improvement: Sleep & Recovery ──────────────────────────────
+let _sleepRecovery: SleepRecovery[] | null = null;
+function SR(): SleepRecovery[] {
+  if (_sleepRecovery === null) _sleepRecovery = load<SleepRecovery>(KEYS.sleepRecovery);
+  return _sleepRecovery;
+}
+
+export function getSleepRecovery(date: string): SleepRecovery | undefined {
+  return SR().find((s) => s.date === date);
+}
+
+export function saveSleepRecovery(input: Omit<SleepRecovery, "id" | "user_id" | "created_at" | "updated_at">): SleepRecovery {
+  const existing = SR().find((s) => s.date === input.date);
+  if (existing) {
+    const idx = _sleepRecovery!.findIndex((s) => s.id === existing.id);
+    _sleepRecovery![idx] = { ...existing, ...input, updated_at: now() };
+    save(KEYS.sleepRecovery, _sleepRecovery!);
+    return _sleepRecovery![idx];
+  }
+  const entry: SleepRecovery = {
+    ...input,
+    id: generateId("sr"),
+    user_id: "user_1",
+    created_at: now(),
+    updated_at: now(),
+  };
+  _sleepRecovery = [entry, ...SR()];
+  save(KEYS.sleepRecovery, _sleepRecovery);
+  return entry;
+}
+
+// ── Self-Improvement: Personal Standards ────────────────────────────
+let _personalStandards: PersonalStandard[] | null = null;
+let _standardScores: PersonalStandardScore[] | null = null;
+
+const DEFAULT_STANDARDS: PersonalStandard[] = [
+  { id: "ps_1", user_id: "user_1", text: "I stay calm under pressure", created_at: "2026-01-01T00:00:00Z" },
+  { id: "ps_2", user_id: "user_1", text: "I respect my own rules", created_at: "2026-01-01T00:00:00Z" },
+  { id: "ps_3", user_id: "user_1", text: "I act with patience", created_at: "2026-01-01T00:00:00Z" },
+  { id: "ps_4", user_id: "user_1", text: "I do not chase the market", created_at: "2026-01-01T00:00:00Z" },
+  { id: "ps_5", user_id: "user_1", text: "I protect my capital first", created_at: "2026-01-01T00:00:00Z" },
+  { id: "ps_6", user_id: "user_1", text: "I choose discipline over impulse", created_at: "2026-01-01T00:00:00Z" },
+];
+
+function PS(): PersonalStandard[] {
+  if (_personalStandards === null) {
+    const stored = load<PersonalStandard>(KEYS.personalStandards);
+    _personalStandards = stored.length > 0 ? stored : [...DEFAULT_STANDARDS];
+    if (stored.length === 0) save(KEYS.personalStandards, _personalStandards);
+  }
+  return _personalStandards;
+}
+
+function PSS(): PersonalStandardScore[] {
+  if (_standardScores === null) _standardScores = load<PersonalStandardScore>(KEYS.standardScores);
+  return _standardScores;
+}
+
+export function getPersonalStandards(): PersonalStandard[] {
+  return [...PS()];
+}
+
+export function createPersonalStandard(text: string): PersonalStandard {
+  const standard: PersonalStandard = {
+    id: generateId("ps"),
+    user_id: "user_1",
+    text,
+    created_at: now(),
+  };
+  _personalStandards = [...PS(), standard];
+  save(KEYS.personalStandards, _personalStandards);
+  return standard;
+}
+
+export function deletePersonalStandard(id: string): boolean {
+  const before = PS().length;
+  _personalStandards = _personalStandards!.filter((s) => s.id !== id);
+  save(KEYS.personalStandards, _personalStandards);
+  return _personalStandards.length < before;
+}
+
+export function getStandardScores(date: string): PersonalStandardScore[] {
+  return PSS().filter((s) => s.date === date);
+}
+
+export function toggleStandardScore(standardId: string, date: string): PersonalStandardScore {
+  const existing = PSS().find((s) => s.standard_id === standardId && s.date === date);
+  if (existing) {
+    const idx = _standardScores!.findIndex((s) => s.id === existing.id);
+    _standardScores![idx] = { ...existing, lived: !existing.lived };
+    save(KEYS.standardScores, _standardScores!);
+    return _standardScores![idx];
+  }
+  const score: PersonalStandardScore = {
+    id: generateId("pss"),
+    standard_id: standardId,
+    date,
+    lived: true,
+    created_at: now(),
+  };
+  _standardScores = [score, ...PSS()];
+  save(KEYS.standardScores, _standardScores);
+  return score;
+}
+
+// ── Self-Improvement: Weekly Reflection ─────────────────────────────
+let _weeklyReflections: WeeklyReflection[] | null = null;
+function WR(): WeeklyReflection[] {
+  if (_weeklyReflections === null) _weeklyReflections = load<WeeklyReflection>(KEYS.weeklyReflections);
+  return _weeklyReflections;
+}
+
+export function getWeeklyReflection(weekStart: string): WeeklyReflection | undefined {
+  return WR().find((r) => r.week_start === weekStart);
+}
+
+export function saveWeeklyReflection(input: Omit<WeeklyReflection, "id" | "user_id" | "created_at" | "updated_at">): WeeklyReflection {
+  const existing = WR().find((r) => r.week_start === input.week_start);
+  if (existing) {
+    const idx = _weeklyReflections!.findIndex((r) => r.id === existing.id);
+    _weeklyReflections![idx] = { ...existing, ...input, updated_at: now() };
+    save(KEYS.weeklyReflections, _weeklyReflections!);
+    return _weeklyReflections![idx];
+  }
+  const entry: WeeklyReflection = {
+    ...input,
+    id: generateId("wr"),
+    user_id: "user_1",
+    created_at: now(),
+    updated_at: now(),
+  };
+  _weeklyReflections = [entry, ...WR()];
+  save(KEYS.weeklyReflections, _weeklyReflections);
+  return entry;
+}
+
+// ── Self-Improvement: Day Summary (aggregates data for a given date) ─
+export interface DaySummary {
+  date: string;
+  hasAnalysis: boolean;
+  analysisCount: number;
+  tradeCount: number;
+  tradeWins: number;
+  habitCount: number;
+  habitCompleted: number;
+  hasJournal: boolean;
+  hasStateCheck: boolean;
+  hasSleep: boolean;
+  stateScore: number | null; // avg of mood/energy/focus
+}
+
+export function getDaySummary(date: string): DaySummary {
+  const trades = getTrades().filter((t) => t.date_time.slice(0, 10) === date);
+  const analyses = getAnalyses().filter((a) => a.date === date);
+  const habits = getHabits();
+  const completions = getHabitCompletions(undefined, date).filter((c) => c.completed);
+  const journal = getDailyJournal(date);
+  const stateCheck = getDailyStateCheck(date);
+  const sleep = getSleepRecovery(date);
+
+  let stateScore: number | null = null;
+  if (stateCheck) {
+    stateScore = Math.round((stateCheck.mood + stateCheck.energy + stateCheck.focus) / 3);
+  }
+
+  return {
+    date,
+    hasAnalysis: analyses.length > 0,
+    analysisCount: analyses.length,
+    tradeCount: trades.length,
+    tradeWins: trades.filter((t) => t.result === "win").length,
+    habitCount: habits.length,
+    habitCompleted: completions.length,
+    hasJournal: !!journal,
+    hasStateCheck: !!stateCheck,
+    hasSleep: !!sleep,
+    stateScore,
+  };
+}
+
 // ── Dev helper — clears all user data from localStorage ─────────────
 export function clearAllData(): void {
   if (typeof window === "undefined") return;
@@ -841,4 +1105,10 @@ export function clearAllData(): void {
   _dailyTasks = null;
   _playbook = undefined;
   _dailyStates = null;
+  _dailyJournals = null;
+  _dailyStateChecks = null;
+  _sleepRecovery = null;
+  _personalStandards = null;
+  _standardScores = null;
+  _weeklyReflections = null;
 }

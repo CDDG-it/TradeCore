@@ -5,7 +5,7 @@ import { Plus, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { getAccounts } from "@/lib/mock/store";
+import { getAccounts, computeAccountROI } from "@/lib/mock/store";
 import { cn } from "@/lib/utils";
 import type { AccountPhase, AccountStatus } from "@/lib/types";
 
@@ -33,13 +33,13 @@ function StatusDot({ status }: { status: AccountStatus }) {
 export default function AccountsPage() {
   const accounts = getAccounts();
 
-  const totalValue = accounts.reduce((s, a) => s + a.current_balance, 0);
+  const totalFeePaid = accounts.reduce((s, a) => s + (a.purchase_cost ?? 0), 0);
   const totalPayouts = accounts.reduce((s, a) => s + a.payout_total, 0);
   const activeCount = accounts.filter((a) => a.status === "active").length;
-  const avgRoi =
-    accounts.length > 0
-      ? (accounts.reduce((s, a) => s + a.roi, 0) / accounts.length).toFixed(1)
-      : "0";
+  // Overall ROI multiple = total payout / total fees paid (e.g. 2.0x)
+  const overallRoi = totalFeePaid > 0
+    ? Math.round((totalPayouts / totalFeePaid) * 10) / 10
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -68,10 +68,10 @@ export default function AccountsPage() {
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total Capital", value: `$${(totalValue / 1000).toFixed(0)}K` },
-          { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}` },
-          { label: "Active Accounts", value: activeCount.toString() },
-          { label: "Avg ROI", value: `${avgRoi}%` },
+          { label: "Fees Paid", value: `$${totalFeePaid.toLocaleString()}`, tooltip: "Total real money invested in prop firm challenges" },
+          { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}`, tooltip: "Total money received from all accounts" },
+          { label: "Active Accounts", value: activeCount.toString(), tooltip: undefined },
+          { label: "Return on Cost", value: `${overallRoi}x`, tooltip: "Total payouts ÷ total fees paid" },
         ].map(({ label, value }) => (
           <div key={label} className="bg-card border border-border/50 rounded-xl p-4 text-center">
             <p className="text-xl font-bold">{value}</p>
@@ -94,6 +94,8 @@ export default function AccountsPage() {
               : 0
           );
           const drawdownRemaining = acct.max_drawdown - acct.drawdown_used;
+          // ROI = payout received / actual fees paid × 100
+          const roi = computeAccountROI(acct.payout_total, acct.purchase_cost);
 
           return (
             <Link key={acct.id} href={`/accounts/${acct.id}`}>
@@ -111,7 +113,7 @@ export default function AccountsPage() {
                     <PhaseBadge phase={acct.phase} />
                   </div>
 
-                  {/* Balance + ROI */}
+                  {/* Balance + ROI on Cost */}
                   <div className="flex items-end justify-between mb-4">
                     <div>
                       <p className="text-2xl font-bold font-mono">
@@ -121,21 +123,25 @@ export default function AccountsPage() {
                         of ${acct.account_size.toLocaleString()} account
                       </p>
                     </div>
-                    <div className="flex items-center gap-1 text-right">
-                      {acct.roi >= 0 ? (
-                        <TrendingUp className="w-4 h-4 text-success" />
-                      ) : (
-                        <TrendingDown className="w-4 h-4 text-destructive" />
-                      )}
-                      <span
-                        className={cn(
-                          "text-lg font-bold",
-                          acct.roi >= 0 ? "text-success" : "text-destructive"
+                    <div className="text-right">
+                      <div className="flex items-center gap-1 justify-end">
+                        {roi >= 0 ? (
+                          <TrendingUp className="w-4 h-4 text-success" />
+                        ) : (
+                          <TrendingDown className="w-4 h-4 text-destructive" />
                         )}
-                      >
-                        {acct.roi >= 0 ? "+" : ""}
-                        {acct.roi}%
-                      </span>
+                        <span
+                          className={cn(
+                            "text-lg font-bold",
+                            roi >= 1 ? "text-success" : roi > 0 ? "text-warning" : "text-destructive"
+                          )}
+                        >
+                          {roi}x
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        on ${acct.purchase_cost.toLocaleString()} paid
+                      </p>
                     </div>
                   </div>
 

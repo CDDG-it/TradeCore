@@ -16,6 +16,7 @@ import {
   Compass,
   Brain,
   BookMarked,
+  Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -41,6 +42,7 @@ const navGroups = [
   {
     label: "Mindset",
     items: [
+      { href: "/self-improvement", label: "Self-Improvement", icon: Flame },
       { href: "/habits", label: "Habits", icon: CheckSquare },
       { href: "/playbook", label: "Playbook", icon: BookMarked },
       { href: "/coaching", label: "Coaching", icon: Brain },
@@ -220,7 +222,7 @@ export function Sidebar() {
                 className="text-xs truncate"
                 style={{ color: "oklch(0.88 0.008 252 / 35%)" }}
               >
-                {user?.email || "demo@tradinghub.app"}
+                {user?.email || "demo@tradecore.app"}
               </p>
             </div>
             <button
