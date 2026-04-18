@@ -43,8 +43,6 @@ const navGroups = [
     label: "Mindset",
     items: [
       { href: "/self-improvement", label: "Self-Improvement", icon: Flame },
-      { href: "/habits", label: "Habits", icon: CheckSquare },
-      { href: "/playbook", label: "Playbook", icon: BookMarked },
       { href: "/coaching", label: "Coaching", icon: Brain },
     ],
   },
@@ -84,7 +82,7 @@ function NavItem({
         "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 relative",
         isActive
           ? "bg-sidebar-accent text-sidebar-foreground"
-          : "text-sidebar-foreground/40 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
+          : "text-sidebar-foreground/65 hover:text-sidebar-foreground/90 hover:bg-sidebar-accent/60"
       )}
     >
       {isActive && (
@@ -157,7 +155,7 @@ export function Sidebar() {
             {group.label && (
               <p
                 className="text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5"
-                style={{ color: "oklch(0.88 0.008 252 / 22%)" }}
+                style={{ color: "oklch(0.88 0.008 252 / 40%)" }}
               >
                 {group.label}
               </p>
