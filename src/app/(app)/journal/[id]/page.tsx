@@ -28,53 +28,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { TradeDiscipline, TradeMarketContext } from "@/lib/types";
 
-/* ── Discipline ring SVG ─────────────────────────────────────────────────── */
-function DisciplineRing({ score }: { score: number }) {
-  const radius = 36;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-  const color =
-    score >= 80
-      ? "oklch(0.72 0.17 145)"   // green
-      : score >= 60
-      ? "oklch(0.74 0.13 82)"    // gold/amber
-      : "oklch(0.65 0.22 25)";   // red
-
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <svg width="96" height="96" viewBox="0 0 96 96" className="-rotate-90">
-        <circle
-          cx="48" cy="48" r={radius}
-          fill="none"
-          stroke="oklch(1 0 0 / 6%)"
-          strokeWidth="8"
-        />
-        <circle
-          cx="48" cy="48" r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 0.6s ease" }}
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center">
-        <span className="text-2xl font-bold" style={{ color }}>{score}</span>
-        <span className="text-[10px] text-muted-foreground font-medium">/ 100</span>
-      </div>
-    </div>
-  );
-}
-
-function DisciplineRingWrapper({ score }: { score: number }) {
-  return (
-    <div className="relative flex items-center justify-center w-24 h-24">
-      <DisciplineRing score={score} />
-    </div>
-  );
-}
 
 const DISCIPLINE_FIELDS: (keyof Omit<TradeDiscipline, "score" | "notes">)[] = [
   "followed_plan", "traded_in_session", "respected_risk", "respected_max_trades",
@@ -231,33 +184,42 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                   <Target className="w-4 h-4" style={{ color: "oklch(0.74 0.13 82)" }} />
                   Discipline Score
+                  <span
+                    className="ml-auto text-sm font-bold"
+                    style={{
+                      color: discipline.score >= 80
+                        ? "oklch(0.72 0.17 145)"
+                        : discipline.score >= 60
+                        ? "oklch(0.74 0.13 82)"
+                        : "oklch(0.65 0.22 25)",
+                    }}
+                  >
+                    {discipline.score}%
+                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-5">
-                  <DisciplineRingWrapper score={discipline.score} />
-                  <div className="flex-1 space-y-1.5">
-                    {DISCIPLINE_FIELDS.map((field) => {
-                      const passed = discipline[field] as boolean;
-                      return (
-                        <div key={field} className="flex items-center gap-2 text-xs">
-                          <span className={cn(
-                            "w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold",
-                            passed
-                              ? "bg-success/15 text-success"
-                              : "bg-destructive/15 text-destructive"
-                          )}>
-                            {passed ? "✓" : "✗"}
-                          </span>
-                          <span className={cn(
-                            passed ? "text-foreground/70" : "text-foreground/40 line-through"
-                          )}>
-                            {getDisciplineFieldLabel(field)}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="space-y-1.5">
+                  {DISCIPLINE_FIELDS.map((field) => {
+                    const passed = discipline[field] as boolean;
+                    return (
+                      <div key={field} className="flex items-center gap-2 text-xs">
+                        <span className={cn(
+                          "w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold",
+                          passed
+                            ? "bg-success/15 text-success"
+                            : "bg-destructive/15 text-destructive"
+                        )}>
+                          {passed ? "✓" : "✗"}
+                        </span>
+                        <span className={cn(
+                          passed ? "text-foreground/70" : "text-foreground/40 line-through"
+                        )}>
+                          {getDisciplineFieldLabel(field)}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
                 {discipline.notes && (
                   <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border leading-relaxed">
