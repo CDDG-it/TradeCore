@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, Plus, X, Check } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,11 +30,16 @@ const DISCIPLINE_CHECKS: { key: keyof TradeDiscipline; label: string }[] = [
   { key: "journal_completed",    label: "Journal entry fully completed" },
 ];
 
-const DEFAULT_DISCIPLINE: TradeDiscipline = {
+const DEFAULT_DISCIPLINE_CHECKS = {
   followed_plan: false, traded_in_session: true, respected_risk: true,
   respected_max_trades: true, matched_a_plus: false, no_impulsive_entry: true,
   no_revenge_trade: true, respected_stop_loss: true, journal_completed: true,
-  score: 0, notes: "",
+};
+
+const DEFAULT_DISCIPLINE: TradeDiscipline = {
+  ...DEFAULT_DISCIPLINE_CHECKS,
+  score: computeDisciplineScore(DEFAULT_DISCIPLINE_CHECKS),
+  notes: "",
 };
 
 const DEFAULT_CONTEXT: TradeMarketContext = {
@@ -396,35 +401,78 @@ export default function NewTradePage() {
         <Card className="bg-card border-border/50 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <CardTitle className="text-sm font-semibold">Discipline Check</CardTitle>
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <CardTitle className="text-sm font-semibold shrink-0">Discipline Check</CardTitle>
                 {form.discipline && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full tabular-nums"
-                    style={{
-                      background: form.discipline.score >= 80 ? "oklch(0.58 0.17 145 / 0.15)" : form.discipline.score >= 60 ? "oklch(0.70 0.16 72 / 0.15)" : "oklch(0.58 0.22 25 / 0.15)",
-                      color: form.discipline.score >= 80 ? "oklch(0.58 0.17 145)" : form.discipline.score >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
-                    }}>
-                    {form.discipline.score}%
-                  </span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden max-w-28" style={{ background: "oklch(0.22 0.025 252)" }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: `${form.discipline.score}%`,
+                          background: form.discipline.score >= 80
+                            ? "oklch(0.58 0.17 145)"
+                            : form.discipline.score >= 60
+                            ? "oklch(0.70 0.16 72)"
+                            : "oklch(0.58 0.22 25)",
+                        }}
+                      />
+                    </div>
+                    <span
+                      className="text-xs font-bold tabular-nums shrink-0"
+                      style={{
+                        color: form.discipline.score >= 80
+                          ? "oklch(0.58 0.17 145)"
+                          : form.discipline.score >= 60
+                          ? "oklch(0.70 0.16 72)"
+                          : "oklch(0.58 0.22 25)",
+                      }}
+                    >
+                      {form.discipline.score}%
+                    </span>
+                  </div>
                 )}
               </div>
-              <button type="button" onClick={() => setShowDiscipline(!showDiscipline)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <button type="button" onClick={() => setShowDiscipline(!showDiscipline)} className="text-xs text-muted-foreground hover:text-foreground transition-colors ml-3 shrink-0">
                 {showDiscipline ? "Collapse" : "Expand"}
               </button>
             </div>
           </CardHeader>
           {showDiscipline && (
             <CardContent className="space-y-3">
-              <div className="space-y-2">
-                {DISCIPLINE_CHECKS.map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-muted/30">
-                    <input type="checkbox"
-                      checked={!!(form.discipline?.[key])}
-                      onChange={(e) => setDiscipline(key, e.target.checked)}
-                      className="w-4 h-4 rounded shrink-0" />
-                    <span className={cn("text-sm", form.discipline?.[key] ? "text-foreground" : "text-muted-foreground")}>{label}</span>
-                  </label>
-                ))}
+              <div className="space-y-1.5">
+                {DISCIPLINE_CHECKS.map(({ key, label }) => {
+                  const checked = !!(form.discipline?.[key]);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setDiscipline(key, !checked)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left"
+                      style={{
+                        background: checked ? "oklch(0.58 0.17 145 / 0.08)" : "oklch(0.09 0.014 252)",
+                        border: `1px solid ${checked ? "oklch(0.58 0.17 145 / 0.25)" : "oklch(0.22 0.025 252)"}`,
+                      }}
+                    >
+                      <div
+                        className="w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all"
+                        style={
+                          checked
+                            ? { background: "oklch(0.58 0.17 145)" }
+                            : { background: "transparent", border: "1.5px solid oklch(0.35 0.03 252)" }
+                        }
+                      >
+                        {checked && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <span
+                        className="text-sm transition-colors"
+                        style={{ color: checked ? "oklch(0.88 0.008 252)" : "oklch(0.65 0.04 252)" }}
+                      >
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Discipline Notes</Label>

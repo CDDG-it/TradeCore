@@ -464,32 +464,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Stats bar ─────────────────────────────── */}
-      <section
-        className="relative z-10 px-6 py-12"
-        style={{ borderTop: "1px solid oklch(1 0 0 / 6%)", borderBottom: "1px solid oklch(1 0 0 / 6%)" }}
-      >
-        <div className="mx-auto max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((s, i) => (
-            <div
-              key={s.label}
-              className="animate-fade-up text-center"
-              style={{ animationDelay: `${400 + i * 80}ms` }}
-            >
-              <div className="text-4xl font-black mb-1.5 tabular-nums animate-shimmer-gold">
-                {s.value}
-              </div>
-              <div
-                className="text-xs leading-snug"
-                style={{ color: "oklch(0.50 0.04 252)" }}
-              >
-                {s.label}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ── Features ──────────────────────────────── */}
       <section className="relative z-10 px-6 py-28">
         <div className="mx-auto max-w-6xl">
