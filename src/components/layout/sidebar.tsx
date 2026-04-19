@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { Logo } from "@/components/logo";
+
 
 const navGroups = [
   {
@@ -136,8 +136,11 @@ export function Sidebar() {
         className="h-14 flex items-center px-5 shrink-0"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
       >
-        <Link href="/" className="hover:opacity-80 transition-opacity">
-          <Logo variant="dark" size={26} />
+        <Link href="/"
+          className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
+          style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
+          <span className="text-white">Trade</span>
+          <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
         </Link>
       </div>
 

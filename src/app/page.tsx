@@ -8,7 +8,6 @@ import {
   Check,
   ChevronRight,
 } from "lucide-react";
-import { Logo, LogoMark } from "@/components/logo";
 import { FadeIn, GlassCard, Stagger, StaggerItem } from "@/components/ui/fade-in";
 
 const features = [
@@ -232,19 +231,23 @@ export default function LandingPage() {
       </div>
 
       {/* ── Header ── */}
-      <header className="liquid-glass-strong relative z-20 px-6 py-4 sticky top-0 rounded-none">
+      <header className="relative z-20 px-6 py-4 sticky top-0" style={{ background: "rgba(8,5,2,0.75)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="mx-auto max-w-6xl flex items-center justify-between">
-          <Link href="/" className="hover:opacity-80 transition-opacity">
-            <Logo variant="dark" size={28} />
+          <Link href="/"
+            className="font-black tracking-tight text-base leading-none hover:opacity-80 transition-opacity"
+            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
+            <span className="text-white">Trade</span>
+            <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login"
-              className="font-body text-sm text-white/40 hover:text-white/80 transition-colors">
+              className="text-sm text-white/40 hover:text-white/80 transition-colors"
+              style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", fontWeight: 600 }}>
               Sign in
             </Link>
             <Link href="/dashboard"
-              className="font-body liquid-glass-strong inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px"
-              style={{ background: "rgba(249,115,22,0.18)", boxShadow: "0 4px 16px rgba(249,115,22,0.20)" }}>
+              className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-bold text-white transition-all hover:-translate-y-px"
+              style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", background: "linear-gradient(135deg,#F97316,#FBBF24)", boxShadow: "0 4px 16px rgba(249,115,22,0.30)" }}>
               Open app
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -258,19 +261,9 @@ export default function LandingPage() {
         <div className="absolute inset-x-0 top-[52px] h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
 
         <div className="mx-auto max-w-3xl">
-          <FadeIn delay={0.06}>
-            <div className="flex justify-center mb-8">
-              <LogoMark size={72} />
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={0.14}>
-            <h1 className="font-heading font-black text-[clamp(4rem,12vw,9rem)] tracking-tight leading-[0.88] text-white mb-6">
-              Trade
-              <br />
-              <span style={{ background: "linear-gradient(135deg, #F97316 0%, #FBBF24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                core.
-              </span>
+          <FadeIn delay={0.10}>
+            <h1 className="font-heading font-black text-[clamp(3rem,9vw,7rem)] tracking-tight leading-none text-white mb-6 whitespace-nowrap">
+              Trade<span style={{ background: "linear-gradient(135deg, #F97316 0%, #FBBF24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>core</span>
             </h1>
           </FadeIn>
 
@@ -431,9 +424,11 @@ export default function LandingPage() {
 
       {/* ── Footer ── */}
       <footer className="relative z-10 px-6 py-8 text-center" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-        <div className="flex items-center justify-center mb-3">
-          <Logo variant="dark" size={18} />
-        </div>
+        <p className="font-black text-sm mb-2 leading-none"
+          style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
+          <span className="text-white">Trade</span>
+          <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
+        </p>
         <p className="font-body text-xs text-white/25">
           Premium trading productivity for futures and commodities traders.
         </p>

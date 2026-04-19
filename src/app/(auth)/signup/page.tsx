@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Logo } from "@/components/logo";
+
 
 export default function SignupPage() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center gap-2">
-          <Logo variant="light" size={32} />
+          <span className="font-black text-xl tracking-tight" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}><span style={{color:"#111"}}>Trade</span><span style={{background:"linear-gradient(90deg,#F97316,#FBBF24)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>CORE</span></span>
           <p className="mt-1 text-sm text-muted-foreground">
             Start building your edge today.
           </p>

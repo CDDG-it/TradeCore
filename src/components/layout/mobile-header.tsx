@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { Logo } from "@/components/logo";
+
 
 const navItems = [
   { href: "/command", label: "Command Center", icon: Compass },
@@ -58,8 +58,11 @@ export function MobileHeader() {
         className="liquid-glass-strong lg:hidden fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 z-50 rounded-none"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
       >
-        <Link href="/" className="hover:opacity-80 transition-opacity">
-          <Logo variant="dark" size={24} />
+        <Link href="/"
+          className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
+          style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
+          <span className="text-white">Trade</span>
+          <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
         </Link>
         <button
           onClick={() => setOpen(true)}
@@ -94,12 +97,12 @@ export function MobileHeader() {
           className="h-14 flex items-center justify-between px-5"
           style={{ borderBottom: "1px solid oklch(1 0 0 / 5%)" }}
         >
-          <Link
-            href="/"
-            className="hover:opacity-80 transition-opacity"
-            onClick={() => setOpen(false)}
-          >
-            <Logo variant="dark" size={24} />
+          <Link href="/"
+            className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
+            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
+            onClick={() => setOpen(false)}>
+            <span className="text-white">Trade</span>
+            <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
           </Link>
           <button
             onClick={() => setOpen(false)}
