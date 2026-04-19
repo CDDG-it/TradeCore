@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
   format,
   startOfMonth,
@@ -501,14 +503,8 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Page header */}
-      <div className="animate-fade-up">
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {format(new Date(), "EEEE, MMMM d, yyyy")}
-        </p>
-      </div>
-
+      <PageHeader badge="Overview" title="Dashboard" subtitle="Your trading command center" />
+      <PageWrapper>
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map(({ label, value, icon: Icon, sub, accent, accentBg }, i) => (
@@ -836,6 +832,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+      </PageWrapper>
     </div>
   );
 }

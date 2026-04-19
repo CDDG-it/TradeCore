@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import { format } from "date-fns";
 import { Plus, Search, TrendingUp, TrendingDown, Minus, ArrowRight, LinkIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,28 +63,26 @@ export default function AnalysisPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Pre-Trade Analysis</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {allAnalyses.length} analyses · structured prep before every trade
-          </p>
-        </div>
-        <Link
-          href="/analysis/new"
-          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
-          style={{
-            background: "oklch(0.72 0.22 45)",
-            color: "oklch(0.07 0.003 28)",
-            boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          New analysis
-        </Link>
-      </div>
-
+      <PageHeader
+        badge="Trading"
+        title="Analysis"
+        subtitle="Pre-trade and market analysis"
+        action={
+          <Link
+            href="/analysis/new"
+            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
+            style={{
+              background: "oklch(0.72 0.22 45)",
+              color: "oklch(0.07 0.003 28)",
+              boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            New analysis
+          </Link>
+        }
+      />
+      <PageWrapper>
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-48 max-w-72">
@@ -197,6 +197,7 @@ export default function AnalysisPage() {
           ))}
         </div>
       )}
+      </PageWrapper>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
   TrendingUp, Shield, AlertTriangle, Lightbulb,
   Eye, Zap, Brain, BarChart2, Target, RefreshCw,
@@ -219,29 +221,22 @@ export default function CoachingPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1
-            className="text-2xl font-bold tracking-tight"
-            style={{ color: "oklch(0.94 0.002 28)" }}
+      <PageHeader
+        badge="Mindset"
+        title="Coaching"
+        subtitle="Mentorship, frameworks, and growth"
+        action={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadInsights}
+            className="gap-1.5 shrink-0"
           >
-            Performance Coaching
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Data-driven insights from your trading history
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={loadInsights}
-          className="gap-1.5 shrink-0"
-        >
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh
-        </Button>
-      </div>
-
+            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          </Button>
+        }
+      />
+      <PageWrapper>
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
@@ -380,6 +375,7 @@ export default function CoachingPage() {
           Log more trades to improve accuracy.
         </p>
       )}
+      </PageWrapper>
     </div>
   );
 }

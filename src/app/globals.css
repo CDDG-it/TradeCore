@@ -306,6 +306,66 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     pointer-events: none;
   }
 
+  /* ── Section/page utilities ─────────────────── */
+  .section-label {
+    font-family: var(--font-body);
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgba(255, 255, 255, 0.25);
+  }
+
+  .page-glow {
+    position: relative;
+  }
+  .page-glow::after {
+    content: '';
+    position: fixed;
+    top: -180px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 300px;
+    background: radial-gradient(ellipse, rgba(249, 115, 22, 0.055) 0%, transparent 68%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Filter pill buttons */
+  .filter-pill {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.45);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .filter-pill:hover {
+    color: rgba(255, 255, 255, 0.75);
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .filter-pill.active {
+    background: rgba(249, 115, 22, 0.15);
+    border-color: rgba(249, 115, 22, 0.35);
+    color: #F97316;
+  }
+
+  /* Stat number */
+  .stat-value {
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 1.875rem;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: white;
+  }
+
   /* Dark luxury card elevation */
   .card-elevated {
     box-shadow:

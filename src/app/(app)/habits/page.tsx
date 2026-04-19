@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { format, subDays } from "date-fns";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
   Plus,
   Flame,
@@ -244,28 +246,26 @@ export default function HabitsPage() {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="animate-fade-up">
-          <h1 className="text-2xl font-bold tracking-tight">Habit Tracker</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {format(new Date(today + "T12:00:00"), "EEEE, MMMM d")} · Build the disciplines that compound
-          </p>
-        </div>
-        <button
-          onClick={() => setShowNewHabit(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0 animate-fade-up"
-          style={{
-            background: "oklch(0.72 0.22 45)",
-            color: "oklch(0.07 0.003 28)",
-            boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          New habit
-        </button>
-      </div>
-
+      <PageHeader
+        badge="Mindset"
+        title="Habits"
+        subtitle="Daily habit tracker"
+        action={
+          <button
+            onClick={() => setShowNewHabit(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
+            style={{
+              background: "oklch(0.72 0.22 45)",
+              color: "oklch(0.07 0.003 28)",
+              boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            New habit
+          </button>
+        }
+      />
+      <PageWrapper>
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
@@ -635,6 +635,8 @@ export default function HabitsPage() {
           )}
         </div>
       </div>
+
+      </PageWrapper>
 
       {/* New habit modal */}
       {showNewHabit && (

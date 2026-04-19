@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Bell, Moon, Globe, Shield, ChevronRight } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -27,11 +29,8 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Manage your preferences</p>
-      </div>
-
+      <PageHeader badge="Account" title="Settings" subtitle="Preferences and configuration" />
+      <PageWrapper>
       {isDemo && (
         <div className="rounded-lg bg-primary/10 border border-primary/20 px-4 py-3 text-sm text-primary">
           Demo mode active — settings are not persisted across sessions.
@@ -198,6 +197,7 @@ export default function SettingsPage() {
           {saved ? "Saved!" : "Save preferences"}
         </Button>
       </div>
+      </PageWrapper>
     </div>
   );
 }

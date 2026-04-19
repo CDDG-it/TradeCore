@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Camera, Mail, User, Calendar, Trophy, BarChart2 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,11 +50,8 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Manage your personal information</p>
-      </div>
-
+      <PageHeader badge="Account" title="Profile" subtitle="Your trader profile" />
+      <PageWrapper>
       {/* Avatar + name */}
       <Card className="bg-card border-border/50">
         <CardContent className="p-6">
@@ -204,6 +203,7 @@ export default function ProfilePage() {
           </Button>
         </div>
       </form>
+      </PageWrapper>
     </div>
   );
 }

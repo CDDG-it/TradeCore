@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
   AreaChart,
   Area,
@@ -168,32 +170,30 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header + period tabs */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Performance breakdown · {trades.length} trade{trades.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1">
-          {PERIODS.map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => setPeriod(id)}
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium rounded-lg transition-all",
-                period === id
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
+      <PageHeader
+        badge="Trading"
+        title="Analytics"
+        subtitle="Performance metrics and equity curve"
+        action={
+          <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1">
+            {PERIODS.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setPeriod(id)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-medium rounded-lg transition-all",
+                  period === id
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        }
+      />
+      <PageWrapper>
       {/* Empty state */}
       {trades.length === 0 && (
         <Card className="bg-card border-border/50">
@@ -579,6 +579,7 @@ export default function AnalyticsPage() {
           )}
         </>
       )}
+      </PageWrapper>
     </div>
   );
 }

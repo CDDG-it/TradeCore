@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Search, Zap, TrendingUp, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,14 +53,8 @@ export default function NewsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">News Scanner</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Futures and commodities market updates
-        </p>
-      </div>
-
+      <PageHeader badge="Markets" title="News" subtitle="High-impact events and market intel" />
+      <PageWrapper>
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-48 max-w-72">
@@ -238,6 +234,7 @@ export default function NewsPage() {
           ))}
         </div>
       </div>
+      </PageWrapper>
     </div>
   );
 }

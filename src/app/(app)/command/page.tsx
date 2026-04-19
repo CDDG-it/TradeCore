@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
   Target, CheckSquare, TrendingUp, TrendingDown,
   Activity, AlertTriangle, BookOpen, Flame,
@@ -193,30 +195,25 @@ export default function CommandCenterPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1
-            className="text-2xl font-bold tracking-tight"
-            style={{ color: "oklch(0.94 0.002 28)" }}
+      <PageHeader
+        badge="Daily"
+        title="Command Center"
+        subtitle="Your pre-session ritual"
+        action={
+          <div
+            className="text-right px-4 py-2.5 rounded-xl"
+            style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 6%)" }}
           >
-            Command Center
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{TODAY_LABEL}</p>
-        </div>
-        <div
-          className="text-right px-4 py-2.5 rounded-xl"
-          style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 6%)" }}
-        >
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            Total Capital
-          </p>
-          <p className="text-xl font-bold text-foreground">
-            ${totalBalance.toLocaleString()}
-          </p>
-        </div>
-      </div>
-
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Total Capital
+            </p>
+            <p className="text-xl font-bold text-foreground">
+              ${totalBalance.toLocaleString()}
+            </p>
+          </div>
+        }
+      />
+      <PageWrapper>
       {/* Top status row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
@@ -743,6 +740,7 @@ export default function CommandCenterPage() {
           </Card>
         </div>
       </div>
+      </PageWrapper>
     </div>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
   ChevronLeft,
   ChevronRight,
@@ -193,14 +195,8 @@ export default function SelfImprovementPage() {
 
   return (
     <div className="space-y-10">
-      {/* Page Header */}
-      <div className="animate-fade-up">
-        <h1 className="text-2xl font-bold tracking-tight">Self-Improvement</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Mindset, habits, and playbook — unified in one place
-        </p>
-      </div>
-
+      <PageHeader badge="Mindset" title="Self-Improvement" subtitle="Daily tracker, habits, and playbook" />
+      <PageWrapper>
       {/* ── DAILY CHECK-IN ───────────────────────────── */}
       <section className="animate-fade-up space-y-5">
         <div
@@ -633,6 +629,7 @@ export default function SelfImprovementPage() {
           )}
         </div>
       </section>
+      </PageWrapper>
     </div>
   );
 }

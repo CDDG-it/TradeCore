@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Plus, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -43,28 +45,26 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Funded Accounts</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {accounts.length} accounts · {activeCount} active
-          </p>
-        </div>
-        <Link
-          href="/accounts/new"
-          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
-          style={{
-            background: "oklch(0.72 0.22 45)",
-            color: "oklch(0.07 0.003 28)",
-            boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          Add account
-        </Link>
-      </div>
-
+      <PageHeader
+        badge="Trading"
+        title="Accounts"
+        subtitle="Funded and personal accounts"
+        action={
+          <Link
+            href="/accounts/new"
+            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
+            style={{
+              background: "oklch(0.72 0.22 45)",
+              color: "oklch(0.07 0.003 28)",
+              boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            Add account
+          </Link>
+        }
+      />
+      <PageWrapper>
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
@@ -214,6 +214,7 @@ export default function AccountsPage() {
           );
         })}
       </div>
+      </PageWrapper>
     </div>
   );
 }

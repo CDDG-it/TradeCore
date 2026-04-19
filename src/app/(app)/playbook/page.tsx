@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Plus, X, Save, BookMarked, Shield, AlertTriangle, Target, Zap, CheckSquare } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import { getPlaybook, savePlaybook } from "@/lib/mock/store";
 import type { TraderPlaybook, TraderType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -229,28 +231,26 @@ export default function PlaybookPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 animate-fade-up">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Trader Playbook</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Your identity, rules, and trading system — in one place
-          </p>
-        </div>
-        <button
-          onClick={handleSave}
-          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
-          style={{
-            background: saved ? "oklch(0.58 0.17 145)" : "oklch(0.72 0.22 45)",
-            color: "oklch(0.07 0.003 28)",
-            boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
-          }}
-        >
-          <Save className="w-4 h-4" />
-          {saved ? "Saved!" : "Save playbook"}
-        </button>
-      </div>
-
+      <PageHeader
+        badge="Mindset"
+        title="Playbook"
+        subtitle="Rules, routine, and A+ criteria"
+        action={
+          <button
+            onClick={handleSave}
+            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
+            style={{
+              background: saved ? "oklch(0.58 0.17 145)" : "oklch(0.72 0.22 45)",
+              color: "oklch(0.07 0.003 28)",
+              boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
+            }}
+          >
+            <Save className="w-4 h-4" />
+            {saved ? "Saved!" : "Save playbook"}
+          </button>
+        }
+      />
+      <PageWrapper>
       {/* Trader Type */}
       <Section icon={Target} title="Who are you as a trader?" color="oklch(0.72 0.22 45)">
         <div className="space-y-2">
@@ -408,6 +408,7 @@ export default function PlaybookPage() {
           {saved ? "Saved!" : "Save playbook"}
         </button>
       </div>
+      </PageWrapper>
     </div>
   );
 }
