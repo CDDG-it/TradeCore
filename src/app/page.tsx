@@ -204,21 +204,23 @@ function MarketNewsPreview() {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      {/* ── Editorial vertical grid lines ── */}
+      <div className="pointer-events-none fixed inset-0 z-0 hidden lg:block" aria-hidden>
+        <div className="absolute inset-y-0 w-px" style={{ left: "25%", background: "rgba(255,255,255,0.022)" }} />
+        <div className="absolute inset-y-0 w-px" style={{ left: "50%", background: "rgba(255,255,255,0.030)" }} />
+        <div className="absolute inset-y-0 w-px" style={{ left: "75%", background: "rgba(255,255,255,0.022)" }} />
+      </div>
+
       {/* ── Ambient background glows ── */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute -top-64 -left-64 w-[800px] h-[800px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(249,115,22,0.07) 0%, transparent 65%)" }} />
-        <div className="absolute -bottom-64 -right-48 w-[900px] h-[900px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(251,191,36,0.05) 0%, transparent 65%)" }} />
-        <div className="absolute inset-0 opacity-[0.018]"
-          style={{
-            backgroundImage: "linear-gradient(rgba(249,115,22,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,0.5) 1px, transparent 1px)",
-            backgroundSize: "72px 72px",
-          }} />
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px]"
+          style={{ background: "radial-gradient(ellipse at top, rgba(249,115,22,0.09) 0%, transparent 65%)" }} />
+        <div className="absolute -bottom-64 -right-48 w-[700px] h-[700px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(251,191,36,0.04) 0%, transparent 65%)" }} />
       </div>
 
       {/* ── Header ── */}
-      <header className="liquid-glass-strong relative z-10 px-6 py-4 sticky top-0 rounded-none">
+      <header className="liquid-glass-strong relative z-20 px-6 py-4 sticky top-0 rounded-none">
         <div className="mx-auto max-w-6xl flex items-center justify-between">
           <Link href="/" className="hover:opacity-80 transition-opacity">
             <Logo variant="dark" size={28} />
@@ -239,59 +241,69 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative z-10 px-6 pt-28 pb-32 text-center">
+      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-32 text-center">
+        {/* Thin horizontal rule above hero content */}
+        <div className="absolute inset-x-0 top-[52px] h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+
         <div className="mx-auto max-w-3xl">
           <FadeIn delay={0}>
-            <div className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold font-body mb-14"
+            <div className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold font-body mb-12"
               style={{ color: "#F97316" }}>
               <Flame className="w-3 h-3" />
-              Built for futures and commodities traders
+              Built for futures &amp; commodities traders
             </div>
           </FadeIn>
 
-          <FadeIn delay={0.08}>
-            <div className="animate-float flex justify-center mb-10">
-              <LogoMark size={88} />
+          <FadeIn delay={0.06}>
+            <div className="flex justify-center mb-8">
+              <LogoMark size={72} />
             </div>
           </FadeIn>
 
-          <FadeIn delay={0.16}>
-            <h1 className="font-heading italic text-7xl sm:text-8xl tracking-tight leading-[0.9] text-white mb-5">
-              Trade<span className="animate-shimmer-gold not-italic">core</span>
+          <FadeIn delay={0.14}>
+            <h1 className="font-heading italic text-[clamp(4rem,12vw,9rem)] tracking-tight leading-[0.88] text-white mb-6">
+              Trade
+              <br />
+              <span style={{ background: "linear-gradient(135deg, #F97316 0%, #FBBF24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                core.
+              </span>
             </h1>
           </FadeIn>
 
-          <FadeIn delay={0.24}>
-            <p className="font-body text-xl font-light text-white/50 mb-3">
-              Where self-improvement{" "}
-              <span className="font-semibold text-white/80">meets trading.</span>
+          <FadeIn delay={0.22}>
+            <p className="font-body text-lg font-light text-white/45 mb-12 max-w-md mx-auto leading-relaxed">
+              A premium performance platform for serious traders.{" "}
+              <span className="text-white/70 font-normal">Discipline, habits, mindset, and execution</span>{" "}
+              — unified.
             </p>
           </FadeIn>
 
           <FadeIn delay={0.30}>
-            <p className="font-body text-base font-light max-w-lg mx-auto mb-14 leading-relaxed text-white/35">
-              A premium performance platform for serious traders. Discipline, habits, mindset, and execution — unified in one focused workspace.
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={0.38}>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link href="/dashboard"
-                className="font-body font-semibold inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm text-white transition-all hover:-translate-y-0.5"
+                className="font-body font-semibold inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm text-white transition-all hover:-translate-y-0.5 active:translate-y-0"
                 style={{
                   background: "linear-gradient(135deg, #F97316 0%, #FBBF24 100%)",
-                  boxShadow: "0 4px 24px rgba(249,115,22,0.35)",
+                  boxShadow: "0 4px 28px rgba(249,115,22,0.40)",
                 }}>
                 Enter dashboard
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link href="/login"
-                className="font-body font-medium inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm liquid-glass text-white/55 hover:text-white/80 transition-all">
-                Sign in to your account
+                className="font-body font-medium inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm liquid-glass text-white/50 hover:text-white/80 transition-all">
+                Sign in
               </Link>
             </div>
           </FadeIn>
         </div>
+
+        {/* Scroll indicator */}
+        <FadeIn delay={0.55} className="absolute bottom-10 left-1/2 -translate-x-1/2">
+          <div className="flex flex-col items-center gap-2 text-white/20">
+            <span className="font-body text-[10px] uppercase tracking-[0.18em]">Scroll</span>
+            <div className="w-px h-8 bg-gradient-to-b from-white/20 to-transparent" />
+          </div>
+        </FadeIn>
       </section>
 
       {/* ── Stats bar ── */}
