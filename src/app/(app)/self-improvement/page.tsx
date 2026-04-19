@@ -613,33 +613,31 @@ export default function SelfImprovementPage() {
           style={{ borderBottom: "1px solid oklch(0.18 0.022 252)", paddingBottom: "12px" }}
         >
           <h2 className="text-base font-semibold">Playbook</h2>
-          <Link
-            href="/playbook"
-            className="text-xs font-medium flex items-center gap-1 transition-colors hover:opacity-80"
-            style={{ color: "oklch(0.72 0.14 220)" }}
-          >
-            Full editor
-            <ExternalLink className="w-3 h-3" />
-          </Link>
+          {(playbookSaved && !playbookDirty) && (
+            <span className="text-xs font-medium flex items-center gap-1" style={{ color: "oklch(0.58 0.17 145)" }}>
+              <Check className="w-3.5 h-3.5" /> Saved
+            </span>
+          )}
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-5">
-          {/* Non-negotiable Rules */}
-          <SectionCard title="Non-Negotiable Rules" icon={Shield} accent="oklch(0.58 0.22 25)">
-            <div className="space-y-3">
-              <div className="space-y-1.5">
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ background: "oklch(0.12 0.018 252)", border: "1px solid oklch(0.22 0.025 252)" }}
+        >
+          {/* Rules + Routine */}
+          <div className="grid lg:grid-cols-2" style={{ borderBottom: "1px solid oklch(0.18 0.022 252)" }}>
+            {/* Non-Negotiable Rules */}
+            <div className="p-5 space-y-3" style={{ borderRight: "1px solid oklch(0.18 0.022 252)" }}>
+              <div className="flex items-center gap-2">
+                <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.58 0.22 25)" }} />
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.58 0.22 25)" }}>
+                  Non-Negotiable Rules
+                </span>
+              </div>
+              <div className="space-y-1">
                 {(playbook.non_negotiable_rules ?? []).map((rule, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg group"
-                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
-                  >
-                    <span
-                      className="text-xs font-bold w-5 shrink-0 tabular-nums"
-                      style={{ color: "oklch(0.45 0.04 252)" }}
-                    >
-                      {i + 1}.
-                    </span>
+                  <div key={i} className="flex items-center gap-2 group py-1">
+                    <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.40 0.03 252)" }}>{i + 1}.</span>
                     <span className="text-sm flex-1">{rule}</span>
                     <button
                       onClick={() => {
@@ -648,75 +646,55 @@ export default function SelfImprovementPage() {
                         setPlaybook({ ...playbook, non_negotiable_rules: rules });
                         setPlaybookDirty(true);
                       }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ color: "oklch(0.55 0.04 252)" }}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-1">
                 <input
                   type="text"
                   value={newRule}
                   onChange={(e) => setNewRule(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && newRule.trim()) {
-                      setPlaybook({
-                        ...playbook,
-                        non_negotiable_rules: [...(playbook.non_negotiable_rules ?? []), newRule.trim()],
-                      });
-                      setNewRule("");
-                      setPlaybookDirty(true);
+                      setPlaybook({ ...playbook, non_negotiable_rules: [...(playbook.non_negotiable_rules ?? []), newRule.trim()] });
+                      setNewRule(""); setPlaybookDirty(true);
                     }
                   }}
                   placeholder="Add a rule..."
-                  className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{
-                    background: "oklch(0.09 0.014 252)",
-                    border: "1px solid oklch(0.22 0.025 252)",
-                    color: "oklch(0.93 0.008 252)",
-                  }}
+                  className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
+                  style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
                 />
                 <button
                   onClick={() => {
                     if (!newRule.trim()) return;
-                    setPlaybook({
-                      ...playbook,
-                      non_negotiable_rules: [...(playbook.non_negotiable_rules ?? []), newRule.trim()],
-                    });
-                    setNewRule("");
-                    setPlaybookDirty(true);
+                    setPlaybook({ ...playbook, non_negotiable_rules: [...(playbook.non_negotiable_rules ?? []), newRule.trim()] });
+                    setNewRule(""); setPlaybookDirty(true);
                   }}
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{
-                    background: "oklch(0.58 0.22 25 / 0.15)",
-                    color: "oklch(0.58 0.22 25)",
-                    border: "1px solid oklch(0.58 0.22 25 / 0.25)",
-                  }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: "oklch(0.58 0.22 25 / 0.12)", color: "oklch(0.58 0.22 25)", border: "1px solid oklch(0.58 0.22 25 / 0.20)" }}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-          </SectionCard>
 
-          {/* Pre-trade Routine */}
-          <SectionCard title="Pre-Trade Routine" icon={CheckSquare} accent="oklch(0.72 0.14 220)">
-            <div className="space-y-3">
-              <div className="space-y-1.5">
+            {/* Pre-Trade Routine */}
+            <div className="p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <CheckSquare className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.72 0.14 220)" }} />
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.72 0.14 220)" }}>
+                  Pre-Trade Routine
+                </span>
+              </div>
+              <div className="space-y-1">
                 {(playbook.pre_trade_routine ?? []).map((step, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg group"
-                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
-                  >
-                    <span
-                      className="text-xs font-bold w-5 shrink-0 tabular-nums"
-                      style={{ color: "oklch(0.72 0.14 220)" }}
-                    >
-                      {i + 1}.
-                    </span>
+                  <div key={i} className="flex items-center gap-2 group py-1">
+                    <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.72 0.14 220 / 0.6)" }}>{i + 1}.</span>
                     <span className="text-sm flex-1">{step}</span>
                     <button
                       onClick={() => {
@@ -725,101 +703,84 @@ export default function SelfImprovementPage() {
                         setPlaybook({ ...playbook, pre_trade_routine: steps });
                         setPlaybookDirty(true);
                       }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ color: "oklch(0.55 0.04 252)" }}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-1">
                 <input
                   type="text"
                   value={newRoutineStep}
                   onChange={(e) => setNewRoutineStep(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && newRoutineStep.trim()) {
-                      setPlaybook({
-                        ...playbook,
-                        pre_trade_routine: [...(playbook.pre_trade_routine ?? []), newRoutineStep.trim()],
-                      });
-                      setNewRoutineStep("");
-                      setPlaybookDirty(true);
+                      setPlaybook({ ...playbook, pre_trade_routine: [...(playbook.pre_trade_routine ?? []), newRoutineStep.trim()] });
+                      setNewRoutineStep(""); setPlaybookDirty(true);
                     }
                   }}
                   placeholder="Add a step..."
-                  className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{
-                    background: "oklch(0.09 0.014 252)",
-                    border: "1px solid oklch(0.22 0.025 252)",
-                    color: "oklch(0.93 0.008 252)",
-                  }}
+                  className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
+                  style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
                 />
                 <button
                   onClick={() => {
                     if (!newRoutineStep.trim()) return;
-                    setPlaybook({
-                      ...playbook,
-                      pre_trade_routine: [...(playbook.pre_trade_routine ?? []), newRoutineStep.trim()],
-                    });
-                    setNewRoutineStep("");
-                    setPlaybookDirty(true);
+                    setPlaybook({ ...playbook, pre_trade_routine: [...(playbook.pre_trade_routine ?? []), newRoutineStep.trim()] });
+                    setNewRoutineStep(""); setPlaybookDirty(true);
                   }}
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{
-                    background: "oklch(0.72 0.14 220 / 0.15)",
-                    color: "oklch(0.72 0.14 220)",
-                    border: "1px solid oklch(0.72 0.14 220 / 0.25)",
-                  }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: "oklch(0.72 0.14 220 / 0.12)", color: "oklch(0.72 0.14 220)", border: "1px solid oklch(0.72 0.14 220 / 0.20)" }}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-          </SectionCard>
+          </div>
 
-          {/* A+ Trade Criteria */}
-          <SectionCard title="A+ Trade Criteria" icon={Target} accent="oklch(0.58 0.17 145)">
-            <textarea
-              rows={5}
-              value={playbook.a_plus_criteria || ""}
-              onChange={(e) => {
-                setPlaybook({ ...playbook, a_plus_criteria: e.target.value });
-                setPlaybookDirty(true);
-              }}
-              placeholder="Describe your ideal A+ setup in detail..."
-              className="w-full rounded-lg px-3 py-2.5 text-sm resize-none"
-              style={{
-                background: "oklch(0.09 0.014 252)",
-                border: "1px solid oklch(0.22 0.025 252)",
-                color: "oklch(0.93 0.008 252)",
-                outline: "none",
-              }}
-            />
-          </SectionCard>
+          {/* A+ Criteria + Weaknesses */}
+          <div className="grid lg:grid-cols-2">
+            {/* A+ Criteria */}
+            <div className="p-5 space-y-3" style={{ borderRight: "1px solid oklch(0.18 0.022 252)" }}>
+              <div className="flex items-center gap-2">
+                <Target className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.58 0.17 145)" }} />
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.58 0.17 145)" }}>
+                  A+ Trade Criteria
+                </span>
+              </div>
+              <textarea
+                rows={4}
+                value={playbook.a_plus_criteria || ""}
+                onChange={(e) => { setPlaybook({ ...playbook, a_plus_criteria: e.target.value }); setPlaybookDirty(true); }}
+                placeholder="Describe your ideal A+ setup..."
+                className="w-full rounded-lg px-3 py-2.5 text-sm resize-none"
+                style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)", outline: "none" }}
+              />
+            </div>
 
-          {/* Known Weaknesses */}
-          <SectionCard title="Known Weaknesses" icon={AlertTriangle} accent="oklch(0.70 0.16 72)">
-            <div className="space-y-3">
+            {/* Known Weaknesses */}
+            <div className="p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.70 0.16 72)" }} />
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.70 0.16 72)" }}>
+                  Known Weaknesses
+                </span>
+              </div>
               {(playbook.common_weaknesses ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {(playbook.common_weaknesses ?? []).map((w) => (
                     <span
                       key={w}
                       className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium"
-                      style={{
-                        background: "oklch(0.70 0.16 72 / 0.12)",
-                        color: "oklch(0.70 0.16 72)",
-                        border: "1px solid oklch(0.70 0.16 72 / 0.25)",
-                      }}
+                      style={{ background: "oklch(0.70 0.16 72 / 0.12)", color: "oklch(0.70 0.16 72)", border: "1px solid oklch(0.70 0.16 72 / 0.22)" }}
                     >
                       {w}
                       <button
                         onClick={() => {
-                          setPlaybook({
-                            ...playbook,
-                            common_weaknesses: (playbook.common_weaknesses ?? []).filter((x: string) => x !== w),
-                          });
+                          setPlaybook({ ...playbook, common_weaknesses: (playbook.common_weaknesses ?? []).filter((x: string) => x !== w) });
                           setPlaybookDirty(true);
                         }}
                         className="hover:opacity-60 transition-opacity"
@@ -839,76 +800,46 @@ export default function SelfImprovementPage() {
                     if (e.key === "Enter" && newWeakness.trim()) {
                       const w = newWeakness.trim();
                       if (!(playbook.common_weaknesses ?? []).includes(w)) {
-                        setPlaybook({
-                          ...playbook,
-                          common_weaknesses: [...(playbook.common_weaknesses ?? []), w],
-                        });
+                        setPlaybook({ ...playbook, common_weaknesses: [...(playbook.common_weaknesses ?? []), w] });
                       }
-                      setNewWeakness("");
-                      setPlaybookDirty(true);
+                      setNewWeakness(""); setPlaybookDirty(true);
                     }
                   }}
                   placeholder="Add a weakness..."
-                  className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{
-                    background: "oklch(0.09 0.014 252)",
-                    border: "1px solid oklch(0.22 0.025 252)",
-                    color: "oklch(0.93 0.008 252)",
-                  }}
+                  className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
+                  style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
                 />
                 <button
                   onClick={() => {
                     const w = newWeakness.trim();
                     if (!w) return;
                     if (!(playbook.common_weaknesses ?? []).includes(w)) {
-                      setPlaybook({
-                        ...playbook,
-                        common_weaknesses: [...(playbook.common_weaknesses ?? []), w],
-                      });
+                      setPlaybook({ ...playbook, common_weaknesses: [...(playbook.common_weaknesses ?? []), w] });
                     }
-                    setNewWeakness("");
-                    setPlaybookDirty(true);
+                    setNewWeakness(""); setPlaybookDirty(true);
                   }}
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{
-                    background: "oklch(0.70 0.16 72 / 0.15)",
-                    color: "oklch(0.70 0.16 72)",
-                    border: "1px solid oklch(0.70 0.16 72 / 0.25)",
-                  }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: "oklch(0.70 0.16 72 / 0.12)", color: "oklch(0.70 0.16 72)", border: "1px solid oklch(0.70 0.16 72 / 0.22)" }}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-          </SectionCard>
-        </div>
-
-        {playbookDirty && (
-          <button
-            onClick={savePlaybookData}
-            className="w-full py-3 rounded-xl text-sm font-semibold transition-all hover:-translate-y-px"
-            style={{
-              background: "oklch(0.72 0.14 220)",
-              color: "oklch(0.08 0.014 252)",
-              boxShadow: "0 4px 14px oklch(0.72 0.14 220 / 0.30)",
-            }}
-          >
-            Save Playbook
-          </button>
-        )}
-        {playbookSaved && !playbookDirty && (
-          <div
-            className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold"
-            style={{
-              background: "oklch(0.58 0.17 145 / 0.15)",
-              color: "oklch(0.58 0.17 145)",
-              border: "1px solid oklch(0.58 0.17 145 / 0.25)",
-            }}
-          >
-            <Check className="w-4 h-4" />
-            Saved
           </div>
-        )}
+
+          {/* Save bar */}
+          {playbookDirty && (
+            <div style={{ borderTop: "1px solid oklch(0.18 0.022 252)" }}>
+              <button
+                onClick={savePlaybookData}
+                className="w-full py-3 text-sm font-semibold transition-all hover:opacity-90"
+                style={{ background: "oklch(0.72 0.14 220 / 0.15)", color: "oklch(0.72 0.14 220)" }}
+              >
+                Save Playbook
+              </button>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
