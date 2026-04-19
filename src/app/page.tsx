@@ -211,22 +211,24 @@ export default function LandingPage() {
         <div className="absolute inset-y-0 w-px" style={{ left: "75%", background: "rgba(255,255,255,0.05)" }} />
       </div>
 
-      {/* ── Animated ambient glow orbs ── */}
+      {/* ── Hero background video ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
-        {/* Primary top-center hero glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] animate-drift-c"
-          style={{ background: "radial-gradient(ellipse at top, rgba(249,115,22,0.22) 0%, rgba(249,115,22,0.08) 40%, transparent 70%)" }} />
-        {/* Left drift orb */}
-        <div className="absolute top-[15%] -left-48 w-[700px] h-[700px] rounded-full animate-drift-a"
-          style={{ background: "radial-gradient(circle, rgba(249,115,22,0.14) 0%, transparent 60%)" }} />
-        {/* Right drift orb */}
-        <div className="absolute top-[40%] -right-64 w-[800px] h-[800px] rounded-full animate-drift-b"
-          style={{ background: "radial-gradient(circle, rgba(251,191,36,0.10) 0%, transparent 60%)" }} />
-        {/* Bottom warm glow */}
-        <div className="absolute -bottom-32 left-1/4 w-[600px] h-[400px] animate-drift-c"
-          style={{ background: "radial-gradient(ellipse, rgba(249,115,22,0.08) 0%, transparent 65%)", animationDelay: "7s" }} />
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: 0.45 }}
+        >
+          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260306_074215_04640ca7-042c-45d6-bb56-58b1e8a42489.mp4" type="video/mp4" />
+        </video>
+        {/* Dark overlay to keep text readable */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(7,4,2,0.55) 0%, rgba(7,4,2,0.35) 40%, rgba(7,4,2,0.65) 100%)" }} />
+        {/* Orange color tint overlay */}
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at top, rgba(249,115,22,0.12) 0%, transparent 60%)" }} />
         {/* Grain texture */}
-        <div className="absolute inset-0 opacity-[0.032]"
+        <div className="absolute inset-0 opacity-[0.028]"
           style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")", backgroundRepeat: "repeat", backgroundSize: "128px 128px" }} />
       </div>
 
