@@ -70,8 +70,8 @@
   --popover-foreground: oklch(0.95 0.005 55);
 
   /* ── Primary — electric amber ───────────────── */
-  --primary: oklch(0.72 0.22 45);              /* electric amber */
-  --primary-foreground: oklch(0.07 0.004 28);
+  --primary: oklch(0.72 0.22 45);              /* vivid orange */
+  --primary-foreground: oklch(1 0 0);          /* white */
 
   /* ── Secondary ──────────────────────────────── */
   --secondary: oklch(0.16 0.006 28);
@@ -89,12 +89,12 @@
   --destructive: oklch(0.62 0.24 18);          /* ember red */
   --success: oklch(0.68 0.20 130);             /* warm lime */
   --success-foreground: oklch(0.07 0.004 28);
-  --warning: oklch(0.72 0.22 45);              /* amber (matches primary) */
-  --warning-foreground: oklch(0.07 0.004 28);
+  --warning: oklch(0.72 0.22 45);              /* orange (matches primary) */
+  --warning-foreground: oklch(1 0 0);
 
   /* ── Amber brand accent ─────────────────────── */
-  --gold: oklch(0.72 0.22 45);                 /* electric amber */
-  --gold-foreground: oklch(0.07 0.004 28);
+  --gold: oklch(0.72 0.22 45);                 /* vivid orange */
+  --gold-foreground: oklch(1 0 0);
 
   /* ── Copper secondary accent ───────────────── */
   --ice: oklch(0.84 0.18 80);                  /* deep copper */
