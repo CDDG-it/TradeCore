@@ -206,17 +206,28 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* ── Editorial vertical grid lines ── */}
       <div className="pointer-events-none fixed inset-0 z-0 hidden lg:block" aria-hidden>
-        <div className="absolute inset-y-0 w-px" style={{ left: "25%", background: "rgba(255,255,255,0.022)" }} />
-        <div className="absolute inset-y-0 w-px" style={{ left: "50%", background: "rgba(255,255,255,0.030)" }} />
-        <div className="absolute inset-y-0 w-px" style={{ left: "75%", background: "rgba(255,255,255,0.022)" }} />
+        <div className="absolute inset-y-0 w-px" style={{ left: "25%", background: "rgba(255,255,255,0.05)" }} />
+        <div className="absolute inset-y-0 w-px" style={{ left: "50%", background: "rgba(255,255,255,0.07)" }} />
+        <div className="absolute inset-y-0 w-px" style={{ left: "75%", background: "rgba(255,255,255,0.05)" }} />
       </div>
 
-      {/* ── Ambient background glows ── */}
+      {/* ── Animated ambient glow orbs ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px]"
-          style={{ background: "radial-gradient(ellipse at top, rgba(249,115,22,0.09) 0%, transparent 65%)" }} />
-        <div className="absolute -bottom-64 -right-48 w-[700px] h-[700px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(251,191,36,0.04) 0%, transparent 65%)" }} />
+        {/* Primary top-center hero glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] animate-drift-c"
+          style={{ background: "radial-gradient(ellipse at top, rgba(249,115,22,0.22) 0%, rgba(249,115,22,0.08) 40%, transparent 70%)" }} />
+        {/* Left drift orb */}
+        <div className="absolute top-[15%] -left-48 w-[700px] h-[700px] rounded-full animate-drift-a"
+          style={{ background: "radial-gradient(circle, rgba(249,115,22,0.14) 0%, transparent 60%)" }} />
+        {/* Right drift orb */}
+        <div className="absolute top-[40%] -right-64 w-[800px] h-[800px] rounded-full animate-drift-b"
+          style={{ background: "radial-gradient(circle, rgba(251,191,36,0.10) 0%, transparent 60%)" }} />
+        {/* Bottom warm glow */}
+        <div className="absolute -bottom-32 left-1/4 w-[600px] h-[400px] animate-drift-c"
+          style={{ background: "radial-gradient(ellipse, rgba(249,115,22,0.08) 0%, transparent 65%)", animationDelay: "7s" }} />
+        {/* Grain texture */}
+        <div className="absolute inset-0 opacity-[0.032]"
+          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")", backgroundRepeat: "repeat", backgroundSize: "128px 128px" }} />
       </div>
 
       {/* ── Header ── */}
