@@ -58,28 +58,28 @@
 
 :root {
   /* ── Core backgrounds ───────────────────────── */
-  --background: oklch(0.07 0.008 28);          /* warm obsidian */
+  --background: oklch(0.07 0.004 28);          /* warm obsidian */
   --foreground: oklch(0.95 0.005 55);          /* warm near-white */
 
   /* ── Cards ──────────────────────────────────── */
-  --card: oklch(0.11 0.010 30);                /* raised warm dark */
+  --card: oklch(0.11 0.005 28);                /* raised warm dark */
   --card-foreground: oklch(0.95 0.005 55);
 
   /* ── Popover ────────────────────────────────── */
-  --popover: oklch(0.13 0.010 30);
+  --popover: oklch(0.13 0.005 28);
   --popover-foreground: oklch(0.95 0.005 55);
 
   /* ── Primary — electric amber ───────────────── */
-  --primary: oklch(0.80 0.22 62);              /* electric amber */
-  --primary-foreground: oklch(0.07 0.008 28);
+  --primary: oklch(0.72 0.22 45);              /* electric amber */
+  --primary-foreground: oklch(0.07 0.004 28);
 
   /* ── Secondary ──────────────────────────────── */
-  --secondary: oklch(0.16 0.012 30);
+  --secondary: oklch(0.16 0.006 28);
   --secondary-foreground: oklch(0.88 0.006 50);
 
   /* ── Muted ──────────────────────────────────── */
   --muted: oklch(0.14 0.010 30);
-  --muted-foreground: oklch(0.62 0.018 42);
+  --muted-foreground: oklch(0.62 0.012 40);
 
   /* ── Accent ─────────────────────────────────── */
   --accent: oklch(0.17 0.013 30);
@@ -88,26 +88,26 @@
   /* ── Semantic ───────────────────────────────── */
   --destructive: oklch(0.62 0.24 18);          /* ember red */
   --success: oklch(0.68 0.20 130);             /* warm lime */
-  --success-foreground: oklch(0.07 0.008 28);
-  --warning: oklch(0.80 0.22 62);              /* amber (matches primary) */
-  --warning-foreground: oklch(0.07 0.008 28);
+  --success-foreground: oklch(0.07 0.004 28);
+  --warning: oklch(0.72 0.22 45);              /* amber (matches primary) */
+  --warning-foreground: oklch(0.07 0.004 28);
 
   /* ── Amber brand accent ─────────────────────── */
-  --gold: oklch(0.80 0.22 62);                 /* electric amber */
-  --gold-foreground: oklch(0.07 0.008 28);
+  --gold: oklch(0.72 0.22 45);                 /* electric amber */
+  --gold-foreground: oklch(0.07 0.004 28);
 
   /* ── Copper secondary accent ───────────────── */
-  --ice: oklch(0.62 0.16 48);                  /* deep copper */
-  --ice-foreground: oklch(0.07 0.008 28);
+  --ice: oklch(0.84 0.18 80);                  /* deep copper */
+  --ice-foreground: oklch(0.07 0.004 28);
 
   /* ── Borders & inputs ───────────────────────── */
-  --border: oklch(0.18 0.014 32);
-  --input: oklch(0.13 0.010 30);
-  --ring: oklch(0.80 0.22 62);                 /* amber focus ring */
+  --border: oklch(0.18 0.008 30);
+  --input: oklch(0.13 0.005 28);
+  --ring: oklch(0.72 0.22 45);                 /* amber focus ring */
 
   /* ── Charts ─────────────────────────────────── */
-  --chart-1: oklch(0.80 0.22 62);              /* amber */
-  --chart-2: oklch(0.62 0.16 48);              /* copper */
+  --chart-1: oklch(0.72 0.22 45);              /* amber */
+  --chart-2: oklch(0.84 0.18 80);              /* copper */
   --chart-3: oklch(0.68 0.20 130);             /* lime */
   --chart-4: oklch(0.62 0.24 18);              /* red */
   --chart-5: oklch(0.72 0.18 100);             /* gold-green */
@@ -115,14 +115,14 @@
   --radius: 0.75rem;
 
   /* ── Sidebar — warmest dark ─────────────────── */
-  --sidebar: oklch(0.055 0.006 26);
+  --sidebar: oklch(0.055 0.003 24);
   --sidebar-foreground: oklch(0.92 0.005 50);
-  --sidebar-primary: oklch(0.80 0.22 62);      /* amber active */
-  --sidebar-primary-foreground: oklch(0.055 0.006 26);
-  --sidebar-accent: oklch(0.13 0.010 30);
+  --sidebar-primary: oklch(0.72 0.22 45);      /* amber active */
+  --sidebar-primary-foreground: oklch(0.055 0.003 24);
+  --sidebar-accent: oklch(0.13 0.005 28);
   --sidebar-accent-foreground: oklch(0.95 0.005 55);
   --sidebar-border: oklch(1 0 0 / 5%);
-  --sidebar-ring: oklch(0.80 0.22 62);
+  --sidebar-ring: oklch(0.72 0.22 45);
 
   /* ── Sidebar helpers ────────────────────────── */
   --sidebar-separator: oklch(1 0 0 / 5%);
@@ -215,9 +215,9 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   body {
     @apply text-foreground;
     background:
-      radial-gradient(ellipse 75% 50% at 5% 0%, oklch(0.22 0.10 62 / 0.30) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at 95% 100%, oklch(0.16 0.07 42 / 0.22) 0%, transparent 55%),
-      oklch(0.07 0.008 28);
+      radial-gradient(ellipse 75% 50% at 5% 0%, oklch(0.22 0.10 45 / 0.28) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 95% 100%, oklch(0.16 0.07 35 / 0.20) 0%, transparent 55%),
+      oklch(0.07 0.004 28);
     background-attachment: fixed;
   }
   html {
@@ -253,15 +253,15 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   /* Amber glow effect */
   .glow-gold {
     box-shadow:
-      0 0 20px oklch(0.80 0.22 62 / 0.40),
-      0 0 50px oklch(0.80 0.22 62 / 0.18);
+      0 0 20px oklch(0.72 0.22 45 / 0.40),
+      0 0 50px oklch(0.72 0.22 45 / 0.18);
   }
 
   /* Copper glow */
   .glow-ice {
     box-shadow:
-      0 0 20px oklch(0.62 0.16 48 / 0.35),
-      0 0 50px oklch(0.62 0.16 48 / 0.14);
+      0 0 20px oklch(0.84 0.18 80 / 0.35),
+      0 0 50px oklch(0.84 0.18 80 / 0.14);
   }
 
   /* Success glow */
@@ -290,7 +290,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   .card-gold-border {
     position: relative;
     border-radius: var(--radius);
-    background: oklch(0.11 0.010 30);
+    background: oklch(0.11 0.005 28);
   }
   .card-gold-border::before {
     content: "";
@@ -298,7 +298,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, oklch(0.80 0.22 62 / 0.65) 0%, oklch(0.62 0.16 48 / 0.25) 50%, transparent 100%);
+    background: linear-gradient(135deg, oklch(0.72 0.22 45 / 0.65) 0%, oklch(0.84 0.18 80 / 0.25) 50%, transparent 100%);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -309,7 +309,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   .card-ice-border {
     position: relative;
     border-radius: var(--radius);
-    background: oklch(0.11 0.010 30);
+    background: oklch(0.11 0.005 28);
   }
   .card-ice-border::before {
     content: "";
@@ -317,7 +317,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, oklch(0.62 0.16 48 / 0.55) 0%, oklch(0.80 0.22 62 / 0.18) 50%, transparent 100%);
+    background: linear-gradient(135deg, oklch(0.84 0.18 80 / 0.55) 0%, oklch(0.72 0.22 45 / 0.18) 50%, transparent 100%);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -331,7 +331,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
   /* Streak badge */
   .streak-badge {
-    background: linear-gradient(135deg, oklch(0.72 0.22 58) 0%, oklch(0.88 0.20 72) 100%);
+    background: linear-gradient(135deg, oklch(0.72 0.22 45) 0%, oklch(0.88 0.20 75) 100%);
     color: oklch(0.07 0.022 275);
     border-radius: 9999px;
     font-weight: 700;
@@ -381,13 +381,13 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 12px oklch(0.80 0.22 62 / 0.35); }
-  50%       { box-shadow: 0 0 32px oklch(0.80 0.22 62 / 0.65), 0 0 60px oklch(0.80 0.22 62 / 0.22); }
+  0%, 100% { box-shadow: 0 0 12px oklch(0.72 0.22 45 / 0.35); }
+  50%       { box-shadow: 0 0 32px oklch(0.72 0.22 45 / 0.65), 0 0 60px oklch(0.72 0.22 45 / 0.22); }
 }
 
 @keyframes pulse-glow-ice {
-  0%, 100% { box-shadow: 0 0 12px oklch(0.62 0.16 48 / 0.30); }
-  50%       { box-shadow: 0 0 32px oklch(0.62 0.16 48 / 0.55), 0 0 60px oklch(0.62 0.16 48 / 0.18); }
+  0%, 100% { box-shadow: 0 0 12px oklch(0.84 0.18 80 / 0.30); }
+  50%       { box-shadow: 0 0 32px oklch(0.84 0.18 80 / 0.55), 0 0 60px oklch(0.84 0.18 80 / 0.18); }
 }
 
 @keyframes draw-line {
@@ -421,11 +421,11 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 .animate-shimmer-gold {
   background: linear-gradient(
     105deg,
-    oklch(0.65 0.22 55) 0%,
-    oklch(0.85 0.24 65) 38%,
-    oklch(0.96 0.14 72) 50%,
-    oklch(0.85 0.24 65) 62%,
-    oklch(0.65 0.22 55) 100%
+    oklch(0.65 0.24 42) 0%,
+    oklch(0.80 0.26 45) 38%,
+    oklch(0.92 0.20 65) 50%,
+    oklch(0.80 0.26 45) 62%,
+    oklch(0.65 0.24 42) 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -436,11 +436,11 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 .animate-shimmer-ice {
   background: linear-gradient(
     105deg,
-    oklch(0.48 0.16 44) 0%,
-    oklch(0.68 0.18 50) 38%,
-    oklch(0.82 0.14 55) 50%,
-    oklch(0.68 0.18 50) 62%,
-    oklch(0.48 0.16 44) 100%
+    oklch(0.72 0.18 70) 0%,
+    oklch(0.88 0.20 80) 38%,
+    oklch(0.96 0.14 85) 50%,
+    oklch(0.88 0.20 80) 62%,
+    oklch(0.72 0.18 70) 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
