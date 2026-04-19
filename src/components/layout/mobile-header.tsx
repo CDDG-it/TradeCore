@@ -67,7 +67,7 @@ export function MobileHeader() {
         <button
           onClick={() => setOpen(true)}
           className="p-2 rounded-lg transition-colors"
-          style={{ color: "oklch(0.90 0.008 280 / 60%)" }}
+          style={{ color: "oklch(0.90 0.008 28 / 60%)" }}
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -107,7 +107,7 @@ export function MobileHeader() {
           <button
             onClick={() => setOpen(false)}
             className="p-1.5 rounded-lg transition-colors"
-            style={{ color: "oklch(0.90 0.008 280 / 50%)" }}
+            style={{ color: "oklch(0.90 0.008 28 / 50%)" }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -132,7 +132,7 @@ export function MobileHeader() {
                 {isActive && (
                   <span
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                    style={{ background: "oklch(0.62 0.26 290)" }}
+                    style={{ background: "oklch(0.72 0.22 45)" }}
                   />
                 )}
                 <Icon
@@ -154,11 +154,11 @@ export function MobileHeader() {
           <div className="flex items-center gap-2.5 px-3 py-2.5">
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center"
-              style={{ background: "oklch(0.62 0.26 290 / 18%)" }}
+              style={{ background: "oklch(0.72 0.22 45 / 18%)" }}
             >
               <span
                 className="text-xs font-bold"
-                style={{ color: "oklch(0.62 0.26 290)" }}
+                style={{ color: "oklch(0.72 0.22 45)" }}
               >
                 {initials}
               </span>
@@ -169,7 +169,7 @@ export function MobileHeader() {
               </p>
               <p
                 className="text-xs truncate"
-                style={{ color: "oklch(0.90 0.008 280 / 35%)" }}
+                style={{ color: "oklch(0.90 0.008 28 / 35%)" }}
               >
                 {user?.email || "demo@tradinghub.app"}
               </p>
@@ -177,7 +177,7 @@ export function MobileHeader() {
             <button
               onClick={signOut}
               className="transition-colors"
-              style={{ color: "oklch(0.90 0.008 280 / 35%)" }}
+              style={{ color: "oklch(0.90 0.008 28 / 35%)" }}
             >
               <LogOut className="w-4 h-4" />
             </button>

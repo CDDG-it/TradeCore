@@ -35,7 +35,7 @@ function ScoreDot({ value, max = 100 }: { value: number; max?: number }) {
   const pct = Math.round((value / max) * 100);
   const color =
     pct >= 80 ? "oklch(0.72 0.17 145)"
-    : pct >= 60 ? "oklch(0.62 0.26 290)"
+    : pct >= 60 ? "oklch(0.72 0.22 45)"
     : "oklch(0.65 0.22 25)";
   return (
     <span className="font-bold text-lg" style={{ color }}>
@@ -68,10 +68,10 @@ function MiniTrade({ trade }: { trade: TradeJournalEntry }) {
             style={{
               background: disciplineScore >= 80
                 ? "oklch(0.72 0.17 145 / 0.12)"
-                : "oklch(0.62 0.26 290 / 0.12)",
+                : "oklch(0.72 0.22 45 / 0.12)",
               color: disciplineScore >= 80
                 ? "oklch(0.72 0.17 145)"
-                : "oklch(0.62 0.26 290)",
+                : "oklch(0.72 0.22 45)",
             }}
           >
             D:{disciplineScore}
@@ -198,7 +198,7 @@ export default function CommandCenterPage() {
         <div>
           <h1
             className="text-2xl font-bold tracking-tight"
-            style={{ color: "oklch(0.94 0.006 280)" }}
+            style={{ color: "oklch(0.94 0.006 28)" }}
           >
             Command Center
           </h1>
@@ -225,7 +225,7 @@ export default function CommandCenterPage() {
             value: `${checklistDone}/${checklistTotal}`,
             sub: checklistPct === 100 ? "Ready to trade" : "Complete checklist",
             icon: CheckSquare,
-            color: checklistPct === 100 ? "oklch(0.72 0.17 145)" : "oklch(0.62 0.26 290)",
+            color: checklistPct === 100 ? "oklch(0.72 0.17 145)" : "oklch(0.72 0.22 45)",
             pct: checklistPct,
           },
           {
@@ -233,7 +233,7 @@ export default function CommandCenterPage() {
             value: `${todayCompletedHabits.length}/${todayHabits.length}`,
             sub: `${habitPct}% complete`,
             icon: Flame,
-            color: habitPct >= 80 ? "oklch(0.72 0.17 145)" : "oklch(0.62 0.26 290)",
+            color: habitPct >= 80 ? "oklch(0.72 0.17 145)" : "oklch(0.72 0.22 45)",
             pct: habitPct,
           },
           {
@@ -252,7 +252,7 @@ export default function CommandCenterPage() {
               : "No trades yet",
             icon: Shield,
             color: avgDiscipline !== null
-              ? avgDiscipline >= 80 ? "oklch(0.72 0.17 145)" : "oklch(0.62 0.26 290)"
+              ? avgDiscipline >= 80 ? "oklch(0.72 0.17 145)" : "oklch(0.72 0.22 45)"
               : "oklch(0.78 0.16 198)",
             pct: avgDiscipline ?? 0,
           },
@@ -288,7 +288,7 @@ export default function CommandCenterPage() {
           <Card className="shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Zap className="w-4 h-4" style={{ color: "oklch(0.62 0.26 290)" }} />
+                <Zap className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
                 Today's Focus
               </CardTitle>
             </CardHeader>
@@ -319,7 +319,7 @@ export default function CommandCenterPage() {
                       : "oklch(1 0 0 / 6%)",
                     color: checklistPct === 100
                       ? "oklch(0.72 0.17 145)"
-                      : "oklch(0.90 0.008 280 / 50%)",
+                      : "oklch(0.90 0.008 28 / 50%)",
                   }}
                 >
                   {checklistDone}/{checklistTotal}
@@ -381,7 +381,7 @@ export default function CommandCenterPage() {
                           className="px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all"
                           style={{
                             background: active ? "oklch(0.78 0.16 198 / 0.15)" : "oklch(1 0 0 / 5%)",
-                            color: active ? "oklch(0.78 0.16 198)" : "oklch(0.90 0.008 280 / 50%)",
+                            color: active ? "oklch(0.78 0.16 198)" : "oklch(0.90 0.008 28 / 50%)",
                             border: `1px solid ${active ? "oklch(0.78 0.16 198 / 0.30)" : "transparent"}`,
                           }}
                         >
@@ -406,9 +406,9 @@ export default function CommandCenterPage() {
                           onClick={() => updateState({ market_context: { ...state.market_context, volatility: v } })}
                           className="px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all"
                           style={{
-                            background: active ? "oklch(0.62 0.26 290 / 0.15)" : "oklch(1 0 0 / 5%)",
-                            color: active ? "oklch(0.62 0.26 290)" : "oklch(0.90 0.008 280 / 50%)",
-                            border: `1px solid ${active ? "oklch(0.62 0.26 290 / 0.30)" : "transparent"}`,
+                            background: active ? "oklch(0.72 0.22 45 / 0.15)" : "oklch(1 0 0 / 5%)",
+                            color: active ? "oklch(0.72 0.22 45)" : "oklch(0.90 0.008 28 / 50%)",
+                            border: `1px solid ${active ? "oklch(0.72 0.22 45 / 0.30)" : "transparent"}`,
                           }}
                         >
                           {v}
@@ -438,7 +438,7 @@ export default function CommandCenterPage() {
                           className="px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all"
                           style={{
                             background: active ? bColor + " / 0.15)" : "oklch(1 0 0 / 5%)",
-                            color: active ? bColor : "oklch(0.90 0.008 280 / 50%)",
+                            color: active ? bColor : "oklch(0.90 0.008 28 / 50%)",
                             border: `1px solid ${active ? bColor + " / 0.30)" : "transparent"}`,
                           }}
                         >
@@ -462,13 +462,13 @@ export default function CommandCenterPage() {
                       key={key}
                       onClick={() => updateState({ market_context: { ...state.market_context, [key]: !active } })}
                       className="flex items-center gap-2 text-xs transition-colors"
-                      style={{ color: active ? "oklch(0.62 0.26 290)" : "oklch(0.90 0.008 280 / 40%)" }}
+                      style={{ color: active ? "oklch(0.72 0.22 45)" : "oklch(0.90 0.008 28 / 40%)" }}
                     >
                       <div
                         className="w-4 h-4 rounded border flex items-center justify-center transition-all"
                         style={{
-                          background: active ? "oklch(0.62 0.26 290 / 0.15)" : "transparent",
-                          borderColor: active ? "oklch(0.62 0.26 290 / 0.40)" : "oklch(1 0 0 / 15%)",
+                          background: active ? "oklch(0.72 0.22 45 / 0.15)" : "transparent",
+                          borderColor: active ? "oklch(0.72 0.22 45 / 0.40)" : "oklch(1 0 0 / 15%)",
                         }}
                       >
                         {active && <span className="text-[8px]">✓</span>}
@@ -528,7 +528,7 @@ export default function CommandCenterPage() {
           <Card className="shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Brain className="w-4 h-4" style={{ color: "oklch(0.62 0.26 290)" }} />
+                <Brain className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
                 End-of-Day Reflection
               </CardTitle>
             </CardHeader>
@@ -603,7 +603,7 @@ export default function CommandCenterPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Flame className="w-4 h-4" style={{ color: "oklch(0.62 0.26 290)" }} />
+                  <Flame className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
                   Habits
                 </CardTitle>
                 <Badge variant="outline" className="text-[10px]">
@@ -626,11 +626,11 @@ export default function CommandCenterPage() {
                       <div
                         className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center border transition-all"
                         style={{
-                          background: done ? "oklch(0.62 0.26 290 / 0.15)" : "transparent",
-                          borderColor: done ? "oklch(0.62 0.26 290 / 0.40)" : "oklch(1 0 0 / 12%)",
+                          background: done ? "oklch(0.72 0.22 45 / 0.15)" : "transparent",
+                          borderColor: done ? "oklch(0.72 0.22 45 / 0.40)" : "oklch(1 0 0 / 12%)",
                         }}
                       >
-                        {done && <span className="text-[8px]" style={{ color: "oklch(0.62 0.26 290)" }}>✓</span>}
+                        {done && <span className="text-[8px]" style={{ color: "oklch(0.72 0.22 45)" }}>✓</span>}
                       </div>
                       <span className={cn(
                         "text-xs transition-colors",
@@ -719,7 +719,7 @@ export default function CommandCenterPage() {
                         color: weekDiscipline >= 80
                           ? "oklch(0.72 0.17 145)"
                           : weekDiscipline >= 60
-                          ? "oklch(0.62 0.26 290)"
+                          ? "oklch(0.72 0.22 45)"
                           : "oklch(0.65 0.22 25)",
                       }}
                     >

@@ -88,20 +88,20 @@ function NavItem({
       {isActive && (
         <span
           className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-          style={{ background: "oklch(0.62 0.26 290)" }}
+          style={{ background: "oklch(0.72 0.22 45)" }}
         />
       )}
       <Icon
         className={cn("w-4 h-4 shrink-0 transition-colors")}
         style={
           isActive
-            ? { color: "oklch(0.62 0.26 290)" }
+            ? { color: "oklch(0.72 0.22 45)" }
             : highlight
             ? { color: "oklch(0.78 0.16 198 / 0.70)" }
             : undefined
         }
       />
-      <span style={isActive ? { color: "oklch(0.94 0.006 280)" } : undefined}>
+      <span style={isActive ? { color: "oklch(0.94 0.006 28)" } : undefined}>
         {label}
       </span>
       {highlight && !isActive && (
@@ -155,7 +155,7 @@ export function Sidebar() {
             {group.label && (
               <p
                 className="text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5"
-                style={{ color: "oklch(0.90 0.008 280 / 40%)" }}
+                style={{ color: "oklch(0.90 0.008 28 / 40%)" }}
               >
                 {group.label}
               </p>
@@ -203,11 +203,11 @@ export function Sidebar() {
           <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg group">
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-              style={{ background: "oklch(0.62 0.26 290 / 18%)" }}
+              style={{ background: "oklch(0.72 0.22 45 / 18%)" }}
             >
               <span
                 className="text-xs font-bold"
-                style={{ color: "oklch(0.62 0.26 290)" }}
+                style={{ color: "oklch(0.72 0.22 45)" }}
               >
                 {initials}
               </span>
@@ -218,7 +218,7 @@ export function Sidebar() {
               </p>
               <p
                 className="text-xs truncate"
-                style={{ color: "oklch(0.90 0.008 280 / 35%)" }}
+                style={{ color: "oklch(0.90 0.008 28 / 35%)" }}
               >
                 {user?.email || "demo@tradecore.app"}
               </p>
@@ -226,7 +226,7 @@ export function Sidebar() {
             <button
               onClick={signOut}
               className="transition-colors opacity-0 group-hover:opacity-100"
-              style={{ color: "oklch(0.90 0.008 280 / 35%)" }}
+              style={{ color: "oklch(0.90 0.008 28 / 35%)" }}
               title="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />

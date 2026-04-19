@@ -131,14 +131,14 @@ function ConnectedCalendar() {
     <div
       className="rounded-xl overflow-hidden"
       style={{
-        background: "oklch(0.10 0.022 278)",
-        border: "1px solid oklch(0.18 0.030 278)",
+        background: "oklch(0.10 0.022 28)",
+        border: "1px solid oklch(0.18 0.030 28)",
       }}
     >
       {/* Calendar Header */}
       <div
         className="flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: "1px solid oklch(0.18 0.030 278)" }}
+        style={{ borderBottom: "1px solid oklch(0.18 0.030 28)" }}
       >
         <div>
           <h2 className="text-sm font-semibold">Day Overview</h2>
@@ -210,8 +210,8 @@ function ConnectedCalendar() {
                     color: isToday
                       ? "oklch(0.78 0.16 198)"
                       : isCurrentMonth
-                      ? "oklch(0.70 0.04 252)"
-                      : "oklch(0.40 0.03 278)",
+                      ? "oklch(0.70 0.04 28)"
+                      : "oklch(0.40 0.03 28)",
                   }}
                 >
                   {format(day, "d")}
@@ -222,7 +222,7 @@ function ConnectedCalendar() {
                   {hasAnalysis && (
                     <div
                       className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: "oklch(0.62 0.26 290)" }}
+                      style={{ background: "oklch(0.72 0.22 45)" }}
                       title="Pre-market analysis"
                     />
                   )}
@@ -256,7 +256,7 @@ function ConnectedCalendar() {
                     style={{
                       background: habitRate >= 0.7
                         ? "oklch(0.78 0.16 198)"
-                        : "oklch(0.55 0.04 278)",
+                        : "oklch(0.55 0.04 28)",
                     }}
                   />
                 )}
@@ -266,9 +266,9 @@ function ConnectedCalendar() {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 mt-3 pt-3" style={{ borderTop: "1px solid oklch(0.18 0.030 278)" }}>
+        <div className="flex flex-wrap items-center gap-4 mt-3 pt-3" style={{ borderTop: "1px solid oklch(0.18 0.030 28)" }}>
           {[
-            { color: "oklch(0.62 0.26 290)", label: "Analysis" },
+            { color: "oklch(0.72 0.22 45)", label: "Analysis" },
             { color: "oklch(0.58 0.17 145)", label: "Win" },
             { color: "oklch(0.58 0.22 25)", label: "Loss" },
             { color: "oklch(0.70 0.16 72)", label: "B/E" },
@@ -286,7 +286,7 @@ function ConnectedCalendar() {
       {selectedDate && selectedSummary && (
         <div
           className="px-5 py-4 space-y-4"
-          style={{ borderTop: "1px solid oklch(0.18 0.030 278)" }}
+          style={{ borderTop: "1px solid oklch(0.18 0.030 28)" }}
         >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">
@@ -309,7 +309,7 @@ function ConnectedCalendar() {
               label="Pre-Market"
               done={selectedSummary.hasAnalysis}
               detail={selectedSummary.hasAnalysis ? `${selectedSummary.analysisCount} analysis done` : "No analysis"}
-              color="oklch(0.62 0.26 290)"
+              color="oklch(0.72 0.22 45)"
               href={`/analysis?date=${selectedDateStr}`}
             />
             <DayStoryBlock
@@ -335,7 +335,7 @@ function ConnectedCalendar() {
               detail={selectedSummary.hasStateCheck && selectedSummary.stateScore !== null
                 ? `Avg score: ${selectedSummary.stateScore}/10`
                 : "Not logged"}
-              color="oklch(0.62 0.26 290)"
+              color="oklch(0.72 0.22 45)"
               href="/self-improvement"
             />
             <DayStoryBlock
@@ -368,7 +368,7 @@ function ConnectedCalendar() {
                     key={trade.id}
                     href={`/journal/${trade.id}`}
                     className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-white/5"
-                    style={{ border: "1px solid oklch(0.18 0.030 278)" }}
+                    style={{ border: "1px solid oklch(0.18 0.030 28)" }}
                   >
                     <ResultBadge result={trade.result} />
                     <div className="flex-1 min-w-0">
@@ -420,8 +420,8 @@ function DayStoryBlock({
       <div
         className="rounded-lg p-3 transition-all hover:border-opacity-60 cursor-pointer"
         style={{
-          background: done ? `${color}0d` : "oklch(0.08 0.018 278)",
-          border: `1px solid ${done ? `${color}2a` : "oklch(0.18 0.030 278)"}`,
+          background: done ? `${color}0d` : "oklch(0.08 0.018 28)",
+          border: `1px solid ${done ? `${color}2a` : "oklch(0.18 0.030 28)"}`,
         }}
       >
         <div className="flex items-center gap-2 mb-1">
@@ -432,12 +432,12 @@ function DayStoryBlock({
             {done ? (
               <Check className="w-3 h-3" style={{ color }} />
             ) : (
-              <Icon className="w-3 h-3" style={{ color: "oklch(0.40 0.03 278)" }} />
+              <Icon className="w-3 h-3" style={{ color: "oklch(0.40 0.03 28)" }} />
             )}
           </div>
           <span
             className="text-xs font-semibold"
-            style={{ color: done ? color : "oklch(0.55 0.04 278)" }}
+            style={{ color: done ? color : "oklch(0.55 0.04 28)" }}
           >
             {label}
           </span>
@@ -469,8 +469,8 @@ export default function DashboardPage() {
       value: `${stats.average_rr}R`,
       icon: Zap,
       sub: `${stats.break_even_rate}% break-even rate`,
-      accent: "oklch(0.62 0.26 290)",
-      accentBg: "oklch(0.62 0.26 290 / 0.10)",
+      accent: "oklch(0.72 0.22 45)",
+      accentBg: "oklch(0.72 0.22 45 / 0.10)",
     },
     {
       label: "Active Accounts",
@@ -516,8 +516,8 @@ export default function DashboardPage() {
             key={label}
             className="animate-fade-up rounded-xl p-5 relative overflow-hidden"
             style={{
-              background: "oklch(0.10 0.022 278)",
-              border: "1px solid oklch(0.18 0.030 278)",
+              background: "oklch(0.10 0.022 28)",
+              border: "1px solid oklch(0.18 0.030 28)",
               animationDelay: `${i * 60}ms`,
             }}
           >
@@ -528,7 +528,7 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between mb-4">
               <p
                 className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: "oklch(0.45 0.04 278)" }}
+                style={{ color: "oklch(0.45 0.04 28)" }}
               >
                 {label}
               </p>
@@ -574,8 +574,8 @@ export default function DashboardPage() {
             <div
               className="rounded-xl p-6 text-center"
               style={{
-                background: "oklch(0.10 0.022 278)",
-                border: "1px solid oklch(0.18 0.030 278)",
+                background: "oklch(0.10 0.022 28)",
+                border: "1px solid oklch(0.18 0.030 28)",
               }}
             >
               <p className="text-sm text-muted-foreground mb-3">No accounts added yet.</p>
@@ -604,8 +604,8 @@ export default function DashboardPage() {
                 <div
                   className="rounded-xl p-4 transition-all hover:border-opacity-60 cursor-pointer"
                   style={{
-                    background: "oklch(0.10 0.022 278)",
-                    border: "1px solid oklch(0.18 0.030 278)",
+                    background: "oklch(0.10 0.022 28)",
+                    border: "1px solid oklch(0.18 0.030 28)",
                   }}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -675,13 +675,13 @@ export default function DashboardPage() {
         <div
           className="rounded-xl overflow-hidden"
           style={{
-            background: "oklch(0.10 0.022 278)",
-            border: "1px solid oklch(0.18 0.030 278)",
+            background: "oklch(0.10 0.022 28)",
+            border: "1px solid oklch(0.18 0.030 28)",
           }}
         >
           <div
             className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: "1px solid oklch(0.18 0.030 278)" }}
+            style={{ borderBottom: "1px solid oklch(0.18 0.030 28)" }}
           >
             <h2 className="text-sm font-semibold">Recent Trades</h2>
             <Link
@@ -712,7 +712,7 @@ export default function DashboardPage() {
                   href={`/journal/${trade.id}`}
                   className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.02]"
                   style={{
-                    borderBottom: i < recentTrades.length - 1 ? "1px solid oklch(0.18 0.030 278)" : undefined,
+                    borderBottom: i < recentTrades.length - 1 ? "1px solid oklch(0.18 0.030 28)" : undefined,
                   }}
                 >
                   <div className="flex items-center gap-2 shrink-0">
@@ -764,8 +764,8 @@ export default function DashboardPage() {
               <div
                 className="rounded-xl p-4 transition-all hover:-translate-y-0.5 cursor-pointer group"
                 style={{
-                  background: "oklch(0.10 0.022 278)",
-                  border: "1px solid oklch(0.18 0.030 278)",
+                  background: "oklch(0.10 0.022 28)",
+                  border: "1px solid oklch(0.18 0.030 28)",
                 }}
               >
                 <div
@@ -803,8 +803,8 @@ export default function DashboardPage() {
                 key={item.id}
                 className="rounded-xl p-4"
                 style={{
-                  background: "oklch(0.10 0.022 278)",
-                  border: "1px solid oklch(0.18 0.030 278)",
+                  background: "oklch(0.10 0.022 28)",
+                  border: "1px solid oklch(0.18 0.030 28)",
                 }}
               >
                 <div className="flex items-start gap-3">
@@ -815,7 +815,7 @@ export default function DashboardPage() {
                         ? { background: "oklch(0.58 0.22 25 / 0.15)", color: "oklch(0.58 0.22 25)" }
                         : item.impact_level === "medium"
                         ? { background: "oklch(0.70 0.16 72 / 0.15)", color: "oklch(0.70 0.16 72)" }
-                        : { background: "oklch(0.22 0.032 278)", color: "oklch(0.55 0.04 278)" }
+                        : { background: "oklch(0.22 0.032 28)", color: "oklch(0.55 0.04 28)" }
                     }
                   >
                     {item.impact_level}
@@ -825,7 +825,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-muted-foreground line-clamp-2">{item.summary}</p>
                     <p
                       className="text-xs mt-2"
-                      style={{ color: "oklch(0.40 0.03 278)" }}
+                      style={{ color: "oklch(0.40 0.03 28)" }}
                     >
                       {item.source_name} · {format(new Date(item.published_at), "MMM d, h:mm a")}
                     </p>
