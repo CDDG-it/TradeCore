@@ -67,7 +67,7 @@ export function MobileHeader() {
         <button
           onClick={() => setOpen(true)}
           className="p-2 rounded-lg transition-colors"
-          style={{ color: "oklch(0.90 0.008 28 / 60%)" }}
+          style={{ color: "oklch(0.90 0.003 28 / 60%)" }}
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -107,7 +107,7 @@ export function MobileHeader() {
           <button
             onClick={() => setOpen(false)}
             className="p-1.5 rounded-lg transition-colors"
-            style={{ color: "oklch(0.90 0.008 28 / 50%)" }}
+            style={{ color: "oklch(0.90 0.003 28 / 50%)" }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -169,7 +169,7 @@ export function MobileHeader() {
               </p>
               <p
                 className="text-xs truncate"
-                style={{ color: "oklch(0.90 0.008 28 / 35%)" }}
+                style={{ color: "oklch(0.90 0.003 28 / 35%)" }}
               >
                 {user?.email || "demo@tradinghub.app"}
               </p>
@@ -177,7 +177,7 @@ export function MobileHeader() {
             <button
               onClick={signOut}
               className="transition-colors"
-              style={{ color: "oklch(0.90 0.008 28 / 35%)" }}
+              style={{ color: "oklch(0.90 0.003 28 / 35%)" }}
             >
               <LogOut className="w-4 h-4" />
             </button>

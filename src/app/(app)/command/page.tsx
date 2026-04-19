@@ -198,7 +198,7 @@ export default function CommandCenterPage() {
         <div>
           <h1
             className="text-2xl font-bold tracking-tight"
-            style={{ color: "oklch(0.94 0.006 28)" }}
+            style={{ color: "oklch(0.94 0.002 28)" }}
           >
             Command Center
           </h1>
@@ -241,7 +241,7 @@ export default function CommandCenterPage() {
             value: `${todayTrades.length}/${maxTrades}`,
             sub: tradesRemaining > 0 ? `${tradesRemaining} remaining` : "Limit reached",
             icon: Target,
-            color: tradesRemaining > 0 ? "oklch(0.78 0.16 198)" : "oklch(0.65 0.22 25)",
+            color: tradesRemaining > 0 ? "oklch(0.72 0.22 45)" : "oklch(0.65 0.22 25)",
             pct: Math.min(100, Math.round((todayTrades.length / maxTrades) * 100)),
           },
           {
@@ -253,7 +253,7 @@ export default function CommandCenterPage() {
             icon: Shield,
             color: avgDiscipline !== null
               ? avgDiscipline >= 80 ? "oklch(0.72 0.17 145)" : "oklch(0.72 0.22 45)"
-              : "oklch(0.78 0.16 198)",
+              : "oklch(0.72 0.22 45)",
             pct: avgDiscipline ?? 0,
           },
         ].map(({ label, value, sub, icon: Icon, color, pct }) => (
@@ -319,7 +319,7 @@ export default function CommandCenterPage() {
                       : "oklch(1 0 0 / 6%)",
                     color: checklistPct === 100
                       ? "oklch(0.72 0.17 145)"
-                      : "oklch(0.90 0.008 28 / 50%)",
+                      : "oklch(0.90 0.003 28 / 50%)",
                   }}
                 >
                   {checklistDone}/{checklistTotal}
@@ -380,9 +380,9 @@ export default function CommandCenterPage() {
                           onClick={() => updateState({ market_context: { ...state.market_context, regime: r } })}
                           className="px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all"
                           style={{
-                            background: active ? "oklch(0.78 0.16 198 / 0.15)" : "oklch(1 0 0 / 5%)",
-                            color: active ? "oklch(0.78 0.16 198)" : "oklch(0.90 0.008 28 / 50%)",
-                            border: `1px solid ${active ? "oklch(0.78 0.16 198 / 0.30)" : "transparent"}`,
+                            background: active ? "oklch(0.72 0.22 45 / 0.15)" : "oklch(1 0 0 / 5%)",
+                            color: active ? "oklch(0.72 0.22 45)" : "oklch(0.90 0.003 28 / 50%)",
+                            border: `1px solid ${active ? "oklch(0.72 0.22 45 / 0.30)" : "transparent"}`,
                           }}
                         >
                           {r}
@@ -407,7 +407,7 @@ export default function CommandCenterPage() {
                           className="px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all"
                           style={{
                             background: active ? "oklch(0.72 0.22 45 / 0.15)" : "oklch(1 0 0 / 5%)",
-                            color: active ? "oklch(0.72 0.22 45)" : "oklch(0.90 0.008 28 / 50%)",
+                            color: active ? "oklch(0.72 0.22 45)" : "oklch(0.90 0.003 28 / 50%)",
                             border: `1px solid ${active ? "oklch(0.72 0.22 45 / 0.30)" : "transparent"}`,
                           }}
                         >
@@ -430,7 +430,7 @@ export default function CommandCenterPage() {
                         ? "oklch(0.72 0.17 145)"
                         : b === "bearish"
                         ? "oklch(0.65 0.22 25)"
-                        : "oklch(0.78 0.16 198)";
+                        : "oklch(0.72 0.22 45)";
                       return (
                         <button
                           key={b}
@@ -438,7 +438,7 @@ export default function CommandCenterPage() {
                           className="px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all"
                           style={{
                             background: active ? bColor + " / 0.15)" : "oklch(1 0 0 / 5%)",
-                            color: active ? bColor : "oklch(0.90 0.008 28 / 50%)",
+                            color: active ? bColor : "oklch(0.90 0.003 28 / 50%)",
                             border: `1px solid ${active ? bColor + " / 0.30)" : "transparent"}`,
                           }}
                         >
@@ -462,7 +462,7 @@ export default function CommandCenterPage() {
                       key={key}
                       onClick={() => updateState({ market_context: { ...state.market_context, [key]: !active } })}
                       className="flex items-center gap-2 text-xs transition-colors"
-                      style={{ color: active ? "oklch(0.72 0.22 45)" : "oklch(0.90 0.008 28 / 40%)" }}
+                      style={{ color: active ? "oklch(0.72 0.22 45)" : "oklch(0.90 0.003 28 / 40%)" }}
                     >
                       <div
                         className="w-4 h-4 rounded border flex items-center justify-center transition-all"
@@ -492,7 +492,7 @@ export default function CommandCenterPage() {
                 <a
                   href="/journal/new"
                   className="text-[10px] font-semibold flex items-center gap-1 transition-colors"
-                  style={{ color: "oklch(0.78 0.16 198)" }}
+                  style={{ color: "oklch(0.72 0.22 45)" }}
                 >
                   + Log Trade <ChevronRight className="w-3 h-3" />
                 </a>
@@ -548,9 +548,9 @@ export default function CommandCenterPage() {
         <div className="space-y-5">
           {/* Identity reminder */}
           {playbook && (
-            <Card className="shadow-sm" style={{ background: "oklch(0.78 0.16 198 / 0.04)", borderColor: "oklch(0.78 0.16 198 / 0.15)" }}>
+            <Card className="shadow-sm" style={{ background: "oklch(0.72 0.22 45 / 0.04)", borderColor: "oklch(0.72 0.22 45 / 0.15)" }}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: "oklch(0.78 0.16 198)" }}>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: "oklch(0.72 0.22 45)" }}>
                   <BookOpen className="w-4 h-4" />
                   My Edge
                 </CardTitle>
@@ -570,7 +570,7 @@ export default function CommandCenterPage() {
                     <div className="space-y-1">
                       {playbook.non_negotiable_rules.slice(0, 3).map((rule, i) => (
                         <div key={i} className="flex items-start gap-1.5 text-xs text-foreground/70">
-                          <span style={{ color: "oklch(0.78 0.16 198)", marginTop: 1 }}>›</span>
+                          <span style={{ color: "oklch(0.72 0.22 45)", marginTop: 1 }}>›</span>
                           {rule}
                         </div>
                       ))}
@@ -590,7 +590,7 @@ export default function CommandCenterPage() {
                 <a
                   href="/playbook"
                   className="text-[10px] font-semibold flex items-center gap-1 transition-opacity hover:opacity-80"
-                  style={{ color: "oklch(0.78 0.16 198)" }}
+                  style={{ color: "oklch(0.72 0.22 45)" }}
                 >
                   View full playbook <ChevronRight className="w-3 h-3" />
                 </a>
@@ -649,7 +649,7 @@ export default function CommandCenterPage() {
           <Card className="shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" style={{ color: atRiskAccounts.length > 0 ? "oklch(0.65 0.22 25)" : "oklch(0.78 0.16 198)" }} />
+                <AlertTriangle className="w-4 h-4" style={{ color: atRiskAccounts.length > 0 ? "oklch(0.65 0.22 25)" : "oklch(0.72 0.22 45)" }} />
                 Account Risk
               </CardTitle>
             </CardHeader>
@@ -733,7 +733,7 @@ export default function CommandCenterPage() {
                   <a
                     href="/analytics"
                     className="text-[10px] font-semibold flex items-center gap-1 mt-2 transition-opacity hover:opacity-80"
-                    style={{ color: "oklch(0.78 0.16 198)" }}
+                    style={{ color: "oklch(0.72 0.22 45)" }}
                   >
                     View full analytics <ChevronRight className="w-3 h-3" />
                   </a>

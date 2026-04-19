@@ -97,19 +97,19 @@ function NavItem({
           isActive
             ? { color: "oklch(0.72 0.22 45)" }
             : highlight
-            ? { color: "oklch(0.78 0.16 198 / 0.70)" }
+            ? { color: "oklch(0.72 0.22 45 / 0.70)" }
             : undefined
         }
       />
-      <span style={isActive ? { color: "oklch(0.94 0.006 28)" } : undefined}>
+      <span style={isActive ? { color: "oklch(0.94 0.002 28)" } : undefined}>
         {label}
       </span>
       {highlight && !isActive && (
         <span
           className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full"
           style={{
-            background: "oklch(0.78 0.16 198 / 0.15)",
-            color: "oklch(0.78 0.16 198)",
+            background: "oklch(0.72 0.22 45 / 0.15)",
+            color: "oklch(0.72 0.22 45)",
           }}
         >
           DAILY
@@ -155,7 +155,7 @@ export function Sidebar() {
             {group.label && (
               <p
                 className="text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5"
-                style={{ color: "oklch(0.90 0.008 28 / 40%)" }}
+                style={{ color: "oklch(0.90 0.003 28 / 40%)" }}
               >
                 {group.label}
               </p>
@@ -218,7 +218,7 @@ export function Sidebar() {
               </p>
               <p
                 className="text-xs truncate"
-                style={{ color: "oklch(0.90 0.008 28 / 35%)" }}
+                style={{ color: "oklch(0.90 0.003 28 / 35%)" }}
               >
                 {user?.email || "demo@tradecore.app"}
               </p>
@@ -226,7 +226,7 @@ export function Sidebar() {
             <button
               onClick={signOut}
               className="transition-colors opacity-0 group-hover:opacity-100"
-              style={{ color: "oklch(0.90 0.008 28 / 35%)" }}
+              style={{ color: "oklch(0.90 0.003 28 / 35%)" }}
               title="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />

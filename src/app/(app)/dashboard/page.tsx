@@ -131,14 +131,14 @@ function ConnectedCalendar() {
     <div
       className="rounded-xl overflow-hidden"
       style={{
-        background: "oklch(0.10 0.022 28)",
-        border: "1px solid oklch(0.18 0.030 28)",
+        background: "oklch(0.10 0.003 28)",
+        border: "1px solid oklch(0.18 0.005 28)",
       }}
     >
       {/* Calendar Header */}
       <div
         className="flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: "1px solid oklch(0.18 0.030 28)" }}
+        style={{ borderBottom: "1px solid oklch(0.18 0.005 28)" }}
       >
         <div>
           <h2 className="text-sm font-semibold">Day Overview</h2>
@@ -193,14 +193,14 @@ function ConnectedCalendar() {
                 style={{
                   opacity: isCurrentMonth ? 1 : 0.3,
                   background: isSelected
-                    ? "oklch(0.78 0.16 198 / 0.12)"
+                    ? "oklch(0.72 0.22 45 / 0.12)"
                     : isToday
-                    ? "oklch(0.78 0.16 198 / 0.06)"
+                    ? "oklch(0.72 0.22 45 / 0.06)"
                     : undefined,
                   border: isSelected
-                    ? "1px solid oklch(0.78 0.16 198 / 0.40)"
+                    ? "1px solid oklch(0.72 0.22 45 / 0.40)"
                     : isToday
-                    ? "1px solid oklch(0.78 0.16 198 / 0.20)"
+                    ? "1px solid oklch(0.72 0.22 45 / 0.20)"
                     : "1px solid transparent",
                 }}
               >
@@ -208,10 +208,10 @@ function ConnectedCalendar() {
                   className="text-xs font-medium mb-0.5"
                   style={{
                     color: isToday
-                      ? "oklch(0.78 0.16 198)"
+                      ? "oklch(0.72 0.22 45)"
                       : isCurrentMonth
-                      ? "oklch(0.70 0.04 28)"
-                      : "oklch(0.40 0.03 28)",
+                      ? "oklch(0.70 0.005 28)"
+                      : "oklch(0.40 0.005 28)",
                   }}
                 >
                   {format(day, "d")}
@@ -255,8 +255,8 @@ function ConnectedCalendar() {
                     className="absolute bottom-0.5 right-0.5 w-1 h-1 rounded-full"
                     style={{
                       background: habitRate >= 0.7
-                        ? "oklch(0.78 0.16 198)"
-                        : "oklch(0.55 0.04 28)",
+                        ? "oklch(0.72 0.22 45)"
+                        : "oklch(0.55 0.005 28)",
                     }}
                   />
                 )}
@@ -266,13 +266,13 @@ function ConnectedCalendar() {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 mt-3 pt-3" style={{ borderTop: "1px solid oklch(0.18 0.030 28)" }}>
+        <div className="flex flex-wrap items-center gap-4 mt-3 pt-3" style={{ borderTop: "1px solid oklch(0.18 0.005 28)" }}>
           {[
             { color: "oklch(0.72 0.22 45)", label: "Analysis" },
             { color: "oklch(0.58 0.17 145)", label: "Win" },
             { color: "oklch(0.58 0.22 25)", label: "Loss" },
             { color: "oklch(0.70 0.16 72)", label: "B/E" },
-            { color: "oklch(0.78 0.16 198)", label: "Habits" },
+            { color: "oklch(0.72 0.22 45)", label: "Habits" },
           ].map(({ color, label }) => (
             <div key={label} className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full" style={{ background: color }} />
@@ -286,7 +286,7 @@ function ConnectedCalendar() {
       {selectedDate && selectedSummary && (
         <div
           className="px-5 py-4 space-y-4"
-          style={{ borderTop: "1px solid oklch(0.18 0.030 28)" }}
+          style={{ borderTop: "1px solid oklch(0.18 0.005 28)" }}
         >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">
@@ -295,7 +295,7 @@ function ConnectedCalendar() {
             {isSameDay(selectedDate, today) && (
               <span
                 className="text-xs font-medium px-2 py-0.5 rounded-md"
-                style={{ background: "oklch(0.78 0.16 198 / 0.15)", color: "oklch(0.78 0.16 198)" }}
+                style={{ background: "oklch(0.72 0.22 45 / 0.15)", color: "oklch(0.72 0.22 45)" }}
               >
                 Today
               </span>
@@ -317,7 +317,7 @@ function ConnectedCalendar() {
               label="Habits"
               done={selectedSummary.habitCompleted > 0}
               detail={`${selectedSummary.habitCompleted}/${selectedSummary.habitCount} completed`}
-              color="oklch(0.78 0.16 198)"
+              color="oklch(0.72 0.22 45)"
               href="/habits"
             />
             <DayStoryBlock
@@ -368,7 +368,7 @@ function ConnectedCalendar() {
                     key={trade.id}
                     href={`/journal/${trade.id}`}
                     className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-white/5"
-                    style={{ border: "1px solid oklch(0.18 0.030 28)" }}
+                    style={{ border: "1px solid oklch(0.18 0.005 28)" }}
                   >
                     <ResultBadge result={trade.result} />
                     <div className="flex-1 min-w-0">
@@ -420,8 +420,8 @@ function DayStoryBlock({
       <div
         className="rounded-lg p-3 transition-all hover:border-opacity-60 cursor-pointer"
         style={{
-          background: done ? `${color}0d` : "oklch(0.08 0.018 28)",
-          border: `1px solid ${done ? `${color}2a` : "oklch(0.18 0.030 28)"}`,
+          background: done ? `${color}0d` : "oklch(0.08 0.003 28)",
+          border: `1px solid ${done ? `${color}2a` : "oklch(0.18 0.005 28)"}`,
         }}
       >
         <div className="flex items-center gap-2 mb-1">
@@ -432,12 +432,12 @@ function DayStoryBlock({
             {done ? (
               <Check className="w-3 h-3" style={{ color }} />
             ) : (
-              <Icon className="w-3 h-3" style={{ color: "oklch(0.40 0.03 28)" }} />
+              <Icon className="w-3 h-3" style={{ color: "oklch(0.40 0.005 28)" }} />
             )}
           </div>
           <span
             className="text-xs font-semibold"
-            style={{ color: done ? color : "oklch(0.55 0.04 28)" }}
+            style={{ color: done ? color : "oklch(0.55 0.005 28)" }}
           >
             {label}
           </span>
@@ -461,8 +461,8 @@ export default function DashboardPage() {
       value: stats.total_trades.toString(),
       icon: Activity,
       sub: `${stats.win_rate}% win rate`,
-      accent: "oklch(0.78 0.16 198)",
-      accentBg: "oklch(0.78 0.16 198 / 0.10)",
+      accent: "oklch(0.72 0.22 45)",
+      accentBg: "oklch(0.72 0.22 45 / 0.10)",
     },
     {
       label: "Avg R:R",
@@ -516,8 +516,8 @@ export default function DashboardPage() {
             key={label}
             className="animate-fade-up rounded-xl p-5 relative overflow-hidden"
             style={{
-              background: "oklch(0.10 0.022 28)",
-              border: "1px solid oklch(0.18 0.030 28)",
+              background: "oklch(0.10 0.003 28)",
+              border: "1px solid oklch(0.18 0.005 28)",
               animationDelay: `${i * 60}ms`,
             }}
           >
@@ -528,7 +528,7 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between mb-4">
               <p
                 className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: "oklch(0.45 0.04 28)" }}
+                style={{ color: "oklch(0.45 0.005 28)" }}
               >
                 {label}
               </p>
@@ -564,7 +564,7 @@ export default function DashboardPage() {
             <Link
               href="/accounts"
               className="text-xs flex items-center gap-1 transition-colors hover:opacity-80"
-              style={{ color: "oklch(0.78 0.16 198)" }}
+              style={{ color: "oklch(0.72 0.22 45)" }}
             >
               View all <ArrowRight className="w-3 h-3" />
             </Link>
@@ -574,15 +574,15 @@ export default function DashboardPage() {
             <div
               className="rounded-xl p-6 text-center"
               style={{
-                background: "oklch(0.10 0.022 28)",
-                border: "1px solid oklch(0.18 0.030 28)",
+                background: "oklch(0.10 0.003 28)",
+                border: "1px solid oklch(0.18 0.005 28)",
               }}
             >
               <p className="text-sm text-muted-foreground mb-3">No accounts added yet.</p>
               <Link
                 href="/accounts/new"
                 className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
-                style={{ color: "oklch(0.78 0.16 198)" }}
+                style={{ color: "oklch(0.72 0.22 45)" }}
               >
                 <Plus className="w-3.5 h-3.5" /> Add funded account
               </Link>
@@ -604,8 +604,8 @@ export default function DashboardPage() {
                 <div
                   className="rounded-xl p-4 transition-all hover:border-opacity-60 cursor-pointer"
                   style={{
-                    background: "oklch(0.10 0.022 28)",
-                    border: "1px solid oklch(0.18 0.030 28)",
+                    background: "oklch(0.10 0.003 28)",
+                    border: "1px solid oklch(0.18 0.005 28)",
                   }}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -620,7 +620,7 @@ export default function DashboardPage() {
                           ? { background: "oklch(0.58 0.17 145 / 0.15)", color: "oklch(0.58 0.17 145)" }
                           : acct.phase === "evaluation"
                           ? { background: "oklch(0.70 0.16 72 / 0.15)", color: "oklch(0.70 0.16 72)" }
-                          : { background: "oklch(0.78 0.16 198 / 0.15)", color: "oklch(0.78 0.16 198)" }
+                          : { background: "oklch(0.72 0.22 45 / 0.15)", color: "oklch(0.72 0.22 45)" }
                       }
                     >
                       {acct.phase}
@@ -675,19 +675,19 @@ export default function DashboardPage() {
         <div
           className="rounded-xl overflow-hidden"
           style={{
-            background: "oklch(0.10 0.022 28)",
-            border: "1px solid oklch(0.18 0.030 28)",
+            background: "oklch(0.10 0.003 28)",
+            border: "1px solid oklch(0.18 0.005 28)",
           }}
         >
           <div
             className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: "1px solid oklch(0.18 0.030 28)" }}
+            style={{ borderBottom: "1px solid oklch(0.18 0.005 28)" }}
           >
             <h2 className="text-sm font-semibold">Recent Trades</h2>
             <Link
               href="/journal"
               className="text-xs flex items-center gap-1 transition-colors hover:opacity-80"
-              style={{ color: "oklch(0.78 0.16 198)" }}
+              style={{ color: "oklch(0.72 0.22 45)" }}
             >
               View all <ArrowRight className="w-3 h-3" />
             </Link>
@@ -699,7 +699,7 @@ export default function DashboardPage() {
               <Link
                 href="/journal/new"
                 className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
-                style={{ color: "oklch(0.78 0.16 198)" }}
+                style={{ color: "oklch(0.72 0.22 45)" }}
               >
                 <Plus className="w-3.5 h-3.5" /> Log your first trade
               </Link>
@@ -712,7 +712,7 @@ export default function DashboardPage() {
                   href={`/journal/${trade.id}`}
                   className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.02]"
                   style={{
-                    borderBottom: i < recentTrades.length - 1 ? "1px solid oklch(0.18 0.030 28)" : undefined,
+                    borderBottom: i < recentTrades.length - 1 ? "1px solid oklch(0.18 0.005 28)" : undefined,
                   }}
                 >
                   <div className="flex items-center gap-2 shrink-0">
@@ -764,17 +764,17 @@ export default function DashboardPage() {
               <div
                 className="rounded-xl p-4 transition-all hover:-translate-y-0.5 cursor-pointer group"
                 style={{
-                  background: "oklch(0.10 0.022 28)",
-                  border: "1px solid oklch(0.18 0.030 28)",
+                  background: "oklch(0.10 0.003 28)",
+                  border: "1px solid oklch(0.18 0.005 28)",
                 }}
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center mb-3 transition-all group-hover:scale-110"
                   style={{
-                    background: "oklch(0.78 0.16 198 / 0.10)",
+                    background: "oklch(0.72 0.22 45 / 0.10)",
                   }}
                 >
-                  <Icon className="w-4 h-4" style={{ color: "oklch(0.78 0.16 198)" }} />
+                  <Icon className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
                 </div>
                 <p className="text-sm font-semibold">{label}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
@@ -792,7 +792,7 @@ export default function DashboardPage() {
             <Link
               href="/news"
               className="text-xs flex items-center gap-1 transition-colors hover:opacity-80"
-              style={{ color: "oklch(0.78 0.16 198)" }}
+              style={{ color: "oklch(0.72 0.22 45)" }}
             >
               All news <ArrowRight className="w-3 h-3" />
             </Link>
@@ -803,8 +803,8 @@ export default function DashboardPage() {
                 key={item.id}
                 className="rounded-xl p-4"
                 style={{
-                  background: "oklch(0.10 0.022 28)",
-                  border: "1px solid oklch(0.18 0.030 28)",
+                  background: "oklch(0.10 0.003 28)",
+                  border: "1px solid oklch(0.18 0.005 28)",
                 }}
               >
                 <div className="flex items-start gap-3">
@@ -815,7 +815,7 @@ export default function DashboardPage() {
                         ? { background: "oklch(0.58 0.22 25 / 0.15)", color: "oklch(0.58 0.22 25)" }
                         : item.impact_level === "medium"
                         ? { background: "oklch(0.70 0.16 72 / 0.15)", color: "oklch(0.70 0.16 72)" }
-                        : { background: "oklch(0.22 0.032 28)", color: "oklch(0.55 0.04 28)" }
+                        : { background: "oklch(0.22 0.005 28)", color: "oklch(0.55 0.005 28)" }
                     }
                   >
                     {item.impact_level}
@@ -825,7 +825,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-muted-foreground line-clamp-2">{item.summary}</p>
                     <p
                       className="text-xs mt-2"
-                      style={{ color: "oklch(0.40 0.03 28)" }}
+                      style={{ color: "oklch(0.40 0.005 28)" }}
                     >
                       {item.source_name} · {format(new Date(item.published_at), "MMM d, h:mm a")}
                     </p>

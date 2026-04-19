@@ -21,9 +21,9 @@ const features = [
     description:
       "Log every trade with R:R, psychology notes, and screenshots. Build a systematic record of your edge.",
     accentClass: "text-ice",
-    glowStyle: { background: "oklch(0.78 0.16 198 / 0.10)" },
-    borderStyle: { borderColor: "oklch(0.78 0.16 198 / 0.20)" },
-    iconGlowStyle: { color: "oklch(0.78 0.16 198)" },
+    glowStyle: { background: "oklch(0.72 0.22 45 / 0.10)" },
+    borderStyle: { borderColor: "oklch(0.72 0.22 45 / 0.20)" },
+    iconGlowStyle: { color: "oklch(0.72 0.22 45)" },
     href: "/journal",
   },
   {
@@ -32,9 +32,9 @@ const features = [
     description:
       "Visualise win rate, R:R distribution, and equity curve. Know exactly where your edge lives.",
     accentClass: "text-ice",
-    glowStyle: { background: "oklch(0.78 0.16 198 / 0.10)" },
-    borderStyle: { borderColor: "oklch(0.78 0.16 198 / 0.20)" },
-    iconGlowStyle: { color: "oklch(0.78 0.16 198)" },
+    glowStyle: { background: "oklch(0.72 0.22 45 / 0.10)" },
+    borderStyle: { borderColor: "oklch(0.72 0.22 45 / 0.20)" },
+    iconGlowStyle: { color: "oklch(0.72 0.22 45)" },
     href: "/analytics",
   },
   {
@@ -80,13 +80,13 @@ function PreviewFrame({ children, title, icon: Icon, color }: {
     <div
       className="rounded-2xl overflow-hidden"
       style={{
-        background: "oklch(0.10 0.016 28)",
-        border: "1px solid oklch(0.20 0.022 28)",
+        background: "oklch(0.10 0.003 28)",
+        border: "1px solid oklch(0.20 0.005 28)",
       }}
     >
       <div
         className="flex items-center gap-2.5 px-4 py-3"
-        style={{ borderBottom: "1px solid oklch(0.18 0.020 28)" }}
+        style={{ borderBottom: "1px solid oklch(0.18 0.005 28)" }}
       >
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -94,13 +94,13 @@ function PreviewFrame({ children, title, icon: Icon, color }: {
         >
           <Icon className="w-3.5 h-3.5" style={{ color }} />
         </div>
-        <span className="text-sm font-semibold" style={{ color: "oklch(0.90 0.008 28)" }}>
+        <span className="text-sm font-semibold" style={{ color: "oklch(0.90 0.003 28)" }}>
           {title}
         </span>
         <div className="ml-auto flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full" style={{ background: "oklch(0.25 0.025 28)" }} />
-          <div className="w-2.5 h-2.5 rounded-full" style={{ background: "oklch(0.25 0.025 28)" }} />
-          <div className="w-2.5 h-2.5 rounded-full" style={{ background: "oklch(0.25 0.025 28)" }} />
+          <div className="w-2.5 h-2.5 rounded-full" style={{ background: "oklch(0.25 0.005 28)" }} />
+          <div className="w-2.5 h-2.5 rounded-full" style={{ background: "oklch(0.25 0.005 28)" }} />
+          <div className="w-2.5 h-2.5 rounded-full" style={{ background: "oklch(0.25 0.005 28)" }} />
         </div>
       </div>
       <div className="p-4">{children}</div>
@@ -117,11 +117,11 @@ function TradeJournalPreview() {
   ];
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-2 px-2 pb-1.5" style={{ borderBottom: "1px solid oklch(0.18 0.020 28)" }}>
-        <span className="text-xs font-medium w-9" style={{ color: "oklch(0.45 0.04 28)" }}>Sym</span>
-        <span className="flex-1 text-xs font-medium" style={{ color: "oklch(0.45 0.04 28)" }}>Setup</span>
-        <span className="text-xs font-medium w-12 text-right" style={{ color: "oklch(0.45 0.04 28)" }}>R:R</span>
-        <span className="text-xs font-medium w-14 text-right" style={{ color: "oklch(0.45 0.04 28)" }}>P&L</span>
+      <div className="flex items-center gap-2 px-2 pb-1.5" style={{ borderBottom: "1px solid oklch(0.18 0.005 28)" }}>
+        <span className="text-xs font-medium w-9" style={{ color: "oklch(0.45 0.005 28)" }}>Sym</span>
+        <span className="flex-1 text-xs font-medium" style={{ color: "oklch(0.45 0.005 28)" }}>Setup</span>
+        <span className="text-xs font-medium w-12 text-right" style={{ color: "oklch(0.45 0.005 28)" }}>R:R</span>
+        <span className="text-xs font-medium w-14 text-right" style={{ color: "oklch(0.45 0.005 28)" }}>P&L</span>
       </div>
       {trades.map((t, i) => (
         <div
@@ -132,8 +132,8 @@ function TradeJournalPreview() {
             border: `1px solid ${t.result === "win" ? "oklch(0.58 0.17 145 / 0.12)" : "oklch(0.58 0.22 25 / 0.12)"}`,
           }}
         >
-          <span className="text-xs font-bold w-9" style={{ color: "oklch(0.78 0.16 198)" }}>{t.symbol}</span>
-          <span className="flex-1 text-xs" style={{ color: "oklch(0.60 0.04 28)" }}>{t.setup}</span>
+          <span className="text-xs font-bold w-9" style={{ color: "oklch(0.72 0.22 45)" }}>{t.symbol}</span>
+          <span className="flex-1 text-xs" style={{ color: "oklch(0.60 0.005 28)" }}>{t.setup}</span>
           <span
             className="text-xs font-semibold w-12 text-right tabular-nums"
             style={{ color: t.result === "win" ? "oklch(0.58 0.17 145)" : "oklch(0.58 0.22 25)" }}
@@ -159,21 +159,21 @@ function AnalyticsPreview() {
       <div className="grid grid-cols-3 gap-2">
         {[
           { label: "Win Rate", value: "67%", color: "oklch(0.58 0.17 145)" },
-          { label: "Avg R:R", value: "2.4R", color: "oklch(0.78 0.16 198)" },
+          { label: "Avg R:R", value: "2.4R", color: "oklch(0.72 0.22 45)" },
           { label: "Best Trade", value: "4.8R", color: "oklch(0.72 0.22 45)" },
         ].map(({ label, value, color }) => (
           <div
             key={label}
             className="rounded-xl p-3 text-center"
-            style={{ background: "oklch(0.07 0.022 28)", border: "1px solid oklch(0.18 0.020 28)" }}
+            style={{ background: "oklch(0.07 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
           >
             <p className="text-base font-black tabular-nums" style={{ color }}>{value}</p>
-            <p className="text-xs mt-0.5" style={{ color: "oklch(0.45 0.04 28)" }}>{label}</p>
+            <p className="text-xs mt-0.5" style={{ color: "oklch(0.45 0.005 28)" }}>{label}</p>
           </div>
         ))}
       </div>
       <div>
-        <p className="text-xs mb-2" style={{ color: "oklch(0.45 0.04 28)" }}>Equity curve — last 10 trades</p>
+        <p className="text-xs mb-2" style={{ color: "oklch(0.45 0.005 28)" }}>Equity curve — last 10 trades</p>
         <div className="flex items-end gap-1 h-14">
           {bars.map((h, i) => (
             <div
@@ -196,8 +196,8 @@ function AnalyticsPreview() {
 function SelfImprovementPreview() {
   const metrics = [
     { label: "Mood", value: 8, color: "oklch(0.72 0.22 45)" },
-    { label: "Energy", value: 7, color: "oklch(0.78 0.16 198)" },
-    { label: "Focus", value: 9, color: "oklch(0.78 0.16 198)" },
+    { label: "Energy", value: 7, color: "oklch(0.72 0.22 45)" },
+    { label: "Focus", value: 9, color: "oklch(0.72 0.22 45)" },
     { label: "Stress", value: 3, color: "oklch(0.58 0.17 145)", invert: true },
   ];
   const habits = [
@@ -208,12 +208,12 @@ function SelfImprovementPreview() {
   ];
   return (
     <div className="space-y-3">
-      <p className="text-xs font-medium" style={{ color: "oklch(0.45 0.04 28)" }}>Today's tracker</p>
+      <p className="text-xs font-medium" style={{ color: "oklch(0.45 0.005 28)" }}>Today's tracker</p>
       <div className="space-y-2">
         {metrics.map(({ label, value, color }) => (
           <div key={label} className="space-y-1">
             <div className="flex justify-between">
-              <span className="text-xs" style={{ color: "oklch(0.55 0.04 28)" }}>{label}</span>
+              <span className="text-xs" style={{ color: "oklch(0.55 0.005 28)" }}>{label}</span>
               <span className="text-xs font-bold" style={{ color }}>{value}</span>
             </div>
             <div className="flex gap-0.5">
@@ -224,7 +224,7 @@ function SelfImprovementPreview() {
                   style={{
                     background: i < value
                       ? color
-                      : "oklch(0.20 0.022 28)",
+                      : "oklch(0.20 0.005 28)",
                   }}
                 />
               ))}
@@ -232,21 +232,21 @@ function SelfImprovementPreview() {
           </div>
         ))}
       </div>
-      <div style={{ borderTop: "1px solid oklch(0.18 0.020 28)", paddingTop: "10px" }}>
-        <p className="text-xs font-medium mb-2" style={{ color: "oklch(0.45 0.04 28)" }}>Habits — 3/4 done</p>
+      <div style={{ borderTop: "1px solid oklch(0.18 0.005 28)", paddingTop: "10px" }}>
+        <p className="text-xs font-medium mb-2" style={{ color: "oklch(0.45 0.005 28)" }}>Habits — 3/4 done</p>
         <div className="space-y-1">
           {habits.map(({ label, done }) => (
             <div key={label} className="flex items-center gap-2">
               <div
                 className="w-4 h-4 rounded-md shrink-0 flex items-center justify-center"
                 style={{
-                  background: done ? "oklch(0.58 0.17 145)" : "oklch(0.14 0.018 28)",
-                  border: done ? "none" : "1px solid oklch(0.25 0.025 28)",
+                  background: done ? "oklch(0.58 0.17 145)" : "oklch(0.14 0.004 28)",
+                  border: done ? "none" : "1px solid oklch(0.25 0.005 28)",
                 }}
               >
                 {done && <Check className="w-2.5 h-2.5 text-white" />}
               </div>
-              <span className="text-xs" style={{ color: done ? "oklch(0.80 0.008 28)" : "oklch(0.45 0.04 28)" }}>
+              <span className="text-xs" style={{ color: done ? "oklch(0.80 0.003 28)" : "oklch(0.45 0.005 28)" }}>
                 {label}
               </span>
             </div>
@@ -290,7 +290,7 @@ function MarketNewsPreview() {
         <div
           key={headline}
           className="rounded-xl p-3"
-          style={{ background: "oklch(0.07 0.022 28)", border: "1px solid oklch(0.18 0.020 28)" }}
+          style={{ background: "oklch(0.07 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
         >
           <div className="flex items-center gap-2 mb-1.5">
             <span
@@ -299,12 +299,12 @@ function MarketNewsPreview() {
             >
               {impact}
             </span>
-            <span className="text-xs ml-auto" style={{ color: "oklch(0.40 0.03 28)" }}>{time}</span>
+            <span className="text-xs ml-auto" style={{ color: "oklch(0.40 0.005 28)" }}>{time}</span>
           </div>
-          <p className="text-xs font-medium leading-snug" style={{ color: "oklch(0.80 0.008 28)" }}>
+          <p className="text-xs font-medium leading-snug" style={{ color: "oklch(0.80 0.003 28)" }}>
             {headline}
           </p>
-          <p className="text-xs mt-1" style={{ color: "oklch(0.40 0.03 28)" }}>{source}</p>
+          <p className="text-xs mt-1" style={{ color: "oklch(0.40 0.005 28)" }}>{source}</p>
         </div>
       ))}
     </div>
@@ -321,7 +321,7 @@ export default function LandingPage() {
         <div
           className="absolute -top-48 -left-48 w-[700px] h-[700px] rounded-full"
           style={{
-            background: "radial-gradient(circle, oklch(0.78 0.16 198 / 0.08), transparent 65%)",
+            background: "radial-gradient(circle, oklch(0.72 0.22 45 / 0.08), transparent 65%)",
           }}
         />
         <div
@@ -334,7 +334,7 @@ export default function LandingPage() {
           className="absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage:
-              "linear-gradient(oklch(0.78 0.16 198 / 0.4) 1px, transparent 1px), linear-gradient(90deg, oklch(0.78 0.16 198 / 0.4) 1px, transparent 1px)",
+              "linear-gradient(oklch(0.72 0.22 45 / 0.4) 1px, transparent 1px), linear-gradient(90deg, oklch(0.72 0.22 45 / 0.4) 1px, transparent 1px)",
             backgroundSize: "64px 64px",
           }}
         />
@@ -344,7 +344,7 @@ export default function LandingPage() {
       <header
         className="relative z-10 px-6 py-4 sticky top-0"
         style={{
-          background: "oklch(0.07 0.022 28 / 0.85)",
+          background: "oklch(0.07 0.003 28 / 0.85)",
           borderBottom: "1px solid oklch(1 0 0 / 6%)",
           backdropFilter: "blur(16px)",
         }}
@@ -364,9 +364,9 @@ export default function LandingPage() {
               href="/dashboard"
               className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px"
               style={{
-                background: "oklch(0.78 0.16 198)",
-                color: "oklch(0.07 0.022 28)",
-                boxShadow: "0 4px 16px oklch(0.78 0.16 198 / 0.30)",
+                background: "oklch(0.72 0.22 45)",
+                color: "oklch(0.07 0.003 28)",
+                boxShadow: "0 4px 16px oklch(0.72 0.22 45 / 0.30)",
               }}
             >
               Open app
@@ -403,7 +403,7 @@ export default function LandingPage() {
             className="animate-fade-up text-7xl sm:text-8xl font-extrabold tracking-tight leading-none mb-5"
             style={{ animationDelay: "160ms" }}
           >
-            <span style={{ color: "oklch(0.94 0.006 28)" }}>Trade</span>
+            <span style={{ color: "oklch(0.94 0.002 28)" }}>Trade</span>
             <span className="animate-shimmer-gold">core</span>
           </h1>
 
@@ -411,13 +411,13 @@ export default function LandingPage() {
             className="animate-fade-up text-xl font-light mb-4"
             style={{
               animationDelay: "240ms",
-              color: "oklch(0.72 0.06 28)",
+              color: "oklch(0.72 0.005 28)",
             }}
           >
             Where self-improvement{" "}
             <span
               className="font-semibold"
-              style={{ color: "oklch(0.94 0.006 28)" }}
+              style={{ color: "oklch(0.94 0.002 28)" }}
             >
               meets trading.
             </span>
@@ -427,7 +427,7 @@ export default function LandingPage() {
             className="animate-fade-up text-base max-w-lg mx-auto mb-14 leading-relaxed"
             style={{
               animationDelay: "300ms",
-              color: "oklch(0.55 0.04 28)",
+              color: "oklch(0.55 0.005 28)",
             }}
           >
             A premium performance platform for serious traders. Discipline, habits, mindset, and execution — unified in one focused workspace.
@@ -441,9 +441,9 @@ export default function LandingPage() {
               href="/dashboard"
               className="inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-sm font-semibold transition-all hover:-translate-y-0.5"
               style={{
-                background: "oklch(0.78 0.16 198)",
-                color: "oklch(0.07 0.022 28)",
-                boxShadow: "0 4px 24px oklch(0.78 0.16 198 / 0.35)",
+                background: "oklch(0.72 0.22 45)",
+                color: "oklch(0.07 0.003 28)",
+                boxShadow: "0 4px 24px oklch(0.72 0.22 45 / 0.35)",
               }}
             >
               Enter dashboard
@@ -454,7 +454,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-sm font-medium transition-all hover:border-opacity-60"
               style={{
                 border: "1px solid oklch(1 0 0 / 12%)",
-                color: "oklch(0.65 0.04 28)",
+                color: "oklch(0.65 0.005 28)",
                 background: "oklch(1 0 0 / 3%)",
               }}
             >
@@ -473,11 +473,11 @@ export default function LandingPage() {
           >
             <h2 className="text-4xl font-bold tracking-tight mb-3 leading-tight">
               The complete system.{" "}
-              <span style={{ color: "oklch(0.40 0.04 28)", fontWeight: 400 }}>Built for serious traders.</span>
+              <span style={{ color: "oklch(0.40 0.005 28)", fontWeight: 400 }}>Built for serious traders.</span>
             </h2>
             <p
               className="text-sm max-w-sm mx-auto"
-              style={{ color: "oklch(0.50 0.04 28)" }}
+              style={{ color: "oklch(0.50 0.005 28)" }}
             >
               Built around the actual workflow of a disciplined trader — from pre-market to post-trade review.
             </p>
@@ -490,8 +490,8 @@ export default function LandingPage() {
                 href={href}
                 className="animate-fade-up group rounded-2xl p-6 block relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
                 style={{
-                  background: "oklch(0.10 0.022 28)",
-                  border: "1px solid oklch(0.18 0.030 28)",
+                  background: "oklch(0.10 0.003 28)",
+                  border: "1px solid oklch(0.18 0.005 28)",
                   animationDelay: `${560 + i * 60}ms`,
                 }}
               >
@@ -513,13 +513,13 @@ export default function LandingPage() {
                 </div>
                 <h3
                   className="relative font-bold text-sm mb-2.5 transition-colors"
-                  style={{ color: "oklch(0.90 0.008 28)" }}
+                  style={{ color: "oklch(0.90 0.003 28)" }}
                 >
                   {title}
                 </h3>
                 <p
                   className="relative text-xs leading-relaxed mb-5"
-                  style={{ color: "oklch(0.50 0.04 28)" }}
+                  style={{ color: "oklch(0.50 0.005 28)" }}
                 >
                   {description}
                 </p>
@@ -541,17 +541,17 @@ export default function LandingPage() {
             <h2 className="text-3xl font-bold tracking-tight mb-3">
               A real look inside.
             </h2>
-            <p className="text-sm max-w-sm mx-auto" style={{ color: "oklch(0.50 0.04 28)" }}>
+            <p className="text-sm max-w-sm mx-auto" style={{ color: "oklch(0.50 0.005 28)" }}>
               Here's what your workspace looks like once you're set up.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-5">
-            <PreviewFrame title="Trade Journal" icon={BookOpen} color="oklch(0.78 0.16 198)">
+            <PreviewFrame title="Trade Journal" icon={BookOpen} color="oklch(0.72 0.22 45)">
               <TradeJournalPreview />
             </PreviewFrame>
 
-            <PreviewFrame title="Performance Analytics" icon={BarChart2} color="oklch(0.78 0.16 198)">
+            <PreviewFrame title="Performance Analytics" icon={BarChart2} color="oklch(0.72 0.22 45)">
               <AnalyticsPreview />
             </PreviewFrame>
 
@@ -576,7 +576,7 @@ export default function LandingPage() {
         </div>
         <p
           className="text-xs"
-          style={{ color: "oklch(0.38 0.03 28)" }}
+          style={{ color: "oklch(0.38 0.005 28)" }}
         >
           Premium trading productivity for futures and commodities traders.
         </p>

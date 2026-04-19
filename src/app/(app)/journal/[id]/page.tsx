@@ -50,7 +50,7 @@ const VOLATILITY_LABELS: Record<string, string> = {
 
 const REGIME_COLORS: Record<string, string> = {
   trending: "oklch(0.72 0.17 145)",
-  ranging: "oklch(0.78 0.16 198)",
+  ranging: "oklch(0.72 0.22 45)",
   choppy: "oklch(0.72 0.22 45)",
 };
 
@@ -244,7 +244,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
                   {context.regime && (
                     <ContextBadge
                       label={REGIME_LABELS[context.regime] ?? context.regime}
-                      color={REGIME_COLORS[context.regime] ?? "oklch(0.78 0.16 198)"}
+                      color={REGIME_COLORS[context.regime] ?? "oklch(0.72 0.22 45)"}
                     />
                   )}
                   {context.volatility && (
@@ -261,7 +261,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
                           ? "oklch(0.72 0.17 145)"
                           : context.htf_bias === "bearish"
                           ? "oklch(0.65 0.22 25)"
-                          : "oklch(0.78 0.16 198)"
+                          : "oklch(0.72 0.22 45)"
                       }
                     />
                   )}
@@ -285,7 +285,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
                           className="h-1.5 flex-1 rounded-full"
                           style={{
                             background: pip <= context.confidence
-                              ? "oklch(0.78 0.16 198)"
+                              ? "oklch(0.72 0.22 45)"
                               : "oklch(1 0 0 / 8%)",
                           }}
                         />
@@ -430,8 +430,8 @@ function TradeDayContext({ tradeDate }: { tradeDate: string }) {
       <div
         className="rounded-xl p-5"
         style={{
-          background: "oklch(0.10 0.022 28)",
-          border: "1px solid oklch(0.18 0.030 28)",
+          background: "oklch(0.10 0.003 28)",
+          border: "1px solid oklch(0.18 0.005 28)",
         }}
       >
         <div className="flex items-center gap-2.5 mb-3">
@@ -445,7 +445,7 @@ function TradeDayContext({ tradeDate }: { tradeDate: string }) {
           <Link
             href="/self-improvement"
             className="ml-auto text-xs flex items-center gap-1 transition-opacity hover:opacity-70"
-            style={{ color: "oklch(0.78 0.16 198)" }}
+            style={{ color: "oklch(0.72 0.22 45)" }}
           >
             Add context <ExternalLink className="w-3 h-3" />
           </Link>
@@ -461,13 +461,13 @@ function TradeDayContext({ tradeDate }: { tradeDate: string }) {
     <div
       className="rounded-xl overflow-hidden"
       style={{
-        background: "oklch(0.10 0.022 28)",
+        background: "oklch(0.10 0.003 28)",
         border: "1px solid oklch(0.72 0.22 45 / 0.20)",
       }}
     >
       <div
         className="flex items-center gap-2.5 px-5 py-3.5"
-        style={{ borderBottom: "1px solid oklch(0.18 0.030 28)" }}
+        style={{ borderBottom: "1px solid oklch(0.18 0.005 28)" }}
       >
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center"
@@ -479,7 +479,7 @@ function TradeDayContext({ tradeDate }: { tradeDate: string }) {
         <Link
           href="/self-improvement"
           className="ml-auto text-xs flex items-center gap-1 transition-opacity hover:opacity-70"
-          style={{ color: "oklch(0.78 0.16 198)" }}
+          style={{ color: "oklch(0.72 0.22 45)" }}
         >
           Self-Improvement <ExternalLink className="w-3 h-3" />
         </Link>
@@ -489,7 +489,7 @@ function TradeDayContext({ tradeDate }: { tradeDate: string }) {
         {stateCheck && (
           <div
             className="rounded-lg p-3"
-            style={{ background: "oklch(0.08 0.018 28)", border: "1px solid oklch(0.18 0.030 28)" }}
+            style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
           >
             <div className="flex items-center gap-2 mb-2">
               <Brain className="w-3.5 h-3.5" style={{ color: "oklch(0.72 0.22 45)" }} />
@@ -523,7 +523,7 @@ function TradeDayContext({ tradeDate }: { tradeDate: string }) {
         {sleepData && (
           <div
             className="rounded-lg p-3"
-            style={{ background: "oklch(0.08 0.018 28)", border: "1px solid oklch(0.18 0.030 28)" }}
+            style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
           >
             <div className="flex items-center gap-2 mb-2">
               <Moon className="w-3.5 h-3.5" style={{ color: "oklch(0.58 0.17 145)" }} />
@@ -547,7 +547,7 @@ function TradeDayContext({ tradeDate }: { tradeDate: string }) {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">Movement</span>
-                <span className="text-xs font-bold" style={{ color: sleepData.training_movement ? "oklch(0.58 0.17 145)" : "oklch(0.55 0.04 28)" }}>
+                <span className="text-xs font-bold" style={{ color: sleepData.training_movement ? "oklch(0.58 0.17 145)" : "oklch(0.55 0.005 28)" }}>
                   {sleepData.training_movement ? "Done" : "Skipped"}
                 </span>
               </div>
@@ -558,11 +558,11 @@ function TradeDayContext({ tradeDate }: { tradeDate: string }) {
         {habits.length > 0 && (
           <div
             className="rounded-lg p-3"
-            style={{ background: "oklch(0.08 0.018 28)", border: "1px solid oklch(0.18 0.030 28)" }}
+            style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
           >
             <div className="flex items-center gap-2 mb-2">
-              <CheckSquare className="w-3.5 h-3.5" style={{ color: "oklch(0.78 0.16 198)" }} />
-              <span className="text-xs font-semibold" style={{ color: "oklch(0.78 0.16 198)" }}>Habits</span>
+              <CheckSquare className="w-3.5 h-3.5" style={{ color: "oklch(0.72 0.22 45)" }} />
+              <span className="text-xs font-semibold" style={{ color: "oklch(0.72 0.22 45)" }}>Habits</span>
               <span
                 className="ml-auto text-xs font-bold"
                 style={{
@@ -584,7 +584,7 @@ function TradeDayContext({ tradeDate }: { tradeDate: string }) {
                     <span className="text-xs">{h.icon}</span>
                     <span
                       className="text-xs flex-1 truncate"
-                      style={{ color: done ? "oklch(0.94 0.006 28)" : "oklch(0.40 0.03 28)" }}
+                      style={{ color: done ? "oklch(0.94 0.002 28)" : "oklch(0.40 0.005 28)" }}
                     >
                       {h.name}
                     </span>

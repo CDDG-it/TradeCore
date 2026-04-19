@@ -133,41 +133,41 @@
 
 /* ── Light mode overrides ────────────────────────── */
 html.light {
-  --background: oklch(0.97 0.005 28);
-  --foreground: oklch(0.12 0.014 28);
+  --background: oklch(0.97 0.002 28);
+  --foreground: oklch(0.12 0.003 28);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.12 0.014 28);
+  --card-foreground: oklch(0.12 0.003 28);
 
-  --popover: oklch(0.99 0.003 28);
-  --popover-foreground: oklch(0.12 0.014 28);
+  --popover: oklch(0.99 0.002 28);
+  --popover-foreground: oklch(0.12 0.003 28);
 
   --primary: oklch(0.72 0.22 45);
-  --primary-foreground: oklch(0.98 0.003 28);
+  --primary-foreground: oklch(0.98 0.002 28);
 
-  --secondary: oklch(0.92 0.008 28);
-  --secondary-foreground: oklch(0.22 0.02 28);
+  --secondary: oklch(0.92 0.003 28);
+  --secondary-foreground: oklch(0.22 0.005 28);
 
-  --muted: oklch(0.93 0.007 28);
-  --muted-foreground: oklch(0.48 0.05 28);
+  --muted: oklch(0.93 0.003 28);
+  --muted-foreground: oklch(0.48 0.005 28);
 
-  --accent: oklch(0.91 0.01 28);
-  --accent-foreground: oklch(0.18 0.02 28);
+  --accent: oklch(0.91 0.003 28);
+  --accent-foreground: oklch(0.18 0.005 28);
 
   --destructive: oklch(0.52 0.22 25);
   --success: oklch(0.46 0.17 145);
-  --success-foreground: oklch(0.98 0.003 28);
+  --success-foreground: oklch(0.98 0.002 28);
   --warning: oklch(0.56 0.16 72);
-  --warning-foreground: oklch(0.98 0.003 28);
+  --warning-foreground: oklch(0.98 0.002 28);
 
   --gold: oklch(0.84 0.18 80);
-  --gold-foreground: oklch(0.98 0.003 28);
+  --gold-foreground: oklch(0.98 0.002 28);
 
   --ice: oklch(0.72 0.22 45);
-  --ice-foreground: oklch(0.98 0.003 28);
+  --ice-foreground: oklch(0.98 0.002 28);
 
-  --border: oklch(0.87 0.012 28);
-  --input: oklch(0.94 0.007 28);
+  --border: oklch(0.87 0.003 28);
+  --input: oklch(0.94 0.002 28);
   --ring: oklch(0.72 0.22 45);
 
   --chart-1: oklch(0.72 0.22 45);
@@ -177,28 +177,28 @@ html.light {
   --chart-5: oklch(0.46 0.17 145);
 
   /* sidebar */
-  --sidebar: oklch(0.94 0.010 28);
-  --sidebar-foreground: oklch(0.18 0.018 28);
+  --sidebar: oklch(0.94 0.002 28);
+  --sidebar-foreground: oklch(0.18 0.005 28);
   --sidebar-primary: oklch(0.84 0.18 80);
-  --sidebar-primary-foreground: oklch(0.98 0.003 28);
-  --sidebar-accent: oklch(0.87 0.012 28);
-  --sidebar-accent-foreground: oklch(0.12 0.014 28);
+  --sidebar-primary-foreground: oklch(0.98 0.002 28);
+  --sidebar-accent: oklch(0.87 0.003 28);
+  --sidebar-accent-foreground: oklch(0.12 0.003 28);
   --sidebar-border: oklch(0 0 0 / 6%);
   --sidebar-ring: oklch(0.84 0.18 80);
 
   /* sidebar helpers */
   --sidebar-separator: oklch(0 0 0 / 6%);
-  --sidebar-label-muted: oklch(0.20 0.018 28 / 30%);
-  --sidebar-text-active: oklch(0.10 0.014 28);
-  --sidebar-meta: oklch(0.20 0.018 28 / 40%);
+  --sidebar-label-muted: oklch(0.20 0.005 28 / 30%);
+  --sidebar-text-active: oklch(0.10 0.003 28);
+  --sidebar-meta: oklch(0.20 0.005 28 / 40%);
 }
 
 /* Light mode scrollbar */
 html.light ::-webkit-scrollbar-thumb {
-  background: oklch(0.75 0.015 28);
+  background: oklch(0.75 0.004 28);
 }
 html.light ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.65 0.02 28);
+  background: oklch(0.65 0.004 28);
 }
 
 /* Light mode — don't invert calendar picker */
@@ -233,11 +233,11 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.22 0.032 28);
+    background: oklch(0.22 0.005 28);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.35 0.03 28);
+    background: oklch(0.35 0.005 28);
   }
 }
 
@@ -272,8 +272,8 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
   /* Premium stat card */
   .stat-card {
-    background: oklch(0.10 0.022 28);
-    border: 1px solid oklch(0.18 0.030 28);
+    background: oklch(0.10 0.003 28);
+    border: 1px solid oklch(0.18 0.005 28);
     border-radius: var(--radius);
     position: relative;
     overflow: hidden;
@@ -332,7 +332,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   /* Streak badge */
   .streak-badge {
     background: linear-gradient(135deg, oklch(0.72 0.22 45) 0%, oklch(0.88 0.20 75) 100%);
-    color: oklch(0.07 0.022 28);
+    color: oklch(0.07 0.003 28);
     border-radius: 9999px;
     font-weight: 700;
     font-size: 0.75rem;
@@ -477,7 +477,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: oklch(0.04 0.01 28 / 0.94);
+  background: oklch(0.04 0.002 28 / 0.94);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
