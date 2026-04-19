@@ -12,10 +12,8 @@ import {
   Settings,
   User,
   LogOut,
-  CheckSquare,
   Compass,
   Brain,
-  BookMarked,
   Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -79,38 +77,33 @@ function NavItem({
       href={href}
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 relative",
+        "font-body flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 relative group/nav",
         isActive
-          ? "bg-sidebar-accent text-sidebar-foreground"
-          : "text-sidebar-foreground/65 hover:text-sidebar-foreground/90 hover:bg-sidebar-accent/60"
+          ? "liquid-glass text-white"
+          : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]"
       )}
     >
       {isActive && (
         <span
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-[2.5px] h-4 rounded-r-full"
           style={{ background: "oklch(0.72 0.22 45)" }}
         />
       )}
       <Icon
-        className={cn("w-4 h-4 shrink-0 transition-colors")}
+        className="w-[15px] h-[15px] shrink-0 transition-colors"
         style={
           isActive
-            ? { color: "oklch(0.72 0.22 45)" }
+            ? { color: "#F97316" }
             : highlight
-            ? { color: "oklch(0.72 0.22 45 / 0.70)" }
+            ? { color: "rgba(249,115,22,0.55)" }
             : undefined
         }
       />
-      <span style={isActive ? { color: "oklch(0.94 0.002 28)" } : undefined}>
-        {label}
-      </span>
+      <span className={isActive ? "text-white/90" : ""}>{label}</span>
       {highlight && !isActive && (
         <span
-          className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-          style={{
-            background: "oklch(0.72 0.22 45 / 0.15)",
-            color: "oklch(0.72 0.22 45)",
-          }}
+          className="ml-auto text-[9px] font-bold tracking-wide px-1.5 py-0.5 rounded-full"
+          style={{ background: "rgba(249,115,22,0.14)", color: "#F97316" }}
         >
           DAILY
         </span>
@@ -134,14 +127,14 @@ export function Sidebar() {
     <aside
       className="fixed left-0 top-0 h-screen w-60 flex flex-col z-40"
       style={{
-        background: "var(--sidebar)",
-        borderRight: "1px solid oklch(1 0 0 / 5%)",
+        background: "oklch(0.055 0.002 28)",
+        borderRight: "1px solid rgba(255,255,255,0.05)",
       }}
     >
       {/* Logo */}
       <div
         className="h-14 flex items-center px-5 shrink-0"
-        style={{ borderBottom: "1px solid oklch(1 0 0 / 5%)" }}
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
       >
         <Link href="/" className="hover:opacity-80 transition-opacity">
           <Logo variant="dark" size={26} />
@@ -149,14 +142,11 @@ export function Sidebar() {
       </div>
 
       {/* Main nav */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-4">
+      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-5">
         {navGroups.map((group) => (
           <div key={group.label ?? "primary"}>
             {group.label && (
-              <p
-                className="text-[9px] font-bold uppercase tracking-widest px-3 mb-1.5"
-                style={{ color: "oklch(0.90 0.003 28 / 40%)" }}
-              >
+              <p className="font-body text-[9px] font-semibold uppercase tracking-[0.14em] px-3 mb-2 text-white/25">
                 {group.label}
               </p>
             )}
@@ -166,15 +156,14 @@ export function Sidebar() {
                   pathname === item.href || pathname.startsWith(item.href + "/");
                 const highlight = "highlight" in item ? item.highlight : false;
                 return (
-                  <div key={item.href} className="relative">
-                    <NavItem
-                      href={item.href}
-                      label={item.label}
-                      icon={item.icon}
-                      isActive={isActive}
-                      highlight={highlight}
-                    />
-                  </div>
+                  <NavItem
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    isActive={isActive}
+                    highlight={highlight}
+                  />
                 );
               })}
             </div>
@@ -185,48 +174,36 @@ export function Sidebar() {
       {/* Bottom nav + user */}
       <div
         className="px-3 pb-3 space-y-0.5 pt-3 shrink-0"
-        style={{ borderTop: "1px solid oklch(1 0 0 / 5%)" }}
+        style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
       >
         {bottomItems.map(({ href, label, icon }) => {
           const isActive = pathname === href;
           return (
-            <div key={href} className="relative">
-              <NavItem href={href} label={label} icon={icon} isActive={isActive} />
-            </div>
+            <NavItem key={href} href={href} label={label} icon={icon} isActive={isActive} />
           );
         })}
 
-        <div
-          className="pt-2 mt-1"
-          style={{ borderTop: "1px solid oklch(1 0 0 / 5%)" }}
-        >
-          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg group">
+        <div className="pt-2 mt-1" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl group hover:bg-white/[0.03] transition-colors">
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-              style={{ background: "oklch(0.72 0.22 45 / 18%)" }}
+              style={{ background: "rgba(249,115,22,0.15)" }}
             >
-              <span
-                className="text-xs font-bold"
-                style={{ color: "oklch(0.72 0.22 45)" }}
-              >
+              <span className="font-body text-[11px] font-bold" style={{ color: "#F97316" }}>
                 {initials}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-sidebar-foreground truncate">
+              <p className="font-body text-xs font-medium text-white/75 truncate">
                 {user?.full_name || "Demo Trader"}
               </p>
-              <p
-                className="text-xs truncate"
-                style={{ color: "oklch(0.90 0.003 28 / 35%)" }}
-              >
+              <p className="font-body text-[11px] text-white/30 truncate">
                 {user?.email || "demo@tradecore.app"}
               </p>
             </div>
             <button
               onClick={signOut}
-              className="transition-colors opacity-0 group-hover:opacity-100"
-              style={{ color: "oklch(0.90 0.003 28 / 35%)" }}
+              className="transition-all opacity-0 group-hover:opacity-60 hover:!opacity-100 text-white/50"
               title="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />

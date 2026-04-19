@@ -55,11 +55,8 @@ export function MobileHeader() {
     <>
       {/* Header bar */}
       <header
-        className="lg:hidden fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 z-50"
-        style={{
-          background: "var(--sidebar)",
-          borderBottom: "1px solid oklch(1 0 0 / 5%)",
-        }}
+        className="liquid-glass-strong lg:hidden fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 z-50 rounded-none"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
       >
         <Link href="/" className="hover:opacity-80 transition-opacity">
           <Logo variant="dark" size={24} />
@@ -89,8 +86,8 @@ export function MobileHeader() {
           open ? "translate-x-0" : "-translate-x-full"
         )}
         style={{
-          background: "var(--sidebar)",
-          borderRight: "1px solid oklch(1 0 0 / 5%)",
+          background: "oklch(0.055 0.002 28)",
+          borderRight: "1px solid rgba(255,255,255,0.05)",
         }}
       >
         <div
