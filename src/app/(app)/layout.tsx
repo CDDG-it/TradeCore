@@ -1,9 +1,13 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
+import { VideoBackground } from "@/components/layout/video-background";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden">
+
+      {/* ── HLS video background ── */}
+      <VideoBackground />
 
       {/* ── Decorative editorial grid lines (desktop) ── */}
       <div className="pointer-events-none fixed inset-0 z-0 hidden lg:block" aria-hidden>

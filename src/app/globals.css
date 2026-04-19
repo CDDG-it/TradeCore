@@ -215,10 +215,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   }
   body {
     @apply text-foreground;
-    background:
-      radial-gradient(ellipse 75% 50% at 5% 0%, oklch(0.22 0.10 45 / 0.28) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at 95% 100%, oklch(0.16 0.07 35 / 0.20) 0%, transparent 55%),
-      oklch(0.07 0.004 28);
+    background: oklch(0.08 0.004 28);
     background-attachment: fixed;
   }
   html {

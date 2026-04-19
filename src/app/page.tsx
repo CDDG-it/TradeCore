@@ -5,7 +5,6 @@ import {
   Brain,
   Zap,
   ArrowRight,
-  Flame,
   Check,
   ChevronRight,
 } from "lucide-react";
@@ -259,14 +258,6 @@ export default function LandingPage() {
         <div className="absolute inset-x-0 top-[52px] h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
 
         <div className="mx-auto max-w-3xl">
-          <FadeIn delay={0}>
-            <div className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold font-body mb-12"
-              style={{ color: "#F97316" }}>
-              <Flame className="w-3 h-3" />
-              Built for futures &amp; commodities traders
-            </div>
-          </FadeIn>
-
           <FadeIn delay={0.06}>
             <div className="flex justify-center mb-8">
               <LogoMark size={72} />

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Instrument_Serif, Barlow } from "next/font/google";
+import { Geist_Mono, Instrument_Serif, Barlow, Nunito } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 
@@ -23,6 +23,13 @@ const barlow = Barlow({
   display: "swap",
 });
 
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Tradecore — Where self-improvement meets trading",
   description: "A premium trading performance platform. Self-improvement, discipline, and trading results — unified.",
@@ -36,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} h-full antialiased`}
+      className={`${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} ${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-body">
         <AuthProvider>{children}</AuthProvider>
