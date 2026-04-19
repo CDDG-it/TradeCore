@@ -12,11 +12,11 @@ import {
   Minus,
   Plus,
   X,
-  ExternalLink,
   Activity,
   Shield,
   Target,
   CheckSquare,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,6 @@ import {
   getDailyJournal,
   saveDailyJournal,
   getDailyStateCheck,
-  saveDailyStateCheck,
   getSleepRecovery,
   saveSleepRecovery,
   getDaySummary,
@@ -37,65 +36,26 @@ import {
 } from "@/lib/mock/store";
 import type {
   DailyJournalEntry,
-  DailyStateCheck,
   SleepRecovery,
   TraderPlaybook,
 } from "@/lib/types";
+
+type DailyTask = { id: string; text: string; done: boolean };
+
+function getDailyTasks(date: string): DailyTask[] {
+  if (typeof window === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(`dailyTasks_${date}`) ?? "[]"); }
+  catch { return []; }
+}
+function saveDailyTasks(date: string, tasks: DailyTask[]) {
+  localStorage.setItem(`dailyTasks_${date}`, JSON.stringify(tasks));
+}
 
 function toDate(d: Date) {
   return format(d, "yyyy-MM-dd");
 }
 
 // ── Reusable sub-components ──────────────────────────────────────────────────
-
-function ScoreBar({
-  label,
-  value,
-  onChange,
-  color = "oklch(0.72 0.14 220)",
-  invert = false,
-}: {
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-  color?: string;
-  invert?: boolean;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="text-xs font-bold tabular-nums w-6 text-right" style={{ color }}>
-          {value}
-        </span>
-      </div>
-      <div className="flex gap-1">
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-          const active = n <= value;
-          const activeColor = invert
-            ? n <= 3
-              ? "oklch(0.58 0.17 145)"
-              : n <= 6
-              ? "oklch(0.70 0.16 72)"
-              : "oklch(0.58 0.22 25)"
-            : n >= 7
-            ? "oklch(0.58 0.17 145)"
-            : n >= 4
-            ? "oklch(0.70 0.16 72)"
-            : "oklch(0.58 0.22 25)";
-          return (
-            <button
-              key={n}
-              onClick={() => onChange(n)}
-              className="flex-1 h-2 rounded-full transition-all hover:opacity-80"
-              style={{ background: active ? activeColor : "oklch(0.22 0.025 252)" }}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 function SectionCard({
   title,
@@ -145,15 +105,8 @@ export default function SelfImprovementPage() {
   const [journal, setJournal] = useState<Partial<DailyJournalEntry>>({});
   const [journalDirty, setJournalDirty] = useState(false);
 
-  // Combined tracker state (mental + sleep)
-  const [stateCheck, setStateCheck] = useState<Partial<DailyStateCheck>>({
-    mood: 5, energy: 5, focus: 5, stress: 5,
-    confidence: 5, emotional_stability: 5, patience: 5, impulsiveness: 5,
-  });
-  const [sleep, setSleep] = useState<Partial<SleepRecovery>>({
-    hours_slept: 7, sleep_quality: 7, training_movement: false,
-    screen_discipline: 7, rest_quality: 7, notes: "",
-  });
+  // Tracker state
+  const [hoursSlept, setHoursSlept] = useState(7);
   const [trackerDirty, setTrackerDirty] = useState(false);
 
   // Habit state
@@ -161,6 +114,10 @@ export default function SelfImprovementPage() {
   const [todayCompletions, setTodayCompletions] = useState(() =>
     getHabitCompletions(undefined, toDate(new Date()))
   );
+
+  // Daily tasks state
+  const [dailyTasks, setDailyTasks] = useState<DailyTask[]>(() => getDailyTasks(toDate(new Date())));
+  const [newTask, setNewTask] = useState("");
 
   // Playbook state
   const [playbook, setPlaybook] = useState<TraderPlaybook>(() => getPlaybook());
@@ -175,21 +132,13 @@ export default function SelfImprovementPage() {
     setJournal(j || {});
     setJournalDirty(false);
 
-    const sc = getDailyStateCheck(selectedDate);
-    setStateCheck(sc || {
-      mood: 5, energy: 5, focus: 5, stress: 5,
-      confidence: 5, emotional_stability: 5, patience: 5, impulsiveness: 5,
-    });
-
     const sl = getSleepRecovery(selectedDate);
-    setSleep(sl || {
-      hours_slept: 7, sleep_quality: 7, training_movement: false,
-      screen_discipline: 7, rest_quality: 7, notes: "",
-    });
+    setHoursSlept(sl?.hours_slept ?? 7);
 
     setTrackerDirty(false);
     setTodayCompletions(getHabitCompletions(undefined, selectedDate));
     setHabits(getHabits());
+    setDailyTasks(getDailyTasks(selectedDate));
   }, [selectedDate]);
 
   function saveJournal() {
@@ -205,25 +154,14 @@ export default function SelfImprovementPage() {
   }
 
   function saveTracker() {
-    saveDailyStateCheck({
-      date: selectedDate,
-      mood: stateCheck.mood ?? 5,
-      energy: stateCheck.energy ?? 5,
-      focus: stateCheck.focus ?? 5,
-      stress: stateCheck.stress ?? 5,
-      confidence: stateCheck.confidence ?? 5,
-      emotional_stability: stateCheck.emotional_stability ?? 5,
-      patience: stateCheck.patience ?? 5,
-      impulsiveness: stateCheck.impulsiveness ?? 5,
-    });
     saveSleepRecovery({
       date: selectedDate,
-      hours_slept: sleep.hours_slept ?? 7,
-      sleep_quality: sleep.sleep_quality ?? 7,
-      training_movement: sleep.training_movement ?? false,
-      screen_discipline: sleep.screen_discipline ?? 7,
-      rest_quality: sleep.rest_quality ?? 7,
-      notes: sleep.notes || "",
+      hours_slept: hoursSlept,
+      sleep_quality: 7,
+      training_movement: false,
+      screen_discipline: 7,
+      rest_quality: 7,
+      notes: "",
     });
     setTrackerDirty(false);
   }
@@ -252,8 +190,6 @@ export default function SelfImprovementPage() {
   }
 
   const isToday = selectedDate === today;
-  const doneCount = todayCompletions.filter((c) => c.completed).length;
-  const habitProgress = habits.length > 0 ? Math.round((doneCount / habits.length) * 100) : 0;
 
   return (
     <div className="space-y-10">
@@ -371,237 +307,159 @@ export default function SelfImprovementPage() {
             </div>
           </SectionCard>
 
-          {/* Combined Daily Tracker */}
+          {/* Daily Tracker */}
           <SectionCard title="Daily Tracker" icon={Activity} accent="oklch(0.74 0.13 82)">
-            <div className="space-y-4">
-              {/* Sleep row */}
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <label className="text-xs text-muted-foreground block mb-1.5">Hours Slept</label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setSleep({ ...sleep, hours_slept: Math.max(0, (sleep.hours_slept ?? 7) - 0.5) });
-                        setTrackerDirty(true);
-                      }}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                      style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
-                    >
-                      −
-                    </button>
-                    <span
-                      className="text-lg font-bold tabular-nums w-10 text-center"
-                      style={{ color: "oklch(0.58 0.17 145)" }}
-                    >
-                      {sleep.hours_slept ?? 7}h
-                    </span>
-                    <button
-                      onClick={() => {
-                        setSleep({ ...sleep, hours_slept: Math.min(12, (sleep.hours_slept ?? 7) + 0.5) });
-                        setTrackerDirty(true);
-                      }}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                      style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <label className="text-xs text-muted-foreground block mb-1.5">Movement</label>
+            <div className="space-y-5">
+              {/* Hours slept */}
+              <div>
+                <label className="text-xs text-muted-foreground block mb-2">Hours Slept</label>
+                <div className="flex items-center gap-3">
                   <button
-                    onClick={() => {
-                      setSleep({ ...sleep, training_movement: !sleep.training_movement });
-                      setTrackerDirty(true);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                    style={
-                      sleep.training_movement
-                        ? {
-                            background: "oklch(0.58 0.17 145 / 0.15)",
-                            color: "oklch(0.58 0.17 145)",
-                            border: "1px solid oklch(0.58 0.17 145 / 0.30)",
-                          }
-                        : {
-                            background: "oklch(0.09 0.014 252)",
-                            color: "oklch(0.55 0.04 252)",
-                            border: "1px solid oklch(0.22 0.025 252)",
-                          }
-                    }
+                    onClick={() => { setHoursSlept(Math.max(0, hoursSlept - 0.5)); setTrackerDirty(true); }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
                   >
-                    {sleep.training_movement ? (
-                      <Check className="w-3.5 h-3.5" />
-                    ) : (
-                      <Minus className="w-3.5 h-3.5" />
-                    )}
-                    {sleep.training_movement ? "Done" : "Not done"}
+                    <Minus className="w-3.5 h-3.5" />
                   </button>
+                  <span className="text-lg font-bold tabular-nums w-10 text-center" style={{ color: "oklch(0.58 0.17 145)" }}>
+                    {hoursSlept}h
+                  </span>
+                  <button
+                    onClick={() => { setHoursSlept(Math.min(12, hoursSlept + 0.5)); setTrackerDirty(true); }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                  {trackerDirty && (
+                    <button
+                      onClick={saveTracker}
+                      className="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
+                      style={{ background: "oklch(0.74 0.13 82 / 0.15)", color: "oklch(0.74 0.13 82)", border: "1px solid oklch(0.74 0.13 82 / 0.25)" }}
+                    >
+                      Save
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <ScoreBar
-                label="Mood"
-                value={stateCheck.mood ?? 5}
-                onChange={(v) => { setStateCheck({ ...stateCheck, mood: v }); setTrackerDirty(true); }}
-                color="oklch(0.74 0.13 82)"
-              />
-              <ScoreBar
-                label="Energy"
-                value={stateCheck.energy ?? 5}
-                onChange={(v) => { setStateCheck({ ...stateCheck, energy: v }); setTrackerDirty(true); }}
-                color="oklch(0.72 0.14 220)"
-              />
-              <ScoreBar
-                label="Focus"
-                value={stateCheck.focus ?? 5}
-                onChange={(v) => { setStateCheck({ ...stateCheck, focus: v }); setTrackerDirty(true); }}
-                color="oklch(0.72 0.14 220)"
-              />
-              <ScoreBar
-                label="Stress (1=low)"
-                value={stateCheck.stress ?? 5}
-                onChange={(v) => { setStateCheck({ ...stateCheck, stress: v }); setTrackerDirty(true); }}
-                color="oklch(0.58 0.22 25)"
-                invert
-              />
-              <ScoreBar
-                label="Sleep Quality"
-                value={sleep.sleep_quality ?? 7}
-                onChange={(v) => { setSleep({ ...sleep, sleep_quality: v }); setTrackerDirty(true); }}
-                color="oklch(0.58 0.17 145)"
-              />
+              {/* Habits */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-muted-foreground">Habits</span>
+                  <Link
+                    href="/habits"
+                    className="text-xs flex items-center gap-1 transition-opacity hover:opacity-70"
+                    style={{ color: "oklch(0.72 0.14 220)" }}
+                  >
+                    Manage <ExternalLink className="w-3 h-3" />
+                  </Link>
+                </div>
+                {habits.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No habits yet.</p>
+                ) : (
+                  <div className="space-y-0.5">
+                    {habits.map((habit) => {
+                      const done = todayCompletions.some((c) => c.habit_id === habit.id && c.completed);
+                      const streak = getHabitStreak(habit.id);
+                      return (
+                        <div key={habit.id} className="flex items-center gap-3 py-1.5">
+                          <button
+                            onClick={() => handleToggleHabit(habit.id)}
+                            className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all hover:scale-110"
+                            style={done
+                              ? { background: habit.color }
+                              : { background: "oklch(0.09 0.014 252)", border: "1.5px solid oklch(0.28 0.025 252)" }}
+                          >
+                            {done ? <Check className="w-3 h-3 text-white" /> : <span className="text-sm leading-none">{habit.icon}</span>}
+                          </button>
+                          <span className="flex-1 text-sm truncate" style={{ color: done ? "oklch(0.88 0.008 252)" : "oklch(0.55 0.04 252)" }}>
+                            {habit.name}
+                          </span>
+                          {streak > 0 && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Flame className="w-3 h-3" style={{ color: "oklch(0.74 0.13 82)" }} />
+                              <span className="text-xs font-semibold" style={{ color: "oklch(0.74 0.13 82)" }}>{streak}d</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
-              {trackerDirty && (
-                <button
-                  onClick={saveTracker}
-                  className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px mt-1"
-                  style={{
-                    background: "oklch(0.74 0.13 82)",
-                    color: "oklch(0.08 0.014 252)",
-                    boxShadow: "0 4px 14px oklch(0.74 0.13 82 / 0.30)",
-                  }}
-                >
-                  Save Tracker
-                </button>
-              )}
+              {/* Daily Tasks */}
+              <div>
+                <span className="text-xs text-muted-foreground block mb-2">Daily Tasks</span>
+                <div className="space-y-0.5 mb-2">
+                  {dailyTasks.map((task) => (
+                    <div key={task.id} className="flex items-center gap-2.5 py-1 group">
+                      <button
+                        onClick={() => {
+                          const updated = dailyTasks.map((t) => t.id === task.id ? { ...t, done: !t.done } : t);
+                          setDailyTasks(updated);
+                          saveDailyTasks(selectedDate, updated);
+                        }}
+                        className="w-4 h-4 rounded flex items-center justify-center shrink-0 transition-all"
+                        style={task.done
+                          ? { background: "oklch(0.58 0.17 145)", border: "none" }
+                          : { background: "oklch(0.09 0.014 252)", border: "1.5px solid oklch(0.28 0.025 252)" }}
+                      >
+                        {task.done && <Check className="w-2.5 h-2.5 text-white" />}
+                      </button>
+                      <span className="flex-1 text-sm" style={{ color: task.done ? "oklch(0.45 0.03 252)" : "oklch(0.88 0.008 252)", textDecoration: task.done ? "line-through" : "none" }}>
+                        {task.text}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const updated = dailyTasks.filter((t) => t.id !== task.id);
+                          setDailyTasks(updated);
+                          saveDailyTasks(selectedDate, updated);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ color: "oklch(0.45 0.03 252)" }}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newTask}
+                    onChange={(e) => setNewTask(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newTask.trim()) {
+                        const updated = [...dailyTasks, { id: crypto.randomUUID(), text: newTask.trim(), done: false }];
+                        setDailyTasks(updated);
+                        saveDailyTasks(selectedDate, updated);
+                        setNewTask("");
+                      }
+                    }}
+                    placeholder="Add a task..."
+                    className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
+                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newTask.trim()) return;
+                      const updated = [...dailyTasks, { id: crypto.randomUUID(), text: newTask.trim(), done: false }];
+                      setDailyTasks(updated);
+                      saveDailyTasks(selectedDate, updated);
+                      setNewTask("");
+                    }}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: "oklch(0.74 0.13 82 / 0.12)", color: "oklch(0.74 0.13 82)", border: "1px solid oklch(0.74 0.13 82 / 0.22)" }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
           </SectionCard>
         </div>
-      </section>
-
-      {/* ── HABIT TRACKER ────────────────────────────── */}
-      <section className="animate-fade-up space-y-5">
-        <div
-          className="flex items-center justify-between"
-          style={{ borderBottom: "1px solid oklch(0.18 0.022 252)", paddingBottom: "12px" }}
-        >
-          <h2 className="text-base font-semibold">Habit Tracker</h2>
-          <Link
-            href="/habits"
-            className="text-xs font-medium flex items-center gap-1 transition-colors hover:opacity-80"
-            style={{ color: "oklch(0.72 0.14 220)" }}
-          >
-            Manage habits
-            <ExternalLink className="w-3 h-3" />
-          </Link>
-        </div>
-
-        {/* Progress summary */}
-        <div
-          className="flex items-center gap-4 px-5 py-4 rounded-xl"
-          style={{ background: "oklch(0.12 0.018 252)", border: "1px solid oklch(0.22 0.025 252)" }}
-        >
-          <div className="relative w-12 h-12 shrink-0">
-            <svg viewBox="0 0 48 48" className="w-12 h-12 -rotate-90">
-              <circle cx="24" cy="24" r="20" fill="none" stroke="oklch(0.22 0.025 252)" strokeWidth="4" />
-              <circle
-                cx="24" cy="24" r="20" fill="none"
-                stroke="oklch(0.58 0.17 145)" strokeWidth="4"
-                strokeDasharray={`${2 * Math.PI * 20}`}
-                strokeDashoffset={`${2 * Math.PI * 20 * (1 - habitProgress / 100)}`}
-                strokeLinecap="round"
-                style={{ transition: "stroke-dashoffset 0.5s ease" }}
-              />
-            </svg>
-            <span
-              className="absolute inset-0 flex items-center justify-center text-xs font-bold"
-              style={{ color: "oklch(0.58 0.17 145)" }}
-            >
-              {habitProgress}%
-            </span>
-          </div>
-          <div>
-            <p className="text-sm font-semibold">
-              {doneCount} of {habits.length} habits done
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {format(new Date(selectedDate + "T12:00:00"), "MMMM d")}
-            </p>
-          </div>
-        </div>
-
-        {habits.length === 0 ? (
-          <div
-            className="rounded-xl px-5 py-8 text-center"
-            style={{ background: "oklch(0.12 0.018 252)", border: "1px solid oklch(0.22 0.025 252)" }}
-          >
-            <p className="text-sm text-muted-foreground">No habits set up yet.</p>
-            <Link
-              href="/habits"
-              className="inline-flex items-center gap-1 mt-3 text-xs font-semibold"
-              style={{ color: "oklch(0.72 0.14 220)" }}
-            >
-              Add habits <ExternalLink className="w-3 h-3" />
-            </Link>
-          </div>
-        ) : (
-          <div
-            className="rounded-xl overflow-hidden"
-            style={{ background: "oklch(0.12 0.018 252)", border: "1px solid oklch(0.22 0.025 252)" }}
-          >
-            {habits.map((habit, idx) => {
-              const done = todayCompletions.some((c) => c.habit_id === habit.id && c.completed);
-              const streak = getHabitStreak(habit.id);
-              return (
-                <div
-                  key={habit.id}
-                  className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.02]"
-                  style={idx > 0 ? { borderTop: "1px solid oklch(0.18 0.022 252)" } : undefined}
-                >
-                  <button
-                    onClick={() => handleToggleHabit(habit.id)}
-                    className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all hover:scale-110"
-                    style={
-                      done
-                        ? { background: habit.color }
-                        : { background: "oklch(0.09 0.014 252)", border: "1.5px solid oklch(0.28 0.025 252)" }
-                    }
-                  >
-                    {done ? (
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    ) : (
-                      <span className="text-base leading-none">{habit.icon}</span>
-                    )}
-                  </button>
-                  <p
-                    className="flex-1 text-sm font-medium truncate"
-                    style={{ color: done ? "oklch(0.88 0.008 252)" : "oklch(0.65 0.04 252)" }}
-                  >
-                    {habit.name}
-                  </p>
-                  {streak > 0 && (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Flame className="w-3.5 h-3.5" style={{ color: "oklch(0.74 0.13 82)" }} />
-                      <span className="text-xs font-semibold" style={{ color: "oklch(0.74 0.13 82)" }}>
-                        {streak}d
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
       </section>
 
       {/* ── PLAYBOOK ─────────────────────────────────── */}
