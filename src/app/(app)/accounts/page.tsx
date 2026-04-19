@@ -55,9 +55,9 @@ export default function AccountsPage() {
           href="/accounts/new"
           className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
           style={{
-            background: "oklch(0.74 0.13 82)",
-            color: "oklch(0.08 0.014 252)",
-            boxShadow: "0 4px 14px oklch(0.74 0.13 82 / 0.30)",
+            background: "oklch(0.62 0.26 290)",
+            color: "oklch(0.07 0.022 275)",
+            boxShadow: "0 4px 14px oklch(0.62 0.26 290 / 0.30)",
           }}
         >
           <Plus className="w-4 h-4" />

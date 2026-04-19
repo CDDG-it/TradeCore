@@ -21,9 +21,9 @@ const features = [
     description:
       "Log every trade with R:R, psychology notes, and screenshots. Build a systematic record of your edge.",
     accentClass: "text-ice",
-    glowStyle: { background: "oklch(0.72 0.14 220 / 0.10)" },
-    borderStyle: { borderColor: "oklch(0.72 0.14 220 / 0.20)" },
-    iconGlowStyle: { color: "oklch(0.72 0.14 220)" },
+    glowStyle: { background: "oklch(0.78 0.16 198 / 0.10)" },
+    borderStyle: { borderColor: "oklch(0.78 0.16 198 / 0.20)" },
+    iconGlowStyle: { color: "oklch(0.78 0.16 198)" },
     href: "/journal",
   },
   {
@@ -32,9 +32,9 @@ const features = [
     description:
       "Visualise win rate, R:R distribution, and equity curve. Know exactly where your edge lives.",
     accentClass: "text-ice",
-    glowStyle: { background: "oklch(0.72 0.14 220 / 0.10)" },
-    borderStyle: { borderColor: "oklch(0.72 0.14 220 / 0.20)" },
-    iconGlowStyle: { color: "oklch(0.72 0.14 220)" },
+    glowStyle: { background: "oklch(0.78 0.16 198 / 0.10)" },
+    borderStyle: { borderColor: "oklch(0.78 0.16 198 / 0.20)" },
+    iconGlowStyle: { color: "oklch(0.78 0.16 198)" },
     href: "/analytics",
   },
   {
@@ -43,9 +43,9 @@ const features = [
     description:
       "Daily journals, mental state check-ins, habit tracker, and playbook — unified in one focused workspace.",
     accentClass: "text-gold",
-    glowStyle: { background: "oklch(0.74 0.13 82 / 0.10)" },
-    borderStyle: { borderColor: "oklch(0.74 0.13 82 / 0.20)" },
-    iconGlowStyle: { color: "oklch(0.74 0.13 82)" },
+    glowStyle: { background: "oklch(0.62 0.26 290 / 0.10)" },
+    borderStyle: { borderColor: "oklch(0.62 0.26 290 / 0.20)" },
+    iconGlowStyle: { color: "oklch(0.62 0.26 290)" },
     href: "/self-improvement",
   },
   {
@@ -94,7 +94,7 @@ function PreviewFrame({ children, title, icon: Icon, color }: {
         >
           <Icon className="w-3.5 h-3.5" style={{ color }} />
         </div>
-        <span className="text-sm font-semibold" style={{ color: "oklch(0.88 0.008 252)" }}>
+        <span className="text-sm font-semibold" style={{ color: "oklch(0.90 0.008 280)" }}>
           {title}
         </span>
         <div className="ml-auto flex gap-1.5">
@@ -118,10 +118,10 @@ function TradeJournalPreview() {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 px-2 pb-1.5" style={{ borderBottom: "1px solid oklch(0.18 0.020 252)" }}>
-        <span className="text-xs font-medium w-9" style={{ color: "oklch(0.45 0.04 252)" }}>Sym</span>
-        <span className="flex-1 text-xs font-medium" style={{ color: "oklch(0.45 0.04 252)" }}>Setup</span>
-        <span className="text-xs font-medium w-12 text-right" style={{ color: "oklch(0.45 0.04 252)" }}>R:R</span>
-        <span className="text-xs font-medium w-14 text-right" style={{ color: "oklch(0.45 0.04 252)" }}>P&L</span>
+        <span className="text-xs font-medium w-9" style={{ color: "oklch(0.45 0.04 278)" }}>Sym</span>
+        <span className="flex-1 text-xs font-medium" style={{ color: "oklch(0.45 0.04 278)" }}>Setup</span>
+        <span className="text-xs font-medium w-12 text-right" style={{ color: "oklch(0.45 0.04 278)" }}>R:R</span>
+        <span className="text-xs font-medium w-14 text-right" style={{ color: "oklch(0.45 0.04 278)" }}>P&L</span>
       </div>
       {trades.map((t, i) => (
         <div
@@ -132,7 +132,7 @@ function TradeJournalPreview() {
             border: `1px solid ${t.result === "win" ? "oklch(0.58 0.17 145 / 0.12)" : "oklch(0.58 0.22 25 / 0.12)"}`,
           }}
         >
-          <span className="text-xs font-bold w-9" style={{ color: "oklch(0.72 0.14 220)" }}>{t.symbol}</span>
+          <span className="text-xs font-bold w-9" style={{ color: "oklch(0.78 0.16 198)" }}>{t.symbol}</span>
           <span className="flex-1 text-xs" style={{ color: "oklch(0.60 0.04 252)" }}>{t.setup}</span>
           <span
             className="text-xs font-semibold w-12 text-right tabular-nums"
@@ -159,21 +159,21 @@ function AnalyticsPreview() {
       <div className="grid grid-cols-3 gap-2">
         {[
           { label: "Win Rate", value: "67%", color: "oklch(0.58 0.17 145)" },
-          { label: "Avg R:R", value: "2.4R", color: "oklch(0.72 0.14 220)" },
-          { label: "Best Trade", value: "4.8R", color: "oklch(0.74 0.13 82)" },
+          { label: "Avg R:R", value: "2.4R", color: "oklch(0.78 0.16 198)" },
+          { label: "Best Trade", value: "4.8R", color: "oklch(0.62 0.26 290)" },
         ].map(({ label, value, color }) => (
           <div
             key={label}
             className="rounded-xl p-3 text-center"
-            style={{ background: "oklch(0.08 0.014 252)", border: "1px solid oklch(0.18 0.020 252)" }}
+            style={{ background: "oklch(0.07 0.022 275)", border: "1px solid oklch(0.18 0.020 252)" }}
           >
             <p className="text-base font-black tabular-nums" style={{ color }}>{value}</p>
-            <p className="text-xs mt-0.5" style={{ color: "oklch(0.45 0.04 252)" }}>{label}</p>
+            <p className="text-xs mt-0.5" style={{ color: "oklch(0.45 0.04 278)" }}>{label}</p>
           </div>
         ))}
       </div>
       <div>
-        <p className="text-xs mb-2" style={{ color: "oklch(0.45 0.04 252)" }}>Equity curve — last 10 trades</p>
+        <p className="text-xs mb-2" style={{ color: "oklch(0.45 0.04 278)" }}>Equity curve — last 10 trades</p>
         <div className="flex items-end gap-1 h-14">
           {bars.map((h, i) => (
             <div
@@ -195,9 +195,9 @@ function AnalyticsPreview() {
 
 function SelfImprovementPreview() {
   const metrics = [
-    { label: "Mood", value: 8, color: "oklch(0.74 0.13 82)" },
-    { label: "Energy", value: 7, color: "oklch(0.72 0.14 220)" },
-    { label: "Focus", value: 9, color: "oklch(0.72 0.14 220)" },
+    { label: "Mood", value: 8, color: "oklch(0.62 0.26 290)" },
+    { label: "Energy", value: 7, color: "oklch(0.78 0.16 198)" },
+    { label: "Focus", value: 9, color: "oklch(0.78 0.16 198)" },
     { label: "Stress", value: 3, color: "oklch(0.58 0.17 145)", invert: true },
   ];
   const habits = [
@@ -208,12 +208,12 @@ function SelfImprovementPreview() {
   ];
   return (
     <div className="space-y-3">
-      <p className="text-xs font-medium" style={{ color: "oklch(0.45 0.04 252)" }}>Today's tracker</p>
+      <p className="text-xs font-medium" style={{ color: "oklch(0.45 0.04 278)" }}>Today's tracker</p>
       <div className="space-y-2">
         {metrics.map(({ label, value, color }) => (
           <div key={label} className="space-y-1">
             <div className="flex justify-between">
-              <span className="text-xs" style={{ color: "oklch(0.55 0.04 252)" }}>{label}</span>
+              <span className="text-xs" style={{ color: "oklch(0.55 0.04 278)" }}>{label}</span>
               <span className="text-xs font-bold" style={{ color }}>{value}</span>
             </div>
             <div className="flex gap-0.5">
@@ -233,7 +233,7 @@ function SelfImprovementPreview() {
         ))}
       </div>
       <div style={{ borderTop: "1px solid oklch(0.18 0.020 252)", paddingTop: "10px" }}>
-        <p className="text-xs font-medium mb-2" style={{ color: "oklch(0.45 0.04 252)" }}>Habits — 3/4 done</p>
+        <p className="text-xs font-medium mb-2" style={{ color: "oklch(0.45 0.04 278)" }}>Habits — 3/4 done</p>
         <div className="space-y-1">
           {habits.map(({ label, done }) => (
             <div key={label} className="flex items-center gap-2">
@@ -246,7 +246,7 @@ function SelfImprovementPreview() {
               >
                 {done && <Check className="w-2.5 h-2.5 text-white" />}
               </div>
-              <span className="text-xs" style={{ color: done ? "oklch(0.80 0.008 252)" : "oklch(0.45 0.04 252)" }}>
+              <span className="text-xs" style={{ color: done ? "oklch(0.80 0.008 252)" : "oklch(0.45 0.04 278)" }}>
                 {label}
               </span>
             </div>
@@ -269,8 +269,8 @@ function MarketNewsPreview() {
     },
     {
       impact: "MED",
-      impactColor: "oklch(0.74 0.13 82)",
-      impactBg: "oklch(0.74 0.13 82 / 0.12)",
+      impactColor: "oklch(0.62 0.26 290)",
+      impactBg: "oklch(0.62 0.26 290 / 0.12)",
       headline: "Fed Minutes Signal Rate Hold Through Q3",
       source: "Bloomberg",
       time: "1h ago",
@@ -290,7 +290,7 @@ function MarketNewsPreview() {
         <div
           key={headline}
           className="rounded-xl p-3"
-          style={{ background: "oklch(0.08 0.014 252)", border: "1px solid oklch(0.18 0.020 252)" }}
+          style={{ background: "oklch(0.07 0.022 275)", border: "1px solid oklch(0.18 0.020 252)" }}
         >
           <div className="flex items-center gap-2 mb-1.5">
             <span
@@ -299,12 +299,12 @@ function MarketNewsPreview() {
             >
               {impact}
             </span>
-            <span className="text-xs ml-auto" style={{ color: "oklch(0.40 0.03 252)" }}>{time}</span>
+            <span className="text-xs ml-auto" style={{ color: "oklch(0.40 0.03 278)" }}>{time}</span>
           </div>
           <p className="text-xs font-medium leading-snug" style={{ color: "oklch(0.80 0.008 252)" }}>
             {headline}
           </p>
-          <p className="text-xs mt-1" style={{ color: "oklch(0.40 0.03 252)" }}>{source}</p>
+          <p className="text-xs mt-1" style={{ color: "oklch(0.40 0.03 278)" }}>{source}</p>
         </div>
       ))}
     </div>
@@ -321,20 +321,20 @@ export default function LandingPage() {
         <div
           className="absolute -top-48 -left-48 w-[700px] h-[700px] rounded-full"
           style={{
-            background: "radial-gradient(circle, oklch(0.72 0.14 220 / 0.08), transparent 65%)",
+            background: "radial-gradient(circle, oklch(0.78 0.16 198 / 0.08), transparent 65%)",
           }}
         />
         <div
           className="absolute -bottom-48 -right-32 w-[800px] h-[800px] rounded-full"
           style={{
-            background: "radial-gradient(circle, oklch(0.74 0.13 82 / 0.07), transparent 65%)",
+            background: "radial-gradient(circle, oklch(0.62 0.26 290 / 0.07), transparent 65%)",
           }}
         />
         <div
           className="absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage:
-              "linear-gradient(oklch(0.72 0.14 220 / 0.4) 1px, transparent 1px), linear-gradient(90deg, oklch(0.72 0.14 220 / 0.4) 1px, transparent 1px)",
+              "linear-gradient(oklch(0.78 0.16 198 / 0.4) 1px, transparent 1px), linear-gradient(90deg, oklch(0.78 0.16 198 / 0.4) 1px, transparent 1px)",
             backgroundSize: "64px 64px",
           }}
         />
@@ -344,7 +344,7 @@ export default function LandingPage() {
       <header
         className="relative z-10 px-6 py-4 sticky top-0"
         style={{
-          background: "oklch(0.08 0.014 252 / 0.85)",
+          background: "oklch(0.07 0.022 275 / 0.85)",
           borderBottom: "1px solid oklch(1 0 0 / 6%)",
           backdropFilter: "blur(16px)",
         }}
@@ -364,9 +364,9 @@ export default function LandingPage() {
               href="/dashboard"
               className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px"
               style={{
-                background: "oklch(0.72 0.14 220)",
-                color: "oklch(0.08 0.014 252)",
-                boxShadow: "0 4px 16px oklch(0.72 0.14 220 / 0.30)",
+                background: "oklch(0.78 0.16 198)",
+                color: "oklch(0.07 0.022 275)",
+                boxShadow: "0 4px 16px oklch(0.78 0.16 198 / 0.30)",
               }}
             >
               Open app
@@ -382,9 +382,9 @@ export default function LandingPage() {
           <div
             className="animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-12"
             style={{
-              background: "oklch(0.74 0.13 82 / 0.10)",
-              border: "1px solid oklch(0.74 0.13 82 / 0.30)",
-              color: "oklch(0.74 0.13 82)",
+              background: "oklch(0.62 0.26 290 / 0.10)",
+              border: "1px solid oklch(0.62 0.26 290 / 0.30)",
+              color: "oklch(0.62 0.26 290)",
               animationDelay: "0ms",
             }}
           >
@@ -403,7 +403,7 @@ export default function LandingPage() {
             className="animate-fade-up text-7xl sm:text-8xl font-extrabold tracking-tight leading-none mb-5"
             style={{ animationDelay: "160ms" }}
           >
-            <span style={{ color: "oklch(0.93 0.008 252)" }}>Trade</span>
+            <span style={{ color: "oklch(0.94 0.006 280)" }}>Trade</span>
             <span className="animate-shimmer-gold">core</span>
           </h1>
 
@@ -417,7 +417,7 @@ export default function LandingPage() {
             Where self-improvement{" "}
             <span
               className="font-semibold"
-              style={{ color: "oklch(0.93 0.008 252)" }}
+              style={{ color: "oklch(0.94 0.006 280)" }}
             >
               meets trading.
             </span>
@@ -427,7 +427,7 @@ export default function LandingPage() {
             className="animate-fade-up text-base max-w-lg mx-auto mb-14 leading-relaxed"
             style={{
               animationDelay: "300ms",
-              color: "oklch(0.55 0.04 252)",
+              color: "oklch(0.55 0.04 278)",
             }}
           >
             A premium performance platform for serious traders. Discipline, habits, mindset, and execution — unified in one focused workspace.
@@ -441,9 +441,9 @@ export default function LandingPage() {
               href="/dashboard"
               className="inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-sm font-semibold transition-all hover:-translate-y-0.5"
               style={{
-                background: "oklch(0.72 0.14 220)",
-                color: "oklch(0.08 0.014 252)",
-                boxShadow: "0 4px 24px oklch(0.72 0.14 220 / 0.35)",
+                background: "oklch(0.78 0.16 198)",
+                color: "oklch(0.07 0.022 275)",
+                boxShadow: "0 4px 24px oklch(0.78 0.16 198 / 0.35)",
               }}
             >
               Enter dashboard
@@ -454,7 +454,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 rounded-xl px-8 py-3.5 text-sm font-medium transition-all hover:border-opacity-60"
               style={{
                 border: "1px solid oklch(1 0 0 / 12%)",
-                color: "oklch(0.65 0.04 252)",
+                color: "oklch(0.65 0.04 278)",
                 background: "oklch(1 0 0 / 3%)",
               }}
             >
@@ -490,8 +490,8 @@ export default function LandingPage() {
                 href={href}
                 className="animate-fade-up group rounded-2xl p-6 block relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
                 style={{
-                  background: "oklch(0.12 0.018 252)",
-                  border: "1px solid oklch(0.22 0.025 252)",
+                  background: "oklch(0.10 0.022 278)",
+                  border: "1px solid oklch(0.18 0.030 278)",
                   animationDelay: `${560 + i * 60}ms`,
                 }}
               >
@@ -547,15 +547,15 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-5">
-            <PreviewFrame title="Trade Journal" icon={BookOpen} color="oklch(0.72 0.14 220)">
+            <PreviewFrame title="Trade Journal" icon={BookOpen} color="oklch(0.78 0.16 198)">
               <TradeJournalPreview />
             </PreviewFrame>
 
-            <PreviewFrame title="Performance Analytics" icon={BarChart2} color="oklch(0.72 0.14 220)">
+            <PreviewFrame title="Performance Analytics" icon={BarChart2} color="oklch(0.78 0.16 198)">
               <AnalyticsPreview />
             </PreviewFrame>
 
-            <PreviewFrame title="Self-Improvement" icon={Brain} color="oklch(0.74 0.13 82)">
+            <PreviewFrame title="Self-Improvement" icon={Brain} color="oklch(0.62 0.26 290)">
               <SelfImprovementPreview />
             </PreviewFrame>
 

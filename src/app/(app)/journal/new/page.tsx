@@ -405,7 +405,7 @@ export default function NewTradePage() {
                 <CardTitle className="text-sm font-semibold shrink-0">Discipline Check</CardTitle>
                 {form.discipline && (
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className="flex-1 h-1.5 rounded-full overflow-hidden max-w-28" style={{ background: "oklch(0.22 0.025 252)" }}>
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden max-w-28" style={{ background: "oklch(0.18 0.030 278)" }}>
                       <div
                         className="h-full rounded-full transition-all duration-300"
                         style={{
@@ -450,8 +450,8 @@ export default function NewTradePage() {
                       onClick={() => setDiscipline(key, !checked)}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left"
                       style={{
-                        background: checked ? "oklch(0.58 0.17 145 / 0.08)" : "oklch(0.09 0.014 252)",
-                        border: `1px solid ${checked ? "oklch(0.58 0.17 145 / 0.25)" : "oklch(0.22 0.025 252)"}`,
+                        background: checked ? "oklch(0.58 0.17 145 / 0.08)" : "oklch(0.08 0.018 278)",
+                        border: `1px solid ${checked ? "oklch(0.58 0.17 145 / 0.25)" : "oklch(0.18 0.030 278)"}`,
                       }}
                     >
                       <div
@@ -466,7 +466,7 @@ export default function NewTradePage() {
                       </div>
                       <span
                         className="text-sm transition-colors"
-                        style={{ color: checked ? "oklch(0.88 0.008 252)" : "oklch(0.65 0.04 252)" }}
+                        style={{ color: checked ? "oklch(0.90 0.008 280)" : "oklch(0.65 0.04 278)" }}
                       >
                         {label}
                       </span>

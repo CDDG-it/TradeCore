@@ -30,12 +30,12 @@ import {
 import type { Habit, HabitCompletion, DailyTask, HabitCategory } from "@/lib/types";
 
 const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label: string }> = {
-  mindset:  { accent: "oklch(0.74 0.13 82)",  bg: "oklch(0.74 0.13 82 / 0.12)",  label: "Mindset"  },
-  routine:  { accent: "oklch(0.72 0.14 220)", bg: "oklch(0.72 0.14 220 / 0.12)", label: "Routine"  },
+  mindset:  { accent: "oklch(0.62 0.26 290)",  bg: "oklch(0.62 0.26 290 / 0.12)",  label: "Mindset"  },
+  routine:  { accent: "oklch(0.78 0.16 198)", bg: "oklch(0.78 0.16 198 / 0.12)", label: "Routine"  },
   research: { accent: "oklch(0.58 0.17 145)", bg: "oklch(0.58 0.17 145 / 0.12)", label: "Research" },
   health:   { accent: "oklch(0.58 0.22 25)",  bg: "oklch(0.58 0.22 25 / 0.12)",  label: "Health"   },
   review:   { accent: "oklch(0.70 0.16 72)",  bg: "oklch(0.70 0.16 72 / 0.12)",  label: "Review"   },
-  other:    { accent: "oklch(0.55 0.04 252)",  bg: "oklch(0.55 0.04 252 / 0.12)", label: "Other"    },
+  other:    { accent: "oklch(0.55 0.04 278)",  bg: "oklch(0.55 0.04 278 / 0.12)", label: "Other"    },
 };
 
 const PRESET_ICONS = ["✍️", "📊", "🔍", "💪", "🧘", "📚", "💤", "🏃", "🎯", "📈", "🧠", "💧"];
@@ -61,7 +61,7 @@ function ProgressRing({
         cy={size / 2}
         r={r}
         fill="none"
-        stroke="oklch(0.22 0.025 252)"
+        stroke="oklch(0.18 0.030 278)"
         strokeWidth={stroke}
       />
       <circle
@@ -127,7 +127,7 @@ function WeekGrid({
                     background: "oklch(0.14 0.02 252)",
                     borderColor: isToday
                       ? habit.color
-                      : "oklch(0.28 0.025 252)",
+                      : "oklch(0.22 0.032 278)",
                     color: "oklch(0.38 0.03 252)",
                   }
             }
@@ -239,7 +239,7 @@ export default function HabitsPage() {
   const PRIORITY_CONFIG = {
     high:   { label: "High",   style: { color: "oklch(0.58 0.22 25)",  bg: "oklch(0.58 0.22 25 / 0.12)"  } },
     medium: { label: "Medium", style: { color: "oklch(0.70 0.16 72)",  bg: "oklch(0.70 0.16 72 / 0.12)"  } },
-    low:    { label: "Low",    style: { color: "oklch(0.55 0.04 252)", bg: "oklch(0.55 0.04 252 / 0.12)" } },
+    low:    { label: "Low",    style: { color: "oklch(0.55 0.04 278)", bg: "oklch(0.55 0.04 278 / 0.12)" } },
   };
 
   return (
@@ -256,9 +256,9 @@ export default function HabitsPage() {
           onClick={() => setShowNewHabit(true)}
           className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0 animate-fade-up"
           style={{
-            background: "oklch(0.74 0.13 82)",
-            color: "oklch(0.08 0.014 252)",
-            boxShadow: "0 4px 14px oklch(0.74 0.13 82 / 0.30)",
+            background: "oklch(0.62 0.26 290)",
+            color: "oklch(0.07 0.022 275)",
+            boxShadow: "0 4px 14px oklch(0.62 0.26 290 / 0.30)",
           }}
         >
           <Plus className="w-4 h-4" />
@@ -274,8 +274,8 @@ export default function HabitsPage() {
             value: `${todayCompleted}/${totalHabits}`,
             sub: `${completionRate}% complete`,
             icon: Target,
-            accent: "oklch(0.74 0.13 82)",
-            accentBg: "oklch(0.74 0.13 82 / 0.10)",
+            accent: "oklch(0.62 0.26 290)",
+            accentBg: "oklch(0.62 0.26 290 / 0.10)",
             ring: completionRate,
           },
           {
@@ -292,8 +292,8 @@ export default function HabitsPage() {
             value: totalHabits.toString(),
             sub: "being tracked",
             icon: Zap,
-            accent: "oklch(0.72 0.14 220)",
-            accentBg: "oklch(0.72 0.14 220 / 0.10)",
+            accent: "oklch(0.78 0.16 198)",
+            accentBg: "oklch(0.78 0.16 198 / 0.10)",
             ring: null,
           },
         ].map(({ label, value, sub, icon: Icon, accent, accentBg, ring }, i) => (
@@ -301,8 +301,8 @@ export default function HabitsPage() {
             key={label}
             className="animate-fade-up rounded-xl p-5 relative overflow-hidden"
             style={{
-              background: "oklch(0.12 0.018 252)",
-              border: "1px solid oklch(0.22 0.025 252)",
+              background: "oklch(0.10 0.022 278)",
+              border: "1px solid oklch(0.18 0.030 278)",
               animationDelay: `${i * 60}ms`,
             }}
           >
@@ -315,7 +315,7 @@ export default function HabitsPage() {
             <div className="flex items-start justify-between mb-4">
               <p
                 className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: "oklch(0.45 0.04 252)" }}
+                style={{ color: "oklch(0.45 0.04 278)" }}
               >
                 {label}
               </p>
@@ -359,8 +359,8 @@ export default function HabitsPage() {
             <div
               className="rounded-xl p-10 text-center animate-fade-up"
               style={{
-                background: "oklch(0.12 0.018 252)",
-                border: "1px solid oklch(0.22 0.025 252 / 0.5)",
+                background: "oklch(0.10 0.022 278)",
+                border: "1px solid oklch(0.18 0.030 278 / 0.5)",
                 borderStyle: "dashed",
               }}
             >
@@ -368,7 +368,7 @@ export default function HabitsPage() {
               <button
                 onClick={() => setShowNewHabit(true)}
                 className="text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
-                style={{ color: "oklch(0.74 0.13 82)" }}
+                style={{ color: "oklch(0.62 0.26 290)" }}
               >
                 <Plus className="w-3.5 h-3.5" /> Create your first habit
               </button>
@@ -391,8 +391,8 @@ export default function HabitsPage() {
                 key={habit.id}
                 className="animate-fade-up rounded-xl p-4 transition-all relative group"
                 style={{
-                  background: "oklch(0.12 0.018 252)",
-                  border: `1px solid ${completedToday ? habit.color.replace(")", " / 0.25)") : "oklch(0.22 0.025 252)"}`,
+                  background: "oklch(0.10 0.022 278)",
+                  border: `1px solid ${completedToday ? habit.color.replace(")", " / 0.25)") : "oklch(0.18 0.030 278)"}`,
                   animationDelay: `${220 + i * 50}ms`,
                 }}
               >
@@ -432,8 +432,8 @@ export default function HabitsPage() {
                       style={{
                         background: completedToday
                           ? habit.color.replace(")", " / 0.20)")
-                          : "oklch(0.16 0.022 252)",
-                        border: `2px solid ${completedToday ? habit.color : "oklch(0.28 0.025 252)"}`,
+                          : "oklch(0.13 0.026 278)",
+                        border: `2px solid ${completedToday ? habit.color : "oklch(0.22 0.032 278)"}`,
                       }}
                     >
                       {completedToday ? <Check className="w-5 h-5" style={{ color: habit.color }} /> : habit.icon}
@@ -499,8 +499,8 @@ export default function HabitsPage() {
           <div
             className="rounded-xl p-4"
             style={{
-              background: "oklch(0.12 0.018 252)",
-              border: "1px solid oklch(0.22 0.025 252)",
+              background: "oklch(0.10 0.022 278)",
+              border: "1px solid oklch(0.18 0.030 278)",
             }}
           >
             <input
@@ -524,7 +524,7 @@ export default function HabitsPage() {
                             background: PRIORITY_CONFIG[p].style.bg,
                             color: PRIORITY_CONFIG[p].style.color,
                           }
-                        : { color: "oklch(0.40 0.03 252)" }
+                        : { color: "oklch(0.40 0.03 278)" }
                     }
                   >
                     {p}
@@ -536,8 +536,8 @@ export default function HabitsPage() {
                 disabled={!newTaskText.trim()}
                 className="text-xs px-3 py-1 rounded-lg font-semibold transition-all disabled:opacity-30"
                 style={{
-                  background: "oklch(0.72 0.14 220)",
-                  color: "oklch(0.08 0.014 252)",
+                  background: "oklch(0.78 0.16 198)",
+                  color: "oklch(0.07 0.022 275)",
                 }}
               >
                 Add
@@ -559,8 +559,8 @@ export default function HabitsPage() {
                 style={{
                   background: task.completed
                     ? "oklch(0.10 0.014 252)"
-                    : "oklch(0.12 0.018 252)",
-                  border: `1px solid ${task.completed ? "oklch(0.18 0.02 252)" : "oklch(0.22 0.025 252)"}`,
+                    : "oklch(0.10 0.022 278)",
+                  border: `1px solid ${task.completed ? "oklch(0.18 0.02 252)" : "oklch(0.18 0.030 278)"}`,
                 }}
               >
                 <button
@@ -585,7 +585,7 @@ export default function HabitsPage() {
                 <div className="flex-1 min-w-0">
                   <p
                     className={cn("text-sm leading-snug", task.completed && "line-through")}
-                    style={{ color: task.completed ? "oklch(0.40 0.03 252)" : "oklch(0.88 0.008 252)" }}
+                    style={{ color: task.completed ? "oklch(0.40 0.03 278)" : "oklch(0.90 0.008 280)" }}
                   >
                     {task.text}
                   </p>
@@ -674,9 +674,9 @@ export default function HabitsPage() {
                   placeholder="e.g. Morning journaling"
                   className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
                   style={{
-                    background: "oklch(0.09 0.014 252)",
+                    background: "oklch(0.08 0.018 278)",
                     border: "1px solid oklch(0.26 0.025 252)",
-                    color: "oklch(0.93 0.008 252)",
+                    color: "oklch(0.94 0.006 280)",
                   }}
                   autoFocus
                 />
@@ -692,9 +692,9 @@ export default function HabitsPage() {
                   placeholder="Optional description..."
                   className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
                   style={{
-                    background: "oklch(0.09 0.014 252)",
+                    background: "oklch(0.08 0.018 278)",
                     border: "1px solid oklch(0.26 0.025 252)",
-                    color: "oklch(0.93 0.008 252)",
+                    color: "oklch(0.94 0.006 280)",
                   }}
                 />
               </div>
@@ -711,9 +711,9 @@ export default function HabitsPage() {
                       style={{
                         background:
                           newHabit.icon === icon
-                            ? "oklch(0.74 0.13 82 / 0.20)"
-                            : "oklch(0.09 0.014 252)",
-                        border: `1px solid ${newHabit.icon === icon ? "oklch(0.74 0.13 82 / 0.50)" : "oklch(0.22 0.025 252)"}`,
+                            ? "oklch(0.62 0.26 290 / 0.20)"
+                            : "oklch(0.08 0.018 278)",
+                        border: `1px solid ${newHabit.icon === icon ? "oklch(0.62 0.26 290 / 0.50)" : "oklch(0.18 0.030 278)"}`,
                       }}
                     >
                       {icon}
@@ -737,7 +737,7 @@ export default function HabitsPage() {
                         style={
                           active
                             ? { background: bg, color: accent, border: `1px solid ${accent.replace(")", " / 0.40)")}` }
-                            : { background: "oklch(0.09 0.014 252)", color: "oklch(0.50 0.04 252)", border: "1px solid oklch(0.22 0.025 252)" }
+                            : { background: "oklch(0.08 0.018 278)", color: "oklch(0.50 0.04 252)", border: "1px solid oklch(0.18 0.030 278)" }
                         }
                       >
                         {label}
@@ -759,14 +759,14 @@ export default function HabitsPage() {
                       style={
                         newHabit.frequency === freq
                           ? {
-                              background: "oklch(0.72 0.14 220 / 0.15)",
-                              color: "oklch(0.72 0.14 220)",
-                              border: "1px solid oklch(0.72 0.14 220 / 0.40)",
+                              background: "oklch(0.78 0.16 198 / 0.15)",
+                              color: "oklch(0.78 0.16 198)",
+                              border: "1px solid oklch(0.78 0.16 198 / 0.40)",
                             }
                           : {
-                              background: "oklch(0.09 0.014 252)",
+                              background: "oklch(0.08 0.018 278)",
                               color: "oklch(0.50 0.04 252)",
-                              border: "1px solid oklch(0.22 0.025 252)",
+                              border: "1px solid oklch(0.18 0.030 278)",
                             }
                       }
                     >
@@ -782,9 +782,9 @@ export default function HabitsPage() {
                 onClick={() => setShowNewHabit(false)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
                 style={{
-                  background: "oklch(0.09 0.014 252)",
-                  color: "oklch(0.55 0.04 252)",
-                  border: "1px solid oklch(0.22 0.025 252)",
+                  background: "oklch(0.08 0.018 278)",
+                  color: "oklch(0.55 0.04 278)",
+                  border: "1px solid oklch(0.18 0.030 278)",
                 }}
               >
                 Cancel
@@ -794,9 +794,9 @@ export default function HabitsPage() {
                 disabled={!newHabit.name.trim()}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
                 style={{
-                  background: "linear-gradient(135deg, oklch(0.74 0.13 82) 0%, oklch(0.82 0.16 82) 100%)",
-                  color: "oklch(0.08 0.014 252)",
-                  boxShadow: "0 4px 14px oklch(0.74 0.13 82 / 0.35)",
+                  background: "linear-gradient(135deg, oklch(0.62 0.26 290) 0%, oklch(0.82 0.16 82) 100%)",
+                  color: "oklch(0.07 0.022 275)",
+                  boxShadow: "0 4px 14px oklch(0.62 0.26 290 / 0.35)",
                 }}
               >
                 Create habit

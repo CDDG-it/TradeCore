@@ -74,13 +74,13 @@ function SectionCard({
     <div
       className={cn("rounded-xl overflow-hidden", className)}
       style={{
-        background: "oklch(0.12 0.018 252)",
-        border: "1px solid oklch(0.22 0.025 252)",
+        background: "oklch(0.10 0.022 278)",
+        border: "1px solid oklch(0.18 0.030 278)",
       }}
     >
       <div
         className="flex items-center gap-2.5 px-5 py-3.5"
-        style={{ borderBottom: "1px solid oklch(0.22 0.025 252)" }}
+        style={{ borderBottom: "1px solid oklch(0.18 0.030 278)" }}
       >
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -205,7 +205,7 @@ export default function SelfImprovementPage() {
       <section className="animate-fade-up space-y-5">
         <div
           className="flex items-center gap-3"
-          style={{ borderBottom: "1px solid oklch(0.18 0.022 252)", paddingBottom: "12px" }}
+          style={{ borderBottom: "1px solid oklch(0.15 0.027 278)", paddingBottom: "12px" }}
         >
           <h2 className="text-base font-semibold">Daily Check-in</h2>
         </div>
@@ -213,12 +213,12 @@ export default function SelfImprovementPage() {
         {/* Date Navigator */}
         <div
           className="flex items-center justify-between px-5 py-3 rounded-xl"
-          style={{ background: "oklch(0.12 0.018 252)", border: "1px solid oklch(0.22 0.025 252)" }}
+          style={{ background: "oklch(0.10 0.022 278)", border: "1px solid oklch(0.18 0.030 278)" }}
         >
           <button
             onClick={prevDay}
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5"
-            style={{ color: "oklch(0.55 0.04 252)" }}
+            style={{ color: "oklch(0.55 0.04 278)" }}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -227,7 +227,7 @@ export default function SelfImprovementPage() {
               {format(new Date(selectedDate + "T12:00:00"), "EEEE, MMMM d")}
             </p>
             {isToday && (
-              <span className="text-xs font-medium" style={{ color: "oklch(0.72 0.14 220)" }}>
+              <span className="text-xs font-medium" style={{ color: "oklch(0.78 0.16 198)" }}>
                 Today
               </span>
             )}
@@ -235,7 +235,7 @@ export default function SelfImprovementPage() {
           <button
             onClick={nextDay}
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5"
-            style={{ color: "oklch(0.55 0.04 252)" }}
+            style={{ color: "oklch(0.55 0.04 278)" }}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -245,7 +245,7 @@ export default function SelfImprovementPage() {
 
         <div className="grid lg:grid-cols-2 gap-5">
           {/* Daily Journal */}
-          <SectionCard title="Daily Journal" icon={BookOpen} accent="oklch(0.72 0.14 220)">
+          <SectionCard title="Daily Journal" icon={BookOpen} accent="oklch(0.78 0.16 198)">
             <div className="space-y-4">
               {[
                 {
@@ -283,9 +283,9 @@ export default function SelfImprovementPage() {
                     placeholder={placeholder}
                     className="w-full rounded-lg px-3 py-2.5 text-sm resize-none"
                     style={{
-                      background: "oklch(0.09 0.014 252)",
-                      border: "1px solid oklch(0.22 0.025 252)",
-                      color: "oklch(0.93 0.008 252)",
+                      background: "oklch(0.08 0.018 278)",
+                      border: "1px solid oklch(0.18 0.030 278)",
+                      color: "oklch(0.94 0.006 280)",
                       outline: "none",
                     }}
                   />
@@ -296,9 +296,9 @@ export default function SelfImprovementPage() {
                   onClick={saveJournal}
                   className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all hover:-translate-y-px"
                   style={{
-                    background: "oklch(0.72 0.14 220)",
-                    color: "oklch(0.08 0.014 252)",
-                    boxShadow: "0 4px 14px oklch(0.72 0.14 220 / 0.30)",
+                    background: "oklch(0.78 0.16 198)",
+                    color: "oklch(0.07 0.022 275)",
+                    boxShadow: "0 4px 14px oklch(0.78 0.16 198 / 0.30)",
                   }}
                 >
                   Save Journal
@@ -308,7 +308,7 @@ export default function SelfImprovementPage() {
           </SectionCard>
 
           {/* Daily Tracker */}
-          <SectionCard title="Daily Tracker" icon={Activity} accent="oklch(0.74 0.13 82)">
+          <SectionCard title="Daily Tracker" icon={Activity} accent="oklch(0.62 0.26 290)">
             <div className="space-y-5">
               {/* Hours slept */}
               <div>
@@ -317,7 +317,7 @@ export default function SelfImprovementPage() {
                   <button
                     onClick={() => { setHoursSlept(Math.max(0, hoursSlept - 0.5)); setTrackerDirty(true); }}
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
+                    style={{ background: "oklch(0.08 0.018 278)", border: "1px solid oklch(0.18 0.030 278)" }}
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
@@ -327,7 +327,7 @@ export default function SelfImprovementPage() {
                   <button
                     onClick={() => { setHoursSlept(Math.min(12, hoursSlept + 0.5)); setTrackerDirty(true); }}
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)" }}
+                    style={{ background: "oklch(0.08 0.018 278)", border: "1px solid oklch(0.18 0.030 278)" }}
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
@@ -335,7 +335,7 @@ export default function SelfImprovementPage() {
                     <button
                       onClick={saveTracker}
                       className="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
-                      style={{ background: "oklch(0.74 0.13 82 / 0.15)", color: "oklch(0.74 0.13 82)", border: "1px solid oklch(0.74 0.13 82 / 0.25)" }}
+                      style={{ background: "oklch(0.62 0.26 290 / 0.15)", color: "oklch(0.62 0.26 290)", border: "1px solid oklch(0.62 0.26 290 / 0.25)" }}
                     >
                       Save
                     </button>
@@ -350,7 +350,7 @@ export default function SelfImprovementPage() {
                   <Link
                     href="/habits"
                     className="text-xs flex items-center gap-1 transition-opacity hover:opacity-70"
-                    style={{ color: "oklch(0.72 0.14 220)" }}
+                    style={{ color: "oklch(0.78 0.16 198)" }}
                   >
                     Manage <ExternalLink className="w-3 h-3" />
                   </Link>
@@ -369,17 +369,17 @@ export default function SelfImprovementPage() {
                             className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all hover:scale-110"
                             style={done
                               ? { background: habit.color }
-                              : { background: "oklch(0.09 0.014 252)", border: "1.5px solid oklch(0.28 0.025 252)" }}
+                              : { background: "oklch(0.08 0.018 278)", border: "1.5px solid oklch(0.22 0.032 278)" }}
                           >
                             {done ? <Check className="w-3 h-3 text-white" /> : <span className="text-sm leading-none">{habit.icon}</span>}
                           </button>
-                          <span className="flex-1 text-sm truncate" style={{ color: done ? "oklch(0.88 0.008 252)" : "oklch(0.55 0.04 252)" }}>
+                          <span className="flex-1 text-sm truncate" style={{ color: done ? "oklch(0.90 0.008 280)" : "oklch(0.55 0.04 278)" }}>
                             {habit.name}
                           </span>
                           {streak > 0 && (
                             <div className="flex items-center gap-1 shrink-0">
-                              <Flame className="w-3 h-3" style={{ color: "oklch(0.74 0.13 82)" }} />
-                              <span className="text-xs font-semibold" style={{ color: "oklch(0.74 0.13 82)" }}>{streak}d</span>
+                              <Flame className="w-3 h-3" style={{ color: "oklch(0.62 0.26 290)" }} />
+                              <span className="text-xs font-semibold" style={{ color: "oklch(0.62 0.26 290)" }}>{streak}d</span>
                             </div>
                           )}
                         </div>
@@ -404,11 +404,11 @@ export default function SelfImprovementPage() {
                         className="w-4 h-4 rounded flex items-center justify-center shrink-0 transition-all"
                         style={task.done
                           ? { background: "oklch(0.58 0.17 145)", border: "none" }
-                          : { background: "oklch(0.09 0.014 252)", border: "1.5px solid oklch(0.28 0.025 252)" }}
+                          : { background: "oklch(0.08 0.018 278)", border: "1.5px solid oklch(0.22 0.032 278)" }}
                       >
                         {task.done && <Check className="w-2.5 h-2.5 text-white" />}
                       </button>
-                      <span className="flex-1 text-sm" style={{ color: task.done ? "oklch(0.45 0.03 252)" : "oklch(0.88 0.008 252)", textDecoration: task.done ? "line-through" : "none" }}>
+                      <span className="flex-1 text-sm" style={{ color: task.done ? "oklch(0.45 0.03 252)" : "oklch(0.90 0.008 280)", textDecoration: task.done ? "line-through" : "none" }}>
                         {task.text}
                       </span>
                       <button
@@ -440,7 +440,7 @@ export default function SelfImprovementPage() {
                     }}
                     placeholder="Add a task..."
                     className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
-                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
+                    style={{ background: "oklch(0.08 0.018 278)", border: "1px solid oklch(0.18 0.030 278)", color: "oklch(0.94 0.006 280)" }}
                   />
                   <button
                     onClick={() => {
@@ -451,7 +451,7 @@ export default function SelfImprovementPage() {
                       setNewTask("");
                     }}
                     className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: "oklch(0.74 0.13 82 / 0.12)", color: "oklch(0.74 0.13 82)", border: "1px solid oklch(0.74 0.13 82 / 0.22)" }}
+                    style={{ background: "oklch(0.62 0.26 290 / 0.12)", color: "oklch(0.62 0.26 290)", border: "1px solid oklch(0.62 0.26 290 / 0.22)" }}
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
@@ -466,7 +466,7 @@ export default function SelfImprovementPage() {
       <section className="animate-fade-up space-y-5">
         <div
           className="flex items-center justify-between"
-          style={{ borderBottom: "1px solid oklch(0.18 0.022 252)", paddingBottom: "12px" }}
+          style={{ borderBottom: "1px solid oklch(0.15 0.027 278)", paddingBottom: "12px" }}
         >
           <h2 className="text-base font-semibold">Playbook</h2>
           {(playbookSaved && !playbookDirty) && (
@@ -478,11 +478,11 @@ export default function SelfImprovementPage() {
 
         <div
           className="rounded-xl overflow-hidden"
-          style={{ background: "oklch(0.12 0.018 252)", border: "1px solid oklch(0.22 0.025 252)" }}
+          style={{ background: "oklch(0.10 0.022 278)", border: "1px solid oklch(0.18 0.030 278)" }}
         >
           <div className="grid lg:grid-cols-2">
             {/* Rules & Routine combined */}
-            <div className="p-5 space-y-4" style={{ borderRight: "1px solid oklch(0.18 0.022 252)" }}>
+            <div className="p-5 space-y-4" style={{ borderRight: "1px solid oklch(0.15 0.027 278)" }}>
               {/* Non-Negotiable Rules */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -494,7 +494,7 @@ export default function SelfImprovementPage() {
                 <div className="space-y-0.5">
                   {(playbook.non_negotiable_rules ?? []).map((rule, i) => (
                     <div key={i} className="flex items-center gap-2 group py-1">
-                      <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.40 0.03 252)" }}>{i + 1}.</span>
+                      <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.40 0.03 278)" }}>{i + 1}.</span>
                       <span className="text-sm flex-1">{rule}</span>
                       <button
                         onClick={() => {
@@ -504,7 +504,7 @@ export default function SelfImprovementPage() {
                           setPlaybookDirty(true);
                         }}
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        style={{ color: "oklch(0.55 0.04 252)" }}
+                        style={{ color: "oklch(0.55 0.04 278)" }}
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -524,7 +524,7 @@ export default function SelfImprovementPage() {
                     }}
                     placeholder="Add a rule..."
                     className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
-                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
+                    style={{ background: "oklch(0.08 0.018 278)", border: "1px solid oklch(0.18 0.030 278)", color: "oklch(0.94 0.006 280)" }}
                   />
                   <button
                     onClick={() => {
@@ -540,20 +540,20 @@ export default function SelfImprovementPage() {
                 </div>
               </div>
 
-              <div style={{ borderTop: "1px solid oklch(0.18 0.022 252)" }} />
+              <div style={{ borderTop: "1px solid oklch(0.15 0.027 278)" }} />
 
               {/* Pre-Trade Routine */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <CheckSquare className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.72 0.14 220)" }} />
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.72 0.14 220)" }}>
+                  <CheckSquare className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.78 0.16 198)" }} />
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.78 0.16 198)" }}>
                     Pre-Trade Routine
                   </span>
                 </div>
                 <div className="space-y-0.5">
                   {(playbook.pre_trade_routine ?? []).map((step, i) => (
                     <div key={i} className="flex items-center gap-2 group py-1">
-                      <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.72 0.14 220 / 0.6)" }}>{i + 1}.</span>
+                      <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.78 0.16 198 / 0.6)" }}>{i + 1}.</span>
                       <span className="text-sm flex-1">{step}</span>
                       <button
                         onClick={() => {
@@ -563,7 +563,7 @@ export default function SelfImprovementPage() {
                           setPlaybookDirty(true);
                         }}
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        style={{ color: "oklch(0.55 0.04 252)" }}
+                        style={{ color: "oklch(0.55 0.04 278)" }}
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -583,7 +583,7 @@ export default function SelfImprovementPage() {
                     }}
                     placeholder="Add a step..."
                     className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
-                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
+                    style={{ background: "oklch(0.08 0.018 278)", border: "1px solid oklch(0.18 0.030 278)", color: "oklch(0.94 0.006 280)" }}
                   />
                   <button
                     onClick={() => {
@@ -592,7 +592,7 @@ export default function SelfImprovementPage() {
                       setNewRoutineStep(""); setPlaybookDirty(true);
                     }}
                     className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: "oklch(0.72 0.14 220 / 0.12)", color: "oklch(0.72 0.14 220)", border: "1px solid oklch(0.72 0.14 220 / 0.20)" }}
+                    style={{ background: "oklch(0.78 0.16 198 / 0.12)", color: "oklch(0.78 0.16 198)", border: "1px solid oklch(0.78 0.16 198 / 0.20)" }}
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
@@ -614,18 +614,18 @@ export default function SelfImprovementPage() {
                 onChange={(e) => { setPlaybook({ ...playbook, a_plus_criteria: e.target.value }); setPlaybookDirty(true); }}
                 placeholder="Describe your ideal A+ setup — what must be true for you to take the trade..."
                 className="w-full rounded-lg px-3 py-2.5 text-sm resize-none"
-                style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)", outline: "none" }}
+                style={{ background: "oklch(0.08 0.018 278)", border: "1px solid oklch(0.18 0.030 278)", color: "oklch(0.94 0.006 280)", outline: "none" }}
               />
             </div>
           </div>
 
           {/* Save bar */}
           {playbookDirty && (
-            <div style={{ borderTop: "1px solid oklch(0.18 0.022 252)" }}>
+            <div style={{ borderTop: "1px solid oklch(0.15 0.027 278)" }}>
               <button
                 onClick={savePlaybookData}
                 className="w-full py-3 text-sm font-semibold transition-all hover:opacity-90"
-                style={{ background: "oklch(0.72 0.14 220 / 0.15)", color: "oklch(0.72 0.14 220)" }}
+                style={{ background: "oklch(0.78 0.16 198 / 0.15)", color: "oklch(0.78 0.16 198)" }}
               >
                 Save Playbook
               </button>
@@ -647,13 +647,13 @@ function DaySummaryBadges({ date }: { date: string }) {
       label: "Pre-Market",
       done: summary.hasAnalysis,
       detail: summary.hasAnalysis ? `${summary.analysisCount} analysis` : "Not done",
-      color: "oklch(0.74 0.13 82)",
+      color: "oklch(0.62 0.26 290)",
     },
     {
       label: "Habits",
       done: summary.habitCompleted > 0,
       detail: `${summary.habitCompleted}/${summary.habitCount} done`,
-      color: "oklch(0.72 0.14 220)",
+      color: "oklch(0.78 0.16 198)",
     },
     {
       label: "Trades",
@@ -668,7 +668,7 @@ function DaySummaryBadges({ date }: { date: string }) {
       label: "Journal",
       done: summary.hasJournal,
       detail: summary.hasJournal ? "Written" : "Not written",
-      color: "oklch(0.72 0.14 220)",
+      color: "oklch(0.78 0.16 198)",
     },
     {
       label: "Tracker",
@@ -677,7 +677,7 @@ function DaySummaryBadges({ date }: { date: string }) {
         summary.hasStateCheck && summary.stateScore !== null
           ? `Avg: ${summary.stateScore}/10`
           : "Not logged",
-      color: "oklch(0.74 0.13 82)",
+      color: "oklch(0.62 0.26 290)",
     },
     {
       label: "Recovery",
@@ -694,23 +694,23 @@ function DaySummaryBadges({ date }: { date: string }) {
           key={label}
           className="rounded-xl p-3 text-center"
           style={{
-            background: done ? `${color}0d` : "oklch(0.12 0.018 252)",
-            border: `1px solid ${done ? `${color}33` : "oklch(0.22 0.025 252)"}`,
+            background: done ? `${color}0d` : "oklch(0.10 0.022 278)",
+            border: `1px solid ${done ? `${color}33` : "oklch(0.18 0.030 278)"}`,
           }}
         >
           <div
             className="w-6 h-6 rounded-full flex items-center justify-center mx-auto mb-1.5"
-            style={{ background: done ? `${color}1a` : "oklch(0.18 0.022 252)" }}
+            style={{ background: done ? `${color}1a` : "oklch(0.15 0.027 278)" }}
           >
             {done ? (
               <Check className="w-3 h-3" style={{ color }} />
             ) : (
-              <Minus className="w-3 h-3" style={{ color: "oklch(0.40 0.03 252)" }} />
+              <Minus className="w-3 h-3" style={{ color: "oklch(0.40 0.03 278)" }} />
             )}
           </div>
           <p
             className="text-xs font-semibold"
-            style={{ color: done ? color : "oklch(0.55 0.04 252)" }}
+            style={{ color: done ? color : "oklch(0.55 0.04 278)" }}
           >
             {label}
           </p>

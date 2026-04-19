@@ -37,14 +37,14 @@ const TYPE_CONFIG: Record<InsightType, {
   pattern: {
     label: "Pattern",
     icon: BarChart2,
-    color: "oklch(0.72 0.14 220)",
-    bg: "oklch(0.72 0.14 220 / 0.08)",
+    color: "oklch(0.78 0.16 198)",
+    bg: "oklch(0.78 0.16 198 / 0.08)",
   },
   suggestion: {
     label: "Suggestion",
     icon: Lightbulb,
-    color: "oklch(0.74 0.13 82)",
-    bg: "oklch(0.74 0.13 82 / 0.08)",
+    color: "oklch(0.62 0.26 290)",
+    bg: "oklch(0.62 0.26 290 / 0.08)",
   },
   blind_spot: {
     label: "Blind Spot",
@@ -64,8 +64,8 @@ const CATEGORY_LABELS: Record<InsightCategory, string> = {
 
 const CONFIDENCE_CONFIG = {
   high: { label: "High confidence", dots: 3, color: "oklch(0.72 0.17 145)" },
-  medium: { label: "Medium confidence", dots: 2, color: "oklch(0.74 0.13 82)" },
-  low: { label: "Low confidence", dots: 1, color: "oklch(0.88 0.008 252 / 40%)" },
+  medium: { label: "Medium confidence", dots: 2, color: "oklch(0.62 0.26 290)" },
+  low: { label: "Low confidence", dots: 1, color: "oklch(0.90 0.008 280 / 40%)" },
 };
 
 function InsightCard({ insight }: { insight: CoachingInsight }) {
@@ -129,7 +129,7 @@ function InsightCard({ insight }: { insight: CoachingInsight }) {
                 className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
                 style={{
                   background: "oklch(1 0 0 / 5%)",
-                  color: "oklch(0.88 0.008 252 / 50%)",
+                  color: "oklch(0.90 0.008 280 / 50%)",
                 }}
               >
                 {CATEGORY_LABELS[insight.category]}
@@ -138,7 +138,7 @@ function InsightCard({ insight }: { insight: CoachingInsight }) {
                 className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
                 style={{
                   background: "oklch(1 0 0 / 5%)",
-                  color: "oklch(0.88 0.008 252 / 50%)",
+                  color: "oklch(0.90 0.008 280 / 50%)",
                 }}
               >
                 {insight.timeframe.replace("_", " ")}
@@ -214,7 +214,7 @@ export default function CoachingPage() {
 
   const disciplineColor =
     avgDiscipline >= 80 ? "oklch(0.72 0.17 145)"
-    : avgDiscipline >= 60 ? "oklch(0.74 0.13 82)"
+    : avgDiscipline >= 60 ? "oklch(0.62 0.26 290)"
     : "oklch(0.65 0.22 25)";
 
   return (
@@ -224,7 +224,7 @@ export default function CoachingPage() {
         <div>
           <h1
             className="text-2xl font-bold tracking-tight"
-            style={{ color: "oklch(0.93 0.008 252)" }}
+            style={{ color: "oklch(0.94 0.006 280)" }}
           >
             Performance Coaching
           </h1>
@@ -249,7 +249,7 @@ export default function CoachingPage() {
             label: "Trades Analyzed",
             value: tradeCount,
             icon: BarChart2,
-            color: "oklch(0.72 0.14 220)",
+            color: "oklch(0.78 0.16 198)",
           },
           {
             label: "Avg Discipline",
@@ -261,7 +261,7 @@ export default function CoachingPage() {
             label: "Insights",
             value: insights.length,
             icon: Brain,
-            color: "oklch(0.74 0.13 82)",
+            color: "oklch(0.62 0.26 290)",
           },
           {
             label: "Action Items",
@@ -323,9 +323,9 @@ export default function CoachingPage() {
               onClick={() => setFilterCategory(cat)}
               className="px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all"
               style={{
-                background: active ? "oklch(0.72 0.14 220 / 0.12)" : "oklch(1 0 0 / 4%)",
-                color: active ? "oklch(0.72 0.14 220)" : "oklch(0.88 0.008 252 / 50%)",
-                border: `1px solid ${active ? "oklch(0.72 0.14 220 / 0.25)" : "transparent"}`,
+                background: active ? "oklch(0.78 0.16 198 / 0.12)" : "oklch(1 0 0 / 4%)",
+                color: active ? "oklch(0.78 0.16 198)" : "oklch(0.90 0.008 280 / 50%)",
+                border: `1px solid ${active ? "oklch(0.78 0.16 198 / 0.25)" : "transparent"}`,
               }}
             >
               {cat === "all" ? "All Categories" : CATEGORY_LABELS[cat]}
@@ -357,7 +357,7 @@ export default function CoachingPage() {
                 <button
                   onClick={() => { setFilterType("all"); setFilterCategory("all"); }}
                   className="text-xs mt-2 transition-colors"
-                  style={{ color: "oklch(0.72 0.14 220)" }}
+                  style={{ color: "oklch(0.78 0.16 198)" }}
                 >
                   Clear filters
                 </button>
