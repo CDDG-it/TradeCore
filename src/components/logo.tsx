@@ -3,116 +3,147 @@ interface LogoProps {
   size?: number;
 }
 
-/** TradeCORE brand mark — white brain + gradient D + candlesticks */
 export function LogoMark({ size = 32 }: LogoProps) {
   return (
     <svg
       width={size}
-      height={size}
-      viewBox="0 0 185 125"
+      height={Math.round(size * 0.88)}
+      viewBox="0 0 210 185"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="TradeCORE mark"
+      aria-label="TradeCORE"
     >
       <defs>
-        <linearGradient id="og" x1="0" y1="1" x2="0" y2="0" gradientUnits="objectBoundingBox">
+        <linearGradient id="gD" x1="100" y1="180" x2="100" y2="5" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#F97316" />
           <stop offset="100%" stopColor="#FBBF24" />
         </linearGradient>
-        <linearGradient id="ogV" x1="85" y1="115" x2="85" y2="8" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#F97316" />
-          <stop offset="100%" stopColor="#FBBF24" />
-        </linearGradient>
-        <linearGradient id="candleR" x1="148" y1="110" x2="148" y2="8" gradientUnits="userSpaceOnUse">
+        <linearGradient id="gC" x1="168" y1="175" x2="168" y2="5" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#F97316" />
           <stop offset="100%" stopColor="#FBBF24" />
         </linearGradient>
       </defs>
 
-      {/* ── Brain: white fill, thick black outer stroke + sulci ── */}
-      {/* White brain body */}
+      {/* ─────────────────────────────────────────────
+          BRAIN — white fill + thick black strokes
+          Side-view (lateral) left hemisphere
+          ───────────────────────────────────────────── */}
+      {/* White brain fill */}
       <path
         fill="white"
-        stroke="#0d0402"
-        strokeWidth="5"
+        d="
+          M 48 12
+          C 38 8 24 12 16 23
+          C 8 33 9 47 16 57
+          C 9 66 7 79 13 91
+          C 18 102 32 109 44 108
+          C 41 118 43 130 54 132
+          C 64 134 73 128 75 119
+          C 80 129 88 134 97 132
+          C 106 130 109 120 107 111
+          C 116 104 120 92 115 80
+          C 121 73 121 59 115 50
+          C 109 40 97 35 88 37
+          C 83 27 73 18 62 15
+          C 58 12 53 11 48 12 Z
+        "
+      />
+      {/* Brain outer border */}
+      <path
+        fill="none"
+        stroke="#0c0501"
+        strokeWidth="6.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         d="
-          M 44 10
-          C 34 5 20 10 13 21
-          C 6 31 7 45 13 55
-          C 6 63 4 77 11 88
-          C 17 98 29 103 41 102
-          C 37 111 40 121 51 122
-          C 61 123 70 117 71 109
-          Q 76 121 86 118
-          C 95 115 96 102 89 95
-          C 99 86 101 72 93 60
-          C 100 51 98 35 89 27
-          C 80 18 65 17 57 24
-          C 52 14 48 7 44 10
-          Z
+          M 48 12
+          C 38 8 24 12 16 23
+          C 8 33 9 47 16 57
+          C 9 66 7 79 13 91
+          C 18 102 32 109 44 108
+          C 41 118 43 130 54 132
+          C 64 134 73 128 75 119
+          C 80 129 88 134 97 132
+          C 106 130 109 120 107 111
+          C 116 104 120 92 115 80
+          C 121 73 121 59 115 50
+          C 109 40 97 35 88 37
+          C 83 27 73 18 62 15
+          C 58 12 53 11 48 12 Z
         "
       />
-
       {/* Central sulcus */}
-      <path stroke="#0d0402" strokeWidth="5" strokeLinecap="round" fill="none"
-        d="M 55 24 C 50 39 46 56 46 73" />
-      {/* Sylvian fissure (horizontal) */}
-      <path stroke="#0d0402" strokeWidth="5" strokeLinecap="round" fill="none"
-        d="M 16 62 C 30 57 45 54 58 51" />
-      {/* Frontal gyrus */}
-      <path stroke="#0d0402" strokeWidth="5" strokeLinecap="round" fill="none"
-        d="M 37 11 C 32 26 29 41 33 56" />
-      {/* Superior parietal */}
-      <path stroke="#0d0402" strokeWidth="5" strokeLinecap="round" fill="none"
-        d="M 90 33 C 83 46 74 56 62 61" />
-      {/* Inferior parietal / occipital */}
-      <path stroke="#0d0402" strokeWidth="5" strokeLinecap="round" fill="none"
-        d="M 94 68 C 84 79 70 84 57 83" />
-      {/* Temporal gyrus */}
-      <path stroke="#0d0402" strokeWidth="5" strokeLinecap="round" fill="none"
-        d="M 22 77 C 33 84 45 86 57 83" />
+      <path fill="none" stroke="#0c0501" strokeWidth="6" strokeLinecap="round"
+        d="M 64 15 C 59 33 56 54 57 75" />
+      {/* Sylvian fissure (lateral fissure) */}
+      <path fill="none" stroke="#0c0501" strokeWidth="6" strokeLinecap="round"
+        d="M 14 68 C 30 63 48 61 63 63" />
+      {/* Superior frontal sulcus */}
+      <path fill="none" stroke="#0c0501" strokeWidth="6" strokeLinecap="round"
+        d="M 41 13 C 36 28 33 44 37 60" />
+      {/* Inferior frontal region */}
+      <path fill="none" stroke="#0c0501" strokeWidth="6" strokeLinecap="round"
+        d="M 17 42 C 29 38 44 37 55 41" />
+      {/* Parietal sulcus */}
+      <path fill="none" stroke="#0c0501" strokeWidth="6" strokeLinecap="round"
+        d="M 114 55 C 107 68 98 78 86 83" />
+      {/* Occipito-parietal */}
+      <path fill="none" stroke="#0c0501" strokeWidth="6" strokeLinecap="round"
+        d="M 116 76 C 107 88 95 95 82 93" />
+      {/* Superior temporal */}
+      <path fill="none" stroke="#0c0501" strokeWidth="6" strokeLinecap="round"
+        d="M 17 83 C 31 88 47 90 60 87" />
+      {/* Inferior temporal */}
+      <path fill="none" stroke="#0c0501" strokeWidth="6" strokeLinecap="round"
+        d="M 43 106 C 53 112 64 113 74 110" />
 
-      {/* ── D shape: bold letter D, orange→yellow gradient ── */}
+      {/* ─────────────────────────────────────────────
+          BOLD LETTER D — orange→yellow gradient
+          Flat left edge aligned with brain right side
+          ───────────────────────────────────────────── */}
       <path
-        fill="url(#ogV)"
-        d="M 78 8 L 78 117 Q 148 117 148 62.5 Q 148 8 78 8 Z"
+        fill="url(#gD)"
+        d="M 87 7 L 87 178 Q 162 178 162 92.5 Q 162 7 87 7 Z"
       />
 
-      {/* ── Candle 1 on D (dark silhouette, shorter) ── */}
-      <line x1="97" y1="26" x2="97" y2="43" stroke="#180800" strokeWidth="4.5" strokeLinecap="round" opacity="0.9" />
-      <rect x="90" y="43" width="14" height="34" rx="2.5" fill="#180800" opacity="0.9" />
-      <line x1="97" y1="77" x2="97" y2="94" stroke="#180800" strokeWidth="4.5" strokeLinecap="round" opacity="0.9" />
+      {/* ─────────────────────────────────────────────
+          CANDLESTICK 1 — dark silhouette, on D (shorter)
+          ───────────────────────────────────────────── */}
+      <line x1="108" y1="35" x2="108" y2="56" stroke="#130600" strokeWidth="5.5" strokeLinecap="round" opacity="0.92"/>
+      <rect x="100" y="56" width="16" height="46" rx="3" fill="#130600" opacity="0.92"/>
+      <line x1="108" y1="102" x2="108" y2="125" stroke="#130600" strokeWidth="5.5" strokeLinecap="round" opacity="0.92"/>
 
-      {/* ── Candle 2 on D (dark silhouette, taller, right) ── */}
-      <line x1="117" y1="18" x2="117" y2="37" stroke="#180800" strokeWidth="4.5" strokeLinecap="round" opacity="0.9" />
-      <rect x="110" y="37" width="14" height="44" rx="2.5" fill="#180800" opacity="0.9" />
-      <line x1="117" y1="81" x2="117" y2="100" stroke="#180800" strokeWidth="4.5" strokeLinecap="round" opacity="0.9" />
+      {/* ─────────────────────────────────────────────
+          CANDLESTICK 2 — dark silhouette, on D (taller)
+          ───────────────────────────────────────────── */}
+      <line x1="130" y1="22" x2="130" y2="47" stroke="#130600" strokeWidth="5.5" strokeLinecap="round" opacity="0.92"/>
+      <rect x="122" y="47" width="16" height="56" rx="3" fill="#130600" opacity="0.92"/>
+      <line x1="130" y1="103" x2="130" y2="130" stroke="#130600" strokeWidth="5.5" strokeLinecap="round" opacity="0.92"/>
 
-      {/* ── Right candle: gradient, outside D ── */}
-      <line x1="148" y1="8" x2="148" y2="28" stroke="url(#candleR)" strokeWidth="4.5" strokeLinecap="round" />
-      <rect x="140" y="28" width="16" height="50" rx="2.5" fill="url(#candleR)" />
-      <line x1="148" y1="78" x2="148" y2="102" stroke="url(#candleR)" strokeWidth="4.5" strokeLinecap="round" />
+      {/* ─────────────────────────────────────────────
+          CANDLESTICK 3 — gradient, outside D (right)
+          ───────────────────────────────────────────── */}
+      <line x1="168" y1="8" x2="168" y2="38" stroke="url(#gC)" strokeWidth="5.5" strokeLinecap="round"/>
+      <rect x="159" y="38" width="18" height="62" rx="3" fill="url(#gC)"/>
+      <line x1="168" y1="100" x2="168" y2="138" stroke="url(#gC)" strokeWidth="5.5" strokeLinecap="round"/>
     </svg>
   );
 }
 
-/** Horizontal lockup: mark + wordmark (round bold font via CSS var) */
 export function Logo({
   variant = "dark",
   size = 28,
   className = "",
 }: LogoProps & { className?: string }) {
   const tradeColor = variant === "dark" ? "#FFFFFF" : "#111111";
-  const sz = size <= 24 ? "text-sm" : size <= 32 ? "text-[15px]" : "text-lg";
+  const textSize = size <= 24 ? "text-sm" : size <= 32 ? "text-base" : "text-lg";
 
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
+    <div className={`flex items-center gap-2 ${className}`}>
       <LogoMark size={size} />
       <span
-        className={`font-bold tracking-tight leading-none ${sz}`}
-        style={{ fontFamily: "var(--font-nunito), var(--font-barlow), system-ui, sans-serif" }}
+        className={`font-black tracking-tight leading-none ${textSize}`}
+        style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
       >
         <span style={{ color: tradeColor }}>Trade</span>
         <span style={{

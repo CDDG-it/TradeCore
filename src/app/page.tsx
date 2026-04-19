@@ -265,7 +265,7 @@ export default function LandingPage() {
           </FadeIn>
 
           <FadeIn delay={0.14}>
-            <h1 className="font-heading italic text-[clamp(4rem,12vw,9rem)] tracking-tight leading-[0.88] text-white mb-6">
+            <h1 className="font-heading font-black text-[clamp(4rem,12vw,9rem)] tracking-tight leading-[0.88] text-white mb-6">
               Trade
               <br />
               <span style={{ background: "linear-gradient(135deg, #F97316 0%, #FBBF24 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
@@ -316,7 +316,7 @@ export default function LandingPage() {
           <div className="liquid-glass rounded-2xl px-8 py-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {stats.map(({ value, label }) => (
               <div key={label}>
-                <p className="font-heading italic text-3xl text-white mb-1"
+                <p className="font-heading font-black text-3xl text-white mb-1"
                   style={{ background: "linear-gradient(135deg, #F97316, #FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
                   {value}
                 </p>
@@ -332,7 +332,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl">
           <FadeIn className="text-center mb-16">
             <p className="font-body text-xs font-semibold uppercase tracking-[0.15em] text-white/30 mb-4">Platform</p>
-            <h2 className="font-heading italic text-5xl md:text-6xl text-white tracking-tight leading-[0.9] mb-4">
+            <h2 className="font-heading font-black text-5xl md:text-6xl text-white tracking-tight leading-[0.9] mb-4">
               The complete system.
             </h2>
             <p className="font-body text-sm font-light text-white/40 max-w-sm mx-auto">
@@ -370,7 +370,7 @@ export default function LandingPage() {
       <section className="relative z-10 px-6 pb-28">
         <div className="mx-auto max-w-6xl">
           <FadeIn className="text-center mb-14">
-            <h2 className="font-heading italic text-4xl md:text-5xl text-white tracking-tight leading-[0.9] mb-3">
+            <h2 className="font-heading font-black text-4xl md:text-5xl text-white tracking-tight leading-[0.9] mb-3">
               A real look inside.
             </h2>
             <p className="font-body text-sm font-light text-white/40 max-w-sm mx-auto">
@@ -410,7 +410,7 @@ export default function LandingPage() {
             <div className="absolute inset-0 pointer-events-none"
               style={{ background: "radial-gradient(ellipse at center top, rgba(249,115,22,0.12), transparent 60%)" }} />
             <p className="font-body text-xs font-semibold uppercase tracking-[0.15em] text-white/30 mb-4 relative">Ready?</p>
-            <h2 className="font-heading italic text-4xl md:text-5xl text-white tracking-tight leading-[0.9] mb-4 relative">
+            <h2 className="font-heading font-black text-4xl md:text-5xl text-white tracking-tight leading-[0.9] mb-4 relative">
               Start trading smarter.
             </h2>
             <p className="font-body text-sm font-light text-white/40 max-w-xs mx-auto mb-8 relative">

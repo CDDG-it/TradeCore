@@ -24,7 +24,7 @@ export function PageHeader({ badge, title, subtitle, action, className = "" }: P
             {badge}
           </p>
         )}
-        <h1 className="font-heading italic text-3xl md:text-4xl text-white tracking-tight leading-[0.92]">
+        <h1 className="font-heading font-black text-3xl md:text-4xl text-white tracking-tight leading-[0.95]">
           {title}
         </h1>
         {subtitle && (
