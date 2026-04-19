@@ -15,7 +15,6 @@ import {
   ExternalLink,
   Activity,
   Shield,
-  AlertTriangle,
   Target,
   CheckSquare,
 } from "lucide-react";
@@ -168,7 +167,6 @@ export default function SelfImprovementPage() {
   const [playbookDirty, setPlaybookDirty] = useState(false);
   const [playbookSaved, setPlaybookSaved] = useState(false);
   const [newRule, setNewRule] = useState("");
-  const [newWeakness, setNewWeakness] = useState("");
   const [newRoutineStep, setNewRoutineStep] = useState("");
 
   // Load daily data when date changes
@@ -624,127 +622,128 @@ export default function SelfImprovementPage() {
           className="rounded-xl overflow-hidden"
           style={{ background: "oklch(0.12 0.018 252)", border: "1px solid oklch(0.22 0.025 252)" }}
         >
-          {/* Rules + Routine */}
-          <div className="grid lg:grid-cols-2" style={{ borderBottom: "1px solid oklch(0.18 0.022 252)" }}>
-            {/* Non-Negotiable Rules */}
-            <div className="p-5 space-y-3" style={{ borderRight: "1px solid oklch(0.18 0.022 252)" }}>
-              <div className="flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.58 0.22 25)" }} />
-                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.58 0.22 25)" }}>
-                  Non-Negotiable Rules
-                </span>
-              </div>
-              <div className="space-y-1">
-                {(playbook.non_negotiable_rules ?? []).map((rule, i) => (
-                  <div key={i} className="flex items-center gap-2 group py-1">
-                    <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.40 0.03 252)" }}>{i + 1}.</span>
-                    <span className="text-sm flex-1">{rule}</span>
-                    <button
-                      onClick={() => {
-                        const rules = [...(playbook.non_negotiable_rules ?? [])];
-                        rules.splice(i, 1);
-                        setPlaybook({ ...playbook, non_negotiable_rules: rules });
-                        setPlaybookDirty(true);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ color: "oklch(0.55 0.04 252)" }}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2 pt-1">
-                <input
-                  type="text"
-                  value={newRule}
-                  onChange={(e) => setNewRule(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newRule.trim()) {
+          <div className="grid lg:grid-cols-2">
+            {/* Rules & Routine combined */}
+            <div className="p-5 space-y-4" style={{ borderRight: "1px solid oklch(0.18 0.022 252)" }}>
+              {/* Non-Negotiable Rules */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.58 0.22 25)" }} />
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.58 0.22 25)" }}>
+                    Non-Negotiable Rules
+                  </span>
+                </div>
+                <div className="space-y-0.5">
+                  {(playbook.non_negotiable_rules ?? []).map((rule, i) => (
+                    <div key={i} className="flex items-center gap-2 group py-1">
+                      <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.40 0.03 252)" }}>{i + 1}.</span>
+                      <span className="text-sm flex-1">{rule}</span>
+                      <button
+                        onClick={() => {
+                          const rules = [...(playbook.non_negotiable_rules ?? [])];
+                          rules.splice(i, 1);
+                          setPlaybook({ ...playbook, non_negotiable_rules: rules });
+                          setPlaybookDirty(true);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ color: "oklch(0.55 0.04 252)" }}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newRule}
+                    onChange={(e) => setNewRule(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newRule.trim()) {
+                        setPlaybook({ ...playbook, non_negotiable_rules: [...(playbook.non_negotiable_rules ?? []), newRule.trim()] });
+                        setNewRule(""); setPlaybookDirty(true);
+                      }
+                    }}
+                    placeholder="Add a rule..."
+                    className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
+                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newRule.trim()) return;
                       setPlaybook({ ...playbook, non_negotiable_rules: [...(playbook.non_negotiable_rules ?? []), newRule.trim()] });
                       setNewRule(""); setPlaybookDirty(true);
-                    }
-                  }}
-                  placeholder="Add a rule..."
-                  className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
-                  style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
-                />
-                <button
-                  onClick={() => {
-                    if (!newRule.trim()) return;
-                    setPlaybook({ ...playbook, non_negotiable_rules: [...(playbook.non_negotiable_rules ?? []), newRule.trim()] });
-                    setNewRule(""); setPlaybookDirty(true);
-                  }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "oklch(0.58 0.22 25 / 0.12)", color: "oklch(0.58 0.22 25)", border: "1px solid oklch(0.58 0.22 25 / 0.20)" }}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
+                    }}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: "oklch(0.58 0.22 25 / 0.12)", color: "oklch(0.58 0.22 25)", border: "1px solid oklch(0.58 0.22 25 / 0.20)" }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Pre-Trade Routine */}
-            <div className="p-5 space-y-3">
-              <div className="flex items-center gap-2">
-                <CheckSquare className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.72 0.14 220)" }} />
-                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.72 0.14 220)" }}>
-                  Pre-Trade Routine
-                </span>
-              </div>
-              <div className="space-y-1">
-                {(playbook.pre_trade_routine ?? []).map((step, i) => (
-                  <div key={i} className="flex items-center gap-2 group py-1">
-                    <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.72 0.14 220 / 0.6)" }}>{i + 1}.</span>
-                    <span className="text-sm flex-1">{step}</span>
-                    <button
-                      onClick={() => {
-                        const steps = [...(playbook.pre_trade_routine ?? [])];
-                        steps.splice(i, 1);
-                        setPlaybook({ ...playbook, pre_trade_routine: steps });
-                        setPlaybookDirty(true);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ color: "oklch(0.55 0.04 252)" }}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2 pt-1">
-                <input
-                  type="text"
-                  value={newRoutineStep}
-                  onChange={(e) => setNewRoutineStep(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newRoutineStep.trim()) {
+              <div style={{ borderTop: "1px solid oklch(0.18 0.022 252)" }} />
+
+              {/* Pre-Trade Routine */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.72 0.14 220)" }} />
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.72 0.14 220)" }}>
+                    Pre-Trade Routine
+                  </span>
+                </div>
+                <div className="space-y-0.5">
+                  {(playbook.pre_trade_routine ?? []).map((step, i) => (
+                    <div key={i} className="flex items-center gap-2 group py-1">
+                      <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.72 0.14 220 / 0.6)" }}>{i + 1}.</span>
+                      <span className="text-sm flex-1">{step}</span>
+                      <button
+                        onClick={() => {
+                          const steps = [...(playbook.pre_trade_routine ?? [])];
+                          steps.splice(i, 1);
+                          setPlaybook({ ...playbook, pre_trade_routine: steps });
+                          setPlaybookDirty(true);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ color: "oklch(0.55 0.04 252)" }}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newRoutineStep}
+                    onChange={(e) => setNewRoutineStep(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newRoutineStep.trim()) {
+                        setPlaybook({ ...playbook, pre_trade_routine: [...(playbook.pre_trade_routine ?? []), newRoutineStep.trim()] });
+                        setNewRoutineStep(""); setPlaybookDirty(true);
+                      }
+                    }}
+                    placeholder="Add a step..."
+                    className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
+                    style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newRoutineStep.trim()) return;
                       setPlaybook({ ...playbook, pre_trade_routine: [...(playbook.pre_trade_routine ?? []), newRoutineStep.trim()] });
                       setNewRoutineStep(""); setPlaybookDirty(true);
-                    }
-                  }}
-                  placeholder="Add a step..."
-                  className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
-                  style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
-                />
-                <button
-                  onClick={() => {
-                    if (!newRoutineStep.trim()) return;
-                    setPlaybook({ ...playbook, pre_trade_routine: [...(playbook.pre_trade_routine ?? []), newRoutineStep.trim()] });
-                    setNewRoutineStep(""); setPlaybookDirty(true);
-                  }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "oklch(0.72 0.14 220 / 0.12)", color: "oklch(0.72 0.14 220)", border: "1px solid oklch(0.72 0.14 220 / 0.20)" }}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
+                    }}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: "oklch(0.72 0.14 220 / 0.12)", color: "oklch(0.72 0.14 220)", border: "1px solid oklch(0.72 0.14 220 / 0.20)" }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* A+ Criteria + Weaknesses */}
-          <div className="grid lg:grid-cols-2">
             {/* A+ Criteria */}
-            <div className="p-5 space-y-3" style={{ borderRight: "1px solid oklch(0.18 0.022 252)" }}>
+            <div className="p-5 space-y-3">
               <div className="flex items-center gap-2">
                 <Target className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.58 0.17 145)" }} />
                 <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.58 0.17 145)" }}>
@@ -752,78 +751,13 @@ export default function SelfImprovementPage() {
                 </span>
               </div>
               <textarea
-                rows={4}
+                rows={12}
                 value={playbook.a_plus_criteria || ""}
                 onChange={(e) => { setPlaybook({ ...playbook, a_plus_criteria: e.target.value }); setPlaybookDirty(true); }}
-                placeholder="Describe your ideal A+ setup..."
+                placeholder="Describe your ideal A+ setup — what must be true for you to take the trade..."
                 className="w-full rounded-lg px-3 py-2.5 text-sm resize-none"
                 style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)", outline: "none" }}
               />
-            </div>
-
-            {/* Known Weaknesses */}
-            <div className="p-5 space-y-3">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.70 0.16 72)" }} />
-                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.70 0.16 72)" }}>
-                  Known Weaknesses
-                </span>
-              </div>
-              {(playbook.common_weaknesses ?? []).length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {(playbook.common_weaknesses ?? []).map((w) => (
-                    <span
-                      key={w}
-                      className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium"
-                      style={{ background: "oklch(0.70 0.16 72 / 0.12)", color: "oklch(0.70 0.16 72)", border: "1px solid oklch(0.70 0.16 72 / 0.22)" }}
-                    >
-                      {w}
-                      <button
-                        onClick={() => {
-                          setPlaybook({ ...playbook, common_weaknesses: (playbook.common_weaknesses ?? []).filter((x: string) => x !== w) });
-                          setPlaybookDirty(true);
-                        }}
-                        className="hover:opacity-60 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newWeakness}
-                  onChange={(e) => setNewWeakness(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newWeakness.trim()) {
-                      const w = newWeakness.trim();
-                      if (!(playbook.common_weaknesses ?? []).includes(w)) {
-                        setPlaybook({ ...playbook, common_weaknesses: [...(playbook.common_weaknesses ?? []), w] });
-                      }
-                      setNewWeakness(""); setPlaybookDirty(true);
-                    }
-                  }}
-                  placeholder="Add a weakness..."
-                  className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
-                  style={{ background: "oklch(0.09 0.014 252)", border: "1px solid oklch(0.22 0.025 252)", color: "oklch(0.93 0.008 252)" }}
-                />
-                <button
-                  onClick={() => {
-                    const w = newWeakness.trim();
-                    if (!w) return;
-                    if (!(playbook.common_weaknesses ?? []).includes(w)) {
-                      setPlaybook({ ...playbook, common_weaknesses: [...(playbook.common_weaknesses ?? []), w] });
-                    }
-                    setNewWeakness(""); setPlaybookDirty(true);
-                  }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "oklch(0.70 0.16 72 / 0.12)", color: "oklch(0.70 0.16 72)", border: "1px solid oklch(0.70 0.16 72 / 0.22)" }}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
             </div>
           </div>
 
