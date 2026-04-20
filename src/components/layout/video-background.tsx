@@ -45,7 +45,7 @@ export function VideoBackground() {
         style={{
           opacity: 0.38,
           // Warm orange/white colour grade: desaturate slightly then push warm
-          filter: "sepia(0.25) saturate(1.6) hue-rotate(340deg) brightness(0.85)",
+          filter: "sepia(0.75) saturate(3.5) hue-rotate(10deg) brightness(0.80)",
         }}
       >
         <source src={src} type="video/mp4" />
@@ -64,8 +64,13 @@ export function VideoBackground() {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(249,115,22,0.14) 0%, transparent 70%)",
+            "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(249,115,22,0.30) 0%, transparent 70%)",
         }}
+      />
+      {/* Full orange wash */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "rgba(180,70,0,0.22)" }}
       />
       {/* Subtle grain */}
       <div
