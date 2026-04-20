@@ -18,6 +18,11 @@ const SESSIONS: Session[] = ["London", "New York", "Asia"];
 const MARKETS: Market[] = ["futures", "commodities"];
 const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "Daily"];
 
+const INSTRUMENTS: Record<Market, string[]> = {
+  futures: ["NQ", "ES", "YM", "RTY"],
+  commodities: ["Gold", "Silver", "Crude Oil", "Natural Gas"],
+};
+
 const DISCIPLINE_CHECKS: { key: keyof TradeDiscipline; label: string }[] = [
   { key: "followed_plan",        label: "Followed my trading plan" },
   { key: "traded_in_session",    label: "Traded in my allowed session" },
@@ -129,10 +134,17 @@ export default function NewTradePage() {
           <CardContent className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="instrument" className="text-xs">Instrument *</Label>
-                <Input id="instrument" value={form.instrument}
-                  onChange={(e) => set("instrument", e.target.value.toUpperCase())}
-                  placeholder="GC, ES, NQ, CL, ZC..." className="h-9 text-sm bg-background/50" required />
+                <Label className="text-xs">Market *</Label>
+                <div className="flex gap-1.5">
+                  {MARKETS.map((m) => (
+                    <button key={m} type="button"
+                      onClick={() => { set("market", m); set("instrument", ""); }}
+                      className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
+                        form.market === m ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                      {m}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="date" className="text-xs">Date *</Label>
@@ -142,19 +154,20 @@ export default function NewTradePage() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Market</Label>
-                <div className="flex gap-1.5">
-                  {MARKETS.map((m) => (
-                    <button key={m} type="button" onClick={() => set("market", m)}
-                      className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
-                        form.market === m ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {m}
-                    </button>
-                  ))}
-                </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Instrument *</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {INSTRUMENTS[form.market].map((inst) => (
+                  <button key={inst} type="button" onClick={() => set("instrument", inst)}
+                    className={cn("px-3 py-1.5 rounded-lg text-sm font-medium transition-all font-mono",
+                      form.instrument === inst ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                    {inst}
+                  </button>
+                ))}
               </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Direction</Label>
                 <div className="flex gap-1.5">
@@ -324,7 +337,7 @@ export default function NewTradePage() {
                 <div className="space-y-1.5">
                   <Label className="text-xs">Market Regime</Label>
                   <div className="flex flex-col gap-1">
-                    {(["trending", "ranging", "choppy"] as MarketRegime[]).map((r) => (
+                    {(["trending", "ranging"] as MarketRegime[]).map((r) => (
                       <button key={r} type="button" onClick={() => setContext("regime", r)}
                         className={cn("py-1.5 rounded-lg text-xs font-medium capitalize transition-all",
                           form.market_context?.regime === r ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
@@ -358,18 +371,6 @@ export default function NewTradePage() {
                                 : "bg-muted text-foreground"
                               : "bg-muted text-muted-foreground hover:text-foreground")}>
                           {b === "bullish" ? "↑" : b === "bearish" ? "↓" : "—"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Confidence (1–5)</Label>
-                    <div className="flex gap-1">
-                      {[1,2,3,4,5].map((n) => (
-                        <button key={n} type="button" onClick={() => setContext("confidence", n)}
-                          className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold tabular-nums transition-all",
-                            form.market_context?.confidence === n ? "bg-gold text-gold-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                          {n}
                         </button>
                       ))}
                     </div>

@@ -13,7 +13,7 @@ interface Props {
   readOnly?: boolean;
 }
 
-const PRESET_LABELS = ["HTF", "LTF", "Entry", "Exit"];
+const PRESET_LABELS = ["HTF", "LTF", "Trade-entry"];
 
 /** Resize and compress an image file to a max width, returning a base64 data URL */
 function compressImage(file: File, maxWidth = 1400): Promise<string> {

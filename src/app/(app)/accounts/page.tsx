@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { getAccounts, computeAccountROI } from "@/lib/mock/store";
 import { cn } from "@/lib/utils";
 import type { AccountPhase, AccountStatus } from "@/lib/types";
@@ -68,7 +67,7 @@ export default function AccountsPage() {
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Fees Paid", value: `$${totalFeePaid.toLocaleString()}`, tooltip: "Total real money invested in prop firm challenges" },
+          { label: "Total Purchase Cost", value: `$${totalFeePaid.toLocaleString()}`, tooltip: "Total real money invested in prop firm challenges" },
           { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}`, tooltip: "Total money received from all accounts" },
           { label: "Active Accounts", value: activeCount.toString(), tooltip: undefined },
           { label: "Return on Cost", value: `${overallRoi}x`, tooltip: "Total payouts ÷ total fees paid" },
@@ -83,18 +82,6 @@ export default function AccountsPage() {
       {/* Account cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {accounts.map((acct) => {
-          const drawdownPct = Math.min(
-            100,
-            Math.round((acct.drawdown_used / acct.max_drawdown) * 100)
-          );
-          const payoutPct = Math.min(
-            100,
-            acct.next_payout_target > 0
-              ? Math.round((acct.payout_total / acct.next_payout_target) * 100)
-              : 0
-          );
-          const drawdownRemaining = acct.max_drawdown - acct.drawdown_used;
-          // ROI = payout received / actual fees paid × 100
           const roi = computeAccountROI(acct.payout_total, acct.purchase_cost);
 
           return (
@@ -113,97 +100,37 @@ export default function AccountsPage() {
                     <PhaseBadge phase={acct.phase} />
                   </div>
 
-                  {/* Balance + ROI on Cost */}
-                  <div className="flex items-end justify-between mb-4">
+                  {/* Stats grid */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
                     <div>
-                      <p className="text-2xl font-bold font-mono">
-                        ${acct.current_balance.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        of ${acct.account_size.toLocaleString()} account
-                      </p>
+                      <p className="text-xs text-muted-foreground mb-0.5">Account Size</p>
+                      <p className="text-sm font-semibold font-mono">${acct.account_size.toLocaleString()}</p>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 justify-end">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-0.5">Purchase Cost</p>
+                      <p className="text-sm font-semibold font-mono">${acct.purchase_cost.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-0.5">Total Payout</p>
+                      <p className="text-sm font-semibold font-mono">${acct.payout_total.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-0.5">ROI</p>
+                      <div className="flex items-center gap-1">
                         {roi >= 0 ? (
-                          <TrendingUp className="w-4 h-4 text-success" />
+                          <TrendingUp className="w-3.5 h-3.5 text-success" />
                         ) : (
-                          <TrendingDown className="w-4 h-4 text-destructive" />
+                          <TrendingDown className="w-3.5 h-3.5 text-destructive" />
                         )}
-                        <span
-                          className={cn(
-                            "text-lg font-bold",
-                            roi >= 1 ? "text-success" : roi > 0 ? "text-warning" : "text-destructive"
-                          )}
-                        >
+                        <span className={cn("text-sm font-bold",
+                          roi >= 1 ? "text-success" : roi > 0 ? "text-warning" : "text-destructive")}>
                           {roi}x
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        on ${acct.purchase_cost.toLocaleString()} paid
-                      </p>
                     </div>
                   </div>
 
-                  {/* Drawdown */}
-                  <div className="space-y-1.5 mb-3">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Drawdown used</span>
-                      <span
-                        className={cn(
-                          "font-medium",
-                          drawdownPct > 60 ? "text-destructive" : drawdownPct > 40 ? "text-warning" : "text-muted-foreground"
-                        )}
-                      >
-                        ${acct.drawdown_used.toLocaleString()} / ${acct.max_drawdown.toLocaleString()}
-                      </span>
-                    </div>
-                    <Progress
-                      value={drawdownPct}
-                      className={cn(
-                        "h-1.5",
-                        drawdownPct > 60 ? "[&>div]:bg-destructive" : "[&>div]:bg-warning"
-                      )}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      ${drawdownRemaining.toLocaleString()} remaining before breach
-                    </p>
-                  </div>
-
-                  {/* Payout progress */}
-                  {acct.phase !== "evaluation" && (
-                    <div className="space-y-1.5 border-t border-border/30 pt-3">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Payout progress</span>
-                        <span className="font-medium">
-                          ${acct.payout_total.toLocaleString()} / ${acct.next_payout_target.toLocaleString()}
-                        </span>
-                      </div>
-                      <Progress value={payoutPct} className="h-1.5 [&>div]:bg-primary" />
-                    </div>
-                  )}
-
-                  {acct.phase === "evaluation" && (
-                    <div className="space-y-1.5 border-t border-border/30 pt-3">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Profit target</span>
-                        <span className="font-medium">
-                          ${(acct.current_balance - acct.start_balance).toLocaleString()} / ${acct.next_payout_target.toLocaleString()}
-                        </span>
-                      </div>
-                      <Progress
-                        value={Math.min(
-                          100,
-                          Math.round(
-                            ((acct.current_balance - acct.start_balance) / acct.next_payout_target) * 100
-                          )
-                        )}
-                        className="h-1.5 [&>div]:bg-warning"
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-end mt-3">
+                  <div className="flex items-center justify-end">
                     <span className="text-xs text-primary flex items-center gap-1">
                       Details <ArrowRight className="w-3 h-3" />
                     </span>

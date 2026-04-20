@@ -8,25 +8,8 @@ const VIDEOS = [
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260322_013248_a74099a8-be2b-4164-a823-eddd5e149fa1.mp4",
 ];
 
-// Deterministic video per route group so each page gets a different video
-function pickVideo(pathname: string): string {
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/analytics") || pathname.startsWith("/accounts")) {
-    return VIDEOS[0];
-  }
-  if (pathname.startsWith("/journal") || pathname.startsWith("/analysis") || pathname.startsWith("/news")) {
-    return VIDEOS[1];
-  }
-  if (pathname.startsWith("/self-improvement") || pathname.startsWith("/habits") || pathname.startsWith("/coaching") || pathname.startsWith("/playbook")) {
-    return VIDEOS[2];
-  }
-  if (pathname.startsWith("/command")) {
-    return VIDEOS[0];
-  }
-  if (pathname.startsWith("/profile") || pathname.startsWith("/settings")) {
-    return VIDEOS[1];
-  }
-  // fallback: index by path length as a quick hash
-  return VIDEOS[pathname.length % VIDEOS.length];
+function pickVideo(_pathname: string): string {
+  return VIDEOS[2];
 }
 
 export function VideoBackground() {
