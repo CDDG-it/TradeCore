@@ -14,25 +14,27 @@ function genCandles(n: number, seed = 42): Candle[] {
   const out: Candle[] = [];
   let p = 4820;
   for (let i = 0; i < n; i++) {
-    const d = (rand() - 0.47) * 95;
+    const d = (rand() - 0.47) * 110;
     const o = p, c = p + d;
-    const h = Math.max(o, c) + rand() * 55;
-    const l = Math.min(o, c) - rand() * 55;
+    const h = Math.max(o, c) + rand() * 70;
+    const l = Math.min(o, c) - rand() * 70;
     p = c;
     out.push({ o, h, l, c });
   }
   return out;
 }
 
-const HERO_N = 180;
+const HERO_N = 120;
 const HERO_CANDLES = genCandles(HERO_N, 99);
-const HERO_W = 11;
-const HERO_GAP = 3;
+// Candle dims — big and readable
+const HERO_W = 22;
+const HERO_GAP = 7;
 const HERO_STEP = HERO_W + HERO_GAP;
 
 function HeroCandlesticks() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offsetRef = useRef(0);
+  const lastTsRef = useRef<number | null>(null);
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
@@ -41,17 +43,26 @@ function HeroCandlesticks() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    let dpr = window.devicePixelRatio || 1;
+
     const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener("resize", resize);
 
     const TOTAL = HERO_N * HERO_STEP;
 
-    const draw = () => {
+    const draw = (ts: number) => {
+      if (lastTsRef.current !== null) {
+        const dt = Math.min(ts - lastTsRef.current, 50);
+        offsetRef.current += (dt / 1000) * 22; // 22 px/s
+      }
+      lastTsRef.current = ts;
+
       const W = canvas.offsetWidth;
       const H = canvas.offsetHeight;
       ctx.clearRect(0, 0, W, H);
@@ -67,20 +78,20 @@ function HeroCandlesticks() {
         if (c.l < minP) minP = c.l;
         if (c.h > maxP) maxP = c.h;
       }
-      const pad = (maxP - minP) * 0.2;
+      const pad = (maxP - minP) * 0.22;
       minP -= pad; maxP += pad;
       const pRange = maxP - minP;
 
-      const cTop = H * 0.08;
-      const cBot = H * 0.92;
+      const cTop = H * 0.06;
+      const cBot = H * 0.88;
       const cH = cBot - cTop;
       const py = (p: number) => cTop + ((maxP - p) / pRange) * cH;
 
-      // Grid
-      ctx.strokeStyle = "rgba(0,0,0,0.06)";
+      // Subtle grid
+      ctx.strokeStyle = "rgba(0,0,0,0.045)";
       ctx.lineWidth = 1;
-      for (let i = 0; i <= 4; i++) {
-        const y = cTop + (i / 4) * cH;
+      for (let i = 0; i <= 5; i++) {
+        const y = cTop + (i / 5) * cH;
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
       }
 
@@ -94,20 +105,30 @@ function HeroCandlesticks() {
         const bull = c.c >= c.o;
         const bTop = py(Math.max(c.o, c.c));
         const bBot = py(Math.min(c.o, c.c));
-        const bH = Math.max(1.5, bBot - bTop);
+        const bH = Math.max(2, bBot - bTop);
         const cx = x + HERO_W / 2;
 
+        // Wick
         ctx.strokeStyle = bull ? "rgba(234,88,12,0.55)" : "rgba(153,27,27,0.48)";
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
-        ctx.fillStyle = bull ? "rgba(249,115,22,0.28)" : "rgba(185,28,28,0.22)";
+        // Body
+        ctx.fillStyle = bull ? "rgba(249,115,22,0.32)" : "rgba(185,28,28,0.25)";
         ctx.fillRect(x, bTop, HERO_W, bH);
-        ctx.strokeStyle = bull ? "rgba(234,88,12,0.65)" : "rgba(153,27,27,0.55)";
-        ctx.lineWidth = 0.75;
+        // Border
+        ctx.strokeStyle = bull ? "rgba(234,88,12,0.70)" : "rgba(153,27,27,0.60)";
+        ctx.lineWidth = 1;
         ctx.strokeRect(x, bTop, HERO_W, bH);
       }
 
-      // Fade edges
+      // Bottom fade to white (blends into the hero content below)
+      const fadeBot = ctx.createLinearGradient(0, H * 0.55, 0, H);
+      fadeBot.addColorStop(0, "rgba(255,255,255,0)");
+      fadeBot.addColorStop(1, "rgba(255,255,255,1)");
+      ctx.fillStyle = fadeBot;
+      ctx.fillRect(0, H * 0.55, W, H);
+
+      // Side fades
       const fadeL = ctx.createLinearGradient(0, 0, 80, 0);
       fadeL.addColorStop(0, "rgba(255,255,255,1)");
       fadeL.addColorStop(1, "rgba(255,255,255,0)");
@@ -120,7 +141,6 @@ function HeroCandlesticks() {
       ctx.fillStyle = fadeR;
       ctx.fillRect(W - 80, 0, 80, H);
 
-      offsetRef.current += 0.22;
       rafRef.current = requestAnimationFrame(draw);
     };
 
@@ -134,8 +154,7 @@ function HeroCandlesticks() {
   return (
     <canvas
       ref={canvasRef}
-      className="w-full"
-      style={{ height: 120, display: "block" }}
+      className="absolute inset-0 w-full h-full"
       aria-hidden
     />
   );
@@ -160,16 +179,12 @@ export default function HomePage() {
         >
           <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260302_085640_276ea93b-d7da-4418-a09b-2aa5b490e838.mp4" type="video/mp4" />
         </video>
-        {/* Orange colour wash */}
         <div className="absolute inset-0"
           style={{ background: "rgba(249,115,22,0.38)", mixBlendMode: "multiply" }} />
-        {/* White vignette */}
         <div className="absolute inset-0"
           style={{ background: "radial-gradient(ellipse 100% 100% at 50% 50%, transparent 30%, rgba(255,255,255,0.88) 100%)" }} />
-        {/* Top + bottom white fades */}
         <div className="absolute inset-0"
           style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.75) 0%, transparent 25%, transparent 75%, rgba(255,255,255,0.75) 100%)" }} />
-        {/* Centre readability wash */}
         <div className="absolute inset-0"
           style={{ background: "rgba(255,255,255,0.18)" }} />
       </div>
@@ -203,13 +218,15 @@ export default function HomePage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        {/* Candlestick chart — above the hero content */}
-        <div className="w-full max-w-2xl mb-10 relative z-10" style={{ opacity: 0.72 }}>
+      <section className="relative z-10 min-h-screen flex flex-col">
+
+        {/* Candlestick chart — top 50% of the hero */}
+        <div className="relative w-full" style={{ height: "50vh" }}>
           <HeroCandlesticks />
         </div>
 
-        <div className="mx-auto max-w-xl">
+        {/* Content — bottom half, centered */}
+        <div className="flex flex-1 flex-col items-center justify-center px-6 text-center -mt-16">
           <FadeIn delay={0.10}>
             <h1
               className="font-heading font-black text-[clamp(3rem,9vw,7rem)] tracking-tight leading-none text-gray-900 mb-6 whitespace-nowrap"

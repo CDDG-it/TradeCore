@@ -46,6 +46,7 @@ export function CandlestickBackground() {
   const { theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offsetRef = useRef(0);
+  const lastTsRef = useRef<number | null>(null);
   const themeRef = useRef(theme);
   const rafRef = useRef<number>(0);
 
@@ -73,7 +74,13 @@ export function CandlestickBackground() {
 
     const TOTAL = N * STEP;
 
-    const draw = () => {
+    const draw = (ts: number) => {
+      if (lastTsRef.current !== null) {
+        const dt = Math.min(ts - lastTsRef.current, 50); // cap at 50ms to avoid jumps after tab switch
+        offsetRef.current += (dt / 1000) * 18; // 18 px/s — slow, cinematic
+      }
+      lastTsRef.current = ts;
+
       const W = canvas.width;
       const H = canvas.height;
       const isDark = themeRef.current !== "light";
@@ -184,12 +191,10 @@ export function CandlestickBackground() {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      offsetRef.current += 0.28;
       rafRef.current = requestAnimationFrame(draw);
     };
 
     rafRef.current = requestAnimationFrame(draw);
-
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);

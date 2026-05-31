@@ -5,7 +5,7 @@ import { CandlestickBackground } from "@/components/layout/candlestick-backgroun
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden">
+    <div className="min-h-screen bg-background relative overflow-x-hidden z-[4]">
 
       {/* ── HLS video background ── */}
       <VideoBackground />
