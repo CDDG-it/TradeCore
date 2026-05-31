@@ -18,7 +18,7 @@ export default function HomePage() {
             filter: "sepia(0.75) saturate(3.5) hue-rotate(10deg) brightness(0.80)",
           }}
         >
-          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_145119_f4ec4d9f-3ecd-4116-baa3-26e8cf2df976.mp4" type="video/mp4" />
+          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260302_085640_276ea93b-d7da-4418-a09b-2aa5b490e838.mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 90% 90% at 50% 50%, rgba(7,4,2,0.18) 0%, rgba(7,4,2,0.68) 100%)" }} />
         <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(249,115,22,0.30) 0%, transparent 70%)" }} />

@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { VideoBackground } from "@/components/layout/video-background";
+import { CandlestickBackground } from "@/components/layout/candlestick-background";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,6 +9,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── HLS video background ── */}
       <VideoBackground />
+
+      {/* ── Interactive candlestick chart (dashboard only) ── */}
+      <CandlestickBackground />
 
       {/* ── Decorative editorial grid lines (desktop) ── */}
       <div className="pointer-events-none fixed inset-0 z-0 hidden lg:block" aria-hidden>
