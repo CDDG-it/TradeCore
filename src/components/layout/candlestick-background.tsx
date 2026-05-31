@@ -7,18 +7,15 @@ import { useTheme } from "@/lib/theme-context";
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Candle { o: number; h: number; l: number; c: number }
 
-// ── Data generation (stable, runs once at module load) ────────────────────────
+// ── Stable data (module-level, seeded) ───────────────────────────────────────
 function genCandles(n: number, seed = 42): Candle[] {
-  // Simple seeded pseudo-random for consistent SSR/CSR
   let s = seed;
-  const rand = () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
-
+  const rand = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
   const out: Candle[] = [];
   let p = 4820;
   for (let i = 0; i < n; i++) {
     const d = (rand() - 0.47) * 95;
-    const o = p;
-    const c = p + d;
+    const o = p, c = p + d;
     const h = Math.max(o, c) + rand() * 55;
     const l = Math.min(o, c) - rand() * 55;
     p = c;
@@ -39,7 +36,6 @@ const N = 220;
 const CANDLES = genCandles(N);
 const SMA20 = calcSMA(CANDLES, 20);
 const SMA50 = calcSMA(CANDLES, 50);
-
 const W_CANDLE = 13;
 const GAP = 4;
 const STEP = W_CANDLE + GAP;
@@ -51,9 +47,13 @@ export function CandlestickBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -1, y: -1, active: false });
   const offsetRef = useRef(0);
+  const themeRef = useRef(theme);
   const rafRef = useRef<number>(0);
 
-  const visible = pathname === "/dashboard" && theme !== "light";
+  // Keep theme ref in sync
+  themeRef.current = theme;
+
+  const visible = pathname === "/dashboard";
 
   useEffect(() => {
     if (!visible) return;
@@ -82,6 +82,7 @@ export function CandlestickBackground() {
     const draw = () => {
       const W = canvas.width;
       const H = canvas.height;
+      const isDark = themeRef.current !== "light";
       ctx.clearRect(0, 0, W, H);
 
       const off = offsetRef.current % TOTAL;
@@ -89,7 +90,7 @@ export function CandlestickBackground() {
       const pixOff = off % STEP;
       const count = Math.ceil(W / STEP) + 3;
 
-      // ── Compute visible price range ──────────────────────────────────────
+      // Price range
       let minP = Infinity, maxP = -Infinity;
       for (let i = 0; i < count; i++) {
         const c = CANDLES[(startIdx + i) % N];
@@ -105,17 +106,17 @@ export function CandlestickBackground() {
       const cH = cBot - cTop;
       const py = (p: number) => cTop + ((maxP - p) / pRange) * cH;
 
-      // ── Horizontal grid ──────────────────────────────────────────────────
-      ctx.strokeStyle = "rgba(255,255,255,0.028)";
+      // ── Grid ────────────────────────────────────────────────────────────
+      ctx.strokeStyle = isDark
+        ? "rgba(255,255,255,0.028)"
+        : "rgba(0,0,0,0.055)";
       ctx.lineWidth = 1;
       for (let i = 0; i <= 6; i++) {
         const y = cTop + (i / 6) * cH;
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
       }
-
-      // ── Vertical grid ────────────────────────────────────────────────────
-      ctx.strokeStyle = "rgba(255,255,255,0.018)";
       const vCount = Math.floor(W / 120);
+      ctx.strokeStyle = isDark ? "rgba(255,255,255,0.018)" : "rgba(0,0,0,0.038)";
       for (let i = 1; i < vCount; i++) {
         const x = (i / vCount) * W;
         ctx.beginPath(); ctx.moveTo(x, cTop); ctx.lineTo(x, cBot); ctx.stroke();
@@ -134,32 +135,30 @@ export function CandlestickBackground() {
         const bH = Math.max(1.5, bBot - bTop);
         const cx = x + W_CANDLE / 2;
 
-        // Wick
-        ctx.strokeStyle = bull
-          ? "rgba(249,115,22,0.32)"
-          : "rgba(172,48,14,0.26)";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(cx, py(c.h));
-        ctx.lineTo(cx, py(c.l));
-        ctx.stroke();
-
-        // Body fill
-        ctx.fillStyle = bull
-          ? "rgba(249,115,22,0.18)"
-          : "rgba(172,48,14,0.15)";
-        ctx.fillRect(x, bTop, W_CANDLE, bH);
-
-        // Body border
-        ctx.strokeStyle = bull
-          ? "rgba(249,115,22,0.42)"
-          : "rgba(172,48,14,0.32)";
-        ctx.lineWidth = 0.75;
-        ctx.strokeRect(x, bTop, W_CANDLE, bH);
+        if (isDark) {
+          ctx.strokeStyle = bull ? "rgba(249,115,22,0.32)" : "rgba(172,48,14,0.26)";
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
+          ctx.fillStyle = bull ? "rgba(249,115,22,0.18)" : "rgba(172,48,14,0.15)";
+          ctx.fillRect(x, bTop, W_CANDLE, bH);
+          ctx.strokeStyle = bull ? "rgba(249,115,22,0.42)" : "rgba(172,48,14,0.32)";
+          ctx.lineWidth = 0.75;
+          ctx.strokeRect(x, bTop, W_CANDLE, bH);
+        } else {
+          // Light mode — darker, more visible
+          ctx.strokeStyle = bull ? "rgba(234,88,12,0.50)" : "rgba(153,27,27,0.42)";
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
+          ctx.fillStyle = bull ? "rgba(249,115,22,0.22)" : "rgba(185,28,28,0.17)";
+          ctx.fillRect(x, bTop, W_CANDLE, bH);
+          ctx.strokeStyle = bull ? "rgba(234,88,12,0.60)" : "rgba(153,27,27,0.50)";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x, bTop, W_CANDLE, bH);
+        }
       }
 
-      // ── SMA 20 (amber) ───────────────────────────────────────────────────
-      ctx.strokeStyle = "rgba(249,115,22,0.28)";
+      // ── SMA 20 ───────────────────────────────────────────────────────────
+      ctx.strokeStyle = isDark ? "rgba(249,115,22,0.28)" : "rgba(234,88,12,0.45)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([]);
       ctx.beginPath();
@@ -174,8 +173,8 @@ export function CandlestickBackground() {
       }
       ctx.stroke();
 
-      // ── SMA 50 (gold, dashed) ────────────────────────────────────────────
-      ctx.strokeStyle = "rgba(251,191,36,0.20)";
+      // ── SMA 50 ───────────────────────────────────────────────────────────
+      ctx.strokeStyle = isDark ? "rgba(251,191,36,0.20)" : "rgba(202,138,4,0.38)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([6, 5]);
       ctx.beginPath();
@@ -194,42 +193,31 @@ export function CandlestickBackground() {
       // ── Crosshair ────────────────────────────────────────────────────────
       const { x: mx, y: my, active } = mouseRef.current;
       if (active && mx >= 0 && my >= 0) {
-        ctx.strokeStyle = "rgba(249,115,22,0.45)";
+        ctx.strokeStyle = isDark
+          ? "rgba(249,115,22,0.45)"
+          : "rgba(234,88,12,0.55)";
         ctx.lineWidth = 1;
         ctx.setLineDash([5, 5]);
-
         ctx.beginPath(); ctx.moveTo(0, my); ctx.lineTo(W, my); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(mx, 0); ctx.lineTo(mx, H); ctx.stroke();
         ctx.setLineDash([]);
 
-        // Price label (right edge)
         if (my >= cTop && my <= cBot) {
           const price = maxP - ((my - cTop) / cH) * pRange;
           const label = price.toFixed(0);
-
           const lw = 54, lh = 20;
-          ctx.fillStyle = "rgba(249,115,22,0.92)";
+          ctx.fillStyle = isDark
+            ? "rgba(249,115,22,0.92)"
+            : "rgba(234,88,12,0.92)";
           ctx.fillRect(W - lw - 2, my - lh / 2, lw, lh);
-
-          ctx.fillStyle = "rgba(0,0,0,0.88)";
+          ctx.fillStyle = "rgba(255,255,255,0.95)";
           ctx.font = "bold 11px monospace";
           ctx.textAlign = "right";
           ctx.textBaseline = "middle";
           ctx.fillText(label, W - 6, my);
         }
-
-        // Dot at candle intersection
-        const relX = mx % STEP;
-        const nearCandleCenter = relX >= 0 && relX <= W_CANDLE;
-        if (nearCandleCenter) {
-          ctx.fillStyle = "rgba(249,115,22,0.70)";
-          ctx.beginPath();
-          ctx.arc(mx, my, 3, 0, Math.PI * 2);
-          ctx.fill();
-        }
       }
 
-      // ── Advance ──────────────────────────────────────────────────────────
       offsetRef.current += 0.28;
       rafRef.current = requestAnimationFrame(draw);
     };
