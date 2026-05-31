@@ -13,6 +13,13 @@ import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | "active" | "inactive";
 
+function roiGreen(roi: number): string {
+  if (roi >= 5) return "oklch(0.38 0.14 145)";
+  if (roi >= 3) return "oklch(0.45 0.16 145)";
+  if (roi >= 2) return "oklch(0.52 0.17 145)";
+  return "oklch(0.58 0.17 145)";
+}
+
 export default function AccountsPage() {
   const accounts = getAccounts();
   const [firmFilter, setFirmFilter] = useState<string>("all");
@@ -109,20 +116,39 @@ export default function AccountsPage() {
         {/* ── Summary stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Fee Paid", value: `$${totalFeePaid.toLocaleString()}`, note: "all accounts", highlight: false },
-            { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}`, note: "all accounts", highlight: false },
-            { label: "Active Capital", value: `$${activeCapital.toLocaleString()}`, note: "active only", highlight: true },
-            { label: "Return on Cost", value: `${overallRoi}x`, note: "all accounts", highlight: false },
-          ].map(({ label, value, note, highlight }) => (
+            { label: "Total Costs", value: `$${totalFeePaid.toLocaleString()}`, note: "all accounts", type: "cost" },
+            { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}`, note: "all accounts", type: "payout" },
+            { label: "Active Capital", value: `$${activeCapital.toLocaleString()}`, note: "active only", type: "capital" },
+            { label: "Return on Cost", value: `${overallRoi}x`, note: "all accounts", type: "roi" },
+          ].map(({ label, value, note, type }) => {
+            const roiColor = type === "roi"
+              ? overallRoi >= 5 ? "oklch(0.38 0.14 145)"
+                : overallRoi >= 3 ? "oklch(0.45 0.16 145)"
+                : overallRoi >= 2 ? "oklch(0.52 0.17 145)"
+                : overallRoi >= 1 ? "oklch(0.58 0.17 145)"
+                : overallRoi > 0 ? "oklch(0.70 0.16 72)"
+                : "oklch(0.58 0.22 25)"
+              : undefined;
+            return (
             <div key={label} className={cn(
               "bg-card border rounded-xl p-4 text-center",
-              highlight ? "border-success/30" : "border-border/50"
+              type === "capital" ? "border-success/30" : "border-border/50"
             )}>
-              <p className={cn("text-xl font-bold", highlight && "text-success")}>{value}</p>
+              <p
+                className="text-xl font-bold"
+                style={{
+                  color: type === "cost" ? "#F97316"
+                    : type === "payout" ? "#F97316"
+                    : type === "roi" ? roiColor
+                    : type === "capital" ? "oklch(0.58 0.17 145)"
+                    : undefined,
+                }}
+              >{value}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
               <p className="text-[10px] text-muted-foreground/50 mt-0.5">{note}</p>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* ── Account cards ── */}
@@ -185,19 +211,18 @@ export default function AccountsPage() {
 
                       <div className="grid grid-cols-2 gap-3 mb-4">
                         <div>
-                          <p className="text-xs text-muted-foreground mb-0.5">Fee Paid</p>
-                          <p className="text-sm font-semibold font-mono">${acct.purchase_cost.toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground mb-0.5">Total Costs</p>
+                          <p className="text-sm font-semibold font-mono" style={{ color: "#F97316" }}>${acct.purchase_cost.toLocaleString()}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-0.5">Total Payout</p>
-                          <p className="text-sm font-semibold font-mono">${totalPaid.toLocaleString()}</p>
+                          <p className="text-sm font-semibold font-mono" style={{ color: "#F97316" }}>${totalPaid.toLocaleString()}</p>
                         </div>
                         <div className="col-span-2">
-                          <p className="text-xs text-muted-foreground mb-0.5">ROI</p>
+                          <p className="text-xs text-muted-foreground mb-0.5">Return on Cost</p>
                           <div className="flex items-center gap-1">
-                            {roi >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-success" /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
-                            <span className={cn("text-sm font-bold",
-                              roi >= 1 ? "text-success" : roi > 0 ? "text-warning" : "text-destructive")}>
+                            {roi >= 0 ? <TrendingUp className="w-3.5 h-3.5" style={{ color: roi >= 1 ? roiGreen(roi) : "oklch(0.70 0.16 72)" }} /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
+                            <span className="text-sm font-bold" style={{ color: roi >= 1 ? roiGreen(roi) : roi > 0 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)" }}>
                               {roi}x
                             </span>
                           </div>

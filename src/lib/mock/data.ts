@@ -246,7 +246,7 @@ export const mockTrades: TradeJournalEntry[] = [
     mistakes: "Stop might have been too tight on the break-even move.",
     lessons: "Give trades room to breathe — maybe use a wider break-even trigger.",
     discipline: { followed_plan: true, traded_in_session: true, respected_risk: true, respected_max_trades: true, matched_a_plus: false, no_impulsive_entry: true, no_revenge_trade: true, respected_stop_loss: true, journal_completed: true, score: 89, notes: "Setup was borderline A+ criteria." },
-    market_context: { regime: "ranging", volatility: "medium", news_day: true, major_event: false, htf_bias: "neutral", confidence: 3, notes: "Ranging market ahead of Fed minutes — should have been more cautious." },
+    market_context: { regime: "ranging", volatility: "medium", news_day: true, major_event: false, htf_bias: "choppy", confidence: 3, notes: "Ranging market ahead of Fed minutes — should have been more cautious." },
     created_at: "2026-04-03T16:00:00Z",
     updated_at: "2026-04-03T16:00:00Z",
   },

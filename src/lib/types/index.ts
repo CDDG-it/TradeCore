@@ -1,4 +1,4 @@
-export type Bias = "bullish" | "bearish" | "neutral";
+export type Bias = "bullish" | "bearish" | "choppy";
 export type Direction = "long" | "short";
 export type TradeResult = "win" | "loss" | "break-even";
 export type Market = "futures" | "commodities";

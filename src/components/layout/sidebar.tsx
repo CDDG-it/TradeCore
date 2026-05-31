@@ -62,7 +62,7 @@ function NavItem({
         "font-body flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 relative group/nav",
         isActive
           ? "bg-sidebar-accent text-sidebar-foreground"
-          : "text-sidebar-foreground/40 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
+          : "text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:scale-[1.03] hover:shadow-sm"
       )}
     >
       {isActive && (
@@ -72,7 +72,7 @@ function NavItem({
         />
       )}
       <Icon
-        className="w-[15px] h-[15px] shrink-0 transition-colors"
+        className={cn("w-[15px] h-[15px] shrink-0 transition-colors", !isActive && "group-hover/nav:text-[#F97316]")}
         style={
           isActive
             ? { color: "#F97316" }
@@ -81,7 +81,7 @@ function NavItem({
             : undefined
         }
       />
-      <span className={isActive ? "text-sidebar-foreground" : ""}>{label}</span>
+      <span className={cn(isActive ? "text-sidebar-foreground" : "", !isActive && "group-hover/nav:text-[#F97316]")}>{label}</span>
       {highlight && !isActive && (
         <span
           className="ml-auto text-[9px] font-bold tracking-wide px-1.5 py-0.5 rounded-full"

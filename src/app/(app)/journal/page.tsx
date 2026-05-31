@@ -9,11 +9,10 @@ import {
   eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, addWeeks, subWeeks,
   getDay, isToday,
 } from "date-fns";
-import { Plus, Search, TrendingUp, TrendingDown, Calendar, List,
+import { Plus, TrendingUp, TrendingDown, Calendar, List,
   ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { getTrades } from "@/lib/mock/store";
 import { cn } from "@/lib/utils";
 import type { TradeResult, Direction } from "@/lib/types";
@@ -34,7 +33,6 @@ function ResultBadge({ result }: { result: TradeResult }) {
 
 export default function JournalPage() {
   const allTrades = getTrades();
-  const [search, setSearch] = useState("");
   const [filterResult, setFilterResult] = useState<TradeResult | "all">("all");
   const [filterDirection, setFilterDirection] = useState<Direction | "all">("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -53,17 +51,14 @@ export default function JournalPage() {
 
   const filtered = useMemo(() => allTrades.filter((t) => {
     const tradeDate = new Date(t.date_time.slice(0, 10) + "T12:00:00");
-    const matchSearch = !search ||
-      t.instrument.toLowerCase().includes(search.toLowerCase()) ||
-      t.confluences.some((c) => c.toLowerCase().includes(search.toLowerCase()));
     const matchResult = filterResult === "all" || t.result === filterResult;
     const matchDir = filterDirection === "all" || t.direction === filterDirection;
     let matchPeriod = true;
     if (periodFilter === "day") matchPeriod = tradeDate >= dayStart && tradeDate <= dayEnd;
     if (periodFilter === "week") matchPeriod = tradeDate >= weekStart && tradeDate <= weekEnd;
     if (periodFilter === "month") matchPeriod = tradeDate >= monthStart && tradeDate <= monthEnd;
-    return matchSearch && matchResult && matchDir && matchPeriod;
-  }), [allTrades, search, filterResult, filterDirection, periodFilter]);
+    return matchResult && matchDir && matchPeriod;
+  }), [allTrades, filterResult, filterDirection, periodFilter]);
 
   const wins = filtered.filter((t) => t.result === "win").length;
   const losses = filtered.filter((t) => t.result === "loss").length;
@@ -180,11 +175,6 @@ export default function JournalPage() {
 
         {viewMode === "list" && (
           <>
-            <div className="relative flex-1 min-w-36 max-w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 text-sm bg-card border-border/50" />
-            </div>
             <div className="flex rounded-lg border border-border/50 overflow-hidden">
               {(["all", "win", "loss", "break-even"] as const).map((r) => (
                 <button key={r} onClick={() => setFilterResult(r)}

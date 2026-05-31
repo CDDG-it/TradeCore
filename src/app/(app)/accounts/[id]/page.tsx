@@ -26,6 +26,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PayoutStatus } from "@/lib/types";
 
+function roiGreenDetail(roi: number): string {
+  if (roi >= 5) return "oklch(0.38 0.14 145)";
+  if (roi >= 3) return "oklch(0.45 0.16 145)";
+  if (roi >= 2) return "oklch(0.52 0.17 145)";
+  return "oklch(0.58 0.17 145)";
+}
+
 function PayoutStatusBadge({ status }: { status: PayoutStatus }) {
   const config = {
     paid: { cls: "bg-success/15 text-success border-success/20", icon: CheckCircle },
@@ -109,7 +116,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
           <div>
             <p className="text-sm text-muted-foreground mb-1">{account.firm_name}</p>
             <h1 className="text-2xl font-bold tracking-tight">{account.account_name}</h1>
-            <p className="text-sm text-muted-foreground mt-1">${account.account_size.toLocaleString()} · Fee: ${account.purchase_cost.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground mt-1">${account.account_size.toLocaleString()} · Cost: ${account.purchase_cost.toLocaleString()}</p>
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
             {!confirmDelete ? (
@@ -134,12 +141,14 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
             )}
             <div className="text-right">
               <div className="flex items-center gap-1.5 justify-end">
-                {roi >= 0 ? <TrendingUp className="w-5 h-5 text-success" /> : <TrendingDown className="w-5 h-5 text-destructive" />}
-                <span className={cn("text-3xl font-bold", roi >= 1 ? "text-success" : roi > 0 ? "text-warning" : "text-destructive")}>
+                {roi >= 0
+                ? <TrendingUp className="w-5 h-5" style={{ color: roi >= 1 ? roiGreenDetail(roi) : "oklch(0.70 0.16 72)" }} />
+                : <TrendingDown className="w-5 h-5 text-destructive" />}
+                <span className="text-3xl font-bold" style={{ color: roi >= 1 ? roiGreenDetail(roi) : roi > 0 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)" }}>
                   {roi}x
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">Return on fees</p>
+              <p className="text-xs text-muted-foreground">Return on cost</p>
             </div>
           </div>
         </div>
@@ -148,17 +157,14 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Account Size", value: `$${account.account_size.toLocaleString()}`, icon: DollarSign },
-          { label: "Fee Paid", value: `$${account.purchase_cost.toLocaleString()}`, icon: DollarSign },
-          { label: "Total Payouts", value: `$${totalPaidOut.toLocaleString()}`, icon: TrendingUp },
-        ].map(({ label, value, icon: Icon }) => (
+          { label: "Account Size", value: `$${account.account_size.toLocaleString()}`, color: undefined },
+          { label: "Total Costs", value: `$${account.purchase_cost.toLocaleString()}`, color: "#F97316" },
+          { label: "Total Payouts", value: `$${totalPaidOut.toLocaleString()}`, color: "#F97316" },
+        ].map(({ label, value, color }) => (
           <Card key={label} className="bg-card border-border/50">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">{label}</p>
-              </div>
-              <p className="text-lg font-bold font-mono">{value}</p>
+              <p className="text-xs text-muted-foreground mb-2">{label}</p>
+              <p className="text-lg font-bold font-mono" style={color ? { color } : undefined}>{value}</p>
             </CardContent>
           </Card>
         ))}

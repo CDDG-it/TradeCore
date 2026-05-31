@@ -14,7 +14,7 @@ import type { Bias } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const INSTRUMENTS = ["NQ", "ES", "GOLD"];
-const BIASES: Bias[] = ["bullish", "bearish", "neutral"];
+const BIASES: Bias[] = ["bullish", "bearish", "choppy"];
 
 function compressImage(file: File, maxWidth = 1400): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -144,7 +144,6 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
   const existingLtf = analysis.screenshot_groups?.find((g) => g.label.startsWith("LTF"));
 
   const [form, setForm] = useState({
-    title: analysis.title,
     date: analysis.date,
     instrument: INSTRUMENTS.includes(analysis.instrument) ? analysis.instrument : analysis.instrument,
     bias: analysis.bias as Bias,
@@ -176,6 +175,7 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
     await new Promise((r) => setTimeout(r, 300));
     updateAnalysis(id, {
       ...form,
+      title: `${form.instrument} — ${form.date}`,
       market: analysis!.market,
       session: analysis!.session,
       notes: "",
@@ -195,7 +195,7 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Analysis
         </Link>
         <h1 className="text-2xl font-bold tracking-tight">Edit Analysis</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{analysis.instrument} · {analysis.title}</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{analysis.instrument} · {analysis.date}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -225,10 +225,6 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Title *</Label>
-              <Input value={form.title} onChange={(e) => set("title", e.target.value)} className="h-9 text-sm" required />
-            </div>
-            <div className="space-y-1.5">
               <Label className="text-xs">Bias</Label>
               <div className="flex gap-1.5">
                 {BIASES.map((b) => (
@@ -237,7 +233,7 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
                       form.bias === b
                         ? b === "bullish" ? "bg-success text-success-foreground"
                           : b === "bearish" ? "bg-destructive text-white"
-                          : "bg-muted text-foreground"
+                          : "bg-warning text-warning-foreground"
                         : "bg-muted text-muted-foreground hover:text-foreground")}>
                     {b}
                   </button>

@@ -27,8 +27,8 @@ function BiasBadge({ bias }: { bias: Bias }) {
       </span>
     );
   return (
-    <span className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
-      <Minus className="w-3 h-3" /> Neutral
+    <span className="flex items-center gap-1 text-warning text-xs font-medium">
+      <Minus className="w-3 h-3" /> Choppy
     </span>
   );
 }
@@ -133,7 +133,7 @@ export default function AnalysisPage() {
 
         {/* Bias filter */}
         <div className="flex rounded-lg border border-border/50 overflow-hidden">
-          {(["all", "bullish", "bearish", "neutral"] as const).map((b) => (
+          {(["all", "bullish", "bearish", "choppy"] as const).map((b) => (
             <button
               key={b}
               onClick={() => setFilterBias(b)}

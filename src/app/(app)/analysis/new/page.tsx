@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { useRef } from "react";
 
 const INSTRUMENTS = ["NQ", "ES", "GOLD"];
-const BIASES: Bias[] = ["bullish", "bearish", "neutral"];
+const BIASES: Bias[] = ["bullish", "bearish", "choppy"];
 
 function compressImage(file: File, maxWidth = 1400): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -152,7 +152,6 @@ export default function NewAnalysisPage() {
   const [activeTab, setActiveTab] = useState<"htf" | "ltf">("htf");
 
   const [form, setForm] = useState({
-    title: "",
     date: new Date().toISOString().split("T")[0],
     instrument: "",
     bias: "bullish" as Bias,
@@ -172,11 +171,12 @@ export default function NewAnalysisPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.instrument || !form.title || !form.thesis) return;
+    if (!form.instrument || !form.thesis) return;
     setSaving(true);
     await new Promise((r) => setTimeout(r, 300));
     const created = createAnalysis({
       ...form,
+      title: `${form.instrument} — ${form.date}`,
       market: "futures",
       session: "New York",
       notes: "",
@@ -224,12 +224,6 @@ export default function NewAnalysisPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="title" className="text-xs">Title *</Label>
-              <Input id="title" value={form.title} onChange={(e) => set("title", e.target.value)}
-                placeholder="e.g. NQ Monday — HTF rejection into 4H demand" className="h-9 text-sm bg-background/50" required />
-            </div>
-
-            <div className="space-y-1.5">
               <Label className="text-xs">Bias</Label>
               <div className="flex gap-1.5">
                 {BIASES.map((b) => (
@@ -238,7 +232,7 @@ export default function NewAnalysisPage() {
                       form.bias === b
                         ? b === "bullish" ? "bg-success text-success-foreground shadow-sm"
                           : b === "bearish" ? "bg-destructive text-white shadow-sm"
-                          : "bg-muted text-foreground shadow-sm"
+                          : "bg-warning text-warning-foreground shadow-sm"
                         : "bg-muted text-muted-foreground hover:text-foreground")}>
                     {b}
                   </button>

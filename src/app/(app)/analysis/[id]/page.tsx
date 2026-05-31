@@ -50,7 +50,7 @@ export default function AnalysisDetailPage({
   const biasConfig = {
     bullish: { icon: TrendingUp, color: "text-success", bg: "bg-success/8 border-success/20", label: "Bullish" },
     bearish: { icon: TrendingDown, color: "text-destructive", bg: "bg-destructive/8 border-destructive/20", label: "Bearish" },
-    neutral: { icon: Minus, color: "text-muted-foreground", bg: "bg-muted border-border", label: "Neutral" },
+    choppy: { icon: Minus, color: "text-warning", bg: "bg-warning/10 border-warning/20", label: "Choppy" },
   };
 
   const bias = biasConfig[analysis.bias];
