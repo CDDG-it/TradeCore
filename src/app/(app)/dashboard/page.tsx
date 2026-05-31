@@ -101,7 +101,7 @@ function DisciplineScoreCard() {
 
   return (
     <div
-      className="rounded-xl p-5 relative overflow-hidden"
+      className="card-hover rounded-xl p-5 relative overflow-hidden"
       style={{ background: "var(--card)", border: "1px solid var(--border)" }}
     >
       <div
@@ -127,21 +127,31 @@ function DisciplineScoreCard() {
       >
         {avg !== null ? `${avg}%` : "—"}
       </p>
-      <div className="flex items-center gap-1 mt-2">
-        {(["week", "month"] as const).map((p) => (
-          <button
-            key={p}
-            onClick={() => setPeriod(p)}
-            className="px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide transition-all"
-            style={
-              period === p
-                ? { background: color.replace(")", " / 0.15)"), color }
-                : { color: "var(--muted-foreground)" }
-            }
-          >
-            {p === "week" ? "This week" : "This month"}
-          </button>
-        ))}
+      <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center gap-1">
+          {(["week", "month"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className="px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide transition-all"
+              style={
+                period === p
+                  ? { background: color.replace(")", " / 0.15)"), color }
+                  : { color: "var(--muted-foreground)" }
+              }
+            >
+              {p === "week" ? "This week" : "This month"}
+            </button>
+          ))}
+        </div>
+        <Link
+          href="/analytics"
+          className="text-[10px] font-medium flex items-center gap-0.5 transition-opacity hover:opacity-80"
+          style={{ color: "var(--muted-foreground)" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          Analytics <ArrowRight className="w-2.5 h-2.5" />
+        </Link>
       </div>
     </div>
   );
@@ -538,7 +548,7 @@ export default function DashboardPage() {
 
           {/* Recent Trades */}
           <div
-            className="rounded-xl overflow-hidden"
+            className="card-hover rounded-xl overflow-hidden"
             style={{ background: "var(--card)", border: "1px solid var(--border)" }}
           >
             <div
