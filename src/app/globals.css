@@ -194,6 +194,24 @@ html.light {
   --sidebar-meta: oklch(0.20 0.005 28 / 40%);
 }
 
+/* Light mode — liquid glass overrides */
+html.light .liquid-glass {
+  background: rgba(255, 255, 255, 0.70);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+html.light .liquid-glass::before {
+  background: none;
+}
+html.light .liquid-glass-strong {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+html.light .liquid-glass-strong::before {
+  background: none;
+}
+
 /* Light mode scrollbar */
 html.light ::-webkit-scrollbar-thumb {
   background: oklch(0.75 0.004 28);
@@ -214,8 +232,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply text-foreground;
-    background: oklch(0.08 0.004 28);
+    @apply text-foreground bg-background;
     background-attachment: fixed;
   }
   html {

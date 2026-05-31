@@ -26,17 +26,11 @@ import {
   ArrowRight,
   Target,
   Activity,
-  DollarSign,
   Plus,
   Zap,
-  CheckSquare,
   ChevronLeft,
   ChevronRight,
-  Flame,
-  Brain,
-  Moon,
   Check,
-  Minus,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,7 +39,6 @@ import {
   getDashboardStats,
   getTrades,
   getAccounts,
-  getFeaturedNews,
   getHabits,
   getHabitCompletions,
   getDaySummary,
@@ -133,14 +126,14 @@ function ConnectedCalendar() {
     <div
       className="rounded-xl overflow-hidden"
       style={{
-        background: "oklch(0.10 0.003 28)",
-        border: "1px solid oklch(0.18 0.005 28)",
+        background: "var(--card)",
+        border: "1px solid var(--border)",
       }}
     >
       {/* Calendar Header */}
       <div
         className="flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: "1px solid oklch(0.18 0.005 28)" }}
+        style={{ borderBottom: "1px solid var(--border)" }}
       >
         <div>
           <h2 className="text-sm font-semibold">Day Overview</h2>
@@ -149,7 +142,7 @@ function ConnectedCalendar() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors hover:bg-white/5"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors hover:bg-black/[0.04]"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -158,7 +151,7 @@ function ConnectedCalendar() {
           </span>
           <button
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors hover:bg-white/5"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors hover:bg-black/[0.04]"
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -191,7 +184,7 @@ function ConnectedCalendar() {
               <button
                 key={day.toISOString()}
                 onClick={() => setSelectedDate(isSelected ? null : day)}
-                className="relative flex flex-col items-center rounded-lg p-1 transition-all hover:bg-white/5 min-h-12"
+                className="relative flex flex-col items-center rounded-lg p-1 transition-all hover:bg-black/[0.04] min-h-12"
                 style={{
                   opacity: isCurrentMonth ? 1 : 0.3,
                   background: isSelected
@@ -268,13 +261,12 @@ function ConnectedCalendar() {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 mt-3 pt-3" style={{ borderTop: "1px solid oklch(0.18 0.005 28)" }}>
+        <div className="flex flex-wrap items-center gap-4 mt-3 pt-3" style={{ borderTop: "1px solid var(--border)" }}>
           {[
             { color: "oklch(0.72 0.22 45)", label: "Analysis" },
             { color: "oklch(0.58 0.17 145)", label: "Win" },
             { color: "oklch(0.58 0.22 25)", label: "Loss" },
             { color: "oklch(0.70 0.16 72)", label: "B/E" },
-            { color: "oklch(0.72 0.22 45)", label: "Habits" },
           ].map(({ color, label }) => (
             <div key={label} className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full" style={{ background: color }} />
@@ -288,7 +280,7 @@ function ConnectedCalendar() {
       {selectedDate && selectedSummary && (
         <div
           className="px-5 py-4 space-y-4"
-          style={{ borderTop: "1px solid oklch(0.18 0.005 28)" }}
+          style={{ borderTop: "1px solid var(--border)" }}
         >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">
@@ -305,7 +297,7 @@ function ConnectedCalendar() {
           </div>
 
           {/* Day story */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <DayStoryBlock
               icon={LineChart}
               label="Pre-Market"
@@ -313,40 +305,6 @@ function ConnectedCalendar() {
               detail={selectedSummary.hasAnalysis ? `${selectedSummary.analysisCount} analysis done` : "No analysis"}
               color="oklch(0.72 0.22 45)"
               href={`/analysis?date=${selectedDateStr}`}
-            />
-            <DayStoryBlock
-              icon={CheckSquare}
-              label="Habits"
-              done={selectedSummary.habitCompleted > 0}
-              detail={`${selectedSummary.habitCompleted}/${selectedSummary.habitCount} completed`}
-              color="oklch(0.72 0.22 45)"
-              href="/habits"
-            />
-            <DayStoryBlock
-              icon={Flame}
-              label="Journal"
-              done={selectedSummary.hasJournal}
-              detail={selectedSummary.hasJournal ? "Written" : "Not written"}
-              color="oklch(0.70 0.16 72)"
-              href={`/self-improvement`}
-            />
-            <DayStoryBlock
-              icon={Brain}
-              label="State Check"
-              done={selectedSummary.hasStateCheck}
-              detail={selectedSummary.hasStateCheck && selectedSummary.stateScore !== null
-                ? `Avg score: ${selectedSummary.stateScore}/10`
-                : "Not logged"}
-              color="oklch(0.72 0.22 45)"
-              href="/self-improvement"
-            />
-            <DayStoryBlock
-              icon={Moon}
-              label="Recovery"
-              done={selectedSummary.hasSleep}
-              detail={selectedSummary.hasSleep ? "Logged" : "Not logged"}
-              color="oklch(0.58 0.17 145)"
-              href="/self-improvement"
             />
             <DayStoryBlock
               icon={BookOpen}
@@ -369,8 +327,8 @@ function ConnectedCalendar() {
                   <Link
                     key={trade.id}
                     href={`/journal/${trade.id}`}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-white/5"
-                    style={{ border: "1px solid oklch(0.18 0.005 28)" }}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-black/[0.04]"
+                    style={{ border: "1px solid var(--border)" }}
                   >
                     <ResultBadge result={trade.result} />
                     <div className="flex-1 min-w-0">
@@ -423,7 +381,7 @@ function DayStoryBlock({
         className="rounded-lg p-3 transition-all hover:border-opacity-60 cursor-pointer"
         style={{
           background: done ? `${color}0d` : "oklch(0.08 0.003 28)",
-          border: `1px solid ${done ? `${color}2a` : "oklch(0.18 0.005 28)"}`,
+          border: `1px solid ${done ? `${color}2a` : "var(--border)"}`,
         }}
       >
         <div className="flex items-center gap-2 mb-1">
@@ -434,7 +392,7 @@ function DayStoryBlock({
             {done ? (
               <Check className="w-3 h-3" style={{ color }} />
             ) : (
-              <Icon className="w-3 h-3" style={{ color: "oklch(0.40 0.005 28)" }} />
+              <Icon className="w-3 h-3" style={{ color: "var(--muted-foreground)" }} />
             )}
           </div>
           <span
@@ -455,8 +413,6 @@ export default function DashboardPage() {
   const stats = getDashboardStats();
   const recentTrades = getTrades().slice(0, 5);
   const accounts = getAccounts();
-  const featuredNews = getFeaturedNews();
-
   const statCards = [
     {
       label: "Total Trades",
@@ -495,8 +451,6 @@ export default function DashboardPage() {
   const quickLinks = [
     { href: "/journal", label: "Trade Journal", icon: BookOpen, desc: "Log a new trade" },
     { href: "/analysis", label: "Pre-Market", icon: LineChart, desc: "Write analysis" },
-    { href: "/self-improvement", label: "Self-Improvement", icon: Flame, desc: "Daily check-in" },
-    { href: "/habits", label: "Habits", icon: CheckSquare, desc: "Daily routines" },
     { href: "/analytics", label: "Analytics", icon: BarChart2, desc: "Performance review" },
     { href: "/accounts", label: "Funded Accounts", icon: Wallet, desc: "Track accounts" },
   ];
@@ -512,8 +466,8 @@ export default function DashboardPage() {
             key={label}
             className="animate-fade-up rounded-xl p-5 relative overflow-hidden"
             style={{
-              background: "oklch(0.10 0.003 28)",
-              border: "1px solid oklch(0.18 0.005 28)",
+              background: "var(--card)",
+              border: "1px solid var(--border)",
               animationDelay: `${i * 60}ms`,
             }}
           >
@@ -524,7 +478,7 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between mb-4">
               <p
                 className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: "oklch(0.45 0.005 28)" }}
+                style={{ color: "var(--muted-foreground)" }}
               >
                 {label}
               </p>
@@ -570,8 +524,8 @@ export default function DashboardPage() {
             <div
               className="rounded-xl p-6 text-center"
               style={{
-                background: "oklch(0.10 0.003 28)",
-                border: "1px solid oklch(0.18 0.005 28)",
+                background: "var(--card)",
+                border: "1px solid var(--border)",
               }}
             >
               <p className="text-sm text-muted-foreground mb-3">No accounts added yet.</p>
@@ -600,8 +554,8 @@ export default function DashboardPage() {
                 <div
                   className="rounded-xl p-4 transition-all hover:border-opacity-60 cursor-pointer"
                   style={{
-                    background: "oklch(0.10 0.003 28)",
-                    border: "1px solid oklch(0.18 0.005 28)",
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
                   }}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -671,13 +625,13 @@ export default function DashboardPage() {
         <div
           className="rounded-xl overflow-hidden"
           style={{
-            background: "oklch(0.10 0.003 28)",
-            border: "1px solid oklch(0.18 0.005 28)",
+            background: "var(--card)",
+            border: "1px solid var(--border)",
           }}
         >
           <div
             className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: "1px solid oklch(0.18 0.005 28)" }}
+            style={{ borderBottom: "1px solid var(--border)" }}
           >
             <h2 className="text-sm font-semibold">Recent Trades</h2>
             <Link
@@ -706,9 +660,9 @@ export default function DashboardPage() {
                 <Link
                   key={trade.id}
                   href={`/journal/${trade.id}`}
-                  className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.02]"
+                  className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-black/[0.02]"
                   style={{
-                    borderBottom: i < recentTrades.length - 1 ? "1px solid oklch(0.18 0.005 28)" : undefined,
+                    borderBottom: i < recentTrades.length - 1 ? "1px solid var(--border)" : undefined,
                   }}
                 >
                   <div className="flex items-center gap-2 shrink-0">
@@ -760,8 +714,8 @@ export default function DashboardPage() {
               <div
                 className="rounded-xl p-4 transition-all hover:-translate-y-0.5 cursor-pointer group"
                 style={{
-                  background: "oklch(0.10 0.003 28)",
-                  border: "1px solid oklch(0.18 0.005 28)",
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
                 }}
               >
                 <div
@@ -780,58 +734,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Featured news */}
-      {featuredNews.length > 0 && (
-        <div className="animate-fade-up" style={{ animationDelay: "480ms" }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold">Featured News</h2>
-            <Link
-              href="/news"
-              className="text-xs flex items-center gap-1 transition-colors hover:opacity-80"
-              style={{ color: "oklch(0.72 0.22 45)" }}
-            >
-              All news <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {featuredNews.map((item) => (
-              <div
-                key={item.id}
-                className="rounded-xl p-4"
-                style={{
-                  background: "oklch(0.10 0.003 28)",
-                  border: "1px solid oklch(0.18 0.005 28)",
-                }}
-              >
-                <div className="flex items-start gap-3">
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-md font-semibold shrink-0 mt-0.5 capitalize"
-                    style={
-                      item.impact_level === "high"
-                        ? { background: "oklch(0.58 0.22 25 / 0.15)", color: "oklch(0.58 0.22 25)" }
-                        : item.impact_level === "medium"
-                        ? { background: "oklch(0.70 0.16 72 / 0.15)", color: "oklch(0.70 0.16 72)" }
-                        : { background: "oklch(0.22 0.005 28)", color: "oklch(0.55 0.005 28)" }
-                    }
-                  >
-                    {item.impact_level}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-snug mb-1">{item.title}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{item.summary}</p>
-                    <p
-                      className="text-xs mt-2"
-                      style={{ color: "oklch(0.40 0.005 28)" }}
-                    >
-                      {item.source_name} · {format(new Date(item.published_at), "MMM d, h:mm a")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
       </PageWrapper>
     </div>
   );

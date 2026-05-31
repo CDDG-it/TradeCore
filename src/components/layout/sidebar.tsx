@@ -8,13 +8,10 @@ import {
   LineChart,
   BarChart2,
   Wallet,
-  Newspaper,
   Settings,
   User,
   LogOut,
   Compass,
-  Brain,
-  Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -35,19 +32,6 @@ const navGroups = [
       { href: "/analysis", label: "Analysis", icon: LineChart },
       { href: "/analytics", label: "Analytics", icon: BarChart2 },
       { href: "/accounts", label: "Accounts", icon: Wallet },
-    ],
-  },
-  {
-    label: "Mindset",
-    items: [
-      { href: "/self-improvement", label: "Self-Improvement", icon: Flame },
-      { href: "/coaching", label: "Coaching", icon: Brain },
-    ],
-  },
-  {
-    label: "Other",
-    items: [
-      { href: "/news", label: "News", icon: Newspaper },
     ],
   },
 ];
@@ -79,14 +63,14 @@ function NavItem({
       className={cn(
         "font-body flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 relative group/nav",
         isActive
-          ? "liquid-glass text-white"
-          : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]"
+          ? "bg-sidebar-accent text-sidebar-foreground"
+          : "text-sidebar-foreground/40 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
       )}
     >
       {isActive && (
         <span
           className="absolute left-0 top-1/2 -translate-y-1/2 w-[2.5px] h-4 rounded-r-full"
-          style={{ background: "oklch(0.72 0.22 45)" }}
+          style={{ background: "#F97316" }}
         />
       )}
       <Icon
@@ -99,7 +83,7 @@ function NavItem({
             : undefined
         }
       />
-      <span className={isActive ? "text-white/90" : ""}>{label}</span>
+      <span className={isActive ? "text-sidebar-foreground" : ""}>{label}</span>
       {highlight && !isActive && (
         <span
           className="ml-auto text-[9px] font-bold tracking-wide px-1.5 py-0.5 rounded-full"
@@ -125,21 +109,14 @@ export function Sidebar() {
 
   return (
     <aside
-      className="fixed left-0 top-0 h-screen w-60 flex flex-col z-40"
-      style={{
-        background: "oklch(0.055 0.002 28)",
-        borderRight: "1px solid rgba(255,255,255,0.05)",
-      }}
+      className="fixed left-0 top-0 h-screen w-60 flex flex-col z-40 bg-sidebar border-r border-sidebar-border"
     >
       {/* Logo */}
-      <div
-        className="h-14 flex items-center px-5 shrink-0"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-      >
+      <div className="h-14 flex items-center px-5 shrink-0 border-b border-sidebar-border">
         <Link href="/"
           className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
           style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
-          <span className="text-white">Trade</span>
+          <span className="text-sidebar-foreground">Trade</span>
           <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
         </Link>
       </div>
@@ -149,7 +126,7 @@ export function Sidebar() {
         {navGroups.map((group) => (
           <div key={group.label ?? "primary"}>
             {group.label && (
-              <p className="font-body text-[9px] font-semibold uppercase tracking-[0.14em] px-3 mb-2 text-white/25">
+              <p className="font-body text-[9px] font-semibold uppercase tracking-[0.14em] px-3 mb-2 text-sidebar-foreground/30">
                 {group.label}
               </p>
             )}
@@ -175,10 +152,7 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom nav + user */}
-      <div
-        className="px-3 pb-3 space-y-0.5 pt-3 shrink-0"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-      >
+      <div className="px-3 pb-3 space-y-0.5 pt-3 shrink-0 border-t border-sidebar-border">
         {bottomItems.map(({ href, label, icon }) => {
           const isActive = pathname === href;
           return (
@@ -186,8 +160,8 @@ export function Sidebar() {
           );
         })}
 
-        <div className="pt-2 mt-1" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl group hover:bg-white/[0.03] transition-colors">
+        <div className="pt-2 mt-1 border-t border-sidebar-border">
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl group hover:bg-sidebar-accent/60 transition-colors">
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
               style={{ background: "rgba(249,115,22,0.15)" }}
@@ -197,16 +171,16 @@ export function Sidebar() {
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-body text-xs font-medium text-white/75 truncate">
+              <p className="font-body text-xs font-medium text-sidebar-foreground/75 truncate">
                 {user?.full_name || "Demo Trader"}
               </p>
-              <p className="font-body text-[11px] text-white/30 truncate">
+              <p className="font-body text-[11px] text-sidebar-foreground/35 truncate">
                 {user?.email || "demo@tradecore.app"}
               </p>
             </div>
             <button
               onClick={signOut}
-              className="transition-all opacity-0 group-hover:opacity-60 hover:!opacity-100 text-white/50"
+              className="transition-all opacity-0 group-hover:opacity-60 hover:!opacity-100 text-sidebar-foreground/50"
               title="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />

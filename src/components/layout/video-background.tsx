@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/lib/theme-context";
 
 const VIDEOS = [
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_080021_d598092b-c4c2-4e53-8e46-94cf9064cd50.mp4",
@@ -14,7 +15,10 @@ function pickVideo(_pathname: string): string {
 
 export function VideoBackground() {
   const pathname = usePathname();
+  const { theme } = useTheme();
   const src = pickVideo(pathname);
+
+  if (theme === "light") return null;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
@@ -27,14 +31,12 @@ export function VideoBackground() {
         className="absolute inset-0 w-full h-full object-cover"
         style={{
           opacity: 0.38,
-          // Warm orange/white colour grade: desaturate slightly then push warm
           filter: "sepia(0.75) saturate(3.5) hue-rotate(10deg) brightness(0.80)",
         }}
       >
         <source src={src} type="video/mp4" />
       </video>
 
-      {/* Dark vignette — keeps edges dark, centre more visible */}
       <div
         className="absolute inset-0"
         style={{
@@ -42,7 +44,6 @@ export function VideoBackground() {
             "radial-gradient(ellipse 90% 90% at 50% 50%, rgba(7,4,2,0.18) 0%, rgba(7,4,2,0.70) 100%)",
         }}
       />
-      {/* Orange radial bloom from top */}
       <div
         className="absolute inset-0"
         style={{
@@ -50,12 +51,10 @@ export function VideoBackground() {
             "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(249,115,22,0.30) 0%, transparent 70%)",
         }}
       />
-      {/* Full orange wash */}
       <div
         className="absolute inset-0"
         style={{ background: "rgba(180,70,0,0.22)" }}
       />
-      {/* Subtle grain */}
       <div
         className="absolute inset-0 opacity-[0.025]"
         style={{

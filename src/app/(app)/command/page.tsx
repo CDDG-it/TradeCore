@@ -5,9 +5,9 @@ import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
-  Target, CheckSquare, TrendingUp, TrendingDown,
+  Target, TrendingUp, TrendingDown,
   Activity, AlertTriangle, BookOpen, Flame,
-  ChevronRight, Circle, CheckCircle2, Brain,
+  ChevronRight,
   Zap, Shield, BarChart2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,28 +24,6 @@ import type {
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 const TODAY_LABEL = format(new Date(), "EEEE, MMMM d");
-
-const DEFAULT_CHECKLIST = [
-  "Reviewed HTF bias and key levels",
-  "Checked economic calendar for news",
-  "Identified today's best setups",
-  "Reviewed my non-negotiable rules",
-  "Mentally prepared — no emotional trading",
-];
-
-function ScoreDot({ value, max = 100 }: { value: number; max?: number }) {
-  const pct = Math.round((value / max) * 100);
-  const color =
-    pct >= 80 ? "oklch(0.72 0.17 145)"
-    : pct >= 60 ? "oklch(0.72 0.22 45)"
-    : "oklch(0.65 0.22 25)";
-  return (
-    <span className="font-bold text-lg" style={{ color }}>
-      {value}
-      {max !== 100 && <span className="text-xs text-muted-foreground font-normal">/{max}</span>}
-    </span>
-  );
-}
 
 function MiniTrade({ trade }: { trade: TradeJournalEntry }) {
   const isWin = trade.result === "win";
@@ -112,13 +90,6 @@ export default function CommandCenterPage() {
     setPlaybook(pb);
     setAccounts(accts);
 
-    // Ensure checklist length matches
-    if (ds.pre_trade_checklist.length === 0) {
-      ds.pre_trade_checklist = DEFAULT_CHECKLIST.map(() => false);
-    }
-    while (ds.pre_trade_checklist.length < DEFAULT_CHECKLIST.length) {
-      ds.pre_trade_checklist.push(false);
-    }
     setState(ds);
   }, []);
 
@@ -127,13 +98,6 @@ export default function CommandCenterPage() {
     const updated = { ...state, ...patch, updated_at: new Date().toISOString() };
     setState(updated);
     saveDailyState(updated);
-  }
-
-  function toggleChecklist(idx: number) {
-    if (!state) return;
-    const next = [...state.pre_trade_checklist];
-    next[idx] = !next[idx];
-    updateState({ pre_trade_checklist: next });
   }
 
   function toggleHabit(habitId: string) {
@@ -157,9 +121,6 @@ export default function CommandCenterPage() {
   if (!state) return null;
 
   const todayTrades = trades.filter((t) => t.date_time.startsWith(TODAY));
-  const checklistDone = state.pre_trade_checklist.filter(Boolean).length;
-  const checklistTotal = DEFAULT_CHECKLIST.length;
-  const checklistPct = Math.round((checklistDone / checklistTotal) * 100);
 
   const todayHabits = habits;
   const todayCompletedHabits = completions
@@ -215,16 +176,8 @@ export default function CommandCenterPage() {
       />
       <PageWrapper>
       {/* Top status row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
-          {
-            label: "Pre-Trade",
-            value: `${checklistDone}/${checklistTotal}`,
-            sub: checklistPct === 100 ? "Ready to trade" : "Complete checklist",
-            icon: CheckSquare,
-            color: checklistPct === 100 ? "oklch(0.72 0.17 145)" : "oklch(0.72 0.22 45)",
-            pct: checklistPct,
-          },
           {
             label: "Habits",
             value: `${todayCompletedHabits.length}/${todayHabits.length}`,
@@ -265,8 +218,7 @@ export default function CommandCenterPage() {
               <p className="text-xl font-bold" style={{ color }}>{value}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>
               <div
-                className="mt-2.5 h-1 rounded-full overflow-hidden"
-                style={{ background: "oklch(1 0 0 / 6%)" }}
+                className="mt-2.5 h-1 rounded-full overflow-hidden bg-border"
               >
                 <div
                   className="h-full rounded-full transition-all duration-500"
@@ -279,7 +231,7 @@ export default function CommandCenterPage() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5">
-        {/* Left col: checklist + focus + context */}
+        {/* Left col: focus + context + trades */}
         <div className="lg:col-span-2 space-y-5">
           {/* Today's Focus */}
           <Card className="shadow-sm">
@@ -300,58 +252,6 @@ export default function CommandCenterPage() {
             </CardContent>
           </Card>
 
-          {/* Pre-Trade Checklist */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <CheckSquare className="w-4 h-4 text-primary" />
-                  Pre-Trade Checklist
-                </CardTitle>
-                <span
-                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  style={{
-                    background: checklistPct === 100
-                      ? "oklch(0.72 0.17 145 / 0.12)"
-                      : "oklch(1 0 0 / 6%)",
-                    color: checklistPct === 100
-                      ? "oklch(0.72 0.17 145)"
-                      : "oklch(0.90 0.003 28 / 50%)",
-                  }}
-                >
-                  {checklistDone}/{checklistTotal}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {DEFAULT_CHECKLIST.map((item, idx) => {
-                const done = state.pre_trade_checklist[idx] ?? false;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => toggleChecklist(idx)}
-                    className="w-full flex items-center gap-3 text-left group"
-                  >
-                    <div
-                      className="w-5 h-5 rounded-md shrink-0 flex items-center justify-center border transition-all"
-                      style={{
-                        background: done ? "oklch(0.72 0.17 145 / 0.15)" : "transparent",
-                        borderColor: done ? "oklch(0.72 0.17 145 / 0.40)" : "oklch(1 0 0 / 12%)",
-                      }}
-                    >
-                      {done && <CheckCircle2 className="w-3 h-3" style={{ color: "oklch(0.72 0.17 145)" }} />}
-                    </div>
-                    <span className={cn(
-                      "text-sm transition-colors",
-                      done ? "text-foreground/40 line-through" : "text-foreground/70 group-hover:text-foreground/90"
-                    )}>
-                      {item}
-                    </span>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
 
           {/* Market Context */}
           <Card className="shadow-sm">
@@ -521,24 +421,6 @@ export default function CommandCenterPage() {
             </CardContent>
           </Card>
 
-          {/* EOD Reflection */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Brain className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
-                End-of-Day Reflection
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <textarea
-                value={state.eod_reflection}
-                onChange={(e) => updateState({ eod_reflection: e.target.value })}
-                placeholder="How did today go? What did you do well? What will you improve tomorrow?"
-                className="w-full text-sm leading-relaxed resize-none outline-none bg-transparent text-foreground placeholder:text-muted-foreground/50 min-h-[80px]"
-                rows={3}
-              />
-            </CardContent>
-          </Card>
         </div>
 
         {/* Right col: identity + habits + accounts */}
@@ -584,13 +466,6 @@ export default function CommandCenterPage() {
                     <span className="font-semibold text-foreground">{playbook.max_daily_risk_percent}%</span>
                   </div>
                 </div>
-                <a
-                  href="/playbook"
-                  className="text-[10px] font-semibold flex items-center gap-1 transition-opacity hover:opacity-80"
-                  style={{ color: "oklch(0.72 0.22 45)" }}
-                >
-                  View full playbook <ChevronRight className="w-3 h-3" />
-                </a>
               </CardContent>
             </Card>
           )}

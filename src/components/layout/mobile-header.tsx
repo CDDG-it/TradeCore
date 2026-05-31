@@ -11,14 +11,10 @@ import {
   LineChart,
   BarChart2,
   Wallet,
-  Newspaper,
   Settings,
   User,
   LogOut,
-  CheckSquare,
   Compass,
-  Brain,
-  BookMarked,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -31,10 +27,6 @@ const navItems = [
   { href: "/analysis", label: "Analysis", icon: LineChart },
   { href: "/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/accounts", label: "Accounts", icon: Wallet },
-  { href: "/habits", label: "Habits", icon: CheckSquare },
-  { href: "/playbook", label: "Playbook", icon: BookMarked },
-  { href: "/coaching", label: "Coaching", icon: Brain },
-  { href: "/news", label: "News", icon: Newspaper },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/profile", label: "Profile", icon: User },
 ];
@@ -54,20 +46,16 @@ export function MobileHeader() {
   return (
     <>
       {/* Header bar */}
-      <header
-        className="liquid-glass-strong lg:hidden fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 z-50 rounded-none"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-      >
+      <header className="bg-sidebar border-b border-sidebar-border lg:hidden fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 z-50">
         <Link href="/"
           className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
           style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
-          <span className="text-white">Trade</span>
+          <span className="text-sidebar-foreground">Trade</span>
           <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
         </Link>
         <button
           onClick={() => setOpen(true)}
-          className="p-2 rounded-lg transition-colors"
-          style={{ color: "oklch(0.90 0.003 28 / 60%)" }}
+          className="p-2 rounded-lg transition-colors text-sidebar-foreground/60"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -76,8 +64,7 @@ export function MobileHeader() {
       {/* Overlay */}
       {open && (
         <div
-          className="lg:hidden fixed inset-0 z-50 backdrop-blur-sm"
-          style={{ background: "oklch(0 0 0 / 70%)" }}
+          className="lg:hidden fixed inset-0 z-50 backdrop-blur-sm bg-black/40"
           onClick={() => setOpen(false)}
         />
       )}
@@ -85,29 +72,21 @@ export function MobileHeader() {
       {/* Drawer panel */}
       <div
         className={cn(
-          "lg:hidden fixed top-0 left-0 h-screen w-64 z-50 flex flex-col transition-transform duration-200",
+          "lg:hidden fixed top-0 left-0 h-screen w-64 z-50 flex flex-col transition-transform duration-200 bg-sidebar border-r border-sidebar-border",
           open ? "translate-x-0" : "-translate-x-full"
         )}
-        style={{
-          background: "oklch(0.055 0.002 28)",
-          borderRight: "1px solid rgba(255,255,255,0.05)",
-        }}
       >
-        <div
-          className="h-14 flex items-center justify-between px-5"
-          style={{ borderBottom: "1px solid oklch(1 0 0 / 5%)" }}
-        >
+        <div className="h-14 flex items-center justify-between px-5 border-b border-sidebar-border">
           <Link href="/"
             className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
             style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
             onClick={() => setOpen(false)}>
-            <span className="text-white">Trade</span>
+            <span className="text-sidebar-foreground">Trade</span>
             <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
           </Link>
           <button
             onClick={() => setOpen(false)}
-            className="p-1.5 rounded-lg transition-colors"
-            style={{ color: "oklch(0.90 0.003 28 / 50%)" }}
+            className="p-1.5 rounded-lg transition-colors text-sidebar-foreground/50"
           >
             <X className="w-4 h-4" />
           </button>
@@ -132,7 +111,7 @@ export function MobileHeader() {
                 {isActive && (
                   <span
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                    style={{ background: "oklch(0.72 0.22 45)" }}
+                    style={{ background: "#F97316" }}
                   />
                 )}
                 <Icon
@@ -147,10 +126,7 @@ export function MobileHeader() {
           })}
         </nav>
 
-        <div
-          className="px-3 pb-4 pt-3"
-          style={{ borderTop: "1px solid oklch(1 0 0 / 5%)" }}
-        >
+        <div className="px-3 pb-4 pt-3 border-t border-sidebar-border">
           <div className="flex items-center gap-2.5 px-3 py-2.5">
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center"
@@ -158,7 +134,7 @@ export function MobileHeader() {
             >
               <span
                 className="text-xs font-bold"
-                style={{ color: "oklch(0.72 0.22 45)" }}
+                style={{ color: "#F97316" }}
               >
                 {initials}
               </span>
@@ -167,17 +143,13 @@ export function MobileHeader() {
               <p className="text-xs font-medium text-sidebar-foreground truncate">
                 {user?.full_name || "Demo Trader"}
               </p>
-              <p
-                className="text-xs truncate"
-                style={{ color: "oklch(0.90 0.003 28 / 35%)" }}
-              >
+              <p className="text-xs text-sidebar-foreground/35 truncate">
                 {user?.email || "demo@tradinghub.app"}
               </p>
             </div>
             <button
               onClick={signOut}
-              className="transition-colors"
-              style={{ color: "oklch(0.90 0.003 28 / 35%)" }}
+              className="transition-colors text-sidebar-foreground/35"
             >
               <LogOut className="w-4 h-4" />
             </button>
