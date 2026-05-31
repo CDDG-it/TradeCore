@@ -4,109 +4,44 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
-import {
-  Target, TrendingUp, TrendingDown,
-  Activity, AlertTriangle, BookOpen, Flame,
-  ChevronRight,
-  Zap, Shield, BarChart2,
-} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Flame, Plus, Check, Pencil, Trash2, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  getTrades, getHabits, getHabitCompletions, getPlaybook,
-  getDailyState, saveDailyState, getAccounts, getAvgDisciplineScore,
+  getHabits, createHabit, updateHabit, deleteHabit,
+  getHabitCompletions,
 } from "@/lib/mock/store";
+import type { Habit, HabitCompletion } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import type {
-  TradeJournalEntry, Habit, HabitCompletion, TraderPlaybook,
-  DailyCommandState, FundedAccount,
-} from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
-const TODAY_LABEL = format(new Date(), "EEEE, MMMM d");
-
-function MiniTrade({ trade }: { trade: TradeJournalEntry }) {
-  const isWin = trade.result === "win";
-  const isLoss = trade.result === "loss";
-  const disciplineScore = trade.discipline?.score;
-
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
-      <div className="flex items-center gap-2.5">
-        {trade.direction === "long"
-          ? <TrendingUp className="w-3.5 h-3.5 text-success shrink-0" />
-          : <TrendingDown className="w-3.5 h-3.5 text-destructive shrink-0" />}
-        <div>
-          <p className="text-xs font-semibold text-foreground">{trade.instrument}</p>
-          <p className="text-[10px] text-muted-foreground">{trade.session} · {trade.timeframe}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        {disciplineScore !== undefined && (
-          <span
-            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-            style={{
-              background: disciplineScore >= 80
-                ? "oklch(0.72 0.17 145 / 0.12)"
-                : "oklch(0.72 0.22 45 / 0.12)",
-              color: disciplineScore >= 80
-                ? "oklch(0.72 0.17 145)"
-                : "oklch(0.72 0.22 45)",
-            }}
-          >
-            D:{disciplineScore}
-          </span>
-        )}
-        <span className={cn(
-          "text-sm font-bold",
-          isWin ? "text-success" : isLoss ? "text-destructive" : "text-warning"
-        )}>
-          {isWin ? "+" : ""}{trade.rr}R
-        </span>
-      </div>
-    </div>
-  );
-}
 
 export default function CommandCenterPage() {
-  const [state, setState] = useState<DailyCommandState | null>(null);
-  const [trades, setTrades] = useState<TradeJournalEntry[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
-  const [playbook, setPlaybook] = useState<TraderPlaybook | null>(null);
-  const [accounts, setAccounts] = useState<FundedAccount[]>([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newHabitName, setNewHabitName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    const allTrades = getTrades();
-    const allHabits = getHabits();
-    const allCompletions = getHabitCompletions();
-    const pb = getPlaybook();
-    const accts = getAccounts();
-    const ds = getDailyState(TODAY);
-
-    setTrades(allTrades);
-    setHabits(allHabits);
-    setCompletions(allCompletions);
-    setPlaybook(pb);
-    setAccounts(accts);
-
-    setState(ds);
+    setHabits(getHabits());
+    setCompletions(getHabitCompletions());
   }, []);
 
-  function updateState(patch: Partial<DailyCommandState>) {
-    if (!state) return;
-    const updated = { ...state, ...patch, updated_at: new Date().toISOString() };
-    setState(updated);
-    saveDailyState(updated);
-  }
+  const todayDone = completions
+    .filter((c) => c.date === TODAY && c.completed)
+    .map((c) => c.habit_id);
 
   function toggleHabit(habitId: string) {
-    // Optimistic toggle — in real app, would call createHabitCompletion / remove
-    const exists = completions.find(
-      (c) => c.habit_id === habitId && c.date === TODAY && c.completed
-    );
-    if (exists) {
-      setCompletions((prev) => prev.filter((c) => !(c.habit_id === habitId && c.date === TODAY && c.completed)));
+    const isDone = todayDone.includes(habitId);
+    if (isDone) {
+      setCompletions((prev) =>
+        prev.filter((c) => !(c.habit_id === habitId && c.date === TODAY && c.completed))
+      );
     } else {
       const newC: HabitCompletion = {
         id: `hc_${Date.now()}`,
@@ -118,503 +53,243 @@ export default function CommandCenterPage() {
     }
   }
 
-  if (!state) return null;
+  function handleAddHabit(e: React.FormEvent) {
+    e.preventDefault();
+    const name = newHabitName.trim();
+    if (!name) return;
+    const created = createHabit({ name, description: "", category: "routine", frequency: "daily", target_days: 7, color: "#F97316", icon: "" });
+    setHabits(getHabits());
+    setNewHabitName("");
+    setShowAdd(false);
+    // Auto-mark done today
+    const newC: HabitCompletion = {
+      id: `hc_${Date.now()}`,
+      habit_id: created.id,
+      date: TODAY,
+      completed: false,
+    };
+    void newC;
+  }
 
-  const todayTrades = trades.filter((t) => t.date_time.startsWith(TODAY));
+  function handleStartEdit(habit: Habit) {
+    setEditingId(habit.id);
+    setEditName(habit.name);
+  }
 
-  const todayHabits = habits;
-  const todayCompletedHabits = completions
-    .filter((c) => c.date === TODAY && c.completed)
-    .map((c) => c.habit_id);
-  const habitPct = todayHabits.length > 0
-    ? Math.round((todayCompletedHabits.length / todayHabits.length) * 100)
-    : 0;
+  function handleSaveEdit(id: string) {
+    const name = editName.trim();
+    if (!name) return;
+    updateHabit(id, { name });
+    setHabits(getHabits());
+    setEditingId(null);
+  }
 
-  const avgDiscipline = todayTrades.length > 0 ? getAvgDisciplineScore(todayTrades) : null;
+  function handleDelete(id: string) {
+    deleteHabit(id);
+    setHabits(getHabits());
+    setCompletions((prev) => prev.filter((c) => c.habit_id !== id));
+  }
 
-  // Weekly discipline from last 7 days
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
-  const weekTrades = trades.filter((t) => new Date(t.date_time) >= weekAgo);
-  const weekDiscipline = getAvgDisciplineScore(weekTrades);
+  const doneCount = todayDone.length;
+  const totalCount = habits.length;
+  const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
-  // Total risk deployed today
-  const todayWins = todayTrades.filter((t) => t.result === "win").length;
-  const todayLosses = todayTrades.filter((t) => t.result === "loss").length;
-
-  // Max trades per day from playbook
-  const maxTrades = playbook?.max_trades_per_day ?? 3;
-  const tradesRemaining = Math.max(0, maxTrades - todayTrades.length);
-  const maxRisk = playbook?.max_daily_risk_percent ?? 2;
-
-  // Account summary
-  const totalBalance = accounts.reduce((sum, a) => sum + a.current_balance, 0);
-  const atRiskAccounts = accounts.filter((a) => {
-    const drawdown = ((a.start_balance - a.current_balance) / a.start_balance) * 100;
-    return drawdown > 3;
+  // Weekly history: last 7 days
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return format(d, "yyyy-MM-dd");
   });
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-2xl">
       <PageHeader
         badge="Daily"
         title="Command Center"
-        subtitle="Your pre-session ritual"
-        action={
-          <div
-            className="text-right px-4 py-2.5 rounded-xl"
-            style={{ background: "oklch(1 0 0 / 3%)", border: "1px solid oklch(1 0 0 / 6%)" }}
-          >
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Total Capital
-            </p>
-            <p className="text-xl font-bold text-foreground">
-              ${totalBalance.toLocaleString()}
-            </p>
-          </div>
-        }
+        subtitle={format(new Date(), "EEEE, MMMM d")}
       />
       <PageWrapper>
-      {/* Top status row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {[
-          {
-            label: "Habits",
-            value: `${todayCompletedHabits.length}/${todayHabits.length}`,
-            sub: `${habitPct}% complete`,
-            icon: Flame,
-            color: habitPct >= 80 ? "oklch(0.72 0.17 145)" : "oklch(0.72 0.22 45)",
-            pct: habitPct,
-          },
-          {
-            label: "Trades Today",
-            value: `${todayTrades.length}/${maxTrades}`,
-            sub: tradesRemaining > 0 ? `${tradesRemaining} remaining` : "Limit reached",
-            icon: Target,
-            color: tradesRemaining > 0 ? "oklch(0.72 0.22 45)" : "oklch(0.65 0.22 25)",
-            pct: Math.min(100, Math.round((todayTrades.length / maxTrades) * 100)),
-          },
-          {
-            label: "Discipline",
-            value: avgDiscipline !== null ? `${avgDiscipline}` : "—",
-            sub: avgDiscipline !== null
-              ? avgDiscipline >= 80 ? "Excellent process" : "Room to improve"
-              : "No trades yet",
-            icon: Shield,
-            color: avgDiscipline !== null
-              ? avgDiscipline >= 80 ? "oklch(0.72 0.17 145)" : "oklch(0.72 0.22 45)"
-              : "oklch(0.72 0.22 45)",
-            pct: avgDiscipline ?? 0,
-          },
-        ].map(({ label, value, sub, icon: Icon, color, pct }) => (
-          <Card key={label} className="shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  {label}
-                </p>
-                <Icon className="w-3.5 h-3.5" style={{ color }} />
-              </div>
-              <p className="text-xl font-bold" style={{ color }}>{value}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>
-              <div
-                className="mt-2.5 h-1 rounded-full overflow-hidden bg-border"
-              >
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${pct}%`, background: color }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-5">
-        {/* Left col: focus + context + trades */}
-        <div className="lg:col-span-2 space-y-5">
-          {/* Today's Focus */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
+        {/* Habit tracker card */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Zap className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
-                Today's Focus
+                <Flame className="w-4 h-4" style={{ color: "#F97316" }} />
+                Habits
               </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <textarea
-                value={state.focus_note}
-                onChange={(e) => updateState({ focus_note: e.target.value })}
-                placeholder="What is your #1 focus for today? (e.g. 'Only A+ setups, no FOMO trades')"
-                className="w-full text-sm leading-relaxed resize-none outline-none bg-transparent text-foreground placeholder:text-muted-foreground/50 min-h-[60px]"
-                rows={2}
-              />
-            </CardContent>
-          </Card>
-
-
-          {/* Market Context */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Activity className="w-4 h-4 text-primary" />
-                Market Context
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid sm:grid-cols-3 gap-3">
-                {/* Regime */}
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                    Regime
-                  </label>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {(["trending", "ranging", "choppy"] as const).map((r) => {
-                      const active = state.market_context.regime === r;
-                      return (
-                        <button
-                          key={r}
-                          onClick={() => updateState({ market_context: { ...state.market_context, regime: r } })}
-                          className="px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all"
-                          style={{
-                            background: active ? "oklch(0.72 0.22 45 / 0.15)" : "oklch(1 0 0 / 5%)",
-                            color: active ? "oklch(0.72 0.22 45)" : "oklch(0.90 0.003 28 / 50%)",
-                            border: `1px solid ${active ? "oklch(0.72 0.22 45 / 0.30)" : "transparent"}`,
-                          }}
-                        >
-                          {r}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Volatility */}
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                    Volatility
-                  </label>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {(["low", "medium", "high"] as const).map((v) => {
-                      const active = state.market_context.volatility === v;
-                      return (
-                        <button
-                          key={v}
-                          onClick={() => updateState({ market_context: { ...state.market_context, volatility: v } })}
-                          className="px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all"
-                          style={{
-                            background: active ? "oklch(0.72 0.22 45 / 0.15)" : "oklch(1 0 0 / 5%)",
-                            color: active ? "oklch(0.72 0.22 45)" : "oklch(0.90 0.003 28 / 50%)",
-                            border: `1px solid ${active ? "oklch(0.72 0.22 45 / 0.30)" : "transparent"}`,
-                          }}
-                        >
-                          {v}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* HTF Bias */}
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
-                    HTF Bias
-                  </label>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {(["bullish", "bearish", "neutral"] as const).map((b) => {
-                      const active = state.market_context.htf_bias === b;
-                      const bColor = b === "bullish"
-                        ? "oklch(0.72 0.17 145)"
-                        : b === "bearish"
-                        ? "oklch(0.65 0.22 25)"
-                        : "oklch(0.72 0.22 45)";
-                      return (
-                        <button
-                          key={b}
-                          onClick={() => updateState({ market_context: { ...state.market_context, htf_bias: b } })}
-                          className="px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-all"
-                          style={{
-                            background: active ? bColor + " / 0.15)" : "oklch(1 0 0 / 5%)",
-                            color: active ? bColor : "oklch(0.90 0.003 28 / 50%)",
-                            border: `1px solid ${active ? bColor + " / 0.30)" : "transparent"}`,
-                          }}
-                        >
-                          {b}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* News toggles */}
-              <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border">
-                {[
-                  { key: "news_day" as const, label: "News Day" },
-                  { key: "major_event" as const, label: "Major Event" },
-                ].map(({ key, label }) => {
-                  const active = !!(state.market_context as Record<string, unknown>)[key];
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => updateState({ market_context: { ...state.market_context, [key]: !active } })}
-                      className="flex items-center gap-2 text-xs transition-colors"
-                      style={{ color: active ? "oklch(0.72 0.22 45)" : "oklch(0.90 0.003 28 / 40%)" }}
-                    >
-                      <div
-                        className="w-4 h-4 rounded border flex items-center justify-center transition-all"
-                        style={{
-                          background: active ? "oklch(0.72 0.22 45 / 0.15)" : "transparent",
-                          borderColor: active ? "oklch(0.72 0.22 45 / 0.40)" : "oklch(1 0 0 / 15%)",
-                        }}
-                      >
-                        {active && <span className="text-[8px]">✓</span>}
-                      </div>
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Today's Trades */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <BarChart2 className="w-4 h-4 text-primary" />
-                  Today's Trades
-                </CardTitle>
-                <a
-                  href="/journal/new"
-                  className="text-[10px] font-semibold flex items-center gap-1 transition-colors"
-                  style={{ color: "oklch(0.72 0.22 45)" }}
-                >
-                  + Log Trade <ChevronRight className="w-3 h-3" />
-                </a>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {todayTrades.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-xs text-muted-foreground">No trades logged today.</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Complete your checklist first.</p>
-                </div>
-              ) : (
-                <div>
-                  {todayTrades.map((t) => (
-                    <MiniTrade key={t.id} trade={t} />
-                  ))}
-                  <div className="mt-3 pt-2 border-t border-border flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground">
-                      {todayWins}W · {todayLosses}L
-                    </div>
-                    {avgDiscipline !== null && (
-                      <div className="text-xs text-muted-foreground">
-                        Avg discipline: <span className="font-semibold text-foreground">{avgDiscipline}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-        </div>
-
-        {/* Right col: identity + habits + accounts */}
-        <div className="space-y-5">
-          {/* Identity reminder */}
-          {playbook && (
-            <Card className="shadow-sm" style={{ background: "oklch(0.72 0.22 45 / 0.04)", borderColor: "oklch(0.72 0.22 45 / 0.15)" }}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2" style={{ color: "oklch(0.72 0.22 45)" }}>
-                  <BookOpen className="w-4 h-4" />
-                  My Edge
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                    Trader Type
-                  </p>
-                  <p className="text-xs text-foreground capitalize">{playbook.trader_type.replace("_", " ")}</p>
-                </div>
-                {playbook.non_negotiable_rules.length > 0 && (
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                      Non-Negotiables
-                    </p>
-                    <div className="space-y-1">
-                      {playbook.non_negotiable_rules.slice(0, 3).map((rule, i) => (
-                        <div key={i} className="flex items-start gap-1.5 text-xs text-foreground/70">
-                          <span style={{ color: "oklch(0.72 0.22 45)", marginTop: 1 }}>›</span>
-                          {rule}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="pt-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Max trades/day</span>
-                    <span className="font-semibold text-foreground">{playbook.max_trades_per_day}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs mt-1">
-                    <span className="text-muted-foreground">Max daily risk</span>
-                    <span className="font-semibold text-foreground">{playbook.max_daily_risk_percent}%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Habits */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Flame className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
-                  Habits
-                </CardTitle>
-                <Badge variant="outline" className="text-[10px]">
-                  {todayCompletedHabits.length}/{todayHabits.length}
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs tabular-nums">
+                  {doneCount}/{totalCount}
                 </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {todayHabits.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No habits set up yet.</p>
-              ) : (
-                todayHabits.map((habit) => {
-                  const done = todayCompletedHabits.includes(habit.id);
-                  return (
-                    <button
-                      key={habit.id}
-                      onClick={() => toggleHabit(habit.id)}
-                      className="w-full flex items-center gap-2.5 text-left group"
-                    >
-                      <div
-                        className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center border transition-all"
-                        style={{
-                          background: done ? "oklch(0.72 0.22 45 / 0.15)" : "transparent",
-                          borderColor: done ? "oklch(0.72 0.22 45 / 0.40)" : "oklch(1 0 0 / 12%)",
-                        }}
-                      >
-                        {done && <span className="text-[8px]" style={{ color: "oklch(0.72 0.22 45)" }}>✓</span>}
-                      </div>
-                      <span className={cn(
-                        "text-xs transition-colors",
-                        done ? "text-foreground/35 line-through" : "text-foreground/70 group-hover:text-foreground/90"
-                      )}>
-                        {habit.name}
-                      </span>
-                    </button>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Account Risk */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" style={{ color: atRiskAccounts.length > 0 ? "oklch(0.65 0.22 25)" : "oklch(0.72 0.22 45)" }} />
-                Account Risk
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {accounts.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No accounts added.</p>
-              ) : (
-                accounts.slice(0, 4).map((acct) => {
-                  const drawdown = ((acct.start_balance - acct.current_balance) / acct.start_balance) * 100;
-                  const isAtRisk = drawdown > 3;
-                  return (
-                    <div key={acct.id}>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-foreground/70 truncate max-w-[110px]">{acct.firm_name} {acct.phase}</span>
-                        <span
-                          className="font-semibold"
-                          style={{ color: isAtRisk ? "oklch(0.65 0.22 25)" : "oklch(0.72 0.17 145)" }}
-                        >
-                          {drawdown > 0 ? `-${drawdown.toFixed(1)}%` : "+0%"}
-                        </span>
-                      </div>
-                      <div
-                        className="h-1 rounded-full overflow-hidden"
-                        style={{ background: "oklch(1 0 0 / 6%)" }}
-                      >
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${Math.min(100, drawdown * 5)}%`,
-                            background: isAtRisk ? "oklch(0.65 0.22 25)" : "oklch(0.72 0.17 145)",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-              {atRiskAccounts.length > 0 && (
-                <div
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs mt-2"
-                  style={{ background: "oklch(0.65 0.22 25 / 0.08)", color: "oklch(0.65 0.22 25)" }}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 text-xs h-7 px-2"
+                  onClick={() => { setShowAdd(!showAdd); setEditingId(null); }}
                 >
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                  {atRiskAccounts.length} account{atRiskAccounts.length > 1 ? "s" : ""} approaching drawdown limit
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  <Plus className="w-3.5 h-3.5" />
+                  Add
+                </Button>
+              </div>
+            </div>
 
-          {/* Weekly Discipline */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Shield className="w-4 h-4" style={{ color: "oklch(0.72 0.17 145)" }} />
-                7-Day Discipline
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {weekTrades.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No trades in the last 7 days.</p>
-              ) : (
-                <div>
-                  <div className="flex items-end gap-1">
-                    <span
-                      className="text-3xl font-bold"
+            {/* Progress bar */}
+            {totalCount > 0 && (
+              <div className="mt-3">
+                <div className="h-1.5 rounded-full bg-border overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%`, background: pct === 100 ? "oklch(0.68 0.20 130)" : "#F97316" }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">{pct}% complete today</p>
+              </div>
+            )}
+          </CardHeader>
+
+          <CardContent className="space-y-1.5">
+            {/* Add habit form */}
+            {showAdd && (
+              <form
+                onSubmit={handleAddHabit}
+                className="flex gap-2 mb-3 pb-3 border-b border-border/50"
+              >
+                <Input
+                  autoFocus
+                  value={newHabitName}
+                  onChange={(e) => setNewHabitName(e.target.value)}
+                  placeholder="Habit name..."
+                  className="h-8 text-sm"
+                />
+                <Button type="submit" size="sm" className="h-8 shrink-0">Save</Button>
+                <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => setShowAdd(false)}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </form>
+            )}
+
+            {habits.length === 0 ? (
+              <div className="py-8 text-center">
+                <Flame className="w-8 h-8 mx-auto mb-3 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">No habits yet.</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Click "Add" to create your first habit.</p>
+              </div>
+            ) : (
+              habits.map((habit) => {
+                const done = todayDone.includes(habit.id);
+                const isEditing = editingId === habit.id;
+
+                return (
+                  <div
+                    key={habit.id}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
+                      done ? "bg-primary/5 border border-primary/15" : "hover:bg-muted/50"
+                    )}
+                  >
+                    {/* Checkbox */}
+                    <button
+                      onClick={() => toggleHabit(habit.id)}
+                      className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center border-2 transition-all"
                       style={{
-                        color: weekDiscipline >= 80
-                          ? "oklch(0.72 0.17 145)"
-                          : weekDiscipline >= 60
-                          ? "oklch(0.72 0.22 45)"
-                          : "oklch(0.65 0.22 25)",
+                        borderColor: done ? "#F97316" : "var(--border)",
+                        background: done ? "#F97316" : "transparent",
                       }}
                     >
-                      {weekDiscipline}
-                    </span>
-                    <span className="text-sm text-muted-foreground mb-1">/100</span>
+                      {done && <Check className="w-3 h-3 text-white" />}
+                    </button>
+
+                    {/* Name / edit field */}
+                    {isEditing ? (
+                      <form
+                        onSubmit={(e) => { e.preventDefault(); handleSaveEdit(habit.id); }}
+                        className="flex-1 flex gap-2"
+                      >
+                        <Input
+                          autoFocus
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="h-7 text-sm py-0"
+                        />
+                        <Button type="submit" size="sm" className="h-7 text-xs px-2">Save</Button>
+                        <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setEditingId(null)}>
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </form>
+                    ) : (
+                      <>
+                        <span className={cn("flex-1 text-sm font-medium transition-colors", done ? "text-foreground/50 line-through" : "text-foreground")}>
+                          {habit.name}
+                        </span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => handleStartEdit(habit)} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button onClick={() => handleDelete(habit.id)} className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    Avg across {weekTrades.filter((t) => t.discipline).length} scored trades
-                  </p>
-                  <a
-                    href="/analytics"
-                    className="text-[10px] font-semibold flex items-center gap-1 mt-2 transition-opacity hover:opacity-80"
-                    style={{ color: "oklch(0.72 0.22 45)" }}
-                  >
-                    View full analytics <ChevronRight className="w-3 h-3" />
-                  </a>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Weekly overview */}
+        {habits.length > 0 && (
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <button
+                className="flex items-center justify-between w-full text-left"
+                onClick={() => setExpanded(!expanded)}
+              >
+                <CardTitle className="text-sm font-semibold">Week overzicht</CardTitle>
+                {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+              </button>
+            </CardHeader>
+            {expanded && (
+              <CardContent>
+                <div className="grid grid-cols-7 gap-1">
+                  {weekDays.map((day) => {
+                    const dayLabel = format(new Date(day + "T12:00:00"), "EEE");
+                    const isToday = day === TODAY;
+                    const dayDone = completions.filter((c) => c.date === day && c.completed).length;
+                    const dayPct = habits.length > 0 ? dayDone / habits.length : 0;
+                    return (
+                      <div key={day} className="flex flex-col items-center gap-1.5">
+                        <span className={cn("text-[10px] font-medium", isToday ? "text-primary" : "text-muted-foreground")}>
+                          {dayLabel}
+                        </span>
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
+                          style={{
+                            background: dayPct === 1
+                              ? "oklch(0.68 0.20 130 / 0.15)"
+                              : dayPct > 0
+                              ? "oklch(0.72 0.22 45 / 0.12)"
+                              : "var(--muted)",
+                            color: dayPct === 1
+                              ? "oklch(0.68 0.20 130)"
+                              : dayPct > 0
+                              ? "#F97316"
+                              : "var(--muted-foreground)",
+                            border: isToday ? "1.5px solid #F97316" : "1px solid transparent",
+                          }}
+                        >
+                          {dayDone}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-            </CardContent>
+                <p className="text-[10px] text-muted-foreground mt-3">Aantal habits voltooid per dag</p>
+              </CardContent>
+            )}
           </Card>
-        </div>
-      </div>
+        )}
       </PageWrapper>
     </div>
   );

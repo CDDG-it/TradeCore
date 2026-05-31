@@ -174,10 +174,9 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      {/* Discipline + Market Context row */}
-      {(discipline || context) && (
+      {/* Discipline Score */}
+      {discipline && (
         <div className="grid sm:grid-cols-2 gap-4">
-          {/* Discipline Score */}
           {discipline && (
             <Card className="shadow-sm">
               <CardHeader className="pb-3">
@@ -230,81 +229,6 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
             </Card>
           )}
 
-          {/* Market Context */}
-          {context && (
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-primary" />
-                  Market Context
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  {context.regime && (
-                    <ContextBadge
-                      label={REGIME_LABELS[context.regime] ?? context.regime}
-                      color={REGIME_COLORS[context.regime] ?? "oklch(0.72 0.22 45)"}
-                    />
-                  )}
-                  {context.volatility && (
-                    <ContextBadge
-                      label={VOLATILITY_LABELS[context.volatility] ?? context.volatility}
-                      color={VOL_COLORS[context.volatility] ?? "oklch(0.72 0.22 45)"}
-                    />
-                  )}
-                  {context.htf_bias && (
-                    <ContextBadge
-                      label={`HTF: ${context.htf_bias.toUpperCase()}`}
-                      color={
-                        context.htf_bias === "bullish"
-                          ? "oklch(0.72 0.17 145)"
-                          : context.htf_bias === "bearish"
-                          ? "oklch(0.65 0.22 25)"
-                          : "oklch(0.72 0.22 45)"
-                      }
-                    />
-                  )}
-                  {context.news_day && (
-                    <ContextBadge label="News Day" color="oklch(0.72 0.22 45)" />
-                  )}
-                  {context.major_event && (
-                    <ContextBadge label="Major Event" color="oklch(0.65 0.22 25)" />
-                  )}
-                </div>
-
-                {context.confidence !== undefined && (
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                      Context Confidence
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      {[1, 2, 3, 4, 5].map((pip) => (
-                        <div
-                          key={pip}
-                          className="h-1.5 flex-1 rounded-full"
-                          style={{
-                            background: pip <= context.confidence
-                              ? "oklch(0.72 0.22 45)"
-                              : "oklch(1 0 0 / 8%)",
-                          }}
-                        />
-                      ))}
-                      <span className="text-xs text-muted-foreground ml-1">
-                        {context.confidence}/5
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {context.notes && (
-                  <p className="text-xs text-muted-foreground leading-relaxed pt-1 border-t border-border">
-                    {context.notes}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </div>
       )}
 

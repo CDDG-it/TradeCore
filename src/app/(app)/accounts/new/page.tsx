@@ -10,11 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createAccount } from "@/lib/mock/store";
-import type { AccountPhase, AccountStatus, FundedAccountInput } from "@/lib/types";
-import { cn } from "@/lib/utils";
-
-const PHASES: AccountPhase[] = ["evaluation", "funded", "payout"];
-const STATUSES: AccountStatus[] = ["active", "inactive", "blown", "passed"];
+import type { FundedAccountInput } from "@/lib/types";
 
 export default function NewAccountPage() {
   const router = useRouter();
@@ -30,7 +26,7 @@ export default function NewAccountPage() {
     start_balance: 50000,
     current_balance: 50000,
     roi: 0,
-    max_drawdown: 2000,
+    max_drawdown: 0,
     trailing_drawdown: undefined,
     drawdown_used: 0,
     payout_total: 0,
@@ -42,13 +38,6 @@ export default function NewAccountPage() {
   function set<K extends keyof FundedAccountInput>(key: K, value: FundedAccountInput[K]) {
     setForm((prev) => {
       const next = { ...prev, [key]: value };
-      // ROI = total payout / purchase cost (as multiplier)
-      const cost = key === "purchase_cost" ? (value as number) : prev.purchase_cost;
-      const payout = key === "payout_total" ? (value as number) : prev.payout_total;
-      if (cost > 0) {
-        next.roi = Math.round((payout / cost) * 100) / 100;
-      }
-      // Keep account_size + start_balance in sync when account_size changes
       if (key === "account_size") {
         next.start_balance = value as number;
         next.current_balance = value as number;
@@ -72,12 +61,11 @@ export default function NewAccountPage() {
         <Link href="/accounts" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Accounts
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight text-primary">Add Funded Account</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-primary">Add Account</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Track a new prop firm account</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Account Info */}
         <Card className="shadow-sm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Account Info</CardTitle></CardHeader>
           <CardContent className="space-y-4">
@@ -95,59 +83,6 @@ export default function NewAccountPage() {
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs">Account Type</Label>
-                <div className="flex gap-1.5">
-                  {["futures", "commodities"].map((t) => (
-                    <button key={t} type="button" onClick={() => set("account_type", t)}
-                      className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize",
-                        form.account_type === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Phase</Label>
-                <div className="flex gap-1">
-                  {PHASES.map((p) => (
-                    <button key={p} type="button" onClick={() => set("phase", p)}
-                      className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize",
-                        form.phase === p
-                          ? p === "funded" ? "bg-success text-success-foreground"
-                            : p === "evaluation" ? "bg-warning text-warning-foreground"
-                            : "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Status</Label>
-              <div className="flex gap-1.5">
-                {STATUSES.map((s) => (
-                  <button key={s} type="button" onClick={() => set("status", s)}
-                    className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize",
-                      form.status === s
-                        ? s === "active" ? "bg-success text-success-foreground"
-                          : s === "blown" ? "bg-destructive text-white"
-                          : "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:text-foreground")}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Financials */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Financials</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
                 <Label className="text-xs">Account Size ($) *</Label>
                 <Input type="number" value={form.account_size}
                   onChange={(e) => set("account_size", parseFloat(e.target.value) || 0)}
@@ -156,36 +91,12 @@ export default function NewAccountPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs">
                   Purchase Cost ($) *
-                  <span className="ml-1 text-muted-foreground/60 font-normal">— real money paid</span>
+                  <span className="ml-1 text-muted-foreground/60 font-normal">— fee paid</span>
                 </Label>
                 <Input type="number" step="0.01" value={form.purchase_cost}
                   onChange={(e) => set("purchase_cost", parseFloat(e.target.value) || 0)}
                   placeholder="e.g. 149" className="h-9 text-sm font-mono" required />
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">ROI on Purchase Cost</Label>
-              <div className="relative">
-                <Input type="number" step="0.01" value={form.roi} readOnly
-                  className="h-9 text-sm font-mono bg-muted cursor-not-allowed pr-16"
-                  title="Auto-calculated: total payout / purchase cost" />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/70">×</div>
-              </div>
-              <p className="text-[10px] text-muted-foreground/60">Auto-calculated: total payout ÷ purchase cost</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Payout */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Payout</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Total Paid Out ($)</Label>
-              <Input type="number" step="0.01" value={form.payout_total}
-                onChange={(e) => set("payout_total", parseFloat(e.target.value) || 0)}
-                className="h-9 text-sm font-mono" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Notes</Label>

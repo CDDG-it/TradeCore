@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createTrade, getAnalyses, computeDisciplineScore } from "@/lib/mock/store";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
-import type { TradeJournalEntryInput, Direction, TradeResult, Market, Session, TradeDiscipline, TradeMarketContext, Bias, MarketRegime, VolatilityLevel } from "@/lib/types";
+import type { TradeJournalEntryInput, Direction, TradeResult, Market, Session, TradeDiscipline, TradeMarketContext } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
@@ -58,7 +58,6 @@ export default function NewTradePage() {
   const [saving, setSaving] = useState(false);
   const [confluenceInput, setConfluenceInput] = useState("");
   const [showDiscipline, setShowDiscipline] = useState(true);
-  const [showContext, setShowContext] = useState(true);
 
   const [form, setForm] = useState<TradeJournalEntryInput>({
     date_time: new Date().toISOString().split("T")[0],
@@ -319,83 +318,6 @@ export default function NewTradePage() {
               </div>
             ))}
           </CardContent>
-        </Card>
-
-        {/* ── Market Context ─────────────────────────────────── */}
-        <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold">Market Context</CardTitle>
-              <button type="button" onClick={() => setShowContext(!showContext)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                {showContext ? "Collapse" : "Expand"}
-              </button>
-            </div>
-          </CardHeader>
-          {showContext && (
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-3 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Market Regime</Label>
-                  <div className="flex flex-col gap-1">
-                    {(["trending", "ranging"] as MarketRegime[]).map((r) => (
-                      <button key={r} type="button" onClick={() => setContext("regime", r)}
-                        className={cn("py-1.5 rounded-lg text-xs font-medium capitalize transition-all",
-                          form.market_context?.regime === r ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Volatility</Label>
-                  <div className="flex flex-col gap-1">
-                    {(["low", "medium", "high", "extreme"] as VolatilityLevel[]).map((v) => (
-                      <button key={v} type="button" onClick={() => setContext("volatility", v)}
-                        className={cn("py-1.5 rounded-lg text-xs font-medium capitalize transition-all",
-                          form.market_context?.volatility === v ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                        {v}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">HTF Bias</Label>
-                    <div className="flex gap-1">
-                      {(["bullish", "bearish", "neutral"] as Bias[]).map((b) => (
-                        <button key={b} type="button" onClick={() => setContext("htf_bias", b)}
-                          className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium capitalize transition-all",
-                            form.market_context?.htf_bias === b
-                              ? b === "bullish" ? "bg-success text-success-foreground"
-                                : b === "bearish" ? "bg-destructive text-white"
-                                : "bg-muted text-foreground"
-                              : "bg-muted text-muted-foreground hover:text-foreground")}>
-                          {b === "bullish" ? "↑" : b === "bearish" ? "↓" : "—"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    {[
-                      { key: "news_day" as const, label: "News day" },
-                      { key: "major_event" as const, label: "Major event" },
-                    ].map(({ key, label }) => (
-                      <label key={key} className="flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" checked={!!form.market_context?.[key]} onChange={(e) => setContext(key, e.target.checked)}
-                          className="w-3.5 h-3.5 rounded" />
-                        <span className="text-xs text-muted-foreground">{label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Context Notes</Label>
-                <Input value={form.market_context?.notes ?? ""} onChange={(e) => setContext("notes", e.target.value)}
-                  placeholder="Any notes on the market conditions..." className="h-9 text-sm bg-background/50" />
-              </div>
-            </CardContent>
-          )}
         </Card>
 
         {/* ── Discipline Check ────────────────────────────────── */}

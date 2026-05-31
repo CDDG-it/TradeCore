@@ -9,19 +9,19 @@ import {
   TrendingUp,
   TrendingDown,
   DollarSign,
-  Shield,
-  Target,
   Calendar,
   CheckCircle,
   Clock,
   Trash2,
   XCircle,
   Pencil,
+  Plus,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { getAccountById, getPayoutsByAccountId, deleteAccount, computeAccountROI } from "@/lib/mock/store";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getAccountById, getPayoutsByAccountId, deleteAccount, createPayout, deletePayout, computeAccountROI } from "@/lib/mock/store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PayoutStatus } from "@/lib/types";
@@ -41,15 +41,16 @@ function PayoutStatusBadge({ status }: { status: PayoutStatus }) {
   );
 }
 
-export default function AccountDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showAddPayout, setShowAddPayout] = useState(false);
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutDate, setPayoutDate] = useState(new Date().toISOString().split("T")[0]);
+  const [payoutNotes, setPayoutNotes] = useState("");
+  const [payouts, setPayouts] = useState(() => getPayoutsByAccountId(id));
   const account = getAccountById(id);
 
   async function handleDelete() {
@@ -57,6 +58,28 @@ export default function AccountDetailPage({
     await new Promise((r) => setTimeout(r, 300));
     deleteAccount(id);
     router.push("/accounts");
+  }
+
+  function handleAddPayout(e: React.FormEvent) {
+    e.preventDefault();
+    const amount = parseFloat(payoutAmount);
+    if (!amount || amount <= 0) return;
+    createPayout({
+      funded_account_id: id,
+      amount,
+      payout_date: payoutDate,
+      status: "paid",
+      notes: payoutNotes,
+    });
+    setPayouts(getPayoutsByAccountId(id));
+    setPayoutAmount("");
+    setPayoutNotes("");
+    setShowAddPayout(false);
+  }
+
+  function handleDeletePayout(payoutId: string) {
+    deletePayout(payoutId);
+    setPayouts(getPayoutsByAccountId(id));
   }
 
   if (!account) {
@@ -70,26 +93,14 @@ export default function AccountDetailPage({
     );
   }
 
-  const payouts = getPayoutsByAccountId(id);
-  const drawdownPct = Math.min(100, Math.round((account.drawdown_used / account.max_drawdown) * 100));
-  const drawdownRemaining = account.max_drawdown - account.drawdown_used;
-  const profitGained = account.current_balance - account.start_balance;
-  // ROI multiple = total payout received / actual fees paid (e.g. 2.0x)
-  const roi = computeAccountROI(account.payout_total, account.purchase_cost);
-  const payoutTarget = account.next_payout_target;
-  const payoutProgress =
-    account.phase !== "evaluation"
-      ? Math.min(100, Math.round((account.payout_total / payoutTarget) * 100))
-      : Math.min(100, Math.round((profitGained / payoutTarget) * 100));
+  const totalPaidOut = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
+  const roi = computeAccountROI(totalPaidOut, account.purchase_cost);
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-3xl">
       {/* Back + header */}
       <div>
-        <Link
-          href="/accounts"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4"
-        >
+        <Link href="/accounts" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to Accounts
         </Link>
@@ -98,78 +109,48 @@ export default function AccountDetailPage({
           <div>
             <p className="text-sm text-muted-foreground mb-1">{account.firm_name}</p>
             <h1 className="text-2xl font-bold tracking-tight">{account.account_name}</h1>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              <Badge className={cn(
-                "capitalize text-xs",
-                account.phase === "funded" ? "bg-success/15 text-success border-success/20"
-                  : account.phase === "evaluation" ? "bg-warning/15 text-warning border-warning/20"
-                  : "bg-primary/15 text-primary border-primary/20"
-              )}>
-                {account.phase}
-              </Badge>
-              <Badge className={cn(
-                "capitalize text-xs",
-                account.status === "active" ? "bg-success/15 text-success border-success/20"
-                  : "bg-muted text-muted-foreground"
-              )}>
-                {account.status}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                ${account.account_size.toLocaleString()} {account.account_type}
-              </span>
-            </div>
+            <p className="text-sm text-muted-foreground mt-1">${account.account_size.toLocaleString()} · Fee: ${account.purchase_cost.toLocaleString()}</p>
           </div>
-          {/* Edit + Delete buttons */}
-        <div className="flex flex-col items-end gap-2 shrink-0">
-          {!confirmDelete ? (
-            <div className="flex items-center gap-2">
-              <Link href={`/accounts/${id}/edit`}>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Pencil className="w-3.5 h-3.5" /> Edit
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            {!confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <Link href={`/accounts/${id}/edit`}>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </Button>
+                </Link>
+                <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => setConfirmDelete(true)}>
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
                 </Button>
-              </Link>
-              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => setConfirmDelete(true)}>
-                <Trash2 className="w-3.5 h-3.5" /> Delete
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-destructive font-medium">Delete this account?</span>
-              <Button variant="outline" size="sm" className="bg-destructive text-white hover:bg-destructive/90 border-destructive" onClick={handleDelete} disabled={deleting}>
-                {deleting ? "Deleting..." : "Yes, delete"}
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>Cancel</Button>
-            </div>
-          )}
-          <div className="text-right">
-            <div className="flex items-center gap-1.5 justify-end">
-              {roi >= 0 ? (
-                <TrendingUp className="w-5 h-5 text-success" />
-              ) : (
-                <TrendingDown className="w-5 h-5 text-destructive" />
-              )}
-              <span className={cn("text-3xl font-bold", roi >= 1 ? "text-success" : roi > 0 ? "text-warning" : "text-destructive")}>
-                {roi}x
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground">Return on fees paid</p>
-            {account.purchase_cost > 0 && (
-              <p className="text-xs text-muted-foreground/60 mt-0.5">
-                Capital invested: ${account.purchase_cost.toLocaleString()}
-              </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-destructive font-medium">Delete this account?</span>
+                <Button variant="outline" size="sm" className="bg-destructive text-white hover:bg-destructive/90 border-destructive" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? "Deleting..." : "Yes, delete"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+              </div>
             )}
-          </div>
+            <div className="text-right">
+              <div className="flex items-center gap-1.5 justify-end">
+                {roi >= 0 ? <TrendingUp className="w-5 h-5 text-success" /> : <TrendingDown className="w-5 h-5 text-destructive" />}
+                <span className={cn("text-3xl font-bold", roi >= 1 ? "text-success" : roi > 0 ? "text-warning" : "text-destructive")}>
+                  {roi}x
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">Return on fees</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Balance metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Current Balance", value: `$${account.current_balance.toLocaleString()}`, icon: DollarSign },
-          { label: "Fees Paid (Capital Invested)", value: `$${(account.purchase_cost ?? 0).toLocaleString()}`, icon: DollarSign },
-          { label: "P&L Gained", value: `${profitGained >= 0 ? "+" : ""}$${profitGained.toLocaleString()}`, icon: profitGained >= 0 ? TrendingUp : TrendingDown },
-          { label: "Total Payouts", value: `$${account.payout_total.toLocaleString()}`, icon: DollarSign },
+          { label: "Account Size", value: `$${account.account_size.toLocaleString()}`, icon: DollarSign },
+          { label: "Fee Paid", value: `$${account.purchase_cost.toLocaleString()}`, icon: DollarSign },
+          { label: "Total Payouts", value: `$${totalPaidOut.toLocaleString()}`, icon: TrendingUp },
         ].map(({ label, value, icon: Icon }) => (
           <Card key={label} className="bg-card border-border/50">
             <CardContent className="p-4">
@@ -183,131 +164,114 @@ export default function AccountDetailPage({
         ))}
       </div>
 
-      {/* Drawdown tracker */}
+      {/* Payout history */}
       <Card className="bg-card border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Shield className="w-4 h-4 text-warning" />
-            Drawdown Tracker
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Drawdown used</span>
-              <span className={cn("font-semibold", drawdownPct > 60 ? "text-destructive" : "text-warning")}>
-                ${account.drawdown_used.toLocaleString()} / ${account.max_drawdown.toLocaleString()}
-              </span>
-            </div>
-            <Progress
-              value={drawdownPct}
-              className={cn("h-3", drawdownPct > 60 ? "[&>div]:bg-destructive" : "[&>div]:bg-warning")}
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{drawdownPct}% of max drawdown used</span>
-              <span>${drawdownRemaining.toLocaleString()} remaining</span>
-            </div>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-success" />
+              Payouts
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              onClick={() => setShowAddPayout(!showAddPayout)}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add payout
+            </Button>
           </div>
+        </CardHeader>
 
-          {account.trailing_drawdown && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Trailing drawdown</span>
-                <span className="font-semibold text-muted-foreground">
-                  ${account.trailing_drawdown.toLocaleString()} limit
-                </span>
+        {showAddPayout && (
+          <CardContent className="border-t border-border/40 pt-4">
+            <form onSubmit={handleAddPayout} className="space-y-3">
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Amount ($) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={payoutAmount}
+                    onChange={(e) => setPayoutAmount(e.target.value)}
+                    placeholder="e.g. 500"
+                    className="h-9 text-sm font-mono"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Date *</Label>
+                  <Input
+                    type="date"
+                    value={payoutDate}
+                    onChange={(e) => setPayoutDate(e.target.value)}
+                    className="h-9 text-sm"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Notes</Label>
+                  <Input
+                    value={payoutNotes}
+                    onChange={(e) => setPayoutNotes(e.target.value)}
+                    placeholder="Optional..."
+                    className="h-9 text-sm"
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-3 text-xs text-muted-foreground">
-                <div className="bg-muted/40 rounded-lg p-3 text-center">
-                  <p className="font-semibold text-foreground text-sm">${account.trailing_drawdown.toLocaleString()}</p>
-                  <p>Max trailing</p>
-                </div>
-                <div className="bg-muted/40 rounded-lg p-3 text-center">
-                  <p className="font-semibold text-foreground text-sm">${account.drawdown_used.toLocaleString()}</p>
-                  <p>Currently used</p>
-                </div>
-                <div className="bg-muted/40 rounded-lg p-3 text-center">
-                  <p className={cn("font-semibold text-sm", (account.trailing_drawdown - account.drawdown_used) < 500 ? "text-destructive" : "text-success")}>
-                    ${(account.trailing_drawdown - account.drawdown_used).toLocaleString()}
-                  </p>
-                  <p>Safe buffer</p>
-                </div>
+              <div className="flex gap-2">
+                <Button type="submit" size="sm">Save payout</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowAddPayout(false)}>Cancel</Button>
               </div>
+            </form>
+          </CardContent>
+        )}
+
+        <CardContent className="p-0">
+          {payouts.length === 0 ? (
+            <div className="px-5 py-8 text-center">
+              <p className="text-sm text-muted-foreground">No payouts logged yet.</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Click "Add payout" to log your first payout.</p>
             </div>
+          ) : (
+            <>
+              <div className="divide-y divide-border/40">
+                {payouts.map((payout) => (
+                  <div key={payout.id} className="flex items-center gap-4 px-5 py-4">
+                    <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">
+                        {format(new Date(payout.payout_date), "MMMM d, yyyy")}
+                      </p>
+                      {payout.notes && (
+                        <p className="text-xs text-muted-foreground truncate">{payout.notes}</p>
+                      )}
+                    </div>
+                    <PayoutStatusBadge status={payout.status} />
+                    <p className="text-sm font-bold text-success shrink-0">
+                      +${payout.amount.toLocaleString()}
+                    </p>
+                    <button
+                      onClick={() => handleDeletePayout(payout.id)}
+                      className="text-muted-foreground/40 hover:text-destructive transition-colors shrink-0"
+                      title="Remove payout"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="px-5 py-3 border-t border-border/40 flex justify-between text-sm">
+                <span className="text-muted-foreground">Total received</span>
+                <span className="font-bold text-success">${totalPaidOut.toLocaleString()}</span>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
 
-      {/* Payout tracker */}
-      <Card className="bg-card border-border/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Target className="w-4 h-4 text-primary" />
-            {account.phase === "evaluation" ? "Profit Target" : "Payout Tracker"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {account.phase === "evaluation" ? "Profit gained" : "Total paid out"}
-              </span>
-              <span className="font-semibold">
-                ${account.phase === "evaluation" ? profitGained.toLocaleString() : account.payout_total.toLocaleString()} / ${payoutTarget.toLocaleString()}
-              </span>
-            </div>
-            <Progress value={payoutProgress} className="h-3 [&>div]:bg-primary" />
-            <p className="text-xs text-muted-foreground">
-              {payoutProgress}% of target · ${(payoutTarget - (account.phase === "evaluation" ? profitGained : account.payout_total)).toLocaleString()} to go
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Payout history */}
-      {payouts.length > 0 && (
-        <Card className="bg-card border-border/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-success" />
-              Payout History
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-border/40">
-              {payouts.map((payout) => (
-                <div key={payout.id} className="flex items-center gap-4 px-5 py-4">
-                  <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">
-                      {format(new Date(payout.payout_date), "MMMM d, yyyy")}
-                    </p>
-                    {payout.notes && (
-                      <p className="text-xs text-muted-foreground truncate">{payout.notes}</p>
-                    )}
-                  </div>
-                  <PayoutStatusBadge status={payout.status} />
-                  <p className="text-sm font-bold text-success shrink-0">
-                    +${payout.amount.toLocaleString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <div className="px-5 py-3 border-t border-border/40 flex justify-between text-sm">
-              <span className="text-muted-foreground">Total received</span>
-              <span className="font-bold text-success">
-                $
-                {payouts
-                  .filter((p) => p.status === "paid")
-                  .reduce((s, p) => s + p.amount, 0)
-                  .toLocaleString()}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Notes */}
       {account.notes && (
         <Card className="bg-card border-border/50">
           <CardHeader className="pb-3">
@@ -319,10 +283,8 @@ export default function AccountDetailPage({
         </Card>
       )}
 
-      {/* Meta */}
       <div className="text-xs text-muted-foreground/60">
-        Account created {format(new Date(account.created_at), "MMMM d, yyyy")} · Last updated{" "}
-        {format(new Date(account.updated_at), "MMM d, yyyy")}
+        Account created {format(new Date(account.created_at), "MMMM d, yyyy")}
       </div>
     </div>
   );

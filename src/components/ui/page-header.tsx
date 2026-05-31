@@ -20,15 +20,15 @@ export function PageHeader({ badge, title, subtitle, action, className = "" }: P
     >
       <div>
         {badge && (
-          <p className="font-body text-[10px] font-semibold uppercase tracking-[0.18em] text-white/25 mb-2">
+          <p className="font-body text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">
             {badge}
           </p>
         )}
-        <h1 className="font-heading font-black text-3xl md:text-4xl text-white tracking-tight leading-[0.95]">
+        <h1 className="font-heading font-black text-3xl md:text-4xl text-foreground tracking-tight leading-[0.95]">
           {title}
         </h1>
         {subtitle && (
-          <p className="font-body text-sm font-light text-white/40 mt-2 leading-relaxed">
+          <p className="font-body text-sm font-light text-muted-foreground mt-2 leading-relaxed">
             {subtitle}
           </p>
         )}
