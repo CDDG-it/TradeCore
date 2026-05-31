@@ -67,7 +67,7 @@ export default function AccountsPage() {
           <div className="flex flex-wrap items-center gap-3">
             {/* Firm filter — dropdown */}
             {allFirms.length > 0 && (
-              <Select value={firmFilter} onValueChange={setFirmFilter}>
+              <Select value={firmFilter} onValueChange={(v) => setFirmFilter(v ?? "all")}>
                 <SelectTrigger className="h-9 min-w-[160px] border-border bg-card text-sm">
                   <SelectValue placeholder="All firms" />
                 </SelectTrigger>

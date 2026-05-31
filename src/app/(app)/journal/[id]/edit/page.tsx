@@ -83,7 +83,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   function calcVisibleScore(d: typeof form.discipline, removed: string[]): number {
     if (!d) return 0;
     const active = DISCIPLINE_LABELS.filter((item) => !removed.includes(item.key));
-    const builtinPassed = active.filter((item) => (d as Record<string, unknown>)[item.key] as boolean).length;
+    const builtinPassed = active.filter((item) => (d as unknown as Record<string, unknown>)[item.key] as boolean).length;
     const custom = d.custom_checks ?? [];
     const customPassed = custom.filter((c) => c.passed).length;
     const total = active.length + custom.length;
