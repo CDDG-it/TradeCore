@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent } from "@/components/ui/card";
 import { getAccounts, computeAccountROI, getPayoutsByAccountId } from "@/lib/mock/store";
+import { PROP_FIRMS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | "active" | "inactive";
@@ -16,9 +17,14 @@ export default function AccountsPage() {
   const [firmFilter, setFirmFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
-  const uniqueFirms = Array.from(new Set(accounts.map((a) => a.firm_name).filter(Boolean)));
+  // Only show firms that the user actually has accounts with
+  const uniqueFirms = PROP_FIRMS.filter((f) => accounts.some((a) => a.firm_name === f));
+  // Include any custom firms not in PROP_FIRMS
+  const customFirms = accounts
+    .map((a) => a.firm_name)
+    .filter((f) => f && !PROP_FIRMS.includes(f as (typeof PROP_FIRMS)[number]));
+  const allFirms = [...uniqueFirms, ...customFirms];
 
-  // Stats use ALL accounts (firm-filtered but not status-filtered)
   const firmAccounts = firmFilter === "all" ? accounts : accounts.filter((a) => a.firm_name === firmFilter);
   const activeAccounts = firmAccounts.filter((a) => a.status === "active");
 
@@ -30,11 +36,13 @@ export default function AccountsPage() {
   const overallRoi = totalFeePaid > 0 ? Math.round((totalPayouts / totalFeePaid) * 10) / 10 : 0;
   const activeCapital = activeAccounts.reduce((s, a) => s + (a.current_balance ?? a.account_size), 0);
 
-  // Cards filtered by firm + status
   const filtered = firmAccounts.filter((a) => {
     if (statusFilter === "all") return true;
     return a.status === statusFilter;
   });
+
+  const filterBtnBase = "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all";
+  const filterBtnInactive = "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground";
 
   return (
     <div className="space-y-6">
@@ -53,33 +61,23 @@ export default function AccountsPage() {
         }
       />
       <PageWrapper>
-        {/* Filters */}
-        {(uniqueFirms.length > 1 || accounts.length > 0) && (
+        {/* ── Filters — always visible when accounts exist ── */}
+        {accounts.length > 0 && (
           <div className="flex flex-wrap items-center gap-3">
             {/* Firm filter */}
-            {uniqueFirms.length > 1 && (
+            {allFirms.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 <button
                   onClick={() => setFirmFilter("all")}
-                  className={cn(
-                    "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
-                    firmFilter === "all"
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                  )}
+                  className={cn(filterBtnBase, firmFilter === "all" ? "border-primary bg-primary text-primary-foreground" : filterBtnInactive)}
                 >
                   All firms
                 </button>
-                {uniqueFirms.map((firm) => (
+                {allFirms.map((firm) => (
                   <button
                     key={firm}
                     onClick={() => setFirmFilter(firm)}
-                    className={cn(
-                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
-                      firmFilter === firm
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                    )}
+                    className={cn(filterBtnBase, firmFilter === firm ? "border-primary bg-primary text-primary-foreground" : filterBtnInactive)}
                   >
                     {firm}
                   </button>
@@ -87,42 +85,39 @@ export default function AccountsPage() {
               </div>
             )}
 
-            {/* Divider between filter groups */}
-            {uniqueFirms.length > 1 && <div className="h-4 w-px bg-border" />}
+            {allFirms.length > 0 && <div className="h-4 w-px bg-border" />}
 
             {/* Status filter */}
-            {accounts.length > 0 && (
-              <div className="flex gap-1.5">
-                {(["all", "active", "inactive"] as StatusFilter[]).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setStatusFilter(s)}
-                    className={cn(
-                      "rounded-lg border px-3 py-1.5 text-xs font-medium capitalize transition-all",
-                      statusFilter === s
-                        ? s === "active"
-                          ? "border-success bg-success/10 text-success"
-                          : s === "inactive"
-                          ? "border-muted-foreground bg-muted text-muted-foreground"
-                          : "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                    )}
-                  >
-                    {s === "all" ? "All status" : s}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex gap-1.5">
+              {(["all", "active", "inactive"] as StatusFilter[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={cn(
+                    filterBtnBase, "capitalize",
+                    statusFilter === s
+                      ? s === "active"
+                        ? "border-success bg-success/10 text-success"
+                        : s === "inactive"
+                        ? "border-destructive/50 bg-destructive/10 text-destructive"
+                        : "border-primary bg-primary text-primary-foreground"
+                      : filterBtnInactive
+                  )}
+                >
+                  {s === "all" ? "All status" : s}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Summary stats — always based on all accounts in firm filter */}
+        {/* ── Summary stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Fee Paid", value: `$${totalFeePaid.toLocaleString()}`, note: "all accounts" },
-            { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}`, note: "all accounts" },
+            { label: "Fee Paid", value: `$${totalFeePaid.toLocaleString()}`, note: "all accounts", highlight: false },
+            { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}`, note: "all accounts", highlight: false },
             { label: "Active Capital", value: `$${activeCapital.toLocaleString()}`, note: "active only", highlight: true },
-            { label: "Return on Cost", value: `${overallRoi}x`, note: "all accounts" },
+            { label: "Return on Cost", value: `${overallRoi}x`, note: "all accounts", highlight: false },
           ].map(({ label, value, note, highlight }) => (
             <div key={label} className={cn(
               "bg-card border rounded-xl p-4 text-center",
@@ -135,7 +130,7 @@ export default function AccountsPage() {
           ))}
         </div>
 
-        {/* Account cards */}
+        {/* ── Account cards ── */}
         {filtered.length === 0 ? (
           <div className="bg-card border border-border/50 rounded-xl p-12 text-center">
             {accounts.length === 0 ? (
@@ -155,30 +150,37 @@ export default function AccountsPage() {
               const payouts = getPayoutsByAccountId(acct.id);
               const totalPaid = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
               const roi = computeAccountROI(totalPaid, acct.purchase_cost);
-              const isInactive = acct.status === "inactive" || acct.status === "blown";
+              const isActive = acct.status === "active";
+              const isBlown = acct.status === "blown";
 
               return (
                 <Link key={acct.id} href={`/accounts/${acct.id}`}>
                   <Card className={cn(
-                    "bg-card border-border/50 hover:border-primary/30 transition-colors h-full",
-                    isInactive && "opacity-60"
+                    "card-hover h-full border-2 transition-none",
+                    isActive
+                      ? "border-success/35"
+                      : isBlown
+                      ? "border-destructive/40"
+                      : "border-destructive/25"
                   )}>
                     <CardContent className="p-5">
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-0.5">
                           <p className="text-xs text-muted-foreground">{acct.firm_name}</p>
-                          {acct.status !== "active" && (
-                            <span className={cn(
-                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full",
-                              acct.status === "blown" ? "bg-destructive/10 text-destructive" :
-                              acct.status === "passed" ? "bg-success/10 text-success" :
-                              "bg-muted text-muted-foreground"
-                            )}>
-                              {acct.status}
-                            </span>
-                          )}
+                          <span className={cn(
+                            "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full",
+                            isActive
+                              ? "bg-success/10 text-success"
+                              : isBlown
+                              ? "bg-destructive/10 text-destructive"
+                              : acct.status === "passed"
+                              ? "bg-primary/10 text-primary"
+                              : "bg-destructive/10 text-destructive"
+                          )}>
+                            {acct.status}
+                          </span>
                         </div>
-                        <div className="flex items-baseline gap-2">
+                        <div className="flex items-baseline gap-2 mt-1">
                           <p className="font-semibold text-sm">{acct.firm_name}</p>
                           <span className="text-xs text-muted-foreground font-mono">
                             ${(acct.account_size / 1000).toFixed(0)}K
@@ -198,11 +200,7 @@ export default function AccountsPage() {
                         <div className="col-span-2">
                           <p className="text-xs text-muted-foreground mb-0.5">ROI</p>
                           <div className="flex items-center gap-1">
-                            {roi >= 0 ? (
-                              <TrendingUp className="w-3.5 h-3.5 text-success" />
-                            ) : (
-                              <TrendingDown className="w-3.5 h-3.5 text-destructive" />
-                            )}
+                            {roi >= 0 ? <TrendingUp className="w-3.5 h-3.5 text-success" /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
                             <span className={cn("text-sm font-bold",
                               roi >= 1 ? "text-success" : roi > 0 ? "text-warning" : "text-destructive")}>
                               {roi}x

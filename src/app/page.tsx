@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { FadeIn } from "@/components/ui/fade-in";
+import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
+
+// Dark bg constant – matches app background oklch(0.08 0.014 252) ≈ rgb(10,11,22)
+const DARK = "rgba(10,11,22,";
 
 // ── Candle generation ────────────────────────────────────────────────────────
 interface Candle { o: number; h: number; l: number; c: number }
@@ -40,13 +44,11 @@ function HeroVideo() {
     const video = videoRef.current;
     if (!video) return;
 
-    // Safari supports HLS natively
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = MUX_SRC;
       return;
     }
 
-    // Chrome/Firefox: use hls.js (already in package.json)
     let hlsInstance: import("hls.js").default | null = null;
     import("hls.js").then(({ default: Hls }) => {
       if (!Hls.isSupported()) return;
@@ -55,28 +57,23 @@ function HeroVideo() {
       hlsInstance.attachMedia(video);
     });
 
-    return () => {
-      hlsInstance?.destroy();
-    };
+    return () => { hlsInstance?.destroy(); };
   }, []);
 
   return (
     <video
       ref={videoRef}
-      autoPlay
-      loop
-      muted
-      playsInline
+      autoPlay loop muted playsInline
       className="absolute inset-0 h-full w-full object-cover"
       style={{
-        opacity: 0.40,
-        filter: "sepia(0.6) saturate(2.8) hue-rotate(12deg) brightness(0.75) contrast(1.05)",
+        opacity: 0.55,
+        filter: "sepia(0.5) saturate(3.0) hue-rotate(10deg) brightness(0.65) contrast(1.08)",
       }}
     />
   );
 }
 
-// ── Candlestick background — full-section, atmospheric ──────────────────────
+// ── Candlestick background — dark cinematic ──────────────────────────────────
 function HeroCandlesticks() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offsetRef = useRef(0);
@@ -90,7 +87,6 @@ function HeroCandlesticks() {
     if (!ctx) return;
 
     let dpr = window.devicePixelRatio || 1;
-
     const resize = () => {
       dpr = window.devicePixelRatio || 1;
       canvas.width = canvas.offsetWidth * dpr;
@@ -133,6 +129,7 @@ function HeroCandlesticks() {
       const cH = cBot - cTop;
       const py = (p: number) => cTop + ((maxP - p) / pRange) * cH;
 
+      // Candles — more vivid on dark bg
       for (let i = 0; i < count; i++) {
         const ci = (startIdx + i) % HERO_N;
         const c = HERO_CANDLES[ci];
@@ -145,51 +142,52 @@ function HeroCandlesticks() {
         const bH = Math.max(1.5, bBot - bTop);
         const cx = x + HERO_W / 2;
 
-        ctx.strokeStyle = bull ? "rgba(234,88,12,0.28)" : "rgba(153,27,27,0.22)";
+        ctx.strokeStyle = bull ? "rgba(249,115,22,0.55)" : "rgba(153,27,27,0.42)";
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
-        ctx.fillStyle = bull ? "rgba(249,115,22,0.13)" : "rgba(185,28,28,0.10)";
+        ctx.fillStyle = bull ? "rgba(249,115,22,0.25)" : "rgba(185,28,28,0.20)";
         ctx.fillRect(x, bTop, HERO_W, bH);
-        ctx.strokeStyle = bull ? "rgba(234,88,12,0.32)" : "rgba(153,27,27,0.26)";
+        ctx.strokeStyle = bull ? "rgba(249,115,22,0.65)" : "rgba(153,27,27,0.52)";
         ctx.lineWidth = 0.75;
         ctx.strokeRect(x, bTop, HERO_W, bH);
       }
 
-      // Center radial mask — clears text area
+      // Center radial mask — dims candles in text area on dark bg
       const radialCx = W / 2;
       const radialCy = H * 0.42;
       const radialR = Math.min(W * 0.46, H * 0.56);
-      const radial = ctx.createRadialGradient(radialCx, radialCy, radialR * 0.15, radialCx, radialCy, radialR);
-      radial.addColorStop(0, "rgba(255,255,255,0.96)");
-      radial.addColorStop(0.45, "rgba(255,255,255,0.72)");
-      radial.addColorStop(0.75, "rgba(255,255,255,0.28)");
-      radial.addColorStop(1, "rgba(255,255,255,0)");
+      const radial = ctx.createRadialGradient(radialCx, radialCy, radialR * 0.10, radialCx, radialCy, radialR);
+      radial.addColorStop(0, `${DARK}0.88)`);
+      radial.addColorStop(0.38, `${DARK}0.62)`);
+      radial.addColorStop(0.72, `${DARK}0.18)`);
+      radial.addColorStop(1, `${DARK}0)`);
       ctx.fillStyle = radial;
       ctx.fillRect(0, 0, W, H);
 
-      const fadeTop = ctx.createLinearGradient(0, 0, 0, H * 0.12);
-      fadeTop.addColorStop(0, "rgba(255,255,255,1)");
-      fadeTop.addColorStop(1, "rgba(255,255,255,0)");
+      // Edge fades into dark bg
+      const fadeTop = ctx.createLinearGradient(0, 0, 0, H * 0.14);
+      fadeTop.addColorStop(0, `${DARK}0.95)`);
+      fadeTop.addColorStop(1, `${DARK}0)`);
       ctx.fillStyle = fadeTop;
-      ctx.fillRect(0, 0, W, H * 0.12);
+      ctx.fillRect(0, 0, W, H * 0.14);
 
-      const fadeBot = ctx.createLinearGradient(0, H * 0.78, 0, H);
-      fadeBot.addColorStop(0, "rgba(255,255,255,0)");
-      fadeBot.addColorStop(1, "rgba(255,255,255,1)");
+      const fadeBot = ctx.createLinearGradient(0, H * 0.75, 0, H);
+      fadeBot.addColorStop(0, `${DARK}0)`);
+      fadeBot.addColorStop(1, `${DARK}0.90)`);
       ctx.fillStyle = fadeBot;
-      ctx.fillRect(0, H * 0.78, W, H);
+      ctx.fillRect(0, H * 0.75, W, H);
 
-      const fadeL = ctx.createLinearGradient(0, 0, 110, 0);
-      fadeL.addColorStop(0, "rgba(255,255,255,1)");
-      fadeL.addColorStop(1, "rgba(255,255,255,0)");
+      const fadeL = ctx.createLinearGradient(0, 0, 100, 0);
+      fadeL.addColorStop(0, `${DARK}0.90)`);
+      fadeL.addColorStop(1, `${DARK}0)`);
       ctx.fillStyle = fadeL;
-      ctx.fillRect(0, 0, 110, H);
+      ctx.fillRect(0, 0, 100, H);
 
-      const fadeR = ctx.createLinearGradient(W - 110, 0, W, 0);
-      fadeR.addColorStop(0, "rgba(255,255,255,0)");
-      fadeR.addColorStop(1, "rgba(255,255,255,1)");
+      const fadeR = ctx.createLinearGradient(W - 100, 0, W, 0);
+      fadeR.addColorStop(0, `${DARK}0)`);
+      fadeR.addColorStop(1, `${DARK}0.90)`);
       ctx.fillStyle = fadeR;
-      ctx.fillRect(W - 110, 0, 110, H);
+      ctx.fillRect(W - 100, 0, 100, H);
 
       rafRef.current = requestAnimationFrame(draw);
     };
@@ -219,16 +217,16 @@ const PILLARS = [
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden" style={{ background: "oklch(0.08 0.014 252)" }}>
 
-      {/* ── Header ── */}
+      {/* ── Dark glass header ── */}
       <header
         className="relative z-20 sticky top-0 px-6 py-4"
         style={{
-          background: "rgba(255,255,255,0.88)",
+          background: "rgba(10,11,22,0.82)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
         <div className="mx-auto max-w-6xl flex items-center justify-between">
@@ -236,107 +234,125 @@ export default function HomePage() {
             className="font-black tracking-tight text-base leading-none"
             style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
           >
-            <span className="text-gray-900">Trade</span>
+            <span className="text-white">Trade</span>
             <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
           </span>
           <Link
             href="/login"
-            className="text-sm text-gray-400 hover:text-gray-900 transition-colors duration-200"
-            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", fontWeight: 600 }}
+            className="text-sm transition-colors duration-200"
+            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", fontWeight: 600, color: "rgba(255,255,255,0.38)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.85)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.38)")}
           >
             Sign in
           </Link>
         </div>
       </header>
 
-      {/* ── Hero — full viewport, unified ── */}
+      {/* ── Hero — full viewport, dark cinematic ── */}
       <section className="relative flex flex-col" style={{ minHeight: "calc(100svh - 57px)" }}>
 
-        {/* Mux HLS video — warm orange-tinted, behind candlesticks */}
+        {/* Mux video layers */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
           <HeroVideo />
-          {/* White wash to keep the light theme */}
-          <div className="absolute inset-0" style={{ background: "rgba(255,255,255,0.62)" }} />
-          {/* Subtle orange bloom at top-center */}
+          {/* Dark base overlay */}
+          <div className="absolute inset-0" style={{ background: `${DARK}0.50)` }} />
+          {/* Orange bloom — cinematic accent */}
           <div className="absolute inset-0" style={{
-            background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 70%)"
+            background: "radial-gradient(ellipse 65% 45% at 50% 28%, rgba(249,115,22,0.22) 0%, transparent 68%)"
+          }} />
+          {/* Vignette — darkens edges */}
+          <div className="absolute inset-0" style={{
+            background: "radial-gradient(ellipse 100% 100% at 50% 50%, transparent 28%, rgba(10,11,22,0.88) 100%)"
+          }} />
+          {/* Bottom fade to dark bg */}
+          <div className="absolute inset-0" style={{
+            background: "linear-gradient(to bottom, transparent 55%, rgba(10,11,22,0.96) 100%)"
           }} />
         </div>
 
-        {/* Atmospheric candlestick — on top of video, behind content */}
+        {/* Atmospheric candlestick — dark variant, on top of video */}
         <HeroCandlesticks />
 
-        {/* Content — centered in all available space */}
+        {/* Content */}
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-20">
 
-          <FadeIn delay={0.14}>
-            <h1
-              className="font-black tracking-tight leading-[0.88] text-gray-900 mb-5"
-              style={{
-                fontFamily: "var(--font-nunito), system-ui, sans-serif",
-                fontSize: "clamp(4rem,11vw,9rem)",
-              }}
-            >
-              Trade
-              <span style={{
-                background: "linear-gradient(135deg,#F97316 0%,#FBBF24 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}>
-                core
-              </span>
-            </h1>
-          </FadeIn>
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.10 }}
+            className="font-black tracking-tight leading-[0.88] mb-5"
+            style={{
+              fontFamily: "var(--font-nunito), system-ui, sans-serif",
+              fontSize: "clamp(4rem,11vw,9rem)",
+              color: "rgba(255,255,255,0.94)",
+            }}
+          >
+            Trade
+            <span style={{
+              background: "linear-gradient(135deg,#F97316 0%,#FBBF24 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}>
+              core
+            </span>
+          </motion.h1>
 
-          <FadeIn delay={0.23}>
-            <p
-              className="text-gray-400 mb-10 leading-relaxed"
-              style={{
-                fontFamily: "var(--font-nunito), system-ui, sans-serif",
-                fontSize: "clamp(1rem,2.4vw,1.25rem)",
-                fontWeight: 400,
-                letterSpacing: "0.01em",
-              }}
-            >
-              The Ultimate Trading Tool
-            </p>
-          </FadeIn>
+          <motion.p
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.22 }}
+            className="mb-10 leading-relaxed"
+            style={{
+              fontFamily: "var(--font-nunito), system-ui, sans-serif",
+              fontSize: "clamp(1rem,2.4vw,1.2rem)",
+              fontWeight: 300,
+              letterSpacing: "0.02em",
+              color: "rgba(255,255,255,0.42)",
+            }}
+          >
+            The Ultimate Trading Tool
+          </motion.p>
 
-          <FadeIn delay={0.32}>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.34 }}
+          >
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
               style={{
                 fontFamily: "var(--font-nunito), system-ui, sans-serif",
                 background: "linear-gradient(135deg,#F97316 0%,#FBBF24 100%)",
-                boxShadow: "0 4px 24px rgba(249,115,22,0.32), 0 1px 2px rgba(0,0,0,0.08)",
+                boxShadow: "0 4px 28px rgba(249,115,22,0.40), 0 1px 2px rgba(0,0,0,0.25)",
               }}
             >
               Open dashboard
               <ArrowRight className="w-4 h-4" />
             </Link>
-          </FadeIn>
+          </motion.div>
         </div>
 
-        {/* ── Feature strip — 2 pillars, anchored to bottom ── */}
+        {/* ── Feature strip — anchored to bottom ── */}
         <FadeIn delay={0.44}>
           <div
             className="relative z-10 border-t"
-            style={{ borderColor: "rgba(0,0,0,0.06)" }}
+            style={{ borderColor: "rgba(255,255,255,0.06)" }}
           >
-            <div className="mx-auto max-w-2xl grid grid-cols-2 divide-x divide-black/[0.06]">
+            <div className="mx-auto max-w-2xl grid grid-cols-2 divide-x" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
               {PILLARS.map((p) => (
-                <div key={p.label} className="px-8 py-5 text-center">
+                <div key={p.label} className="px-8 py-5 text-center" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
                   <p
-                    className="text-sm font-semibold text-gray-800 mb-0.5"
-                    style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
+                    className="text-sm font-semibold mb-0.5"
+                    style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", color: "rgba(255,255,255,0.78)" }}
                   >
                     {p.label}
                   </p>
                   <p
-                    className="text-xs text-gray-400 leading-snug"
-                    style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
+                    className="text-xs leading-snug"
+                    style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", color: "rgba(255,255,255,0.30)" }}
                   >
                     {p.desc}
                   </p>

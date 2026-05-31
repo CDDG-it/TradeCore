@@ -416,7 +416,7 @@ export default function DashboardPage() {
           {statCards.map(({ label, value, sub, icon: Icon, accent, accentBg }, i) => (
             <div
               key={label}
-              className="rounded-xl p-5 relative overflow-hidden"
+              className="card-hover rounded-xl p-5 relative overflow-hidden"
               style={{
                 background: "var(--card)",
                 border: "1px solid var(--border)",
@@ -484,7 +484,7 @@ export default function DashboardPage() {
                   <Link
                     key={trade.id}
                     href={`/journal/${trade.id}`}
-                    className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-black/[0.02]"
+                    className="flex items-center gap-4 px-5 py-3.5 transition-all border-l-2 border-transparent hover:border-primary/40 hover:bg-muted/20"
                     style={{ borderBottom: i < recentTrades.length - 1 ? "1px solid var(--border)" : undefined }}
                   >
                     <div className="flex items-center gap-2 shrink-0">

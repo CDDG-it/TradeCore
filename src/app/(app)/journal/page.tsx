@@ -283,7 +283,7 @@ export default function JournalPage() {
               <div className="divide-y divide-border/40">
                 {filtered.map((trade) => (
                   <Link key={trade.id} href={`/journal/${trade.id}`}
-                    className="flex items-center gap-4 px-5 py-4 hover:bg-muted/20 transition-colors group">
+                    className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 border-l-2 border-transparent hover:border-primary/40 transition-all group">
                     <div className="flex items-center gap-2 w-16 shrink-0">
                       {trade.direction === "long"
                         ? <TrendingUp className="w-3.5 h-3.5 text-success" />

@@ -177,7 +177,7 @@ export default function AnalysisPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((analysis) => (
             <Link key={analysis.id} href={`/analysis/${analysis.id}`}>
-              <Card className="bg-card border-border/50 hover:border-primary/30 transition-colors h-full">
+              <Card className="bg-card border border-border/50 card-hover h-full">
                 <CardContent className="p-5">
                   {/* Top row */}
                   <div className="flex items-start justify-between gap-2 mb-3">
