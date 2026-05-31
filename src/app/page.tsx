@@ -309,7 +309,7 @@ export default function HomePage() {
             className="relative z-10 border-t"
             style={{ borderColor: "rgba(0,0,0,0.06)" }}
           >
-            <div className="mx-auto max-w-4xl grid grid-cols-3 divide-x" style={{ divideColor: "rgba(0,0,0,0.06)" }}>
+            <div className="mx-auto max-w-4xl grid grid-cols-3 divide-x divide-black/[0.06]">
               {PILLARS.map((p) => (
                 <div key={p.label} className="px-8 py-5">
                   <p

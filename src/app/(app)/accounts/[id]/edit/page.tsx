@@ -9,7 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAccountById, updateAccount } from "@/lib/mock/store";
+import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS, ACCOUNT_TYPES } from "@/lib/accounts-constants";
+import { cn } from "@/lib/utils";
 
 export default function EditAccountPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -25,6 +28,9 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
       </div>
     );
   }
+
+  const initialCustomSize = !ACCOUNT_SIZE_PRESETS.some((p) => p.value === account.account_size);
+  const [customSize, setCustomSize] = useState(initialCustomSize);
 
   const [form, setForm] = useState({
     firm_name: account.firm_name,
@@ -49,6 +55,11 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  function selectSize(value: number) {
+    setCustomSize(false);
+    setForm((prev) => ({ ...prev, account_size: value }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.firm_name || !form.account_name) return;
@@ -57,6 +68,8 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
     updateAccount(id, form);
     router.push(`/accounts/${id}`);
   }
+
+  const isPresetSize = ACCOUNT_SIZE_PRESETS.some((p) => p.value === form.account_size) && !customSize;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -72,43 +85,115 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
         <Card className="shadow-sm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Account Info</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Firm Name *</Label>
-                <Input value={form.firm_name} onChange={(e) => set("firm_name", e.target.value)}
-                  placeholder="e.g. Topstep, Apex, FTMO..." className="h-9 text-sm" required />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Account Name *</Label>
-                <Input value={form.account_name} onChange={(e) => set("account_name", e.target.value)}
-                  placeholder="e.g. 50K Futures" className="h-9 text-sm" required />
+
+            {/* Firm Name — select menu */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Firm *</Label>
+              <Select value={form.firm_name} onValueChange={(v) => { if (v) set("firm_name", v); }}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select a prop firm…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROP_FIRMS.map((firm) => (
+                    <SelectItem key={firm} value={firm}>{firm}</SelectItem>
+                  ))}
+                  {/* Show current value if it's not in the list (legacy data) */}
+                  {form.firm_name && !PROP_FIRMS.includes(form.firm_name as (typeof PROP_FIRMS)[number]) && (
+                    <SelectItem value={form.firm_name}>{form.firm_name}</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Account Type — button group */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Account Type *</Label>
+              <div className="flex flex-wrap gap-2">
+                {ACCOUNT_TYPES.map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => set("account_name", type)}
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+                      form.account_name === type
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    {type}
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Account Size ($)</Label>
-                <Input type="number" value={form.account_size}
-                  onChange={(e) => set("account_size", parseFloat(e.target.value) || 0)}
-                  className="h-9 text-sm font-mono" />
+
+            {/* Account Size — button group + custom */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Account Size *</Label>
+              <div className="flex flex-wrap gap-2">
+                {ACCOUNT_SIZE_PRESETS.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => selectSize(p.value)}
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-xs font-medium font-mono transition-all",
+                      isPresetSize && form.account_size === p.value
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setCustomSize(true)}
+                  className={cn(
+                    "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+                    customSize
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  )}
+                >
+                  Custom
+                </button>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Purchase Cost ($)</Label>
-                <Input type="number" step="0.01" value={form.purchase_cost}
-                  onChange={(e) => set("purchase_cost", parseFloat(e.target.value) || 0)}
-                  className="h-9 text-sm font-mono" />
-              </div>
+              {customSize && (
+                <Input
+                  type="number"
+                  autoFocus
+                  value={form.account_size}
+                  onChange={(e) => setForm((prev) => ({ ...prev, account_size: parseFloat(e.target.value) || 0 }))}
+                  placeholder="Enter custom size…"
+                  className="h-9 text-sm font-mono mt-2"
+                />
+              )}
             </div>
+
+            {/* Purchase Cost */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">
+                Purchase Cost ($)
+                <span className="ml-1 text-muted-foreground/60 font-normal">— eval fee paid</span>
+              </Label>
+              <Input type="number" step="0.01" value={form.purchase_cost}
+                onChange={(e) => set("purchase_cost", parseFloat(e.target.value) || 0)}
+                className="h-9 text-sm font-mono" />
+            </div>
+
+            {/* Notes */}
             <div className="space-y-1.5">
               <Label className="text-xs">Notes</Label>
               <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)}
-                placeholder="Any notes about this account, rules, strategy..." className="text-sm min-h-20 resize-none" />
+                placeholder="Any notes about this account, rules, strategy…" className="text-sm min-h-20 resize-none" />
             </div>
           </CardContent>
         </Card>
 
         <div className="flex items-center justify-end gap-3">
           <Link href={`/accounts/${id}`}><Button type="button" variant="outline">Cancel</Button></Link>
-          <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save changes"}</Button>
+          <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
         </div>
       </form>
     </div>

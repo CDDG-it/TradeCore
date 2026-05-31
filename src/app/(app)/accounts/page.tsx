@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Plus, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -10,9 +11,15 @@ import { cn } from "@/lib/utils";
 
 export default function AccountsPage() {
   const accounts = getAccounts();
+  const [firmFilter, setFirmFilter] = useState<string>("all");
 
-  const totalFeePaid = accounts.reduce((s, a) => s + (a.purchase_cost ?? 0), 0);
-  const totalPayouts = accounts.reduce((s, a) => {
+  // Unique firms from existing accounts, preserving insertion order
+  const uniqueFirms = Array.from(new Set(accounts.map((a) => a.firm_name).filter(Boolean)));
+
+  const filtered = firmFilter === "all" ? accounts : accounts.filter((a) => a.firm_name === firmFilter);
+
+  const totalFeePaid = filtered.reduce((s, a) => s + (a.purchase_cost ?? 0), 0);
+  const totalPayouts = filtered.reduce((s, a) => {
     const payouts = getPayoutsByAccountId(a.id);
     return s + payouts.filter((p) => p.status === "paid").reduce((ps, p) => ps + p.amount, 0);
   }, 0);
@@ -35,6 +42,37 @@ export default function AccountsPage() {
         }
       />
       <PageWrapper>
+        {/* Firm filter — only shown when there are multiple firms */}
+        {uniqueFirms.length > 1 && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setFirmFilter("all")}
+              className={cn(
+                "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+                firmFilter === "all"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+              )}
+            >
+              All firms
+            </button>
+            {uniqueFirms.map((firm) => (
+              <button
+                key={firm}
+                onClick={() => setFirmFilter(firm)}
+                className={cn(
+                  "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+                  firmFilter === firm
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                )}
+              >
+                {firm}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Summary stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
@@ -50,16 +88,22 @@ export default function AccountsPage() {
         </div>
 
         {/* Account cards */}
-        {accounts.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="bg-card border border-border/50 rounded-xl p-12 text-center">
-            <p className="text-sm text-muted-foreground mb-3">No accounts added yet.</p>
-            <Link href="/accounts/new" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-              <Plus className="w-3.5 h-3.5" /> Add your first account
-            </Link>
+            {accounts.length === 0 ? (
+              <>
+                <p className="text-sm text-muted-foreground mb-3">No accounts added yet.</p>
+                <Link href="/accounts/new" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                  <Plus className="w-3.5 h-3.5" /> Add your first account
+                </Link>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">No accounts for {firmFilter}.</p>
+            )}
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {accounts.map((acct) => {
+            {filtered.map((acct) => {
               const payouts = getPayoutsByAccountId(acct.id);
               const totalPaid = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
               const roi = computeAccountROI(totalPaid, acct.purchase_cost);
@@ -70,8 +114,12 @@ export default function AccountsPage() {
                     <CardContent className="p-5">
                       <div className="mb-4">
                         <p className="text-xs text-muted-foreground mb-0.5">{acct.firm_name}</p>
-                        <p className="font-semibold text-sm">{acct.account_name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">${acct.account_size.toLocaleString()}</p>
+                        <div className="flex items-baseline gap-2">
+                          <p className="font-semibold text-sm">{acct.account_name}</p>
+                          <span className="text-xs text-muted-foreground font-mono">
+                            ${(acct.account_size / 1000).toFixed(0)}K
+                          </span>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 mb-4">
