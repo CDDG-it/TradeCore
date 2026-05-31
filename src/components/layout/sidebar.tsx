@@ -11,7 +11,6 @@ import {
   Settings,
   User,
   LogOut,
-  Compass,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -21,8 +20,7 @@ const navGroups = [
   {
     label: null,
     items: [
-      { href: "/command", label: "Command Center", icon: Compass, highlight: true },
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, highlight: true },
     ],
   },
   {

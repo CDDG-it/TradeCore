@@ -2,60 +2,171 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ImagePlus, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { createAnalysis, getPlaybook, savePlaybook } from "@/lib/mock/store";
-import { ScreenshotUpload } from "@/components/screenshot-upload";
-import type { PreTradeAnalysisInput, Bias, Market, Session, TraderPlaybook } from "@/lib/types";
+import { createAnalysis } from "@/lib/mock/store";
+import type { Bias } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Plus, X, Shield, CheckSquare, Target } from "lucide-react";
+import { useRef } from "react";
 
-const SESSIONS: Session[] = ["London", "New York", "Asia"];
-const MARKETS: Market[] = ["futures", "commodities"];
+const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const BIASES: Bias[] = ["bullish", "bearish", "neutral"];
 
-const INSTRUMENTS: Record<Market, string[]> = {
-  futures: ["NQ", "ES", "YM", "RTY"],
-  commodities: ["Gold", "Silver", "Crude Oil", "Natural Gas"],
-};
+function compressImage(file: File, maxWidth = 1400): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function ChartTab({
+  label,
+  timeframe,
+  onTimeframeChange,
+  urls,
+  onUrlsChange,
+  placeholder,
+}: {
+  label: string;
+  timeframe: string;
+  onTimeframeChange: (v: string) => void;
+  urls: string[];
+  onUrlsChange: (urls: string[]) => void;
+  placeholder: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  async function processFiles(files: FileList | File[]) {
+    const toAdd = Array.from(files).filter((f) => f.type.startsWith("image/")).slice(0, 5 - urls.length);
+    if (!toAdd.length) return;
+    setLoading(true);
+    try {
+      const compressed = await Promise.all(toAdd.map((f) => compressImage(f)));
+      onUrlsChange([...urls, ...compressed]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label className="text-xs">Timeframe</Label>
+        <Input
+          value={timeframe}
+          onChange={(e) => onTimeframeChange(e.target.value)}
+          placeholder={placeholder}
+          className="h-9 text-sm bg-background/50 font-mono max-w-48"
+        />
+      </div>
+
+      {urls.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {urls.map((url, i) => (
+            <div key={i} className="relative group aspect-video rounded-lg overflow-hidden border border-border/60 bg-muted/30">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt={`${label} ${i + 1}`} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                <button type="button" onClick={() => setLightbox(url)}
+                  className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center text-foreground hover:bg-white">
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </button>
+                <button type="button" onClick={() => onUrlsChange(urls.filter((_, idx) => idx !== i))}
+                  className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center text-destructive hover:bg-white">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {urls.length < 5 && (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); }}
+          disabled={loading}
+          className={cn(
+            "w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-6 text-xs text-muted-foreground transition-all",
+            dragging ? "border-primary/60 bg-primary/4 text-primary" : "border-border/50 hover:border-primary/40 hover:bg-muted/30",
+            loading && "opacity-60 cursor-wait"
+          )}
+        >
+          <ImagePlus className={cn("w-5 h-5", dragging ? "text-primary" : "text-muted-foreground/60")} />
+          {loading ? <span>Processing...</span> : (
+            <>
+              <span className="font-medium">{urls.length === 0 ? `Add ${label} screenshots` : "Add more"}</span>
+              <span className="text-muted-foreground/60">Click or drag & drop · {5 - urls.length} remaining</span>
+            </>
+          )}
+        </button>
+      )}
+
+      <input ref={inputRef} type="file" accept="image/*" multiple className="hidden"
+        onChange={(e) => e.target.files && processFiles(e.target.files)} />
+
+      {lightbox && (
+        <div className="screenshot-lightbox-overlay" onClick={() => setLightbox(null)}>
+          <button type="button" onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
+            <X className="w-4 h-4" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={lightbox} alt="Full size" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function NewAnalysisPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [playbook, setPlaybook] = useState<TraderPlaybook>(() => getPlaybook());
-  const [playbookDirty, setPlaybookDirty] = useState(false);
-  const [playbookSaved, setPlaybookSaved] = useState(false);
-  const [newRule, setNewRule] = useState("");
-  const [newRoutineStep, setNewRoutineStep] = useState("");
+  const [activeTab, setActiveTab] = useState<"htf" | "ltf">("htf");
 
-  function savePlaybookData() {
-    savePlaybook(playbook);
-    setPlaybookDirty(false);
-    setPlaybookSaved(true);
-    setTimeout(() => setPlaybookSaved(false), 2500);
-  }
-
-  const [form, setForm] = useState<PreTradeAnalysisInput>({
+  const [form, setForm] = useState({
     title: "",
     date: new Date().toISOString().split("T")[0],
     instrument: "",
-    market: "futures",
-    session: "New York",
-    bias: "bullish",
+    bias: "bullish" as Bias,
     thesis: "",
     long_scenario: "",
     short_scenario: "",
-    notes: "",
-    screenshot_groups: [],
-    used_for_trade: false,
   });
 
-  function set<K extends keyof PreTradeAnalysisInput>(key: K, value: PreTradeAnalysisInput[K]) {
+  const [htfTF, setHtfTF] = useState("4H / Daily");
+  const [ltfTF, setLtfTF] = useState("15m / 5m");
+  const [htfUrls, setHtfUrls] = useState<string[]>([]);
+  const [ltfUrls, setLtfUrls] = useState<string[]>([]);
+
+  function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -64,7 +175,17 @@ export default function NewAnalysisPage() {
     if (!form.instrument || !form.title || !form.thesis) return;
     setSaving(true);
     await new Promise((r) => setTimeout(r, 300));
-    const created = createAnalysis(form);
+    const created = createAnalysis({
+      ...form,
+      market: "futures",
+      session: "New York",
+      notes: "",
+      used_for_trade: false,
+      screenshot_groups: [
+        { label: `HTF${htfTF ? ` · ${htfTF}` : ""}`, urls: htfUrls },
+        { label: `LTF${ltfTF ? ` · ${ltfTF}` : ""}`, urls: ltfUrls },
+      ],
+    });
     router.push(`/analysis/${created.id}`);
   }
 
@@ -84,14 +205,13 @@ export default function NewAnalysisPage() {
           <CardContent className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs">Market *</Label>
+                <Label className="text-xs">Instrument *</Label>
                 <div className="flex gap-1.5">
-                  {MARKETS.map((m) => (
-                    <button key={m} type="button"
-                      onClick={() => { set("market", m); set("instrument", ""); }}
-                      className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
-                        form.market === m ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {m}
+                  {INSTRUMENTS.map((inst) => (
+                    <button key={inst} type="button" onClick={() => set("instrument", inst)}
+                      className={cn("flex-1 py-1.5 rounded-lg text-sm font-medium transition-all font-mono",
+                        form.instrument === inst ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                      {inst}
                     </button>
                   ))}
                 </div>
@@ -102,52 +222,27 @@ export default function NewAnalysisPage() {
                   onChange={(e) => set("date", e.target.value)} className="h-9 text-sm bg-background/50" required />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Instrument *</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {INSTRUMENTS[form.market].map((inst) => (
-                  <button key={inst} type="button" onClick={() => set("instrument", inst)}
-                    className={cn("px-3 py-1.5 rounded-lg text-sm font-medium transition-all font-mono",
-                      form.instrument === inst ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                    {inst}
-                  </button>
-                ))}
-              </div>
-            </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="title" className="text-xs">Title *</Label>
-              <Input id="title" value={form.title}
-                onChange={(e) => set("title", e.target.value)}
-                placeholder="e.g. Gold London continuation setup" className="h-9 text-sm bg-background/50" required />
+              <Input id="title" value={form.title} onChange={(e) => set("title", e.target.value)}
+                placeholder="e.g. NQ Monday — HTF rejection into 4H demand" className="h-9 text-sm bg-background/50" required />
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Session</Label>
-                <div className="flex flex-wrap gap-1">
-                  {SESSIONS.map((s) => (
-                    <button key={s} type="button" onClick={() => set("session", s)}
-                      className={cn("px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
-                        form.session === s ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Bias</Label>
-                <div className="flex gap-1">
-                  {BIASES.map((b) => (
-                    <button key={b} type="button" onClick={() => set("bias", b)}
-                      className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
-                        form.bias === b
-                          ? b === "bullish" ? "bg-success text-success-foreground shadow-sm"
-                            : b === "bearish" ? "bg-destructive text-white shadow-sm"
-                            : "bg-muted text-foreground shadow-sm"
-                          : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {b}
-                    </button>
-                  ))}
-                </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Bias</Label>
+              <div className="flex gap-1.5">
+                {BIASES.map((b) => (
+                  <button key={b} type="button" onClick={() => set("bias", b)}
+                    className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
+                      form.bias === b
+                        ? b === "bullish" ? "bg-success text-success-foreground shadow-sm"
+                          : b === "bearish" ? "bg-destructive text-white shadow-sm"
+                          : "bg-muted text-foreground shadow-sm"
+                        : "bg-muted text-muted-foreground hover:text-foreground")}>
+                    {b}
+                  </button>
+                ))}
               </div>
             </div>
           </CardContent>
@@ -184,159 +279,58 @@ export default function NewAnalysisPage() {
                   className="text-sm bg-background/50 min-h-28 resize-none border-destructive/25 focus-visible:ring-destructive/30" />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="notes" className="text-xs">Notes <span className="text-muted-foreground/60 font-normal">(optional)</span></Label>
-              <Textarea id="notes" value={form.notes} onChange={(e) => set("notes", e.target.value)}
-                placeholder="Any other context, reminders, or observations..."
-                className="text-sm bg-background/50 min-h-20 resize-none" />
-            </div>
           </CardContent>
         </Card>
 
-        {/* ── Playbook Reference ──────────────────────────────── */}
+        {/* Charts — HTF / LTF */}
         <Card className="bg-card border-border/50 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold">Pre-Trade Checklist</CardTitle>
-              {playbookSaved && !playbookDirty && (
-                <span className="text-xs font-medium" style={{ color: "oklch(0.58 0.17 145)" }}>Saved</span>
-              )}
+              <CardTitle className="text-sm font-semibold">Charts</CardTitle>
+              <div className="flex gap-1">
+                {(["htf", "ltf"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={cn(
+                      "px-3 py-1 rounded-lg text-xs font-semibold uppercase tracking-wide transition-all",
+                      activeTab === tab
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {tab}
+                    {(tab === "htf" ? htfUrls : ltfUrls).length > 0 && (
+                      <span className={cn("ml-1.5 text-[10px]", activeTab === tab ? "opacity-70" : "opacity-50")}>
+                        {(tab === "htf" ? htfUrls : ltfUrls).length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-5">
-            {/* Non-Negotiable Rules */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.58 0.22 25)" }} />
-                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.58 0.22 25)" }}>
-                  Non-Negotiable Rules
-                </span>
-              </div>
-              <div className="space-y-0.5">
-                {(playbook.non_negotiable_rules ?? []).map((rule, i) => (
-                  <div key={i} className="flex items-center gap-2 group py-1">
-                    <span className="text-xs tabular-nums w-4 shrink-0 text-muted-foreground">{i + 1}.</span>
-                    <span className="text-sm flex-1">{rule}</span>
-                    <button type="button"
-                      onClick={() => {
-                        const rules = [...(playbook.non_negotiable_rules ?? [])];
-                        rules.splice(i, 1);
-                        setPlaybook({ ...playbook, non_negotiable_rules: rules });
-                        setPlaybookDirty(true);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input type="text" value={newRule} onChange={(e) => setNewRule(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newRule.trim()) {
-                      setPlaybook({ ...playbook, non_negotiable_rules: [...(playbook.non_negotiable_rules ?? []), newRule.trim()] });
-                      setNewRule(""); setPlaybookDirty(true);
-                    }
-                  }}
-                  placeholder="Add a rule..."
-                  className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
-                  style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)", color: "oklch(0.94 0.002 28)" }} />
-                <button type="button"
-                  onClick={() => {
-                    if (!newRule.trim()) return;
-                    setPlaybook({ ...playbook, non_negotiable_rules: [...(playbook.non_negotiable_rules ?? []), newRule.trim()] });
-                    setNewRule(""); setPlaybookDirty(true);
-                  }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "oklch(0.58 0.22 25 / 0.12)", color: "oklch(0.58 0.22 25)", border: "1px solid oklch(0.58 0.22 25 / 0.20)" }}>
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            <div style={{ borderTop: "1px solid oklch(0.15 0.004 28)" }} />
-
-            {/* Pre-Trade Routine */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <CheckSquare className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.72 0.22 45)" }} />
-                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.72 0.22 45)" }}>
-                  Pre-Trade Routine
-                </span>
-              </div>
-              <div className="space-y-0.5">
-                {(playbook.pre_trade_routine ?? []).map((step, i) => (
-                  <div key={i} className="flex items-center gap-2 group py-1">
-                    <span className="text-xs tabular-nums w-4 shrink-0" style={{ color: "oklch(0.72 0.22 45 / 0.6)" }}>{i + 1}.</span>
-                    <span className="text-sm flex-1">{step}</span>
-                    <button type="button"
-                      onClick={() => {
-                        const steps = [...(playbook.pre_trade_routine ?? [])];
-                        steps.splice(i, 1);
-                        setPlaybook({ ...playbook, pre_trade_routine: steps });
-                        setPlaybookDirty(true);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input type="text" value={newRoutineStep} onChange={(e) => setNewRoutineStep(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && newRoutineStep.trim()) {
-                      setPlaybook({ ...playbook, pre_trade_routine: [...(playbook.pre_trade_routine ?? []), newRoutineStep.trim()] });
-                      setNewRoutineStep(""); setPlaybookDirty(true);
-                    }
-                  }}
-                  placeholder="Add a step..."
-                  className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
-                  style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)", color: "oklch(0.94 0.002 28)" }} />
-                <button type="button"
-                  onClick={() => {
-                    if (!newRoutineStep.trim()) return;
-                    setPlaybook({ ...playbook, pre_trade_routine: [...(playbook.pre_trade_routine ?? []), newRoutineStep.trim()] });
-                    setNewRoutineStep(""); setPlaybookDirty(true);
-                  }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "oklch(0.72 0.22 45 / 0.12)", color: "oklch(0.72 0.22 45)", border: "1px solid oklch(0.72 0.22 45 / 0.20)" }}>
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            <div style={{ borderTop: "1px solid oklch(0.15 0.004 28)" }} />
-
-            {/* A+ Criteria */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Target className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.58 0.17 145)" }} />
-                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "oklch(0.58 0.17 145)" }}>
-                  A+ Trade Criteria
-                </span>
-              </div>
-              <textarea rows={6} value={playbook.a_plus_criteria || ""}
-                onChange={(e) => { setPlaybook({ ...playbook, a_plus_criteria: e.target.value }); setPlaybookDirty(true); }}
-                placeholder="Describe your ideal A+ setup — what must be true for you to take the trade..."
-                className="w-full rounded-lg px-3 py-2.5 text-sm resize-none"
-                style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)", color: "oklch(0.94 0.002 28)", outline: "none" }} />
-            </div>
-
-            {playbookDirty && (
-              <button type="button" onClick={savePlaybookData}
-                className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90"
-                style={{ background: "oklch(0.72 0.22 45 / 0.15)", color: "oklch(0.72 0.22 45)", border: "1px solid oklch(0.72 0.22 45 / 0.25)" }}>
-                Save Checklist
-              </button>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Screenshots</CardTitle></CardHeader>
           <CardContent>
-            <ScreenshotUpload groups={form.screenshot_groups} onChange={(g) => set("screenshot_groups", g)} />
+            {activeTab === "htf" ? (
+              <ChartTab
+                label="HTF"
+                timeframe={htfTF}
+                onTimeframeChange={setHtfTF}
+                urls={htfUrls}
+                onUrlsChange={setHtfUrls}
+                placeholder="e.g. 4H / Daily"
+              />
+            ) : (
+              <ChartTab
+                label="LTF"
+                timeframe={ltfTF}
+                onTimeframeChange={setLtfTF}
+                urls={ltfUrls}
+                onUrlsChange={setLtfUrls}
+                placeholder="e.g. 15m / 5m"
+              />
+            )}
           </CardContent>
         </Card>
 

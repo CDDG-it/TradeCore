@@ -2,29 +2,41 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, Plus, X, Check } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { getTradeById, updateTrade, getAnalyses } from "@/lib/mock/store";
+import { getTradeById, updateTrade, getAnalyses, computeDisciplineScore } from "@/lib/mock/store";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
-import type { Direction, TradeResult, Market, Session } from "@/lib/types";
+import type { Direction, TradeResult, Session, TradeDiscipline } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
-const MARKETS: Market[] = ["futures", "commodities"];
 const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "Daily"];
+
+const DISCIPLINE_LABELS: { key: keyof Omit<TradeDiscipline, "score" | "notes" | "custom_checks">; label: string }[] = [
+  { key: "followed_plan", label: "Followed my trading plan" },
+  { key: "traded_in_session", label: "Traded in my allowed session" },
+  { key: "respected_risk", label: "Respected risk rules" },
+  { key: "respected_max_trades", label: "Respected max trades for today" },
+  { key: "matched_a_plus", label: "Setup matched A+ criteria" },
+  { key: "no_impulsive_entry", label: "No impulsive entry" },
+  { key: "no_revenge_trade", label: "Not a revenge trade" },
+  { key: "respected_stop_loss", label: "Respected the stop loss" },
+  { key: "journal_completed", label: "Journal entry fully completed" },
+];
 
 export default function EditTradePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const trade = getTradeById(id);
-  const analyses = getAnalyses();
   const [saving, setSaving] = useState(false);
   const [confluenceInput, setConfluenceInput] = useState("");
+  const [showDiscipline, setShowDiscipline] = useState(true);
+  const [newCustomLabel, setNewCustomLabel] = useState("");
 
   if (!trade) {
     return (
@@ -38,23 +50,72 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [form, setForm] = useState({
     date_time: trade.date_time.slice(0, 10),
     instrument: trade.instrument,
-    market: trade.market as Market,
+    market: trade.market,
     session: trade.session as Session,
     timeframe: trade.timeframe ?? "",
     direction: trade.direction as Direction,
     confluences: [...trade.confluences],
     rr: trade.rr,
     result: trade.result as TradeResult,
-    screenshot_groups: trade.screenshot_groups ?? [],
+    screenshot_groups: trade.screenshot_groups?.length
+      ? trade.screenshot_groups
+      : [{ label: "Entry TF", urls: [] }, { label: "HTF", urls: [] }],
     execution_notes: trade.execution_notes,
     psychology_notes: trade.psychology_notes,
     mistakes: trade.mistakes,
     lessons: trade.lessons,
     linked_analysis_id: trade.linked_analysis_id,
+    discipline: trade.discipline ?? {
+      followed_plan: false, traded_in_session: true, respected_risk: true,
+      respected_max_trades: true, matched_a_plus: false, no_impulsive_entry: true,
+      no_revenge_trade: true, respected_stop_loss: true, journal_completed: true,
+      score: 78, notes: "", custom_checks: [],
+    },
   });
+
+  const analyses = getAnalyses().filter((a) => a.date === form.date_time);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function setDiscipline(key: keyof Omit<TradeDiscipline, "score" | "notes" | "custom_checks">, value: boolean) {
+    setForm((prev) => {
+      const updated = { ...(prev.discipline!), [key]: value };
+      updated.score = computeDisciplineScore(updated);
+      return { ...prev, discipline: updated };
+    });
+  }
+
+  function toggleCustomCheck(idx: number) {
+    setForm((prev) => {
+      const custom = [...(prev.discipline?.custom_checks ?? [])];
+      custom[idx] = { ...custom[idx], passed: !custom[idx].passed };
+      const updated = { ...prev.discipline!, custom_checks: custom };
+      updated.score = computeDisciplineScore(updated);
+      return { ...prev, discipline: updated };
+    });
+  }
+
+  function addCustomCheck() {
+    const label = newCustomLabel.trim();
+    if (!label) return;
+    setForm((prev) => {
+      const custom = [...(prev.discipline?.custom_checks ?? []), { label, passed: false }];
+      const updated = { ...prev.discipline!, custom_checks: custom };
+      updated.score = computeDisciplineScore(updated);
+      return { ...prev, discipline: updated };
+    });
+    setNewCustomLabel("");
+  }
+
+  function removeCustomCheck(idx: number) {
+    setForm((prev) => {
+      const custom = (prev.discipline?.custom_checks ?? []).filter((_, i) => i !== idx);
+      const updated = { ...prev.discipline!, custom_checks: custom };
+      updated.score = computeDisciplineScore(updated);
+      return { ...prev, discipline: updated };
+    });
   }
 
   function addConfluence() {
@@ -89,28 +150,30 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           <CardContent className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs">Instrument</Label>
-                <Input value={form.instrument} onChange={(e) => set("instrument", e.target.value.toUpperCase())} className="h-9 text-sm" required />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Date</Label>
-                <Input type="date" value={form.date_time} onChange={(e) => set("date_time", e.target.value)} className="h-9 text-sm" required />
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Market</Label>
+                <Label className="text-xs">Instrument *</Label>
                 <div className="flex gap-1.5">
-                  {MARKETS.map((m) => (
-                    <button key={m} type="button" onClick={() => set("market", m)}
-                      className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
-                        form.market === m ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {m}
+                  {INSTRUMENTS.map((inst) => (
+                    <button key={inst} type="button" onClick={() => set("instrument", inst)}
+                      className={cn("flex-1 py-1.5 rounded-lg text-sm font-medium transition-all font-mono",
+                        form.instrument === inst ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                      {inst}
                     </button>
                   ))}
                 </div>
+                {!INSTRUMENTS.includes(form.instrument) && (
+                  <Input value={form.instrument} onChange={(e) => set("instrument", e.target.value.toUpperCase())}
+                    className="h-8 text-sm mt-1" placeholder="Custom instrument" />
+                )}
               </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Date</Label>
+                <Input type="date" value={form.date_time}
+                  onChange={(e) => { set("date_time", e.target.value); set("linked_analysis_id", undefined); }}
+                  className="h-9 text-sm" required />
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Direction</Label>
                 <div className="flex gap-1.5">
@@ -157,7 +220,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Timeframe</Label>
+                <Label className="text-xs">Entry Timeframe</Label>
                 <div className="flex flex-wrap gap-1.5">
                   {TIMEFRAMES.map((tf) => (
                     <button key={tf} type="button"
@@ -178,35 +241,43 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">R:R</Label>
-                <Input type="number" step="0.1" min="0" value={form.rr}
-                  onChange={(e) => set("rr", parseFloat(e.target.value) || 0)} className="h-9 text-sm font-mono" required />
-              </div>
-              {analyses.length > 0 && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Link to Analysis</Label>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button type="button" onClick={() => set("linked_analysis_id", undefined)}
-                      className={cn("px-3 py-1 rounded-lg text-xs font-medium transition-all",
-                        !form.linked_analysis_id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      None
-                    </button>
-                    {analyses.slice(0, 3).map((a) => (
-                      <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
-                        className={cn("px-3 py-1 rounded-lg text-xs font-medium transition-all max-w-48 truncate",
-                          form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                        {a.instrument} · {a.title.slice(0, 20)}…
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="space-y-1.5">
+              <Label className="text-xs">R:R</Label>
+              <Input type="number" step="0.1" min="0" value={form.rr}
+                onChange={(e) => set("rr", parseFloat(e.target.value) || 0)}
+                className="h-9 text-sm font-mono max-w-32" required />
             </div>
           </CardContent>
         </Card>
 
+        {/* Link to Analysis */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold">Analysis — {form.date_time}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {analyses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No analysis found for this date.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => set("linked_analysis_id", undefined)}
+                  className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    !form.linked_analysis_id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                  None
+                </button>
+                {analyses.map((a) => (
+                  <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
+                    className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all max-w-xs truncate",
+                      form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                    {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}…` : a.title}
+                  </button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Confluences */}
         <Card className="shadow-sm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Confluences</CardTitle></CardHeader>
           <CardContent>
@@ -230,23 +301,99 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           </CardContent>
         </Card>
 
+        {/* Discipline Check */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Post-Trade Review</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            {([
-              { key: "execution_notes" as const, label: "Execution Notes" },
-              { key: "psychology_notes" as const, label: "Psychology" },
-              { key: "mistakes" as const, label: "Mistakes" },
-              { key: "lessons" as const, label: "Lessons" },
-            ] as const).map(({ key, label }) => (
-              <div key={key} className="space-y-1.5">
-                <Label className="text-xs">{label}</Label>
-                <Textarea value={form[key] as string} onChange={(e) => set(key, e.target.value)} className="text-sm min-h-16 resize-none" />
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <CardTitle className="text-sm font-semibold shrink-0">Discipline Check</CardTitle>
+                {form.discipline && (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden max-w-28" style={{ background: "oklch(0.18 0.005 28)" }}>
+                      <div className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: `${form.discipline.score}%`,
+                          background: form.discipline.score >= 80 ? "oklch(0.58 0.17 145)"
+                            : form.discipline.score >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
+                        }} />
+                    </div>
+                    <span className="text-xs font-bold tabular-nums shrink-0"
+                      style={{
+                        color: form.discipline.score >= 80 ? "oklch(0.58 0.17 145)"
+                          : form.discipline.score >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
+                      }}>
+                      {form.discipline.score}%
+                    </span>
+                  </div>
+                )}
               </div>
-            ))}
-          </CardContent>
+              <button type="button" onClick={() => setShowDiscipline(!showDiscipline)}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors ml-3 shrink-0">
+                {showDiscipline ? "Collapse" : "Expand"}
+              </button>
+            </div>
+          </CardHeader>
+          {showDiscipline && (
+            <CardContent className="space-y-3">
+              <div className="space-y-1.5">
+                {DISCIPLINE_LABELS.map(({ key, label }) => {
+                  const checked = !!(form.discipline?.[key]);
+                  return (
+                    <button key={key} type="button" onClick={() => setDiscipline(key, !checked)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left"
+                      style={{
+                        background: checked ? "oklch(0.58 0.17 145 / 0.08)" : "oklch(0.08 0.003 28)",
+                        border: `1px solid ${checked ? "oklch(0.58 0.17 145 / 0.25)" : "oklch(0.18 0.005 28)"}`,
+                      }}>
+                      <div className="w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all"
+                        style={checked ? { background: "oklch(0.58 0.17 145)" } : { background: "transparent", border: "1.5px solid oklch(0.35 0.005 28)" }}>
+                        {checked && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className="text-sm transition-colors"
+                        style={{ color: checked ? "oklch(0.90 0.003 28)" : "oklch(0.65 0.005 28)" }}>
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                {(form.discipline?.custom_checks ?? []).map((item, idx) => (
+                  <button key={idx} type="button" onClick={() => toggleCustomCheck(idx)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left group"
+                    style={{
+                      background: item.passed ? "oklch(0.58 0.17 145 / 0.08)" : "oklch(0.08 0.003 28)",
+                      border: `1px solid ${item.passed ? "oklch(0.58 0.17 145 / 0.25)" : "oklch(0.18 0.005 28)"}`,
+                    }}>
+                    <div className="w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all"
+                      style={item.passed ? { background: "oklch(0.58 0.17 145)" } : { background: "transparent", border: "1.5px solid oklch(0.35 0.005 28)" }}>
+                      {item.passed && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    <span className="text-sm flex-1 text-left transition-colors"
+                      style={{ color: item.passed ? "oklch(0.90 0.003 28)" : "oklch(0.65 0.005 28)" }}>
+                      {item.label}
+                    </span>
+                    <span onClick={(e) => { e.stopPropagation(); removeCustomCheck(idx); }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer">
+                      <X className="w-3.5 h-3.5" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Input value={newCustomLabel} onChange={(e) => setNewCustomLabel(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomCheck())}
+                  placeholder="Add custom rule..."
+                  className="h-8 text-xs bg-background/50" />
+                <Button type="button" variant="outline" size="sm" onClick={addCustomCheck} className="h-8 shrink-0">
+                  <Plus className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
+        {/* Screenshots */}
         <Card className="shadow-sm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Screenshots</CardTitle></CardHeader>
           <CardContent>

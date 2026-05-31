@@ -1,51 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { PageHeader } from "@/components/ui/page-header";
-import { PageWrapper } from "@/components/ui/page-wrapper";
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  addDays,
-  addMonths,
-  subMonths,
-  isSameDay,
-  isSameMonth,
-} from "date-fns";
+import { useState, useEffect } from "react";
+import { format, startOfWeek, startOfMonth } from "date-fns";
 import {
   TrendingUp,
   TrendingDown,
   BookOpen,
-  LineChart,
-  BarChart2,
+  Activity,
   Wallet,
   ArrowRight,
-  Target,
-  Activity,
+  Flame,
   Plus,
-  Zap,
-  ChevronLeft,
-  ChevronRight,
   Check,
+  Pencil,
+  Trash2,
+  X,
+  Target,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
-  getDashboardStats,
   getTrades,
   getAccounts,
   getHabits,
   getHabitCompletions,
-  getDaySummary,
-  getAnalyses,
+  createHabit,
+  updateHabit,
+  deleteHabit,
 } from "@/lib/mock/store";
 import { cn } from "@/lib/utils";
-import type { TradeResult } from "@/lib/types";
+import type { TradeResult, Habit, HabitCompletion } from "@/lib/types";
+
+const TODAY = format(new Date(), "yyyy-MM-dd");
 
 function ResultBadge({ result }: { result: TradeResult }) {
   if (result === "win")
@@ -76,664 +67,408 @@ function ResultBadge({ result }: { result: TradeResult }) {
   );
 }
 
-// ── Connected Calendar ────────────────────────────────────────────────────────
-function ConnectedCalendar() {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-
+function DisciplineScoreCard() {
+  const [period, setPeriod] = useState<"week" | "month">("week");
   const trades = getTrades();
-  const habits = getHabits();
-  const allCompletions = getHabitCompletions();
-  const allAnalyses = getAnalyses();
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const now = new Date();
+  const cutoff =
+    period === "week"
+      ? startOfWeek(now, { weekStartsOn: 1 })
+      : startOfMonth(now);
 
-  const days: Date[] = [];
-  let d = calStart;
-  while (d <= calEnd) {
-    days.push(d);
-    d = addDays(d, 1);
-  }
+  const periodTrades = trades.filter(
+    (t) => t.discipline && new Date(t.date_time) >= cutoff
+  );
 
-  const today = new Date();
+  const avg =
+    periodTrades.length > 0
+      ? Math.round(
+          periodTrades.reduce((s, t) => s + (t.discipline?.score ?? 0), 0) /
+            periodTrades.length
+        )
+      : null;
 
-  function getDayData(date: Date) {
-    const dateStr = format(date, "yyyy-MM-dd");
-    const dayTrades = trades.filter((t) => t.date_time.slice(0, 10) === dateStr);
-    const dayAnalyses = allAnalyses.filter((a) => a.date === dateStr);
-    const dayCompletions = allCompletions.filter((c) => c.date === dateStr && c.completed);
-    const habitRate = habits.length > 0 ? dayCompletions.length / habits.length : 0;
-
-    return {
-      trades: dayTrades,
-      hasAnalysis: dayAnalyses.length > 0,
-      habitRate,
-      habitCount: dayCompletions.length,
-    };
-  }
-
-  // Selected day detail
-  const selectedDateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : null;
-  const selectedSummary = selectedDateStr ? getDaySummary(selectedDateStr) : null;
-  const selectedDayTrades = selectedDateStr
-    ? trades.filter((t) => t.date_time.slice(0, 10) === selectedDateStr)
-    : [];
+  const color =
+    avg === null
+      ? "oklch(0.55 0.005 28)"
+      : avg >= 80
+      ? "oklch(0.58 0.17 145)"
+      : avg >= 60
+      ? "oklch(0.70 0.16 72)"
+      : "oklch(0.58 0.22 25)";
 
   return (
     <div
-      className="rounded-xl overflow-hidden"
-      style={{
-        background: "var(--card)",
-        border: "1px solid var(--border)",
-      }}
+      className="rounded-xl p-5 relative overflow-hidden"
+      style={{ background: "var(--card)", border: "1px solid var(--border)" }}
     >
-      {/* Calendar Header */}
       <div
-        className="flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: "1px solid var(--border)" }}
-      >
-        <div>
-          <h2 className="text-sm font-semibold">Day Overview</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Click any day to see the full story</p>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors hover:bg-black/[0.04]"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-          <span className="text-xs font-semibold px-2 w-28 text-center">
-            {format(currentMonth, "MMMM yyyy")}
-          </span>
-          <button
-            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors hover:bg-black/[0.04]"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      <div className="p-4">
-        {/* Day headers */}
-        <div className="grid grid-cols-7 mb-1">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-            <div key={d} className="text-center text-xs text-muted-foreground py-1 font-medium">
-              {d}
-            </div>
-          ))}
-        </div>
-
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-0.5">
-          {days.map((day) => {
-            const isCurrentMonth = isSameMonth(day, currentMonth);
-            const isToday = isSameDay(day, today);
-            const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
-            const { trades: dayTrades, hasAnalysis, habitRate } = getDayData(day);
-
-            const hasWin = dayTrades.some((t) => t.result === "win");
-            const hasLoss = dayTrades.some((t) => t.result === "loss");
-            const hasBreakEven = dayTrades.some((t) => t.result === "break-even");
-
-            return (
-              <button
-                key={day.toISOString()}
-                onClick={() => setSelectedDate(isSelected ? null : day)}
-                className="relative flex flex-col items-center rounded-lg p-1 transition-all hover:bg-black/[0.04] min-h-12"
-                style={{
-                  opacity: isCurrentMonth ? 1 : 0.3,
-                  background: isSelected
-                    ? "oklch(0.72 0.22 45 / 0.12)"
-                    : isToday
-                    ? "oklch(0.72 0.22 45 / 0.06)"
-                    : undefined,
-                  border: isSelected
-                    ? "1px solid oklch(0.72 0.22 45 / 0.40)"
-                    : isToday
-                    ? "1px solid oklch(0.72 0.22 45 / 0.20)"
-                    : "1px solid transparent",
-                }}
-              >
-                <span
-                  className="text-xs font-medium mb-0.5"
-                  style={{
-                    color: isToday
-                      ? "oklch(0.72 0.22 45)"
-                      : isCurrentMonth
-                      ? "oklch(0.70 0.005 28)"
-                      : "oklch(0.40 0.005 28)",
-                  }}
-                >
-                  {format(day, "d")}
-                </span>
-
-                {/* Indicators */}
-                <div className="flex flex-wrap gap-0.5 justify-center">
-                  {hasAnalysis && (
-                    <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: "oklch(0.72 0.22 45)" }}
-                      title="Pre-market analysis"
-                    />
-                  )}
-                  {hasWin && (
-                    <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: "oklch(0.58 0.17 145)" }}
-                      title="Win"
-                    />
-                  )}
-                  {hasLoss && (
-                    <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: "oklch(0.58 0.22 25)" }}
-                      title="Loss"
-                    />
-                  )}
-                  {hasBreakEven && (
-                    <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: "oklch(0.70 0.16 72)" }}
-                      title="Break-even"
-                    />
-                  )}
-                </div>
-
-                {/* Habit ring at bottom */}
-                {habitRate > 0 && (
-                  <div
-                    className="absolute bottom-0.5 right-0.5 w-1 h-1 rounded-full"
-                    style={{
-                      background: habitRate >= 0.7
-                        ? "oklch(0.72 0.22 45)"
-                        : "oklch(0.55 0.005 28)",
-                    }}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 mt-3 pt-3" style={{ borderTop: "1px solid var(--border)" }}>
-          {[
-            { color: "oklch(0.72 0.22 45)", label: "Analysis" },
-            { color: "oklch(0.58 0.17 145)", label: "Win" },
-            { color: "oklch(0.58 0.22 25)", label: "Loss" },
-            { color: "oklch(0.70 0.16 72)", label: "B/E" },
-          ].map(({ color, label }) => (
-            <div key={label} className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-              <span className="text-xs text-muted-foreground">{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Selected day detail */}
-      {selectedDate && selectedSummary && (
+        className="absolute inset-x-0 top-0 h-px"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${color.replace(")", " / 0.40)")}, transparent)`,
+        }}
+      />
+      <div className="flex items-start justify-between mb-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Discipline Score
+        </p>
         <div
-          className="px-5 py-4 space-y-4"
-          style={{ borderTop: "1px solid var(--border)" }}
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: `${color.replace(")", " / 0.12)")}` }}
         >
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">
-              {format(selectedDate, "EEEE, MMMM d, yyyy")}
-            </h3>
-            {isSameDay(selectedDate, today) && (
-              <span
-                className="text-xs font-medium px-2 py-0.5 rounded-md"
-                style={{ background: "oklch(0.72 0.22 45 / 0.15)", color: "oklch(0.72 0.22 45)" }}
-              >
-                Today
-              </span>
-            )}
-          </div>
-
-          {/* Day story */}
-          <div className="grid grid-cols-2 gap-2">
-            <DayStoryBlock
-              icon={LineChart}
-              label="Pre-Market"
-              done={selectedSummary.hasAnalysis}
-              detail={selectedSummary.hasAnalysis ? `${selectedSummary.analysisCount} analysis done` : "No analysis"}
-              color="oklch(0.72 0.22 45)"
-              href={`/analysis?date=${selectedDateStr}`}
-            />
-            <DayStoryBlock
-              icon={BookOpen}
-              label="Trades"
-              done={selectedSummary.tradeCount > 0}
-              detail={selectedSummary.tradeCount > 0
-                ? `${selectedSummary.tradeCount} trade${selectedSummary.tradeCount > 1 ? "s" : ""} · ${selectedSummary.tradeWins}W`
-                : "No trades"}
-              color="oklch(0.58 0.17 145)"
-              href={`/journal`}
-            />
-          </div>
-
-          {/* Trades on this day */}
-          {selectedDayTrades.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Trades taken</p>
-              <div className="space-y-1">
-                {selectedDayTrades.map((trade) => (
-                  <Link
-                    key={trade.id}
-                    href={`/journal/${trade.id}`}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-black/[0.04]"
-                    style={{ border: "1px solid var(--border)" }}
-                  >
-                    <ResultBadge result={trade.result} />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium">{trade.instrument}</span>
-                      <span className="text-xs text-muted-foreground ml-2 capitalize">{trade.session} · {trade.direction}</span>
-                    </div>
-                    <span
-                      className="text-sm font-bold"
-                      style={{
-                        color: trade.result === "win"
-                          ? "oklch(0.58 0.17 145)"
-                          : trade.result === "loss"
-                          ? "oklch(0.58 0.22 25)"
-                          : "oklch(0.70 0.16 72)",
-                      }}
-                    >
-                      {trade.result === "win" ? "+" : trade.result === "loss" ? "-" : ""}
-                      {trade.rr}R
-                    </span>
-                    <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
+          <Target className="w-3.5 h-3.5" style={{ color }} />
         </div>
-      )}
+      </div>
+      <p
+        className="text-3xl font-black tracking-tight mb-1 tabular-nums"
+        style={{ color }}
+      >
+        {avg !== null ? `${avg}%` : "—"}
+      </p>
+      <div className="flex items-center gap-1 mt-2">
+        {(["week", "month"] as const).map((p) => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            className="px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide transition-all"
+            style={
+              period === p
+                ? { background: color.replace(")", " / 0.15)"), color }
+                : { color: "var(--muted-foreground)" }
+            }
+          >
+            {p === "week" ? "This week" : "This month"}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
-function DayStoryBlock({
-  icon: Icon,
-  label,
-  done,
-  detail,
-  color,
-  href,
-}: {
-  icon: React.ElementType;
-  label: string;
-  done: boolean;
-  detail: string;
-  color: string;
-  href: string;
-}) {
+function HabitTracker() {
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [completions, setCompletions] = useState<HabitCompletion[]>([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newHabitName, setNewHabitName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+
+  useEffect(() => {
+    setHabits(getHabits());
+    setCompletions(getHabitCompletions());
+  }, []);
+
+  const todayDone = completions
+    .filter((c) => c.date === TODAY && c.completed)
+    .map((c) => c.habit_id);
+
+  function toggleHabit(habitId: string) {
+    const isDone = todayDone.includes(habitId);
+    if (isDone) {
+      setCompletions((prev) =>
+        prev.filter((c) => !(c.habit_id === habitId && c.date === TODAY && c.completed))
+      );
+    } else {
+      setCompletions((prev) => [
+        ...prev,
+        { id: `hc_${Date.now()}`, habit_id: habitId, date: TODAY, completed: true },
+      ]);
+    }
+  }
+
+  function handleAddHabit(e: React.FormEvent) {
+    e.preventDefault();
+    const name = newHabitName.trim();
+    if (!name) return;
+    createHabit({ name, description: "", category: "routine", frequency: "daily", target_days: 7, color: "#F97316", icon: "" });
+    setHabits(getHabits());
+    setNewHabitName("");
+    setShowAdd(false);
+  }
+
+  function handleSaveEdit(id: string) {
+    const name = editName.trim();
+    if (!name) return;
+    updateHabit(id, { name });
+    setHabits(getHabits());
+    setEditingId(null);
+  }
+
+  function handleDelete(id: string) {
+    deleteHabit(id);
+    setHabits(getHabits());
+    setCompletions((prev) => prev.filter((c) => c.habit_id !== id));
+  }
+
+  const doneCount = todayDone.length;
+  const totalCount = habits.length;
+  const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
   return (
-    <Link href={href}>
-      <div
-        className="rounded-lg p-3 transition-all hover:border-opacity-60 cursor-pointer"
-        style={{
-          background: done ? `${color}0d` : "oklch(0.08 0.003 28)",
-          border: `1px solid ${done ? `${color}2a` : "var(--border)"}`,
-        }}
-      >
-        <div className="flex items-center gap-2 mb-1">
-          <div
-            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: `${color}1a` }}
-          >
-            {done ? (
-              <Check className="w-3 h-3" style={{ color }} />
-            ) : (
-              <Icon className="w-3 h-3" style={{ color: "var(--muted-foreground)" }} />
-            )}
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Flame className="w-4 h-4" style={{ color: "#F97316" }} />
+            Habits — {format(new Date(), "EEEE, MMMM d")}
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs tabular-nums">
+              {doneCount}/{totalCount}
+            </Badge>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs h-7 px-2"
+              onClick={() => { setShowAdd(!showAdd); setEditingId(null); }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add
+            </Button>
           </div>
-          <span
-            className="text-xs font-semibold"
-            style={{ color: done ? color : "oklch(0.55 0.005 28)" }}
-          >
-            {label}
-          </span>
         </div>
-        <p className="text-xs text-muted-foreground leading-tight">{detail}</p>
-      </div>
-    </Link>
+        {totalCount > 0 && (
+          <div className="mt-3">
+            <div className="h-1.5 rounded-full bg-border overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${pct}%`, background: pct === 100 ? "oklch(0.68 0.20 130)" : "#F97316" }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">{pct}% complete today</p>
+          </div>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-1.5">
+        {showAdd && (
+          <form onSubmit={handleAddHabit} className="flex gap-2 mb-3 pb-3 border-b border-border/50">
+            <Input autoFocus value={newHabitName} onChange={(e) => setNewHabitName(e.target.value)}
+              placeholder="Habit name..." className="h-8 text-sm" />
+            <Button type="submit" size="sm" className="h-8 shrink-0">Save</Button>
+            <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={() => setShowAdd(false)}>
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </form>
+        )}
+        {habits.length === 0 ? (
+          <div className="py-8 text-center">
+            <Flame className="w-8 h-8 mx-auto mb-3 text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">No habits yet.</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Click "Add" to create your first habit.</p>
+          </div>
+        ) : (
+          habits.map((habit) => {
+            const done = todayDone.includes(habit.id);
+            const isEditing = editingId === habit.id;
+            return (
+              <div
+                key={habit.id}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
+                  done ? "bg-primary/5 border border-primary/15" : "hover:bg-muted/50"
+                )}
+              >
+                <button
+                  onClick={() => toggleHabit(habit.id)}
+                  className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center border-2 transition-all"
+                  style={{
+                    borderColor: done ? "#F97316" : "var(--border)",
+                    background: done ? "#F97316" : "transparent",
+                  }}
+                >
+                  {done && <Check className="w-3 h-3 text-white" />}
+                </button>
+                {isEditing ? (
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); handleSaveEdit(habit.id); }}
+                    className="flex-1 flex gap-2"
+                  >
+                    <Input autoFocus value={editName} onChange={(e) => setEditName(e.target.value)}
+                      className="h-7 text-sm py-0" />
+                    <Button type="submit" size="sm" className="h-7 text-xs px-2">Save</Button>
+                    <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setEditingId(null)}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </form>
+                ) : (
+                  <>
+                    <span className={cn("flex-1 text-sm font-medium transition-colors", done ? "text-foreground/50 line-through" : "text-foreground")}>
+                      {habit.name}
+                    </span>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => { setEditingId(habit.id); setEditName(habit.name); }}
+                        className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => handleDelete(habit.id)}
+                        className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-// ── Main Dashboard ─────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const stats = getDashboardStats();
-  const recentTrades = getTrades().slice(0, 5);
+  const trades = getTrades();
   const accounts = getAccounts();
+
+  const totalTrades = trades.length;
+  const winRate =
+    totalTrades > 0
+      ? Math.round((trades.filter((t) => t.result === "win").length / totalTrades) * 100)
+      : 0;
+
+  const activeAccounts = accounts.filter((a) => a.status === "active");
+  const totalCapital = activeAccounts.reduce((s, a) => s + a.current_balance, 0);
+
+  const recentTrades = trades.slice(0, 5);
+
   const statCards = [
     {
       label: "Total Trades",
-      value: stats.total_trades.toString(),
+      value: totalTrades.toString(),
+      sub: `${winRate}% win rate`,
       icon: Activity,
-      sub: `${stats.win_rate}% win rate`,
       accent: "oklch(0.72 0.22 45)",
       accentBg: "oklch(0.72 0.22 45 / 0.10)",
     },
     {
-      label: "Avg R:R",
-      value: `${stats.average_rr}R`,
-      icon: Zap,
-      sub: `${stats.break_even_rate}% break-even rate`,
-      accent: "oklch(0.72 0.22 45)",
-      accentBg: "oklch(0.72 0.22 45 / 0.10)",
-    },
-    {
-      label: "Active Accounts",
-      value: stats.active_accounts.toString(),
+      label: "Active Capital",
+      value: totalCapital > 0 ? `$${totalCapital.toLocaleString()}` : "—",
+      sub: `${activeAccounts.length} active account${activeAccounts.length !== 1 ? "s" : ""}`,
       icon: Wallet,
-      sub: `$${stats.total_payouts.toLocaleString()} paid out`,
       accent: "oklch(0.58 0.17 145)",
       accentBg: "oklch(0.58 0.17 145 / 0.10)",
     },
-    {
-      label: "Drawdown Used",
-      value: `$${stats.total_drawdown_used.toLocaleString()}`,
-      icon: Target,
-      sub: "Across all funded accounts",
-      accent: "oklch(0.70 0.16 72)",
-      accentBg: "oklch(0.70 0.16 72 / 0.10)",
-    },
-  ];
-
-  const quickLinks = [
-    { href: "/journal", label: "Trade Journal", icon: BookOpen, desc: "Log a new trade" },
-    { href: "/analysis", label: "Pre-Market", icon: LineChart, desc: "Write analysis" },
-    { href: "/analytics", label: "Analytics", icon: BarChart2, desc: "Performance review" },
-    { href: "/accounts", label: "Funded Accounts", icon: Wallet, desc: "Track accounts" },
   ];
 
   return (
     <div className="space-y-8">
-      <PageHeader badge="Overview" title="Dashboard" subtitle="Your trading command center" />
+      <PageHeader badge="Daily" title="Dashboard" subtitle={format(new Date(), "EEEE, MMMM d, yyyy")} />
       <PageWrapper>
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(({ label, value, icon: Icon, sub, accent, accentBg }, i) => (
-          <div
-            key={label}
-            className="animate-fade-up rounded-xl p-5 relative overflow-hidden"
-            style={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              animationDelay: `${i * 60}ms`,
-            }}
-          >
+        {/* Stats + Discipline */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-up">
+          {statCards.map(({ label, value, sub, icon: Icon, accent, accentBg }, i) => (
             <div
-              className="absolute inset-x-0 top-0 h-px"
-              style={{ background: `linear-gradient(90deg, transparent, ${accent.replace(')', ' / 0.40)')}, transparent)` }}
-            />
-            <div className="flex items-start justify-between mb-4">
-              <p
-                className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: "var(--muted-foreground)" }}
-              >
-                {label}
-              </p>
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: accentBg }}
-              >
-                <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
-              </div>
-            </div>
-            <p
-              className="text-3xl font-black tracking-tight mb-1 tabular-nums"
-              style={{ color: accent }}
-            >
-              {value}
-            </p>
-            <p className="text-xs text-muted-foreground">{sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Calendar + Accounts */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Connected Calendar */}
-        <div className="lg:col-span-2 animate-fade-up" style={{ animationDelay: "200ms" }}>
-          <ConnectedCalendar />
-        </div>
-
-        {/* Accounts summary */}
-        <div className="space-y-4 animate-fade-up" style={{ animationDelay: "280ms" }}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Funded Accounts</h2>
-            <Link
-              href="/accounts"
-              className="text-xs flex items-center gap-1 transition-colors hover:opacity-80"
-              style={{ color: "oklch(0.72 0.22 45)" }}
-            >
-              View all <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          {accounts.length === 0 && (
-            <div
-              className="rounded-xl p-6 text-center"
+              key={label}
+              className="rounded-xl p-5 relative overflow-hidden"
               style={{
                 background: "var(--card)",
                 border: "1px solid var(--border)",
+                animationDelay: `${i * 60}ms`,
               }}
             >
-              <p className="text-sm text-muted-foreground mb-3">No accounts added yet.</p>
-              <Link
-                href="/accounts/new"
-                className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
-                style={{ color: "oklch(0.72 0.22 45)" }}
-              >
-                <Plus className="w-3.5 h-3.5" /> Add funded account
-              </Link>
-            </div>
-          )}
-
-          {accounts.map((acct) => {
-            const drawdownPct = Math.round((acct.drawdown_used / acct.max_drawdown) * 100);
-            const payoutPct = Math.min(
-              100,
-              Math.round((acct.payout_total / acct.next_payout_target) * 100)
-            );
-            // ROI multiple = payout / fees paid (e.g. 2.0x)
-            const roi = acct.purchase_cost > 0
-              ? Math.round((acct.payout_total / acct.purchase_cost) * 10) / 10
-              : 0;
-            return (
-              <Link key={acct.id} href={`/accounts/${acct.id}`}>
-                <div
-                  className="rounded-xl p-4 transition-all hover:border-opacity-60 cursor-pointer"
-                  style={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-xs font-semibold">{acct.account_name}</p>
-                      <p className="text-xs text-muted-foreground">{acct.firm_name}</p>
-                    </div>
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-md font-medium capitalize"
-                      style={
-                        acct.phase === "funded"
-                          ? { background: "oklch(0.58 0.17 145 / 0.15)", color: "oklch(0.58 0.17 145)" }
-                          : acct.phase === "evaluation"
-                          ? { background: "oklch(0.70 0.16 72 / 0.15)", color: "oklch(0.70 0.16 72)" }
-                          : { background: "oklch(0.72 0.22 45 / 0.15)", color: "oklch(0.72 0.22 45)" }
-                      }
-                    >
-                      {acct.phase}
-                    </span>
-                  </div>
-
-                  <div className="flex items-baseline gap-1 mb-3">
-                    <span
-                      className="text-lg font-black tabular-nums"
-                      style={{
-                        color: roi >= 1 ? "oklch(0.58 0.17 145)" : roi > 0 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
-                      }}
-                    >
-                      {roi}x
-                    </span>
-                    <span className="text-xs text-muted-foreground">return on fees</span>
-                  </div>
-
-                  <div className="space-y-1 mb-2">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Drawdown</span>
-                      <span>{drawdownPct}%</span>
-                    </div>
-                    <Progress
-                      value={drawdownPct}
-                      className={cn(
-                        "h-1.5",
-                        drawdownPct > 60 ? "[&>div]:bg-destructive" : "[&>div]:bg-warning"
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Payout progress</span>
-                      <span>
-                        ${acct.payout_total.toLocaleString()} /{" "}
-                        ${acct.next_payout_target.toLocaleString()}
-                      </span>
-                    </div>
-                    <Progress value={payoutPct} className="h-1.5 [&>div]:bg-primary" />
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Recent trades */}
-      <div className="animate-fade-up" style={{ animationDelay: "320ms" }}>
-        <div
-          className="rounded-xl overflow-hidden"
-          style={{
-            background: "var(--card)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          <div
-            className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: "1px solid var(--border)" }}
-          >
-            <h2 className="text-sm font-semibold">Recent Trades</h2>
-            <Link
-              href="/journal"
-              className="text-xs flex items-center gap-1 transition-colors hover:opacity-80"
-              style={{ color: "oklch(0.72 0.22 45)" }}
-            >
-              View all <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          {recentTrades.length === 0 ? (
-            <div className="px-5 py-10 text-center">
-              <p className="text-sm text-muted-foreground mb-3">No trades logged yet.</p>
-              <Link
-                href="/journal/new"
-                className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
-                style={{ color: "oklch(0.72 0.22 45)" }}
-              >
-                <Plus className="w-3.5 h-3.5" /> Log your first trade
-              </Link>
-            </div>
-          ) : (
-            <div>
-              {recentTrades.map((trade, i) => (
-                <Link
-                  key={trade.id}
-                  href={`/journal/${trade.id}`}
-                  className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-black/[0.02]"
-                  style={{
-                    borderBottom: i < recentTrades.length - 1 ? "1px solid var(--border)" : undefined,
-                  }}
-                >
-                  <div className="flex items-center gap-2 shrink-0">
-                    <ResultBadge result={trade.result} />
-                    {trade.direction === "long" ? (
-                      <TrendingUp className="w-3.5 h-3.5 text-success" />
-                    ) : (
-                      <TrendingDown className="w-3.5 h-3.5 text-destructive" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold">{trade.instrument}</p>
-                    <p className="text-xs text-muted-foreground truncate capitalize">
-                      {trade.session} · {trade.market}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p
-                      className="text-sm font-bold"
-                      style={{
-                        color:
-                          trade.result === "win"
-                            ? "oklch(0.58 0.17 145)"
-                            : trade.result === "loss"
-                            ? "oklch(0.58 0.22 25)"
-                            : "oklch(0.70 0.16 72)",
-                      }}
-                    >
-                      {trade.result === "win" ? "+" : trade.result === "loss" ? "-" : ""}
-                      {trade.rr}R
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(trade.date_time.slice(0, 10) + "T12:00:00"), "MMM d")}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Quick navigation */}
-      <div className="animate-fade-up" style={{ animationDelay: "400ms" }}>
-        <h2 className="text-sm font-semibold mb-4">Quick Navigation</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          {quickLinks.map(({ href, label, icon: Icon, desc }) => (
-            <Link key={href} href={href}>
               <div
-                className="rounded-xl p-4 transition-all hover:-translate-y-0.5 cursor-pointer group"
-                style={{
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center mb-3 transition-all group-hover:scale-110"
-                  style={{
-                    background: "oklch(0.72 0.22 45 / 0.10)",
-                  }}
-                >
-                  <Icon className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
+                className="absolute inset-x-0 top-0 h-px"
+                style={{ background: `linear-gradient(90deg, transparent, ${accent.replace(")", " / 0.40)")}, transparent)` }}
+              />
+              <div className="flex items-start justify-between mb-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: accentBg }}>
+                  <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
                 </div>
-                <p className="text-sm font-semibold">{label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
               </div>
-            </Link>
+              <p className="text-3xl font-black tracking-tight mb-1 tabular-nums" style={{ color: accent }}>{value}</p>
+              <p className="text-xs text-muted-foreground">{sub}</p>
+            </div>
           ))}
+          <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
+            <DisciplineScoreCard />
+          </div>
         </div>
-      </div>
 
+        {/* Habit Tracker + Recent Trades */}
+        <div className="grid lg:grid-cols-2 gap-6 animate-fade-up" style={{ animationDelay: "180ms" }}>
+          <HabitTracker />
+
+          {/* Recent Trades */}
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+          >
+            <div
+              className="flex items-center justify-between px-5 py-4"
+              style={{ borderBottom: "1px solid var(--border)" }}
+            >
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <BookOpen className="w-4 h-4" style={{ color: "#F97316" }} />
+                Recent Trades
+              </h2>
+              <Link
+                href="/journal"
+                className="text-xs flex items-center gap-1 transition-colors hover:opacity-80"
+                style={{ color: "oklch(0.72 0.22 45)" }}
+              >
+                View all <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+            {recentTrades.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <p className="text-sm text-muted-foreground mb-3">No trades logged yet.</p>
+                <Link href="/journal/new"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
+                  style={{ color: "oklch(0.72 0.22 45)" }}>
+                  <Plus className="w-3.5 h-3.5" /> Log your first trade
+                </Link>
+              </div>
+            ) : (
+              <div>
+                {recentTrades.map((trade, i) => (
+                  <Link
+                    key={trade.id}
+                    href={`/journal/${trade.id}`}
+                    className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-black/[0.02]"
+                    style={{ borderBottom: i < recentTrades.length - 1 ? "1px solid var(--border)" : undefined }}
+                  >
+                    <div className="flex items-center gap-2 shrink-0">
+                      <ResultBadge result={trade.result} />
+                      {trade.direction === "long" ? (
+                        <TrendingUp className="w-3.5 h-3.5 text-success" />
+                      ) : (
+                        <TrendingDown className="w-3.5 h-3.5 text-destructive" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold">{trade.instrument}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {format(new Date(trade.date_time.slice(0, 10) + "T12:00:00"), "MMM d")}
+                        {trade.timeframe ? ` · ${trade.timeframe}` : ""}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p
+                        className="text-sm font-bold"
+                        style={{
+                          color:
+                            trade.result === "win"
+                              ? "oklch(0.58 0.17 145)"
+                              : trade.result === "loss"
+                              ? "oklch(0.58 0.22 25)"
+                              : "oklch(0.70 0.16 72)",
+                        }}
+                      >
+                        {trade.result === "win" ? "+" : trade.result === "loss" ? "-" : ""}
+                        {trade.rr}R
+                      </p>
+                      {trade.discipline && (
+                        <p className="text-[10px] text-muted-foreground">{trade.discipline.score}% disc.</p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </PageWrapper>
     </div>
   );

@@ -57,9 +57,11 @@ export interface TradeDiscipline {
   no_revenge_trade: boolean;
   respected_stop_loss: boolean;
   journal_completed: boolean;
-  /** Computed 0–100 from the boolean fields above */
+  /** Computed 0–100 from the boolean fields above + custom_checks */
   score: number;
   notes: string;
+  /** User-defined custom discipline rules */
+  custom_checks?: { label: string; passed: boolean }[];
 }
 
 // ── Market Context ──────────────────────────────────────────────────────────

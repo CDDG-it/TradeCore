@@ -520,8 +520,12 @@ const DISCIPLINE_FIELDS: (keyof TradeDiscipline)[] = [
 ];
 
 export function computeDisciplineScore(d: Partial<TradeDiscipline>): number {
-  const trueCount = DISCIPLINE_FIELDS.filter((f) => d[f] === true).length;
-  return Math.round((trueCount / DISCIPLINE_FIELDS.length) * 100);
+  const defaultTrue = DISCIPLINE_FIELDS.filter((f) => d[f] === true).length;
+  const customChecks = d.custom_checks ?? [];
+  const customTrue = customChecks.filter((c) => c.passed).length;
+  const total = DISCIPLINE_FIELDS.length + customChecks.length;
+  if (total === 0) return 0;
+  return Math.round(((defaultTrue + customTrue) / total) * 100);
 }
 
 export function getDisciplineFieldLabel(field: keyof TradeDiscipline): string {
