@@ -4,9 +4,11 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay,
-  eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths,
-  getDay, isToday } from "date-fns";
+import {
+  format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay,
+  eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, addWeeks, subWeeks,
+  getDay, isToday,
+} from "date-fns";
 import { Plus, Search, TrendingUp, TrendingDown, Calendar, List,
   ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +20,7 @@ import type { TradeResult, Direction } from "@/lib/types";
 
 type ViewMode = "list" | "calendar";
 type PeriodFilter = "all" | "day" | "week" | "month";
+type CalendarPeriod = "month" | "week";
 
 function ResultBadge({ result }: { result: TradeResult }) {
   const config = {
@@ -37,6 +40,8 @@ export default function JournalPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [calendarPeriod, setCalendarPeriod] = useState<CalendarPeriod>("month");
+  const [calendarWeekDate, setCalendarWeekDate] = useState(new Date());
 
   const now = new Date();
   const dayStart = startOfDay(now);
@@ -67,11 +72,17 @@ export default function JournalPage() {
     ? (filtered.reduce((s, t) => s + t.rr, 0) / filtered.length).toFixed(1)
     : "—";
 
-  // Calendar helpers
+  // Calendar helpers — month view
   const calMonthStart = startOfMonth(calendarMonth);
   const calMonthEnd = endOfMonth(calendarMonth);
   const calDays = eachDayOfInterval({ start: calMonthStart, end: calMonthEnd });
   const startPad = (getDay(calMonthStart) + 6) % 7; // Mon-start
+
+  // Calendar helpers — week view
+  const calWeekStart = startOfWeek(calendarWeekDate, { weekStartsOn: 1 });
+  const calWeekEnd = endOfWeek(calendarWeekDate, { weekStartsOn: 1 });
+  const calWeekDays = eachDayOfInterval({ start: calWeekStart, end: calWeekEnd });
+
   const tradesByDay = useMemo(() => {
     const map: Record<string, typeof allTrades> = {};
     allTrades.forEach((t) => {
@@ -89,6 +100,20 @@ export default function JournalPage() {
     : periodFilter === "month"
     ? format(now, "MMMM yyyy")
     : "All time";
+
+  // Calendar navigation
+  function prevCalendar() {
+    if (calendarPeriod === "month") setCalendarMonth(subMonths(calendarMonth, 1));
+    else setCalendarWeekDate(subWeeks(calendarWeekDate, 1));
+  }
+  function nextCalendar() {
+    if (calendarPeriod === "month") setCalendarMonth(addMonths(calendarMonth, 1));
+    else setCalendarWeekDate(addWeeks(calendarWeekDate, 1));
+  }
+
+  const calendarTitle = calendarPeriod === "month"
+    ? format(calendarMonth, "MMMM yyyy")
+    : `${format(calWeekStart, "MMM d")} – ${format(calWeekEnd, "MMM d, yyyy")}`;
 
   return (
     <div className="space-y-6">
@@ -119,7 +144,7 @@ export default function JournalPage() {
           { label: "Break-Even", value: bes.toString(), color: "text-warning" },
           { label: "Avg R:R", value: avgRR, color: "text-primary" },
         ].map(({ label, value, color }) => (
-          <div key={label} className="bg-card border border-border/50 rounded-xl p-4 text-center">
+          <div key={label} className="bg-card border border-border/50 rounded-xl p-4 text-center card-hover">
             <p className={cn("text-xl font-bold", color)}>{value}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
           </div>
@@ -191,69 +216,145 @@ export default function JournalPage() {
       {/* CALENDAR VIEW */}
       {viewMode === "calendar" && (
         <div className="space-y-4">
-          {/* Month nav */}
+          {/* Navigation + period toggle */}
           <div className="flex items-center justify-between">
-            <button onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}
+            <button onClick={prevCalendar}
               className="p-1.5 rounded-lg hover:bg-muted transition-colors">
               <ChevronLeft className="w-4 h-4 text-muted-foreground" />
             </button>
-            <p className="text-sm font-semibold">{format(calendarMonth, "MMMM yyyy")}</p>
-            <button onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}
+            <div className="text-center space-y-1.5">
+              <p className="text-sm font-semibold">{calendarTitle}</p>
+              <div className="flex rounded-lg border border-border/50 overflow-hidden mx-auto w-fit">
+                <button
+                  onClick={() => setCalendarPeriod("month")}
+                  className={cn("px-3 py-1 text-xs font-medium transition-colors",
+                    calendarPeriod === "month" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+                  Month
+                </button>
+                <button
+                  onClick={() => setCalendarPeriod("week")}
+                  className={cn("px-3 py-1 text-xs font-medium transition-colors",
+                    calendarPeriod === "week" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+                  Week
+                </button>
+              </div>
+            </div>
+            <button onClick={nextCalendar}
               className="p-1.5 rounded-lg hover:bg-muted transition-colors">
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
 
-          <Card className="bg-card border-border/50">
-            <CardContent className="p-4">
-              {/* Day headers */}
-              <div className="grid grid-cols-7 mb-2">
-                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                  <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
-                ))}
-              </div>
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: startPad }).map((_, i) => (
-                  <div key={`pad-${i}`} />
-                ))}
-                {calDays.map((day) => {
-                  const key = format(day, "yyyy-MM-dd");
-                  const dayTrades = tradesByDay[key] || [];
-                  const dayWins = dayTrades.filter((t) => t.result === "win").length;
-                  const dayLosses = dayTrades.filter((t) => t.result === "loss").length;
-                  const isCurrentMonth = isSameMonth(day, calendarMonth);
-                  return (
-                    <div key={key}
-                      className={cn("min-h-[52px] rounded-lg p-1 transition-colors",
-                        isToday(day) ? "ring-1 ring-primary/40 bg-primary/3" : "",
-                        dayTrades.length > 0 ? "cursor-pointer hover:bg-muted/40" : "")}>
-                      <p className={cn("text-xs font-medium mb-1 text-center",
-                        isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/80" : "text-muted-foreground/40")}>
+          {/* ── MONTH VIEW ── */}
+          {calendarPeriod === "month" && (
+            <Card className="bg-card border-border/50">
+              <CardContent className="p-4">
+                {/* Day headers */}
+                <div className="grid grid-cols-7 mb-1">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+                    <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
+                  ))}
+                </div>
+                {/* Calendar grid — square cells */}
+                <div className="grid grid-cols-7 gap-1">
+                  {Array.from({ length: startPad }).map((_, i) => (
+                    <div key={`pad-${i}`} className="aspect-square" />
+                  ))}
+                  {calDays.map((day) => {
+                    const key = format(day, "yyyy-MM-dd");
+                    const dayTrades = tradesByDay[key] || [];
+                    const isCurrentMonth = isSameMonth(day, calendarMonth);
+                    return (
+                      <div key={key}
+                        className={cn("aspect-square rounded-lg p-1 transition-colors flex flex-col",
+                          isToday(day) ? "ring-1 ring-primary/40 bg-primary/3" : "",
+                          dayTrades.length > 0 ? "cursor-pointer hover:bg-muted/40" : "")}>
+                        <p className={cn("text-xs font-medium text-center shrink-0",
+                          isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/80" : "text-muted-foreground/40")}>
+                          {format(day, "d")}
+                        </p>
+                        {dayTrades.length > 0 && (
+                          <div className="flex flex-col gap-0.5 mt-0.5 flex-1 overflow-hidden">
+                            {dayTrades.slice(0, 2).map((t) => (
+                              <Link key={t.id} href={`/journal/${t.id}`}
+                                className={cn("block rounded px-0.5 py-px text-[9px] font-semibold truncate transition-colors leading-tight",
+                                  t.result === "win" ? "bg-success/15 text-success hover:bg-success/25"
+                                    : t.result === "loss" ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
+                                    : "bg-warning/15 text-warning hover:bg-warning/25")}>
+                                {t.instrument}
+                              </Link>
+                            ))}
+                            {dayTrades.length > 2 && (
+                              <p className="text-[9px] text-muted-foreground text-center leading-tight">+{dayTrades.length - 2}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── WEEK VIEW ── */}
+          {calendarPeriod === "week" && (
+            <Card className="bg-card border-border/50">
+              <CardContent className="p-4">
+                {/* Day headers with full date */}
+                <div className="grid grid-cols-7 gap-2 mb-3">
+                  {calWeekDays.map((day) => (
+                    <div key={day.toISOString()} className={cn(
+                      "text-center rounded-lg py-2",
+                      isToday(day) ? "bg-primary/8 ring-1 ring-primary/30" : ""
+                    )}>
+                      <p className="text-[10px] font-medium text-muted-foreground">{format(day, "EEE")}</p>
+                      <p className={cn("text-sm font-bold mt-0.5",
+                        isToday(day) ? "text-primary" : "text-foreground/80")}>
                         {format(day, "d")}
                       </p>
-                      {dayTrades.length > 0 && (
-                        <div className="space-y-0.5">
-                          {dayTrades.slice(0, 2).map((t) => (
-                            <Link key={t.id} href={`/journal/${t.id}`}
-                              className={cn("block rounded px-1 py-0.5 text-xs font-medium truncate transition-colors",
-                                t.result === "win" ? "bg-success/15 text-success hover:bg-success/25"
-                                  : t.result === "loss" ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
-                                  : "bg-warning/15 text-warning hover:bg-warning/25")}>
-                              {t.instrument}
-                            </Link>
-                          ))}
-                          {dayTrades.length > 2 && (
-                            <p className="text-xs text-muted-foreground text-center">+{dayTrades.length - 2}</p>
-                          )}
-                        </div>
-                      )}
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+                {/* Week day columns — taller cells */}
+                <div className="grid grid-cols-7 gap-2">
+                  {calWeekDays.map((day) => {
+                    const key = format(day, "yyyy-MM-dd");
+                    const dayTrades = tradesByDay[key] || [];
+                    return (
+                      <div key={key}
+                        className={cn("min-h-[140px] rounded-xl p-1.5 flex flex-col gap-1 transition-colors",
+                          isToday(day) ? "bg-primary/4 ring-1 ring-primary/20" : "bg-muted/20",
+                          dayTrades.length === 0 ? "items-center justify-center" : ""
+                        )}>
+                        {dayTrades.length === 0 ? (
+                          <span className="text-[10px] text-muted-foreground/30 text-center">—</span>
+                        ) : (
+                          dayTrades.map((t) => (
+                            <Link key={t.id} href={`/journal/${t.id}`}
+                              className={cn("block rounded-lg px-2 py-1.5 transition-colors group",
+                                t.result === "win" ? "bg-success/15 hover:bg-success/25"
+                                  : t.result === "loss" ? "bg-destructive/15 hover:bg-destructive/25"
+                                  : "bg-warning/15 hover:bg-warning/25")}>
+                              <p className={cn("text-xs font-bold truncate",
+                                t.result === "win" ? "text-success"
+                                  : t.result === "loss" ? "text-destructive"
+                                  : "text-warning")}>
+                                {t.instrument}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                                {t.direction === "long" ? "L" : "S"} · {t.rr}R
+                              </p>
+                            </Link>
+                          ))
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Legend */}
           <div className="flex items-center gap-4 text-xs text-muted-foreground">

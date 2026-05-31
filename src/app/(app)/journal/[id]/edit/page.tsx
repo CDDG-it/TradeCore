@@ -37,6 +37,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [confluenceInput, setConfluenceInput] = useState("");
   const [showDiscipline, setShowDiscipline] = useState(true);
   const [newCustomLabel, setNewCustomLabel] = useState("");
+  const [removedBuiltinKeys, setRemovedBuiltinKeys] = useState<string[]>([]);
 
   if (!trade) {
     return (
@@ -79,10 +80,30 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  function calcVisibleScore(d: typeof form.discipline, removed: string[]): number {
+    if (!d) return 0;
+    const active = DISCIPLINE_LABELS.filter((item) => !removed.includes(item.key));
+    const builtinPassed = active.filter((item) => (d as Record<string, unknown>)[item.key] as boolean).length;
+    const custom = d.custom_checks ?? [];
+    const customPassed = custom.filter((c) => c.passed).length;
+    const total = active.length + custom.length;
+    return total > 0 ? Math.round(((builtinPassed + customPassed) / total) * 100) : 0;
+  }
+
   function setDiscipline(key: keyof Omit<TradeDiscipline, "score" | "notes" | "custom_checks">, value: boolean) {
     setForm((prev) => {
       const updated = { ...(prev.discipline!), [key]: value };
-      updated.score = computeDisciplineScore(updated);
+      updated.score = calcVisibleScore(updated, removedBuiltinKeys);
+      return { ...prev, discipline: updated };
+    });
+  }
+
+  function removeBuiltinCheck(key: string) {
+    const next = [...removedBuiltinKeys, key];
+    setRemovedBuiltinKeys(next);
+    setForm((prev) => {
+      const updated = { ...prev.discipline!, [key]: false };
+      updated.score = calcVisibleScore(updated, next);
       return { ...prev, discipline: updated };
     });
   }
@@ -92,7 +113,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
       const custom = [...(prev.discipline?.custom_checks ?? [])];
       custom[idx] = { ...custom[idx], passed: !custom[idx].passed };
       const updated = { ...prev.discipline!, custom_checks: custom };
-      updated.score = computeDisciplineScore(updated);
+      updated.score = calcVisibleScore(updated, removedBuiltinKeys);
       return { ...prev, discipline: updated };
     });
   }
@@ -103,7 +124,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     setForm((prev) => {
       const custom = [...(prev.discipline?.custom_checks ?? []), { label, passed: false }];
       const updated = { ...prev.discipline!, custom_checks: custom };
-      updated.score = computeDisciplineScore(updated);
+      updated.score = calcVisibleScore(updated, removedBuiltinKeys);
       return { ...prev, discipline: updated };
     });
     setNewCustomLabel("");
@@ -113,7 +134,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     setForm((prev) => {
       const custom = (prev.discipline?.custom_checks ?? []).filter((_, i) => i !== idx);
       const updated = { ...prev.discipline!, custom_checks: custom };
-      updated.score = computeDisciplineScore(updated);
+      updated.score = calcVisibleScore(updated, removedBuiltinKeys);
       return { ...prev, discipline: updated };
     });
   }
@@ -336,55 +357,89 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           {showDiscipline && (
             <CardContent className="space-y-3">
               <div className="space-y-1.5">
-                {DISCIPLINE_LABELS.map(({ key, label }) => {
-                  const checked = !!(form.discipline?.[key]);
+                {DISCIPLINE_LABELS.filter(({ key }) => !removedBuiltinKeys.includes(key)).map(({ key, label }) => {
+                  const checked = !!(form.discipline?.[key as keyof typeof form.discipline]);
                   return (
-                    <button key={key} type="button" onClick={() => setDiscipline(key, !checked)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left"
-                      style={{
-                        background: checked ? "oklch(0.58 0.17 145 / 0.08)" : "oklch(0.08 0.003 28)",
-                        border: `1px solid ${checked ? "oklch(0.58 0.17 145 / 0.25)" : "oklch(0.18 0.005 28)"}`,
-                      }}>
-                      <div className="w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all"
-                        style={checked ? { background: "oklch(0.58 0.17 145)" } : { background: "transparent", border: "1.5px solid oklch(0.35 0.005 28)" }}>
-                        {checked && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                      <span className="text-sm transition-colors"
-                        style={{ color: checked ? "oklch(0.90 0.003 28)" : "oklch(0.65 0.005 28)" }}>
-                        {label}
-                      </span>
-                    </button>
+                    <div key={key} className="flex items-center gap-2 group/check">
+                      <button type="button" onClick={() => setDiscipline(key, !checked)}
+                        className={cn("flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left border",
+                          checked
+                            ? "bg-success/8 border-success/25"
+                            : "bg-secondary border-border hover:border-primary/30 hover:bg-muted"
+                        )}>
+                        <div className={cn("w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all border-2",
+                          checked ? "bg-success border-success" : "bg-transparent border-muted-foreground/30"
+                        )}>
+                          {checked && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                        <span className={cn("text-sm transition-colors",
+                          checked ? "text-foreground" : "text-muted-foreground")}>
+                          {label}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeBuiltinCheck(key)}
+                        className="opacity-0 group-hover/check:opacity-100 transition-opacity p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   );
                 })}
 
                 {(form.discipline?.custom_checks ?? []).map((item, idx) => (
-                  <button key={idx} type="button" onClick={() => toggleCustomCheck(idx)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left group"
-                    style={{
-                      background: item.passed ? "oklch(0.58 0.17 145 / 0.08)" : "oklch(0.08 0.003 28)",
-                      border: `1px solid ${item.passed ? "oklch(0.58 0.17 145 / 0.25)" : "oklch(0.18 0.005 28)"}`,
-                    }}>
-                    <div className="w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all"
-                      style={item.passed ? { background: "oklch(0.58 0.17 145)" } : { background: "transparent", border: "1.5px solid oklch(0.35 0.005 28)" }}>
-                      {item.passed && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    <span className="text-sm flex-1 text-left transition-colors"
-                      style={{ color: item.passed ? "oklch(0.90 0.003 28)" : "oklch(0.65 0.005 28)" }}>
-                      {item.label}
-                    </span>
-                    <span onClick={(e) => { e.stopPropagation(); removeCustomCheck(idx); }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive cursor-pointer">
+                  <div key={idx} className="flex items-center gap-2 group/check">
+                    <button type="button" onClick={() => toggleCustomCheck(idx)}
+                      className={cn("flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left border",
+                        item.passed
+                          ? "bg-success/8 border-success/25"
+                          : "bg-secondary border-border hover:border-primary/30 hover:bg-muted"
+                      )}>
+                      <div className={cn("w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all border-2",
+                        item.passed ? "bg-success border-success" : "bg-transparent border-muted-foreground/30"
+                      )}>
+                        {item.passed && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className={cn("text-sm flex-1 text-left transition-colors",
+                        item.passed ? "text-foreground" : "text-muted-foreground")}>
+                        {item.label}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeCustomCheck(idx)}
+                      className="opacity-0 group-hover/check:opacity-100 transition-opacity p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                    >
                       <X className="w-3.5 h-3.5" />
-                    </span>
-                  </button>
+                    </button>
+                  </div>
                 ))}
+
+                {removedBuiltinKeys.length > 0 && (
+                  <div className="pt-1">
+                    <p className="text-[10px] text-muted-foreground/50 mb-1.5">Removed checks</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {DISCIPLINE_LABELS.filter(({ key }) => removedBuiltinKeys.includes(key)).map(({ key, label }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setRemovedBuiltinKeys((prev) => prev.filter((k) => k !== key))}
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground/50 hover:text-foreground border border-dashed border-border/50 hover:border-border px-2 py-1 rounded-lg transition-colors"
+                        >
+                          <Plus className="w-3 h-3" /> {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 pt-1">
                 <Input value={newCustomLabel} onChange={(e) => setNewCustomLabel(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomCheck())}
                   placeholder="Add custom rule..."
-                  className="h-8 text-xs bg-background/50" />
+                  className="h-8 text-xs" />
                 <Button type="button" variant="outline" size="sm" onClick={addCustomCheck} className="h-8 shrink-0">
                   <Plus className="w-3.5 h-3.5" />
                 </Button>

@@ -196,23 +196,46 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
                   {DISCIPLINE_FIELDS.map((field) => {
                     const passed = discipline[field] as boolean;
                     return (
-                      <div key={field} className="flex items-center gap-2 text-xs">
+                      <div key={field} className={cn(
+                        "flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs",
+                        passed ? "bg-success/6 border-success/20" : "bg-secondary border-border/60"
+                      )}>
                         <span className={cn(
-                          "w-3.5 h-3.5 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold",
+                          "w-4 h-4 rounded-md shrink-0 flex items-center justify-center text-[9px] font-bold border",
                           passed
-                            ? "bg-success/15 text-success"
-                            : "bg-destructive/15 text-destructive"
+                            ? "bg-success border-success text-white"
+                            : "bg-transparent border-muted-foreground/30 text-muted-foreground/50"
                         )}>
                           {passed ? "✓" : "✗"}
                         </span>
                         <span className={cn(
-                          passed ? "text-foreground/70" : "text-foreground/40 line-through"
+                          passed ? "text-foreground/80" : "text-muted-foreground/60"
                         )}>
                           {getDisciplineFieldLabel(field)}
                         </span>
                       </div>
                     );
                   })}
+                  {(discipline.custom_checks ?? []).map((check, idx) => (
+                    <div key={`custom-${idx}`} className={cn(
+                      "flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs",
+                      check.passed ? "bg-success/6 border-success/20" : "bg-secondary border-border/60"
+                    )}>
+                      <span className={cn(
+                        "w-4 h-4 rounded-md shrink-0 flex items-center justify-center text-[9px] font-bold border",
+                        check.passed
+                          ? "bg-success border-success text-white"
+                          : "bg-transparent border-muted-foreground/30 text-muted-foreground/50"
+                      )}>
+                        {check.passed ? "✓" : "✗"}
+                      </span>
+                      <span className={cn(
+                        check.passed ? "text-foreground/80" : "text-muted-foreground/60"
+                      )}>
+                        {check.label}
+                      </span>
+                    </div>
+                  ))}
                 </div>
                 {discipline.notes && (
                   <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border leading-relaxed">

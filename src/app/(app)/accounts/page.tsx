@@ -6,6 +6,7 @@ import { Plus, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAccounts, computeAccountROI, getPayoutsByAccountId } from "@/lib/mock/store";
 import { PROP_FIRMS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
@@ -64,25 +65,19 @@ export default function AccountsPage() {
         {/* ── Filters — always visible when accounts exist ── */}
         {accounts.length > 0 && (
           <div className="flex flex-wrap items-center gap-3">
-            {/* Firm filter */}
+            {/* Firm filter — dropdown */}
             {allFirms.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  onClick={() => setFirmFilter("all")}
-                  className={cn(filterBtnBase, firmFilter === "all" ? "border-primary bg-primary text-primary-foreground" : filterBtnInactive)}
-                >
-                  All firms
-                </button>
-                {allFirms.map((firm) => (
-                  <button
-                    key={firm}
-                    onClick={() => setFirmFilter(firm)}
-                    className={cn(filterBtnBase, firmFilter === firm ? "border-primary bg-primary text-primary-foreground" : filterBtnInactive)}
-                  >
-                    {firm}
-                  </button>
-                ))}
-              </div>
+              <Select value={firmFilter} onValueChange={setFirmFilter}>
+                <SelectTrigger className="h-9 min-w-[160px] border-border bg-card text-sm">
+                  <SelectValue placeholder="All firms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All firms</SelectItem>
+                  {allFirms.map((firm) => (
+                    <SelectItem key={firm} value={firm}>{firm}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
 
             {allFirms.length > 0 && <div className="h-4 w-px bg-border" />}
@@ -156,7 +151,7 @@ export default function AccountsPage() {
               return (
                 <Link key={acct.id} href={`/accounts/${acct.id}`}>
                   <Card className={cn(
-                    "card-hover h-full border-2 transition-none",
+                    "h-full border-2",
                     isActive
                       ? "border-success/35"
                       : isBlown

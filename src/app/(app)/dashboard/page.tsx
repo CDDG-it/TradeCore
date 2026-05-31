@@ -33,6 +33,7 @@ import {
   updateHabit,
   deleteHabit,
 } from "@/lib/mock/store";
+import { subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { TradeResult, Habit, HabitCompletion } from "@/lib/types";
 
@@ -153,6 +154,7 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
   const [newHabitName, setNewHabitName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [showOverview, setShowOverview] = useState(false);
 
   useEffect(() => {
     const h = getHabits();
@@ -212,6 +214,12 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
   const totalCount = habits.length;
   const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
+  // Build last-7-days overview data
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = subDays(new Date(), 6 - i);
+    return format(d, "yyyy-MM-dd");
+  });
+
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-3">
@@ -225,6 +233,14 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
             <Badge variant="outline" className="text-xs tabular-nums">
               {doneCount}/{totalCount}
             </Badge>
+            <Button
+              size="sm"
+              variant="outline"
+              className={cn("gap-1.5 text-xs h-7 px-2", showOverview && "bg-primary/10 border-primary/30 text-primary")}
+              onClick={() => setShowOverview(!showOverview)}
+            >
+              Overview
+            </Button>
             <Button
               size="sm"
               variant="outline"
@@ -249,6 +265,78 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
         )}
       </CardHeader>
       <CardContent className="space-y-1.5">
+        {/* 7-day overview grid */}
+        {showOverview && habits.length > 0 && (
+          <div className="mb-4 pb-4 border-b border-border/50">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr>
+                    <th className="text-left font-medium text-muted-foreground pr-3 pb-2 min-w-[120px]">Habit</th>
+                    {last7Days.map((d) => (
+                      <th key={d} className="text-center pb-2 min-w-[32px]">
+                        <span className={cn(
+                          "text-[10px] font-medium",
+                          d === TODAY ? "text-primary" : "text-muted-foreground/60"
+                        )}>
+                          {format(new Date(d + "T12:00:00"), "EEE")[0]}
+                        </span>
+                        <br />
+                        <span className={cn(
+                          "text-[10px]",
+                          d === TODAY ? "text-primary font-semibold" : "text-muted-foreground/40"
+                        )}>
+                          {format(new Date(d + "T12:00:00"), "d")}
+                        </span>
+                      </th>
+                    ))}
+                    <th className="text-center pb-2 pl-2 min-w-[40px]">
+                      <span className="text-[10px] font-medium text-muted-foreground/60">7d %</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {habits.map((habit) => {
+                    const weekDone = last7Days.filter((d) =>
+                      completions.some((c) => c.habit_id === habit.id && c.date === d && c.completed)
+                    ).length;
+                    const weekPct = Math.round((weekDone / 7) * 100);
+                    return (
+                      <tr key={habit.id} className="border-t border-border/30">
+                        <td className="py-1.5 pr-3 font-medium text-foreground/80 truncate max-w-[120px]">
+                          {habit.name}
+                        </td>
+                        {last7Days.map((d) => {
+                          const done = completions.some(
+                            (c) => c.habit_id === habit.id && c.date === d && c.completed
+                          );
+                          return (
+                            <td key={d} className="text-center py-1.5">
+                              <span
+                                className="inline-block w-5 h-5 rounded-md"
+                                style={{
+                                  background: done ? "#F97316" : "var(--muted)",
+                                  opacity: done ? 1 : 0.5,
+                                }}
+                              />
+                            </td>
+                          );
+                        })}
+                        <td className="text-center py-1.5 pl-2">
+                          <span className={cn("font-semibold tabular-nums",
+                            weekPct === 100 ? "text-success" : weekPct >= 60 ? "text-primary" : "text-muted-foreground"
+                          )}>
+                            {weekPct}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
         {showAdd && (
           <form onSubmit={handleAddHabit} className="flex gap-2 mb-3 pb-3 border-b border-border/50">
             <Input autoFocus value={newHabitName} onChange={(e) => setNewHabitName(e.target.value)}
