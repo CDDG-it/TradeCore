@@ -176,10 +176,10 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
     await new Promise((r) => setTimeout(r, 300));
     updateAnalysis(id, {
       ...form,
-      market: analysis.market,
-      session: analysis.session,
+      market: analysis!.market,
+      session: analysis!.session,
       notes: "",
-      used_for_trade: analysis.used_for_trade,
+      used_for_trade: analysis!.used_for_trade,
       screenshot_groups: [
         { label: `HTF${htfTF ? ` · ${htfTF}` : ""}`, urls: htfUrls },
         { label: `LTF${ltfTF ? ` · ${ltfTF}` : ""}`, urls: ltfUrls },
