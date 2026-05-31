@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { format, startOfWeek, startOfMonth } from "date-fns";
 import {
   TrendingUp,
@@ -146,7 +146,7 @@ function DisciplineScoreCard() {
   );
 }
 
-function HabitTracker() {
+function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: string) => void) => void }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
   const [showAdd, setShowAdd] = useState(false);
@@ -155,7 +155,8 @@ function HabitTracker() {
   const [editName, setEditName] = useState("");
 
   useEffect(() => {
-    setHabits(getHabits());
+    const h = getHabits();
+    setHabits(h);
     setCompletions(getHabitCompletions());
   }, []);
 
@@ -176,6 +177,12 @@ function HabitTracker() {
       ]);
     }
   }
+
+  // Expose toggle capability to parent for keyboard shortcuts
+  useEffect(() => {
+    onToggle?.(habits, toggleHabit);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [habits, todayDone.join(",")]);
 
   function handleAddHabit(e: React.FormEvent) {
     e.preventDefault();
@@ -212,6 +219,7 @@ function HabitTracker() {
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Flame className="w-4 h-4" style={{ color: "#F97316" }} />
             Habits — {format(new Date(), "EEEE, MMMM d")}
+            <span className="ml-1 text-[10px] font-normal text-muted-foreground/50 tracking-wide hidden sm:inline">press 1–9 to toggle</span>
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs tabular-nums">
@@ -258,9 +266,10 @@ function HabitTracker() {
             <p className="text-xs text-muted-foreground/60 mt-1">Click "Add" to create your first habit.</p>
           </div>
         ) : (
-          habits.map((habit) => {
+          habits.map((habit, idx) => {
             const done = todayDone.includes(habit.id);
             const isEditing = editingId === habit.id;
+            const keyHint = idx < 9 ? String(idx + 1) : null;
             return (
               <div
                 key={habit.id}
@@ -269,6 +278,11 @@ function HabitTracker() {
                   done ? "bg-primary/5 border border-primary/15" : "hover:bg-muted/50"
                 )}
               >
+                {keyHint && (
+                  <span className="w-4 text-[10px] font-mono text-muted-foreground/30 shrink-0 text-center select-none hidden sm:block">
+                    {keyHint}
+                  </span>
+                )}
                 <button
                   onClick={() => toggleHabit(habit.id)}
                   className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center border-2 transition-all"
@@ -320,6 +334,48 @@ function HabitTracker() {
 export default function DashboardPage() {
   const trades = getTrades();
   const accounts = getAccounts();
+  const habitStateRef = useRef<{ habits: Habit[]; toggle: (id: string) => void } | null>(null);
+  const disciplineRef = useRef<HTMLDivElement>(null);
+  const habitsRef = useRef<HTMLDivElement>(null);
+
+  const handleHabitState = useCallback((habits: Habit[], toggle: (id: string) => void) => {
+    habitStateRef.current = { habits, toggle };
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      // 1-9: toggle nth habit
+      if (e.key >= "1" && e.key <= "9") {
+        const idx = parseInt(e.key) - 1;
+        const state = habitStateRef.current;
+        if (state && state.habits[idx]) {
+          state.toggle(state.habits[idx].id);
+        }
+        return;
+      }
+
+      // H: scroll to habits
+      if (e.key === "h" || e.key === "H") {
+        habitsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        habitsRef.current?.classList.add("ring-2", "ring-primary/40");
+        setTimeout(() => habitsRef.current?.classList.remove("ring-2", "ring-primary/40"), 1200);
+        return;
+      }
+
+      // D: scroll to discipline
+      if (e.key === "d" || e.key === "D") {
+        disciplineRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        disciplineRef.current?.classList.add("ring-2", "ring-primary/40");
+        setTimeout(() => disciplineRef.current?.classList.remove("ring-2", "ring-primary/40"), 1200);
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const totalTrades = trades.length;
   const winRate =
@@ -381,14 +437,16 @@ export default function DashboardPage() {
               <p className="text-xs text-muted-foreground">{sub}</p>
             </div>
           ))}
-          <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
+          <div className="animate-fade-up" style={{ animationDelay: "120ms" }} ref={disciplineRef}>
             <DisciplineScoreCard />
           </div>
         </div>
 
         {/* Habit Tracker + Recent Trades */}
         <div className="grid lg:grid-cols-2 gap-6 animate-fade-up" style={{ animationDelay: "180ms" }}>
-          <HabitTracker />
+          <div ref={habitsRef} className="rounded-xl transition-all duration-300">
+            <HabitTracker onToggle={handleHabitState} />
+          </div>
 
           {/* Recent Trades */}
           <div

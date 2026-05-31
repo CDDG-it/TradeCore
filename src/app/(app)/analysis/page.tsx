@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { Plus, Search, TrendingUp, TrendingDown, Minus, ArrowRight, LinkIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,20 +45,38 @@ function MarketBadge({ market }: { market: Market }) {
   );
 }
 
+type PeriodFilter = "all" | "day" | "week" | "month";
+
 export default function AnalysisPage() {
   const allAnalyses = getAnalyses();
   const [search, setSearch] = useState("");
   const [filterBias, setFilterBias] = useState<Bias | "all">("all");
   const [filterMarket, setFilterMarket] = useState<Market | "all">("all");
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
+
+  const now = new Date();
+  const dayStart = startOfDay(now);
+  const dayEnd = endOfDay(now);
 
   const filtered = allAnalyses.filter((a) => {
     const matchSearch =
       !search ||
-      a.title.toLowerCase().includes(search.toLowerCase()) ||
       a.instrument.toLowerCase().includes(search.toLowerCase());
     const matchBias = filterBias === "all" || a.bias === filterBias;
     const matchMarket = filterMarket === "all" || a.market === filterMarket;
-    return matchSearch && matchBias && matchMarket;
+    let matchPeriod = true;
+    if (periodFilter !== "all") {
+      const d = new Date(a.date + "T12:00:00");
+      if (periodFilter === "day") matchPeriod = d >= dayStart && d <= dayEnd;
+      else if (periodFilter === "week") {
+        const w = new Date(now); w.setDate(now.getDate() - 7);
+        matchPeriod = d >= w;
+      } else if (periodFilter === "month") {
+        const m = new Date(now); m.setMonth(now.getMonth() - 1);
+        matchPeriod = d >= m;
+      }
+    }
+    return matchSearch && matchBias && matchMarket && matchPeriod;
   });
 
   return (
@@ -88,11 +106,29 @@ export default function AnalysisPage() {
         <div className="relative flex-1 min-w-48 max-w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search instrument or title..."
+            placeholder="Search instrument..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 text-sm bg-card border-border/50"
           />
+        </div>
+
+        {/* Period filter */}
+        <div className="flex rounded-lg border border-border/50 overflow-hidden">
+          {(["all", "day", "week", "month"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriodFilter(p)}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium transition-colors",
+                periodFilter === p
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              {p === "all" ? "All time" : p === "day" ? "Today" : p === "week" ? "This week" : "This month"}
+            </button>
+          ))}
         </div>
 
         {/* Bias filter */}
@@ -158,11 +194,6 @@ export default function AnalysisPage() {
                       </Badge>
                     )}
                   </div>
-
-                  {/* Title */}
-                  <p className="text-sm font-medium leading-snug mb-2 line-clamp-2">
-                    {analysis.title}
-                  </p>
 
                   {/* Thesis */}
                   <p className="text-xs text-muted-foreground line-clamp-2 mb-4 leading-relaxed">

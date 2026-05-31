@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay,
   eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths,
   getDay, isToday } from "date-fns";
 import { Plus, Search, TrendingUp, TrendingDown, Calendar, List,
@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import type { TradeResult, Direction } from "@/lib/types";
 
 type ViewMode = "list" | "calendar";
-type PeriodFilter = "all" | "week" | "month";
+type PeriodFilter = "all" | "day" | "week" | "month";
 
 function ResultBadge({ result }: { result: TradeResult }) {
   const config = {
@@ -39,6 +39,8 @@ export default function JournalPage() {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const now = new Date();
+  const dayStart = startOfDay(now);
+  const dayEnd = endOfDay(now);
   const weekStart = startOfWeek(now, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
   const monthStart = startOfMonth(now);
@@ -52,6 +54,7 @@ export default function JournalPage() {
     const matchResult = filterResult === "all" || t.result === filterResult;
     const matchDir = filterDirection === "all" || t.direction === filterDirection;
     let matchPeriod = true;
+    if (periodFilter === "day") matchPeriod = tradeDate >= dayStart && tradeDate <= dayEnd;
     if (periodFilter === "week") matchPeriod = tradeDate >= weekStart && tradeDate <= weekEnd;
     if (periodFilter === "month") matchPeriod = tradeDate >= monthStart && tradeDate <= monthEnd;
     return matchSearch && matchResult && matchDir && matchPeriod;
@@ -79,7 +82,9 @@ export default function JournalPage() {
     return map;
   }, [allTrades]);
 
-  const periodLabel = periodFilter === "week"
+  const periodLabel = periodFilter === "day"
+    ? format(now, "EEEE, MMM d")
+    : periodFilter === "week"
     ? `Week of ${format(weekStart, "MMM d")}`
     : periodFilter === "month"
     ? format(now, "MMMM yyyy")
@@ -139,11 +144,11 @@ export default function JournalPage() {
 
         {/* Period filter */}
         <div className="flex rounded-lg border border-border/50 overflow-hidden">
-          {(["all", "week", "month"] as const).map((p) => (
+          {(["all", "day", "week", "month"] as const).map((p) => (
             <button key={p} onClick={() => setPeriodFilter(p)}
               className={cn("px-3 py-1.5 text-xs font-medium transition-colors capitalize",
                 periodFilter === p ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-              {p === "all" ? "All time" : p === "week" ? "This week" : "This month"}
+              {p === "all" ? "All time" : p === "day" ? "Today" : p === "week" ? "This week" : "This month"}
             </button>
           ))}
         </div>

@@ -45,7 +45,6 @@ export function CandlestickBackground() {
   const pathname = usePathname();
   const { theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouseRef = useRef({ x: -1, y: -1, active: false });
   const offsetRef = useRef(0);
   const themeRef = useRef(theme);
   const rafRef = useRef<number>(0);
@@ -53,7 +52,9 @@ export function CandlestickBackground() {
   // Keep theme ref in sync
   themeRef.current = theme;
 
-  const visible = pathname === "/dashboard";
+  const visible = [
+    "/dashboard", "/journal", "/analysis", "/analytics", "/accounts",
+  ].some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   useEffect(() => {
     if (!visible) return;
@@ -69,13 +70,6 @@ export function CandlestickBackground() {
     };
     resize();
     window.addEventListener("resize", resize);
-
-    const onMove = (e: MouseEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY, active: true };
-    };
-    const onLeave = () => { mouseRef.current.active = false; };
-    window.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseleave", onLeave);
 
     const TOTAL = N * STEP;
 
@@ -190,34 +184,6 @@ export function CandlestickBackground() {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // ── Crosshair ────────────────────────────────────────────────────────
-      const { x: mx, y: my, active } = mouseRef.current;
-      if (active && mx >= 0 && my >= 0) {
-        ctx.strokeStyle = isDark
-          ? "rgba(249,115,22,0.45)"
-          : "rgba(234,88,12,0.55)";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath(); ctx.moveTo(0, my); ctx.lineTo(W, my); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(mx, 0); ctx.lineTo(mx, H); ctx.stroke();
-        ctx.setLineDash([]);
-
-        if (my >= cTop && my <= cBot) {
-          const price = maxP - ((my - cTop) / cH) * pRange;
-          const label = price.toFixed(0);
-          const lw = 54, lh = 20;
-          ctx.fillStyle = isDark
-            ? "rgba(249,115,22,0.92)"
-            : "rgba(234,88,12,0.92)";
-          ctx.fillRect(W - lw - 2, my - lh / 2, lw, lh);
-          ctx.fillStyle = "rgba(255,255,255,0.95)";
-          ctx.font = "bold 11px monospace";
-          ctx.textAlign = "right";
-          ctx.textBaseline = "middle";
-          ctx.fillText(label, W - 6, my);
-        }
-      }
-
       offsetRef.current += 0.28;
       rafRef.current = requestAnimationFrame(draw);
     };
@@ -227,8 +193,6 @@ export function CandlestickBackground() {
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseleave", onLeave);
     };
   }, [visible]);
 

@@ -6,8 +6,6 @@ import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -17,12 +15,12 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { format, subDays, subMonths, isAfter } from "date-fns";
+import { format, subDays, subMonths, startOfDay, endOfDay, isAfter, isBefore } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTrades } from "@/lib/mock/store";
 import { cn } from "@/lib/utils";
 
-type Period = "all" | "week" | "month";
+type Period = "all" | "day" | "week" | "month";
 
 function ChartTooltip({
   active,
@@ -53,6 +51,14 @@ export default function AnalyticsPage() {
   // ── Period filtering ─────────────────────────────────────────────────
   const trades = useMemo(() => {
     if (period === "all") return allTrades;
+    if (period === "day") {
+      const dayStart = startOfDay(new Date());
+      const dayEnd = endOfDay(new Date());
+      return allTrades.filter((t) => {
+        const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
+        return !isBefore(d, dayStart) && !isAfter(d, dayEnd);
+      });
+    }
     const cutoff =
       period === "week" ? subDays(new Date(), 7) : subMonths(new Date(), 1);
     return allTrades.filter((t) =>
@@ -94,17 +100,7 @@ export default function AnalyticsPage() {
     { name: "B/E", value: bes.length, color: "var(--color-warning)" },
   ].filter((d) => d.value > 0);
 
-  // ── R:R distribution ─────────────────────────────────────────────────
-  const rrBuckets: Record<string, number> = {};
-  trades.forEach((t) => {
-    const bucket = `${Math.floor(t.rr)}-${Math.floor(t.rr) + 1}R`;
-    rrBuckets[bucket] = (rrBuckets[bucket] || 0) + 1;
-  });
-  const rrData = Object.entries(rrBuckets)
-    .map(([range, count]) => ({ range, count }))
-    .sort((a, b) => parseFloat(a.range) - parseFloat(b.range));
-
-  // ── Win rate by instrument ────────────────────────────────────────────
+  // ── Win rate by instrument (for breakdown table) ─────────────────────
   const byInstrument: Record<string, { trades: number; wins: number; totalRR: number }> = {};
   trades.forEach((t) => {
     if (!byInstrument[t.instrument])
@@ -166,6 +162,7 @@ export default function AnalyticsPage() {
     { id: "all", label: "All time" },
     { id: "month", label: "This month" },
     { id: "week", label: "This week" },
+    { id: "day", label: "Today" },
   ];
 
   return (
@@ -226,7 +223,9 @@ export default function AnalyticsPage() {
                 label: "Total Trades",
                 value: trades.length.toString(),
                 sub:
-                  period === "week"
+                  period === "day"
+                    ? "Today"
+                    : period === "week"
                     ? "Last 7 days"
                     : period === "month"
                     ? "Last 30 days"
@@ -369,94 +368,6 @@ export default function AnalyticsPage() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Win rate by instrument + R:R distribution */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            <Card className="bg-card border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Win Rate by Instrument</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart
-                    data={instrumentData}
-                    margin={{ top: 5, right: 5, bottom: 0, left: 0 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="var(--color-border)"
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(v) => `${v}%`}
-                    />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="winRate" name="Win %" radius={[4, 4, 0, 0]}>
-                      {instrumentData.map((entry, index) => (
-                        <Cell
-                          key={index}
-                          fill={
-                            entry.winRate >= 60
-                              ? "var(--color-chart-1)"
-                              : entry.winRate >= 40
-                              ? "var(--color-chart-3)"
-                              : "var(--color-chart-4)"
-                          }
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">R:R Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart
-                    data={rrData}
-                    margin={{ top: 5, right: 5, bottom: 0, left: 0 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="var(--color-border)"
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="range"
-                      tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar
-                      dataKey="count"
-                      name="Trades"
-                      fill="var(--color-chart-2)"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
