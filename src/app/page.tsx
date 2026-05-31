@@ -30,6 +30,52 @@ const HERO_W = 14;
 const HERO_GAP = 6;
 const HERO_STEP = HERO_W + HERO_GAP;
 
+// ── Mux HLS video ────────────────────────────────────────────────────────────
+const MUX_SRC = "https://stream.mux.com/QgTir2Bu4u6d01CqyKEBCks68PIm2nCM7vhwXgenS00tw.m3u8";
+
+function HeroVideo() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Safari supports HLS natively
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = MUX_SRC;
+      return;
+    }
+
+    // Chrome/Firefox: use hls.js (already in package.json)
+    let hlsInstance: import("hls.js").default | null = null;
+    import("hls.js").then(({ default: Hls }) => {
+      if (!Hls.isSupported()) return;
+      hlsInstance = new Hls({ startLevel: -1 });
+      hlsInstance.loadSource(MUX_SRC);
+      hlsInstance.attachMedia(video);
+    });
+
+    return () => {
+      hlsInstance?.destroy();
+    };
+  }, []);
+
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      loop
+      muted
+      playsInline
+      className="absolute inset-0 h-full w-full object-cover"
+      style={{
+        opacity: 0.40,
+        filter: "sepia(0.6) saturate(2.8) hue-rotate(12deg) brightness(0.75) contrast(1.05)",
+      }}
+    />
+  );
+}
+
 // ── Candlestick background — full-section, atmospheric ──────────────────────
 function HeroCandlesticks() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -59,7 +105,7 @@ function HeroCandlesticks() {
     const draw = (ts: number) => {
       if (lastTsRef.current !== null) {
         const dt = Math.min(ts - lastTsRef.current, 50);
-        offsetRef.current += (dt / 1000) * 16; // 16 px/s — slow drift
+        offsetRef.current += (dt / 1000) * 16;
       }
       lastTsRef.current = ts;
 
@@ -87,7 +133,6 @@ function HeroCandlesticks() {
       const cH = cBot - cTop;
       const py = (p: number) => cTop + ((maxP - p) / pRange) * cH;
 
-      // Candles — very subtle, textural
       for (let i = 0; i < count; i++) {
         const ci = (startIdx + i) % HERO_N;
         const c = HERO_CANDLES[ci];
@@ -100,29 +145,21 @@ function HeroCandlesticks() {
         const bH = Math.max(1.5, bBot - bTop);
         const cx = x + HERO_W / 2;
 
-        // Wicks
         ctx.strokeStyle = bull ? "rgba(234,88,12,0.28)" : "rgba(153,27,27,0.22)";
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
-        // Bodies
         ctx.fillStyle = bull ? "rgba(249,115,22,0.13)" : "rgba(185,28,28,0.10)";
         ctx.fillRect(x, bTop, HERO_W, bH);
-        // Border
         ctx.strokeStyle = bull ? "rgba(234,88,12,0.32)" : "rgba(153,27,27,0.26)";
         ctx.lineWidth = 0.75;
         ctx.strokeRect(x, bTop, HERO_W, bH);
       }
 
-      // ── Masking gradients — create the atmospheric "window" ──────────────
-
-      // Center radial: clear the middle where text lives so it stays readable
+      // Center radial mask — clears text area
       const radialCx = W / 2;
       const radialCy = H * 0.42;
       const radialR = Math.min(W * 0.46, H * 0.56);
-      const radial = ctx.createRadialGradient(
-        radialCx, radialCy, radialR * 0.15,
-        radialCx, radialCy, radialR
-      );
+      const radial = ctx.createRadialGradient(radialCx, radialCy, radialR * 0.15, radialCx, radialCy, radialR);
       radial.addColorStop(0, "rgba(255,255,255,0.96)");
       radial.addColorStop(0.45, "rgba(255,255,255,0.72)");
       radial.addColorStop(0.75, "rgba(255,255,255,0.28)");
@@ -130,28 +167,24 @@ function HeroCandlesticks() {
       ctx.fillStyle = radial;
       ctx.fillRect(0, 0, W, H);
 
-      // Top fade
       const fadeTop = ctx.createLinearGradient(0, 0, 0, H * 0.12);
       fadeTop.addColorStop(0, "rgba(255,255,255,1)");
       fadeTop.addColorStop(1, "rgba(255,255,255,0)");
       ctx.fillStyle = fadeTop;
       ctx.fillRect(0, 0, W, H * 0.12);
 
-      // Bottom fade — into the feature strip
       const fadeBot = ctx.createLinearGradient(0, H * 0.78, 0, H);
       fadeBot.addColorStop(0, "rgba(255,255,255,0)");
       fadeBot.addColorStop(1, "rgba(255,255,255,1)");
       ctx.fillStyle = fadeBot;
       ctx.fillRect(0, H * 0.78, W, H);
 
-      // Left fade
       const fadeL = ctx.createLinearGradient(0, 0, 110, 0);
       fadeL.addColorStop(0, "rgba(255,255,255,1)");
       fadeL.addColorStop(1, "rgba(255,255,255,0)");
       ctx.fillStyle = fadeL;
       ctx.fillRect(0, 0, 110, H);
 
-      // Right fade
       const fadeR = ctx.createLinearGradient(W - 110, 0, W, 0);
       fadeR.addColorStop(0, "rgba(255,255,255,0)");
       fadeR.addColorStop(1, "rgba(255,255,255,1)");
@@ -181,25 +214,12 @@ function HeroCandlesticks() {
 const PILLARS = [
   { label: "Trade Journal", desc: "Log every trade with full context" },
   { label: "Performance Analytics", desc: "Find patterns in your execution" },
-  { label: "Mindset & Habits", desc: "Where self-improvement meets trading" },
 ] as const;
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-
-      {/* ── Video bg — very subtle atmosphere ── */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
-        <video
-          autoPlay loop muted playsInline
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ opacity: 0.28, filter: "grayscale(1) brightness(0.72) contrast(1.05)" }}
-        >
-          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260302_085640_276ea93b-d7da-4418-a09b-2aa5b490e838.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0" style={{ background: "rgba(255,255,255,0.70)" }} />
-      </div>
 
       {/* ── Header ── */}
       <header
@@ -232,25 +252,23 @@ export default function HomePage() {
       {/* ── Hero — full viewport, unified ── */}
       <section className="relative flex flex-col" style={{ minHeight: "calc(100svh - 57px)" }}>
 
-        {/* Atmospheric candlestick — covers entire section */}
+        {/* Mux HLS video — warm orange-tinted, behind candlesticks */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+          <HeroVideo />
+          {/* White wash to keep the light theme */}
+          <div className="absolute inset-0" style={{ background: "rgba(255,255,255,0.62)" }} />
+          {/* Subtle orange bloom at top-center */}
+          <div className="absolute inset-0" style={{
+            background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(249,115,22,0.12) 0%, transparent 70%)"
+          }} />
+        </div>
+
+        {/* Atmospheric candlestick — on top of video, behind content */}
         <HeroCandlesticks />
 
         {/* Content — centered in all available space */}
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-20">
 
-          {/* Eyebrow */}
-          <FadeIn delay={0.06}>
-            <div
-              className="mb-8 flex items-center gap-3 text-[11px] font-semibold tracking-[0.18em] uppercase"
-              style={{ color: "rgba(249,115,22,0.75)", fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
-            >
-              <span className="h-px w-10 bg-orange-300/60" />
-              Trading productivity platform
-              <span className="h-px w-10 bg-orange-300/60" />
-            </div>
-          </FadeIn>
-
-          {/* Headline */}
           <FadeIn delay={0.14}>
             <h1
               className="font-black tracking-tight leading-[0.88] text-gray-900 mb-5"
@@ -271,7 +289,6 @@ export default function HomePage() {
             </h1>
           </FadeIn>
 
-          {/* Tagline */}
           <FadeIn delay={0.23}>
             <p
               className="text-gray-400 mb-10 leading-relaxed"
@@ -286,7 +303,6 @@ export default function HomePage() {
             </p>
           </FadeIn>
 
-          {/* CTA */}
           <FadeIn delay={0.32}>
             <Link
               href="/dashboard"
@@ -303,15 +319,15 @@ export default function HomePage() {
           </FadeIn>
         </div>
 
-        {/* ── Feature strip — anchored to bottom ── */}
+        {/* ── Feature strip — 2 pillars, anchored to bottom ── */}
         <FadeIn delay={0.44}>
           <div
             className="relative z-10 border-t"
             style={{ borderColor: "rgba(0,0,0,0.06)" }}
           >
-            <div className="mx-auto max-w-4xl grid grid-cols-3 divide-x divide-black/[0.06]">
+            <div className="mx-auto max-w-2xl grid grid-cols-2 divide-x divide-black/[0.06]">
               {PILLARS.map((p) => (
-                <div key={p.label} className="px-8 py-5">
+                <div key={p.label} className="px-8 py-5 text-center">
                   <p
                     className="text-sm font-semibold text-gray-800 mb-0.5"
                     style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}

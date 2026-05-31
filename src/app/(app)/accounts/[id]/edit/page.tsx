@@ -11,8 +11,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAccountById, updateAccount } from "@/lib/mock/store";
-import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS, ACCOUNT_TYPES } from "@/lib/accounts-constants";
+import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
+
+const STATUS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "blown", label: "Blown" },
+  { value: "passed", label: "Passed" },
+] as const;
 
 export default function EditAccountPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -62,7 +69,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.firm_name || !form.account_name) return;
+    if (!form.firm_name) return;
     setSaving(true);
     await new Promise((r) => setTimeout(r, 300));
     updateAccount(id, form);
@@ -78,7 +85,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Account
         </Link>
         <h1 className="text-2xl font-bold tracking-tight">Edit Account</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{account.firm_name} · {account.account_name}</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{account.firm_name} · ${(account.account_size / 1000).toFixed(0)}K</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -86,7 +93,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Account Info</CardTitle></CardHeader>
           <CardContent className="space-y-4">
 
-            {/* Firm Name — select menu */}
+            {/* Firm */}
             <div className="space-y-1.5">
               <Label className="text-xs">Firm *</Label>
               <Select value={form.firm_name} onValueChange={(v) => { if (v) set("firm_name", v); }}>
@@ -97,7 +104,6 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
                   {PROP_FIRMS.map((firm) => (
                     <SelectItem key={firm} value={firm}>{firm}</SelectItem>
                   ))}
-                  {/* Show current value if it's not in the list (legacy data) */}
                   {form.firm_name && !PROP_FIRMS.includes(form.firm_name as (typeof PROP_FIRMS)[number]) && (
                     <SelectItem value={form.firm_name}>{form.firm_name}</SelectItem>
                   )}
@@ -105,29 +111,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
               </Select>
             </div>
 
-            {/* Account Type — button group */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Account Type *</Label>
-              <div className="flex flex-wrap gap-2">
-                {ACCOUNT_TYPES.map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => set("account_name", type)}
-                    className={cn(
-                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
-                      form.account_name === type
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                    )}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Account Size — button group + custom */}
+            {/* Account Size */}
             <div className="space-y-1.5">
               <Label className="text-xs">Account Size *</Label>
               <div className="flex flex-wrap gap-2">
@@ -180,6 +164,32 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
               <Input type="number" step="0.01" value={form.purchase_cost}
                 onChange={(e) => set("purchase_cost", parseFloat(e.target.value) || 0)}
                 className="h-9 text-sm font-mono" />
+            </div>
+
+            {/* Status — active / inactive toggle */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Account Status</Label>
+              <div className="flex gap-2">
+                {STATUS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => set("status", opt.value)}
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+                      form.status === opt.value
+                        ? opt.value === "active"
+                          ? "border-success bg-success/10 text-success"
+                          : opt.value === "blown"
+                          ? "border-destructive bg-destructive/10 text-destructive"
+                          : "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Notes */}

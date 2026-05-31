@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createAccount } from "@/lib/mock/store";
 import type { FundedAccountInput } from "@/lib/types";
-import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS, ACCOUNT_TYPES } from "@/lib/accounts-constants";
+import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
 
 export default function NewAccountPage() {
@@ -22,7 +22,7 @@ export default function NewAccountPage() {
 
   const [form, setForm] = useState<FundedAccountInput>({
     firm_name: "",
-    account_name: "Pro",
+    account_name: "funded",
     account_type: "futures",
     phase: "funded",
     account_size: 50000,
@@ -53,13 +53,11 @@ export default function NewAccountPage() {
   function selectSize(value: number) {
     setCustomSize(false);
     set("account_size", value);
-    set("start_balance", value);
-    set("current_balance", value);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.firm_name || !form.account_name) return;
+    if (!form.firm_name) return;
     setSaving(true);
     await new Promise((r) => setTimeout(r, 300));
     const created = createAccount(form);
@@ -83,7 +81,7 @@ export default function NewAccountPage() {
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Account Info</CardTitle></CardHeader>
           <CardContent className="space-y-4">
 
-            {/* Firm Name — select menu */}
+            {/* Firm */}
             <div className="space-y-1.5">
               <Label className="text-xs">Firm *</Label>
               <Select value={form.firm_name} onValueChange={(v) => { if (v) set("firm_name", v); }} required>
@@ -98,29 +96,7 @@ export default function NewAccountPage() {
               </Select>
             </div>
 
-            {/* Account Type — button group */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Account Type *</Label>
-              <div className="flex flex-wrap gap-2">
-                {ACCOUNT_TYPES.map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => set("account_name", type)}
-                    className={cn(
-                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
-                      form.account_name === type
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                    )}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Account Size — button group + custom */}
+            {/* Account Size */}
             <div className="space-y-1.5">
               <Label className="text-xs">Account Size *</Label>
               <div className="flex flex-wrap gap-2">

@@ -9,21 +9,32 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getAccounts, computeAccountROI, getPayoutsByAccountId } from "@/lib/mock/store";
 import { cn } from "@/lib/utils";
 
+type StatusFilter = "all" | "active" | "inactive";
+
 export default function AccountsPage() {
   const accounts = getAccounts();
   const [firmFilter, setFirmFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
-  // Unique firms from existing accounts, preserving insertion order
   const uniqueFirms = Array.from(new Set(accounts.map((a) => a.firm_name).filter(Boolean)));
 
-  const filtered = firmFilter === "all" ? accounts : accounts.filter((a) => a.firm_name === firmFilter);
+  // Stats use ALL accounts (firm-filtered but not status-filtered)
+  const firmAccounts = firmFilter === "all" ? accounts : accounts.filter((a) => a.firm_name === firmFilter);
+  const activeAccounts = firmAccounts.filter((a) => a.status === "active");
 
-  const totalFeePaid = filtered.reduce((s, a) => s + (a.purchase_cost ?? 0), 0);
-  const totalPayouts = filtered.reduce((s, a) => {
+  const totalFeePaid = firmAccounts.reduce((s, a) => s + (a.purchase_cost ?? 0), 0);
+  const totalPayouts = firmAccounts.reduce((s, a) => {
     const payouts = getPayoutsByAccountId(a.id);
     return s + payouts.filter((p) => p.status === "paid").reduce((ps, p) => ps + p.amount, 0);
   }, 0);
   const overallRoi = totalFeePaid > 0 ? Math.round((totalPayouts / totalFeePaid) * 10) / 10 : 0;
+  const activeCapital = activeAccounts.reduce((s, a) => s + (a.current_balance ?? a.account_size), 0);
+
+  // Cards filtered by firm + status
+  const filtered = firmAccounts.filter((a) => {
+    if (statusFilter === "all") return true;
+    return a.status === statusFilter;
+  });
 
   return (
     <div className="space-y-6">
@@ -42,47 +53,84 @@ export default function AccountsPage() {
         }
       />
       <PageWrapper>
-        {/* Firm filter — only shown when there are multiple firms */}
-        {uniqueFirms.length > 1 && (
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFirmFilter("all")}
-              className={cn(
-                "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
-                firmFilter === "all"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-              )}
-            >
-              All firms
-            </button>
-            {uniqueFirms.map((firm) => (
-              <button
-                key={firm}
-                onClick={() => setFirmFilter(firm)}
-                className={cn(
-                  "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
-                  firmFilter === firm
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                )}
-              >
-                {firm}
-              </button>
-            ))}
+        {/* Filters */}
+        {(uniqueFirms.length > 1 || accounts.length > 0) && (
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Firm filter */}
+            {uniqueFirms.length > 1 && (
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setFirmFilter("all")}
+                  className={cn(
+                    "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+                    firmFilter === "all"
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  )}
+                >
+                  All firms
+                </button>
+                {uniqueFirms.map((firm) => (
+                  <button
+                    key={firm}
+                    onClick={() => setFirmFilter(firm)}
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+                      firmFilter === firm
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    {firm}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Divider between filter groups */}
+            {uniqueFirms.length > 1 && <div className="h-4 w-px bg-border" />}
+
+            {/* Status filter */}
+            {accounts.length > 0 && (
+              <div className="flex gap-1.5">
+                {(["all", "active", "inactive"] as StatusFilter[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStatusFilter(s)}
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-xs font-medium capitalize transition-all",
+                      statusFilter === s
+                        ? s === "active"
+                          ? "border-success bg-success/10 text-success"
+                          : s === "inactive"
+                          ? "border-muted-foreground bg-muted text-muted-foreground"
+                          : "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    )}
+                  >
+                    {s === "all" ? "All status" : s}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Summary stats */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* Summary stats — always based on all accounts in firm filter */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Fee Paid", value: `$${totalFeePaid.toLocaleString()}` },
-            { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}` },
-            { label: "Return on Cost", value: `${overallRoi}x` },
-          ].map(({ label, value }) => (
-            <div key={label} className="bg-card border border-border/50 rounded-xl p-4 text-center">
-              <p className="text-xl font-bold">{value}</p>
+            { label: "Fee Paid", value: `$${totalFeePaid.toLocaleString()}`, note: "all accounts" },
+            { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}`, note: "all accounts" },
+            { label: "Active Capital", value: `$${activeCapital.toLocaleString()}`, note: "active only", highlight: true },
+            { label: "Return on Cost", value: `${overallRoi}x`, note: "all accounts" },
+          ].map(({ label, value, note, highlight }) => (
+            <div key={label} className={cn(
+              "bg-card border rounded-xl p-4 text-center",
+              highlight ? "border-success/30" : "border-border/50"
+            )}>
+              <p className={cn("text-xl font-bold", highlight && "text-success")}>{value}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+              <p className="text-[10px] text-muted-foreground/50 mt-0.5">{note}</p>
             </div>
           ))}
         </div>
@@ -98,7 +146,7 @@ export default function AccountsPage() {
                 </Link>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">No accounts for {firmFilter}.</p>
+              <p className="text-sm text-muted-foreground">No accounts match the current filter.</p>
             )}
           </div>
         ) : (
@@ -107,15 +155,31 @@ export default function AccountsPage() {
               const payouts = getPayoutsByAccountId(acct.id);
               const totalPaid = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
               const roi = computeAccountROI(totalPaid, acct.purchase_cost);
+              const isInactive = acct.status === "inactive" || acct.status === "blown";
 
               return (
                 <Link key={acct.id} href={`/accounts/${acct.id}`}>
-                  <Card className="bg-card border-border/50 hover:border-primary/30 transition-colors h-full">
+                  <Card className={cn(
+                    "bg-card border-border/50 hover:border-primary/30 transition-colors h-full",
+                    isInactive && "opacity-60"
+                  )}>
                     <CardContent className="p-5">
                       <div className="mb-4">
-                        <p className="text-xs text-muted-foreground mb-0.5">{acct.firm_name}</p>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <p className="text-xs text-muted-foreground">{acct.firm_name}</p>
+                          {acct.status !== "active" && (
+                            <span className={cn(
+                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full",
+                              acct.status === "blown" ? "bg-destructive/10 text-destructive" :
+                              acct.status === "passed" ? "bg-success/10 text-success" :
+                              "bg-muted text-muted-foreground"
+                            )}>
+                              {acct.status}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-baseline gap-2">
-                          <p className="font-semibold text-sm">{acct.account_name}</p>
+                          <p className="font-semibold text-sm">{acct.firm_name}</p>
                           <span className="text-xs text-muted-foreground font-mono">
                             ${(acct.account_size / 1000).toFixed(0)}K
                           </span>
