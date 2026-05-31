@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import {
   ArrowLeft, TrendingUp, TrendingDown, Calendar,
   Brain, AlertCircle, Lightbulb, CheckCircle2,
-  LinkIcon, Pencil, Trash2, Target,
+  LinkIcon, Pencil, Trash2, Target, Check,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,54 +17,10 @@ import {
   getTradeById,
   getAnalysisById,
   deleteTrade,
-  getDisciplineFieldLabel,
+  updateTrade,
 } from "@/lib/mock/store";
 import { cn } from "@/lib/utils";
 import type { TradeDiscipline, TradeMarketContext } from "@/lib/types";
-
-
-const DISCIPLINE_FIELDS: (keyof Omit<TradeDiscipline, "score" | "notes">)[] = [
-  "followed_plan", "traded_in_session", "respected_risk", "respected_max_trades",
-  "matched_a_plus", "no_impulsive_entry", "no_revenge_trade", "respected_stop_loss",
-  "journal_completed",
-];
-
-const REGIME_LABELS: Record<string, string> = {
-  trending: "Trending",
-  ranging: "Ranging",
-  choppy: "Choppy",
-};
-
-const VOLATILITY_LABELS: Record<string, string> = {
-  low: "Low Vol",
-  medium: "Med Vol",
-  high: "High Vol",
-  extreme: "Extreme",
-};
-
-const REGIME_COLORS: Record<string, string> = {
-  trending: "oklch(0.72 0.17 145)",
-  ranging: "oklch(0.72 0.22 45)",
-  choppy: "oklch(0.72 0.22 45)",
-};
-
-const VOL_COLORS: Record<string, string> = {
-  low: "oklch(0.72 0.17 145)",
-  medium: "oklch(0.72 0.22 45)",
-  high: "oklch(0.65 0.22 25)",
-  extreme: "oklch(0.60 0.25 25)",
-};
-
-function ContextBadge({ label, color }: { label: string; color: string }) {
-  return (
-    <span
-      className="text-xs font-semibold px-2.5 py-1 rounded-full"
-      style={{ background: color + " / 0.15)", color }}
-    >
-      {label}
-    </span>
-  );
-}
 
 export default function TradeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -73,6 +29,10 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
   const [deleting, setDeleting] = useState(false);
 
   const trade = getTradeById(id);
+
+  const [discipline, setDisciplineState] = useState<TradeDiscipline | undefined>(
+    trade?.discipline as TradeDiscipline | undefined
+  );
 
   if (!trade) {
     return (
@@ -84,8 +44,8 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   const linkedAnalysis = trade.linked_analysis_id ? getAnalysisById(trade.linked_analysis_id) : undefined;
-  const discipline = trade.discipline as TradeDiscipline | undefined;
   const context = trade.market_context as TradeMarketContext | undefined;
+  void context;
 
   const resultConfig = {
     win: { color: "text-success", bg: "bg-success/8 border-success/20", label: "Win" },
@@ -101,7 +61,27 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
     router.push("/journal");
   }
 
+  function toggleCustomCheck(idx: number) {
+    if (!discipline) return;
+    const custom = [...(discipline.custom_checks ?? [])];
+    custom[idx] = { ...custom[idx], passed: !custom[idx].passed };
+    const total = custom.length;
+    const score = total > 0 ? Math.round((custom.filter((c) => c.passed).length / total) * 100) : 0;
+    const updated = { ...discipline, custom_checks: custom, score };
+    setDisciplineState(updated);
+    updateTrade(id, { discipline: updated });
+  }
+
   const groups = trade.screenshot_groups ?? [];
+  const customChecks = discipline?.custom_checks ?? [];
+  const hasCustomChecks = customChecks.length > 0;
+
+  const disciplineScore = discipline?.score ?? 0;
+  const scoreColor = disciplineScore >= 80
+    ? "oklch(0.72 0.17 145)"
+    : disciplineScore >= 60
+    ? "oklch(0.72 0.22 45)"
+    : "oklch(0.65 0.22 25)";
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -168,85 +148,62 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      {/* Discipline Score */}
+      {/* Discipline Check */}
       {discipline && (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {discipline && (
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Target className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
-                  Discipline Score
-                  <span
-                    className="ml-auto text-sm font-bold"
-                    style={{
-                      color: discipline.score >= 80
-                        ? "oklch(0.72 0.17 145)"
-                        : discipline.score >= 60
-                        ? "oklch(0.72 0.22 45)"
-                        : "oklch(0.65 0.22 25)",
-                    }}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Target className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
+              Discipline Check
+              <span className="ml-auto text-sm font-bold" style={{ color: scoreColor }}>
+                {hasCustomChecks ? `${disciplineScore}%` : "—"}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {hasCustomChecks ? (
+              <div className="space-y-1.5">
+                {customChecks.map((check, idx) => (
+                  <button
+                    key={`custom-${idx}`}
+                    onClick={() => toggleCustomCheck(idx)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-xs transition-all text-left",
+                      check.passed
+                        ? "bg-success/8 border-success/25 hover:bg-success/12"
+                        : "bg-secondary border-border hover:border-primary/30 hover:bg-muted"
+                    )}
                   >
-                    {discipline.score}%
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1.5">
-                  {DISCIPLINE_FIELDS.map((field) => {
-                    const passed = discipline[field] as boolean;
-                    return (
-                      <div key={field} className={cn(
-                        "flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs",
-                        passed ? "bg-success/6 border-success/20" : "bg-secondary border-border/60"
-                      )}>
-                        <span className={cn(
-                          "w-4 h-4 rounded-md shrink-0 flex items-center justify-center text-[9px] font-bold border",
-                          passed
-                            ? "bg-success border-success text-white"
-                            : "bg-transparent border-muted-foreground/30 text-muted-foreground/50"
-                        )}>
-                          {passed ? "✓" : "✗"}
-                        </span>
-                        <span className={cn(
-                          passed ? "text-foreground/80" : "text-muted-foreground/60"
-                        )}>
-                          {getDisciplineFieldLabel(field)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  {(discipline.custom_checks ?? []).map((check, idx) => (
-                    <div key={`custom-${idx}`} className={cn(
-                      "flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs",
-                      check.passed ? "bg-success/6 border-success/20" : "bg-secondary border-border/60"
+                    <span className={cn(
+                      "w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all border-2",
+                      check.passed
+                        ? "bg-success border-success"
+                        : "bg-transparent border-muted-foreground/30"
                     )}>
-                      <span className={cn(
-                        "w-4 h-4 rounded-md shrink-0 flex items-center justify-center text-[9px] font-bold border",
-                        check.passed
-                          ? "bg-success border-success text-white"
-                          : "bg-transparent border-muted-foreground/30 text-muted-foreground/50"
-                      )}>
-                        {check.passed ? "✓" : "✗"}
-                      </span>
-                      <span className={cn(
-                        check.passed ? "text-foreground/80" : "text-muted-foreground/60"
-                      )}>
-                        {check.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                {discipline.notes && (
-                  <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border leading-relaxed">
-                    {discipline.notes}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-        </div>
+                      {check.passed && <Check className="w-3 h-3 text-white" />}
+                    </span>
+                    <span className={cn(
+                      "flex-1 transition-colors",
+                      check.passed ? "text-foreground/80" : "text-muted-foreground"
+                    )}>
+                      {check.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground/60 text-center py-3">
+                No discipline rules on this trade.{" "}
+                <Link href={`/journal/${id}/edit`} className="text-primary hover:underline">Edit</Link> to add rules.
+              </p>
+            )}
+            {discipline.notes && (
+              <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border leading-relaxed">
+                {discipline.notes}
+              </p>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Confluences */}
@@ -281,7 +238,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
         </Card>
       )}
 
-      {/* Notes */}
+      {/* Execution + Psychology */}
       <div className="grid sm:grid-cols-2 gap-4">
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
@@ -349,7 +306,6 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
           </CardContent>
         </Card>
       )}
-
     </div>
   );
 }

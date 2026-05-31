@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { getTradeById, updateTrade, getAnalyses, computeDisciplineScore } from "@/lib/mock/store";
+import { Textarea } from "@/components/ui/textarea";
+import { getTradeById, updateTrade, getAnalyses } from "@/lib/mock/store";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { Direction, TradeResult, Session, TradeDiscipline } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -16,18 +17,6 @@ import { cn } from "@/lib/utils";
 const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
 const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "Daily"];
-
-const DISCIPLINE_LABELS: { key: keyof Omit<TradeDiscipline, "score" | "notes" | "custom_checks">; label: string }[] = [
-  { key: "followed_plan", label: "Followed my trading plan" },
-  { key: "traded_in_session", label: "Traded in my allowed session" },
-  { key: "respected_risk", label: "Respected risk rules" },
-  { key: "respected_max_trades", label: "Respected max trades for today" },
-  { key: "matched_a_plus", label: "Setup matched A+ criteria" },
-  { key: "no_impulsive_entry", label: "No impulsive entry" },
-  { key: "no_revenge_trade", label: "Not a revenge trade" },
-  { key: "respected_stop_loss", label: "Respected the stop loss" },
-  { key: "journal_completed", label: "Journal entry fully completed" },
-];
 
 export default function EditTradePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -37,7 +26,6 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [confluenceInput, setConfluenceInput] = useState("");
   const [showDiscipline, setShowDiscipline] = useState(true);
   const [newCustomLabel, setNewCustomLabel] = useState("");
-  const [removedBuiltinKeys, setRemovedBuiltinKeys] = useState<string[]>([]);
 
   if (!trade) {
     return (
@@ -61,60 +49,34 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     screenshot_groups: trade.screenshot_groups?.length
       ? trade.screenshot_groups
       : [{ label: "Entry TF", urls: [] }, { label: "HTF", urls: [] }],
-    execution_notes: trade.execution_notes,
-    psychology_notes: trade.psychology_notes,
-    mistakes: trade.mistakes,
-    lessons: trade.lessons,
+    execution_notes: trade.execution_notes ?? "",
+    psychology_notes: trade.psychology_notes ?? "",
+    mistakes: trade.mistakes ?? "",
+    lessons: trade.lessons ?? "",
     linked_analysis_id: trade.linked_analysis_id,
-    discipline: trade.discipline ?? {
-      followed_plan: false, traded_in_session: true, respected_risk: true,
-      respected_max_trades: true, matched_a_plus: false, no_impulsive_entry: true,
-      no_revenge_trade: true, respected_stop_loss: true, journal_completed: true,
-      score: 78, notes: "", custom_checks: [],
+    discipline: (trade.discipline as TradeDiscipline | undefined) ?? {
+      followed_plan: false, traded_in_session: false, respected_risk: false,
+      respected_max_trades: false, matched_a_plus: false, no_impulsive_entry: false,
+      no_revenge_trade: false, respected_stop_loss: false, journal_completed: false,
+      score: 0, notes: "", custom_checks: [],
     },
   });
-
-  const analyses = getAnalyses().filter((a) => a.date === form.date_time);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function calcVisibleScore(d: typeof form.discipline, removed: string[]): number {
-    if (!d) return 0;
-    const active = DISCIPLINE_LABELS.filter((item) => !removed.includes(item.key));
-    const builtinPassed = active.filter((item) => (d as unknown as Record<string, unknown>)[item.key] as boolean).length;
-    const custom = d.custom_checks ?? [];
-    const customPassed = custom.filter((c) => c.passed).length;
-    const total = active.length + custom.length;
-    return total > 0 ? Math.round(((builtinPassed + customPassed) / total) * 100) : 0;
-  }
-
-  function setDiscipline(key: keyof Omit<TradeDiscipline, "score" | "notes" | "custom_checks">, value: boolean) {
-    setForm((prev) => {
-      const updated = { ...(prev.discipline!), [key]: value };
-      updated.score = calcVisibleScore(updated, removedBuiltinKeys);
-      return { ...prev, discipline: updated };
-    });
-  }
-
-  function removeBuiltinCheck(key: string) {
-    const next = [...removedBuiltinKeys, key];
-    setRemovedBuiltinKeys(next);
-    setForm((prev) => {
-      const updated = { ...prev.discipline!, [key]: false };
-      updated.score = calcVisibleScore(updated, next);
-      return { ...prev, discipline: updated };
-    });
+  function calcScore(custom: { label: string; passed: boolean }[]): number {
+    if (custom.length === 0) return 0;
+    return Math.round((custom.filter((c) => c.passed).length / custom.length) * 100);
   }
 
   function toggleCustomCheck(idx: number) {
     setForm((prev) => {
       const custom = [...(prev.discipline?.custom_checks ?? [])];
       custom[idx] = { ...custom[idx], passed: !custom[idx].passed };
-      const updated = { ...prev.discipline!, custom_checks: custom };
-      updated.score = calcVisibleScore(updated, removedBuiltinKeys);
-      return { ...prev, discipline: updated };
+      const score = calcScore(custom);
+      return { ...prev, discipline: { ...prev.discipline!, custom_checks: custom, score } };
     });
   }
 
@@ -123,9 +85,8 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     if (!label) return;
     setForm((prev) => {
       const custom = [...(prev.discipline?.custom_checks ?? []), { label, passed: false }];
-      const updated = { ...prev.discipline!, custom_checks: custom };
-      updated.score = calcVisibleScore(updated, removedBuiltinKeys);
-      return { ...prev, discipline: updated };
+      const score = calcScore(custom);
+      return { ...prev, discipline: { ...prev.discipline!, custom_checks: custom, score } };
     });
     setNewCustomLabel("");
   }
@@ -133,9 +94,8 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   function removeCustomCheck(idx: number) {
     setForm((prev) => {
       const custom = (prev.discipline?.custom_checks ?? []).filter((_, i) => i !== idx);
-      const updated = { ...prev.discipline!, custom_checks: custom };
-      updated.score = calcVisibleScore(updated, removedBuiltinKeys);
-      return { ...prev, discipline: updated };
+      const score = calcScore(custom);
+      return { ...prev, discipline: { ...prev.discipline!, custom_checks: custom, score } };
     });
   }
 
@@ -154,6 +114,9 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     updateTrade(id, form);
     router.push(`/journal/${id}`);
   }
+
+  const customChecks = form.discipline?.custom_checks ?? [];
+  const disciplineScore = form.discipline?.score ?? 0;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -277,24 +240,27 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
             <CardTitle className="text-sm font-semibold">Analysis — {form.date_time}</CardTitle>
           </CardHeader>
           <CardContent>
-            {analyses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No analysis found for this date.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => set("linked_analysis_id", undefined)}
-                  className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                    !form.linked_analysis_id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                  None
-                </button>
-                {analyses.map((a) => (
-                  <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
-                    className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all max-w-xs truncate",
-                      form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                    {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}…` : a.title}
+            {(() => {
+              const analyses = getAnalyses().filter((a) => a.date === form.date_time);
+              return analyses.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No analysis found for this date.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => set("linked_analysis_id", undefined)}
+                    className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      !form.linked_analysis_id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                    None
                   </button>
-                ))}
-              </div>
-            )}
+                  {analyses.map((a) => (
+                    <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
+                      className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all max-w-xs truncate",
+                        form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                      {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}…` : a.title}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
 
@@ -328,22 +294,22 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <CardTitle className="text-sm font-semibold shrink-0">Discipline Check</CardTitle>
-                {form.discipline && (
+                {customChecks.length > 0 && (
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <div className="flex-1 h-1.5 rounded-full overflow-hidden max-w-28" style={{ background: "oklch(0.18 0.005 28)" }}>
                       <div className="h-full rounded-full transition-all duration-300"
                         style={{
-                          width: `${form.discipline.score}%`,
-                          background: form.discipline.score >= 80 ? "oklch(0.58 0.17 145)"
-                            : form.discipline.score >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
+                          width: `${disciplineScore}%`,
+                          background: disciplineScore >= 80 ? "oklch(0.58 0.17 145)"
+                            : disciplineScore >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
                         }} />
                     </div>
                     <span className="text-xs font-bold tabular-nums shrink-0"
                       style={{
-                        color: form.discipline.score >= 80 ? "oklch(0.58 0.17 145)"
-                          : form.discipline.score >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
+                        color: disciplineScore >= 80 ? "oklch(0.58 0.17 145)"
+                          : disciplineScore >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
                       }}>
-                      {form.discipline.score}%
+                      {disciplineScore}%
                     </span>
                   </div>
                 )}
@@ -356,39 +322,13 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           </CardHeader>
           {showDiscipline && (
             <CardContent className="space-y-3">
+              {customChecks.length === 0 && (
+                <p className="text-xs text-muted-foreground/60 text-center py-2">
+                  No rules yet — add your personal discipline rules below.
+                </p>
+              )}
               <div className="space-y-1.5">
-                {DISCIPLINE_LABELS.filter(({ key }) => !removedBuiltinKeys.includes(key)).map(({ key, label }) => {
-                  const checked = !!(form.discipline?.[key as keyof typeof form.discipline]);
-                  return (
-                    <div key={key} className="flex items-center gap-2 group/check">
-                      <button type="button" onClick={() => setDiscipline(key, !checked)}
-                        className={cn("flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left border",
-                          checked
-                            ? "bg-success/8 border-success/25"
-                            : "bg-secondary border-border hover:border-primary/30 hover:bg-muted"
-                        )}>
-                        <div className={cn("w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all border-2",
-                          checked ? "bg-success border-success" : "bg-transparent border-muted-foreground/30"
-                        )}>
-                          {checked && <Check className="w-3 h-3 text-white" />}
-                        </div>
-                        <span className={cn("text-sm transition-colors",
-                          checked ? "text-foreground" : "text-muted-foreground")}>
-                          {label}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeBuiltinCheck(key)}
-                        className="opacity-0 group-hover/check:opacity-100 transition-opacity p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  );
-                })}
-
-                {(form.discipline?.custom_checks ?? []).map((item, idx) => (
+                {customChecks.map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2 group/check">
                     <button type="button" onClick={() => toggleCustomCheck(idx)}
                       className={cn("flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left border",
@@ -415,30 +355,12 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                     </button>
                   </div>
                 ))}
-
-                {removedBuiltinKeys.length > 0 && (
-                  <div className="pt-1">
-                    <p className="text-[10px] text-muted-foreground/50 mb-1.5">Removed checks</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {DISCIPLINE_LABELS.filter(({ key }) => removedBuiltinKeys.includes(key)).map(({ key, label }) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setRemovedBuiltinKeys((prev) => prev.filter((k) => k !== key))}
-                          className="inline-flex items-center gap-1 text-xs text-muted-foreground/50 hover:text-foreground border border-dashed border-border/50 hover:border-border px-2 py-1 rounded-lg transition-colors"
-                        >
-                          <Plus className="w-3 h-3" /> {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="flex gap-2 pt-1">
                 <Input value={newCustomLabel} onChange={(e) => setNewCustomLabel(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomCheck())}
-                  placeholder="Add custom rule..."
+                  placeholder="Add discipline rule..."
                   className="h-8 text-xs" />
                 <Button type="button" variant="outline" size="sm" onClick={addCustomCheck} className="h-8 shrink-0">
                   <Plus className="w-3.5 h-3.5" />
@@ -447,6 +369,56 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
             </CardContent>
           )}
         </Card>
+
+        {/* Execution & Psychology */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Execution Notes</CardTitle></CardHeader>
+          <CardContent>
+            <Textarea
+              value={form.execution_notes}
+              onChange={(e) => set("execution_notes", e.target.value)}
+              placeholder="How did you execute the trade? Entry timing, management, exit..."
+              className="min-h-24 text-sm resize-none"
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Psychology</CardTitle></CardHeader>
+          <CardContent>
+            <Textarea
+              value={form.psychology_notes}
+              onChange={(e) => set("psychology_notes", e.target.value)}
+              placeholder="How did you feel? Emotions, mindset, discipline during this trade..."
+              className="min-h-24 text-sm resize-none"
+            />
+          </CardContent>
+        </Card>
+
+        <div className="grid sm:grid-cols-2 gap-5">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Mistakes</CardTitle></CardHeader>
+            <CardContent>
+              <Textarea
+                value={form.mistakes}
+                onChange={(e) => set("mistakes", e.target.value)}
+                placeholder="What went wrong or could have been better?"
+                className="min-h-20 text-sm resize-none"
+              />
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Lessons</CardTitle></CardHeader>
+            <CardContent>
+              <Textarea
+                value={form.lessons}
+                onChange={(e) => set("lessons", e.target.value)}
+                placeholder="What did you learn from this trade?"
+                className="min-h-20 text-sm resize-none"
+              />
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Screenshots */}
         <Card className="shadow-sm">

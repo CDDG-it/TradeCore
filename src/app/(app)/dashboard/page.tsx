@@ -572,7 +572,7 @@ export default function DashboardPage() {
                   <Link
                     key={trade.id}
                     href={`/journal/${trade.id}`}
-                    className="flex items-center gap-4 px-5 py-3.5 transition-all border-l-2 border-transparent hover:border-primary/40 hover:bg-muted/20"
+                    className="group flex items-center gap-4 px-5 py-3.5 transition-all border-l-2 border-transparent hover:border-primary/40 hover:bg-muted/30 cursor-pointer"
                     style={{ borderBottom: i < recentTrades.length - 1 ? "1px solid var(--border)" : undefined }}
                   >
                     <div className="flex items-center gap-2 shrink-0">
@@ -584,30 +584,33 @@ export default function DashboardPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold">{trade.instrument}</p>
+                      <p className="text-sm font-semibold group-hover:text-primary transition-colors">{trade.instrument}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {format(new Date(trade.date_time.slice(0, 10) + "T12:00:00"), "MMM d")}
                         {trade.timeframe ? ` · ${trade.timeframe}` : ""}
                       </p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p
-                        className="text-sm font-bold"
-                        style={{
-                          color:
-                            trade.result === "win"
-                              ? "oklch(0.58 0.17 145)"
-                              : trade.result === "loss"
-                              ? "oklch(0.58 0.22 25)"
-                              : "oklch(0.70 0.16 72)",
-                        }}
-                      >
-                        {trade.result === "win" ? "+" : trade.result === "loss" ? "-" : ""}
-                        {trade.rr}R
-                      </p>
-                      {trade.discipline && (
-                        <p className="text-[10px] text-muted-foreground">{trade.discipline.score}% disc.</p>
-                      )}
+                    <div className="text-right shrink-0 flex items-center gap-3">
+                      <div>
+                        <p
+                          className="text-sm font-bold"
+                          style={{
+                            color:
+                              trade.result === "win"
+                                ? "oklch(0.58 0.17 145)"
+                                : trade.result === "loss"
+                                ? "oklch(0.58 0.22 25)"
+                                : "oklch(0.70 0.16 72)",
+                          }}
+                        >
+                          {trade.result === "win" ? "+" : trade.result === "loss" ? "-" : ""}
+                          {trade.rr}R
+                        </p>
+                        {trade.discipline && trade.discipline.score > 0 && (
+                          <p className="text-[10px] text-muted-foreground">{trade.discipline.score}% disc.</p>
+                        )}
+                      </div>
+                      <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary/60 transition-all group-hover:translate-x-0.5" />
                     </div>
                   </Link>
                 ))}
