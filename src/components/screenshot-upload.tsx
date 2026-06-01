@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { ImagePlus, X, ZoomIn, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScreenshotGroup } from "@/lib/types";
@@ -57,6 +57,31 @@ export function ScreenshotUpload({
 
   const safeTab = Math.min(activeTab, Math.max(0, groups.length - 1));
   const currentGroup = groups[safeTab];
+
+  // Paste (Ctrl+V / Cmd+V) — only active in edit mode when a group exists
+  useEffect(() => {
+    if (readOnly || !currentGroup) return;
+    const handler = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const imageFiles: File[] = [];
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) imageFiles.push(file);
+        }
+      }
+      if (imageFiles.length) {
+        e.preventDefault();
+        processFiles(imageFiles);
+      }
+    };
+    document.addEventListener("paste", handler);
+    return () => document.removeEventListener("paste", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readOnly, safeTab, groups]);
 
   function addGroup(label: string) {
     const trimmed = label.trim();
@@ -381,8 +406,7 @@ export function ScreenshotUpload({
                       : "Add more"}
                   </span>
                   <span className="text-muted-foreground/60">
-                    Click or drag & drop · {maxFilesPerGroup - currentGroup.urls.length} remaining ·
-                    JPG, PNG, WebP
+                    Click, drag & drop, or paste · {maxFilesPerGroup - currentGroup.urls.length} remaining
                   </span>
                 </>
               )}

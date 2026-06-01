@@ -65,9 +65,13 @@ export function CandlestickBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    let dpr = window.devicePixelRatio || 1;
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      lastTsRef.current = null; // reset timestamp so first frame after resize doesn't jump
     };
     resize();
     window.addEventListener("resize", resize);
@@ -81,8 +85,8 @@ export function CandlestickBackground() {
       }
       lastTsRef.current = ts;
 
-      const W = canvas.width;
-      const H = canvas.height;
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
       const isDark = themeRef.current !== "light";
       ctx.clearRect(0, 0, W, H);
 
@@ -137,29 +141,29 @@ export function CandlestickBackground() {
         const cx = x + W_CANDLE / 2;
 
         if (isDark) {
-          ctx.strokeStyle = bull ? "rgba(249,115,22,0.32)" : "rgba(172,48,14,0.26)";
+          // Match hero section: orange bulls, warm dark bears
+          ctx.strokeStyle = bull ? "rgba(249,115,22,0.55)" : "rgba(172,48,14,0.45)";
           ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
-          ctx.fillStyle = bull ? "rgba(249,115,22,0.18)" : "rgba(172,48,14,0.15)";
+          ctx.fillStyle = bull ? "rgba(249,115,22,0.22)" : "rgba(172,48,14,0.18)";
           ctx.fillRect(x, bTop, W_CANDLE, bH);
-          ctx.strokeStyle = bull ? "rgba(249,115,22,0.42)" : "rgba(172,48,14,0.32)";
+          ctx.strokeStyle = bull ? "rgba(249,115,22,0.72)" : "rgba(172,48,14,0.55)";
           ctx.lineWidth = 0.75;
           ctx.strokeRect(x, bTop, W_CANDLE, bH);
         } else {
-          // Light mode — darker, more visible
-          ctx.strokeStyle = bull ? "rgba(234,88,12,0.50)" : "rgba(153,27,27,0.42)";
+          ctx.strokeStyle = bull ? "rgba(249,115,22,0.55)" : "rgba(16,11,6,0.45)";
           ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
-          ctx.fillStyle = bull ? "rgba(249,115,22,0.22)" : "rgba(185,28,28,0.17)";
+          ctx.fillStyle = bull ? "rgba(249,115,22,0.22)" : "rgba(16,11,6,0.12)";
           ctx.fillRect(x, bTop, W_CANDLE, bH);
-          ctx.strokeStyle = bull ? "rgba(234,88,12,0.60)" : "rgba(153,27,27,0.50)";
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = bull ? "rgba(249,115,22,0.72)" : "rgba(16,11,6,0.55)";
+          ctx.lineWidth = 0.75;
           ctx.strokeRect(x, bTop, W_CANDLE, bH);
         }
       }
 
       // ── SMA 20 ───────────────────────────────────────────────────────────
-      ctx.strokeStyle = isDark ? "rgba(249,115,22,0.28)" : "rgba(234,88,12,0.45)";
+      ctx.strokeStyle = isDark ? "rgba(249,115,22,0.38)" : "rgba(249,115,22,0.55)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([]);
       ctx.beginPath();
