@@ -1,203 +1,177 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Moon, Globe, Shield, ChevronRight } from "lucide-react";
+import { Shield, Lock, KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth-context";
+import { Input } from "@/components/ui/input";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
-  const { } = useAuth();
-  const isDemo = false;
-  const [notifications, setNotifications] = useState({
-    tradeReminders: true,
-    newsAlerts: false,
-    drawdownAlerts: true,
-    payoutUpdates: true,
-  });
-  const [saved, setSaved] = useState(false);
+  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNext, setShowNext] = useState(false);
+  const [pwState, setPwState] = useState<"idle" | "loading" | "saved" | "error">("idle");
+  const [pwError, setPwError] = useState("");
 
-  async function handleSave() {
-    await new Promise((r) => setTimeout(r, 400));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwError("");
+    if (pwForm.next !== pwForm.confirm) {
+      setPwError("New passwords do not match.");
+      return;
+    }
+    if (pwForm.next.length < 8) {
+      setPwError("Password must be at least 8 characters.");
+      return;
+    }
+    setPwState("loading");
+    try {
+      const supabase = createClient();
+      // Re-authenticate then update password
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: (await supabase.auth.getUser()).data.user?.email ?? "",
+        password: pwForm.current,
+      });
+      if (signInErr) {
+        setPwError("Current password is incorrect.");
+        setPwState("error");
+        return;
+      }
+      const { error } = await supabase.auth.updateUser({ password: pwForm.next });
+      if (error) throw error;
+      setPwState("saved");
+      setPwForm({ current: "", next: "", confirm: "" });
+      setTimeout(() => setPwState("idle"), 3000);
+    } catch {
+      setPwError("Failed to update password. Please try again.");
+      setPwState("error");
+    }
   }
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <PageHeader badge="Account" title="Settings" subtitle="Preferences and configuration" />
+      <PageHeader badge="Account" title="Settings" subtitle="Security and account configuration" />
       <PageWrapper>
-      {isDemo && (
-        <div className="rounded-lg bg-primary/10 border border-primary/20 px-4 py-3 text-sm text-primary">
-          Demo mode active — settings are not persisted across sessions.
-        </div>
-      )}
-
-      {/* Notifications */}
-      <Card className="bg-card border-border/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Bell className="w-4 h-4 text-primary" />
-            Notifications
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {[
-            {
-              key: "tradeReminders" as const,
-              label: "Daily trade reminders",
-              desc: "Remind you to log trades at end of session",
-            },
-            {
-              key: "newsAlerts" as const,
-              label: "High-impact news alerts",
-              desc: "Get notified for high-impact market events",
-            },
-            {
-              key: "drawdownAlerts" as const,
-              label: "Drawdown warnings",
-              desc: "Alert when approaching drawdown threshold",
-            },
-            {
-              key: "payoutUpdates" as const,
-              label: "Payout status updates",
-              desc: "Notifications for payout approvals and status changes",
-            },
-          ].map(({ key, label, desc }) => (
-            <div key={key} className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium">{label}</p>
-                <p className="text-xs text-muted-foreground">{desc}</p>
+        {/* Security */}
+        <Card className="bg-card border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Shield className="w-4 h-4 text-primary" />
+              Security
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Change password */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                <p className="text-sm font-medium">Change Password</p>
               </div>
-              <Switch
-                checked={notifications[key]}
-                onCheckedChange={(v) =>
-                  setNotifications((prev) => ({ ...prev, [key]: v }))
-                }
-              />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+              <form onSubmit={handleChangePassword} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="current_pw" className="text-xs">Current password</Label>
+                  <div className="relative">
+                    <Input
+                      id="current_pw"
+                      type={showCurrent ? "text" : "password"}
+                      value={pwForm.current}
+                      onChange={(e) => setPwForm((p) => ({ ...p, current: e.target.value }))}
+                      className="h-9 text-sm bg-background/50 pr-9"
+                      placeholder="••••••••"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrent((v) => !v)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showCurrent ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
 
-      {/* Appearance */}
-      <Card className="bg-card border-border/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Moon className="w-4 h-4 text-primary" />
-            Appearance
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Dark mode</p>
-              <p className="text-xs text-muted-foreground">App is optimized for dark mode</p>
-            </div>
-            <Switch checked={true} onCheckedChange={() => {}} />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Compact layout</p>
-              <p className="text-xs text-muted-foreground">Reduce spacing for more information density</p>
-            </div>
-            <Switch checked={false} onCheckedChange={() => {}} />
-          </div>
-        </CardContent>
-      </Card>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="new_pw" className="text-xs">New password</Label>
+                    <div className="relative">
+                      <Input
+                        id="new_pw"
+                        type={showNext ? "text" : "password"}
+                        value={pwForm.next}
+                        onChange={(e) => setPwForm((p) => ({ ...p, next: e.target.value }))}
+                        className="h-9 text-sm bg-background/50 pr-9"
+                        placeholder="Min. 8 characters"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNext((v) => !v)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showNext ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="confirm_pw" className="text-xs">Confirm new password</Label>
+                    <Input
+                      id="confirm_pw"
+                      type="password"
+                      value={pwForm.confirm}
+                      onChange={(e) => setPwForm((p) => ({ ...p, confirm: e.target.value }))}
+                      className="h-9 text-sm bg-background/50"
+                      placeholder="Repeat new password"
+                      required
+                    />
+                  </div>
+                </div>
 
-      {/* Trading preferences */}
-      <Card className="bg-card border-border/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Globe className="w-4 h-4 text-primary" />
-            Trading Preferences
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Default market</p>
-              <p className="text-xs text-muted-foreground">Pre-select when creating trades or analysis</p>
-            </div>
-            <div className="flex gap-1">
-              {["Futures", "Commodities"].map((m) => (
-                <button
-                  key={m}
-                  className={
-                    m === "Futures"
-                      ? "px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground"
-                      : "px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-muted-foreground hover:text-foreground"
-                  }
+                {pwError && (
+                  <div className="flex items-center gap-2 text-xs text-destructive">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {pwError}
+                  </div>
+                )}
+
+                {pwState === "saved" && (
+                  <div className="flex items-center gap-2 text-xs text-success">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    Password updated successfully.
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={pwState === "loading" || pwState === "saved"}
+                  className="mt-1"
                 >
-                  {m}
-                </button>
-              ))}
+                  {pwState === "loading" ? "Updating…" : pwState === "saved" ? "Updated!" : "Update password"}
+                </Button>
+              </form>
             </div>
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Default session</p>
-              <p className="text-xs text-muted-foreground">Pre-select for new entries</p>
-            </div>
-            <div className="flex gap-1">
-              {["London", "New York"].map((s) => (
-                <button
-                  key={s}
-                  className={
-                    s === "New York"
-                      ? "px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground"
-                      : "px-3 py-1.5 rounded-lg text-xs font-medium bg-muted text-muted-foreground hover:text-foreground"
-                  }
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Security */}
-      <Card className="bg-card border-border/50">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Shield className="w-4 h-4 text-primary" />
-            Security
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          {[
-            { label: "Change password", desc: "Update your account password" },
-            { label: "Two-factor authentication", desc: "Add an extra layer of security" },
-            { label: "Connected devices", desc: "View and manage active sessions" },
-          ].map(({ label, desc }) => (
-            <button
-              key={label}
-              className="w-full flex items-center justify-between px-3 py-3 rounded-lg hover:bg-muted/40 transition-colors text-left"
-            >
-              <div>
-                <p className="text-sm font-medium">{label}</p>
-                <p className="text-xs text-muted-foreground">{desc}</p>
+            <div className="border-t border-border/40" />
+
+            {/* 2FA — coming soon */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <KeyRound className="w-3.5 h-3.5 text-muted-foreground" />
+                <p className="text-sm font-medium">Two-Factor Authentication</p>
+                <span className="ml-auto text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  Coming soon
+                </span>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            </button>
-          ))}
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saved}>
-          {saved ? "Saved!" : "Save preferences"}
-        </Button>
-      </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                TOTP-based two-factor authentication (via authenticator app) is planned for a future release. No configuration is available yet — enabling a non-functional toggle would be misleading, so this section will unlock once the feature is fully implemented.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </PageWrapper>
     </div>
   );

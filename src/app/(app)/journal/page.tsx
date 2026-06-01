@@ -41,10 +41,10 @@ export default function JournalPage() {
     getTrades().then(setAllTrades).finally(() => setLoading(false));
   }, []);
   const [filterDirection, setFilterDirection] = useState<Direction | "all">("all");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>("calendar");
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
   const [calendarMonth, setCalendarMonth] = useState(new Date());
-  const [calendarPeriod, setCalendarPeriod] = useState<CalendarPeriod>("month");
+  const [calendarPeriod, setCalendarPeriod] = useState<CalendarPeriod>("week");
   const [calendarWeekDate, setCalendarWeekDate] = useState(new Date());
 
   const now = new Date();

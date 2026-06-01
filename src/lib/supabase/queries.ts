@@ -839,6 +839,66 @@ export async function getDaySummary(date: string): Promise<DaySummary> {
   };
 }
 
+// ── Profile ──────────────────────────────────────────────────────────
+
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  bio: string | null;
+  discipline_rules: string | null;
+  preferred_session: string | null;
+  preferred_instrument: string | null;
+  timezone: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type UserProfileUpdate = Partial<Omit<UserProfile, "id" | "user_id" | "created_at" | "updated_at">>;
+
+export async function getProfile(): Promise<UserProfile | null> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  return data as UserProfile | null;
+}
+
+export async function upsertProfile(input: UserProfileUpdate): Promise<UserProfile> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ ...input, updated_at: now() })
+      .eq("user_id", user.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as UserProfile;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .insert({ ...input, user_id: user.id, created_at: now(), updated_at: now() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as UserProfile;
+}
+
 // ── Coaching utilities (pure computation, re-exported from mock store) ─
 export {
   generateCoachingInsights,
