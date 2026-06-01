@@ -79,10 +79,13 @@ export async function updateAnalysis(
   input: Partial<PreTradeAnalysisInput>
 ): Promise<PreTradeAnalysis> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
     .from("analyses")
     .update({ ...input, updated_at: now() })
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
   if (error) throw error;
@@ -91,7 +94,9 @@ export async function updateAnalysis(
 
 export async function deleteAnalysis(id: string): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase.from("analyses").delete().eq("id", id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase.from("analyses").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw error;
 }
 
@@ -147,10 +152,13 @@ export async function updateTrade(
   input: Partial<TradeJournalEntryInput>
 ): Promise<TradeJournalEntry> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
     .from("trades")
     .update({ ...input, updated_at: now() })
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
   if (error) throw error;
@@ -159,7 +167,9 @@ export async function updateTrade(
 
 export async function deleteTrade(id: string): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase.from("trades").delete().eq("id", id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase.from("trades").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw error;
 }
 
@@ -211,10 +221,13 @@ export async function updateAccount(
   input: Partial<FundedAccountInput>
 ): Promise<FundedAccount> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
     .from("funded_accounts")
     .update({ ...input, updated_at: now() })
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
   if (error) throw error;
@@ -223,8 +236,10 @@ export async function updateAccount(
 
 export async function deleteAccount(id: string): Promise<void> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
   // Cascades to payout_events via FK
-  const { error } = await supabase.from("funded_accounts").delete().eq("id", id);
+  const { error } = await supabase.from("funded_accounts").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw error;
 }
 
@@ -243,6 +258,8 @@ export async function getPayoutsByAccountId(accountId: string): Promise<PayoutEv
 
 export async function createPayout(input: Omit<PayoutEvent, "id">): Promise<PayoutEvent> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
     .from("payout_events")
     .insert(input)
@@ -289,10 +306,13 @@ export async function createHabit(
 
 export async function updateHabit(id: string, input: Partial<Habit>): Promise<Habit> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
     .from("habits")
     .update({ ...input, updated_at: now() })
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
   if (error) throw error;
@@ -301,8 +321,10 @@ export async function updateHabit(id: string, input: Partial<Habit>): Promise<Ha
 
 export async function deleteHabit(id: string): Promise<void> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
   await supabase.from("habit_completions").delete().eq("habit_id", id);
-  const { error } = await supabase.from("habits").delete().eq("id", id);
+  const { error } = await supabase.from("habits").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw error;
 }
 
@@ -702,10 +724,13 @@ export async function createDailyTask(
 
 export async function updateDailyTask(id: string, input: Partial<DailyTask>): Promise<DailyTask> {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
     .from("daily_tasks")
     .update(input)
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
   if (error) throw error;
@@ -714,7 +739,9 @@ export async function updateDailyTask(id: string, input: Partial<DailyTask>): Pr
 
 export async function deleteDailyTask(id: string): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase.from("daily_tasks").delete().eq("id", id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase.from("daily_tasks").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw error;
 }
 

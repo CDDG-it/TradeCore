@@ -26,10 +26,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Use getUser() for authoritative server-validated auth check,
+    // then getSession() only to retrieve the access token for downstream use.
+    Promise.all([
+      supabase.auth.getUser(),
+      supabase.auth.getSession(),
+    ]).then(([{ data: { user } }, { data: { session } }]) => {
+      setUser(user);
       setSession(session);
-      setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
