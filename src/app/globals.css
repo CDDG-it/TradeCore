@@ -493,7 +493,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 }
 
 .card-hover:hover {
-  transform: translateY(-2px) scale(1.012) translateZ(0);
+  transform: translateY(-2px) translateZ(0);
   box-shadow: 0 12px 40px rgba(249, 115, 22, 0.13), 0 4px 16px rgba(0, 0, 0, 0.38) !important;
   border-color: rgba(249, 115, 22, 0.30) !important;
 }

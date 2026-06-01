@@ -16,7 +16,7 @@ interface Props {
 const PRESET_LABELS = ["HTF", "LTF", "Trade-entry"];
 
 /** Resize and compress an image file to a max width, returning a base64 data URL */
-function compressImage(file: File, maxWidth = 1400): Promise<string> {
+function compressImage(file: File, maxWidth = 2400): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -28,9 +28,11 @@ function compressImage(file: File, maxWidth = 1400): Promise<string> {
         const canvas = document.createElement("canvas");
         canvas.width = w;
         canvas.height = h;
-        const ctx = canvas.getContext("2d")!;
+        const ctx = canvas.getContext("2d", { alpha: false })!;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
         ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
+        resolve(canvas.toDataURL("image/jpeg", 0.93));
       };
       img.onerror = reject;
       img.src = e.target?.result as string;
