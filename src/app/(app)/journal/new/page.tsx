@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { createTrade, getAnalyses } from "@/lib/supabase/queries";
+import { createTrade, getAnalyses, getProfile } from "@/lib/supabase/queries";
 import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline } from "@/lib/types";
@@ -43,7 +43,20 @@ export default function NewTradePage() {
   const [allAnalyses, setAllAnalyses] = useState<PreTradeAnalysis[]>([]);
 
   useEffect(() => {
-    getAnalyses().then(setAllAnalyses);
+    Promise.all([getAnalyses(), getProfile()]).then(([analyses, profile]) => {
+      setAllAnalyses(analyses);
+      if (profile?.discipline_rules) {
+        const checks = profile.discipline_rules
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((label) => ({ label, passed: false }));
+        if (checks.length > 0) {
+          const score = 0;
+          setForm((prev) => ({ ...prev, discipline: { ...prev.discipline!, custom_checks: checks, score } }));
+        }
+      }
+    });
   }, []);
 
   const [form, setForm] = useState<TradeJournalEntryInput>({

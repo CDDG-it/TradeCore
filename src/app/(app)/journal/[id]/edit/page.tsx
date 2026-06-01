@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { getTradeById, updateTrade, getAnalyses } from "@/lib/supabase/queries";
+import { getTradeById, updateTrade, getAnalyses, getProfile } from "@/lib/supabase/queries";
 import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { Direction, TradeResult, Session, TradeDiscipline } from "@/lib/types";
@@ -60,10 +60,28 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [form, setForm] = useState(DEFAULT_FORM);
 
   useEffect(() => {
-    Promise.all([getTradeById(id), getAnalyses()]).then(([trade, analyses]) => {
+    Promise.all([getTradeById(id), getAnalyses(), getProfile()]).then(([trade, analyses, profile]) => {
       setAllAnalyses(analyses);
       if (!trade) { setNotFound(true); setLoading(false); return; }
       setTradeInfo({ instrument: trade.instrument, session: trade.session });
+
+      const existingDiscipline = trade.discipline as TradeDiscipline | undefined;
+      const hasExistingChecks = (existingDiscipline?.custom_checks?.length ?? 0) > 0;
+
+      let discipline: TradeDiscipline = existingDiscipline ?? DEFAULT_FORM.discipline;
+
+      // Pre-load from profile only when the trade has no custom checks yet
+      if (!hasExistingChecks && profile?.discipline_rules) {
+        const checks = profile.discipline_rules
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((label) => ({ label, passed: false }));
+        if (checks.length > 0) {
+          discipline = { ...discipline, custom_checks: checks, score: 0 };
+        }
+      }
+
       setForm({
         date_time: trade.date_time.slice(0, 10),
         instrument: trade.instrument,
@@ -82,7 +100,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         mistakes: trade.mistakes ?? "",
         lessons: trade.lessons ?? "",
         linked_analysis_id: trade.linked_analysis_id,
-        discipline: (trade.discipline as TradeDiscipline | undefined) ?? DEFAULT_FORM.discipline,
+        discipline,
       });
       setLoading(false);
     });
