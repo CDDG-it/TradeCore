@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays } from "lucide-react";
+import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent } from "@/components/ui/card";
@@ -250,7 +251,13 @@ export default function AccountsPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-end">
+                      <div className="flex items-center justify-between">
+                        {acct.purchase_date ? (
+                          <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
+                            <CalendarDays className="w-2.5 h-2.5" />
+                            {format(new Date(acct.purchase_date + "T12:00:00"), "d MMM yyyy")}
+                          </span>
+                        ) : <span />}
                         <span className="text-xs text-primary flex items-center gap-1">
                           Details <ArrowRight className="w-3 h-3" />
                         </span>

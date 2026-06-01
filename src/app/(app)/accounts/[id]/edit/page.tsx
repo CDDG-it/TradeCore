@@ -78,7 +78,11 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
     if (!form.firm_name) return;
     setSaving(true);
     try {
-      await updateAccount(id, form);
+      await updateAccount(id, {
+        ...form,
+        purchase_date: form.purchase_date || undefined,
+        inactive_date: form.inactive_date || undefined,
+      });
       router.push(`/accounts/${id}`);
     } catch (err) {
       console.error("Failed to save account:", err);

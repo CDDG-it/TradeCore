@@ -487,10 +487,13 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 .card-hover {
   transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
   will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .card-hover:hover {
-  transform: translateY(-2px) scale(1.012);
+  transform: translateY(-2px) scale(1.012) translateZ(0);
   box-shadow: 0 12px 40px rgba(249, 115, 22, 0.13), 0 4px 16px rgba(0, 0, 0, 0.38) !important;
   border-color: rgba(249, 115, 22, 0.30) !important;
 }

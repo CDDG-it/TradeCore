@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const BIASES: Bias[] = ["bullish", "bearish", "choppy"];
 
-function compressImage(file: File, maxWidth = 1400): Promise<string> {
+function compressImage(file: File, maxWidth = 2400): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -29,7 +29,7 @@ function compressImage(file: File, maxWidth = 1400): Promise<string> {
         const canvas = document.createElement("canvas");
         canvas.width = w; canvas.height = h;
         canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
+        resolve(canvas.toDataURL("image/jpeg", 0.93));
       };
       img.onerror = reject;
       img.src = e.target?.result as string;
@@ -72,6 +72,13 @@ function ChartTab({
     return () => window.removeEventListener("paste", onPaste);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urls]);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setLightbox(null); }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox]);
 
   return (
     <div className="space-y-3">
