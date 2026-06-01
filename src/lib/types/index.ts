@@ -139,6 +139,8 @@ export interface TradeJournalEntry {
   psychology_notes: string;
   mistakes: string;
   lessons: string;
+  /** Execution time e.g. "09:32" */
+  execution_time?: string;
   /** Optional process discipline self-assessment */
   discipline?: TradeDiscipline;
   /** Optional structured market context at time of trade */
@@ -168,6 +170,10 @@ export interface FundedAccount {
   next_payout_target: number;
   status: AccountStatus;
   notes: string;
+  /** Date the account/eval was purchased */
+  purchase_date?: string;
+  /** Date the account went inactive/expired */
+  inactive_date?: string;
   created_at: string;
   updated_at: string;
 }

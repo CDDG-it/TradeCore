@@ -2,7 +2,8 @@
 
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, X, Check } from "lucide-react";
+import { ArrowLeft, Plus, X, Check, Clock } from "lucide-react";
+import { format } from "date-fns";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ const DEFAULT_FORM = {
     no_revenge_trade: false, respected_stop_loss: false, journal_completed: false,
     score: 0, notes: "", custom_checks: [],
   } as TradeDiscipline,
+  execution_time: "" as string | undefined,
 };
 
 export default function EditTradePage({ params }: { params: Promise<{ id: string }> }) {
@@ -55,6 +57,8 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [showDiscipline, setShowDiscipline] = useState(true);
   const [newCustomLabel, setNewCustomLabel] = useState("");
   const [allAnalyses, setAllAnalyses] = useState<PreTradeAnalysis[]>([]);
+  const [customTF, setCustomTF] = useState("");
+  const [showCustomTF, setShowCustomTF] = useState(false);
   const [tradeInfo, setTradeInfo] = useState<{ instrument: string; session: string }>({ instrument: "", session: "" });
 
   const [form, setForm] = useState(DEFAULT_FORM);
@@ -101,6 +105,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         lessons: trade.lessons ?? "",
         linked_analysis_id: trade.linked_analysis_id,
         discipline,
+        execution_time: trade.execution_time ?? "",
       });
       setLoading(false);
     });
@@ -211,7 +216,14 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Date</Label>
+                <Label className="text-xs flex items-center gap-2">
+                  Date
+                  {form.date_time && (
+                    <span className="text-muted-foreground font-normal">
+                      {format(new Date(form.date_time + "T12:00:00"), "EEEE")}
+                    </span>
+                  )}
+                </Label>
                 <Input type="date" value={form.date_time}
                   onChange={(e) => { set("date_time", e.target.value); set("linked_analysis_id", undefined); }}
                   className="h-9 text-sm" required />
@@ -282,15 +294,47 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                       {tf}
                     </button>
                   ))}
+                  <button type="button" onClick={() => setShowCustomTF((v) => !v)}
+                    className={cn("px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
+                      showCustomTF ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                    Custom
+                  </button>
                 </div>
+                {showCustomTF && (
+                  <div className="flex gap-2 mt-1.5">
+                    <Input value={customTF} onChange={(e) => setCustomTF(e.target.value)}
+                      placeholder="e.g. 2H" className="h-8 text-xs font-mono max-w-32"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const v = customTF.trim();
+                          if (v) { const parts = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : []; if (!parts.includes(v)) set("timeframe", [...parts, v].join(" / ")); setCustomTF(""); setShowCustomTF(false); }
+                        }
+                      }} />
+                    <Button type="button" size="sm" variant="outline" className="h-8 px-3 text-xs"
+                      onClick={() => { const v = customTF.trim(); if (v) { const parts = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : []; if (!parts.includes(v)) set("timeframe", [...parts, v].join(" / ")); setCustomTF(""); setShowCustomTF(false); } }}>
+                      Add
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">R:R</Label>
-              <Input type="number" step="0.1" min="0" value={form.rr}
-                onChange={(e) => set("rr", parseFloat(e.target.value) || 0)}
-                className="h-9 text-sm font-mono max-w-32" required />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">R:R</Label>
+                <Input type="number" step="0.1" min="0" value={form.rr}
+                  onChange={(e) => set("rr", parseFloat(e.target.value) || 0)}
+                  className="h-9 text-sm font-mono" required />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs flex items-center gap-1.5">
+                  <Clock className="w-3 h-3" /> Execution Time
+                </Label>
+                <Input type="time" value={form.execution_time ?? ""}
+                  onChange={(e) => set("execution_time", e.target.value)}
+                  className="h-9 text-sm font-mono" />
+              </div>
             </div>
           </CardContent>
         </Card>

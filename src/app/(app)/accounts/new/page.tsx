@@ -37,6 +37,8 @@ export default function NewAccountPage() {
     next_payout_target: 0,
     status: "active",
     notes: "",
+    purchase_date: new Date().toISOString().split("T")[0],
+    inactive_date: undefined,
   });
 
   function set<K extends keyof FundedAccountInput>(key: K, value: FundedAccountInput[K]) {
@@ -144,15 +146,23 @@ export default function NewAccountPage() {
               )}
             </div>
 
-            {/* Purchase Cost */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">
-                Purchase Cost ($) *
-                <span className="ml-1 text-muted-foreground/60 font-normal">— eval fee paid</span>
-              </Label>
-              <Input type="number" step="0.01" value={form.purchase_cost}
-                onChange={(e) => set("purchase_cost", parseFloat(e.target.value) || 0)}
-                placeholder="e.g. 149" className="h-9 text-sm font-mono" required />
+            {/* Purchase Cost + Purchase Date */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Purchase Cost ($) *
+                  <span className="ml-1 text-muted-foreground/60 font-normal">— eval fee paid</span>
+                </Label>
+                <Input type="number" step="0.01" value={form.purchase_cost}
+                  onChange={(e) => set("purchase_cost", parseFloat(e.target.value) || 0)}
+                  placeholder="e.g. 149" className="h-9 text-sm font-mono" required />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Purchase Date</Label>
+                <Input type="date" value={form.purchase_date ?? ""}
+                  onChange={(e) => set("purchase_date", e.target.value || undefined)}
+                  className="h-9 text-sm" />
+              </div>
             </div>
 
             {/* Notes */}

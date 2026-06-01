@@ -46,6 +46,7 @@ function ChartTab({
   urls: string[]; onUrlsChange: (urls: string[]) => void; placeholder: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLButtonElement>(null);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
@@ -59,6 +60,18 @@ function ChartTab({
       onUrlsChange([...urls, ...compressed]);
     } finally { setLoading(false); }
   }
+
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      if (!dropZoneRef.current) return;
+      const items = Array.from(e.clipboardData?.items ?? []);
+      const imageFiles = items.filter((i) => i.type.startsWith("image/")).map((i) => i.getAsFile()).filter(Boolean) as File[];
+      if (imageFiles.length > 0) processFiles(imageFiles);
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urls]);
 
   return (
     <div className="space-y-3">
@@ -88,7 +101,7 @@ function ChartTab({
         </div>
       )}
       {urls.length < 5 && (
-        <button type="button" onClick={() => inputRef.current?.click()}
+        <button ref={dropZoneRef} type="button" onClick={() => inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={(e) => { e.preventDefault(); setDragging(false); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); }}
@@ -102,7 +115,7 @@ function ChartTab({
           {loading ? <span>Processing...</span> : (
             <>
               <span className="font-medium">{urls.length === 0 ? `Add ${label} screenshots` : "Add more"}</span>
-              <span className="text-muted-foreground/60">Click or drag & drop · {5 - urls.length} remaining</span>
+              <span className="text-muted-foreground/60">Click · drag & drop · or paste · {5 - urls.length} remaining</span>
             </>
           )}
         </button>

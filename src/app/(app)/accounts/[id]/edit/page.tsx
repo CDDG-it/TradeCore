@@ -41,7 +41,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
   const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
   const [customSize, setCustomSize] = useState(false);
-  const [form, setForm] = useState(DEFAULT_FORM);
+  const [form, setForm] = useState<typeof DEFAULT_FORM & { purchase_date?: string; inactive_date?: string }>(DEFAULT_FORM);
 
   useEffect(() => {
     getAccountById(id).then((acct) => {
@@ -57,6 +57,8 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
         trailing_drawdown: acct.trailing_drawdown, drawdown_used: acct.drawdown_used,
         payout_total: acct.payout_total, next_payout_target: acct.next_payout_target,
         status: acct.status, notes: acct.notes,
+        purchase_date: acct.purchase_date ?? "",
+        inactive_date: acct.inactive_date ?? "",
       });
       setLoading(false);
     });
@@ -177,14 +179,22 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
             </div>
 
             {/* Purchase Cost */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">
-                Purchase Cost ($)
-                <span className="ml-1 text-muted-foreground/60 font-normal">— eval fee paid</span>
-              </Label>
-              <Input type="number" step="0.01" value={form.purchase_cost}
-                onChange={(e) => set("purchase_cost", parseFloat(e.target.value) || 0)}
-                className="h-9 text-sm font-mono" />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Purchase Cost ($)
+                  <span className="ml-1 text-muted-foreground/60 font-normal">— eval fee paid</span>
+                </Label>
+                <Input type="number" step="0.01" value={form.purchase_cost}
+                  onChange={(e) => set("purchase_cost", parseFloat(e.target.value) || 0)}
+                  className="h-9 text-sm font-mono" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Purchase Date</Label>
+                <Input type="date" value={form.purchase_date ?? ""}
+                  onChange={(e) => setForm((p) => ({ ...p, purchase_date: e.target.value || undefined }))}
+                  className="h-9 text-sm" />
+              </div>
             </div>
 
             {/* Status — active / inactive toggle */}
@@ -212,6 +222,18 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
                 ))}
               </div>
             </div>
+
+            {/* Inactive date — only shown when account is not active */}
+            {form.status !== "active" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  {form.status === "blown" ? "Blown date" : form.status === "passed" ? "Passed date" : "Inactive since"}
+                </Label>
+                <Input type="date" value={form.inactive_date ?? ""}
+                  onChange={(e) => setForm((p) => ({ ...p, inactive_date: e.target.value || undefined }))}
+                  className="h-9 text-sm" />
+              </div>
+            )}
 
             {/* Notes */}
             <div className="space-y-1.5">

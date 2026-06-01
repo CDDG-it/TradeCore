@@ -15,13 +15,16 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { format, subDays, subMonths, startOfDay, endOfDay, isAfter, isBefore } from "date-fns";
+import { format, subDays, subMonths, startOfDay, endOfDay, isAfter, isBefore, getDay } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTrades } from "@/lib/supabase/queries";
 import type { TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Period = "all" | "day" | "week" | "month";
+type DayFilter = "all" | "Mon" | "Tue" | "Wed" | "Thu" | "Fri";
+type SessionFilter = "all" | "London" | "New York" | "Asia";
+type DirectionFilter = "all" | "long" | "short";
 
 function ChartTooltip({
   active,
@@ -45,8 +48,13 @@ function ChartTooltip({
   );
 }
 
+const DAY_MAP: Record<number, DayFilter> = { 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri" };
+
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>("all");
+  const [dayFilter, setDayFilter] = useState<DayFilter>("all");
+  const [sessionFilter, setSessionFilter] = useState<SessionFilter>("all");
+  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
   const [allTrades, setAllTrades] = useState<TradeJournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -56,21 +64,33 @@ export default function AnalyticsPage() {
 
   // ── Period filtering ─────────────────────────────────────────────────
   const trades = useMemo(() => {
-    if (period === "all") return allTrades;
-    if (period === "day") {
-      const dayStart = startOfDay(new Date());
-      const dayEnd = endOfDay(new Date());
-      return allTrades.filter((t) => {
-        const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
-        return !isBefore(d, dayStart) && !isAfter(d, dayEnd);
-      });
+    let result = allTrades;
+    if (period !== "all") {
+      if (period === "day") {
+        const dayStart = startOfDay(new Date());
+        const dayEnd = endOfDay(new Date());
+        result = result.filter((t) => {
+          const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
+          return !isBefore(d, dayStart) && !isAfter(d, dayEnd);
+        });
+      } else {
+        const cutoff = period === "week" ? subDays(new Date(), 7) : subMonths(new Date(), 1);
+        result = result.filter((t) =>
+          isAfter(new Date(t.date_time.slice(0, 10) + "T12:00:00"), cutoff)
+        );
+      }
     }
-    const cutoff =
-      period === "week" ? subDays(new Date(), 7) : subMonths(new Date(), 1);
-    return allTrades.filter((t) =>
-      isAfter(new Date(t.date_time.slice(0, 10) + "T12:00:00"), cutoff)
-    );
-  }, [allTrades, period]);
+    if (dayFilter !== "all") {
+      result = result.filter((t) => DAY_MAP[getDay(new Date(t.date_time.slice(0, 10) + "T12:00:00"))] === dayFilter);
+    }
+    if (sessionFilter !== "all") {
+      result = result.filter((t) => t.session === sessionFilter);
+    }
+    if (directionFilter !== "all") {
+      result = result.filter((t) => t.direction === directionFilter);
+    }
+    return result;
+  }, [allTrades, period, dayFilter, sessionFilter, directionFilter]);
 
   // ── Derived stats ─────────────────────────────────────────────────────
   const wins = trades.filter((t) => t.result === "win");
@@ -208,6 +228,40 @@ export default function AnalyticsPage() {
         }
       />
       <PageWrapper>
+      {/* Extra filters */}
+      <div className="flex flex-wrap gap-2">
+        {/* Day of week */}
+        <div className="flex rounded-lg border border-border/50 overflow-hidden">
+          {(["all", "Mon", "Tue", "Wed", "Thu", "Fri"] as DayFilter[]).map((d) => (
+            <button key={d} onClick={() => setDayFilter(d)}
+              className={cn("px-2.5 py-1.5 text-xs font-medium transition-colors",
+                dayFilter === d ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+              {d === "all" ? "All days" : d}
+            </button>
+          ))}
+        </div>
+        {/* Session */}
+        <div className="flex rounded-lg border border-border/50 overflow-hidden">
+          {(["all", "London", "New York", "Asia"] as SessionFilter[]).map((s) => (
+            <button key={s} onClick={() => setSessionFilter(s)}
+              className={cn("px-2.5 py-1.5 text-xs font-medium transition-colors",
+                sessionFilter === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+              {s === "all" ? "All sessions" : s}
+            </button>
+          ))}
+        </div>
+        {/* Direction */}
+        <div className="flex rounded-lg border border-border/50 overflow-hidden">
+          {(["all", "long", "short"] as DirectionFilter[]).map((d) => (
+            <button key={d} onClick={() => setDirectionFilter(d)}
+              className={cn("px-2.5 py-1.5 text-xs font-medium transition-colors capitalize",
+                directionFilter === d ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+              {d === "all" ? "Both directions" : d}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Empty state */}
       {trades.length === 0 && (
         <Card className="bg-card border-border/50">

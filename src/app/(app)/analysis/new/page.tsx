@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ImagePlus, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
@@ -55,9 +55,22 @@ function ChartTab({
   placeholder: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLButtonElement>(null);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
+
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      if (!dropZoneRef.current) return;
+      const items = Array.from(e.clipboardData?.items ?? []);
+      const imageFiles = items.filter((i) => i.type.startsWith("image/")).map((i) => i.getAsFile()).filter(Boolean) as File[];
+      if (imageFiles.length > 0) processFiles(imageFiles);
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urls]);
 
   async function processFiles(files: FileList | File[]) {
     const toAdd = Array.from(files).filter((f) => f.type.startsWith("image/")).slice(0, 5 - urls.length);
@@ -106,6 +119,7 @@ function ChartTab({
 
       {urls.length < 5 && (
         <button
+          ref={dropZoneRef}
           type="button"
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -122,7 +136,7 @@ function ChartTab({
           {loading ? <span>Processing...</span> : (
             <>
               <span className="font-medium">{urls.length === 0 ? `Add ${label} screenshots` : "Add more"}</span>
-              <span className="text-muted-foreground/60">Click or drag & drop · {5 - urls.length} remaining</span>
+              <span className="text-muted-foreground/60">Click · drag & drop · or paste · {5 - urls.length} remaining</span>
             </>
           )}
         </button>
