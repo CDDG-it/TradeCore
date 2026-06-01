@@ -68,10 +68,10 @@ export function CandlestickBackground() {
     let dpr = window.devicePixelRatio || 1;
     const resize = () => {
       dpr = window.devicePixelRatio || 1;
-      canvas.width = canvas.offsetWidth * dpr;
-      canvas.height = canvas.offsetHeight * dpr;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      lastTsRef.current = null; // reset timestamp so first frame after resize doesn't jump
+      lastTsRef.current = null;
     };
     resize();
     window.addEventListener("resize", resize);
@@ -85,8 +85,8 @@ export function CandlestickBackground() {
       }
       lastTsRef.current = ts;
 
-      const W = canvas.offsetWidth;
-      const H = canvas.offsetHeight;
+      const W = window.innerWidth;
+      const H = window.innerHeight;
       const isDark = themeRef.current !== "light";
       ctx.clearRect(0, 0, W, H);
 
