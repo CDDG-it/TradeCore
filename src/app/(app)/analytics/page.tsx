@@ -72,9 +72,10 @@ export default function AnalyticsPage() {
   const bes = trades.filter((t) => t.result === "break-even");
   const winRate = trades.length > 0 ? Math.round((wins.length / trades.length) * 100) : 0;
   const lossRate = trades.length > 0 ? Math.round((losses.length / trades.length) * 100) : 0;
+  // Average R:R calculated only over winning trades — losses are excluded to avoid skewing the metric
   const avgRR =
-    trades.length > 0
-      ? Math.round((trades.reduce((s, t) => s + t.rr, 0) / trades.length) * 100) / 100
+    wins.length > 0
+      ? Math.round((wins.reduce((s, t) => s + t.rr, 0) / wins.length) * 100) / 100
       : 0;
 
   // ── Cumulative R curve (win=+rr, loss=-1R, be=0) ────────────────────
@@ -101,19 +102,21 @@ export default function AnalyticsPage() {
   ].filter((d) => d.value > 0);
 
   // ── Win rate by instrument (for breakdown table) ─────────────────────
-  const byInstrument: Record<string, { trades: number; wins: number; totalRR: number }> = {};
+  const byInstrument: Record<string, { trades: number; wins: number; winTotalRR: number }> = {};
   trades.forEach((t) => {
     if (!byInstrument[t.instrument])
-      byInstrument[t.instrument] = { trades: 0, wins: 0, totalRR: 0 };
+      byInstrument[t.instrument] = { trades: 0, wins: 0, winTotalRR: 0 };
     byInstrument[t.instrument].trades += 1;
-    if (t.result === "win") byInstrument[t.instrument].wins += 1;
-    byInstrument[t.instrument].totalRR += t.rr;
+    if (t.result === "win") {
+      byInstrument[t.instrument].wins += 1;
+      byInstrument[t.instrument].winTotalRR += t.rr;
+    }
   });
   const instrumentData = Object.entries(byInstrument)
     .map(([name, d]) => ({
       name,
       winRate: Math.round((d.wins / d.trades) * 100),
-      avgRR: Math.round((d.totalRR / d.trades) * 100) / 100,
+      avgRR: d.wins > 0 ? Math.round((d.winTotalRR / d.wins) * 100) / 100 : 0,
       trades: d.trades,
     }))
     .sort((a, b) => b.winRate - a.winRate);
@@ -148,13 +151,15 @@ export default function AnalyticsPage() {
           (shortTrades.filter((t) => t.result === "win").length / shortTrades.length) * 100
         )
       : 0;
+  const longWins = longTrades.filter((t) => t.result === "win");
+  const shortWins = shortTrades.filter((t) => t.result === "win");
   const longAvgRR =
-    longTrades.length > 0
-      ? Math.round((longTrades.reduce((s, t) => s + t.rr, 0) / longTrades.length) * 100) / 100
+    longWins.length > 0
+      ? Math.round((longWins.reduce((s, t) => s + t.rr, 0) / longWins.length) * 100) / 100
       : 0;
   const shortAvgRR =
-    shortTrades.length > 0
-      ? Math.round((shortTrades.reduce((s, t) => s + t.rr, 0) / shortTrades.length) * 100) / 100
+    shortWins.length > 0
+      ? Math.round((shortWins.reduce((s, t) => s + t.rr, 0) / shortWins.length) * 100) / 100
       : 0;
 
   // ── Tabs ──────────────────────────────────────────────────────────────
@@ -215,8 +220,8 @@ export default function AnalyticsPage() {
               },
               {
                 label: "Avg R:R",
-                value: `${avgRR}R`,
-                sub: "Per completed trade",
+                value: wins.length > 0 ? `${avgRR}R` : "—",
+                sub: "Winning trades only",
                 color: "text-primary",
               },
               {

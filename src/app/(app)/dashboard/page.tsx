@@ -494,6 +494,7 @@ export default function DashboardPage() {
       icon: Activity,
       accent: "oklch(0.72 0.22 45)",
       accentBg: "oklch(0.72 0.22 45 / 0.10)",
+      href: undefined as string | undefined,
     },
     {
       label: "Active Capital",
@@ -502,6 +503,7 @@ export default function DashboardPage() {
       icon: Wallet,
       accent: "oklch(0.58 0.17 145)",
       accentBg: "oklch(0.58 0.17 145 / 0.10)",
+      href: "/accounts" as string | undefined,
     },
   ];
 
@@ -511,30 +513,57 @@ export default function DashboardPage() {
       <PageWrapper>
         {/* Stats + Discipline */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-up">
-          {statCards.map(({ label, value, sub, icon: Icon, accent, accentBg }, i) => (
-            <div
-              key={label}
-              className="card-hover rounded-xl p-5 relative overflow-hidden"
-              style={{
-                background: "var(--card)",
-                border: "1px solid var(--border)",
-                animationDelay: `${i * 60}ms`,
-              }}
-            >
-              <div
-                className="absolute inset-x-0 top-0 h-px"
-                style={{ background: `linear-gradient(90deg, transparent, ${accent.replace(")", " / 0.40)")}, transparent)` }}
-              />
-              <div className="flex items-start justify-between mb-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: accentBg }}>
-                  <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
+          {statCards.map(({ label, value, sub, icon: Icon, accent, accentBg, href }, i) => {
+            const inner = (
+              <>
+                <div
+                  className="absolute inset-x-0 top-0 h-px"
+                  style={{ background: `linear-gradient(90deg, transparent, ${accent.replace(")", " / 0.40)")}, transparent)` }}
+                />
+                <div className="flex items-start justify-between mb-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: accentBg }}>
+                    <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
+                  </div>
                 </div>
+                <p className="text-3xl font-black tracking-tight mb-1 tabular-nums" style={{ color: accent }}>{value}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">{sub}</p>
+                  {href && (
+                    <span className="text-[10px] font-medium flex items-center gap-0.5" style={{ color: "var(--muted-foreground)" }}>
+                      Manage <ArrowRight className="w-2.5 h-2.5" />
+                    </span>
+                  )}
+                </div>
+              </>
+            );
+            return href ? (
+              <Link
+                key={label}
+                href={href}
+                className="card-hover rounded-xl p-5 relative overflow-hidden cursor-pointer"
+                style={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  animationDelay: `${i * 60}ms`,
+                }}
+              >
+                {inner}
+              </Link>
+            ) : (
+              <div
+                key={label}
+                className="card-hover rounded-xl p-5 relative overflow-hidden"
+                style={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  animationDelay: `${i * 60}ms`,
+                }}
+              >
+                {inner}
               </div>
-              <p className="text-3xl font-black tracking-tight mb-1 tabular-nums" style={{ color: accent }}>{value}</p>
-              <p className="text-xs text-muted-foreground">{sub}</p>
-            </div>
-          ))}
+            );
+          })}
           <div className="animate-fade-up" style={{ animationDelay: "120ms" }} ref={disciplineRef}>
             <DisciplineScoreCard />
           </div>
@@ -613,8 +642,11 @@ export default function DashboardPage() {
                                 : "oklch(0.70 0.16 72)",
                           }}
                         >
-                          {trade.result === "win" ? "+" : trade.result === "loss" ? "-" : ""}
-                          {trade.rr}R
+                          {trade.result === "win"
+                            ? `+${trade.rr}R`
+                            : trade.result === "loss"
+                            ? "-1R"
+                            : "0R"}
                         </p>
                         {trade.discipline && trade.discipline.score > 0 && (
                           <p className="text-[10px] text-muted-foreground">{trade.discipline.score}% disc.</p>

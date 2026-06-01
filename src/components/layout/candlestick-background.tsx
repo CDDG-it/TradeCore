@@ -76,8 +76,8 @@ export function CandlestickBackground() {
 
     const draw = (ts: number) => {
       if (lastTsRef.current !== null) {
-        const dt = Math.min(ts - lastTsRef.current, 50); // cap at 50ms to avoid jumps after tab switch
-        offsetRef.current += (dt / 1000) * 18; // 18 px/s — slow, cinematic
+        const dt = Math.min(ts - lastTsRef.current, 100); // cap at 100ms — absorbs tab-switch spikes cleanly
+        offsetRef.current += (dt / 1000) * 9; // 9 px/s — slow, cinematic
       }
       lastTsRef.current = ts;
 
