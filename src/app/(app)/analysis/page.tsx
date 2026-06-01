@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -9,9 +9,9 @@ import { Plus, Search, TrendingUp, TrendingDown, Minus, ArrowRight, LinkIcon } f
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { getAnalyses } from "@/lib/mock/store";
+import { getAnalyses } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
-import type { Bias, Market } from "@/lib/types";
+import type { Bias, Market, PreTradeAnalysis } from "@/lib/types";
 
 function BiasBadge({ bias }: { bias: Bias }) {
   if (bias === "bullish")
@@ -48,11 +48,16 @@ function MarketBadge({ market }: { market: Market }) {
 type PeriodFilter = "all" | "day" | "week" | "month";
 
 export default function AnalysisPage() {
-  const allAnalyses = getAnalyses();
+  const [allAnalyses, setAllAnalyses] = useState<PreTradeAnalysis[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterBias, setFilterBias] = useState<Bias | "all">("all");
   const [filterMarket, setFilterMarket] = useState<Market | "all">("all");
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
+
+  useEffect(() => {
+    getAnalyses().then(setAllAnalyses).finally(() => setLoading(false));
+  }, []);
 
   const now = new Date();
   const dayStart = startOfDay(now);
@@ -78,6 +83,12 @@ export default function AnalysisPage() {
     }
     return matchSearch && matchBias && matchMarket && matchPeriod;
   });
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
 
   return (
     <div className="space-y-6">

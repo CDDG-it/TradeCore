@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
@@ -17,7 +17,8 @@ import {
 } from "recharts";
 import { format, subDays, subMonths, startOfDay, endOfDay, isAfter, isBefore } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getTrades } from "@/lib/mock/store";
+import { getTrades } from "@/lib/supabase/queries";
+import type { TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Period = "all" | "day" | "week" | "month";
@@ -46,7 +47,12 @@ function ChartTooltip({
 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>("all");
-  const allTrades = getTrades();
+  const [allTrades, setAllTrades] = useState<TradeJournalEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getTrades().then(setAllTrades).finally(() => setLoading(false));
+  }, []);
 
   // ── Period filtering ─────────────────────────────────────────────────
   const trades = useMemo(() => {
@@ -169,6 +175,12 @@ export default function AnalyticsPage() {
     { id: "week", label: "This week" },
     { id: "day", label: "Today" },
   ];
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
 
   return (
     <div className="space-y-8">

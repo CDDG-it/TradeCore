@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Camera, Mail, User, Calendar, Trophy, BarChart2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -11,28 +11,37 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
-import { getDashboardStats, getTrades, getAccounts } from "@/lib/mock/store";
+import { getDashboardStats, getTrades, getAccounts } from "@/lib/supabase/queries";
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const stats = getDashboardStats();
-  const trades = getTrades();
-  const accounts = getAccounts();
+  const [stats, setStats] = useState<import("@/lib/types").DashboardStats | null>(null);
+  const [trades, setTrades] = useState<import("@/lib/types").TradeJournalEntry[]>([]);
+  const [accounts, setAccounts] = useState<import("@/lib/types").FundedAccount[]>([]);
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    getDashboardStats().then(setStats);
+    getTrades().then(setTrades);
+    getAccounts().then(setAccounts);
+  }, []);
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
+
   const [form, setForm] = useState({
-    full_name: user?.full_name || "Demo Trader",
-    email: user?.email || "demo@tradinghub.app",
+    full_name: displayName,
+    email: user?.email || "",
     bio: "Futures and commodities trader focused on high-probability setups. Gold, ES, and crude oil specialist.",
     timezone: "America/New_York",
     tradingStyle: "Intraday",
   });
 
-  const initials = form.full_name
+  const initials = (form.full_name || "T")
     .split(" ")
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join("")
-    .toUpperCase();
+    .toUpperCase()
+    .slice(0, 2);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +52,9 @@ export default function ProfilePage() {
 
   const memberSince = user?.created_at
     ? format(new Date(user.created_at), "MMMM yyyy")
-    : "January 2026";
+    : "—";
+
+  const safeStats = stats ?? { total_trades: 0, win_rate: 0, average_rr: 0, break_even_rate: 0, active_accounts: 0, total_payouts: 0, total_drawdown_used: 0 };
 
   const bestTrade = [...trades].filter((t) => t.result === "win").sort((a, b) => b.rr - a.rr)[0];
   const totalPayouts = accounts.reduce((s, a) => s + a.payout_total, 0);
@@ -74,7 +85,7 @@ export default function ProfilePage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <BarChart2 className="w-3 h-3" />
-                  {stats.total_trades} trades logged
+                  {safeStats.total_trades} trades logged
                 </span>
               </div>
             </div>
@@ -85,9 +96,9 @@ export default function ProfilePage() {
       {/* Career stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total Trades", value: stats.total_trades.toString() },
-          { label: "Win Rate", value: `${stats.win_rate}%` },
-          { label: "Avg R:R", value: `${stats.average_rr}R` },
+          { label: "Total Trades", value: safeStats.total_trades.toString() },
+          { label: "Win Rate", value: `${safeStats.win_rate}%` },
+          { label: "Avg R:R", value: `${safeStats.average_rr}R` },
           { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}` },
         ].map(({ label, value }) => (
           <div key={label} className="bg-card border border-border/50 rounded-xl p-4 text-center">

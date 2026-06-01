@@ -98,12 +98,13 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
 
-  const initials =
-    user?.full_name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase() || "DT";
+  const displayName: string = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
+  const initials = displayName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <aside
@@ -170,10 +171,10 @@ export function Sidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-body text-xs font-medium text-sidebar-foreground/75 truncate">
-                {user?.full_name || "Demo Trader"}
+                {displayName}
               </p>
               <p className="font-body text-[11px] text-sidebar-foreground/35 truncate">
-                {user?.email || "demo@tradecore.app"}
+                {user?.email || ""}
               </p>
             </div>
             <button

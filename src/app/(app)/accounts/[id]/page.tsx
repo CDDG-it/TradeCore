@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -21,10 +21,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getAccountById, getPayoutsByAccountId, deleteAccount, createPayout, deletePayout, computeAccountROI } from "@/lib/mock/store";
+import { getAccountById, getPayoutsByAccountId, deleteAccount, createPayout, deletePayout, computeAccountROI } from "@/lib/supabase/queries";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { PayoutStatus } from "@/lib/types";
+import type { PayoutStatus, FundedAccount, PayoutEvent } from "@/lib/types";
 
 function roiGreenDetail(roi: number): string {
   if (roi >= 5) return "oklch(0.38 0.14 145)";
@@ -51,43 +51,53 @@ function PayoutStatusBadge({ status }: { status: PayoutStatus }) {
 export default function AccountDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const [account, setAccount] = useState<FundedAccount | null>(null);
+  const [payouts, setPayouts] = useState<PayoutEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showAddPayout, setShowAddPayout] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutDate, setPayoutDate] = useState(new Date().toISOString().split("T")[0]);
   const [payoutNotes, setPayoutNotes] = useState("");
-  const [payouts, setPayouts] = useState(() => getPayoutsByAccountId(id));
-  const account = getAccountById(id);
+
+  useEffect(() => {
+    Promise.all([getAccountById(id), getPayoutsByAccountId(id)]).then(([acct, p]) => {
+      setAccount(acct);
+      setPayouts(p);
+      setLoading(false);
+    });
+  }, [id]);
 
   async function handleDelete() {
     setDeleting(true);
-    await new Promise((r) => setTimeout(r, 300));
-    deleteAccount(id);
+    await deleteAccount(id);
     router.push("/accounts");
   }
 
-  function handleAddPayout(e: React.FormEvent) {
+  async function handleAddPayout(e: React.FormEvent) {
     e.preventDefault();
     const amount = parseFloat(payoutAmount);
     if (!amount || amount <= 0) return;
-    createPayout({
-      funded_account_id: id,
-      amount,
-      payout_date: payoutDate,
-      status: "paid",
-      notes: payoutNotes,
-    });
-    setPayouts(getPayoutsByAccountId(id));
+    await createPayout({ funded_account_id: id, amount, payout_date: payoutDate, status: "paid", notes: payoutNotes });
+    const p = await getPayoutsByAccountId(id);
+    setPayouts(p);
     setPayoutAmount("");
     setPayoutNotes("");
     setShowAddPayout(false);
   }
 
-  function handleDeletePayout(payoutId: string) {
-    deletePayout(payoutId);
-    setPayouts(getPayoutsByAccountId(id));
+  async function handleDeletePayout(payoutId: string) {
+    await deletePayout(payoutId);
+    const p = await getPayoutsByAccountId(id);
+    setPayouts(p);
   }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
 
   if (!account) {
     return (

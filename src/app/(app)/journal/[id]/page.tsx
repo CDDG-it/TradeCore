@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -18,20 +18,39 @@ import {
   getAnalysisById,
   deleteTrade,
   updateTrade,
-} from "@/lib/mock/store";
+} from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
-import type { TradeDiscipline, TradeMarketContext } from "@/lib/types";
+import type { TradeDiscipline, TradeMarketContext, TradeJournalEntry, PreTradeAnalysis } from "@/lib/types";
 
 export default function TradeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const [trade, setTrade] = useState<TradeJournalEntry | null>(null);
+  const [linkedAnalysis, setLinkedAnalysis] = useState<PreTradeAnalysis | null>(null);
+  const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [discipline, setDisciplineState] = useState<TradeDiscipline | undefined>(undefined);
 
-  const trade = getTradeById(id);
+  useEffect(() => {
+    getTradeById(id).then(async (t) => {
+      setTrade(t);
+      setDisciplineState(t?.discipline as TradeDiscipline | undefined);
+      if (t?.linked_analysis_id) {
+        const a = await getAnalysisById(t.linked_analysis_id);
+        setLinkedAnalysis(a);
+      }
+      setLoading(false);
+    });
+  }, [id]);
 
-  const [discipline, setDisciplineState] = useState<TradeDiscipline | undefined>(
-    trade?.discipline as TradeDiscipline | undefined
+  const context = trade?.market_context as TradeMarketContext | undefined;
+  void context;
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
   );
 
   if (!trade) {
@@ -43,10 +62,6 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  const linkedAnalysis = trade.linked_analysis_id ? getAnalysisById(trade.linked_analysis_id) : undefined;
-  const context = trade.market_context as TradeMarketContext | undefined;
-  void context;
-
   const resultConfig = {
     win: { color: "text-success", bg: "bg-success/8 border-success/20", label: "Win" },
     loss: { color: "text-destructive", bg: "bg-destructive/8 border-destructive/20", label: "Loss" },
@@ -56,12 +71,11 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
 
   async function handleDelete() {
     setDeleting(true);
-    await new Promise((r) => setTimeout(r, 300));
-    deleteTrade(id);
+    await deleteTrade(id);
     router.push("/journal");
   }
 
-  function toggleCustomCheck(idx: number) {
+  async function toggleCustomCheck(idx: number) {
     if (!discipline) return;
     const custom = [...(discipline.custom_checks ?? [])];
     custom[idx] = { ...custom[idx], passed: !custom[idx].passed };
@@ -69,7 +83,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
     const score = total > 0 ? Math.round((custom.filter((c) => c.passed).length / total) * 100) : 0;
     const updated = { ...discipline, custom_checks: custom, score };
     setDisciplineState(updated);
-    updateTrade(id, { discipline: updated });
+    await updateTrade(id, { discipline: updated });
   }
 
   const groups = trade.screenshot_groups ?? [];

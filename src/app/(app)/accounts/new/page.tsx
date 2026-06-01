@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createAccount } from "@/lib/mock/store";
+import { createAccount } from "@/lib/supabase/queries";
 import type { FundedAccountInput } from "@/lib/types";
 import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
@@ -59,9 +59,13 @@ export default function NewAccountPage() {
     e.preventDefault();
     if (!form.firm_name) return;
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 300));
-    const created = createAccount(form);
-    router.push(`/accounts/${created.id}`);
+    try {
+      const created = await createAccount(form);
+      router.push(`/accounts/${created.id}`);
+    } catch (err) {
+      console.error("Failed to create account:", err);
+      setSaving(false);
+    }
   }
 
   const isPresetSize = ACCOUNT_SIZE_PRESETS.some((p) => p.value === form.account_size) && !customSize;

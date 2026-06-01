@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import {
   getTrades, getHabits, getHabitCompletions, getPlaybook,
   generateCoachingInsights, getAvgDisciplineScore,
-} from "@/lib/mock/store";
+} from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 import type { CoachingInsight, InsightType, InsightCategory } from "@/lib/types";
 
@@ -188,12 +188,11 @@ export default function CoachingPage() {
   const [avgDiscipline, setAvgDiscipline] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  function loadInsights() {
+  async function loadInsights() {
     setLoading(true);
-    const trades = getTrades();
-    const habits = getHabits();
-    const completions = getHabitCompletions();
-    const playbook = getPlaybook();
+    const [trades, habits, completions, playbook] = await Promise.all([
+      getTrades(), getHabits(), getHabitCompletions(), getPlaybook(),
+    ]);
     const generated = generateCoachingInsights(trades, habits, completions, playbook);
     setInsights(generated);
     setTradeCount(trades.length);

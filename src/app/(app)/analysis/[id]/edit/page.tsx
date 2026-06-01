@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useRef } from "react";
+import { use, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ImagePlus, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { getAnalysisById, updateAnalysis } from "@/lib/mock/store";
+import { getAnalysisById, updateAnalysis } from "@/lib/supabase/queries";
+import type { PreTradeAnalysis } from "@/lib/types";
 import type { Bias } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -126,67 +127,95 @@ function ChartTab({
 export default function EditAnalysisPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const analysis = getAnalysisById(id);
+  const [analysis, setAnalysis] = useState<PreTradeAnalysis | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"htf" | "ltf">("htf");
 
-  if (!analysis) {
-    return (
-      <div className="text-center py-20">
-        <p className="text-muted-foreground text-sm">Analysis not found.</p>
-        <Link href="/analysis" className="text-primary text-sm hover:underline mt-2 inline-block">← Back</Link>
-      </div>
-    );
-  }
-
-  // Extract HTF / LTF from existing groups
-  const existingHtf = analysis.screenshot_groups?.find((g) => g.label.startsWith("HTF"));
-  const existingLtf = analysis.screenshot_groups?.find((g) => g.label.startsWith("LTF"));
-
-  const [form, setForm] = useState({
-    date: analysis.date,
-    instrument: INSTRUMENTS.includes(analysis.instrument) ? analysis.instrument : analysis.instrument,
-    bias: analysis.bias as Bias,
-    thesis: analysis.thesis,
-    long_scenario: analysis.long_scenario ?? "",
-    short_scenario: analysis.short_scenario ?? "",
+  const [form, setFormState] = useState({
+    date: new Date().toISOString().split("T")[0],
+    instrument: "",
+    bias: "bullish" as Bias,
+    thesis: "",
+    long_scenario: "",
+    short_scenario: "",
   });
+  const [htfTF, setHtfTF] = useState("4H / Daily");
+  const [ltfTF, setLtfTF] = useState("15m / 5m");
+  const [htfUrls, setHtfUrls] = useState<string[]>([]);
+  const [ltfUrls, setLtfUrls] = useState<string[]>([]);
 
-  const [htfTF, setHtfTF] = useState(() => {
-    if (!existingHtf) return "4H / Daily";
-    const parts = existingHtf.label.split(" · ");
-    return parts.length > 1 ? parts.slice(1).join(" · ") : "4H / Daily";
-  });
-  const [ltfTF, setLtfTF] = useState(() => {
-    if (!existingLtf) return "15m / 5m";
-    const parts = existingLtf.label.split(" · ");
-    return parts.length > 1 ? parts.slice(1).join(" · ") : "15m / 5m";
-  });
-  const [htfUrls, setHtfUrls] = useState<string[]>(existingHtf?.urls ?? []);
-  const [ltfUrls, setLtfUrls] = useState<string[]>(existingLtf?.urls ?? []);
+  useEffect(() => {
+    getAnalysisById(id).then((a) => {
+      if (!a) { setNotFound(true); setLoading(false); return; }
+      setAnalysis(a);
+      const existingHtf = a.screenshot_groups?.find((g) => g.label.startsWith("HTF"));
+      const existingLtf = a.screenshot_groups?.find((g) => g.label.startsWith("LTF"));
+      setFormState({
+        date: a.date,
+        instrument: a.instrument,
+        bias: a.bias as Bias,
+        thesis: a.thesis,
+        long_scenario: a.long_scenario ?? "",
+        short_scenario: a.short_scenario ?? "",
+      });
+      setHtfTF(() => {
+        if (!existingHtf) return "4H / Daily";
+        const parts = existingHtf.label.split(" · ");
+        return parts.length > 1 ? parts.slice(1).join(" · ") : "4H / Daily";
+      });
+      setLtfTF(() => {
+        if (!existingLtf) return "15m / 5m";
+        const parts = existingLtf.label.split(" · ");
+        return parts.length > 1 ? parts.slice(1).join(" · ") : "15m / 5m";
+      });
+      setHtfUrls(existingHtf?.urls ?? []);
+      setLtfUrls(existingLtf?.urls ?? []);
+      setLoading(false);
+    });
+  }, [id]);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setFormState((prev) => ({ ...prev, [key]: value }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!analysis) return;
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 300));
-    updateAnalysis(id, {
-      ...form,
-      title: `${form.instrument} — ${form.date}`,
-      market: analysis!.market,
-      session: analysis!.session,
-      notes: "",
-      used_for_trade: analysis!.used_for_trade,
-      screenshot_groups: [
-        { label: `HTF${htfTF ? ` · ${htfTF}` : ""}`, urls: htfUrls },
-        { label: `LTF${ltfTF ? ` · ${ltfTF}` : ""}`, urls: ltfUrls },
-      ],
-    });
-    router.push(`/analysis/${id}`);
+    try {
+      await updateAnalysis(id, {
+        ...form,
+        title: `${form.instrument} — ${form.date}`,
+        market: analysis.market,
+        session: analysis.session,
+        notes: "",
+        used_for_trade: analysis.used_for_trade,
+        screenshot_groups: [
+          { label: `HTF${htfTF ? ` · ${htfTF}` : ""}`, urls: htfUrls },
+          { label: `LTF${ltfTF ? ` · ${ltfTF}` : ""}`, urls: ltfUrls },
+        ],
+      });
+      router.push(`/analysis/${id}`);
+    } catch (err) {
+      console.error("Failed to save analysis:", err);
+      setSaving(false);
+    }
   }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
+
+  if (notFound) return (
+    <div className="text-center py-20">
+      <p className="text-muted-foreground text-sm">Analysis not found.</p>
+      <Link href="/analysis" className="text-primary text-sm hover:underline mt-2 inline-block">← Back</Link>
+    </div>
+  );
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -195,7 +224,7 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Analysis
         </Link>
         <h1 className="text-2xl font-bold tracking-tight">Edit Analysis</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{analysis.instrument} · {analysis.date}</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{form.instrument} · {form.date}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">

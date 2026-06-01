@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -13,7 +13,8 @@ import { Plus, TrendingUp, TrendingDown, Calendar, List,
   ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getTrades } from "@/lib/mock/store";
+import { getTrades } from "@/lib/supabase/queries";
+import type { TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { TradeResult, Direction } from "@/lib/types";
 
@@ -32,8 +33,13 @@ function ResultBadge({ result }: { result: TradeResult }) {
 }
 
 export default function JournalPage() {
-  const allTrades = getTrades();
+  const [allTrades, setAllTrades] = useState<TradeJournalEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterResult, setFilterResult] = useState<TradeResult | "all">("all");
+
+  useEffect(() => {
+    getTrades().then(setAllTrades).finally(() => setLoading(false));
+  }, []);
   const [filterDirection, setFilterDirection] = useState<Direction | "all">("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
@@ -111,6 +117,12 @@ export default function JournalPage() {
   const calendarTitle = calendarPeriod === "month"
     ? format(calendarMonth, "MMMM yyyy")
     : `${format(calWeekStart, "MMM d")} – ${format(calWeekEnd, "MMM d, yyyy")}`;
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
 
   return (
     <div className="space-y-6">

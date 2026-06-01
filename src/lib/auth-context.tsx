@@ -1,51 +1,58 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { mockUser } from "@/lib/mock/data";
-import type { User } from "@/lib/types";
+import { createClient } from "@/lib/supabase/client";
+import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isLoading: boolean;
-  isDemo: boolean;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  session: null,
   isLoading: true,
-  isDemo: true,
-  signOut: () => {},
+  signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
   useEffect(() => {
-    if (isDemo) {
-      setUser(mockUser);
+    const supabase = createClient();
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
       setIsLoading(false);
-      return;
-    }
+    });
 
-    // Real Supabase auth would go here
-    // const supabase = createClient();
-    // supabase.auth.getUser().then(...)
-    setIsLoading(false);
-  }, [isDemo]);
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsLoading(false);
+      }
+    );
 
-  const signOut = () => {
-    if (isDemo) {
-      window.location.href = "/login";
-      return;
-    }
-    // supabase.auth.signOut()
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isDemo, signOut }}>
+    <AuthContext.Provider value={{ user, session, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

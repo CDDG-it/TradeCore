@@ -29,10 +29,12 @@ import {
   getHabitCompletions,
   toggleHabitCompletion,
   getHabitStreak,
-} from "@/lib/mock/store";
+} from "@/lib/supabase/queries";
 import type {
   DailyJournalEntry,
   SleepRecovery,
+  Habit,
+  HabitCompletion,
 } from "@/lib/types";
 
 type DailyTask = { id: string; text: string; done: boolean };
@@ -105,32 +107,41 @@ export default function SelfImprovementPage() {
   const [trackerDirty, setTrackerDirty] = useState(false);
 
   // Habit state
-  const [habits, setHabits] = useState(() => getHabits());
-  const [todayCompletions, setTodayCompletions] = useState(() =>
-    getHabitCompletions(undefined, toDate(new Date()))
-  );
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [todayCompletions, setTodayCompletions] = useState<HabitCompletion[]>([]);
+  const [habitStreaks, setHabitStreaks] = useState<Record<string, number>>({});
 
   // Daily tasks state
-  const [dailyTasks, setDailyTasks] = useState<DailyTask[]>(() => getDailyTasks(toDate(new Date())));
+  const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
   const [newTask, setNewTask] = useState("");
 
   // Load daily data when date changes
   useEffect(() => {
-    const j = getDailyJournal(selectedDate);
-    setJournal(j || {});
-    setJournalDirty(false);
-
-    const sl = getSleepRecovery(selectedDate);
-    setHoursSlept(sl?.hours_slept ?? 7);
-
-    setTrackerDirty(false);
-    setTodayCompletions(getHabitCompletions(undefined, selectedDate));
-    setHabits(getHabits());
-    setDailyTasks(getDailyTasks(selectedDate));
+    (async () => {
+      const [j, sl, completions, h, tasks] = await Promise.all([
+        getDailyJournal(selectedDate),
+        getSleepRecovery(selectedDate),
+        getHabitCompletions(undefined, selectedDate),
+        getHabits(),
+        getDailyTasks(selectedDate),
+      ]);
+      setJournal(j || {});
+      setJournalDirty(false);
+      setHoursSlept(sl?.hours_slept ?? 7);
+      setTrackerDirty(false);
+      setTodayCompletions(completions);
+      setHabits(h);
+      setDailyTasks(tasks);
+      const streakMap: Record<string, number> = {};
+      await Promise.all(h.map(async (hab) => {
+        streakMap[hab.id] = await getHabitStreak(hab.id);
+      }));
+      setHabitStreaks(streakMap);
+    })();
   }, [selectedDate]);
 
-  function saveJournal() {
-    saveDailyJournal({
+  async function saveJournal() {
+    await saveDailyJournal({
       date: selectedDate,
       mood_note: journal.mood_note || "",
       mental_state: journal.mental_state || "",
@@ -141,8 +152,8 @@ export default function SelfImprovementPage() {
     setJournalDirty(false);
   }
 
-  function saveTracker() {
-    saveSleepRecovery({
+  async function saveTracker() {
+    await saveSleepRecovery({
       date: selectedDate,
       hours_slept: hoursSlept,
       sleep_quality: 7,
@@ -154,9 +165,10 @@ export default function SelfImprovementPage() {
     setTrackerDirty(false);
   }
 
-  function handleToggleHabit(habitId: string) {
-    toggleHabitCompletion(habitId, selectedDate);
-    setTodayCompletions(getHabitCompletions(undefined, selectedDate));
+  async function handleToggleHabit(habitId: string) {
+    await toggleHabitCompletion(habitId, selectedDate);
+    const c = await getHabitCompletions(undefined, selectedDate);
+    setTodayCompletions(c);
   }
 
   function prevDay() {
@@ -336,7 +348,7 @@ export default function SelfImprovementPage() {
                   <div className="space-y-0.5">
                     {habits.map((habit) => {
                       const done = todayCompletions.some((c) => c.habit_id === habit.id && c.completed);
-                      const streak = getHabitStreak(habit.id);
+                      const streak = habitStreaks[habit.id] ?? 0;
                       return (
                         <div key={habit.id} className="flex items-center gap-3 py-1.5">
                           <button
@@ -444,8 +456,16 @@ export default function SelfImprovementPage() {
 
 // ── Day Summary Badges ────────────────────────────────────────────────────────
 
+import type { DaySummary } from "@/lib/supabase/queries";
+
 function DaySummaryBadges({ date }: { date: string }) {
-  const summary = getDaySummary(date);
+  const [summary, setSummary] = useState<DaySummary | null>(null);
+
+  useEffect(() => {
+    getDaySummary(date).then(setSummary);
+  }, [date]);
+
+  if (!summary) return null;
 
   const items = [
     {

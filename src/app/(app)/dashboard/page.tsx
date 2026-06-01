@@ -32,7 +32,8 @@ import {
   createHabit,
   updateHabit,
   deleteHabit,
-} from "@/lib/mock/store";
+  toggleHabitCompletion,
+} from "@/lib/supabase/queries";
 import { subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { TradeResult, Habit, HabitCompletion } from "@/lib/types";
@@ -70,7 +71,11 @@ function ResultBadge({ result }: { result: TradeResult }) {
 
 function DisciplineScoreCard() {
   const [period, setPeriod] = useState<"week" | "month">("week");
-  const trades = getTrades();
+  const [trades, setTrades] = useState<import("@/lib/types").TradeJournalEntry[]>([]);
+
+  useEffect(() => {
+    getTrades().then(setTrades);
+  }, []);
 
   const now = new Date();
   const cutoff =
@@ -166,28 +171,22 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
   const [editName, setEditName] = useState("");
   const [showOverview, setShowOverview] = useState(false);
 
-  useEffect(() => {
-    const h = getHabits();
+  const refreshHabits = async () => {
+    const [h, c] = await Promise.all([getHabits(), getHabitCompletions()]);
     setHabits(h);
-    setCompletions(getHabitCompletions());
-  }, []);
+    setCompletions(c);
+  };
+
+  useEffect(() => { refreshHabits(); }, []);
 
   const todayDone = completions
     .filter((c) => c.date === TODAY && c.completed)
     .map((c) => c.habit_id);
 
-  function toggleHabit(habitId: string) {
-    const isDone = todayDone.includes(habitId);
-    if (isDone) {
-      setCompletions((prev) =>
-        prev.filter((c) => !(c.habit_id === habitId && c.date === TODAY && c.completed))
-      );
-    } else {
-      setCompletions((prev) => [
-        ...prev,
-        { id: `hc_${Date.now()}`, habit_id: habitId, date: TODAY, completed: true },
-      ]);
-    }
+  async function toggleHabit(habitId: string) {
+    await toggleHabitCompletion(habitId, TODAY);
+    const c = await getHabitCompletions();
+    setCompletions(c);
   }
 
   // Expose toggle capability to parent for keyboard shortcuts
@@ -196,28 +195,28 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [habits, todayDone.join(",")]);
 
-  function handleAddHabit(e: React.FormEvent) {
+  async function handleAddHabit(e: React.FormEvent) {
     e.preventDefault();
     const name = newHabitName.trim();
     if (!name) return;
-    createHabit({ name, description: "", category: "routine", frequency: "daily", target_days: 7, color: "#F97316", icon: "" });
-    setHabits(getHabits());
+    await createHabit({ name, description: "", category: "routine", frequency: "daily", target_days: 7, color: "#F97316", icon: "" });
+    await refreshHabits();
     setNewHabitName("");
     setShowAdd(false);
   }
 
-  function handleSaveEdit(id: string) {
+  async function handleSaveEdit(id: string) {
     const name = editName.trim();
     if (!name) return;
-    updateHabit(id, { name });
-    setHabits(getHabits());
+    await updateHabit(id, { name });
+    const h = await getHabits();
+    setHabits(h);
     setEditingId(null);
   }
 
-  function handleDelete(id: string) {
-    deleteHabit(id);
-    setHabits(getHabits());
-    setCompletions((prev) => prev.filter((c) => c.habit_id !== id));
+  async function handleDelete(id: string) {
+    await deleteHabit(id);
+    await refreshHabits();
   }
 
   const doneCount = todayDone.length;
@@ -430,9 +429,14 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
 }
 
 export default function DashboardPage() {
-  const trades = getTrades();
-  const accounts = getAccounts();
+  const [trades, setTrades] = useState<import("@/lib/types").TradeJournalEntry[]>([]);
+  const [accounts, setAccounts] = useState<import("@/lib/types").FundedAccount[]>([]);
   const habitStateRef = useRef<{ habits: Habit[]; toggle: (id: string) => void } | null>(null);
+
+  useEffect(() => {
+    getTrades().then(setTrades);
+    getAccounts().then(setAccounts);
+  }, []);
   const disciplineRef = useRef<HTMLDivElement>(null);
   const habitsRef = useRef<HTMLDivElement>(null);
 

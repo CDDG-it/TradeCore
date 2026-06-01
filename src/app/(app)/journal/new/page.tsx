@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, X, Check } from "lucide-react";
 import Link from "next/link";
@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { createTrade, getAnalyses } from "@/lib/mock/store";
+import { createTrade, getAnalyses } from "@/lib/supabase/queries";
+import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,11 @@ export default function NewTradePage() {
   const [confluenceInput, setConfluenceInput] = useState("");
   const [showDiscipline, setShowDiscipline] = useState(true);
   const [newCustomLabel, setNewCustomLabel] = useState("");
+  const [allAnalyses, setAllAnalyses] = useState<PreTradeAnalysis[]>([]);
+
+  useEffect(() => {
+    getAnalyses().then(setAllAnalyses);
+  }, []);
 
   const [form, setForm] = useState<TradeJournalEntryInput>({
     date_time: new Date().toISOString().split("T")[0],
@@ -63,7 +69,7 @@ export default function NewTradePage() {
     market_context: undefined,
   });
 
-  const analyses = getAnalyses().filter((a) => a.date === form.date_time);
+  const analyses = allAnalyses.filter((a) => a.date === form.date_time);
 
   function set<K extends keyof TradeJournalEntryInput>(key: K, value: TradeJournalEntryInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -114,9 +120,13 @@ export default function NewTradePage() {
     e.preventDefault();
     if (!form.instrument) return;
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 300));
-    const created = createTrade(form);
-    router.push(`/journal/${created.id}`);
+    try {
+      const created = await createTrade(form);
+      router.push(`/journal/${created.id}`);
+    } catch (err) {
+      console.error("Failed to save trade:", err);
+      setSaving(false);
+    }
   }
 
   const customChecks = form.discipline?.custom_checks ?? [];

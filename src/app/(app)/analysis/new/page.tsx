@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { createAnalysis } from "@/lib/mock/store";
+import { createAnalysis } from "@/lib/supabase/queries";
 import type { Bias } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useRef } from "react";
@@ -173,20 +173,24 @@ export default function NewAnalysisPage() {
     e.preventDefault();
     if (!form.instrument || !form.thesis) return;
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 300));
-    const created = createAnalysis({
-      ...form,
-      title: `${form.instrument} — ${form.date}`,
-      market: "futures",
-      session: "New York",
-      notes: "",
-      used_for_trade: false,
-      screenshot_groups: [
-        { label: `HTF${htfTF ? ` · ${htfTF}` : ""}`, urls: htfUrls },
-        { label: `LTF${ltfTF ? ` · ${ltfTF}` : ""}`, urls: ltfUrls },
-      ],
-    });
-    router.push(`/analysis/${created.id}`);
+    try {
+      const created = await createAnalysis({
+        ...form,
+        title: `${form.instrument} — ${form.date}`,
+        market: "futures",
+        session: "New York",
+        notes: "",
+        used_for_trade: false,
+        screenshot_groups: [
+          { label: `HTF${htfTF ? ` · ${htfTF}` : ""}`, urls: htfUrls },
+          { label: `LTF${ltfTF ? ` · ${ltfTF}` : ""}`, urls: ltfUrls },
+        ],
+      });
+      router.push(`/analysis/${created.id}`);
+    } catch (err) {
+      console.error("Failed to save analysis:", err);
+      setSaving(false);
+    }
   }
 
   return (

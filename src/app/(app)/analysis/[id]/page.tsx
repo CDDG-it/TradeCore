@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -18,7 +18,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getAnalysisById, getTrades, deleteAnalysis } from "@/lib/mock/store";
+import { getAnalysisById, getTrades, deleteAnalysis } from "@/lib/supabase/queries";
+import type { PreTradeAnalysis, TradeJournalEntry } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import { cn } from "@/lib/utils";
 
@@ -29,10 +30,25 @@ export default function AnalysisDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const [analysis, setAnalysis] = useState<PreTradeAnalysis | null>(null);
+  const [linkedTrade, setLinkedTrade] = useState<TradeJournalEntry | null>(null);
+  const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const analysis = getAnalysisById(id);
+  useEffect(() => {
+    Promise.all([getAnalysisById(id), getTrades()]).then(([a, trades]) => {
+      setAnalysis(a);
+      setLinkedTrade(trades.find((t) => t.linked_analysis_id === id) ?? null);
+      setLoading(false);
+    });
+  }, [id]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
 
   if (!analysis) {
     return (
@@ -45,8 +61,6 @@ export default function AnalysisDetailPage({
     );
   }
 
-  const linkedTrade = getTrades().find((t) => t.linked_analysis_id === analysis.id);
-
   const biasConfig = {
     bullish: { icon: TrendingUp, color: "text-success", bg: "bg-success/8 border-success/20", label: "Bullish" },
     bearish: { icon: TrendingDown, color: "text-destructive", bg: "bg-destructive/8 border-destructive/20", label: "Bearish" },
@@ -58,8 +72,7 @@ export default function AnalysisDetailPage({
 
   async function handleDelete() {
     setDeleting(true);
-    await new Promise((r) => setTimeout(r, 300));
-    deleteAnalysis(id);
+    await deleteAnalysis(id);
     router.push("/analysis");
   }
 

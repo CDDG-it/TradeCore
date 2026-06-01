@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getAccountById, updateAccount } from "@/lib/mock/store";
+import { getAccountById, updateAccount } from "@/lib/supabase/queries";
+import type { FundedAccount } from "@/lib/types";
 import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
 
@@ -21,42 +22,45 @@ const STATUS_OPTIONS = [
   { value: "passed", label: "Passed" },
 ] as const;
 
+import type { AccountPhase, AccountStatus } from "@/lib/types";
+
+const DEFAULT_FORM = {
+  firm_name: "", account_name: "funded", account_type: "funded",
+  phase: "funded" as AccountPhase, account_size: 100000, purchase_cost: 0,
+  start_balance: 100000, current_balance: 100000, roi: 0,
+  max_drawdown: 5, trailing_drawdown: undefined as number | undefined,
+  drawdown_used: 0, payout_total: 0, next_payout_target: 0,
+  status: "active" as AccountStatus, notes: "",
+};
+
 export default function EditAccountPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const account = getAccountById(id);
+  const [account, setAccount] = useState<FundedAccount | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [customSize, setCustomSize] = useState(false);
+  const [form, setForm] = useState(DEFAULT_FORM);
 
-  if (!account) {
-    return (
-      <div className="text-center py-20">
-        <p className="text-muted-foreground text-sm">Account not found.</p>
-        <Link href="/accounts" className="text-primary text-sm hover:underline mt-2 inline-block">← Back to accounts</Link>
-      </div>
-    );
-  }
-
-  const initialCustomSize = !ACCOUNT_SIZE_PRESETS.some((p) => p.value === account.account_size);
-  const [customSize, setCustomSize] = useState(initialCustomSize);
-
-  const [form, setForm] = useState({
-    firm_name: account.firm_name,
-    account_name: account.account_name,
-    account_type: account.account_type,
-    phase: account.phase,
-    account_size: account.account_size,
-    purchase_cost: account.purchase_cost ?? 0,
-    start_balance: account.start_balance,
-    current_balance: account.current_balance,
-    roi: account.roi,
-    max_drawdown: account.max_drawdown,
-    trailing_drawdown: account.trailing_drawdown,
-    drawdown_used: account.drawdown_used,
-    payout_total: account.payout_total,
-    next_payout_target: account.next_payout_target,
-    status: account.status,
-    notes: account.notes,
-  });
+  useEffect(() => {
+    getAccountById(id).then((acct) => {
+      if (!acct) { setNotFound(true); setLoading(false); return; }
+      setAccount(acct);
+      setCustomSize(!ACCOUNT_SIZE_PRESETS.some((p) => p.value === acct.account_size));
+      setForm({
+        firm_name: acct.firm_name, account_name: acct.account_name,
+        account_type: acct.account_type, phase: acct.phase,
+        account_size: acct.account_size, purchase_cost: acct.purchase_cost ?? 0,
+        start_balance: acct.start_balance, current_balance: acct.current_balance,
+        roi: acct.roi, max_drawdown: acct.max_drawdown,
+        trailing_drawdown: acct.trailing_drawdown, drawdown_used: acct.drawdown_used,
+        payout_total: acct.payout_total, next_payout_target: acct.next_payout_target,
+        status: acct.status, notes: acct.notes,
+      });
+      setLoading(false);
+    });
+  }, [id]);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -71,10 +75,27 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
     e.preventDefault();
     if (!form.firm_name) return;
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 300));
-    updateAccount(id, form);
-    router.push(`/accounts/${id}`);
+    try {
+      await updateAccount(id, form);
+      router.push(`/accounts/${id}`);
+    } catch (err) {
+      console.error("Failed to save account:", err);
+      setSaving(false);
+    }
   }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
+
+  if (notFound) return (
+    <div className="text-center py-20">
+      <p className="text-muted-foreground text-sm">Account not found.</p>
+      <Link href="/accounts" className="text-primary text-sm hover:underline mt-2 inline-block">← Back to accounts</Link>
+    </div>
+  );
 
   const isPresetSize = ACCOUNT_SIZE_PRESETS.some((p) => p.value === form.account_size) && !customSize;
 
@@ -85,7 +106,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Account
         </Link>
         <h1 className="text-2xl font-bold tracking-tight">Edit Account</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{account.firm_name} · ${(account.account_size / 1000).toFixed(0)}K</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{form.firm_name} · ${(form.account_size / 1000).toFixed(0)}K</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">

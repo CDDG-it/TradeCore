@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,28 +15,29 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
-    if (isDemo) {
-      // Demo mode — skip real auth
-      await new Promise((r) => setTimeout(r, 500));
-      router.push("/dashboard");
-      return;
-    }
-
-    // Real Supabase auth would go here
     try {
-      // const supabase = createClient();
-      // const { error } = await supabase.auth.signInWithPassword({ email, password });
-      // if (error) throw error;
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        if (error.message.includes("Email not confirmed")) {
+          setError("Please verify your email address before signing in. Check your inbox.");
+        } else if (error.message.includes("Invalid login credentials")) {
+          setError("Invalid email or password.");
+        } else {
+          setError(error.message);
+        }
+        return;
+      }
       router.push("/dashboard");
+      router.refresh();
     } catch {
-      setError("Invalid email or password");
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -46,18 +47,17 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center gap-2">
-          <span className="font-black text-xl tracking-tight" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}><span style={{color:"#111"}}>Trade</span><span style={{background:"linear-gradient(90deg,#F97316,#FBBF24)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>CORE</span></span>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Your edge, organized.
-          </p>
+          <span className="font-black text-xl tracking-tight" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
+            <span style={{ color: "#111" }}>Trade</span>
+            <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
+          </span>
+          <p className="mt-1 text-sm text-muted-foreground">Your edge, organized.</p>
         </div>
 
         <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl">Sign in</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account
-            </CardDescription>
+            <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,21 +67,16 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {isDemo && (
-                <div className="rounded-lg bg-primary/10 px-4 py-3 text-sm text-primary">
-                  Demo mode — click sign in with any credentials.
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="demo@tradinghub.app"
+                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required={!isDemo}
+                  required
+                  autoComplete="email"
                   className="bg-background/50"
                 />
               </div>
@@ -89,10 +84,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link
-                    href="/reset-password"
-                    className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                  >
+                  <Link href="/reset-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
                     Forgot password?
                   </Link>
                 </div>
@@ -102,21 +94,20 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required={!isDemo}
+                  required
+                  autoComplete="current-password"
                   className="bg-background/50"
                 />
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign in"}
+                {isLoading ? "Signing in…" : "Sign in"}
               </Button>
             </form>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-primary hover:underline">
-                Sign up
-              </Link>
+              <Link href="/signup" className="text-primary hover:underline">Sign up</Link>
             </p>
           </CardContent>
         </Card>

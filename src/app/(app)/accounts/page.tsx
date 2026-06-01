@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getAccounts, computeAccountROI, getPayoutsByAccountId } from "@/lib/mock/store";
+import { getAccounts, computeAccountROI, getPayoutsByAccountId } from "@/lib/supabase/queries";
 import { PROP_FIRMS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
+import type { FundedAccount, PayoutEvent } from "@/lib/types";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -21,9 +22,23 @@ function roiGreen(roi: number): string {
 }
 
 export default function AccountsPage() {
-  const accounts = getAccounts();
+  const [accounts, setAccounts] = useState<FundedAccount[]>([]);
+  const [payoutMap, setPayoutMap] = useState<Record<string, PayoutEvent[]>>({});
+  const [loading, setLoading] = useState(true);
   const [firmFilter, setFirmFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  useEffect(() => {
+    getAccounts().then(async (accts) => {
+      setAccounts(accts);
+      const map: Record<string, PayoutEvent[]> = {};
+      await Promise.all(accts.map(async (a) => {
+        map[a.id] = await getPayoutsByAccountId(a.id);
+      }));
+      setPayoutMap(map);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
 
   // Only show firms that the user actually has accounts with
   const uniqueFirms = PROP_FIRMS.filter((f) => accounts.some((a) => a.firm_name === f));
@@ -38,7 +53,7 @@ export default function AccountsPage() {
 
   const totalFeePaid = firmAccounts.reduce((s, a) => s + (a.purchase_cost ?? 0), 0);
   const totalPayouts = firmAccounts.reduce((s, a) => {
-    const payouts = getPayoutsByAccountId(a.id);
+    const payouts = payoutMap[a.id] ?? [];
     return s + payouts.filter((p) => p.status === "paid").reduce((ps, p) => ps + p.amount, 0);
   }, 0);
   const overallRoi = totalFeePaid > 0 ? Math.round((totalPayouts / totalFeePaid) * 10) / 10 : 0;
@@ -51,6 +66,12 @@ export default function AccountsPage() {
 
   const filterBtnBase = "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all";
   const filterBtnInactive = "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground";
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -168,7 +189,7 @@ export default function AccountsPage() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map((acct) => {
-              const payouts = getPayoutsByAccountId(acct.id);
+              const payouts = payoutMap[acct.id] ?? [];
               const totalPaid = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
               const roi = computeAccountROI(totalPaid, acct.purchase_cost);
               const isActive = acct.status === "active";

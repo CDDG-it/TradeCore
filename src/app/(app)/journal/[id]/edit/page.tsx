@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, X, Check } from "lucide-react";
 import Link from "next/link";
@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { getTradeById, updateTrade, getAnalyses } from "@/lib/mock/store";
+import { getTradeById, updateTrade, getAnalyses } from "@/lib/supabase/queries";
+import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { Direction, TradeResult, Session, TradeDiscipline } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -18,49 +19,74 @@ const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
 const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "Daily"];
 
+import type { Market } from "@/lib/types";
+
+const DEFAULT_FORM = {
+  date_time: new Date().toISOString().split("T")[0],
+  instrument: "",
+  market: "futures" as Market,
+  session: "New York" as Session,
+  timeframe: "",
+  direction: "long" as Direction,
+  confluences: [] as string[],
+  rr: 2,
+  result: "win" as TradeResult,
+  screenshot_groups: [{ label: "Entry TF", urls: [] as string[] }, { label: "HTF", urls: [] as string[] }],
+  execution_notes: "",
+  psychology_notes: "",
+  mistakes: "",
+  lessons: "",
+  linked_analysis_id: undefined as string | undefined,
+  discipline: {
+    followed_plan: false, traded_in_session: false, respected_risk: false,
+    respected_max_trades: false, matched_a_plus: false, no_impulsive_entry: false,
+    no_revenge_trade: false, respected_stop_loss: false, journal_completed: false,
+    score: 0, notes: "", custom_checks: [],
+  } as TradeDiscipline,
+};
+
 export default function EditTradePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const trade = getTradeById(id);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confluenceInput, setConfluenceInput] = useState("");
   const [showDiscipline, setShowDiscipline] = useState(true);
   const [newCustomLabel, setNewCustomLabel] = useState("");
+  const [allAnalyses, setAllAnalyses] = useState<PreTradeAnalysis[]>([]);
+  const [tradeInfo, setTradeInfo] = useState<{ instrument: string; session: string }>({ instrument: "", session: "" });
 
-  if (!trade) {
-    return (
-      <div className="text-center py-20">
-        <p className="text-muted-foreground text-sm">Trade not found.</p>
-        <Link href="/journal" className="text-primary text-sm hover:underline mt-2 inline-block">← Back to journal</Link>
-      </div>
-    );
-  }
+  const [form, setForm] = useState(DEFAULT_FORM);
 
-  const [form, setForm] = useState({
-    date_time: trade.date_time.slice(0, 10),
-    instrument: trade.instrument,
-    market: trade.market,
-    session: trade.session as Session,
-    timeframe: trade.timeframe ?? "",
-    direction: trade.direction as Direction,
-    confluences: [...trade.confluences],
-    rr: trade.rr,
-    result: trade.result as TradeResult,
-    screenshot_groups: trade.screenshot_groups?.length
-      ? trade.screenshot_groups
-      : [{ label: "Entry TF", urls: [] }, { label: "HTF", urls: [] }],
-    execution_notes: trade.execution_notes ?? "",
-    psychology_notes: trade.psychology_notes ?? "",
-    mistakes: trade.mistakes ?? "",
-    lessons: trade.lessons ?? "",
-    linked_analysis_id: trade.linked_analysis_id,
-    discipline: (trade.discipline as TradeDiscipline | undefined) ?? {
-      followed_plan: false, traded_in_session: false, respected_risk: false,
-      respected_max_trades: false, matched_a_plus: false, no_impulsive_entry: false,
-      no_revenge_trade: false, respected_stop_loss: false, journal_completed: false,
-      score: 0, notes: "", custom_checks: [],
-    },
-  });
+  useEffect(() => {
+    Promise.all([getTradeById(id), getAnalyses()]).then(([trade, analyses]) => {
+      setAllAnalyses(analyses);
+      if (!trade) { setNotFound(true); setLoading(false); return; }
+      setTradeInfo({ instrument: trade.instrument, session: trade.session });
+      setForm({
+        date_time: trade.date_time.slice(0, 10),
+        instrument: trade.instrument,
+        market: trade.market,
+        session: trade.session as Session,
+        timeframe: trade.timeframe ?? "",
+        direction: trade.direction as Direction,
+        confluences: [...trade.confluences],
+        rr: trade.rr,
+        result: trade.result as TradeResult,
+        screenshot_groups: trade.screenshot_groups?.length
+          ? trade.screenshot_groups
+          : [{ label: "Entry TF", urls: [] }, { label: "HTF", urls: [] }],
+        execution_notes: trade.execution_notes ?? "",
+        psychology_notes: trade.psychology_notes ?? "",
+        mistakes: trade.mistakes ?? "",
+        lessons: trade.lessons ?? "",
+        linked_analysis_id: trade.linked_analysis_id,
+        discipline: (trade.discipline as TradeDiscipline | undefined) ?? DEFAULT_FORM.discipline,
+      });
+      setLoading(false);
+    });
+  }, [id]);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -110,13 +136,30 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 300));
-    updateTrade(id, form);
-    router.push(`/journal/${id}`);
+    try {
+      await updateTrade(id, form);
+      router.push(`/journal/${id}`);
+    } catch (err) {
+      console.error("Failed to save trade:", err);
+      setSaving(false);
+    }
   }
 
   const customChecks = form.discipline?.custom_checks ?? [];
   const disciplineScore = form.discipline?.score ?? 0;
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
+
+  if (notFound) return (
+    <div className="text-center py-20">
+      <p className="text-muted-foreground text-sm">Trade not found.</p>
+      <Link href="/journal" className="text-primary text-sm hover:underline mt-2 inline-block">← Back to journal</Link>
+    </div>
+  );
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -125,7 +168,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Trade
         </Link>
         <h1 className="text-2xl font-bold tracking-tight">Edit Trade</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{trade.instrument} · {trade.session} session</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{tradeInfo.instrument} · {tradeInfo.session} session</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -241,7 +284,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           </CardHeader>
           <CardContent>
             {(() => {
-              const analyses = getAnalyses().filter((a) => a.date === form.date_time);
+              const analyses = allAnalyses.filter((a) => a.date === form.date_time);
               return analyses.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No analysis found for this date.</p>
               ) : (

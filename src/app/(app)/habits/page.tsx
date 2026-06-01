@@ -28,7 +28,7 @@ import {
   createDailyTask,
   updateDailyTask,
   deleteDailyTask,
-} from "@/lib/mock/store";
+} from "@/lib/supabase/queries";
 import type { Habit, HabitCompletion, DailyTask, HabitCategory } from "@/lib/types";
 
 const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label: string }> = {
@@ -173,21 +173,32 @@ export default function HabitsPage() {
     icon: "🎯",
   });
 
-  useEffect(() => {
-    setHabits(getHabits());
-    setCompletions(getHabitCompletions());
-    setTasks(getDailyTasks(today));
-  }, [today]);
+  const [streaks, setStreaks] = useState<Record<string, number>>({});
 
-  function handleToggle(habitId: string, date: string) {
-    toggleHabitCompletion(habitId, date);
-    setCompletions(getHabitCompletions());
+  const refresh = async () => {
+    const [h, c, t] = await Promise.all([getHabits(), getHabitCompletions(), getDailyTasks(today)]);
+    setHabits(h);
+    setCompletions(c);
+    setTasks(t);
+    const streakMap: Record<string, number> = {};
+    await Promise.all(h.map(async (habit) => {
+      streakMap[habit.id] = await getHabitStreak(habit.id);
+    }));
+    setStreaks(streakMap);
+  };
+
+  useEffect(() => { refresh(); }, [today]);
+
+  async function handleToggle(habitId: string, date: string) {
+    await toggleHabitCompletion(habitId, date);
+    const c = await getHabitCompletions();
+    setCompletions(c);
   }
 
-  function handleCreateHabit() {
+  async function handleCreateHabit() {
     if (!newHabit.name.trim()) return;
     const cat = CATEGORY_COLORS[newHabit.category];
-    createHabit({
+    await createHabit({
       name: newHabit.name.trim(),
       description: newHabit.description.trim(),
       category: newHabit.category,
@@ -196,33 +207,35 @@ export default function HabitsPage() {
       color: cat.accent,
       icon: newHabit.icon,
     });
-    setHabits(getHabits());
+    await refresh();
     setNewHabit({ name: "", description: "", category: "routine", frequency: "daily", icon: "🎯" });
     setShowNewHabit(false);
   }
 
-  function handleDeleteHabit(id: string) {
-    deleteHabit(id);
-    setHabits(getHabits());
-    setCompletions(getHabitCompletions());
+  async function handleDeleteHabit(id: string) {
+    await deleteHabit(id);
+    await refresh();
     setDeletingHabit(null);
   }
 
-  function handleAddTask() {
+  async function handleAddTask() {
     if (!newTaskText.trim()) return;
-    createDailyTask({ date: today, text: newTaskText.trim(), completed: false, priority: newTaskPriority });
-    setTasks(getDailyTasks(today));
+    await createDailyTask({ date: today, text: newTaskText.trim(), completed: false, priority: newTaskPriority });
+    const t = await getDailyTasks(today);
+    setTasks(t);
     setNewTaskText("");
   }
 
-  function handleToggleTask(id: string, completed: boolean) {
-    updateDailyTask(id, { completed: !completed });
-    setTasks(getDailyTasks(today));
+  async function handleToggleTask(id: string, completed: boolean) {
+    await updateDailyTask(id, { completed: !completed });
+    const t = await getDailyTasks(today);
+    setTasks(t);
   }
 
-  function handleDeleteTask(id: string) {
-    deleteDailyTask(id);
-    setTasks(getDailyTasks(today));
+  async function handleDeleteTask(id: string) {
+    await deleteDailyTask(id);
+    const t = await getDailyTasks(today);
+    setTasks(t);
   }
 
   // Stats
@@ -231,7 +244,7 @@ export default function HabitsPage() {
     completions.some((c) => c.habit_id === h.id && c.date === today && c.completed)
   ).length;
   const completionRate = totalHabits > 0 ? Math.round((todayCompleted / totalHabits) * 100) : 0;
-  const longestStreak = habits.reduce((max, h) => Math.max(max, getHabitStreak(h.id)), 0);
+  const longestStreak = Object.values(streaks).reduce((max, s) => Math.max(max, s), 0);
 
   // Last 7 days for each habit
   const last7Days = Array.from({ length: 7 }, (_, i) =>
@@ -376,7 +389,7 @@ export default function HabitsPage() {
           )}
 
           {habits.map((habit, i) => {
-            const streak = getHabitStreak(habit.id);
+            const streak = streaks[habit.id] ?? 0;
             const habitCompletions = completions.filter((c) => c.habit_id === habit.id);
             const completedToday = habitCompletions.some(
               (c) => c.date === today && c.completed

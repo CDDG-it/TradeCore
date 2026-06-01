@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, X, Save, BookMarked, Shield, AlertTriangle, Target, Zap, CheckSquare } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
-import { getPlaybook, savePlaybook } from "@/lib/mock/store";
+import { getPlaybook, savePlaybook } from "@/lib/supabase/queries";
 import type { TraderPlaybook, TraderType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -215,16 +215,27 @@ function Section({
   );
 }
 
+const EMPTY_PLAYBOOK: TraderPlaybook = {
+  trader_type: "day_trader", trading_style: "", markets: [], preferred_sessions: [],
+  preferred_setups: [], preferred_timeframes: [], max_trades_per_day: 2,
+  max_daily_risk_percent: 1, ideal_market_conditions: "", a_plus_criteria: "",
+  non_negotiable_rules: [], common_weaknesses: [], pre_trade_routine: [], updated_at: "",
+};
+
 export default function PlaybookPage() {
-  const [form, setForm] = useState<TraderPlaybook>(() => getPlaybook());
+  const [form, setForm] = useState<TraderPlaybook>(EMPTY_PLAYBOOK);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    getPlaybook().then((p) => { if (p) setForm(p); });
+  }, []);
 
   function set<K extends keyof TraderPlaybook>(key: K, value: TraderPlaybook[K]) {
     setForm((p) => ({ ...p, [key]: value }));
   }
 
-  function handleSave() {
-    savePlaybook(form);
+  async function handleSave() {
+    await savePlaybook(form);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }

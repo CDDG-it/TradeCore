@@ -36,12 +36,8 @@ export function MobileHeader() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
 
-  const initials =
-    user?.full_name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase() || "DT";
+  const displayName: string = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
+  const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
     <>
@@ -141,10 +137,10 @@ export function MobileHeader() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-sidebar-foreground truncate">
-                {user?.full_name || "Demo Trader"}
+                {displayName}
               </p>
               <p className="text-xs text-sidebar-foreground/35 truncate">
-                {user?.email || "demo@tradinghub.app"}
+                {user?.email || ""}
               </p>
             </div>
             <button

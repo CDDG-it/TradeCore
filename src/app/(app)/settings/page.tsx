@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 
 export default function SettingsPage() {
-  const { isDemo } = useAuth();
+  const { } = useAuth();
+  const isDemo = false;
   const [notifications, setNotifications] = useState({
     tradeReminders: true,
     newsAlerts: false,
