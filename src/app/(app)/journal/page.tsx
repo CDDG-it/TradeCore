@@ -60,11 +60,13 @@ export default function JournalPage() {
     return matchResult && matchDir && matchPeriod;
   }), [allTrades, filterResult, filterDirection, periodFilter]);
 
-  const wins = filtered.filter((t) => t.result === "win").length;
+  const winTrades = filtered.filter((t) => t.result === "win");
+  const wins = winTrades.length;
   const losses = filtered.filter((t) => t.result === "loss").length;
   const bes = filtered.filter((t) => t.result === "break-even").length;
-  const avgRR = filtered.length > 0
-    ? (filtered.reduce((s, t) => s + t.rr, 0) / filtered.length).toFixed(1)
+  // Avg R:R only over winning trades — losses are always -1R so excluding them keeps this metric meaningful
+  const avgRR = winTrades.length > 0
+    ? (winTrades.reduce((s, t) => s + t.rr, 0) / winTrades.length).toFixed(1)
     : "—";
 
   // Calendar helpers — month view
@@ -333,7 +335,7 @@ export default function JournalPage() {
                                 {t.instrument}
                               </p>
                               <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-                                {t.direction === "long" ? "L" : "S"} · {t.rr}R
+                                {t.direction === "long" ? "L" : "S"} · {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
                               </p>
                             </Link>
                           ))
@@ -396,7 +398,12 @@ export default function JournalPage() {
                       <p className="text-xs text-muted-foreground mt-0.5">{trade.session} session</p>
                     </div>
                     <div className="text-center w-12 shrink-0 hidden md:block">
-                      <p className="text-sm font-semibold">{trade.rr}R</p>
+                      <p className={cn("text-sm font-semibold",
+                        trade.result === "win" ? "text-success"
+                        : trade.result === "loss" ? "text-destructive"
+                        : "text-warning")}>
+                        {trade.result === "win" ? `+${trade.rr}R` : trade.result === "loss" ? "-1R" : "0R"}
+                      </p>
                       <p className="text-xs text-muted-foreground">R:R</p>
                     </div>
                     <div className="text-right shrink-0 ml-auto">

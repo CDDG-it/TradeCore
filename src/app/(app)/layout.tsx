@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { VideoBackground } from "@/components/layout/video-background";
 import { CandlestickBackground } from "@/components/layout/candlestick-background";
+import { TransitionLayout } from "@/components/layout/transition-layout";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -35,7 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <main className="lg:pl-60 pt-14 lg:pt-0 min-h-screen relative z-10">
         <div className="px-4 py-8 sm:px-6 lg:px-8 max-w-7xl mx-auto lg:mx-0">
-          {children}
+          <TransitionLayout>{children}</TransitionLayout>
         </div>
       </main>
     </div>
