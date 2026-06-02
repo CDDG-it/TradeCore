@@ -76,11 +76,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
   const authHeader = request.headers.get("authorization");
+  console.log("[send-email] auth header present:", !!authHeader);
   if (!authHeader) {
     console.error("[send-email] Missing authorization header");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!verifyHookSignature(authHeader, hookSecret)) {
+  const token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : null;
+  console.log("[send-email] token parts:", token?.split(".").length);
+  const valid = verifyHookSignature(authHeader, hookSecret);
+  console.log("[send-email] signature valid:", valid);
+  if (!valid) {
     console.error("[send-email] Invalid hook signature — possible spoofed request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
