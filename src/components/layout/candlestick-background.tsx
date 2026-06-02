@@ -65,18 +65,28 @@ export function CandlestickBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let dpr = window.devicePixelRatio || 1;
+    // Cap DPR at 2 — 3× devices don't need triple-resolution canvas
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    const getSize = () => ({
+      w: window.visualViewport?.width  ?? window.innerWidth,
+      h: window.visualViewport?.height ?? window.innerHeight,
+    });
+
     const resize = () => {
-      dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const { w, h } = getSize();
+      canvas.width  = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      // Explicitly set CSS size so intrinsic canvas dimensions never override layout
+      canvas.style.width  = `${w}px`;
+      canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       lastTsRef.current = null;
     };
     resize();
     window.addEventListener("resize", resize);
-
-    const TOTAL = N * STEP;
+    window.visualViewport?.addEventListener("resize", resize);
 
     const draw = (ts: number) => {
       if (lastTsRef.current !== null) {
@@ -85,15 +95,21 @@ export function CandlestickBackground() {
       }
       lastTsRef.current = ts;
 
-      const W = window.innerWidth;
-      const H = window.innerHeight;
+      const { w: W, h: H } = getSize();
       const isDark = themeRef.current !== "light";
       ctx.clearRect(0, 0, W, H);
 
-      const off = offsetRef.current % TOTAL;
-      const startIdx = Math.floor(off / STEP) % N;
-      const pixOff = off % STEP;
-      const count = Math.ceil(W / STEP) + 3;
+      // On narrow screens use smaller candles so density feels right
+      const isMobile = W < 768;
+      const wCandle = isMobile ? 7  : W_CANDLE;
+      const gap     = isMobile ? 3  : GAP;
+      const step    = wCandle + gap;
+      const count   = Math.ceil(W / step) + 3;
+
+      const totalW = N * step;
+      const off = offsetRef.current % totalW;
+      const startIdx = Math.floor(off / step) % N;
+      const pixOff = off % step;
 
       // Price range
       let minP = Infinity, maxP = -Infinity;
@@ -131,34 +147,33 @@ export function CandlestickBackground() {
       for (let i = 0; i < count; i++) {
         const ci = (startIdx + i) % N;
         const c = CANDLES[ci];
-        const x = i * STEP - pixOff;
-        if (x < -STEP || x > W + STEP) continue;
+        const x = i * step - pixOff;
+        if (x < -step || x > W + step) continue;
 
         const bull = c.c >= c.o;
         const bTop = py(Math.max(c.o, c.c));
         const bBot = py(Math.min(c.o, c.c));
         const bH = Math.max(1.5, bBot - bTop);
-        const cx = x + W_CANDLE / 2;
+        const cx = x + wCandle / 2;
 
         if (isDark) {
-          // Match hero section: orange bulls, warm dark bears
           ctx.strokeStyle = bull ? "rgba(249,115,22,0.55)" : "rgba(172,48,14,0.45)";
           ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
           ctx.fillStyle = bull ? "rgba(249,115,22,0.22)" : "rgba(172,48,14,0.18)";
-          ctx.fillRect(x, bTop, W_CANDLE, bH);
+          ctx.fillRect(x, bTop, wCandle, bH);
           ctx.strokeStyle = bull ? "rgba(249,115,22,0.72)" : "rgba(172,48,14,0.55)";
           ctx.lineWidth = 0.75;
-          ctx.strokeRect(x, bTop, W_CANDLE, bH);
+          ctx.strokeRect(x, bTop, wCandle, bH);
         } else {
           ctx.strokeStyle = bull ? "rgba(249,115,22,0.55)" : "rgba(16,11,6,0.45)";
           ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
           ctx.fillStyle = bull ? "rgba(249,115,22,0.22)" : "rgba(16,11,6,0.12)";
-          ctx.fillRect(x, bTop, W_CANDLE, bH);
+          ctx.fillRect(x, bTop, wCandle, bH);
           ctx.strokeStyle = bull ? "rgba(249,115,22,0.72)" : "rgba(16,11,6,0.55)";
           ctx.lineWidth = 0.75;
-          ctx.strokeRect(x, bTop, W_CANDLE, bH);
+          ctx.strokeRect(x, bTop, wCandle, bH);
         }
       }
 
@@ -171,7 +186,7 @@ export function CandlestickBackground() {
       for (let i = 0; i < count; i++) {
         const ci = (startIdx + i) % N;
         if (ci < 19) { first = true; continue; }
-        const x = i * STEP - pixOff + W_CANDLE / 2;
+        const x = i * step - pixOff + wCandle / 2;
         const y = py(SMA20[ci]);
         if (first) { ctx.moveTo(x, y); first = false; }
         else ctx.lineTo(x, y);
@@ -187,7 +202,7 @@ export function CandlestickBackground() {
       for (let i = 0; i < count; i++) {
         const ci = (startIdx + i) % N;
         if (ci < 49) { first = true; continue; }
-        const x = i * STEP - pixOff + W_CANDLE / 2;
+        const x = i * step - pixOff + wCandle / 2;
         const y = py(SMA50[ci]);
         if (first) { ctx.moveTo(x, y); first = false; }
         else ctx.lineTo(x, y);
@@ -202,6 +217,7 @@ export function CandlestickBackground() {
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
+      window.visualViewport?.removeEventListener("resize", resize);
     };
   }, [visible]);
 
