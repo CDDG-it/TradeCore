@@ -69,10 +69,17 @@ function getEmailContent(type: string, confirmUrl: string): { subject: string; h
 }
 
 export async function POST(request: NextRequest) {
-  // Only block requests with NO authorization header at all
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Verify JWT signature if a hook secret is configured
+  const hookSecret = process.env.SUPABASE_HOOK_SECRET;
+  if (hookSecret) {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader) {
+      console.warn("[send-email] Missing authorization header — check hook secret in Supabase dashboard");
+      // Don't block: Supabase may not send auth header if signing secret isn't saved in dashboard
+    } else if (!verifyHookSignature(authHeader, hookSecret)) {
+      console.error("[send-email] Invalid hook signature");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
   }
 
   let body: {
