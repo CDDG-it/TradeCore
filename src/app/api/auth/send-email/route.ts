@@ -94,7 +94,9 @@ export async function POST(request: NextRequest) {
   const { token_hash, redirect_to, email_action_type, site_url } = email_data;
 
   const finalRedirect = email_action_type === "recovery" ? "/auth/update-password" : redirect_to;
-  const confirmUrl = buildConfirmUrl(site_url, token_hash, email_action_type, finalRedirect);
+  // Use configured site URL — never rely on site_url from payload (may point to Supabase directly)
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tradinghub-lovat.vercel.app";
+  const confirmUrl = buildConfirmUrl(appUrl, token_hash, email_action_type, finalRedirect);
   const { subject, html } = getEmailContent(email_action_type, confirmUrl);
 
   const transporter = nodemailer.createTransport({
