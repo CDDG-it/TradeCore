@@ -25,7 +25,7 @@ function verifyHookSignature(authHeader: string | null, secret: string): boolean
   }
 }
 
-const SENDER_EMAIL = "info@cddegroot.nl";
+const SENDER_EMAIL = "collinalmelo@gmail.com";
 const SENDER_NAME = "TradeCore";
 
 function buildConfirmUrl(siteUrl: string, tokenHash: string, type: string, redirectTo?: string): string {
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
   const { subject, html } = getEmailContent(email_action_type, confirmUrl);
 
   const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
+    host: "smtp.gmail.com",
     port: 587,
     secure: false,
     auth: {
