@@ -69,17 +69,21 @@ function getEmailContent(type: string, confirmUrl: string): { subject: string; h
 }
 
 export async function POST(request: NextRequest) {
-  // Verify JWT signature if a hook secret is configured
+  // Enforce JWT verification — only Supabase (which holds the hook secret) can call this endpoint.
+  // Without this, anyone who knows the URL could abuse it to send emails via Gmail.
   const hookSecret = process.env.SUPABASE_HOOK_SECRET;
-  if (hookSecret) {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
-      console.warn("[send-email] Missing authorization header — check hook secret in Supabase dashboard");
-      // Don't block: Supabase may not send auth header if signing secret isn't saved in dashboard
-    } else if (!verifyHookSignature(authHeader, hookSecret)) {
-      console.error("[send-email] Invalid hook signature");
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
+  if (!hookSecret) {
+    console.error("[send-email] SUPABASE_HOOK_SECRET not configured — refusing all requests");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader) {
+    console.error("[send-email] Missing authorization header");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!verifyHookSignature(authHeader, hookSecret)) {
+    console.error("[send-email] Invalid hook signature — possible spoofed request");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let body: {
