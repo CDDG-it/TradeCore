@@ -70,7 +70,6 @@ function getEmailContent(type: string, confirmUrl: string): { subject: string; h
 
 export async function POST(request: NextRequest) {
   // Enforce JWT verification — only Supabase (which holds the hook secret) can call this endpoint.
-  // Without this, anyone who knows the URL could abuse it to send emails via Gmail.
   const hookSecret = process.env.SUPABASE_HOOK_SECRET;
   if (!hookSecret) {
     console.error("[send-email] SUPABASE_HOOK_SECRET not configured — refusing all requests");
