@@ -4,6 +4,13 @@ import { useRef, useState, useEffect } from "react";
 import { ImagePlus, X, ZoomIn, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScreenshotGroup } from "@/lib/types";
+import { uploadScreenshot, deleteScreenshot, getScreenshotUrls } from "@/lib/supabase/storage";
+
+interface StorageConfig {
+  userId: string;
+  entityType: "trades" | "analyses";
+  entityId: string;
+}
 
 interface Props {
   groups: ScreenshotGroup[];
@@ -11,6 +18,8 @@ interface Props {
   maxFilesPerGroup?: number;
   className?: string;
   readOnly?: boolean;
+  /** When provided, images are uploaded to Supabase Storage instead of stored as base64 */
+  storageConfig?: StorageConfig;
 }
 
 const PRESET_LABELS = ["HTF", "LTF", "Trade-entry"];
@@ -48,6 +57,7 @@ export function ScreenshotUpload({
   maxFilesPerGroup = 5,
   className,
   readOnly = false,
+  storageConfig,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -56,9 +66,35 @@ export function ScreenshotUpload({
   const [loading, setLoading] = useState(false);
   const [addingGroup, setAddingGroup] = useState(false);
   const [customLabel, setCustomLabel] = useState("");
+  // Maps storage paths → temporary signed URLs for display
+  const [resolvedUrls, setResolvedUrls] = useState<Map<string, string>>(new Map());
 
   const safeTab = Math.min(activeTab, Math.max(0, groups.length - 1));
   const currentGroup = groups[safeTab];
+
+  // Resolve storage paths → signed URLs whenever groups change
+  useEffect(() => {
+    const paths = groups
+      .flatMap((g) => g.urls)
+      .filter((u) => !u.startsWith("data:") && !u.startsWith("http") && u.length > 0);
+    if (!paths.length) return;
+    const unresolved = paths.filter((p) => !resolvedUrls.has(p));
+    if (!unresolved.length) return;
+    getScreenshotUrls(unresolved).then((signed) => {
+      setResolvedUrls((prev) => {
+        const next = new Map(prev);
+        unresolved.forEach((p, i) => next.set(p, signed[i]));
+        return next;
+      });
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups]);
+
+  /** Returns a displayable URL: signed URL for storage paths, passthrough for base64/http */
+  function display(url: string): string {
+    if (url.startsWith("data:") || url.startsWith("http")) return url;
+    return resolvedUrls.get(url) ?? url;
+  }
 
   // Paste (Ctrl+V / Cmd+V) — only active in edit mode when a group exists
   useEffect(() => {
@@ -111,9 +147,20 @@ export function ScreenshotUpload({
     if (!toAdd.length) return;
     setLoading(true);
     try {
-      const compressed = await Promise.all(toAdd.map((f) => compressImage(f)));
+      let newUrls: string[];
+      if (storageConfig) {
+        // Upload directly to Supabase Storage — returns storage path
+        newUrls = await Promise.all(
+          toAdd.map((f) =>
+            uploadScreenshot(storageConfig.userId, storageConfig.entityType, storageConfig.entityId, f)
+          )
+        );
+      } else {
+        // Fallback: compress to base64 (no storage config available yet)
+        newUrls = await Promise.all(toAdd.map((f) => compressImage(f)));
+      }
       const newGroups = groups.map((g, i) =>
-        i === safeTab ? { ...g, urls: [...g.urls, ...compressed] } : g
+        i === safeTab ? { ...g, urls: [...g.urls, ...newUrls] } : g
       );
       onChange(newGroups);
     } finally {
@@ -121,7 +168,11 @@ export function ScreenshotUpload({
     }
   }
 
-  function removeUrl(groupIdx: number, url: string) {
+  async function removeUrl(groupIdx: number, url: string) {
+    // Delete from Supabase Storage if it's a storage path (not base64/http)
+    if (!url.startsWith("data:") && !url.startsWith("http")) {
+      deleteScreenshot(url).catch(() => {}); // fire-and-forget, non-critical
+    }
     const newGroups = groups.map((g, i) =>
       i === groupIdx ? { ...g, urls: g.urls.filter((u) => u !== url) } : g
     );
@@ -150,11 +201,11 @@ export function ScreenshotUpload({
                 <div
                   key={i}
                   className="relative group aspect-video rounded-lg overflow-hidden border border-border/60 bg-muted/30 cursor-pointer"
-                  onClick={() => setLightbox(url)}
+                  onClick={() => setLightbox(display(url))}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={url}
+                    src={display(url)}
                     alt={`${group.label} ${i + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -352,7 +403,7 @@ export function ScreenshotUpload({
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                     <button
                       type="button"
-                      onClick={() => setLightbox(url)}
+                      onClick={() => setLightbox(display(url))}
                       className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center text-foreground hover:bg-white transition-colors"
                       title="View full size"
                     >

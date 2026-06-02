@@ -44,10 +44,14 @@ export default function NewTradePage() {
   const [allAnalyses, setAllAnalyses] = useState<PreTradeAnalysis[]>([]);
   const [customTF, setCustomTF] = useState("");
   const [showCustomTF, setShowCustomTF] = useState(false);
+  // Pre-generate entity ID so screenshots can be uploaded before the trade is saved
+  const [entityId] = useState(() => crypto.randomUUID());
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([getAnalyses(), getProfile()]).then(([analyses, profile]) => {
       setAllAnalyses(analyses);
+      if (profile?.id) setUserId(profile.id);
       if (profile?.discipline_rules) {
         const checks = profile.discipline_rules
           .split("\n")
@@ -139,7 +143,7 @@ export default function NewTradePage() {
     if (!form.instrument) return;
     setSaving(true);
     try {
-      const created = await createTrade(form);
+      const created = await createTrade(form, entityId);
       router.push(`/journal/${created.id}`);
     } catch (err) {
       console.error("Failed to save trade:", err);
@@ -523,6 +527,7 @@ export default function NewTradePage() {
             <ScreenshotUpload
               groups={form.screenshot_groups}
               onChange={(g) => set("screenshot_groups", g)}
+              storageConfig={userId ? { userId, entityType: "trades", entityId } : undefined}
             />
           </CardContent>
         </Card>

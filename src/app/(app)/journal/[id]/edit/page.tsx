@@ -61,12 +61,14 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [customTF, setCustomTF] = useState("");
   const [showCustomTF, setShowCustomTF] = useState(false);
   const [tradeInfo, setTradeInfo] = useState<{ instrument: string; session: string }>({ instrument: "", session: "" });
+  const [userId, setUserId] = useState<string | null>(null);
 
   const [form, setForm] = useState(DEFAULT_FORM);
 
   useEffect(() => {
     Promise.all([getTradeById(id), getAnalyses(), getProfile()]).then(([trade, analyses, profile]) => {
       setAllAnalyses(analyses);
+      if (profile?.id) setUserId(profile.id);
       if (!trade) { setNotFound(true); setLoading(false); return; }
       setTradeInfo({ instrument: trade.instrument, session: trade.session });
 
@@ -555,7 +557,11 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         <Card className="shadow-sm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Screenshots</CardTitle></CardHeader>
           <CardContent>
-            <ScreenshotUpload groups={form.screenshot_groups} onChange={(g) => set("screenshot_groups", g)} />
+            <ScreenshotUpload
+              groups={form.screenshot_groups}
+              onChange={(g) => set("screenshot_groups", g)}
+              storageConfig={userId ? { userId, entityType: "trades", entityId: id } : undefined}
+            />
           </CardContent>
         </Card>
 
