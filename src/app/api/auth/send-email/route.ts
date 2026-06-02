@@ -15,7 +15,11 @@ function verifyHookSignature(authHeader: string | null, secret: string): boolean
     .update(`${header}.${payload}`)
     .digest("base64url");
   try {
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    // Compare decoded bytes to avoid base64url padding mismatches
+    const sigBytes = Buffer.from(signature, "base64url");
+    const expBytes = Buffer.from(expected, "base64url");
+    if (sigBytes.length !== expBytes.length) return false;
+    return crypto.timingSafeEqual(sigBytes, expBytes);
   } catch {
     return false;
   }
