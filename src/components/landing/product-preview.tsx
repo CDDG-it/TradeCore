@@ -3,10 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
+import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 // Exact same warm-white as hero background
-const BG = "rgba(249,246,242,";
+const BG = "rgba(249,246,242,1)";
 
 const CARDS = [
   {
@@ -56,73 +57,71 @@ const CARDS = [
   },
 ] as const;
 
-// ── Browser-chrome frame wrapping a screenshot ────────────────────────────────
+// ── Screenshot frame — no browser chrome, just the app with orange glow ───────
 function ScreenshotFrame({ src, alt }: { src: string; alt: string }) {
+  const [hovered, setHovered] = useState(false);
+
   return (
     <div
-      className="relative w-full overflow-hidden rounded-xl shadow-[0_8px_48px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.06)]"
-      style={{ border: "1px solid rgba(0,0,0,0.08)" }}
+      className="relative w-full overflow-hidden rounded-2xl"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        boxShadow: hovered
+          ? "0 0 0 2px rgba(249,115,22,0.60), 0 0 48px rgba(249,115,22,0.22), 0 16px 64px rgba(0,0,0,0.12)"
+          : "0 0 0 1.5px rgba(249,115,22,0.22), 0 0 20px rgba(249,115,22,0.08), 0 8px 40px rgba(0,0,0,0.08)",
+        transition: "box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
     >
-      {/* Browser chrome bar */}
-      <div
-        className="flex items-center gap-1.5 px-3 py-2"
-        style={{
-          background:   "rgba(249,246,242,0.95)",
-          borderBottom: "1px solid rgba(0,0,0,0.08)",
-        }}
-      >
-        {/* Traffic lights */}
-        <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#FF5F57" }} />
-        <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#FEBC2E" }} />
-        <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#28C840" }} />
-        {/* Address bar */}
-        <div
-          className="ml-3 flex-1 rounded-md px-3 py-1 text-[10px] font-mono max-w-xs"
-          style={{
-            background: "rgba(0,0,0,0.05)",
-            color:      "rgba(60,48,36,0.45)",
-          }}
-        >
-          tradecore.app{src.replace("/screenshots", "").replace(".jpg", "")}
-        </div>
-      </div>
-      {/* Screenshot */}
-      <div className="relative w-full" style={{ aspectRatio: "1440/900" }}>
+      {/* Screenshot — aspect ratio matches 1200×900 crop */}
+      <div className="relative w-full" style={{ aspectRatio: "4/3" }}>
         <Image
           src={src}
           alt={alt}
           fill
-          sizes="(max-width: 768px) 100vw, 55vw"
+          sizes="(max-width: 768px) 100vw, 60vw"
           className="object-cover object-top"
           priority
         />
       </div>
+
+      {/* Subtle orange rim light that appears on hover */}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-2xl"
+        style={{
+          background: hovered
+            ? "linear-gradient(135deg, rgba(249,115,22,0.05) 0%, transparent 50%)"
+            : "transparent",
+          transition: "background 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      />
     </div>
   );
 }
 
-// ── Single full-height card ───────────────────────────────────────────────────
-function FeatureCard({ card }: { card: typeof CARDS[number] }) {
+// ── Single full-height card ────────────────────────────────────────────────────
+function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
   const isEven = card.index % 2 === 0;
+
+  // Screenshot always gets the larger column (3 fr), text gets 2 fr
+  const gridCols = isEven
+    ? "lg:grid-cols-[2fr_3fr]"
+    : "lg:grid-cols-[3fr_2fr]";
 
   return (
     <div
       className="min-h-screen flex items-center py-24 border-b"
       style={{ borderColor: "rgba(0,0,0,0.06)" }}
     >
-      <div className="mx-auto w-full max-w-6xl px-6 sm:px-8">
-        <div
-          className={`grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center ${
-            isEven ? "" : "lg:[&>*:first-child]:order-2 lg:[&>*:last-child]:order-1"
-          }`}
-        >
-          {/* Text side */}
+      <div className="mx-auto w-full max-w-7xl px-6 sm:px-10">
+        <div className={`grid grid-cols-1 ${gridCols} gap-12 lg:gap-20 items-center`}>
+          {/* Text side — pushed to second visual position for odd cards */}
           <motion.div
-            initial={{ opacity: 0, x: isEven ? -24 : 24 }}
+            initial={{ opacity: 0, x: isEven ? -28 : 28 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.70, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col gap-6"
+            className={`flex flex-col gap-6 ${!isEven ? "lg:order-2" : ""}`}
           >
             {/* Number + section label */}
             <div className="flex items-center gap-3">
@@ -158,7 +157,7 @@ function FeatureCard({ card }: { card: typeof CARDS[number] }) {
               className="font-black tracking-tight leading-[0.92]"
               style={{
                 fontFamily: "var(--font-nunito), system-ui, sans-serif",
-                fontSize:   "clamp(2.6rem, 6vw, 4.5rem)",
+                fontSize:   "clamp(2.8rem, 5vw, 4.8rem)",
                 color:      "rgba(15,12,8,0.90)",
               }}
             >
@@ -170,7 +169,7 @@ function FeatureCard({ card }: { card: typeof CARDS[number] }) {
               className="leading-relaxed max-w-md"
               style={{
                 fontFamily: "var(--font-nunito), system-ui, sans-serif",
-                fontSize:   "clamp(0.95rem, 1.6vw, 1.05rem)",
+                fontSize:   "clamp(0.95rem, 1.5vw, 1.05rem)",
                 fontWeight: 400,
                 color:      "rgba(60,48,36,0.55)",
               }}
@@ -183,9 +182,9 @@ function FeatureCard({ card }: { card: typeof CARDS[number] }) {
               href={card.route}
               className="self-start inline-flex items-center gap-2.5 rounded-full px-7 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
               style={{
-                fontFamily:  "var(--font-nunito), system-ui, sans-serif",
-                background:  "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
-                boxShadow:   "0 4px 24px rgba(249,115,22,0.28), 0 1px 3px rgba(0,0,0,0.10)",
+                fontFamily: "var(--font-nunito), system-ui, sans-serif",
+                background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
+                boxShadow:  "0 4px 24px rgba(249,115,22,0.28), 0 1px 3px rgba(0,0,0,0.10)",
               }}
             >
               {card.cta}
@@ -195,10 +194,11 @@ function FeatureCard({ card }: { card: typeof CARDS[number] }) {
 
           {/* Screenshot side */}
           <motion.div
-            initial={{ opacity: 0, x: isEven ? 24 : -24 }}
+            initial={{ opacity: 0, x: isEven ? 28 : -28 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.70, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
+            className={!isEven ? "lg:order-1" : ""}
           >
             <ScreenshotFrame
               src={card.screenshot}
@@ -211,13 +211,10 @@ function FeatureCard({ card }: { card: typeof CARDS[number] }) {
   );
 }
 
-// ── Section ───────────────────────────────────────────────────────────────────
+// ── Section ────────────────────────────────────────────────────────────────────
 export function ProductPreview() {
   return (
-    <section
-      style={{ background: `${BG}1)` }}
-      className="overflow-x-hidden"
-    >
+    <section style={{ background: BG }} className="overflow-x-hidden">
       {/* Top border matching hero bottom strip */}
       <div
         className="h-px w-full"
@@ -276,22 +273,34 @@ export function ProductPreview() {
         className="px-6 py-10 border-t"
         style={{ borderColor: "rgba(0,0,0,0.07)" }}
       >
-        <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link href="/" className="font-black text-sm tracking-tight leading-none hover:opacity-70 transition-opacity"
-            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
-            <span style={{ color: "rgba(15,12,8,0.85)" }}>Trade</span>
-            <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
-          </Link>
-          <p
-            className="text-xs"
-            style={{ color: "rgba(60,48,36,0.38)" }}
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Link
+            href="/"
+            className="font-black text-sm tracking-tight leading-none hover:opacity-70 transition-opacity"
+            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
           >
+            <span style={{ color: "rgba(15,12,8,0.85)" }}>Trade</span>
+            <span
+              style={{
+                background:            "linear-gradient(90deg,#F97316,#d97706)",
+                WebkitBackgroundClip:  "text",
+                WebkitTextFillColor:   "transparent",
+                backgroundClip:        "text",
+              }}
+            >
+              CORE
+            </span>
+          </Link>
+          <p className="text-xs" style={{ color: "rgba(60,48,36,0.38)" }}>
             Where self-improvement meets trading.
           </p>
           <Link
             href="/dashboard"
             className="text-xs font-semibold transition-colors duration-200"
-            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", color: "rgba(249,115,22,0.80)" }}
+            style={{
+              fontFamily: "var(--font-nunito), system-ui, sans-serif",
+              color:      "rgba(249,115,22,0.80)",
+            }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#F97316")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(249,115,22,0.80)")}
           >
