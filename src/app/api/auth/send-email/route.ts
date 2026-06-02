@@ -69,24 +69,18 @@ function getEmailContent(type: string, confirmUrl: string): { subject: string; h
 }
 
 export async function POST(request: NextRequest) {
-  // Enforce JWT verification — only Supabase (which holds the hook secret) can call this endpoint.
-  const hookSecret = process.env.SUPABASE_HOOK_SECRET;
-  if (!hookSecret) {
-    console.error("[send-email] SUPABASE_HOOK_SECRET not configured — refusing all requests");
+  // Security: verify a shared secret passed as a query param in the hook URL.
+  // This is more reliable than Supabase JWT signing, which doesn't always send headers.
+  // The hook URL in Supabase is: /api/auth/send-email?secret=<HOOK_ENDPOINT_SECRET>
+  const endpointSecret = process.env.HOOK_ENDPOINT_SECRET;
+  if (!endpointSecret) {
+    console.error("[send-email] HOOK_ENDPOINT_SECRET not configured");
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
-  const authHeader = request.headers.get("authorization");
-  console.log("[send-email] auth header present:", !!authHeader);
-  if (!authHeader) {
-    console.error("[send-email] Missing authorization header");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : null;
-  console.log("[send-email] token parts:", token?.split(".").length);
-  const valid = verifyHookSignature(authHeader, hookSecret);
-  console.log("[send-email] signature valid:", valid);
-  if (!valid) {
-    console.error("[send-email] Invalid hook signature — possible spoofed request");
+  const { searchParams } = new URL(request.url);
+  const incomingSecret = searchParams.get("secret");
+  if (!incomingSecret || !crypto.timingSafeEqual(Buffer.from(incomingSecret), Buffer.from(endpointSecret))) {
+    console.error("[send-email] Invalid or missing endpoint secret");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
