@@ -39,9 +39,10 @@ function LoginForm() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        if (error.message.includes("Email not confirmed")) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
           setPageState("unverified");
-        } else if (error.message.includes("Invalid login credentials")) {
+        } else if (msg.includes("invalid login credentials") || msg.includes("invalid email or password")) {
           setError("Invalid email or password.");
         } else {
           setError(error.message);
@@ -65,17 +66,24 @@ function LoginForm() {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm`,
-        },
+        options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
       });
-      if (error) {
-        setError(error.message);
+
+      if (!error) {
+        setPageState("resent");
         return;
       }
-      setPageState("resent");
+
+      const msg = error.message.toLowerCase();
+      if (msg.includes("rate limit") || msg.includes("after") || msg.includes("seconds")) {
+        setError("Please wait a moment before requesting another email.");
+      } else if (msg.includes("already confirmed") || msg.includes("already registered")) {
+        setError("This email is already verified. Try signing in.");
+      } else {
+        setError("Could not send verification email. Please try again in a few minutes.");
+      }
     } catch {
-      setError("Could not resend email. Please try again.");
+      setError("Could not send verification email. Please try again in a few minutes.");
     } finally {
       setIsResending(false);
     }
