@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { FadeIn } from "@/components/ui/fade-in";
 import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
+import { ProductPreview } from "@/components/landing/product-preview";
 
 // Light bg constant – warm white  oklch(0.98 0.003 45) ≈ rgba(249,246,242)
 const LIGHT = "rgba(249,246,242,";
@@ -181,7 +182,8 @@ const PILLARS = [
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ background: "oklch(0.98 0.003 45)" }}>
+    <>
+    <div className="overflow-x-hidden" style={{ background: "oklch(0.98 0.003 45)" }}>
 
       {/* ── Light glass header ── */}
       <header
@@ -309,5 +311,7 @@ export default function HomePage() {
 
       </section>
     </div>
+    <ProductPreview />
+    </>
   );
 }
