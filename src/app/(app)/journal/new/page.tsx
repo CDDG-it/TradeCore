@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createTrade, getAnalyses, getProfile } from "@/lib/supabase/queries";
 import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
-import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline } from "@/lib/types";
+import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const INSTRUMENTS = ["NQ", "ES", "GOLD"];
@@ -84,6 +84,7 @@ export default function NewTradePage() {
     discipline: { ...EMPTY_DISCIPLINE },
     market_context: undefined,
     execution_time: "",
+    execution_quality: undefined as TradeJournalEntry["execution_quality"],
   });
 
   const analyses = allAnalyses.filter((a) => a.date === form.date_time);
@@ -222,6 +223,30 @@ export default function NewTradePage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            {/* Execution Quality */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Execution Quality</Label>
+              <div className="flex gap-1.5">
+                {(["good", "bad"] as const).map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => set("execution_quality", form.execution_quality === q ? undefined : q)}
+                    className={cn(
+                      "flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all capitalize",
+                      form.execution_quality === q
+                        ? q === "good"
+                          ? "bg-success text-success-foreground shadow-sm"
+                          : "bg-destructive text-white shadow-sm"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {q === "good" ? "✓ Good execution" : "✗ Bad execution"}
+                  </button>
+                ))}
               </div>
             </div>
 

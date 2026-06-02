@@ -141,6 +141,8 @@ export interface TradeJournalEntry {
   lessons: string;
   /** Execution time e.g. "09:32" */
   execution_time?: string;
+  /** Subjective execution quality rating */
+  execution_quality?: "good" | "bad";
   /** Optional process discipline self-assessment */
   discipline?: TradeDiscipline;
   /** Optional structured market context at time of trade */

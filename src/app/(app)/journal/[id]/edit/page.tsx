@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getTradeById, updateTrade, getAnalyses, getProfile } from "@/lib/supabase/queries";
 import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
-import type { Direction, TradeResult, Session, TradeDiscipline } from "@/lib/types";
+import type { Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const INSTRUMENTS = ["NQ", "ES", "GOLD"];
@@ -45,6 +45,7 @@ const DEFAULT_FORM = {
     score: 0, notes: "", custom_checks: [],
   } as TradeDiscipline,
   execution_time: "" as string | undefined,
+  execution_quality: undefined as TradeJournalEntry["execution_quality"],
 };
 
 export default function EditTradePage({ params }: { params: Promise<{ id: string }> }) {
@@ -106,6 +107,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         linked_analysis_id: trade.linked_analysis_id,
         discipline,
         execution_time: trade.execution_time ?? "",
+        execution_quality: (trade as TradeJournalEntry).execution_quality,
       });
       setLoading(false);
     });
@@ -260,6 +262,30 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            {/* Execution Quality */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Execution Quality</Label>
+              <div className="flex gap-1.5">
+                {(["good", "bad"] as const).map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => set("execution_quality", form.execution_quality === q ? undefined : q)}
+                    className={cn(
+                      "flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all capitalize",
+                      form.execution_quality === q
+                        ? q === "good"
+                          ? "bg-success text-success-foreground shadow-sm"
+                          : "bg-destructive text-white shadow-sm"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {q === "good" ? "✓ Good execution" : "✗ Bad execution"}
+                  </button>
+                ))}
               </div>
             </div>
 

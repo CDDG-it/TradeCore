@@ -21,6 +21,7 @@ import type { TradeResult, Direction } from "@/lib/types";
 type ViewMode = "list" | "calendar";
 type PeriodFilter = "all" | "day" | "week" | "month";
 type CalendarPeriod = "month" | "week";
+type ExecutionQualityFilter = "all" | "good" | "bad";
 
 function ResultBadge({ result }: { result: TradeResult }) {
   const config = {
@@ -36,6 +37,7 @@ export default function JournalPage() {
   const [allTrades, setAllTrades] = useState<TradeJournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterResult, setFilterResult] = useState<TradeResult | "all">("all");
+  const [filterExecution, setFilterExecution] = useState<ExecutionQualityFilter>("all");
 
   useEffect(() => {
     getTrades().then(setAllTrades).finally(() => setLoading(false));
@@ -59,12 +61,13 @@ export default function JournalPage() {
     const tradeDate = new Date(t.date_time.slice(0, 10) + "T12:00:00");
     const matchResult = filterResult === "all" || t.result === filterResult;
     const matchDir = filterDirection === "all" || t.direction === filterDirection;
+    const matchExecution = filterExecution === "all" || t.execution_quality === filterExecution;
     let matchPeriod = true;
     if (periodFilter === "day") matchPeriod = tradeDate >= dayStart && tradeDate <= dayEnd;
     if (periodFilter === "week") matchPeriod = tradeDate >= weekStart && tradeDate <= weekEnd;
     if (periodFilter === "month") matchPeriod = tradeDate >= monthStart && tradeDate <= monthEnd;
-    return matchResult && matchDir && matchPeriod;
-  }), [allTrades, filterResult, filterDirection, periodFilter]);
+    return matchResult && matchDir && matchPeriod && matchExecution;
+  }), [allTrades, filterResult, filterDirection, filterExecution, periodFilter]);
 
   const winTrades = filtered.filter((t) => t.result === "win");
   const wins = winTrades.length;
@@ -207,6 +210,15 @@ export default function JournalPage() {
                 </button>
               ))}
             </div>
+            <div className="flex rounded-lg border border-border/50 overflow-hidden">
+              {(["all", "good", "bad"] as const).map((e) => (
+                <button key={e} onClick={() => setFilterExecution(e)}
+                  className={cn("px-3 py-1.5 text-xs font-medium transition-colors",
+                    filterExecution === e ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+                  {e === "all" ? "All exec" : e === "good" ? "✓ Good" : "✗ Bad"}
+                </button>
+              ))}
+            </div>
           </>
         )}
       </div>
@@ -281,11 +293,14 @@ export default function JournalPage() {
                           <div className="flex flex-col gap-0.5 mt-0.5 flex-1 overflow-hidden">
                             {dayTrades.slice(0, 2).map((t) => (
                               <Link key={t.id} href={`/journal/${t.id}`}
-                                className={cn("block rounded px-0.5 py-px text-[9px] font-semibold truncate transition-colors leading-tight",
+                                className={cn("flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] font-semibold truncate transition-colors leading-tight",
                                   t.result === "win" ? "bg-success/15 text-success hover:bg-success/25"
                                     : t.result === "loss" ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
                                     : "bg-warning/15 text-warning hover:bg-warning/25")}>
                                 {t.instrument}
+                                {t.execution_quality && (
+                                  <span className="shrink-0 opacity-70">{t.execution_quality === "good" ? "✓" : "✗"}</span>
+                                )}
                               </Link>
                             ))}
                             {dayTrades.length > 2 && (
@@ -346,8 +361,13 @@ export default function JournalPage() {
                                   : "text-warning")}>
                                 {t.instrument}
                               </p>
-                              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 flex items-center gap-1">
                                 {t.direction === "long" ? "L" : "S"} · {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+                                {t.execution_quality && (
+                                  <span className={t.execution_quality === "good" ? "text-success" : "text-destructive"}>
+                                    {t.execution_quality === "good" ? "✓" : "✗"}
+                                  </span>
+                                )}
                               </p>
                             </Link>
                           ))
@@ -389,11 +409,21 @@ export default function JournalPage() {
                 {filtered.map((trade) => (
                   <Link key={trade.id} href={`/journal/${trade.id}`}
                     className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 border-l-2 border-transparent hover:border-primary/40 transition-all group">
-                    <div className="flex items-center gap-2 w-16 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       {trade.direction === "long"
                         ? <TrendingUp className="w-3.5 h-3.5 text-success" />
                         : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
                       <ResultBadge result={trade.result} />
+                      {trade.execution_quality && (
+                        <span className={cn(
+                          "text-[10px] font-bold px-1.5 py-0.5 rounded-md leading-none",
+                          trade.execution_quality === "good"
+                            ? "bg-success/15 text-success"
+                            : "bg-destructive/15 text-destructive"
+                        )}>
+                          {trade.execution_quality === "good" ? "✓" : "✗"}
+                        </span>
+                      )}
                     </div>
                     <div className="w-14 shrink-0">
                       <p className="text-sm font-bold group-hover:text-primary transition-colors">{trade.instrument}</p>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Shield, Lock, KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Shield, Lock, KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle, BarChart2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { getProfile, upsertProfile } from "@/lib/supabase/queries";
+import { cn } from "@/lib/utils";
+
+const PREFERRED_INSTRUMENTS = ["NQ", "ES", "Gold"] as const;
 
 export default function SettingsPage() {
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
@@ -16,6 +20,26 @@ export default function SettingsPage() {
   const [showNext, setShowNext] = useState(false);
   const [pwState, setPwState] = useState<"idle" | "loading" | "saved" | "error">("idle");
   const [pwError, setPwError] = useState("");
+  const [prefInstrument, setPrefInstrument] = useState<string | null>(null);
+  const [prefSaveState, setPrefSaveState] = useState<"idle" | "saving" | "saved">("idle");
+
+  useEffect(() => {
+    getProfile().then((p) => {
+      if (p?.preferred_instrument) setPrefInstrument(p.preferred_instrument);
+    });
+  }, []);
+
+  async function handleSaveInstrument(instrument: string) {
+    setPrefInstrument(instrument);
+    setPrefSaveState("saving");
+    try {
+      await upsertProfile({ preferred_instrument: instrument });
+      setPrefSaveState("saved");
+      setTimeout(() => setPrefSaveState("idle"), 2000);
+    } catch {
+      setPrefSaveState("idle");
+    }
+  }
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -56,6 +80,47 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-2xl">
       <PageHeader badge="Account" title="Settings" subtitle="Security and account configuration" />
       <PageWrapper>
+        {/* Trading Preferences */}
+        <Card className="bg-card border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <BarChart2 className="w-4 h-4 text-primary" />
+              Trading Preferences
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label className="text-xs mb-2 block">Preferred Instrument</Label>
+              <div className="flex gap-2">
+                {PREFERRED_INSTRUMENTS.map((inst) => (
+                  <button
+                    key={inst}
+                    type="button"
+                    onClick={() => handleSaveInstrument(inst)}
+                    className={cn(
+                      "flex-1 py-2 rounded-lg text-sm font-semibold font-mono transition-all",
+                      prefInstrument === inst
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                    )}
+                  >
+                    {inst}
+                  </button>
+                ))}
+              </div>
+              {prefSaveState === "saved" && (
+                <div className="flex items-center gap-1.5 text-xs text-success mt-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  Preference saved
+                </div>
+              )}
+              {prefSaveState === "saving" && (
+                <p className="text-xs text-muted-foreground mt-2">Saving…</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Security */}
         <Card className="bg-card border-border/50">
           <CardHeader className="pb-3">

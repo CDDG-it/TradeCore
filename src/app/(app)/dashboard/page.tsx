@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { format, startOfWeek, startOfMonth } from "date-fns";
+import { motion } from "motion/react";
 import {
   TrendingUp,
   TrendingDown,
@@ -22,7 +23,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
   getTrades,
@@ -33,6 +33,7 @@ import {
   updateHabit,
   deleteHabit,
   toggleHabitCompletion,
+  getProfile,
 } from "@/lib/supabase/queries";
 import { subDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -431,11 +432,18 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
 export default function DashboardPage() {
   const [trades, setTrades] = useState<import("@/lib/types").TradeJournalEntry[]>([]);
   const [accounts, setAccounts] = useState<import("@/lib/types").FundedAccount[]>([]);
+  const [greeting, setGreeting] = useState("");
+  const [firstName, setFirstName] = useState<string | null>(null);
   const habitStateRef = useRef<{ habits: Habit[]; toggle: (id: string) => void } | null>(null);
 
   useEffect(() => {
+    const h = new Date().getHours();
+    setGreeting(h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
     getTrades().then(setTrades);
     getAccounts().then(setAccounts);
+    getProfile().then((p) => {
+      if (p?.full_name) setFirstName(p.full_name.split(" ")[0]);
+    });
   }, []);
   const disciplineRef = useRef<HTMLDivElement>(null);
   const habitsRef = useRef<HTMLDivElement>(null);
@@ -513,7 +521,29 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader badge="Daily" title="Dashboard" subtitle={format(new Date(), "EEEE, MMMM d, yyyy")} />
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="flex items-start justify-between gap-4 mb-8"
+      >
+        <div>
+          <p className="font-body text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">
+            Daily
+          </p>
+          <h1 className="font-heading font-black text-3xl md:text-4xl text-foreground tracking-tight leading-[0.95]">
+            Dashboard
+          </h1>
+          {greeting && (
+            <p className="font-body text-lg font-semibold text-foreground mt-3">
+              {greeting}{firstName ? `, ${firstName}` : ""} 👋
+            </p>
+          )}
+          <p className="font-body text-sm font-light text-muted-foreground mt-1 leading-relaxed">
+            {format(new Date(), "EEEE, MMMM d, yyyy")}
+          </p>
+        </div>
+      </motion.div>
       <PageWrapper>
         {/* Stats + Discipline */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-up">

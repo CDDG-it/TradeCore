@@ -35,7 +35,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <main className="lg:pl-60 pt-14 lg:pt-0 min-h-screen relative z-10">
-        <div className="px-4 py-8 sm:px-6 lg:px-8 max-w-7xl mx-auto lg:mx-0">
+        <div className="px-4 py-8 sm:px-6 lg:px-8 w-full">
           <TransitionLayout>{children}</TransitionLayout>
         </div>
       </main>
