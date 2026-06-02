@@ -1,20 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+type PageState = "login" | "unverified" | "resent";
+
+const Logo = () => (
+  <span className="font-black text-xl tracking-tight" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
+    <span style={{ color: "#111" }}>Trade</span>
+    <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
+  </span>
+);
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlError = searchParams.get("error");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
+  const [pageState, setPageState] = useState<PageState>("login");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,7 +40,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         if (error.message.includes("Email not confirmed")) {
-          setError("Please verify your email address before signing in. Check your inbox.");
+          setPageState("unverified");
         } else if (error.message.includes("Invalid login credentials")) {
           setError("Invalid email or password.");
         } else {
@@ -43,14 +57,93 @@ export default function LoginPage() {
     }
   }
 
+  async function handleResend() {
+    setIsResending(true);
+    setError("");
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        },
+      });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      setPageState("resent");
+    } catch {
+      setError("Could not resend email. Please try again.");
+    } finally {
+      setIsResending(false);
+    }
+  }
+
+  if (pageState === "unverified") {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="flex flex-col items-center gap-2"><Logo /></div>
+          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl">Verify your email</CardTitle>
+              <CardDescription>
+                Your account hasn&apos;t been verified yet. We need to confirm <strong>{email}</strong> before you can sign in.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {error && (
+                <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
+              )}
+              <p className="text-sm text-muted-foreground">
+                Check your inbox for the original verification email, or request a new one below.
+              </p>
+              <Button className="w-full" onClick={handleResend} disabled={isResending}>
+                {isResending ? "Sending…" : "Resend verification email"}
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => setPageState("login")}>
+                Back to sign in
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState === "resent") {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="flex flex-col items-center gap-2"><Logo /></div>
+          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl">Email sent</CardTitle>
+              <CardDescription>
+                A new verification link has been sent to <strong>{email}</strong>.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Click the link in your email to activate your account. Don&apos;t forget to check your spam folder.
+              </p>
+              <Button variant="outline" className="w-full" onClick={() => setPageState("login")}>
+                Back to sign in
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center gap-2">
-          <span className="font-black text-xl tracking-tight" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
-            <span style={{ color: "#111" }}>Trade</span>
-            <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
-          </span>
+          <Logo />
           <p className="mt-1 text-sm text-muted-foreground">Your edge, organized.</p>
         </div>
 
@@ -61,9 +154,9 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
+              {(error || urlError) && (
                 <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                  {error}
+                  {error || urlError}
                 </div>
               )}
 
@@ -113,5 +206,13 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -13,6 +13,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
@@ -47,6 +49,22 @@ export default function SignupPage() {
     }
   }
 
+  async function handleResend() {
+    setIsResending(true);
+    setResendSuccess(false);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
+      });
+      if (!error) setResendSuccess(true);
+    } finally {
+      setIsResending(false);
+    }
+  }
+
   if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
@@ -66,8 +84,17 @@ export default function SignupPage() {
               <p className="text-sm text-muted-foreground">
                 Click the link in your email to activate your account. Check your spam folder if you don&apos;t see it within a few minutes.
               </p>
+              {resendSuccess ? (
+                <div className="rounded-lg bg-primary/10 px-4 py-3 text-sm text-primary">
+                  A new verification email has been sent.
+                </div>
+              ) : (
+                <Button variant="outline" className="w-full" onClick={handleResend} disabled={isResending}>
+                  {isResending ? "Sending…" : "Resend verification email"}
+                </Button>
+              )}
               <Link href="/login">
-                <Button variant="outline" className="w-full">Back to sign in</Button>
+                <Button variant="ghost" className="w-full">Back to sign in</Button>
               </Link>
             </CardContent>
           </Card>

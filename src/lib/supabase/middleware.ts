@@ -51,8 +51,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && isAuthPage) {
+  // Redirect authenticated users away from auth pages — but NOT from
+  // /auth/update-password, which requires an active session to work.
+  if (user && isAuthPage && request.nextUrl.pathname !== "/auth/update-password") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
