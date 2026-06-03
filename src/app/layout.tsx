@@ -20,15 +20,15 @@ const instrumentSerif = Instrument_Serif({
 const barlow = Barlow({
   variable: "--font-barlow",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
+  display: "block",
 });
 
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
   weight: ["700", "800", "900"],
-  display: "swap",
+  display: "block",
 });
 
 export const metadata: Metadata = {

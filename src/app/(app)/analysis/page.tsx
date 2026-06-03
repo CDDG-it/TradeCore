@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
-import { format, startOfDay, endOfDay } from "date-fns";
-import { Plus, Search, TrendingUp, TrendingDown, Minus, ArrowRight, LinkIcon } from "lucide-react";
+import {
+  format, startOfDay, endOfDay,
+  getISOWeek, getISOWeekYear, startOfISOWeek, endOfISOWeek,
+} from "date-fns";
+import { Plus, Search, TrendingUp, TrendingDown, Minus, ArrowRight, LinkIcon, LayoutGrid, List } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -45,7 +48,19 @@ function MarketBadge({ market }: { market: Market }) {
   );
 }
 
+const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
 type PeriodFilter = "all" | "day" | "week" | "month";
+type ViewMode = "grid" | "list";
+
+interface WeekGroup {
+  key: string;
+  weekNum: number;
+  weekYear: number;
+  start: Date;
+  end: Date;
+  analyses: PreTradeAnalysis[];
+}
 
 export default function AnalysisPage() {
   const [allAnalyses, setAllAnalyses] = useState<PreTradeAnalysis[]>([]);
@@ -54,6 +69,7 @@ export default function AnalysisPage() {
   const [filterBias, setFilterBias] = useState<Bias | "all">("all");
   const [filterMarket, setFilterMarket] = useState<Market | "all">("all");
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   useEffect(() => {
     getAnalyses().then(setAllAnalyses).finally(() => setLoading(false));
@@ -63,7 +79,7 @@ export default function AnalysisPage() {
   const dayStart = startOfDay(now);
   const dayEnd = endOfDay(now);
 
-  const filtered = allAnalyses.filter((a) => {
+  const filtered = useMemo(() => allAnalyses.filter((a) => {
     const matchSearch =
       !search ||
       a.instrument.toLowerCase().includes(search.toLowerCase());
@@ -82,7 +98,29 @@ export default function AnalysisPage() {
       }
     }
     return matchSearch && matchBias && matchMarket && matchPeriod;
-  });
+  }), [allAnalyses, search, filterBias, filterMarket, periodFilter]);
+
+  const weekGroups = useMemo((): WeekGroup[] => {
+    const groupMap = new Map<string, WeekGroup>();
+    filtered.forEach((a) => {
+      const d = new Date(a.date + "T12:00:00");
+      const weekNum = getISOWeek(d);
+      const weekYear = getISOWeekYear(d);
+      const key = `${weekYear}-W${String(weekNum).padStart(2, "0")}`;
+      if (!groupMap.has(key)) {
+        groupMap.set(key, {
+          key,
+          weekNum,
+          weekYear,
+          start: startOfISOWeek(d),
+          end: endOfISOWeek(d),
+          analyses: [],
+        });
+      }
+      groupMap.get(key)!.analyses.push(a);
+    });
+    return Array.from(groupMap.values()).sort((a, b) => b.start.getTime() - a.start.getTime());
+  }, [filtered]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -122,6 +160,28 @@ export default function AnalysisPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 text-sm bg-card border-border/50"
           />
+        </div>
+
+        {/* View toggle */}
+        <div className="flex rounded-lg border border-border/50 overflow-hidden">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5",
+              viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" /> Grid
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5",
+              viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
+          >
+            <List className="w-3.5 h-3.5" /> List
+          </button>
         </div>
 
         {/* Period filter */}
@@ -179,12 +239,15 @@ export default function AnalysisPage() {
         </div>
       </div>
 
-      {/* Cards grid */}
-      {filtered.length === 0 ? (
+      {/* Empty state */}
+      {filtered.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
           <p className="text-sm">No analyses found.</p>
         </div>
-      ) : (
+      )}
+
+      {/* GRID VIEW */}
+      {viewMode === "grid" && filtered.length > 0 && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((analysis) => (
             <Link key={analysis.id} href={`/analysis/${analysis.id}`}>
@@ -237,6 +300,118 @@ export default function AnalysisPage() {
               </Card>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* LIST VIEW — grouped by week */}
+      {viewMode === "list" && filtered.length > 0 && (
+        <div className="space-y-8">
+          {weekGroups.map((group) => {
+            const weekStart = group.start;
+            const weekEnd = group.end;
+            const dayRange = Array.from({ length: 7 }, (_, i) => {
+              const d = new Date(weekStart);
+              d.setDate(weekStart.getDate() + i);
+              return d;
+            });
+
+            return (
+              <div key={group.key} className="space-y-3">
+                {/* Week header */}
+                <div className="flex items-baseline gap-3">
+                  <span
+                    className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-md"
+                    style={{
+                      background: "oklch(0.72 0.22 45 / 0.12)",
+                      color: "oklch(0.72 0.22 45)",
+                    }}
+                  >
+                    W{group.weekNum}
+                  </span>
+                  <span className="text-sm font-semibold text-foreground/80">
+                    {format(weekStart, "MMM d")} – {format(weekEnd, "MMM d, yyyy")}
+                  </span>
+                  <div className="flex gap-1 ml-1">
+                    {dayRange.map((d, i) => {
+                      const key = format(d, "yyyy-MM-dd");
+                      const hasAnalysis = group.analyses.some((a) => a.date === key);
+                      return (
+                        <span
+                          key={key}
+                          title={`${DAY_NAMES[i]} ${format(d, "MMM d")}`}
+                          className={cn(
+                            "inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-semibold",
+                            hasAnalysis
+                              ? "text-primary"
+                              : "text-muted-foreground/30"
+                          )}
+                          style={hasAnalysis ? { background: "oklch(0.72 0.22 45 / 0.12)" } : undefined}
+                        >
+                          {DAY_NAMES[i][0]}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {group.analyses.length} {group.analyses.length === 1 ? "analysis" : "analyses"}
+                  </span>
+                </div>
+
+                {/* Analysis rows */}
+                <Card className="bg-card border-border/50 overflow-hidden">
+                  <div className="divide-y divide-border/40">
+                    {group.analyses.map((analysis) => (
+                      <Link
+                        key={analysis.id}
+                        href={`/analysis/${analysis.id}`}
+                        className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 border-l-2 border-transparent hover:border-primary/40 transition-all group"
+                      >
+                        {/* Date */}
+                        <div className="w-10 shrink-0 text-center">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            {format(new Date(analysis.date + "T12:00:00"), "EEE")}
+                          </p>
+                          <p className="text-sm font-bold text-foreground/80">
+                            {format(new Date(analysis.date + "T12:00:00"), "d")}
+                          </p>
+                        </div>
+
+                        {/* Instrument + market */}
+                        <div className="w-24 shrink-0">
+                          <p className="text-sm font-bold group-hover:text-primary transition-colors">
+                            {analysis.instrument}
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">{analysis.market}</p>
+                        </div>
+
+                        {/* Bias */}
+                        <div className="w-20 shrink-0">
+                          <BiasBadge bias={analysis.bias} />
+                        </div>
+
+                        {/* Thesis */}
+                        <p className="flex-1 text-xs text-muted-foreground truncate hidden sm:block leading-relaxed">
+                          {analysis.thesis}
+                        </p>
+
+                        {/* Session + badges */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {analysis.used_for_trade && (
+                            <Badge className="text-xs bg-primary/10 text-primary border-primary/20">
+                              <LinkIcon className="w-2.5 h-2.5 mr-1" />
+                              Traded
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground hidden md:block">{analysis.session}</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary/60 transition-all group-hover:translate-x-0.5" />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            );
+          })}
         </div>
       )}
       </PageWrapper>

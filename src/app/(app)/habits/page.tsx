@@ -95,7 +95,7 @@ function WeekGrid({
 }) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = subDays(new Date(today + "T12:00:00"), 6 - i);
-    return d.toISOString().slice(0, 10);
+    return format(d, "yyyy-MM-dd");
   });
   const completedSet = new Set(
     completions.filter((c) => c.completed).map((c) => c.date)
@@ -157,7 +157,7 @@ interface NewHabitForm {
 }
 
 export default function HabitsPage() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = format(new Date(), "yyyy-MM-dd");
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
   const [tasks, setTasks] = useState<DailyTask[]>([]);
@@ -248,7 +248,7 @@ export default function HabitsPage() {
 
   // Last 7 days for each habit
   const last7Days = Array.from({ length: 7 }, (_, i) =>
-    subDays(new Date(today + "T12:00:00"), i).toISOString().slice(0, 10)
+    format(subDays(new Date(today + "T12:00:00"), i), "yyyy-MM-dd")
   );
 
   const PRIORITY_CONFIG = {

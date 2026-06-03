@@ -536,7 +536,7 @@ export default function DashboardPage() {
           </h1>
           {greeting && (
             <p className="font-body text-lg font-semibold text-foreground mt-3">
-              {greeting}{firstName ? `, ${firstName}` : ""} 👋
+              {greeting}{firstName ? `, ${firstName}` : ""}
             </p>
           )}
           <p className="font-body text-sm font-light text-muted-foreground mt-1 leading-relaxed">

@@ -131,7 +131,9 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
           </div>
 
           <div className={cn("px-5 py-3 rounded-xl border shrink-0", res.bg)}>
-            <p className={cn("text-2xl font-bold text-center", res.color)}>{trade.rr}R</p>
+            <p className={cn("text-2xl font-bold text-center", res.color)}>
+              {trade.result === "win" ? `+${trade.rr}R` : trade.result === "loss" ? "-1R" : "0R"}
+            </p>
             <p className={cn("text-xs font-medium text-center mt-0.5", res.color)}>{res.label}</p>
           </div>
         </div>

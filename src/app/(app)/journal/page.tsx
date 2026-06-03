@@ -285,7 +285,7 @@ export default function JournalPage() {
                         className={cn("aspect-square rounded-lg p-1 transition-colors flex flex-col",
                           isToday(day) ? "ring-1 ring-primary/40 bg-primary/3" : "",
                           dayTrades.length > 0 ? "cursor-pointer hover:bg-muted/40" : "")}>
-                        <p className={cn("text-xs font-medium text-center shrink-0",
+                        <p className={cn("text-xs font-semibold text-center shrink-0",
                           isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/80" : "text-muted-foreground/40")}>
                           {format(day, "d")}
                         </p>
@@ -293,7 +293,7 @@ export default function JournalPage() {
                           <div className="flex flex-col gap-0.5 mt-0.5 flex-1 overflow-hidden">
                             {dayTrades.slice(0, 2).map((t) => (
                               <Link key={t.id} href={`/journal/${t.id}`}
-                                className={cn("flex items-center gap-0.5 rounded px-0.5 py-px text-[9px] font-semibold truncate transition-colors leading-tight",
+                                className={cn("flex items-center gap-0.5 rounded px-0.5 py-px text-[10px] font-semibold truncate transition-colors leading-tight",
                                   t.result === "win" ? "bg-success/15 text-success hover:bg-success/25"
                                     : t.result === "loss" ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
                                     : "bg-warning/15 text-warning hover:bg-warning/25")}>
@@ -304,7 +304,7 @@ export default function JournalPage() {
                               </Link>
                             ))}
                             {dayTrades.length > 2 && (
-                              <p className="text-[9px] text-muted-foreground text-center leading-tight">+{dayTrades.length - 2}</p>
+                              <p className="text-[10px] text-muted-foreground text-center leading-tight">+{dayTrades.length - 2}</p>
                             )}
                           </div>
                         )}
@@ -327,7 +327,7 @@ export default function JournalPage() {
                       "text-center rounded-lg py-2",
                       isToday(day) ? "bg-primary/8 ring-1 ring-primary/30" : ""
                     )}>
-                      <p className="text-[10px] font-medium text-muted-foreground">{format(day, "EEE")}</p>
+                      <p className="text-xs font-medium text-muted-foreground">{format(day, "EEE")}</p>
                       <p className={cn("text-sm font-bold mt-0.5",
                         isToday(day) ? "text-primary" : "text-foreground/80")}>
                         {format(day, "d")}
@@ -361,7 +361,7 @@ export default function JournalPage() {
                                   : "text-warning")}>
                                 {t.instrument}
                               </p>
-                              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 flex items-center gap-1">
+                              <p className="text-xs text-muted-foreground leading-tight mt-0.5 flex items-center gap-1">
                                 {t.direction === "long" ? "L" : "S"} · {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
                                 {t.execution_quality && (
                                   <span className={t.execution_quality === "good" ? "text-success" : "text-destructive"}>
