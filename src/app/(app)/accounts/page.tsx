@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import type { FundedAccount, PayoutEvent } from "@/lib/types";
 
 type StatusFilter = "all" | "active" | "inactive";
+type SortOrder = "newest" | "oldest";
 
 function roiGreen(roi: number): string {
   if (roi >= 5) return "oklch(0.38 0.14 145)";
@@ -28,6 +29,7 @@ export default function AccountsPage() {
   const [loading, setLoading] = useState(true);
   const [firmFilter, setFirmFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
 
   useEffect(() => {
     getAccounts().then(async (accts) => {
@@ -60,10 +62,16 @@ export default function AccountsPage() {
   const overallRoi = totalFeePaid > 0 ? Math.round((totalPayouts / totalFeePaid) * 10) / 10 : 0;
   const activeCapital = activeAccounts.reduce((s, a) => s + (a.current_balance ?? a.account_size), 0);
 
-  const filtered = firmAccounts.filter((a) => {
-    if (statusFilter === "all") return true;
-    return a.status === statusFilter;
-  });
+  const filtered = firmAccounts
+    .filter((a) => {
+      if (statusFilter === "all") return true;
+      return a.status === statusFilter;
+    })
+    .sort((a, b) => {
+      const dateA = a.purchase_date ? new Date(a.purchase_date).getTime() : 0;
+      const dateB = b.purchase_date ? new Date(b.purchase_date).getTime() : 0;
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
 
   const filterBtnBase = "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all";
   const filterBtnInactive = "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground";
@@ -132,6 +140,17 @@ export default function AccountsPage() {
                 </button>
               ))}
             </div>
+
+            <div className="h-4 w-px bg-border" />
+
+            {/* Sort by date */}
+            <button
+              onClick={() => setSortOrder(sortOrder === "newest" ? "oldest" : "newest")}
+              className={cn(filterBtnBase, "flex items-center gap-1.5", filterBtnInactive)}
+            >
+              <ArrowUpDown className="w-3 h-3" />
+              {sortOrder === "newest" ? "Newest first" : "Oldest first"}
+            </button>
           </div>
         )}
 

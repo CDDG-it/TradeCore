@@ -280,32 +280,30 @@ export default function JournalPage() {
                     const key = format(day, "yyyy-MM-dd");
                     const dayTrades = tradesByDay[key] || [];
                     const isCurrentMonth = isSameMonth(day, calendarMonth);
+                    const fontSize = dayTrades.length === 1 ? "text-xs" : dayTrades.length === 2 ? "text-[10px]" : "text-[9px]";
                     return (
                       <div key={key}
                         className={cn("aspect-square rounded-lg p-1 transition-colors flex flex-col",
                           isToday(day) ? "ring-1 ring-primary/40 bg-primary/3" : "",
-                          dayTrades.length > 0 ? "cursor-pointer hover:bg-muted/40" : "")}>
-                        <p className={cn("text-xs font-semibold text-center shrink-0",
-                          isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/80" : "text-muted-foreground/40")}>
+                          dayTrades.length > 0 ? "hover:brightness-110" : "")}>
+                        <p className={cn("text-[10px] font-semibold text-center shrink-0 leading-none mb-0.5",
+                          isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/60" : "text-muted-foreground/30")}>
                           {format(day, "d")}
                         </p>
                         {dayTrades.length > 0 && (
-                          <div className="flex flex-col gap-0.5 mt-0.5 flex-1 overflow-hidden">
-                            {dayTrades.slice(0, 2).map((t) => (
+                          <div className="flex flex-col gap-0.5 flex-1 min-h-0">
+                            {dayTrades.map((t) => (
                               <Link key={t.id} href={`/journal/${t.id}`}
-                                className={cn("flex items-center gap-0.5 rounded px-0.5 py-px text-[10px] font-semibold truncate transition-colors leading-tight",
-                                  t.result === "win" ? "bg-success/15 text-success hover:bg-success/25"
-                                    : t.result === "loss" ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
-                                    : "bg-warning/15 text-warning hover:bg-warning/25")}>
+                                className={cn(
+                                  "flex-1 flex items-center justify-center rounded font-bold text-center leading-none transition-all min-h-0 px-0.5",
+                                  fontSize,
+                                  t.result === "win" ? "bg-success/20 text-success hover:bg-success/30"
+                                    : t.result === "loss" ? "bg-destructive/20 text-destructive hover:bg-destructive/30"
+                                    : "bg-warning/20 text-warning hover:bg-warning/30"
+                                )}>
                                 {t.instrument}
-                                {t.execution_quality && (
-                                  <span className="shrink-0 opacity-70">{t.execution_quality === "good" ? "✓" : "✗"}</span>
-                                )}
                               </Link>
                             ))}
-                            {dayTrades.length > 2 && (
-                              <p className="text-[10px] text-muted-foreground text-center leading-tight">+{dayTrades.length - 2}</p>
-                            )}
                           </div>
                         )}
                       </div>
@@ -342,7 +340,7 @@ export default function JournalPage() {
                     const dayTrades = tradesByDay[key] || [];
                     return (
                       <div key={key}
-                        className={cn("min-h-[140px] rounded-xl p-1.5 flex flex-col gap-1 transition-colors",
+                        className={cn("min-h-[160px] rounded-xl p-1.5 flex flex-col gap-1 transition-colors",
                           isToday(day) ? "bg-primary/4 ring-1 ring-primary/20" : "bg-muted/20",
                           dayTrades.length === 0 ? "items-center justify-center" : ""
                         )}>
@@ -351,23 +349,18 @@ export default function JournalPage() {
                         ) : (
                           dayTrades.map((t) => (
                             <Link key={t.id} href={`/journal/${t.id}`}
-                              className={cn("block rounded-lg px-2 py-1.5 transition-colors group",
+                              className={cn("flex-1 flex flex-col items-center justify-center rounded-lg px-1.5 py-2 transition-colors group min-h-0",
                                 t.result === "win" ? "bg-success/15 hover:bg-success/25"
                                   : t.result === "loss" ? "bg-destructive/15 hover:bg-destructive/25"
                                   : "bg-warning/15 hover:bg-warning/25")}>
-                              <p className={cn("text-xs font-bold truncate",
+                              <p className={cn("text-sm font-bold text-center leading-tight",
                                 t.result === "win" ? "text-success"
                                   : t.result === "loss" ? "text-destructive"
                                   : "text-warning")}>
                                 {t.instrument}
                               </p>
-                              <p className="text-xs text-muted-foreground leading-tight mt-0.5 flex items-center gap-1">
-                                {t.direction === "long" ? "L" : "S"} · {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
-                                {t.execution_quality && (
-                                  <span className={t.execution_quality === "good" ? "text-success" : "text-destructive"}>
-                                    {t.execution_quality === "good" ? "✓" : "✗"}
-                                  </span>
-                                )}
+                              <p className="text-xs text-muted-foreground text-center leading-tight mt-1">
+                                {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
                               </p>
                             </Link>
                           ))
