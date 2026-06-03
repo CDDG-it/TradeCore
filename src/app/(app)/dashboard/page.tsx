@@ -184,8 +184,8 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
     .filter((c) => c.date === TODAY && c.completed)
     .map((c) => c.habit_id);
 
-  async function toggleHabit(habitId: string) {
-    await toggleHabitCompletion(habitId, TODAY);
+  async function toggleHabit(habitId: string, date: string = TODAY) {
+    await toggleHabitCompletion(habitId, date);
     const c = await getHabitCompletions();
     setCompletions(c);
   }
@@ -237,7 +237,6 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Flame className="w-4 h-4" style={{ color: "#F97316" }} />
             Habits — {format(new Date(), "EEEE, MMMM d")}
-            <span className="ml-1 text-[10px] font-normal text-muted-foreground/50 tracking-wide hidden sm:inline">press 1–9 to toggle</span>
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs tabular-nums">
@@ -322,11 +321,13 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
                           );
                           return (
                             <td key={d} className="text-center py-1.5">
-                              <span
-                                className="inline-block w-5 h-5 rounded-md"
+                              <button
+                                onClick={() => toggleHabit(habit.id, d)}
+                                title={format(new Date(d + "T12:00:00"), "EEE MMM d")}
+                                className="inline-block w-5 h-5 rounded-md transition-all hover:scale-110 hover:opacity-90"
                                 style={{
                                   background: done ? "#F97316" : "var(--muted)",
-                                  opacity: done ? 1 : 0.5,
+                                  opacity: done ? 1 : 0.4,
                                 }}
                               />
                             </td>
