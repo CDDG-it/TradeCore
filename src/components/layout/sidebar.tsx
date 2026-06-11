@@ -82,14 +82,6 @@ function NavItem({
         }
       />
       <span className={cn(isActive ? "text-sidebar-foreground" : "", !isActive && "group-hover/nav:text-[#F97316]")}>{label}</span>
-      {highlight && !isActive && (
-        <span
-          className="ml-auto text-[9px] font-bold tracking-wide px-1.5 py-0.5 rounded-full"
-          style={{ background: "rgba(249,115,22,0.14)", color: "#F97316" }}
-        >
-          DAILY
-        </span>
-      )}
     </Link>
   );
 }

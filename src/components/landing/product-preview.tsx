@@ -262,41 +262,6 @@ export function ProductPreview() {
         <FeatureCard key={card.route} card={card} />
       ))}
 
-      {/* Footer strip */}
-      <div
-        className="px-6 py-10 border-t"
-        style={{ borderColor: "rgba(0,0,0,0.07)" }}
-      >
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="font-black text-sm tracking-tight leading-none hover:opacity-70 transition-opacity"
-            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
-          >
-            <span style={{ color: "rgba(15,12,8,0.85)" }}>Trade</span>
-            <span
-              style={{
-                background:            "linear-gradient(90deg,#F97316,#d97706)",
-                WebkitBackgroundClip:  "text",
-                WebkitTextFillColor:   "transparent",
-                backgroundClip:        "text",
-              }}
-            >
-              CORE
-            </span>
-          </Link>
-          <p className="text-xs" style={{ color: "rgba(60,48,36,0.38)" }}>
-            Where self-improvement meets trading.
-          </p>
-          <Link
-            href="/dashboard"
-            className="text-xs font-semibold text-[rgba(249,115,22,0.80)] transition-colors duration-200 hover:text-[#F97316]"
-            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
-          >
-            Get started →
-          </Link>
-        </div>
-      </div>
     </section>
   );
 }

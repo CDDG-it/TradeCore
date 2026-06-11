@@ -6,6 +6,7 @@ import { FadeIn } from "@/components/ui/fade-in";
 import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { ProductPreview } from "@/components/landing/product-preview";
+import { LandingFooter } from "@/components/landing/footer";
 
 // Light bg constant – warm white  oklch(0.98 0.003 45) ≈ rgba(249,246,242)
 const LIGHT = "rgba(249,246,242,";
@@ -203,9 +204,10 @@ const PILLARS = [
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   return (
-    // overflow-x-clip (not -hidden): hidden creates a scroll container that
-    // silently disables the sticky header; clip only cuts off overflow.
-    <div className="overflow-x-clip" style={{ background: "oklch(0.98 0.003 45)" }}>
+    // No overflow class here: overflow-x-hidden disables the sticky header and
+    // overflow-x-clip kills page scrolling entirely. Sections that animate
+    // horizontally contain their own overflow instead.
+    <div style={{ background: "oklch(0.98 0.003 45)" }}>
 
       {/* ── Light glass header ── */}
       <header
@@ -366,6 +368,7 @@ export default function HomePage() {
       </section>
 
       <ProductPreview />
+      <LandingFooter />
     </div>
   );
 }
