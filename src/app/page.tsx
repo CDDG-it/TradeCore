@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowDown } from "lucide-react";
 import { FadeIn } from "@/components/ui/fade-in";
 import { motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProductPreview } from "@/components/landing/product-preview";
 
 // Light bg constant – warm white  oklch(0.98 0.003 45) ≈ rgba(249,246,242)
 const LIGHT = "rgba(249,246,242,";
+const NUNITO = "var(--font-nunito), system-ui, sans-serif";
+const MONO = "var(--font-geist-mono), ui-monospace, monospace";
 
 // ── Candle generation ────────────────────────────────────────────────────────
 interface Candle { o: number; h: number; l: number; c: number }
@@ -41,12 +43,17 @@ function HeroCandlesticks() {
   const offsetRef = useRef(0);
   const lastTsRef = useRef<number | null>(null);
   const rafRef = useRef<number>(0);
+  // Smoothed y-scale: without this the chart visibly "jumps" every time a
+  // candle scrolls out of the visible window and min/max recompute.
+  const scaleRef = useRef<{ min: number; max: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     let dpr = window.devicePixelRatio || 1;
     const resize = () => {
@@ -56,16 +63,17 @@ function HeroCandlesticks() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
-    window.addEventListener("resize", resize);
 
     const TOTAL = HERO_N * HERO_STEP;
 
     const draw = (ts: number) => {
-      if (lastTsRef.current !== null) {
-        const dt = Math.min(ts - lastTsRef.current, 50);
-        offsetRef.current += (dt / 1000) * 16;
+      if (!reducedMotion) {
+        if (lastTsRef.current !== null) {
+          const dt = Math.min(ts - lastTsRef.current, 50);
+          offsetRef.current += (dt / 1000) * 16;
+        }
+        lastTsRef.current = ts;
       }
-      lastTsRef.current = ts;
 
       const W = canvas.offsetWidth;
       const H = canvas.offsetHeight;
@@ -76,20 +84,26 @@ function HeroCandlesticks() {
       const pixOff = off % HERO_STEP;
       const count = Math.ceil(W / HERO_STEP) + 3;
 
-      let minP = Infinity, maxP = -Infinity;
+      let tMin = Infinity, tMax = -Infinity;
       for (let i = 0; i < count; i++) {
         const c = HERO_CANDLES[(startIdx + i) % HERO_N];
-        if (c.l < minP) minP = c.l;
-        if (c.h > maxP) maxP = c.h;
+        if (c.l < tMin) tMin = c.l;
+        if (c.h > tMax) tMax = c.h;
       }
-      const pad = (maxP - minP) * 0.28;
-      minP -= pad; maxP += pad;
-      const pRange = maxP - minP;
+      const pad = (tMax - tMin) * 0.28;
+      tMin -= pad; tMax += pad;
+
+      if (!scaleRef.current) scaleRef.current = { min: tMin, max: tMax };
+      const sc = scaleRef.current;
+      const k = 0.04; // per-frame lerp toward target scale
+      sc.min += (tMin - sc.min) * k;
+      sc.max += (tMax - sc.max) * k;
+      const pRange = sc.max - sc.min;
 
       const cTop = H * 0.04;
       const cBot = H * 0.96;
       const cH = cBot - cTop;
-      const py = (p: number) => cTop + ((maxP - p) / pRange) * cH;
+      const py = (p: number) => cTop + ((sc.max - p) / pRange) * cH;
 
       // Orange bulls, near-black bears on white bg
       for (let i = 0; i < count; i++) {
@@ -154,13 +168,19 @@ function HeroCandlesticks() {
       ctx.fillStyle = fadeR;
       ctx.fillRect(W - 100, 0, 100, H);
 
-      rafRef.current = requestAnimationFrame(draw);
+      if (!reducedMotion) rafRef.current = requestAnimationFrame(draw);
     };
+
+    const onResize = () => {
+      resize();
+      if (reducedMotion) draw(0);
+    };
+    window.addEventListener("resize", onResize);
 
     rafRef.current = requestAnimationFrame(draw);
     return () => {
       cancelAnimationFrame(rafRef.current);
-      window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", onResize);
     };
   }, []);
 
@@ -173,21 +193,84 @@ function HeroCandlesticks() {
   );
 }
 
-// ── Feature pillars ──────────────────────────────────────────────────────────
+// ── Live quote pill — ties the headline to the moving tape behind it ─────────
+const QUOTE_BASE = 4812.4;
+
+function LiveQuote() {
+  const [price, setPrice] = useState(QUOTE_BASE);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setInterval(() => {
+      setPrice((p) => {
+        const next = p + (Math.random() - 0.48) * 2.6;
+        // Keep the simulated quote tethered to its base
+        return Math.abs(next - QUOTE_BASE) > 40 ? QUOTE_BASE + (next - QUOTE_BASE) * 0.5 : next;
+      });
+    }, 1500);
+    return () => clearInterval(id);
+  }, []);
+
+  const delta = ((price - QUOTE_BASE) / QUOTE_BASE) * 100;
+  const up = delta >= 0;
+
+  return (
+    <div
+      className="inline-flex items-center gap-2.5 rounded-full border px-4 py-1.5"
+      style={{
+        borderColor: "rgba(16,11,6,0.10)",
+        background: "rgba(249,246,242,0.72)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+      }}
+    >
+      <span className="relative flex h-1.5 w-1.5">
+        <span
+          className="absolute inline-flex h-full w-full animate-ping rounded-full"
+          style={{ background: "rgba(249,115,22,0.55)" }}
+        />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: "#F97316" }} />
+      </span>
+      <span
+        className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
+        style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.55)" }}
+      >
+        GC&thinsp;·&thinsp;Gold Futures
+      </span>
+      <span
+        className="text-xs tabular-nums"
+        style={{ fontFamily: MONO, color: "rgba(15,12,8,0.80)" }}
+      >
+        {price.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+      </span>
+      <span
+        className="text-[0.6875rem] tabular-nums"
+        style={{ fontFamily: MONO, color: up ? "#ea580c" : "rgba(16,11,6,0.60)" }}
+      >
+        {up ? "▲" : "▼"}&thinsp;{Math.abs(delta).toFixed(2)}%
+      </span>
+    </div>
+  );
+}
+
+// ── Feature pillars — mirror the five tools shown in the product preview ─────
 const PILLARS = [
-  { label: "Trade Journal", desc: "Log every trade with full context" },
-  { label: "Performance Analytics", desc: "Find patterns in your execution" },
+  { n: "01", label: "Trade Journal", desc: "Log every trade with full context" },
+  { n: "02", label: "Pre-Market Analysis", desc: "Structured prep before the bell" },
+  { n: "03", label: "Performance Analytics", desc: "Find patterns in your execution" },
+  { n: "04", label: "Funded Accounts", desc: "Payouts, ROI and drawdown in view" },
 ] as const;
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   return (
-    <>
-    <div className="overflow-x-hidden" style={{ background: "oklch(0.98 0.003 45)" }}>
+    // overflow-x-clip (not -hidden): hidden creates a scroll container that
+    // silently disables the sticky header; clip only cuts off overflow.
+    <div className="overflow-x-clip" style={{ background: "oklch(0.98 0.003 45)" }}>
 
       {/* ── Light glass header ── */}
       <header
-        className="relative z-20 sticky top-0 px-6 py-4"
+        className="sticky top-0 z-20 px-6 py-4"
         style={{
           background: "rgba(249,246,242,0.88)",
           backdropFilter: "blur(20px)",
@@ -198,17 +281,15 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl flex items-center justify-between">
           <span
             className="font-black tracking-tight text-base leading-none"
-            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
+            style={{ fontFamily: NUNITO }}
           >
             <span style={{ color: "rgba(15,12,8,0.88)" }}>Trade</span>
             <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
           </span>
           <Link
             href="/login"
-            className="text-sm transition-colors duration-200"
-            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", fontWeight: 600, color: "rgba(60,48,36,0.45)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(15,12,8,0.85)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(60,48,36,0.45)")}
+            className="text-sm font-semibold text-[rgba(60,48,36,0.45)] transition-colors duration-200 hover:text-[rgba(15,12,8,0.85)]"
+            style={{ fontFamily: NUNITO }}
           >
             Sign in
           </Link>
@@ -216,7 +297,8 @@ export default function HomePage() {
       </header>
 
       {/* ── Hero — light background, orange + black candle visuals ── */}
-      <section className="relative flex flex-col" style={{ minHeight: "calc(100svh - 57px)" }}>
+      {/* 53px = header height (py-4 + text-base logo + 1px border) */}
+      <section className="relative flex flex-col" style={{ minHeight: "calc(100svh - 53px)" }}>
 
         {/* Candlestick background */}
         <HeroCandlesticks />
@@ -224,14 +306,23 @@ export default function HomePage() {
         {/* Content */}
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-20">
 
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-7"
+          >
+            <LiveQuote />
+          </motion.div>
+
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.10 }}
-            className="font-black tracking-tight leading-[0.88] mb-5"
+            className="font-black tracking-tight leading-[0.88] mb-6"
             style={{
-              fontFamily: "var(--font-nunito), system-ui, sans-serif",
-              fontSize: "clamp(4rem,11vw,9rem)",
+              fontFamily: NUNITO,
+              fontSize: "clamp(3.5rem,11vw,9rem)",
               color: "rgba(15,12,8,0.90)",
             }}
           >
@@ -250,28 +341,30 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.22 }}
-            className="mb-10 leading-relaxed"
+            className="mb-10 max-w-xl leading-relaxed"
             style={{
-              fontFamily: "var(--font-nunito), system-ui, sans-serif",
+              fontFamily: NUNITO,
               fontSize: "clamp(1rem,2.4vw,1.2rem)",
               fontWeight: 400,
-              letterSpacing: "0.02em",
+              letterSpacing: "0.01em",
               color: "rgba(60,48,36,0.55)",
             }}
           >
-            The Ultimate Trading Tool
+            Where self-improvement meets trading. Journal, pre-market prep and
+            funded-account tracking — one focused workspace for futures traders.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.34 }}
+            className="flex flex-wrap items-center justify-center gap-3"
           >
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
               style={{
-                fontFamily: "var(--font-nunito), system-ui, sans-serif",
+                fontFamily: NUNITO,
                 background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
                 boxShadow: "0 4px 28px rgba(249,115,22,0.35), 0 1px 3px rgba(0,0,0,0.12)",
               }}
@@ -279,6 +372,20 @@ export default function HomePage() {
               Open dashboard
               <ArrowRight className="w-4 h-4" />
             </Link>
+            <a
+              href="#product"
+              className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(249,115,22,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
+              style={{
+                fontFamily: NUNITO,
+                borderColor: "rgba(16,11,6,0.14)",
+                background: "rgba(249,246,242,0.65)",
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
+              }}
+            >
+              See the platform
+              <ArrowDown className="w-3.5 h-3.5" />
+            </a>
           </motion.div>
         </div>
 
@@ -288,18 +395,28 @@ export default function HomePage() {
             className="relative z-10 border-t"
             style={{ borderColor: "rgba(0,0,0,0.08)" }}
           >
-            <div className="mx-auto max-w-2xl grid grid-cols-2 divide-x" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
-              {PILLARS.map((p) => (
-                <div key={p.label} className="px-8 py-5 text-center" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
+            <div className="mx-auto max-w-5xl grid grid-cols-2 lg:grid-cols-4">
+              {PILLARS.map((p, i) => (
+                <div
+                  key={p.label}
+                  className={`group px-6 py-5 text-center transition-colors duration-300 hover:bg-[rgba(249,115,22,0.04)] ${i > 0 ? "border-l" : ""} ${i >= 2 ? "max-lg:border-t lg:border-t-0" : ""} ${i === 2 ? "max-lg:border-l-0" : ""}`}
+                  style={{ borderColor: "rgba(0,0,0,0.08)" }}
+                >
+                  <p
+                    className="mb-1 text-[0.625rem] font-black tabular-nums tracking-[0.18em] text-[rgba(249,115,22,0.75)] transition-colors duration-300 group-hover:text-[#F97316]"
+                    style={{ fontFamily: NUNITO }}
+                  >
+                    {p.n}
+                  </p>
                   <p
                     className="text-sm font-semibold mb-0.5"
-                    style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", color: "rgba(15,12,8,0.75)" }}
+                    style={{ fontFamily: NUNITO, color: "rgba(15,12,8,0.75)" }}
                   >
                     {p.label}
                   </p>
                   <p
                     className="text-xs leading-snug"
-                    style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif", color: "rgba(60,48,36,0.45)" }}
+                    style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.45)" }}
                   >
                     {p.desc}
                   </p>
@@ -310,8 +427,8 @@ export default function HomePage() {
         </FadeIn>
 
       </section>
+
+      <ProductPreview />
     </div>
-    <ProductPreview />
-    </>
   );
 }

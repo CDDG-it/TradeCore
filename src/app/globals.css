@@ -682,3 +682,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   pointer-events: none;
   opacity: 0.4;
 }
+
+/* ── Smooth in-page anchor scrolling (landing CTA → #product) ──────── */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}

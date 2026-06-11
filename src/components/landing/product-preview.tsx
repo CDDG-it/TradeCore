@@ -58,7 +58,7 @@ const CARDS = [
 ] as const;
 
 // ── Screenshot frame — no browser chrome, just the app with orange glow ───────
-function ScreenshotFrame({ src, alt }: { src: string; alt: string }) {
+function ScreenshotFrame({ src, alt, eager }: { src: string; alt: string; eager?: boolean }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -81,7 +81,7 @@ function ScreenshotFrame({ src, alt }: { src: string; alt: string }) {
           fill
           sizes="(max-width: 768px) 100vw, 60vw"
           className="object-cover object-top"
-          priority
+          priority={eager}
         />
       </div>
 
@@ -203,6 +203,7 @@ function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
             <ScreenshotFrame
               src={card.screenshot}
               alt={`${card.name} page screenshot`}
+              eager={card.index === 0}
             />
           </motion.div>
         </div>
@@ -214,7 +215,7 @@ function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
 // ── Section ────────────────────────────────────────────────────────────────────
 export function ProductPreview() {
   return (
-    <section style={{ background: BG }} className="overflow-x-hidden">
+    <section id="product" style={{ background: BG }} className="overflow-x-hidden scroll-mt-14">
       {/* Top border matching hero bottom strip */}
       <div
         className="h-px w-full"
@@ -296,13 +297,8 @@ export function ProductPreview() {
           </p>
           <Link
             href="/dashboard"
-            className="text-xs font-semibold transition-colors duration-200"
-            style={{
-              fontFamily: "var(--font-nunito), system-ui, sans-serif",
-              color:      "rgba(249,115,22,0.80)",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#F97316")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(249,115,22,0.80)")}
+            className="text-xs font-semibold text-[rgba(249,115,22,0.80)] transition-colors duration-200 hover:text-[#F97316]"
+            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
           >
             Get started →
           </Link>
