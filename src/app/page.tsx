@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ArrowDown } from "lucide-react";
+import { ArrowRight, ArrowDown, NotebookPen, Compass, BarChart3, Landmark } from "lucide-react";
 import { FadeIn } from "@/components/ui/fade-in";
 import { motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ProductPreview } from "@/components/landing/product-preview";
 
 // Light bg constant – warm white  oklch(0.98 0.003 45) ≈ rgba(249,246,242)
 const LIGHT = "rgba(249,246,242,";
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
-const MONO = "var(--font-geist-mono), ui-monospace, monospace";
 
 // ── Candle generation ────────────────────────────────────────────────────────
 interface Candle { o: number; h: number; l: number; c: number }
@@ -193,72 +192,12 @@ function HeroCandlesticks() {
   );
 }
 
-// ── Live quote pill — ties the headline to the moving tape behind it ─────────
-const QUOTE_BASE = 4812.4;
-
-function LiveQuote() {
-  const [price, setPrice] = useState(QUOTE_BASE);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = setInterval(() => {
-      setPrice((p) => {
-        const next = p + (Math.random() - 0.48) * 2.6;
-        // Keep the simulated quote tethered to its base
-        return Math.abs(next - QUOTE_BASE) > 40 ? QUOTE_BASE + (next - QUOTE_BASE) * 0.5 : next;
-      });
-    }, 1500);
-    return () => clearInterval(id);
-  }, []);
-
-  const delta = ((price - QUOTE_BASE) / QUOTE_BASE) * 100;
-  const up = delta >= 0;
-
-  return (
-    <div
-      className="inline-flex items-center gap-2.5 rounded-full border px-4 py-1.5"
-      style={{
-        borderColor: "rgba(16,11,6,0.10)",
-        background: "rgba(249,246,242,0.72)",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
-      }}
-    >
-      <span className="relative flex h-1.5 w-1.5">
-        <span
-          className="absolute inline-flex h-full w-full animate-ping rounded-full"
-          style={{ background: "rgba(249,115,22,0.55)" }}
-        />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: "#F97316" }} />
-      </span>
-      <span
-        className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
-        style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.55)" }}
-      >
-        GC&thinsp;·&thinsp;Gold Futures
-      </span>
-      <span
-        className="text-xs tabular-nums"
-        style={{ fontFamily: MONO, color: "rgba(15,12,8,0.80)" }}
-      >
-        {price.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-      </span>
-      <span
-        className="text-[0.6875rem] tabular-nums"
-        style={{ fontFamily: MONO, color: up ? "#ea580c" : "rgba(16,11,6,0.60)" }}
-      >
-        {up ? "▲" : "▼"}&thinsp;{Math.abs(delta).toFixed(2)}%
-      </span>
-    </div>
-  );
-}
-
-// ── Feature pillars — mirror the five tools shown in the product preview ─────
+// ── Feature pillars — mirror the tools shown in the product preview ──────────
 const PILLARS = [
-  { n: "01", label: "Trade Journal", desc: "Log every trade with full context" },
-  { n: "02", label: "Pre-Market Analysis", desc: "Structured prep before the bell" },
-  { n: "03", label: "Performance Analytics", desc: "Find patterns in your execution" },
-  { n: "04", label: "Funded Accounts", desc: "Payouts, ROI and drawdown in view" },
+  { icon: NotebookPen, label: "Trade Journal", desc: "Log every trade with full context", href: "/journal" },
+  { icon: Compass, label: "Pre-Market Analysis", desc: "Structured prep before the bell", href: "/analysis" },
+  { icon: BarChart3, label: "Performance Analytics", desc: "Find patterns in your execution", href: "/analytics" },
+  { icon: Landmark, label: "Funded Accounts", desc: "Payouts, ROI and drawdown in view", href: "/accounts" },
 ] as const;
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -306,15 +245,6 @@ export default function HomePage() {
         {/* Content */}
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-20">
 
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-7"
-          >
-            <LiveQuote />
-          </motion.div>
-
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -350,8 +280,8 @@ export default function HomePage() {
               color: "rgba(60,48,36,0.55)",
             }}
           >
-            Where self-improvement meets trading. Journal, pre-market prep and
-            funded-account tracking — one focused workspace for futures traders.
+            Every trade logged. Every session prepped. Every payout tracked.
+            The quiet work that separates funded traders from former ones.
           </motion.p>
 
           <motion.div
@@ -397,30 +327,37 @@ export default function HomePage() {
           >
             <div className="mx-auto max-w-5xl grid grid-cols-2 lg:grid-cols-4">
               {PILLARS.map((p, i) => (
-                <div
+                <Link
                   key={p.label}
-                  className={`group px-6 py-5 text-center transition-colors duration-300 hover:bg-[rgba(249,115,22,0.04)] ${i > 0 ? "border-l" : ""} ${i >= 2 ? "max-lg:border-t lg:border-t-0" : ""} ${i === 2 ? "max-lg:border-l-0" : ""}`}
+                  href={p.href}
+                  className={`group relative px-6 py-6 text-left transition-colors duration-300 hover:bg-[rgba(249,115,22,0.05)] ${i > 0 ? "border-l" : ""} ${i >= 2 ? "max-lg:border-t lg:border-t-0" : ""} ${i === 2 ? "max-lg:border-l-0" : ""}`}
                   style={{ borderColor: "rgba(0,0,0,0.08)" }}
                 >
+                  {/* Orange accent line that grows in from the left on hover */}
+                  <span
+                    className="absolute left-0 top-0 h-[2px] w-0 transition-all duration-300 ease-out group-hover:w-full"
+                    style={{ background: "linear-gradient(90deg,#F97316,#d97706)" }}
+                  />
+                  <div className="mb-2.5 flex items-center justify-between">
+                    <p.icon
+                      className="h-[18px] w-[18px] text-[rgba(60,48,36,0.40)] transition-all duration-300 group-hover:scale-110 group-hover:text-[#F97316]"
+                      strokeWidth={1.75}
+                    />
+                    <ArrowRight className="h-3.5 w-3.5 -translate-x-1 text-[#F97316] opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
+                  </div>
                   <p
-                    className="mb-1 text-[0.625rem] font-black tabular-nums tracking-[0.18em] text-[rgba(249,115,22,0.75)] transition-colors duration-300 group-hover:text-[#F97316]"
-                    style={{ fontFamily: NUNITO }}
-                  >
-                    {p.n}
-                  </p>
-                  <p
-                    className="text-sm font-semibold mb-0.5"
-                    style={{ fontFamily: NUNITO, color: "rgba(15,12,8,0.75)" }}
+                    className="text-sm font-bold mb-0.5 transition-colors duration-300"
+                    style={{ fontFamily: NUNITO, color: "rgba(15,12,8,0.78)" }}
                   >
                     {p.label}
                   </p>
                   <p
                     className="text-xs leading-snug"
-                    style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.45)" }}
+                    style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.48)" }}
                   >
                     {p.desc}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

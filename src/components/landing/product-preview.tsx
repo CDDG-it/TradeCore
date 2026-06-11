@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 // Exact same warm-white as hero background
@@ -59,18 +58,14 @@ const CARDS = [
 
 // ── Screenshot frame — no browser chrome, just the app with orange glow ───────
 function ScreenshotFrame({ src, alt, eager }: { src: string; alt: string; eager?: boolean }) {
-  const [hovered, setHovered] = useState(false);
-
+  // Pure CSS hover: no React state, and the glow lives on its own layer whose
+  // opacity fades — gradients and stacked shadows can't be interpolated, so
+  // transitioning them directly snaps on mouse-leave.
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className="group/frame relative w-full overflow-hidden rounded-2xl"
       style={{
-        boxShadow: hovered
-          ? "0 0 0 2px rgba(249,115,22,0.60), 0 0 48px rgba(249,115,22,0.22), 0 16px 64px rgba(0,0,0,0.12)"
-          : "0 0 0 1.5px rgba(249,115,22,0.22), 0 0 20px rgba(249,115,22,0.08), 0 8px 40px rgba(0,0,0,0.08)",
-        transition: "box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+        boxShadow: "0 0 0 1.5px rgba(249,115,22,0.22), 0 0 20px rgba(249,115,22,0.08), 0 8px 40px rgba(0,0,0,0.08)",
       }}
     >
       {/* Screenshot — aspect ratio matches 1200×900 crop */}
@@ -85,14 +80,12 @@ function ScreenshotFrame({ src, alt, eager }: { src: string; alt: string; eager?
         />
       </div>
 
-      {/* Subtle orange rim light that appears on hover */}
+      {/* Hover glow + rim light, faded in via opacity only */}
       <div
-        className="pointer-events-none absolute inset-0 rounded-2xl"
+        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover/frame:opacity-100"
         style={{
-          background: hovered
-            ? "linear-gradient(135deg, rgba(249,115,22,0.05) 0%, transparent 50%)"
-            : "transparent",
-          transition: "background 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+          boxShadow: "inset 0 0 0 2px rgba(249,115,22,0.60)",
+          background: "linear-gradient(135deg, rgba(249,115,22,0.05) 0%, transparent 50%)",
         }}
       />
     </div>

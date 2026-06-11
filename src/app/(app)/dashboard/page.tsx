@@ -139,7 +139,7 @@ function DisciplineScoreCard() {
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className="px-2.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide transition-all"
+              className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wide transition-all"
               style={
                 period === p
                   ? { background: color.replace(")", " / 0.15)"), color }
@@ -152,7 +152,7 @@ function DisciplineScoreCard() {
         </div>
         <Link
           href="/analytics"
-          className="text-[10px] font-medium flex items-center gap-0.5 transition-opacity hover:opacity-80"
+          className="text-[11px] font-medium flex items-center gap-0.5 transition-opacity hover:opacity-80"
           style={{ color: "var(--muted-foreground)" }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -285,22 +285,22 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
                     {last7Days.map((d) => (
                       <th key={d} className="text-center pb-2 min-w-[32px]">
                         <span className={cn(
-                          "text-[10px] font-medium",
-                          d === TODAY ? "text-primary" : "text-muted-foreground/60"
+                          "text-[11px] font-medium",
+                          d === TODAY ? "text-primary" : "text-muted-foreground/75"
                         )}>
                           {format(new Date(d + "T12:00:00"), "EEE")[0]}
                         </span>
                         <br />
                         <span className={cn(
-                          "text-[10px]",
-                          d === TODAY ? "text-primary font-semibold" : "text-muted-foreground/40"
+                          "text-[11px]",
+                          d === TODAY ? "text-primary font-semibold" : "text-muted-foreground/60"
                         )}>
                           {format(new Date(d + "T12:00:00"), "d")}
                         </span>
                       </th>
                     ))}
                     <th className="text-center pb-2 pl-2 min-w-[40px]">
-                      <span className="text-[10px] font-medium text-muted-foreground/60">7d %</span>
+                      <span className="text-[11px] font-medium text-muted-foreground/75">7d %</span>
                     </th>
                   </tr>
                 </thead>
@@ -378,7 +378,7 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
                 )}
               >
                 {keyHint && (
-                  <span className="w-4 text-[10px] font-mono text-muted-foreground/30 shrink-0 text-center select-none hidden sm:block">
+                  <span className="w-4 text-[11px] font-mono text-muted-foreground/50 shrink-0 text-center select-none hidden sm:block">
                     {keyHint}
                   </span>
                 )}
@@ -529,7 +529,7 @@ export default function DashboardPage() {
         className="flex items-start justify-between gap-4 mb-8"
       >
         <div>
-          <p className="font-body text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">
+          <p className="font-body text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">
             Daily
           </p>
           <h1 className="font-heading font-black text-3xl md:text-4xl text-foreground tracking-tight leading-[0.95]">
@@ -565,7 +565,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">{sub}</p>
                   {href && (
-                    <span className="text-[10px] font-medium flex items-center gap-0.5" style={{ color: "var(--muted-foreground)" }}>
+                    <span className="text-[11px] font-medium flex items-center gap-0.5" style={{ color: "var(--muted-foreground)" }}>
                       Manage <ArrowRight className="w-2.5 h-2.5" />
                     </span>
                   )}
@@ -684,7 +684,7 @@ export default function DashboardPage() {
                             : "0R"}
                         </p>
                         {trade.discipline && trade.discipline.score > 0 && (
-                          <p className="text-[10px] text-muted-foreground">{trade.discipline.score}% disc.</p>
+                          <p className="text-[11px] text-muted-foreground">{trade.discipline.score}% disc.</p>
                         )}
                       </div>
                       <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary/60 transition-all group-hover:translate-x-0.5" />
