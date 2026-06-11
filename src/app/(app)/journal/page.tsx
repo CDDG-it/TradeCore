@@ -294,13 +294,17 @@ export default function JournalPage() {
                           <div className="flex flex-col gap-0.5 flex-1 min-h-0">
                             {dayTrades.map((t) => (
                               <Link key={t.id} href={`/journal/${t.id}`}
+                                title={t.execution_quality ? `${t.instrument} · ${t.execution_quality} execution` : t.instrument}
                                 className={cn(
-                                  "flex-1 flex items-center justify-center rounded font-bold text-center leading-none transition-all min-h-0 px-0.5",
+                                  "flex-1 flex items-center justify-center gap-0.5 rounded font-bold text-center leading-none transition-all min-h-0 px-0.5",
                                   fontSize,
                                   t.result === "win" ? "bg-success/20 text-success hover:bg-success/30"
                                     : t.result === "loss" ? "bg-destructive/20 text-destructive hover:bg-destructive/30"
                                     : "bg-warning/20 text-warning hover:bg-warning/30"
                                 )}>
+                                {t.execution_quality && (
+                                  <span className="opacity-75">{t.execution_quality === "good" ? "✓" : "✗"}</span>
+                                )}
                                 {t.instrument}
                               </Link>
                             ))}
@@ -362,6 +366,16 @@ export default function JournalPage() {
                               <p className="text-xs text-muted-foreground text-center leading-tight mt-1">
                                 {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
                               </p>
+                              {t.execution_quality && (
+                                <span className={cn(
+                                  "mt-1 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                                  t.execution_quality === "good"
+                                    ? "bg-success/15 text-success"
+                                    : "bg-destructive/15 text-destructive"
+                                )}>
+                                  {t.execution_quality === "good" ? "✓ Good" : "✗ Bad"}
+                                </span>
+                              )}
                             </Link>
                           ))
                         )}
@@ -378,6 +392,7 @@ export default function JournalPage() {
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-success/40" />Win</span>
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-destructive/40" />Loss</span>
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-warning/40" />B/E</span>
+            <span className="text-muted-foreground/60">✓ good execution · ✗ bad execution</span>
           </div>
         </div>
       )}

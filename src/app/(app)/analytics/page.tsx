@@ -97,7 +97,12 @@ export default function AnalyticsPage() {
   const losses = trades.filter((t) => t.result === "loss");
   const bes = trades.filter((t) => t.result === "break-even");
   const winRate = trades.length > 0 ? Math.round((wins.length / trades.length) * 100) : 0;
-  const lossRate = trades.length > 0 ? Math.round((losses.length / trades.length) * 100) : 0;
+
+  // ── Execution quality breakdown ──────────────────────────────────────
+  const goodExec = trades.filter((t) => t.execution_quality === "good");
+  const badExec = trades.filter((t) => t.execution_quality === "bad");
+  const unratedExec = trades.length - goodExec.length - badExec.length;
+  const goodExecRate = trades.length > 0 ? Math.round((goodExec.length / trades.length) * 100) : 0;
   // Average R:R calculated only over winning trades — losses are excluded to avoid skewing the metric
   const avgRR =
     wins.length > 0
@@ -303,12 +308,6 @@ export default function AnalyticsPage() {
                     : "All time",
                 color: "text-foreground",
               },
-              {
-                label: "Loss Rate",
-                value: `${lossRate}%`,
-                sub: `${losses.length} losing trade${losses.length !== 1 ? "s" : ""}`,
-                color: "text-destructive",
-              },
             ].map(({ label, value, sub, color }) => (
               <Card key={label} className="bg-card border-border/50">
                 <CardContent className="p-5">
@@ -320,6 +319,38 @@ export default function AnalyticsPage() {
                 </CardContent>
               </Card>
             ))}
+
+            {/* Execution breakdown — segmented bar instead of another donut */}
+            <Card className="bg-card border-border/50">
+              <CardContent className="p-5">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                  Execution
+                </p>
+                <p className="text-2xl font-bold text-success">{goodExecRate}%</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {goodExec.length} of {trades.length} trade{trades.length !== 1 ? "s" : ""} well executed
+                </p>
+                {/* Segmented quality bar: good / bad / unrated */}
+                <div className="mt-3 flex h-2 w-full gap-0.5 overflow-hidden rounded-full">
+                  {goodExec.length > 0 && (
+                    <div className="bg-success/80 rounded-full" style={{ width: `${(goodExec.length / trades.length) * 100}%` }} />
+                  )}
+                  {badExec.length > 0 && (
+                    <div className="bg-destructive/80 rounded-full" style={{ width: `${(badExec.length / trades.length) * 100}%` }} />
+                  )}
+                  {unratedExec > 0 && (
+                    <div className="bg-muted-foreground/20 rounded-full" style={{ width: `${(unratedExec / trades.length) * 100}%` }} />
+                  )}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-success/80" />{goodExec.length} good</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-destructive/80" />{badExec.length} bad</span>
+                  {unratedExec > 0 && (
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />{unratedExec} unrated</span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Cumulative R curve + result pie */}

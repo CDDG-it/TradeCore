@@ -3,20 +3,113 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { motion } from "motion/react";
+import { Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CandlesCanvas } from "@/components/landing/candles-canvas";
 import { createClient } from "@/lib/supabase/client";
 
 type PageState = "login" | "unverified" | "resent";
 
+const NUNITO = "var(--font-nunito), system-ui, sans-serif";
+
 const Logo = () => (
-  <span className="font-black text-xl tracking-tight" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
-    <span style={{ color: "#111" }}>Trade</span>
-    <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
+  <span className="font-black text-xl tracking-tight" style={{ fontFamily: NUNITO }}>
+    <span style={{ color: "rgba(15,12,8,0.88)" }}>Trade</span>
+    <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
   </span>
 );
+
+/* Full-screen warm-white backdrop with the drifting candlestick chart from the
+   landing page, so signing in feels like part of the same product. */
+function AuthShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative flex min-h-svh items-center justify-center px-4" style={{ background: "oklch(0.98 0.003 45)" }}>
+      <CandlesCanvas />
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-md space-y-8"
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+}
+
+/* Glass card over the canvas — same treatment as the landing header */
+function AuthCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="rounded-2xl p-7"
+      style={{
+        background: "rgba(255,253,250,0.92)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        border: "1px solid rgba(0,0,0,0.07)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 16px 48px rgba(16,11,6,0.08)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+const inputClass =
+  "w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all duration-200 outline-none " +
+  "border-[rgba(16,11,6,0.12)] bg-[rgba(255,255,255,0.65)] text-[rgba(15,12,8,0.88)] " +
+  "placeholder:text-[rgba(60,48,36,0.35)] " +
+  "hover:border-[rgba(249,115,22,0.35)] " +
+  "focus:border-[rgba(249,115,22,0.55)] focus:bg-white focus:ring-2 focus:ring-[rgba(249,115,22,0.15)]";
+
+function SubmitButton({ loading, children }: { loading: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      type="submit"
+      disabled={loading}
+      className="group inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+      style={{
+        fontFamily: NUNITO,
+        background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
+        boxShadow: "0 4px 20px rgba(249,115,22,0.30), 0 1px 3px rgba(0,0,0,0.10)",
+      }}
+    >
+      {loading ? (
+        <>
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          {children}
+        </>
+      ) : (
+        <>
+          {children}
+          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+        </>
+      )}
+    </button>
+  );
+}
+
+function SecondaryButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-xl border px-4 py-2.5 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(249,115,22,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
+      style={{ fontFamily: NUNITO, borderColor: "rgba(16,11,6,0.12)", background: "rgba(255,255,255,0.55)" }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ErrorNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl px-4 py-3 text-sm" style={{ background: "rgba(220,38,38,0.08)", color: "rgb(185,28,28)", border: "1px solid rgba(220,38,38,0.15)" }}>
+      {children}
+    </div>
+  );
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -25,6 +118,7 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
@@ -89,131 +183,118 @@ function LoginForm() {
     }
   }
 
+  const heading = (title: string, sub: React.ReactNode) => (
+    <div className="mb-5 space-y-1">
+      <h1 className="text-xl font-bold" style={{ fontFamily: NUNITO, color: "rgba(15,12,8,0.88)" }}>{title}</h1>
+      <p className="text-sm" style={{ color: "rgba(60,48,36,0.55)" }}>{sub}</p>
+    </div>
+  );
+
   if (pageState === "unverified") {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md space-y-8">
-          <div className="flex flex-col items-center gap-2"><Logo /></div>
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl">Verify your email</CardTitle>
-              <CardDescription>
-                Your account hasn&apos;t been verified yet. We need to confirm <strong>{email}</strong> before you can sign in.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
-              )}
-              <p className="text-sm text-muted-foreground">
-                Check your inbox for the original verification email, or request a new one below.
-              </p>
-              <Button className="w-full" onClick={handleResend} disabled={isResending}>
-                {isResending ? "Sending…" : "Resend verification email"}
-              </Button>
-              <Button variant="outline" className="w-full" onClick={() => setPageState("login")}>
-                Back to sign in
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <AuthShell>
+        <div className="flex flex-col items-center gap-2"><Logo /></div>
+        <AuthCard>
+          {heading("Verify your email", <>Your account hasn&apos;t been verified yet. We need to confirm <strong>{email}</strong> before you can sign in.</>)}
+          <div className="space-y-4">
+            {error && <ErrorNote>{error}</ErrorNote>}
+            <p className="text-sm" style={{ color: "rgba(60,48,36,0.55)" }}>
+              Check your inbox for the original verification email, or request a new one below.
+            </p>
+            <SubmitButton loading={isResending}>
+              {isResending ? "Sending" : "Resend verification email"}
+            </SubmitButton>
+            <SecondaryButton onClick={() => setPageState("login")}>Back to sign in</SecondaryButton>
+          </div>
+        </AuthCard>
+      </AuthShell>
     );
   }
 
   if (pageState === "resent") {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md space-y-8">
-          <div className="flex flex-col items-center gap-2"><Logo /></div>
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl">Email sent</CardTitle>
-              <CardDescription>
-                A new verification link has been sent to <strong>{email}</strong>.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Click the link in your email to activate your account. Don&apos;t forget to check your spam folder.
-              </p>
-              <Button variant="outline" className="w-full" onClick={() => setPageState("login")}>
-                Back to sign in
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <AuthShell>
+        <div className="flex flex-col items-center gap-2"><Logo /></div>
+        <AuthCard>
+          {heading("Email sent", <>A new verification link has been sent to <strong>{email}</strong>.</>)}
+          <div className="space-y-4">
+            <p className="text-sm" style={{ color: "rgba(60,48,36,0.55)" }}>
+              Click the link in your email to activate your account. Don&apos;t forget to check your spam folder.
+            </p>
+            <SecondaryButton onClick={() => setPageState("login")}>Back to sign in</SecondaryButton>
+          </div>
+        </AuthCard>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="flex flex-col items-center gap-2">
-          <Logo />
-          <p className="mt-1 text-sm text-muted-foreground">Your edge, organized.</p>
-        </div>
-
-        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-xl">Sign in</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {(error || urlError) && (
-                <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                  {error || urlError}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  className="bg-background/50"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link href="/reset-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-                    Forgot password?
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className="bg-background/50"
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in…" : "Sign in"}
-              </Button>
-            </form>
-
-            <p className="mt-6 text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-primary hover:underline">Sign up</Link>
-            </p>
-          </CardContent>
-        </Card>
+    <AuthShell>
+      <div className="flex flex-col items-center gap-2">
+        <Logo />
+        <p className="mt-1 text-sm" style={{ color: "rgba(60,48,36,0.50)" }}>Your edge, organized.</p>
       </div>
-    </div>
+
+      <AuthCard>
+        {heading("Sign in", "Enter your credentials to access your account")}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {(error || urlError) && <ErrorNote>{error || urlError}</ErrorNote>}
+
+          <div className="space-y-2">
+            <Label htmlFor="email" style={{ color: "rgba(15,12,8,0.75)" }}>Email</Label>
+            <input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className={inputClass}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
+              <Label htmlFor="password" style={{ color: "rgba(15,12,8,0.75)" }}>Password</Label>
+              <Link href="/reset-password" className="text-xs transition-colors text-[rgba(60,48,36,0.45)] hover:text-[#F97316]">
+                Forgot password?
+              </Link>
+            </div>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className={`${inputClass} pr-10`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgba(60,48,36,0.40)] transition-colors hover:text-[#F97316]"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <SubmitButton loading={isLoading}>
+            {isLoading ? "Signing in" : "Sign in"}
+          </SubmitButton>
+        </form>
+
+        <p className="mt-6 text-center text-sm" style={{ color: "rgba(60,48,36,0.50)" }}>
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="font-semibold text-[#F97316] transition-colors hover:text-[#d97706]">Sign up</Link>
+        </p>
+      </AuthCard>
+    </AuthShell>
   );
 }
 

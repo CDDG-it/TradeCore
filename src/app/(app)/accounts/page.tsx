@@ -14,7 +14,16 @@ import { cn } from "@/lib/utils";
 import type { FundedAccount, PayoutEvent } from "@/lib/types";
 
 type StatusFilter = "all" | "active" | "inactive";
+type PhaseFilter = "all" | "evaluation" | "funded";
 type SortOrder = "newest" | "oldest";
+
+/* "Funded" covers both the funded and payout phases — an account receiving
+   payouts is past evaluation by definition. */
+function matchesPhase(acct: FundedAccount, filter: PhaseFilter): boolean {
+  if (filter === "all") return true;
+  if (filter === "evaluation") return acct.phase === "evaluation";
+  return acct.phase === "funded" || acct.phase === "payout";
+}
 
 function roiGreen(roi: number): string {
   if (roi >= 5) return "oklch(0.38 0.14 145)";
@@ -29,6 +38,7 @@ export default function AccountsPage() {
   const [loading, setLoading] = useState(true);
   const [firmFilter, setFirmFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
 
   useEffect(() => {
@@ -67,6 +77,7 @@ export default function AccountsPage() {
       if (statusFilter === "all") return true;
       return a.status === statusFilter;
     })
+    .filter((a) => matchesPhase(a, phaseFilter))
     .sort((a, b) => {
       const dateA = a.purchase_date ? new Date(a.purchase_date).getTime() : 0;
       const dateB = b.purchase_date ? new Date(b.purchase_date).getTime() : 0;
@@ -137,6 +148,30 @@ export default function AccountsPage() {
                   )}
                 >
                   {s === "all" ? "All status" : s}
+                </button>
+              ))}
+            </div>
+
+            <div className="h-4 w-px bg-border" />
+
+            {/* Phase filter — evaluation vs funded */}
+            <div className="flex gap-1.5">
+              {(["all", "evaluation", "funded"] as PhaseFilter[]).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPhaseFilter(p)}
+                  className={cn(
+                    filterBtnBase, "capitalize",
+                    phaseFilter === p
+                      ? p === "evaluation"
+                        ? "border-warning bg-warning/10 text-warning"
+                        : p === "funded"
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-primary bg-primary text-primary-foreground"
+                      : filterBtnInactive
+                  )}
+                >
+                  {p === "all" ? "All phases" : p === "evaluation" ? "Evaluation" : "Funded"}
                 </button>
               ))}
             </div>
@@ -229,18 +264,28 @@ export default function AccountsPage() {
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-0.5">
                           <p className="text-xs text-muted-foreground">{acct.firm_name}</p>
-                          <span className={cn(
-                            "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full",
-                            isActive
-                              ? "bg-success/10 text-success"
-                              : isBlown
-                              ? "bg-destructive/10 text-destructive"
-                              : acct.status === "passed"
-                              ? "bg-primary/10 text-primary"
-                              : "bg-destructive/10 text-destructive"
-                          )}>
-                            {acct.status}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className={cn(
+                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full",
+                              acct.phase === "evaluation"
+                                ? "bg-warning/15 text-warning"
+                                : "bg-primary/15 text-primary"
+                            )}>
+                              {acct.phase === "evaluation" ? "Eval" : "Funded"}
+                            </span>
+                            <span className={cn(
+                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full",
+                              isActive
+                                ? "bg-success/10 text-success"
+                                : isBlown
+                                ? "bg-destructive/10 text-destructive"
+                                : acct.status === "passed"
+                                ? "bg-primary/10 text-primary"
+                                : "bg-destructive/10 text-destructive"
+                            )}>
+                              {acct.status}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-baseline gap-2 mt-1">
                           <p className="font-semibold text-sm">{acct.firm_name}</p>
