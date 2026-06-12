@@ -286,7 +286,10 @@ export default function AccountsPage() {
               const isBlown = acct.status === "blown";
 
               return (
-                <Link key={acct.id} href={`/accounts/${acct.id}`}>
+                // relative wrapper: an absolute overlay link handles navigation
+                // so the phase/status badges can be real buttons (a <button>
+                // nested inside an <a> is invalid HTML and swallows the click).
+                <div key={acct.id} className="relative">
                   <Card className={cn(
                     "h-full border-2",
                     isActive
@@ -299,7 +302,7 @@ export default function AccountsPage() {
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-0.5">
                           <p className="text-xs text-muted-foreground">{acct.firm_name}</p>
-                          <div className="flex items-center gap-1">
+                          <div className="relative z-10 flex items-center gap-1">
                             <button
                               type="button"
                               onClick={(e) => togglePhase(e, acct)}
@@ -360,20 +363,29 @@ export default function AccountsPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between">
+                      <div className="relative z-10 flex items-center justify-between">
                         {acct.purchase_date ? (
                           <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
                             <CalendarDays className="w-2.5 h-2.5" />
                             {format(new Date(acct.purchase_date + "T12:00:00"), "d MMM yyyy")}
                           </span>
                         ) : <span />}
-                        <span className="text-xs text-primary flex items-center gap-1">
+                        <Link
+                          href={`/accounts/${acct.id}`}
+                          className="text-xs text-primary flex items-center gap-1 hover:underline"
+                        >
                           Details <ArrowRight className="w-3 h-3" />
-                        </span>
+                        </Link>
                       </div>
                     </CardContent>
                   </Card>
-                </Link>
+                  {/* Full-card navigation overlay, beneath the z-10 controls */}
+                  <Link
+                    href={`/accounts/${acct.id}`}
+                    aria-label={`Open ${acct.firm_name} account`}
+                    className="absolute inset-0 z-0 rounded-2xl"
+                  />
+                </div>
               );
             })}
           </div>
