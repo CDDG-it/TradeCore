@@ -136,12 +136,8 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
 
         <div className="flex items-start justify-between gap-4">
           <div>
+            {/* Just the firm as the heading — account size and cost live in the summary cards below */}
             <h1 className="text-2xl font-bold tracking-tight">{account.firm_name}</h1>
-            {/* account_name defaults to "funded" — only show it when it's a real custom label */}
-            {account.account_name && account.account_name.trim().toLowerCase() !== "funded" && (
-              <p className="text-sm text-muted-foreground mt-1">{account.account_name}</p>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">${account.account_size.toLocaleString()} · Cost: ${account.purchase_cost.toLocaleString()}</p>
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
             {!confirmDelete ? (
