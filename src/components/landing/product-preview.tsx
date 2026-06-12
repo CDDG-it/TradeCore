@@ -4,57 +4,22 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
+import { FEATURES } from "@/lib/landing/features";
 
 // Exact same warm-white as hero background
 const BG = "rgba(249,246,242,1)";
 
-const CARDS = [
-  {
-    index:   0,
-    section: "DAILY",
-    name:    "Dashboard",
-    route:   "/dashboard",
-    desc:    "One view for your entire trading day. Habits, recent trades, funded account status and discipline score — all before the opening bell.",
-    cta:     "Open dashboard",
-    screenshot: "/screenshots/dashboard.jpg",
-  },
-  {
-    index:   1,
-    section: "TRADING",
-    name:    "Journal",
-    route:   "/journal",
-    desc:    "Log every trade with setup, execution quality and session context. Review your full trade history in list or calendar view.",
-    cta:     "View journal",
-    screenshot: "/screenshots/journal.jpg",
-  },
-  {
-    index:   2,
-    section: "TRADING",
-    name:    "Analysis",
-    route:   "/analysis",
-    desc:    "Build structured pre-market analysis notes around bias, key levels and session scenarios before you ever touch the keyboard.",
-    cta:     "Review analyses",
-    screenshot: "/screenshots/analysis.jpg",
-  },
-  {
-    index:   3,
-    section: "TRADING",
-    name:    "Analytics",
-    route:   "/analytics",
-    desc:    "Find patterns in your execution over time. Win rate by session, R-multiples, day-of-week tendencies and discipline trends.",
-    cta:     "See analytics",
-    screenshot: "/screenshots/analytics.jpg",
-  },
-  {
-    index:   4,
-    section: "TRADING",
-    name:    "Accounts",
-    route:   "/accounts",
-    desc:    "Track all funded prop firm accounts in one place. Monitor payouts, ROI multiples, drawdown thresholds and account phases.",
-    cta:     "View accounts",
-    screenshot: "/screenshots/accounts.jpg",
-  },
-] as const;
+// The preview cards mirror the feature pages. The orange CTA on each card now
+// leads to that feature's explainer page, not straight into the gated app.
+const CARDS = FEATURES.map((f, index) => ({
+  index,
+  section: f.section.toUpperCase(),
+  name: f.name,
+  route: `/features/${f.slug}`,
+  desc: f.blurb,
+  cta: "Learn more",
+  screenshot: f.screenshot,
+}));
 
 // ── Screenshot frame — no browser chrome, just the app with orange glow ───────
 function ScreenshotFrame({ src, alt, eager }: { src: string; alt: string; eager?: boolean }) {

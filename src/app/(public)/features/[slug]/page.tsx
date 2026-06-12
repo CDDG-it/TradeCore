@@ -1,0 +1,215 @@
+import Link from "next/link";
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+import { ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { FEATURES, FEATURE_BY_SLUG } from "@/lib/landing/features";
+import { LandingFooter } from "@/components/landing/footer";
+
+const NUNITO = "var(--font-nunito), system-ui, sans-serif";
+
+export function generateStaticParams() {
+  return FEATURES.map((f) => ({ slug: f.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const feature = FEATURE_BY_SLUG[slug];
+  if (!feature) return { title: "TradingMC" };
+  return {
+    title: `${feature.name} — TradingMC`,
+    description: feature.tagline,
+  };
+}
+
+export default async function FeaturePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const feature = FEATURE_BY_SLUG[slug];
+  if (!feature) notFound();
+
+  // Index in the list, used for the prev/next footer navigation.
+  const idx = FEATURES.findIndex((f) => f.slug === feature.slug);
+  const next = FEATURES[(idx + 1) % FEATURES.length];
+
+  return (
+    <div style={{ background: "oklch(0.98 0.003 45)", fontFamily: NUNITO }}>
+      {/* Slim header */}
+      <header
+        className="sticky top-0 z-30 px-6 py-4"
+        style={{
+          background: "rgba(249,246,242,0.88)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(0,0,0,0.07)",
+        }}
+      >
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+          <Link
+            href="/"
+            className="font-black tracking-tight text-base leading-none hover:opacity-80 transition-opacity"
+          >
+            <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
+            <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+          </Link>
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+            style={{
+              background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
+              boxShadow: "0 2px 14px rgba(249,115,22,0.30), 0 1px 2px rgba(0,0,0,0.10)",
+            }}
+          >
+            Make account
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="mx-auto max-w-5xl px-6 pt-16 pb-10 sm:pt-24">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[rgba(60,48,36,0.45)] transition-colors duration-200 hover:text-[#F97316]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          All features
+        </Link>
+
+        <div className="mt-7 flex items-center gap-3">
+          <span
+            className="text-[0.625rem] font-bold uppercase tracking-[0.18em]"
+            style={{ color: "rgba(249,115,22,0.90)" }}
+          >
+            {feature.section}
+          </span>
+          <span className="h-px w-6" style={{ background: "rgba(249,115,22,0.30)" }} />
+        </div>
+
+        <h1
+          className="mt-4 font-black tracking-tight leading-[0.9]"
+          style={{ fontSize: "clamp(2.6rem, 7vw, 5rem)", color: "rgba(15,12,8,0.90)" }}
+        >
+          {feature.name}
+        </h1>
+        <p
+          className="mt-5 max-w-2xl leading-relaxed"
+          style={{ fontSize: "clamp(1.05rem, 2.2vw, 1.35rem)", color: "rgba(60,48,36,0.60)" }}
+        >
+          {feature.intro}
+        </p>
+      </section>
+
+      {/* Screenshot */}
+      <section className="mx-auto max-w-5xl px-6">
+        <div
+          className="relative w-full overflow-hidden rounded-2xl"
+          style={{
+            aspectRatio: "4/3",
+            boxShadow:
+              "0 0 0 1.5px rgba(249,115,22,0.22), 0 0 24px rgba(249,115,22,0.08), 0 12px 50px rgba(0,0,0,0.10)",
+          }}
+        >
+          <Image
+            src={feature.screenshot}
+            alt={`${feature.name} page in TradingMC`}
+            fill
+            sizes="(max-width: 1024px) 100vw, 1024px"
+            className="object-cover object-top"
+            priority
+          />
+        </div>
+      </section>
+
+      {/* Explainer blocks */}
+      <section className="mx-auto max-w-3xl px-6 py-20 sm:py-28">
+        <div className="space-y-16">
+          {feature.blocks.map((block) => (
+            <div key={block.heading}>
+              <h2
+                className="font-black tracking-tight leading-tight"
+                style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.2rem)", color: "rgba(15,12,8,0.88)" }}
+              >
+                {block.heading}
+              </h2>
+              <p
+                className="mt-4 leading-relaxed"
+                style={{ fontSize: "1.05rem", color: "rgba(60,48,36,0.60)" }}
+              >
+                {block.body}
+              </p>
+              {block.points && (
+                <ul className="mt-6 space-y-3.5">
+                  {block.points.map((point, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span
+                        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                        style={{ background: "rgba(249,115,22,0.12)" }}
+                      >
+                        <Check className="h-3 w-3" style={{ color: "#d97706" }} strokeWidth={3} />
+                      </span>
+                      <span
+                        className="leading-relaxed"
+                        style={{ fontSize: "1rem", color: "rgba(60,48,36,0.62)" }}
+                      >
+                        {point}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div
+          className="mt-20 rounded-2xl px-7 py-9 text-center sm:px-10"
+          style={{
+            background: "rgba(249,115,22,0.06)",
+            border: "1px solid rgba(249,115,22,0.16)",
+          }}
+        >
+          <h3
+            className="font-black tracking-tight"
+            style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", color: "rgba(15,12,8,0.88)" }}
+          >
+            Put {feature.name.toLowerCase()} to work
+          </h3>
+          <p className="mx-auto mt-3 max-w-md leading-relaxed" style={{ color: "rgba(60,48,36,0.58)" }}>
+            Start logging the quiet work that separates funded traders from former ones.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+              style={{
+                background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
+                boxShadow: "0 4px 24px rgba(249,115,22,0.28), 0 1px 3px rgba(0,0,0,0.10)",
+              }}
+            >
+              Make account
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+            <Link
+              href={`/features/${next.slug}`}
+              className="inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(249,115,22,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
+              style={{ borderColor: "rgba(16,11,6,0.14)" }}
+            >
+              Next: {next.name}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <LandingFooter />
+    </div>
+  );
+}

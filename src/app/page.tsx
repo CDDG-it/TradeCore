@@ -1,22 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ArrowDown, NotebookPen, Compass, BarChart3, Landmark } from "lucide-react";
-import { FadeIn } from "@/components/ui/fade-in";
+import { ArrowRight, ArrowDown } from "lucide-react";
 import { motion } from "motion/react";
 import { ProductPreview } from "@/components/landing/product-preview";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
 import { LandingFooter } from "@/components/landing/footer";
+import { LandingNav } from "@/components/landing/landing-nav";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
-
-// ── Feature pillars — mirror the tools shown in the product preview ──────────
-const PILLARS = [
-  { icon: NotebookPen, label: "Trade Journal", desc: "Log every trade with full context", href: "/journal" },
-  { icon: Compass, label: "Pre-Market Analysis", desc: "Structured prep before the bell", href: "/analysis" },
-  { icon: BarChart3, label: "Performance Analytics", desc: "Find patterns in your execution", href: "/analytics" },
-  { icon: Landmark, label: "Funded Accounts", desc: "Payouts, ROI and drawdown in view", href: "/accounts" },
-] as const;
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
@@ -26,33 +18,8 @@ export default function HomePage() {
     // horizontally contain their own overflow instead.
     <div style={{ background: "oklch(0.98 0.003 45)" }}>
 
-      {/* ── Light glass header ── */}
-      <header
-        className="sticky top-0 z-20 px-6 py-4"
-        style={{
-          background: "rgba(249,246,242,0.88)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(0,0,0,0.07)",
-        }}
-      >
-        <div className="mx-auto max-w-6xl flex items-center justify-between">
-          <span
-            className="font-black tracking-tight text-base leading-none"
-            style={{ fontFamily: NUNITO }}
-          >
-            <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
-            <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
-          </span>
-          <Link
-            href="/login"
-            className="text-sm font-semibold text-[rgba(60,48,36,0.45)] transition-colors duration-200 hover:text-[rgba(15,12,8,0.85)]"
-            style={{ fontFamily: NUNITO }}
-          >
-            Sign in
-          </Link>
-        </div>
-      </header>
+      {/* ── Top navigation: Features dropdown, Coming soon, Sign in, Make account ── */}
+      <LandingNav />
 
       {/* ── Hero — light background, orange + black candle visuals ── */}
       {/* 53px = header height (py-4 + text-base logo + 1px border) */}
@@ -137,50 +104,6 @@ export default function HomePage() {
             </a>
           </motion.div>
         </div>
-
-        {/* ── Feature strip — anchored to bottom ── */}
-        <FadeIn delay={0.44}>
-          <div
-            className="relative z-10 border-t"
-            style={{ borderColor: "rgba(0,0,0,0.08)" }}
-          >
-            <div className="mx-auto max-w-5xl grid grid-cols-2 lg:grid-cols-4">
-              {PILLARS.map((p, i) => (
-                <Link
-                  key={p.label}
-                  href={p.href}
-                  className={`group relative px-6 py-6 text-left transition-colors duration-300 hover:bg-[rgba(249,115,22,0.05)] ${i > 0 ? "border-l" : ""} ${i >= 2 ? "max-lg:border-t lg:border-t-0" : ""} ${i === 2 ? "max-lg:border-l-0" : ""}`}
-                  style={{ borderColor: "rgba(0,0,0,0.08)" }}
-                >
-                  {/* Orange accent line that grows in from the left on hover */}
-                  <span
-                    className="absolute left-0 top-0 h-[2px] w-0 transition-all duration-300 ease-out group-hover:w-full"
-                    style={{ background: "linear-gradient(90deg,#F97316,#d97706)" }}
-                  />
-                  <div className="mb-2.5 flex items-center justify-between">
-                    <p.icon
-                      className="h-[18px] w-[18px] text-[rgba(60,48,36,0.40)] transition-all duration-300 group-hover:scale-110 group-hover:text-[#F97316]"
-                      strokeWidth={1.75}
-                    />
-                    <ArrowRight className="h-3.5 w-3.5 -translate-x-1 text-[#F97316] opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
-                  </div>
-                  <p
-                    className="text-sm font-bold mb-0.5 transition-colors duration-300"
-                    style={{ fontFamily: NUNITO, color: "rgba(15,12,8,0.78)" }}
-                  >
-                    {p.label}
-                  </p>
-                  <p
-                    className="text-xs leading-snug"
-                    style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.48)" }}
-                  >
-                    {p.desc}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </FadeIn>
 
       </section>
 
