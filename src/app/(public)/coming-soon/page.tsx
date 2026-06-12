@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowLeft, Flame, Target, BookMarked, MessageSquare, Newspaper } from "lucide-react";
+import { ArrowLeft, Newspaper, Magnet, Waves, Users } from "lucide-react";
 import { LandingFooter } from "@/components/landing/footer";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
@@ -12,28 +12,22 @@ export const metadata: Metadata = {
 
 const UPCOMING = [
   {
-    icon: Flame,
-    name: "Habits",
-    status: "In build",
-    desc: "Track the daily inputs behind your results. Build streaks for the routines that keep you sharp and watch them line up against your win rate.",
-  },
-  {
-    icon: Target,
-    name: "Self-Mastery",
-    status: "In build",
-    desc: "A daily check in for mental state, sleep and personal standards, plus weekly reviews and growth insights that connect how you feel to how you trade.",
-  },
-  {
-    icon: BookMarked,
-    name: "Playbook",
+    icon: Magnet,
+    name: "Gamma Exposure Levels",
     status: "Planned",
-    desc: "Codify your setups into a living playbook. Rules, entry criteria and screenshots for every play you trade, so you only take the ones you have proven.",
+    desc: "See where dealer gamma pins price. Map the key GEX levels that act as magnets and walls intraday, so you know which strikes the market wants to defend.",
   },
   {
-    icon: MessageSquare,
-    name: "Coaching",
+    icon: Waves,
+    name: "CVD",
     status: "Planned",
-    desc: "Structured feedback on your journal and analytics. Turn your own data into a plan for the next week instead of guessing what to fix.",
+    desc: "Read the order flow behind the candles. Cumulative Volume Delta shows whether buyers or sellers are actually in control, and where aggression is drying up.",
+  },
+  {
+    icon: Users,
+    name: "COT Data",
+    status: "Planned",
+    desc: "Track how the big players are positioned. Commitment of Traders data turns the weekly report into a clean read on what commercials and large speculators are doing.",
   },
   {
     icon: Newspaper,
