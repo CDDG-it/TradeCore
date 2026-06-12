@@ -11,11 +11,11 @@ export default function TermsPage() {
         </div>
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">1. What TradeCore is</h2>
+          <h2 className="text-lg font-semibold">1. What TradingMC is</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            TradeCore is a personal trading productivity platform. It provides tools for journaling trades,
+            TradingMC is a personal trading productivity platform. It provides tools for journaling trades,
             tracking funded accounts, logging pre-market analyses, and monitoring trading habits and mental state.
-            TradeCore is not a financial advisor, broker, or trading platform. No part of TradeCore constitutes
+            TradingMC is not a financial advisor, broker, or trading platform. No part of TradingMC constitutes
             financial advice.
           </p>
         </section>
@@ -31,20 +31,20 @@ export default function TermsPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">3. Acceptable use</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            You may use TradeCore for personal trading journaling purposes only. You may not:
+            You may use TradingMC for personal trading journaling purposes only. You may not:
           </p>
           <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside leading-relaxed">
             <li>Upload illegal content or malware</li>
             <li>Attempt to access other users&apos; data</li>
             <li>Reverse-engineer or attempt to compromise the platform</li>
-            <li>Use TradeCore for commercial resale or sublicensing</li>
+            <li>Use TradingMC for commercial resale or sublicensing</li>
           </ul>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">4. Your data</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            You own your trading data. TradeCore stores it on your behalf to provide the service. We do not claim
+            You own your trading data. TradingMC stores it on your behalf to provide the service. We do not claim
             ownership of your journal entries, analyses, or screenshots. See our{" "}
             <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link> for details on how
             your data is stored and protected.
@@ -54,7 +54,7 @@ export default function TermsPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">5. No financial warranties</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            TradeCore is a journaling and productivity tool. We make no claims about improving trading performance
+            TradingMC is a journaling and productivity tool. We make no claims about improving trading performance
             or profitability. Trading involves significant financial risk. Use this tool at your own discretion.
           </p>
         </section>
@@ -62,7 +62,7 @@ export default function TermsPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">6. Service availability</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            TradeCore is provided as-is. We aim for high availability but do not guarantee 100% uptime.
+            TradingMC is provided as-is. We aim for high availability but do not guarantee 100% uptime.
             We may modify or discontinue features with reasonable notice. This is an early-stage product.
           </p>
         </section>

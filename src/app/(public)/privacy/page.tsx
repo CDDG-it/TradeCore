@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">What we store</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            TradeCore stores the following data to provide its journal and dashboard functionality:
+            TradingMC stores the following data to provide its journal and dashboard functionality:
           </p>
           <ul className="text-sm text-muted-foreground space-y-1.5 list-disc list-inside leading-relaxed">
             <li>Your email address and display name (used for authentication)</li>
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Third-party services</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            TradeCore uses Supabase (hosted PostgreSQL and file storage) to store your data. Supabase is a SOC 2
+            TradingMC uses Supabase (hosted PostgreSQL and file storage) to store your data. Supabase is a SOC 2
             compliant platform. Your data resides in the EU region. We do not sell or share your data with advertisers
             or analytics providers.
           </p>

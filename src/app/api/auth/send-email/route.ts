@@ -26,7 +26,7 @@ function verifyHookSignature(authHeader: string | null, secret: string): boolean
 }
 
 const SENDER_EMAIL = "collinalmelo@gmail.com";
-const SENDER_NAME = "TradeCore";
+const SENDER_NAME = "TradingMC";
 
 function buildConfirmUrl(siteUrl: string, tokenHash: string, type: string, redirectTo?: string): string {
   const base = `${siteUrl}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(type)}`;
@@ -39,7 +39,7 @@ function getEmailContent(type: string, confirmUrl: string): { subject: string; h
     <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;padding:40px 24px;background:#fff;">
       <div style="margin-bottom:32px;">
         <span style="font-size:20px;font-weight:900;letter-spacing:-0.5px;">
-          <span style="color:#111;">Trade</span><span style="color:#F97316;">CORE</span>
+          <span style="color:#111;">Trading</span><span style="color:#F97316;">MC</span>
         </span>
       </div>
   `;
@@ -52,18 +52,18 @@ function getEmailContent(type: string, confirmUrl: string): { subject: string; h
 
   if (type === "signup") {
     return {
-      subject: "Verify your TradeCore account",
-      html: `${header}<h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111;">Verify your email</h2><p style="color:#555;margin-bottom:24px;">Click the button below to activate your TradeCore account.</p>${btn}Verify email</a>${link}${footer}`,
+      subject: "Verify your TradingMC account",
+      html: `${header}<h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111;">Verify your email</h2><p style="color:#555;margin-bottom:24px;">Click the button below to activate your TradingMC account.</p>${btn}Verify email</a>${link}${footer}`,
     };
   }
   if (type === "recovery") {
     return {
-      subject: "Reset your TradeCore password",
+      subject: "Reset your TradingMC password",
       html: `${header}<h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111;">Reset your password</h2><p style="color:#555;margin-bottom:24px;">Click the button below to choose a new password.</p>${btn}Reset password</a>${link}${footer}`,
     };
   }
   return {
-    subject: "Action required — TradeCore",
+    subject: "Action required — TradingMC",
     html: `${header}<h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111;">Action required</h2><p style="color:#555;margin-bottom:24px;">Click the button below to continue.</p>${btn}Continue</a>${footer}`,
   };
 }

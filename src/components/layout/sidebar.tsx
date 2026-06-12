@@ -107,8 +107,8 @@ export function Sidebar() {
         <Link href="/"
           className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
           style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
-          <span className="text-sidebar-foreground">Trade</span>
-          <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
+          <span className="text-sidebar-foreground">Trading</span>
+          <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
         </Link>
       </div>
 

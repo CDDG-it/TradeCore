@@ -55,7 +55,7 @@ export const mockPlaybook: TraderPlaybook = {
 
 export const mockUser: User = {
   id: "user_1",
-  email: "demo@tradecore.app",
+  email: "demo@tradingmc.app",
   full_name: "Demo Trader",
   avatar_url: undefined,
   created_at: "2026-01-15T08:00:00Z",

@@ -50,13 +50,13 @@ export function LandingFooter() {
               className="font-black text-lg tracking-tight leading-none transition-opacity hover:opacity-70"
               style={{ fontFamily: NUNITO }}
             >
-              <span style={{ color: "rgba(15,12,8,0.88)" }}>Trade</span>
+              <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
               <span style={{
                 background: "linear-gradient(90deg,#F97316,#d97706)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
-              }}>CORE</span>
+              }}>MC</span>
             </Link>
             <p
               className="mt-3 text-sm leading-relaxed"
@@ -112,7 +112,7 @@ export function LandingFooter() {
           style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}
         >
           <p className="text-xs" style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.40)" }}>
-            © {new Date().getFullYear()} Tradecore. All rights reserved.
+            © {new Date().getFullYear()} TradingMC. All rights reserved.
           </p>
           <p className="text-xs" style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.40)" }}>
             Plan the session. Log the trade. Review the week.

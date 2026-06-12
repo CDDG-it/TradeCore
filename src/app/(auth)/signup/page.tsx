@@ -71,8 +71,8 @@ export default function SignupPage() {
         <div className="w-full max-w-md space-y-8">
           <div className="flex flex-col items-center gap-2">
             <span className="font-black text-xl tracking-tight" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
-              <span style={{ color: "#111" }}>Trade</span>
-              <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
+              <span style={{ color: "#111" }}>Trading</span>
+              <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
             </span>
           </div>
           <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
@@ -108,8 +108,8 @@ export default function SignupPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center gap-2">
           <span className="font-black text-xl tracking-tight" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
-            <span style={{ color: "#111" }}>Trade</span>
-            <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
+            <span style={{ color: "#111" }}>Trading</span>
+            <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
           </span>
           <p className="mt-1 text-sm text-muted-foreground">Start building your edge today.</p>
         </div>

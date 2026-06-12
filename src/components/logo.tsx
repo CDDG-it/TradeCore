@@ -11,7 +11,7 @@ export function LogoMark({ size = 32 }: LogoProps) {
       viewBox="0 0 210 185"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="TradeCORE"
+      aria-label="TradingMC"
     >
       <defs>
         <linearGradient id="gD" x1="100" y1="180" x2="100" y2="5" gradientUnits="userSpaceOnUse">
@@ -145,13 +145,13 @@ export function Logo({
         className={`font-black tracking-tight leading-none ${textSize}`}
         style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
       >
-        <span style={{ color: tradeColor }}>Trade</span>
+        <span style={{ color: tradeColor }}>Trading</span>
         <span style={{
           background: "linear-gradient(90deg, #F97316 0%, #FBBF24 100%)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           backgroundClip: "text",
-        }}>CORE</span>
+        }}>MC</span>
       </span>
     </div>
   );

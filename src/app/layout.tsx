@@ -32,7 +32,7 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Tradecore",
+  title: "TradingMC",
   description: "Persoonlijk trading dashboard.",
 };
 

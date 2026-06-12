@@ -15,8 +15,8 @@ const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
 const Logo = () => (
   <span className="font-black text-xl tracking-tight" style={{ fontFamily: NUNITO }}>
-    <span style={{ color: "rgba(15,12,8,0.88)" }}>Trade</span>
-    <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
+    <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
+    <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
   </span>
 );
 

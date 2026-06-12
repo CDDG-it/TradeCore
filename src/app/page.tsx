@@ -6,7 +6,6 @@ import { FadeIn } from "@/components/ui/fade-in";
 import { motion } from "motion/react";
 import { ProductPreview } from "@/components/landing/product-preview";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
-import { CursorTrail } from "@/components/landing/cursor-trail";
 import { LandingFooter } from "@/components/landing/footer";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
@@ -26,8 +25,6 @@ export default function HomePage() {
     // overflow-x-clip kills page scrolling entirely. Sections that animate
     // horizontally contain their own overflow instead.
     <div style={{ background: "oklch(0.98 0.003 45)" }}>
-      {/* Orange line that follows the cursor across the whole page */}
-      <CursorTrail />
 
       {/* ── Light glass header ── */}
       <header
@@ -44,8 +41,8 @@ export default function HomePage() {
             className="font-black tracking-tight text-base leading-none"
             style={{ fontFamily: NUNITO }}
           >
-            <span style={{ color: "rgba(15,12,8,0.88)" }}>Trade</span>
-            <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CORE</span>
+            <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
+            <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
           </span>
           <Link
             href="/login"
@@ -78,14 +75,14 @@ export default function HomePage() {
               color: "rgba(15,12,8,0.90)",
             }}
           >
-            Trade
+            Trading
             <span style={{
               background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
             }}>
-              core
+              MC
             </span>
           </motion.h1>
 
