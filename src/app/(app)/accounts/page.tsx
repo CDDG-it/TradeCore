@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
@@ -33,6 +34,7 @@ function roiGreen(roi: number): string {
 }
 
 export default function AccountsPage() {
+  const router = useRouter();
   const [accounts, setAccounts] = useState<FundedAccount[]>([]);
   const [payoutMap, setPayoutMap] = useState<Record<string, PayoutEvent[]>>({});
   const [loading, setLoading] = useState(true);
@@ -286,10 +288,24 @@ export default function AccountsPage() {
               const isBlown = acct.status === "blown";
 
               return (
-                // relative wrapper: an absolute overlay link handles navigation
-                // so the phase/status badges can be real buttons (a <button>
-                // nested inside an <a> is invalid HTML and swallows the click).
-                <div key={acct.id} className="relative">
+                // The wrapper handles navigation on click so the card keeps a real
+                // :hover (an absolute overlay link would steal it and the card would
+                // feel dead). Interactive controls inside stopPropagation, so the
+                // phase/status toggles and the footer links never trigger navigation.
+                <div
+                  key={acct.id}
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => router.push(`/accounts/${acct.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      router.push(`/accounts/${acct.id}`);
+                    }
+                  }}
+                  aria-label={`Open ${acct.firm_name} account`}
+                  className="relative cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                >
                   <Card className={cn(
                     "h-full border-2",
                     isActive
@@ -372,12 +388,14 @@ export default function AccountsPage() {
                         <div className="flex items-center gap-3">
                           <Link
                             href={`/accounts/${acct.id}?payout=open`}
+                            onClick={(e) => e.stopPropagation()}
                             className="text-xs text-primary flex items-center gap-1 hover:underline"
                           >
                             <Plus className="w-3 h-3" /> Add payout
                           </Link>
                           <Link
                             href={`/accounts/${acct.id}`}
+                            onClick={(e) => e.stopPropagation()}
                             className="text-xs text-primary flex items-center gap-1 hover:underline"
                           >
                             Details <ArrowRight className="w-3 h-3" />
@@ -386,12 +404,6 @@ export default function AccountsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  {/* Full-card navigation overlay, beneath the z-10 controls */}
-                  <Link
-                    href={`/accounts/${acct.id}`}
-                    aria-label={`Open ${acct.firm_name} account`}
-                    className="absolute inset-0 z-0 rounded-2xl"
-                  />
                 </div>
               );
             })}

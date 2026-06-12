@@ -1,8 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowDown } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useScroll, useTransform } from "motion/react";
 import { ProductPreview } from "@/components/landing/product-preview";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
 import { LandingFooter } from "@/components/landing/footer";
@@ -12,6 +13,16 @@ const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
+  // Scroll-driven parallax: the hero content drifts down and fades as you scroll
+  // into the product section, so the two layers feel like they have depth.
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, 110]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+
   return (
     // No overflow class here: overflow-x-hidden disables the sticky header and
     // overflow-x-clip kills page scrolling entirely. Sections that animate
@@ -23,13 +34,24 @@ export default function HomePage() {
 
       {/* ── Hero — light background, orange + black candle visuals ── */}
       {/* 53px = header height (py-4 + text-base logo + 1px border) */}
-      <section className="relative flex flex-col" style={{ minHeight: "calc(100svh - 53px)" }}>
+      <section ref={heroRef} className="relative flex flex-col" style={{ minHeight: "calc(100svh - 53px)" }}>
 
         {/* Candlestick background */}
         <CandlesCanvas />
 
-        {/* Content */}
-        <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-20">
+        {/* Ambient drifting glow — adds depth behind the headline */}
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(249,115,22,0.10) 0%, transparent 65%)" }}
+          animate={{ scale: [1, 1.18, 1], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 9, ease: "easeInOut", repeat: Infinity }}
+        />
+
+        {/* Content — parallax + fade on scroll */}
+        <motion.div
+          style={{ y: contentY, opacity: contentOpacity }}
+          className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-20">
 
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
@@ -103,7 +125,7 @@ export default function HomePage() {
               <ArrowDown className="w-3.5 h-3.5" />
             </a>
           </motion.div>
-        </div>
+        </motion.div>
 
       </section>
 

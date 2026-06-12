@@ -148,24 +148,26 @@ export default function JournalPage() {
         }
       />
       <PageWrapper>
-      {/* Summary row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: "Wins", value: wins.toString(), color: "text-success" },
-          { label: "Losses", value: losses.toString(), color: "text-destructive" },
-          { label: "Break-Even", value: bes.toString(), color: "text-warning" },
-          { label: "Avg R:R", value: avgRR, color: "text-primary" },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="bg-card border border-border/50 rounded-xl p-4 text-center card-hover">
-            <p className={cn("text-xl font-bold", color)}>{value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-          </div>
-        ))}
-      </div>
+      {/* Summary row — list mode only; the calendar speaks for itself */}
+      {viewMode === "list" && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: "Wins", value: wins.toString(), color: "text-success" },
+            { label: "Losses", value: losses.toString(), color: "text-destructive" },
+            { label: "Break-Even", value: bes.toString(), color: "text-warning" },
+            { label: "Avg R:R", value: avgRR, color: "text-primary" },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="bg-card border border-border/50 rounded-xl p-4 text-center card-hover">
+              <p className={cn("text-xl font-bold", color)}>{value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Controls row */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* View toggle */}
+        {/* View toggle — always visible so you can switch modes */}
         <div className="flex rounded-lg border border-border/50 overflow-hidden">
           <button onClick={() => setViewMode("list")}
             className={cn("px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5",
@@ -179,19 +181,20 @@ export default function JournalPage() {
           </button>
         </div>
 
-        {/* Period filter */}
-        <div className="flex rounded-lg border border-border/50 overflow-hidden">
-          {(["all", "day", "week", "month"] as const).map((p) => (
-            <button key={p} onClick={() => setPeriodFilter(p)}
-              className={cn("px-3 py-1.5 text-xs font-medium transition-colors capitalize",
-                periodFilter === p ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-              {p === "all" ? "All time" : p === "day" ? "Today" : p === "week" ? "This week" : "This month"}
-            </button>
-          ))}
-        </div>
-
+        {/* Filters — list mode only */}
         {viewMode === "list" && (
           <>
+            {/* Period filter */}
+            <div className="flex rounded-lg border border-border/50 overflow-hidden">
+              {(["all", "day", "week", "month"] as const).map((p) => (
+                <button key={p} onClick={() => setPeriodFilter(p)}
+                  className={cn("px-3 py-1.5 text-xs font-medium transition-colors capitalize",
+                    periodFilter === p ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+                  {p === "all" ? "All time" : p === "day" ? "Today" : p === "week" ? "This week" : "This month"}
+                </button>
+              ))}
+            </div>
+
             <div className="flex rounded-lg border border-border/50 overflow-hidden">
               {(["all", "win", "loss", "break-even"] as const).map((r) => (
                 <button key={r} onClick={() => setFilterResult(r)}
@@ -232,47 +235,46 @@ export default function JournalPage() {
       {/* CALENDAR VIEW */}
       {viewMode === "calendar" && (
         <div className="space-y-4">
-          {/* Navigation + period toggle */}
-          <div className="flex items-center justify-between">
-            <button onClick={prevCalendar}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
-            </button>
-            <div className="text-center space-y-1.5">
-              <p className="text-sm font-semibold">{calendarTitle}</p>
-              <div className="flex rounded-lg border border-border/50 overflow-hidden mx-auto w-fit">
-                <button
-                  onClick={() => setCalendarPeriod("month")}
-                  className={cn("px-3 py-1 text-xs font-medium transition-colors",
-                    calendarPeriod === "month" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-                  Month
-                </button>
-                <button
-                  onClick={() => setCalendarPeriod("week")}
-                  className={cn("px-3 py-1 text-xs font-medium transition-colors",
-                    calendarPeriod === "week" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-                  Week
-                </button>
+          {/* ── Calendar panel: navigation header + grid in one cohesive card ── */}
+          <Card className="bg-card border-border/50 overflow-hidden">
+            {/* Navigation + period toggle */}
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/40 bg-gradient-to-b from-muted/25 to-transparent">
+              <button onClick={prevCalendar} aria-label="Previous"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-sm font-semibold tracking-tight">{calendarTitle}</p>
+                <div className="flex rounded-lg bg-muted/40 p-0.5">
+                  {(["month", "week"] as const).map((p) => (
+                    <button key={p} onClick={() => setCalendarPeriod(p)}
+                      className={cn("rounded-md px-3 py-1 text-xs font-medium capitalize transition-all",
+                        calendarPeriod === p
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground")}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
               </div>
+              <button onClick={nextCalendar} aria-label="Next"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary">
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
-            <button onClick={nextCalendar}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
 
-          {/* ── MONTH VIEW ── */}
-          {calendarPeriod === "month" && (
-            <Card className="bg-card border-border/50">
-              <CardContent className="p-4">
+            <CardContent className="p-4">
+              {/* ── MONTH VIEW ── */}
+              {calendarPeriod === "month" && (
+                <>
                 {/* Day headers */}
-                <div className="grid grid-cols-7 mb-1">
+                <div className="grid grid-cols-7 mb-2">
                   {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                    <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
+                    <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 py-1">{d}</div>
                   ))}
                 </div>
                 {/* Calendar grid — square cells */}
-                <div className="grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-1.5">
                   {Array.from({ length: startPad }).map((_, i) => (
                     <div key={`pad-${i}`} className="aspect-square" />
                   ))}
@@ -283,9 +285,12 @@ export default function JournalPage() {
                     const fontSize = dayTrades.length === 1 ? "text-xs" : dayTrades.length === 2 ? "text-[10px]" : "text-[9px]";
                     return (
                       <div key={key}
-                        className={cn("aspect-square rounded-lg p-1 transition-colors flex flex-col",
-                          isToday(day) ? "ring-1 ring-primary/40 bg-primary/3" : "",
-                          dayTrades.length > 0 ? "hover:brightness-110" : "")}>
+                        className={cn("aspect-square rounded-lg p-1 flex flex-col border transition-colors",
+                          isToday(day)
+                            ? "border-primary/50 bg-primary/5"
+                            : dayTrades.length > 0
+                            ? "border-border/50 bg-muted/20 hover:border-primary/30"
+                            : "border-border/25 bg-muted/5")}>
                         <p className={cn("text-[10px] font-semibold text-center shrink-0 leading-none mb-0.5",
                           isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/60" : "text-muted-foreground/30")}>
                           {format(day, "d")}
@@ -314,22 +319,20 @@ export default function JournalPage() {
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                </>
+              )}
 
-          {/* ── WEEK VIEW ── */}
-          {calendarPeriod === "week" && (
-            <Card className="bg-card border-border/50">
-              <CardContent className="p-4">
+              {/* ── WEEK VIEW ── */}
+              {calendarPeriod === "week" && (
+                <>
                 {/* Day headers with full date */}
                 <div className="grid grid-cols-7 gap-2 mb-3">
                   {calWeekDays.map((day) => (
                     <div key={day.toISOString()} className={cn(
-                      "text-center rounded-lg py-2",
-                      isToday(day) ? "bg-primary/8 ring-1 ring-primary/30" : ""
+                      "text-center rounded-lg py-2 border",
+                      isToday(day) ? "bg-primary/8 border-primary/40" : "border-transparent"
                     )}>
-                      <p className="text-xs font-medium text-muted-foreground">{format(day, "EEE")}</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{format(day, "EEE")}</p>
                       <p className={cn("text-sm font-bold mt-0.5",
                         isToday(day) ? "text-primary" : "text-foreground/80")}>
                         {format(day, "d")}
@@ -383,9 +386,10 @@ export default function JournalPage() {
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                </>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Legend */}
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
