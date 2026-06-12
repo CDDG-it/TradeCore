@@ -277,7 +277,7 @@ export default function AccountsPage() {
             )}
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((acct) => {
               const payouts = payoutMap[acct.id] ?? [];
               const totalPaid = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
@@ -298,52 +298,51 @@ export default function AccountsPage() {
                       ? "border-destructive/40"
                       : "border-destructive/25"
                   )}>
-                    <CardContent className="p-5">
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-0.5">
-                          <p className="text-xs text-muted-foreground">{acct.firm_name}</p>
-                          <div className="relative z-10 flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={(e) => togglePhase(e, acct)}
-                              title={acct.phase === "evaluation" ? "Click to mark as funded" : "Click to move back to evaluation"}
-                              className={cn(
-                                "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full cursor-pointer transition-all hover:ring-1",
-                                acct.phase === "evaluation"
-                                  ? "bg-warning/15 text-warning hover:ring-warning/50"
-                                  : "bg-primary/15 text-primary hover:ring-primary/50"
-                              )}
-                            >
-                              {acct.phase === "evaluation" ? "Eval" : "Funded"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => toggleStatus(e, acct)}
-                              title={isActive ? "Click to mark as inactive" : "Click to reactivate"}
-                              className={cn(
-                                "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full cursor-pointer transition-all hover:ring-1",
-                                isActive
-                                  ? "bg-success/10 text-success hover:ring-success/50"
-                                  : isBlown
-                                  ? "bg-destructive/10 text-destructive hover:ring-destructive/50"
-                                  : acct.status === "passed"
-                                  ? "bg-primary/10 text-primary hover:ring-primary/50"
-                                  : "bg-destructive/10 text-destructive hover:ring-destructive/50"
-                              )}
-                            >
-                              {acct.status}
-                            </button>
+                    <CardContent className="p-4">
+                      <div className="mb-3 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-baseline gap-2">
+                            <p className="font-semibold text-sm truncate">{acct.firm_name}</p>
+                            <span className="text-xs text-muted-foreground font-mono shrink-0">
+                              ${(acct.account_size / 1000).toFixed(0)}K
+                            </span>
                           </div>
                         </div>
-                        <div className="flex items-baseline gap-2 mt-1">
-                          <p className="font-semibold text-sm">{acct.firm_name}</p>
-                          <span className="text-xs text-muted-foreground font-mono">
-                            ${(acct.account_size / 1000).toFixed(0)}K
-                          </span>
+                        <div className="relative z-10 flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => togglePhase(e, acct)}
+                            title={acct.phase === "evaluation" ? "Click to mark as funded" : "Click to move back to evaluation"}
+                            className={cn(
+                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full cursor-pointer transition-all hover:ring-1",
+                              acct.phase === "evaluation"
+                                ? "bg-warning/15 text-warning hover:ring-warning/50"
+                                : "bg-primary/15 text-primary hover:ring-primary/50"
+                            )}
+                          >
+                            {acct.phase === "evaluation" ? "Eval" : "Funded"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => toggleStatus(e, acct)}
+                            title={isActive ? "Click to mark as inactive" : "Click to reactivate"}
+                            className={cn(
+                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full cursor-pointer transition-all hover:ring-1",
+                              isActive
+                                ? "bg-success/10 text-success hover:ring-success/50"
+                                : isBlown
+                                ? "bg-destructive/10 text-destructive hover:ring-destructive/50"
+                                : acct.status === "passed"
+                                ? "bg-primary/10 text-primary hover:ring-primary/50"
+                                : "bg-destructive/10 text-destructive hover:ring-destructive/50"
+                            )}
+                          >
+                            {acct.status}
+                          </button>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="grid grid-cols-2 gap-2.5 mb-3">
                         <div>
                           <p className="text-xs text-muted-foreground mb-0.5">Total Costs</p>
                           <p className="text-sm font-semibold font-mono" style={{ color: "#F97316" }}>${acct.purchase_cost.toLocaleString()}</p>
@@ -363,19 +362,27 @@ export default function AccountsPage() {
                         </div>
                       </div>
 
-                      <div className="relative z-10 flex items-center justify-between">
+                      <div className="relative z-10 flex items-center justify-between gap-2">
                         {acct.purchase_date ? (
                           <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
                             <CalendarDays className="w-2.5 h-2.5" />
                             {format(new Date(acct.purchase_date + "T12:00:00"), "d MMM yyyy")}
                           </span>
                         ) : <span />}
-                        <Link
-                          href={`/accounts/${acct.id}`}
-                          className="text-xs text-primary flex items-center gap-1 hover:underline"
-                        >
-                          Details <ArrowRight className="w-3 h-3" />
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          <Link
+                            href={`/accounts/${acct.id}?payout=open`}
+                            className="text-xs text-primary flex items-center gap-1 hover:underline"
+                          >
+                            <Plus className="w-3 h-3" /> Add payout
+                          </Link>
+                          <Link
+                            href={`/accounts/${acct.id}`}
+                            className="text-xs text-primary flex items-center gap-1 hover:underline"
+                          >
+                            Details <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

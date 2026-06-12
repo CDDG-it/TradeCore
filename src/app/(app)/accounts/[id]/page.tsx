@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getAccountById, getPayoutsByAccountId, deleteAccount, createPayout, deletePayout, computeAccountROI, updateAccount } from "@/lib/supabase/queries";
+import { getAccountById, getPayoutsByAccountId, deleteAccount, createPayout, deletePayout, computeAccountROI } from "@/lib/supabase/queries";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PayoutStatus, FundedAccount, PayoutEvent } from "@/lib/types";
@@ -69,40 +69,22 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
     });
   }, [id]);
 
+  // Opened via the card's "Add payout" link (/accounts/[id]?payout=open):
+  // reveal the form and scroll it into view once the account has loaded.
+  useEffect(() => {
+    if (loading || !account) return;
+    if (new URLSearchParams(window.location.search).get("payout") === "open") {
+      setShowAddPayout(true);
+      requestAnimationFrame(() =>
+        document.getElementById("payouts")?.scrollIntoView({ behavior: "smooth", block: "start" })
+      );
+    }
+  }, [loading, account]);
+
   async function handleDelete() {
     setDeleting(true);
     await deleteAccount(id);
     router.push("/accounts");
-  }
-
-  // One-click phase/status toggles — optimistic with revert on failure
-  async function togglePhase() {
-    if (!account) return;
-    const prev = account.phase;
-    const next = prev === "evaluation" ? "funded" : "evaluation";
-    setAccount({ ...account, phase: next });
-    try {
-      await updateAccount(id, { phase: next });
-    } catch {
-      setAccount((a) => (a ? { ...a, phase: prev } : a));
-    }
-  }
-
-  async function toggleStatus() {
-    if (!account) return;
-    const prevStatus = account.status;
-    const prevDate = account.inactive_date;
-    const next = prevStatus === "active" ? "inactive" : "active";
-    // Stamp the date when deactivating; null clears the column on reactivation
-    const inactive_date = next === "inactive"
-      ? format(new Date(), "yyyy-MM-dd")
-      : (null as unknown as undefined);
-    setAccount({ ...account, status: next, inactive_date: inactive_date ?? undefined });
-    try {
-      await updateAccount(id, { status: next, inactive_date });
-    } catch {
-      setAccount((a) => (a ? { ...a, status: prevStatus, inactive_date: prevDate } : a));
-    }
   }
 
   async function handleAddPayout(e: React.FormEvent) {
@@ -157,39 +139,6 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
             <p className="text-sm text-muted-foreground mb-1">{account.firm_name}</p>
             <h1 className="text-2xl font-bold tracking-tight">{account.account_name}</h1>
             <p className="text-sm text-muted-foreground mt-1">${account.account_size.toLocaleString()} · Cost: ${account.purchase_cost.toLocaleString()}</p>
-
-            {/* One-click phase + status toggles */}
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <button
-                type="button"
-                onClick={togglePhase}
-                title={account.phase === "evaluation" ? "Click to mark as funded" : "Click to move back to evaluation"}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all hover:-translate-y-px",
-                  account.phase === "evaluation"
-                    ? "border-warning/40 bg-warning/10 text-warning hover:bg-warning/15"
-                    : "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
-                )}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: "currentColor" }} />
-                {account.phase === "evaluation" ? "Evaluation" : "Funded"}
-              </button>
-              <button
-                type="button"
-                onClick={toggleStatus}
-                title={account.status === "active" ? "Click to mark as inactive" : "Click to reactivate"}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all hover:-translate-y-px",
-                  account.status === "active"
-                    ? "border-success/40 bg-success/10 text-success hover:bg-success/15"
-                    : "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15"
-                )}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: "currentColor" }} />
-                {account.status === "active" ? "Active" : "Inactive"}
-              </button>
-              <span className="text-[11px] text-muted-foreground/60">Click to change</span>
-            </div>
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
             {!confirmDelete ? (
@@ -244,7 +193,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Payout history */}
-      <Card className="bg-card border-border/50">
+      <Card id="payouts" className="bg-card border-border/50 scroll-mt-6">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
