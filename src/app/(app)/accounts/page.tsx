@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getAccounts, computeAccountROI, getPayoutsByAccountId } from "@/lib/supabase/queries";
+import { getAccounts, computeAccountROI, getPayoutsByAccountId, updateAccount } from "@/lib/supabase/queries";
 import { PROP_FIRMS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
 import type { FundedAccount, PayoutEvent } from "@/lib/types";
@@ -86,6 +86,41 @@ export default function AccountsPage() {
 
   const filterBtnBase = "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all";
   const filterBtnInactive = "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground";
+
+  /* One-click toggles on the cards. The card itself is a link, so the badge
+     buttons stop the navigation. Updates are optimistic with a revert on error. */
+  function patchLocal(id: string, patch: Partial<FundedAccount>) {
+    setAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+  }
+
+  async function togglePhase(e: React.MouseEvent, acct: FundedAccount) {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = acct.phase === "evaluation" ? "funded" : "evaluation";
+    patchLocal(acct.id, { phase: next });
+    try {
+      await updateAccount(acct.id, { phase: next });
+    } catch {
+      patchLocal(acct.id, { phase: acct.phase });
+    }
+  }
+
+  async function toggleStatus(e: React.MouseEvent, acct: FundedAccount) {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = acct.status === "active" ? "inactive" : "active";
+    // Stamp the date when deactivating; clear it on reactivation (null is
+    // required to actually clear the column, undefined would be dropped)
+    const inactive_date = next === "inactive"
+      ? format(new Date(), "yyyy-MM-dd")
+      : (null as unknown as undefined);
+    patchLocal(acct.id, { status: next, inactive_date: inactive_date ?? undefined });
+    try {
+      await updateAccount(acct.id, { status: next, inactive_date });
+    } catch {
+      patchLocal(acct.id, { status: acct.status, inactive_date: acct.inactive_date });
+    }
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -265,26 +300,36 @@ export default function AccountsPage() {
                         <div className="flex items-center justify-between mb-0.5">
                           <p className="text-xs text-muted-foreground">{acct.firm_name}</p>
                           <div className="flex items-center gap-1">
-                            <span className={cn(
-                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full",
-                              acct.phase === "evaluation"
-                                ? "bg-warning/15 text-warning"
-                                : "bg-primary/15 text-primary"
-                            )}>
+                            <button
+                              type="button"
+                              onClick={(e) => togglePhase(e, acct)}
+                              title={acct.phase === "evaluation" ? "Click to mark as funded" : "Click to move back to evaluation"}
+                              className={cn(
+                                "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full cursor-pointer transition-all hover:ring-1",
+                                acct.phase === "evaluation"
+                                  ? "bg-warning/15 text-warning hover:ring-warning/50"
+                                  : "bg-primary/15 text-primary hover:ring-primary/50"
+                              )}
+                            >
                               {acct.phase === "evaluation" ? "Eval" : "Funded"}
-                            </span>
-                            <span className={cn(
-                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full",
-                              isActive
-                                ? "bg-success/10 text-success"
-                                : isBlown
-                                ? "bg-destructive/10 text-destructive"
-                                : acct.status === "passed"
-                                ? "bg-primary/10 text-primary"
-                                : "bg-destructive/10 text-destructive"
-                            )}>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => toggleStatus(e, acct)}
+                              title={isActive ? "Click to mark as inactive" : "Click to reactivate"}
+                              className={cn(
+                                "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full cursor-pointer transition-all hover:ring-1",
+                                isActive
+                                  ? "bg-success/10 text-success hover:ring-success/50"
+                                  : isBlown
+                                  ? "bg-destructive/10 text-destructive hover:ring-destructive/50"
+                                  : acct.status === "passed"
+                                  ? "bg-primary/10 text-primary hover:ring-primary/50"
+                                  : "bg-destructive/10 text-destructive hover:ring-destructive/50"
+                              )}
+                            >
                               {acct.status}
-                            </span>
+                            </button>
                           </div>
                         </div>
                         <div className="flex items-baseline gap-2 mt-1">

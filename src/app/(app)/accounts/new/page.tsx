@@ -24,7 +24,8 @@ export default function NewAccountPage() {
     firm_name: "",
     account_name: "funded",
     account_type: "futures",
-    phase: "funded",
+    // Every account starts in evaluation; promote to funded from the card
+    phase: "evaluation",
     account_size: 50000,
     purchase_cost: 149,
     start_balance: 50000,

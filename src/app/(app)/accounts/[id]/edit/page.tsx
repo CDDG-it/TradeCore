@@ -15,13 +15,6 @@ import type { FundedAccount } from "@/lib/types";
 import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
 
-const STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-  { value: "blown", label: "Blown" },
-  { value: "passed", label: "Passed" },
-] as const;
-
 import type { AccountPhase, AccountStatus } from "@/lib/types";
 
 const DEFAULT_FORM = {
@@ -201,43 +194,8 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
               </div>
             </div>
 
-            {/* Status — active / inactive toggle */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Account Status</Label>
-              <div className="flex gap-2">
-                {STATUS_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => set("status", opt.value)}
-                    className={cn(
-                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
-                      form.status === opt.value
-                        ? opt.value === "active"
-                          ? "border-success bg-success/10 text-success"
-                          : opt.value === "blown"
-                          ? "border-destructive bg-destructive/10 text-destructive"
-                          : "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Inactive date — only shown when account is not active */}
-            {form.status !== "active" && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">
-                  {form.status === "blown" ? "Blown date" : form.status === "passed" ? "Passed date" : "Inactive since"}
-                </Label>
-                <Input type="date" value={form.inactive_date ?? ""}
-                  onChange={(e) => setForm((p) => ({ ...p, inactive_date: e.target.value || undefined }))}
-                  className="h-9 text-sm" />
-              </div>
-            )}
+            {/* Phase and status are managed with one click on the account
+                card in the overview, not from this form. */}
 
             {/* Notes */}
             <div className="space-y-1.5">
