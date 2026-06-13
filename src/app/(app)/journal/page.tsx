@@ -286,44 +286,54 @@ export default function JournalPage() {
                     <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 py-1">{d}</div>
                   ))}
                 </div>
-                {/* Calendar grid — square cells */}
+                {/* Calendar grid — compact cells, same chip style as the week view */}
                 <div className="grid grid-cols-7 gap-1.5">
                   {Array.from({ length: startPad }).map((_, i) => (
-                    <div key={`pad-${i}`} className="aspect-square" />
+                    <div key={`pad-${i}`} />
                   ))}
                   {calDays.map((day) => {
                     const key = format(day, "yyyy-MM-dd");
                     const dayTrades = tradesByDay[key] || [];
                     const isCurrentMonth = isSameMonth(day, calendarMonth);
-                    const fontSize = dayTrades.length === 1 ? "text-xs" : dayTrades.length === 2 ? "text-[10px]" : "text-[9px]";
                     return (
                       <div key={key}
-                        className={cn("aspect-square rounded-lg p-1 flex flex-col border transition-colors",
+                        className={cn("min-h-[78px] rounded-xl p-1.5 flex flex-col gap-1 border transition-colors",
                           isToday(day)
-                            ? "border-primary/50 bg-primary/5"
+                            ? "border-primary/40 bg-primary/8"
                             : dayTrades.length > 0
                             ? "border-border/50 bg-muted/20 hover:border-primary/30"
                             : "border-border/25 bg-muted/5")}>
-                        <p className={cn("text-[11px] font-bold text-center shrink-0 leading-none mb-0.5",
-                          isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/70" : "text-muted-foreground/30")}>
+                        <p className={cn("text-xs font-bold text-center shrink-0 leading-none",
+                          isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/75" : "text-muted-foreground/30")}>
                           {format(day, "d")}
                         </p>
                         {dayTrades.length > 0 && (
-                          <div className="flex flex-col gap-0.5 flex-1 min-h-0">
+                          <div className="flex flex-col gap-1 flex-1 min-h-0">
                             {dayTrades.map((t) => (
                               <Link key={t.id} href={`/journal/${t.id}`}
                                 title={t.execution_quality ? `${instrumentName(t.instrument)} · ${t.execution_quality} execution` : instrumentName(t.instrument)}
                                 className={cn(
-                                  "flex-1 flex items-center justify-center gap-0.5 rounded font-bold text-center leading-none transition-all min-h-0 px-0.5",
-                                  fontSize,
-                                  t.result === "win" ? "bg-success/20 text-success hover:bg-success/30"
-                                    : t.result === "loss" ? "bg-destructive/20 text-destructive hover:bg-destructive/30"
-                                    : "bg-warning/20 text-warning hover:bg-warning/30"
+                                  "flex-1 flex flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1 leading-none transition-colors min-h-0",
+                                  t.result === "win" ? "bg-success/15 hover:bg-success/25"
+                                    : t.result === "loss" ? "bg-destructive/15 hover:bg-destructive/25"
+                                    : "bg-warning/15 hover:bg-warning/25"
                                 )}>
+                                <span className={cn("text-[11px] font-extrabold text-center leading-tight tracking-tight",
+                                  t.result === "win" ? "text-success"
+                                    : t.result === "loss" ? "text-destructive"
+                                    : "text-warning")}>
+                                  {instrumentName(t.instrument)}
+                                </span>
                                 {t.execution_quality && (
-                                  <span className="opacity-75">{t.execution_quality === "good" ? "✓" : "✗"}</span>
+                                  <span className={cn(
+                                    "inline-flex items-center rounded-full px-1.5 py-0.5 text-[8px] font-bold leading-none",
+                                    t.execution_quality === "good"
+                                      ? "bg-success/20 text-success"
+                                      : "bg-destructive/20 text-destructive"
+                                  )}>
+                                    {t.execution_quality === "good" ? "✓ Good" : "✗ Bad"}
+                                  </span>
                                 )}
-                                <span className="truncate">{instrumentName(t.instrument)}</span>
                               </Link>
                             ))}
                           </div>
