@@ -313,6 +313,28 @@ export interface WeeklyReflection {
   updated_at: string;
 }
 
+/** Trade-focused weekly review attached to the Journal page. The trade stats
+ *  are derived from the journal; only the qualitative fields and the per-day
+ *  "did I take the best trade" flags are persisted here. */
+export interface WeeklyTradeReview {
+  id: string;
+  user_id: string;
+  week_start: string; // ISO date of Monday
+  mistakes: string;
+  lessons: string;
+  prevention_plan: string;
+  /** Map of ISO date -> whether you took the best available trade that day
+   *  (true on no-trade days means staying out was the right call). */
+  best_trade_days: Record<string, boolean>;
+  created_at: string;
+  updated_at: string;
+}
+
+export type WeeklyTradeReviewInput = Omit<
+  WeeklyTradeReview,
+  "id" | "user_id" | "created_at" | "updated_at"
+>;
+
 // ── Form / Input types ───────────────────────────────────────────────────────
 export type PreTradeAnalysisInput = Omit<PreTradeAnalysis, "id" | "user_id" | "created_at" | "updated_at">;
 export type TradeJournalEntryInput = Omit<TradeJournalEntry, "id" | "user_id" | "created_at" | "updated_at">;

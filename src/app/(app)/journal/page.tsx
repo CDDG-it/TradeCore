@@ -9,7 +9,7 @@ import {
   eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, addWeeks, subWeeks,
   getDay, isToday,
 } from "date-fns";
-import { Plus, TrendingUp, TrendingDown, Calendar, List,
+import { Plus, TrendingUp, TrendingDown, Calendar, List, CalendarCheck,
   ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +17,9 @@ import { getTrades } from "@/lib/supabase/queries";
 import type { TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { TradeResult, Direction } from "@/lib/types";
+import { WeeklyReview } from "@/components/journal/weekly-review";
 
-type ViewMode = "list" | "calendar";
+type ViewMode = "list" | "calendar" | "review";
 type PeriodFilter = "all" | "day" | "week" | "month";
 type CalendarPeriod = "month" | "week";
 type ExecutionQualityFilter = "all" | "good" | "bad";
@@ -191,6 +192,11 @@ export default function JournalPage() {
             className={cn("px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5",
               viewMode === "calendar" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
             <Calendar className="w-3.5 h-3.5" /> Calendar
+          </button>
+          <button onClick={() => setViewMode("review")}
+            className={cn("px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5",
+              viewMode === "review" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+            <CalendarCheck className="w-3.5 h-3.5" /> Weekly Review
           </button>
         </div>
 
@@ -426,6 +432,9 @@ export default function JournalPage() {
           </div>
         </div>
       )}
+
+      {/* WEEKLY REVIEW VIEW */}
+      {viewMode === "review" && <WeeklyReview />}
 
       {/* LIST VIEW */}
       {viewMode === "list" && (

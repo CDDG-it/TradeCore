@@ -20,6 +20,8 @@ import type {
   PersonalStandard,
   PersonalStandardScore,
   WeeklyReflection,
+  WeeklyTradeReview,
+  WeeklyTradeReviewInput,
   DashboardStats,
 } from "@/lib/types";
 
@@ -662,6 +664,55 @@ export async function saveWeeklyReflection(
     .single();
   if (error) throw error;
   return data as WeeklyReflection;
+}
+
+// ── Weekly Trade Reviews (Journal page) ──────────────────────────────
+// Fail-soft: if the weekly_trade_reviews table has not been created yet,
+// reads return empty so the Weekly Review tab still renders its derived stats.
+
+export async function getWeeklyTradeReviews(): Promise<WeeklyTradeReview[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("weekly_trade_reviews")
+    .select("*");
+  if (error) return [];
+  return (data ?? []).map((r) => ({
+    ...r,
+    best_trade_days: (r.best_trade_days ?? {}) as Record<string, boolean>,
+  })) as WeeklyTradeReview[];
+}
+
+export async function saveWeeklyTradeReview(
+  input: WeeklyTradeReviewInput
+): Promise<WeeklyTradeReview> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: existing } = await supabase
+    .from("weekly_trade_reviews")
+    .select("id")
+    .eq("week_start", input.week_start)
+    .maybeSingle();
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from("weekly_trade_reviews")
+      .update({ ...input, updated_at: now() })
+      .eq("id", existing.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as WeeklyTradeReview;
+  }
+
+  const { data, error } = await supabase
+    .from("weekly_trade_reviews")
+    .insert({ ...input, user_id: user.id, created_at: now(), updated_at: now() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as WeeklyTradeReview;
 }
 
 // ── Dashboard Stats ──────────────────────────────────────────────────
