@@ -91,7 +91,7 @@ export default function WeeklyReviewDetailPage({ params }: { params: Promise<{ w
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6">
       {/* Back + header */}
       <div>
         <Link href="/journal" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
@@ -121,12 +121,16 @@ export default function WeeklyReviewDetailPage({ params }: { params: Promise<{ w
         </div>
       </div>
 
-      {/* Per-day rows: trades + best-trade toggle */}
+      {/* Main split: left = week trades, right = mistakes + lessons */}
+      <div className="grid lg:grid-cols-2 gap-6 items-stretch">
+
+      {/* LEFT — Per-day rows: trades + best-trade toggle */}
       <Card className="bg-card border-border/50">
-        <CardContent className="p-4 sm:p-5 space-y-2.5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">
-            Did you take the best trade each day?
-          </p>
+        <CardContent className="p-4 sm:p-5 flex flex-col gap-2.5 h-full">
+          <div>
+            <p className="text-sm font-bold">Trades this week</p>
+            <p className="text-xs text-muted-foreground/70 mt-0.5">Did you take the best trade each day?</p>
+          </div>
           {group.days.map((day, i) => {
             const dayDate = new Date(day.date + "T12:00:00");
             const best = !!bestDays[day.date];
@@ -179,27 +183,31 @@ export default function WeeklyReviewDetailPage({ params }: { params: Promise<{ w
         </CardContent>
       </Card>
 
-      {/* Reflection — large fields */}
-      <div className="space-y-4">
-        <ReviewField
+      {/* RIGHT — Mistakes + Lessons */}
+      <div className="flex flex-col gap-6">
+        <ReviewField fill
           icon={AlertTriangle} iconClass="text-destructive"
           label="Mistakes made"
           placeholder="What went wrong this week? Be specific about the setups, the moments, and the decisions."
           value={mistakes} onChange={(v) => { setMistakes(v); setSaved(false); }}
         />
-        <ReviewField
+        <ReviewField fill
           icon={Lightbulb} iconClass="text-warning"
           label="Lessons learned"
           placeholder="What did the week teach you about your process, your edge, and yourself?"
           value={lessons} onChange={(v) => { setLessons(v); setSaved(false); }}
         />
-        <ReviewField
-          icon={ListChecks} iconClass="text-success"
-          label="Prevention plan"
-          placeholder="Step by step, how do you make sure these mistakes do not happen again next week?"
-          value={prevention} onChange={(v) => { setPrevention(v); setSaved(false); }}
-        />
       </div>
+
+      </div>
+
+      {/* BOTTOM — Prevention plan, full width */}
+      <ReviewField
+        icon={ListChecks} iconClass="text-success"
+        label="Prevention plan for next week"
+        placeholder="Step by step, how do you make sure these mistakes do not happen again next week?"
+        value={prevention} onChange={(v) => { setPrevention(v); setSaved(false); }}
+      />
 
       {/* Save */}
       <div className="flex items-center justify-end gap-3">
@@ -250,7 +258,7 @@ function Switch({ checked, onChange }: { checked: boolean; onChange: () => void 
 }
 
 function ReviewField({
-  icon: Icon, iconClass, label, placeholder, value, onChange,
+  icon: Icon, iconClass, label, placeholder, value, onChange, fill,
 }: {
   icon: React.ElementType;
   iconClass: string;
@@ -258,9 +266,10 @@ function ReviewField({
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
+  fill?: boolean;
 }) {
   return (
-    <div className="space-y-2">
+    <div className={cn(fill ? "flex-1 flex flex-col gap-2" : "space-y-2")}>
       <label className="flex items-center gap-2 text-sm font-semibold text-foreground/85">
         <Icon className={cn("w-4 h-4", iconClass)} />
         {label}
@@ -269,8 +278,11 @@ function ReviewField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        rows={6}
-        className="w-full resize-y rounded-xl border border-border/50 bg-muted/20 px-4 py-3 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/40 focus:bg-card"
+        rows={fill ? undefined : 7}
+        className={cn(
+          "w-full rounded-xl border border-border/70 bg-white px-4 py-3 text-sm leading-relaxed text-foreground shadow-sm outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15",
+          fill ? "flex-1 min-h-[220px] resize-none" : "min-h-[180px] resize-y"
+        )}
       />
     </div>
   );
