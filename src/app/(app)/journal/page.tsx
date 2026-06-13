@@ -23,6 +23,19 @@ type PeriodFilter = "all" | "day" | "week" | "month";
 type CalendarPeriod = "month" | "week";
 type ExecutionQualityFilter = "all" | "good" | "bad";
 
+// Expand short tickers to the names traders recognise at a glance.
+const INSTRUMENT_NAMES: Record<string, string> = {
+  NQ: "Nasdaq", MNQ: "Nasdaq",
+  ES: "SP500", MES: "SP500",
+  GOLD: "Gold", GC: "Gold", XAUUSD: "Gold",
+  CL: "Crude Oil",
+  EURUSD: "EUR/USD", GBPUSD: "GBP/USD",
+  BTC: "Bitcoin",
+};
+function instrumentName(symbol: string): string {
+  return INSTRUMENT_NAMES[(symbol ?? "").toUpperCase()] ?? symbol;
+}
+
 function ResultBadge({ result }: { result: TradeResult }) {
   const config = {
     win: "bg-success/15 text-success border-success/20",
@@ -291,15 +304,15 @@ export default function JournalPage() {
                             : dayTrades.length > 0
                             ? "border-border/50 bg-muted/20 hover:border-primary/30"
                             : "border-border/25 bg-muted/5")}>
-                        <p className={cn("text-[10px] font-semibold text-center shrink-0 leading-none mb-0.5",
-                          isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/60" : "text-muted-foreground/30")}>
+                        <p className={cn("text-[11px] font-bold text-center shrink-0 leading-none mb-0.5",
+                          isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/70" : "text-muted-foreground/30")}>
                           {format(day, "d")}
                         </p>
                         {dayTrades.length > 0 && (
                           <div className="flex flex-col gap-0.5 flex-1 min-h-0">
                             {dayTrades.map((t) => (
                               <Link key={t.id} href={`/journal/${t.id}`}
-                                title={t.execution_quality ? `${t.instrument} · ${t.execution_quality} execution` : t.instrument}
+                                title={t.execution_quality ? `${instrumentName(t.instrument)} · ${t.execution_quality} execution` : instrumentName(t.instrument)}
                                 className={cn(
                                   "flex-1 flex items-center justify-center gap-0.5 rounded font-bold text-center leading-none transition-all min-h-0 px-0.5",
                                   fontSize,
@@ -310,7 +323,7 @@ export default function JournalPage() {
                                 {t.execution_quality && (
                                   <span className="opacity-75">{t.execution_quality === "good" ? "✓" : "✗"}</span>
                                 )}
-                                {t.instrument}
+                                <span className="truncate">{instrumentName(t.instrument)}</span>
                               </Link>
                             ))}
                           </div>
@@ -333,8 +346,8 @@ export default function JournalPage() {
                       isToday(day) ? "bg-primary/8 border-primary/40" : "border-transparent"
                     )}>
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{format(day, "EEE")}</p>
-                      <p className={cn("text-sm font-bold mt-0.5",
-                        isToday(day) ? "text-primary" : "text-foreground/80")}>
+                      <p className={cn("text-xl font-extrabold mt-0.5 leading-none",
+                        isToday(day) ? "text-primary" : "text-foreground/85")}>
                         {format(day, "d")}
                       </p>
                     </div>
@@ -356,29 +369,32 @@ export default function JournalPage() {
                         ) : (
                           dayTrades.map((t) => (
                             <Link key={t.id} href={`/journal/${t.id}`}
-                              className={cn("flex-1 flex flex-col items-center justify-center rounded-lg px-1.5 py-2 transition-colors group min-h-0",
+                              className={cn("flex-1 flex flex-col items-center justify-center gap-1.5 rounded-lg px-1.5 py-2.5 transition-colors min-h-0",
                                 t.result === "win" ? "bg-success/15 hover:bg-success/25"
                                   : t.result === "loss" ? "bg-destructive/15 hover:bg-destructive/25"
                                   : "bg-warning/15 hover:bg-warning/25")}>
-                              <p className={cn("text-sm font-bold text-center leading-tight",
+                              {/* Trade pair — full name, prominent */}
+                              <p className={cn("text-base font-extrabold text-center leading-tight tracking-tight",
                                 t.result === "win" ? "text-success"
                                   : t.result === "loss" ? "text-destructive"
                                   : "text-warning")}>
-                                {t.instrument}
+                                {instrumentName(t.instrument)}
                               </p>
-                              <p className="text-xs text-muted-foreground text-center leading-tight mt-1">
-                                {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
-                              </p>
+                              {/* Execution quality — directly under the pair */}
                               {t.execution_quality && (
                                 <span className={cn(
-                                  "mt-1 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                                  "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold leading-none",
                                   t.execution_quality === "good"
-                                    ? "bg-success/15 text-success"
-                                    : "bg-destructive/15 text-destructive"
+                                    ? "bg-success/20 text-success"
+                                    : "bg-destructive/20 text-destructive"
                                 )}>
                                   {t.execution_quality === "good" ? "✓ Good" : "✗ Bad"}
                                 </span>
                               )}
+                              {/* R multiple */}
+                              <p className="text-xs font-semibold text-muted-foreground/80 text-center leading-none">
+                                {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+                              </p>
                             </Link>
                           ))
                         )}
