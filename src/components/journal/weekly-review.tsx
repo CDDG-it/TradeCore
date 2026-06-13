@@ -6,7 +6,7 @@ import {
   format, startOfISOWeek, endOfISOWeek, eachDayOfInterval,
   getISOWeek, getISOWeekYear, isToday,
 } from "date-fns";
-import { Star, Check, AlertTriangle, Lightbulb, ListChecks, Loader2, ArrowRight } from "lucide-react";
+import { ChevronDown, Check, AlertTriangle, Lightbulb, ListChecks, Loader2, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getTrades, getWeeklyTradeReviews, saveWeeklyTradeReview } from "@/lib/supabase/queries";
@@ -117,16 +117,6 @@ export function WeeklyReview() {
   );
 }
 
-function StatPill({ label, value, tone }: { label: string; value: number | string; tone: "win" | "loss" | "be" }) {
-  const cls = tone === "win" ? "text-success" : tone === "loss" ? "text-destructive" : "text-warning";
-  return (
-    <div className="text-center">
-      <p className={cn("text-lg font-bold leading-none", cls)}>{value}</p>
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mt-1">{label}</p>
-    </div>
-  );
-}
-
 function WeekCard({
   week,
   review,
@@ -143,6 +133,7 @@ function WeekCard({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const dirty =
     mistakes !== (review?.mistakes ?? "") ||
@@ -181,133 +172,157 @@ function WeekCard({
   const rColor = week.totalR > 0 ? "text-success" : week.totalR < 0 ? "text-destructive" : "text-warning";
 
   return (
-    <Card className={cn("border-2", week.totalR > 0 ? "border-success/30" : week.totalR < 0 ? "border-destructive/30" : "border-border/60")}>
-      <CardContent className="p-5 space-y-5">
-        {/* ── Header: week + stats ── */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-primary/10 text-primary">
-                W{week.weekNum} · {week.year}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground mt-1.5">{week.rangeLabel}</p>
-          </div>
-          <div className="flex items-center gap-5">
-            <StatPill label="Wins" value={week.wins} tone="win" />
-            <StatPill label="Losses" value={week.losses} tone="loss" />
-            <StatPill label="B/E" value={week.bes} tone="be" />
-            <div className="text-center pl-4 border-l border-border/50">
-              <p className={cn("text-2xl font-black leading-none", rColor)}>{totalRLabel}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mt-1">Week R</p>
-            </div>
-          </div>
+    <Card className={cn("border-2 overflow-hidden", week.totalR > 0 ? "border-success/30" : week.totalR < 0 ? "border-destructive/30" : "border-border/60")}>
+      {/* ── Compact header — click to expand the full review ── */}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="w-full text-left px-4 py-3.5 flex items-center justify-between gap-4 transition-colors hover:bg-muted/20"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-primary/10 text-primary shrink-0">
+            W{week.weekNum} · {week.year}
+          </span>
+          <span className="text-sm text-muted-foreground truncate">{week.rangeLabel}</span>
         </div>
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-2 text-xs font-bold">
+            <span className="text-success">{week.wins}W</span>
+            <span className="text-destructive">{week.losses}L</span>
+            <span className="text-warning">{week.bes}BE</span>
+          </div>
+          <span className={cn("text-lg font-black tabular-nums", rColor)}>{totalRLabel}</span>
+          <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", expanded && "rotate-180")} />
+        </div>
+      </button>
 
-        {/* ── Per-day strip: trades + "best trade taken" toggle ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-          {week.days.map((day, i) => {
-            const dayDate = new Date(day.date + "T12:00:00");
-            const best = !!bestDays[day.date];
-            return (
-              <div
-                key={day.date}
-                className={cn(
-                  "rounded-xl border p-2 flex flex-col gap-1.5 min-h-[112px]",
-                  isToday(dayDate) ? "border-primary/40 bg-primary/5" : "border-border/40 bg-muted/15"
-                )}
-              >
-                <div className="flex items-center justify-between">
+      {/* ── Expanded detail ── */}
+      {expanded && (
+        <CardContent className="border-t border-border/40 p-5 space-y-5">
+          {/* Per-day strip: trades + "best trade taken" toggle */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+            {week.days.map((day, i) => {
+              const dayDate = new Date(day.date + "T12:00:00");
+              const best = !!bestDays[day.date];
+              return (
+                <div
+                  key={day.date}
+                  className={cn(
+                    "rounded-xl border p-2 flex flex-col gap-2 min-h-[124px]",
+                    isToday(dayDate) ? "border-primary/40 bg-primary/5" : "border-border/40 bg-muted/15"
+                  )}
+                >
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                     {DAY_LABELS[i]} {format(dayDate, "d")}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => toggleBest(day.date)}
-                    title={best ? "Best trade taken — click to unset" : "Mark: took the best trade (or rightly stayed out)"}
-                    className="transition-transform hover:scale-110"
-                  >
-                    <Star
-                      className={cn("w-3.5 h-3.5", best ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40")}
-                    />
-                  </button>
+
+                  <div className="flex-1 flex flex-col gap-1">
+                    {day.trades.length === 0 ? (
+                      <span className="text-[10px] text-muted-foreground/40">No trades</span>
+                    ) : (
+                      day.trades.map((t) => (
+                        <Link
+                          key={t.id}
+                          href={`/journal/${t.id}`}
+                          className={cn(
+                            "flex items-center justify-between rounded-md px-1.5 py-1 text-[11px] font-bold leading-none transition-colors",
+                            t.result === "win" ? "bg-success/15 text-success hover:bg-success/25"
+                              : t.result === "loss" ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
+                              : "bg-warning/15 text-warning hover:bg-warning/25"
+                          )}
+                        >
+                          <span className="truncate">{instrumentName(t.instrument)}</span>
+                          <span className="shrink-0 ml-1">
+                            {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+                          </span>
+                        </Link>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Best-trade toggle for this day */}
+                  <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-border/30">
+                    <span className="text-[9px] font-medium text-muted-foreground/70 leading-tight">Best trade</span>
+                    <DayToggle checked={best} onChange={() => toggleBest(day.date)} />
+                  </div>
                 </div>
+              );
+            })}
+          </div>
 
-                <div className="flex-1 flex flex-col gap-1">
-                  {day.trades.length === 0 ? (
-                    <span className="text-[10px] text-muted-foreground/40 mt-1">No trades</span>
-                  ) : (
-                    day.trades.map((t) => (
-                      <Link
-                        key={t.id}
-                        href={`/journal/${t.id}`}
-                        className={cn(
-                          "flex items-center justify-between rounded-md px-1.5 py-1 text-[11px] font-bold leading-none transition-colors",
-                          t.result === "win" ? "bg-success/15 text-success hover:bg-success/25"
-                            : t.result === "loss" ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
-                            : "bg-warning/15 text-warning hover:bg-warning/25"
-                        )}
-                      >
-                        <span className="truncate">{instrumentName(t.instrument)}</span>
-                        <span className="shrink-0 ml-1">
-                          {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
-                        </span>
-                      </Link>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+          {/* Reflection fields */}
+          <div className="grid md:grid-cols-3 gap-3">
+            <ReviewField
+              icon={AlertTriangle} iconClass="text-destructive"
+              label="Mistakes made" placeholder="What went wrong this week?"
+              value={mistakes} onChange={(v) => { setMistakes(v); setSaved(false); }}
+            />
+            <ReviewField
+              icon={Lightbulb} iconClass="text-warning"
+              label="Lessons learned" placeholder="What did the week teach you?"
+              value={lessons} onChange={(v) => { setLessons(v); setSaved(false); }}
+            />
+            <ReviewField
+              icon={ListChecks} iconClass="text-success"
+              label="Prevention plan" placeholder="Step by step, how do you avoid this next week?"
+              value={prevention} onChange={(v) => { setPrevention(v); setSaved(false); }}
+            />
+          </div>
 
-        {/* ── Reflection fields ── */}
-        <div className="grid md:grid-cols-3 gap-3">
-          <ReviewField
-            icon={AlertTriangle} iconClass="text-destructive"
-            label="Mistakes made" placeholder="What went wrong this week?"
-            value={mistakes} onChange={(v) => { setMistakes(v); setSaved(false); }}
-          />
-          <ReviewField
-            icon={Lightbulb} iconClass="text-warning"
-            label="Lessons learned" placeholder="What did the week teach you?"
-            value={lessons} onChange={(v) => { setLessons(v); setSaved(false); }}
-          />
-          <ReviewField
-            icon={ListChecks} iconClass="text-success"
-            label="Prevention plan" placeholder="Step by step, how do you avoid this next week?"
-            value={prevention} onChange={(v) => { setPrevention(v); setSaved(false); }}
-          />
-        </div>
-
-        {/* ── Footer: save ── */}
-        <div className="flex items-center justify-end gap-3">
-          {saved && !dirty && (
-            <span className="text-xs text-success flex items-center gap-1">
-              <Check className="w-3.5 h-3.5" /> Saved
-            </span>
-          )}
-          {saveError && (
-            <span className="text-xs text-destructive">Could not save. Run the latest SQL migration.</span>
-          )}
-          <Link
-            href={`/journal/${week.trades[0]?.id ?? ""}`}
-            className="text-xs text-primary flex items-center gap-1 hover:underline"
-          >
-            Open trades <ArrowRight className="w-3 h-3" />
-          </Link>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving || !dirty}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
-          >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-            {saving ? "Saving" : "Save review"}
-          </button>
-        </div>
-      </CardContent>
+          {/* Footer: save */}
+          <div className="flex items-center justify-end gap-3">
+            {saved && !dirty && (
+              <span className="text-xs text-success flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> Saved
+              </span>
+            )}
+            {saveError && (
+              <span className="text-xs text-destructive">Could not save. Run the latest SQL migration.</span>
+            )}
+            <Link
+              href={`/journal/${week.trades[0]?.id ?? ""}`}
+              className="text-xs text-primary flex items-center gap-1 hover:underline"
+            >
+              Open trades <ArrowRight className="w-3 h-3" />
+            </Link>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || !dirty}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              {saving ? "Saving" : "Save review"}
+            </button>
+          </div>
+        </CardContent>
+      )}
     </Card>
+  );
+}
+
+// Compact on/off switch used per day to mark whether the best trade was taken.
+function DayToggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      title={checked ? "Best trade taken" : "Mark best trade taken"}
+      className={cn(
+        "relative h-4 w-7 shrink-0 rounded-full transition-colors",
+        checked ? "bg-success" : "bg-muted-foreground/25"
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform",
+          checked ? "translate-x-3.5" : "translate-x-0.5"
+        )}
+      />
+    </button>
   );
 }
 
