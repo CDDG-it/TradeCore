@@ -62,6 +62,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [showCustomTF, setShowCustomTF] = useState(false);
   const [tradeInfo, setTradeInfo] = useState<{ instrument: string; session: string }>({ instrument: "", session: "" });
   const [userId, setUserId] = useState<string | null>(null);
+  const [savedConfluences, setSavedConfluences] = useState<string[]>([]);
 
   const [form, setForm] = useState(DEFAULT_FORM);
 
@@ -69,6 +70,14 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     Promise.all([getTradeById(id), getAnalyses(), getProfile()]).then(([trade, analyses, profile]) => {
       setAllAnalyses(analyses);
       if (profile?.id) setUserId(profile.id);
+      if (profile?.confluence_options) {
+        setSavedConfluences(
+          profile.confluence_options
+            .split("\n")
+            .map((l) => l.trim())
+            .filter(Boolean)
+        );
+      }
       if (!trade) { setNotFound(true); setLoading(false); return; }
       setTradeInfo({ instrument: trade.instrument, session: trade.session });
 
@@ -158,6 +167,15 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
       set("confluences", [...form.confluences, t]);
       setConfluenceInput("");
     }
+  }
+
+  function toggleConfluence(c: string) {
+    set(
+      "confluences",
+      form.confluences.includes(c)
+        ? form.confluences.filter((x) => x !== c)
+        : [...form.confluences, c]
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -401,6 +419,32 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         <Card className="shadow-sm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Confluences</CardTitle></CardHeader>
           <CardContent>
+            {savedConfluences.length > 0 && (
+              <div className="mb-3">
+                <p className="text-xs text-muted-foreground mb-2">Quick select</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {savedConfluences.map((c) => {
+                    const active = form.confluences.includes(c);
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => toggleConfluence(c)}
+                        className={cn(
+                          "inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors",
+                          active
+                            ? "bg-primary/15 text-primary border-primary/40"
+                            : "bg-background/50 text-muted-foreground border-border/50 hover:text-foreground hover:border-border"
+                        )}
+                      >
+                        {active && <Check className="w-3 h-3" />}
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="flex gap-2 mb-3">
               <Input value={confluenceInput} onChange={(e) => setConfluenceInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addConfluence())}

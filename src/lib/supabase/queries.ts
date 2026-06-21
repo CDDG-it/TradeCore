@@ -899,6 +899,8 @@ export interface UserProfile {
   full_name: string | null;
   bio: string | null;
   discipline_rules: string | null;
+  /** Newline-separated list of the trader's saved confluence options, selectable in the journal */
+  confluence_options: string | null;
   preferred_session: string | null;
   preferred_instrument: string | null;
   timezone: string | null;

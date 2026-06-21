@@ -58,6 +58,7 @@ export default function ProfilePage() {
     preferred_session: "",
     preferred_instrument: "",
     discipline_rules: "",
+    confluence_options: "",
   });
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export default function ProfilePage() {
             preferred_session: p.preferred_session || "",
             preferred_instrument: p.preferred_instrument || "",
             discipline_rules: p.discipline_rules || "",
+            confluence_options: p.confluence_options || "",
           }));
         }
         setProfileLoading(false);
@@ -105,6 +107,7 @@ export default function ProfilePage() {
           preferred_session: form.preferred_session,
           preferred_instrument: form.preferred_instrument,
           discipline_rules: form.discipline_rules,
+          confluence_options: form.confluence_options,
         }),
       ]);
       setSaveState("saved");
@@ -323,6 +326,27 @@ export default function ProfilePage() {
                 />
                 <p className="text-xs text-muted-foreground mt-2">
                   One rule per line. These are referenced in the journal&apos;s pre-trade checklist.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Confluences */}
+            <Card className="bg-card border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">Confluences</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Your personal confluence library. These appear as quick-select options in the journal when logging trades.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  value={form.confluence_options}
+                  onChange={(e) => setForm((p) => ({ ...p, confluence_options: e.target.value }))}
+                  className="text-sm bg-background/50 min-h-32 resize-none font-mono"
+                  placeholder={"Demand zone\nSession momentum\nStructure break\nLiquidity sweep\nHTF trend alignment"}
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  One confluence per line. You can still add new confluences directly in the journal.
                 </p>
               </CardContent>
             </Card>
