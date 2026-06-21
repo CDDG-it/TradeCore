@@ -8,6 +8,7 @@ import {
   LineChart,
   BarChart2,
   Wallet,
+  Radar,
   Settings,
   User,
   LogOut,
@@ -28,6 +29,7 @@ const navGroups = [
     items: [
       { href: "/journal", label: "Journal", icon: BookOpen },
       { href: "/analysis", label: "Analysis", icon: LineChart },
+      { href: "/option-flow", label: "Option Flow", icon: Radar },
       { href: "/analytics", label: "Analytics", icon: BarChart2 },
       { href: "/accounts", label: "Accounts", icon: Wallet },
     ],
