@@ -30,7 +30,8 @@ const FLOWS: Record<InstrumentKey, InstrumentFlow> = {
     label: "E-mini Nasdaq-100",
     spot: 22148.5,
     updatedAt: "2026-06-21T13:42:00Z",
-    dataSource: "tastytrade",
+    dataSource: "mock",
+    live: false,
     bias: {
       bias: "BULLISH",
       score: 0.41,
@@ -109,7 +110,8 @@ const FLOWS: Record<InstrumentKey, InstrumentFlow> = {
     label: "Gold (GC)",
     spot: 3384.6,
     updatedAt: "2026-06-21T13:42:00Z",
-    dataSource: "tastytrade",
+    dataSource: "mock",
+    live: false,
     bias: {
       bias: "BEARISH",
       score: -0.31,

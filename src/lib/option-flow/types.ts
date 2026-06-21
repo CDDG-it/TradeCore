@@ -103,12 +103,15 @@ export interface MacroScore {
   relationship: number;
 }
 
-/** Put/Call ratio context from the options chain. */
+/**
+ * Put/Call ratio context from the options chain.
+ * Null when the source (e.g. free Yahoo Finance) does not expose futures options.
+ */
 export interface OiContext {
-  pcr: number;
-  pcr_bias: "bullish" | "bearish" | "neutral";
-  max_pain: number;
-  gex_flip: number;
+  pcr: number | null;
+  pcr_bias: "bullish" | "bearish" | "neutral" | "unavailable";
+  max_pain: number | null;
+  gex_flip: number | null;
 }
 
 export interface InstrumentFlow {
@@ -117,7 +120,11 @@ export interface InstrumentFlow {
   spot: number;
   /** ISO timestamp of when this snapshot was produced */
   updatedAt: string;
-  dataSource: "tastytrade" | "yfinance";
+  dataSource: "tastytrade" | "yfinance" | "yahoo" | "mock";
+  /** True when built from live market data, false for mock fallback */
+  live: boolean;
+  /** Optional caveat about data completeness (e.g. PCR not available) */
+  note?: string;
   bias: WeeklyBias;
   cot: Cot;
   macro: MacroScore[];

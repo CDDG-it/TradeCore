@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   AreaChart,
   Area,
@@ -18,7 +18,7 @@ import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { getAllFlows, getInstrumentFlow, INSTRUMENT_KEYS } from "@/lib/option-flow/data";
+import { getAllFlows, INSTRUMENT_KEYS } from "@/lib/option-flow/data";
 import type {
   InstrumentKey,
   Timeframe,
@@ -612,11 +612,28 @@ function Segmented<T extends string>({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function OptionFlowPage() {
-  const flows = useMemo(() => getAllFlows(), []);
+  const [flows, setFlows] = useState<InstrumentFlow[]>(() => getAllFlows());
   const [instrument, setInstrument] = useState<InstrumentKey>("NQ");
   const [timeframe, setTimeframe] = useState<Timeframe>("intraday");
+  const [loading, setLoading] = useState(true);
 
-  const flow = getInstrumentFlow(instrument);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/option-flow")
+      .then((r) => r.json())
+      .then((data: { flows?: InstrumentFlow[] }) => {
+        if (active && data.flows?.length) setFlows(data.flows);
+      })
+      .catch(() => {
+        /* keep mock fallback */
+      })
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const flow = flows.find((f) => f.key === instrument) ?? flows[0];
   const zones = flow.zones[timeframe];
 
   return (
@@ -628,10 +645,10 @@ export default function OptionFlowPage() {
         action={
           <div className="hidden sm:flex flex-col items-end gap-1">
             <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-              {flow.dataSource === "tastytrade" ? "🟢 Tastytrade" : "🟡 Delayed"}
+              {loading ? "⏳ Loading…" : flow.live ? "🟢 Live · Yahoo" : "🟡 Mock data"}
             </span>
             <span className="text-[11px] text-muted-foreground">
-              {format(new Date(flow.updatedAt), "MMM d · HH:mm")} ET
+              {format(new Date(flow.updatedAt), "MMM d · HH:mm")}
             </span>
           </div>
         }
@@ -683,9 +700,15 @@ export default function OptionFlowPage() {
                 <Gauge className="w-3.5 h-3.5" />
                 <span>
                   {timeframe === "weekly" ? "Weekly" : "Intraday"} confluence zones · spot{" "}
-                  <span className="text-primary font-semibold tabular-nums">{fmtPrice(flow.spot, instrument)}</span> ·
-                  PCR {flow.oi.pcr} ({flow.oi.pcr_bias}) · Max pain {fmtPrice(flow.oi.max_pain, instrument)} · GEX flip{" "}
-                  {fmtPrice(flow.oi.gex_flip, instrument)}
+                  <span className="text-primary font-semibold tabular-nums">{fmtPrice(flow.spot, instrument)}</span>
+                  {flow.oi.pcr !== null ? (
+                    <>
+                      {" "}· PCR {flow.oi.pcr} ({flow.oi.pcr_bias}) · Max pain{" "}
+                      {fmtPrice(flow.oi.max_pain, instrument)} · GEX flip {fmtPrice(flow.oi.gex_flip, instrument)}
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground/60"> · PCR/GEX n/a (free feed)</span>
+                  )}
                 </span>
               </div>
               <ZonesPanel zones={zones} spot={flow.spot} instKey={instrument} />
