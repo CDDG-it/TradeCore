@@ -616,11 +616,12 @@ export default function OptionFlowPage() {
   const [instrument, setInstrument] = useState<InstrumentKey>("NQ");
   const [timeframe, setTimeframe] = useState<Timeframe>("intraday");
   const [loading, setLoading] = useState(true);
+  const [cooldown, setCooldown] = useState(0); // seconds until the manual button re-enables
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      // Cache-bust so a manual refresh always hits the route handler.
+      // Cache-bust so each refresh hits the route handler.
       const res = await fetch(`/api/option-flow?t=${Date.now()}`, { cache: "no-store" });
       const data: { flows?: InstrumentFlow[] } = await res.json();
       if (data.flows?.length) setFlows(data.flows);
@@ -631,9 +632,27 @@ export default function OptionFlowPage() {
     }
   }, []);
 
+  const manualRefresh = useCallback(async () => {
+    await load();
+    setCooldown(60); // lock the button for 60s after a manual refresh
+  }, [load]);
+
+  // Initial load
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Auto-refresh every 60s (independent of the manual cooldown)
+  useEffect(() => {
+    const id = setInterval(() => void load(), 60_000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  // 1s ticker that counts the manual cooldown down to zero
+  useEffect(() => {
+    const id = setInterval(() => setCooldown((c) => (c > 0 ? c - 1 : 0)), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const flow = flows.find((f) => f.key === instrument) ?? flows[0];
   const zones = flow.zones[timeframe];
@@ -651,20 +670,20 @@ export default function OptionFlowPage() {
                 {loading ? "⏳ Loading…" : flow.live ? "🟢 Live · Yahoo" : "🟡 Mock data"}
               </span>
               <span className="text-[11px] text-muted-foreground">
-                {format(new Date(flow.updatedAt), "MMM d · HH:mm")}
+                {format(new Date(flow.updatedAt), "HH:mm:ss")} · auto 60s
               </span>
             </div>
             <button
-              onClick={() => void load()}
-              disabled={loading}
-              title="Refresh live data"
+              onClick={() => void manualRefresh()}
+              disabled={loading || cooldown > 0}
+              title={cooldown > 0 ? `Available again in ${cooldown}s` : "Refresh live data"}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border/60 bg-card text-xs font-medium transition-all",
-                "hover:border-primary/50 hover:text-primary disabled:opacity-50 disabled:pointer-events-none"
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border/60 bg-card text-xs font-medium transition-all tabular-nums",
+                "hover:border-primary/50 hover:text-primary disabled:opacity-50 disabled:pointer-events-none disabled:hover:border-border/60 disabled:hover:text-foreground"
               )}
             >
               <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
-              <span className="hidden sm:inline">Refresh</span>
+              <span className="hidden sm:inline">{cooldown > 0 ? `${cooldown}s` : "Refresh"}</span>
             </button>
           </div>
         }
