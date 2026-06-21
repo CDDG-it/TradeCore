@@ -45,6 +45,7 @@ export default function NewTradePage() {
   const [customTF, setCustomTF] = useState("");
   const [showCustomTF, setShowCustomTF] = useState(false);
   const [savedConfluences, setSavedConfluences] = useState<string[]>([]);
+  const [debugRaw, setDebugRaw] = useState<unknown>("(not loaded yet)");
   // Pre-generate entity ID so screenshots can be uploaded before the trade is saved
   const [entityId] = useState(() => crypto.randomUUID());
   const [userId, setUserId] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export default function NewTradePage() {
     Promise.all([getAnalyses(), getProfile()]).then(([analyses, profile]) => {
       setAllAnalyses(analyses);
       if (profile?.id) setUserId(profile.id);
+      setDebugRaw(profile ? (("confluence_options" in profile) ? profile.confluence_options : "(column missing on returned row)") : "(profile is null — not logged in?)");
       if (profile?.confluence_options) {
         setSavedConfluences(
           profile.confluence_options
@@ -381,6 +383,9 @@ export default function NewTradePage() {
         <Card className="bg-card border-border/50 shadow-sm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Confluences</CardTitle></CardHeader>
           <CardContent>
+            <div className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 font-mono break-all">
+              DEBUG · rawProfileConfluences = {JSON.stringify(debugRaw)} · parsedCount = {savedConfluences.length}
+            </div>
             {savedConfluences.length > 0 && (
               <div className="mb-3">
                 <p className="text-xs text-muted-foreground mb-2">Quick select</p>
