@@ -69,15 +69,17 @@ export default function ProfilePage() {
       getHabits().then(setHabits),
       getProfile().then((p) => {
         if (p) {
+          // Prefer values the user may have already typed during the async load
+          // (prev.* wins) so a slow profile fetch can't clobber in-progress input.
           setForm((prev) => ({
             ...prev,
-            full_name: p.full_name || prev.full_name,
-            bio: p.bio || "",
-            timezone: p.timezone || "Europe/Amsterdam",
-            preferred_session: p.preferred_session || "",
-            preferred_instrument: p.preferred_instrument || "",
-            discipline_rules: p.discipline_rules || "",
-            confluence_options: p.confluence_options || "",
+            full_name: prev.full_name || p.full_name || "",
+            bio: prev.bio || p.bio || "",
+            timezone: prev.timezone !== "Europe/Amsterdam" ? prev.timezone : (p.timezone || "Europe/Amsterdam"),
+            preferred_session: prev.preferred_session || p.preferred_session || "",
+            preferred_instrument: prev.preferred_instrument || p.preferred_instrument || "",
+            discipline_rules: prev.discipline_rules || p.discipline_rules || "",
+            confluence_options: prev.confluence_options || p.confluence_options || "",
           }));
         }
         setProfileLoading(false);
