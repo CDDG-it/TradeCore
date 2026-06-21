@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   AreaChart,
   Area,
@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import { ArrowUp, ArrowDown, Minus, Target, Activity, Layers, Gauge } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, Target, Activity, Layers, Gauge, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -617,21 +617,23 @@ export default function OptionFlowPage() {
   const [timeframe, setTimeframe] = useState<Timeframe>("intraday");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
-    fetch("/api/option-flow")
-      .then((r) => r.json())
-      .then((data: { flows?: InstrumentFlow[] }) => {
-        if (active && data.flows?.length) setFlows(data.flows);
-      })
-      .catch(() => {
-        /* keep mock fallback */
-      })
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Cache-bust so a manual refresh always hits the route handler.
+      const res = await fetch(`/api/option-flow?t=${Date.now()}`, { cache: "no-store" });
+      const data: { flows?: InstrumentFlow[] } = await res.json();
+      if (data.flows?.length) setFlows(data.flows);
+    } catch {
+      /* keep current/mock data */
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const flow = flows.find((f) => f.key === instrument) ?? flows[0];
   const zones = flow.zones[timeframe];
@@ -643,13 +645,27 @@ export default function OptionFlowPage() {
         title="Option Flow"
         subtitle="Dealer positioning, session structure, and COT-driven weekly bias for NQ & GC."
         action={
-          <div className="hidden sm:flex flex-col items-end gap-1">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-              {loading ? "⏳ Loading…" : flow.live ? "🟢 Live · Yahoo" : "🟡 Mock data"}
-            </span>
-            <span className="text-[11px] text-muted-foreground">
-              {format(new Date(flow.updatedAt), "MMM d · HH:mm")}
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex flex-col items-end gap-1">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                {loading ? "⏳ Loading…" : flow.live ? "🟢 Live · Yahoo" : "🟡 Mock data"}
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {format(new Date(flow.updatedAt), "MMM d · HH:mm")}
+              </span>
+            </div>
+            <button
+              onClick={() => void load()}
+              disabled={loading}
+              title="Refresh live data"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border/60 bg-card text-xs font-medium transition-all",
+                "hover:border-primary/50 hover:text-primary disabled:opacity-50 disabled:pointer-events-none"
+              )}
+            >
+              <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
           </div>
         }
       />
