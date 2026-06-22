@@ -47,7 +47,6 @@ const INST = {
   },
 } as const;
 
-const RISK_FREE = 0.05;
 const YF_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
@@ -104,182 +103,114 @@ async function yahooChart(symbol: string, interval: string, range: string): Prom
   };
 }
 
-// ── Yahoo options chain (cookie + crumb handshake) ────────────────────────────
-let _crumbCache: { cookie: string; crumb: string } | null = null;
-let _crumbInflight: Promise<{ cookie: string; crumb: string }> | null = null;
-let _crumbFailUntil = 0; // back-off timestamp after a rate-limit, to stop hammering getcrumb
-
-// Last successful greeks per instrument — served (marked stale) when a refresh is rate-limited.
+// ── Options chain via CBOE delayed quotes (free, keyless, greeks pre-computed) ──
+// Last successful greeks per instrument — served (marked stale) if a refresh fails.
 const _lastGreeks: Partial<Record<InstrumentKey, { oi: OiContext; greeks: GreeksProfile }>> = {};
 
-function yahooCrumb(force = false): Promise<{ cookie: string; crumb: string }> {
-  if (_crumbCache && !force) return Promise.resolve(_crumbCache);
-  if (!force && Date.now() < _crumbFailUntil)
-    return Promise.reject(new Error("Yahoo crumb backing off (recent rate-limit)"));
-  // Dedupe concurrent callers (both instruments) onto one handshake.
-  if (_crumbInflight && !force) return _crumbInflight;
-  _crumbInflight = doCrumb()
-    .catch((e) => {
-      _crumbFailUntil = Date.now() + 5 * 60_000; // cool down 5 min on failure
-      throw e;
-    })
-    .finally(() => {
-      _crumbInflight = null;
-    });
-  return _crumbInflight;
-}
+// OCC option symbol: ROOT + YYMMDD + (C|P) + strike×1000 (8 digits). e.g. QQQ260622C00495000
+const OCC_RE = /(\d{6})([CP])(\d{8})$/;
 
-async function doCrumb(): Promise<{ cookie: string; crumb: string }> {
-  const r1 = await fetch("https://fc.yahoo.com", { headers: { "User-Agent": YF_UA } });
-  // undici exposes getSetCookie(); fall back to the combined header
-  const h = r1.headers as Headers & { getSetCookie?: () => string[] };
-  const setCookies = h.getSetCookie?.() ?? (r1.headers.get("set-cookie") ? [r1.headers.get("set-cookie")!] : []);
-  const cookie = setCookies.map((c) => c.split(";")[0]).join("; ");
-  const r2 = await fetch("https://query1.finance.yahoo.com/v1/test/getcrumb", {
-    headers: { "User-Agent": YF_UA, Cookie: cookie },
-  });
-  const crumb = (await r2.text()).trim();
-  if (!crumb || crumb.length > 40 || /too many|invalid|forbidden/i.test(crumb))
-    throw new Error(`Yahoo crumb failed: "${crumb.slice(0, 30)}"`);
-  _crumbCache = { cookie, crumb };
-  return _crumbCache;
-}
-
-interface OptStrike {
+interface CboeOpt {
   strike: number;
-  callOI: number;
-  putOI: number;
-  iv: number; // ATM-ish IV for this strike (avg of call/put)
-  expiry: number; // unix seconds
+  type: "C" | "P";
+  oi: number;
+  gamma: number;
+  delta: number; // CBOE delta is already signed (puts negative)
 }
 
-/** Fetch one expiry's calls/puts for an ETF symbol. */
-async function fetchOptionExpiry(
-  symbol: string,
-  date?: number
-): Promise<{ etfSpot: number; expiry: number; strikes: OptStrike[]; expirations: number[] }> {
-  const run = async (retry: boolean): Promise<Response> => {
-    const { cookie, crumb } = await yahooCrumb(retry);
-    const url =
-      `https://query1.finance.yahoo.com/v7/finance/options/${symbol}?crumb=${encodeURIComponent(crumb)}` +
-      (date ? `&date=${date}` : "");
-    const res = await fetch(url, { headers: { "User-Agent": YF_UA, Cookie: cookie }, next: { revalidate: 120 } });
-    if (res.status === 401 && !retry) return run(true); // stale crumb → refresh once
-    return res;
-  };
-  const res = await run(false);
-  if (!res.ok) throw new Error(`Yahoo options ${symbol} ${res.status}`);
+/** Fetch an ETF options chain from CBOE; greeks come pre-computed. */
+async function fetchCboeChain(symbol: string): Promise<{ etfSpot: number; opts: CboeOpt[] }> {
+  const url = `https://cdn.cboe.com/api/global/delayed_quotes/options/${symbol}.json`;
+  const res = await fetch(url, { headers: { "User-Agent": YF_UA }, next: { revalidate: 120 } });
+  if (!res.ok) throw new Error(`CBOE ${symbol} ${res.status}`);
   const json = await res.json();
-  const r = json?.optionChain?.result?.[0];
-  if (!r?.options?.[0]) throw new Error(`Yahoo options ${symbol} empty`);
-  const etfSpot = r.quote?.regularMarketPrice ?? 0;
-  const opt = r.options[0];
-  const expiry = opt.expirationDate ?? date ?? 0;
+  const data = json?.data ?? {};
+  const etfSpot = data.current_price ?? data.close ?? 0;
+  const raw: { option: string; open_interest?: number; gamma?: number; delta?: number }[] = data.options ?? [];
 
-  const map = new Map<number, OptStrike>();
-  const add = (arr: Record<string, number>[], side: "call" | "put") => {
-    for (const o of arr ?? []) {
-      const k = o.strike;
-      if (k == null) continue;
-      const cur = map.get(k) ?? { strike: k, callOI: 0, putOI: 0, iv: 0, expiry };
-      const oi = o.openInterest ?? 0;
-      const iv = o.impliedVolatility ?? 0;
-      if (side === "call") cur.callOI = oi;
-      else cur.putOI = oi;
-      if (iv > 0) cur.iv = cur.iv ? (cur.iv + iv) / 2 : iv;
-      map.set(k, cur);
-    }
-  };
-  add(opt.calls, "call");
-  add(opt.puts, "put");
-  return {
-    etfSpot,
-    expiry,
-    strikes: [...map.values()].sort((a, b) => a.strike - b.strike),
-    expirations: r.expirationDates ?? [],
-  };
+  const now = Date.now();
+  const opts: CboeOpt[] = [];
+  for (const o of raw) {
+    const m = OCC_RE.exec(o.option);
+    if (!m) continue;
+    const [, yymmdd, type, strike8] = m;
+    const strike = parseInt(strike8, 10) / 1000;
+    const expMs = Date.UTC(2000 + +yymmdd.slice(0, 2), +yymmdd.slice(2, 4) - 1, +yymmdd.slice(4, 6), 20);
+    const dte = (expMs - now) / 86_400_000;
+    if (dte < 0 || dte > 45) continue; // nearest ~6 weeks of expiries
+    if (etfSpot && Math.abs(strike - etfSpot) / etfSpot > 0.15) continue; // ±15% of spot
+    opts.push({
+      strike,
+      type: type as "C" | "P",
+      oi: o.open_interest ?? 0,
+      gamma: o.gamma ?? 0,
+      delta: o.delta ?? 0,
+    });
+  }
+  return { etfSpot, opts };
 }
 
-// ── Black-Scholes greeks ──────────────────────────────────────────────────────
-const normPdf = (x: number) => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
-function normCdf(x: number): number {
-  // Abramowitz-Stegun approximation
-  const t = 1 / (1 + 0.2316419 * Math.abs(x));
-  const d = 0.3989423 * Math.exp(-(x * x) / 2);
-  let p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-  if (x > 0) p = 1 - p;
-  return p;
-}
-
-function bsGreeks(S: number, K: number, T: number, sigma: number): { gamma: number; deltaCall: number } {
-  if (S <= 0 || K <= 0 || T <= 0 || sigma <= 0) return { gamma: 0, deltaCall: 0 };
-  const d1 = (Math.log(S / K) + (RISK_FREE + (sigma * sigma) / 2) * T) / (sigma * Math.sqrt(T));
-  return { gamma: normPdf(d1) / (S * sigma * Math.sqrt(T)), deltaCall: normCdf(d1) };
-}
-
-/** Compute dealer GEX/DEX profile + OI context from an ETF options proxy. */
+/** Compute dealer GEX/DEX profile + OI context from the CBOE ETF options proxy. */
 async function computeGreeks(
   proxy: string,
   futSpot: number
 ): Promise<{ oi: OiContext; greeks: GreeksProfile } | null> {
   try {
-    const nearest = await fetchOptionExpiry(proxy);
-    const { etfSpot } = nearest;
-    if (!etfSpot) return null;
-
-    // Add one ~monthly expiry for a fuller weekly profile (best-effort).
-    let strikes = nearest.strikes;
-    const monthly = nearest.expirations.find((e) => (e - Date.now() / 1000) / 86400 >= 21);
-    if (monthly && monthly !== nearest.expiry) {
-      try {
-        const m = await fetchOptionExpiry(proxy, monthly);
-        strikes = mergeStrikes(strikes, m.strikes);
-      } catch {
-        /* nearest expiry alone is fine */
-      }
-    }
+    const { etfSpot, opts } = await fetchCboeChain(proxy);
+    if (!etfSpot || !opts.length) return null;
 
     const ratio = futSpot / etfSpot; // proxy → futures scale
-    const now = Date.now() / 1000;
-    const cs = 100; // ETF option contract size
+    const cs = 100; // option contract size
 
     let totalGex = 0,
       totalDex = 0,
       callOItot = 0,
       putOItot = 0;
-    const profile: GreekStrike[] = [];
+    const perStrike = new Map<number, { gex: number; dex: number }>(); // keyed by futures strike
+    const oiByStrike = new Map<number, { c: number; p: number }>(); // ETF strike → OI, for max pain
 
-    for (const s of strikes) {
-      const T = Math.max((s.expiry - now) / (365 * 86400), 1 / 365);
-      const sigma = s.iv > 0 ? s.iv : 0.2;
-      const { gamma, deltaCall } = bsGreeks(etfSpot, s.strike, T, sigma);
-      const deltaPut = deltaCall - 1;
-      // Naive dealer convention: long calls / short puts
-      const gex = gamma * (s.callOI - s.putOI) * cs * etfSpot * etfSpot * 0.01;
-      const dex = (deltaCall * s.callOI + deltaPut * s.putOI) * cs * etfSpot;
+    for (const o of opts) {
+      // Dealer convention: long calls / short puts → call gamma positive, put gamma negative
+      const gex = (o.type === "C" ? 1 : -1) * o.gamma * o.oi * cs * etfSpot * etfSpot * 0.01;
+      const dex = o.delta * o.oi * cs * etfSpot; // delta already signed
       totalGex += gex;
       totalDex += dex;
-      callOItot += s.callOI;
-      putOItot += s.putOI;
-      profile.push({ strike: rnd(s.strike * ratio), gex: rnd(gex), dex: rnd(dex) });
+      if (o.type === "C") callOItot += o.oi;
+      else putOItot += o.oi;
+
+      const fk = rnd(o.strike * ratio);
+      const cur = perStrike.get(fk) ?? { gex: 0, dex: 0 };
+      cur.gex += gex;
+      cur.dex += dex;
+      perStrike.set(fk, cur);
+
+      const so = oiByStrike.get(o.strike) ?? { c: 0, p: 0 };
+      if (o.type === "C") so.c += o.oi;
+      else so.p += o.oi;
+      oiByStrike.set(o.strike, so);
     }
+
+    const profile: GreekStrike[] = [...perStrike.entries()]
+      .map(([strike, v]) => ({ strike, gex: rnd(v.gex), dex: rnd(v.dex) }))
+      .sort((a, b) => a.strike - b.strike);
     if (!profile.length) return null;
 
-    // Gamma flip: cumulative GEX zero-crossing
-    let cum = 0,
-      flip: number | null = null;
+    // Gamma flip: strike where cumulative GEX changes sign (dealers flip short↔long gamma).
+    // Collect all genuine sign-changes, then pick the one nearest spot.
+    let cum = 0;
+    const crossings: number[] = [];
     for (const p of profile) {
       const prev = cum;
       cum += p.gex;
-      if (prev <= 0 && cum > 0) flip = p.strike;
-      else if (prev >= 0 && cum < 0) flip = p.strike;
+      if ((prev < 0 && cum >= 0) || (prev > 0 && cum <= 0)) crossings.push(p.strike);
     }
+    const flip = crossings.length
+      ? crossings.reduce((a, b) => (Math.abs(b - futSpot) < Math.abs(a - futSpot) ? b : a))
+      : null;
 
     const callWall = profile.reduce((a, b) => (b.gex > a.gex ? b : a), profile[0]);
     const putWall = profile.reduce((a, b) => (b.gex < a.gex ? b : a), profile[0]);
-
-    // Max pain: expiry price minimizing total option intrinsic value (in ETF space)
-    const maxPainEtf = computeMaxPain(strikes);
+    const maxPainEtf = computeMaxPain(oiByStrike);
     const pcr = callOItot > 0 ? rnd(putOItot / callOItot, 2) : null;
     const pcrBias: OiContext["pcr_bias"] =
       pcr == null ? "unavailable" : pcr > 1.1 ? "bullish" : pcr < 0.8 ? "bearish" : "neutral";
@@ -311,19 +242,15 @@ async function computeGreeks(
   }
 }
 
-function mergeStrikes(a: OptStrike[], b: OptStrike[]): OptStrike[] {
-  // Combine two expiries; keep them as separate rows (different T) but merged list.
-  return [...a, ...b].sort((x, y) => x.strike - y.strike || x.expiry - y.expiry);
-}
-
-function computeMaxPain(strikes: OptStrike[]): number | null {
-  if (!strikes.length) return null;
-  const ks = strikes.map((s) => s.strike);
+/** Max pain: expiry price minimizing total option intrinsic value (in ETF strike space). */
+function computeMaxPain(oiByStrike: Map<number, { c: number; p: number }>): number | null {
+  const entries = [...oiByStrike.entries()];
+  if (!entries.length) return null;
   let best: { k: number; pain: number } | null = null;
-  for (const P of ks) {
+  for (const [P] of entries) {
     let pain = 0;
-    for (const s of strikes) {
-      pain += s.callOI * Math.max(P - s.strike, 0) + s.putOI * Math.max(s.strike - P, 0);
+    for (const [k, oi] of entries) {
+      pain += oi.c * Math.max(P - k, 0) + oi.p * Math.max(k - P, 0);
     }
     if (!best || pain < best.pain) best = { k: P, pain };
   }
