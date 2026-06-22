@@ -29,9 +29,14 @@ const navGroups = [
     items: [
       { href: "/journal", label: "Journal", icon: BookOpen },
       { href: "/analysis", label: "Analysis", icon: LineChart },
-      { href: "/option-flow", label: "Option Flow", icon: Radar },
       { href: "/analytics", label: "Analytics", icon: BarChart2 },
       { href: "/accounts", label: "Accounts", icon: Wallet },
+    ],
+  },
+  {
+    label: "Market Structure",
+    items: [
+      { href: "/option-flow", label: "Option Flow", icon: Radar },
     ],
   },
 ];

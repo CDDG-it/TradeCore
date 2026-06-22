@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays, ArrowUpDown } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays, ArrowUpDown, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAccounts, computeAccountROI, getPayoutsByAccountId, updateAccount } from "@/lib/supabase/queries";
 import { PROP_FIRMS } from "@/lib/accounts-constants";
+import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import type { FundedAccount, PayoutEvent } from "@/lib/types";
 
@@ -35,6 +36,7 @@ function roiGreen(roi: number): string {
 
 export default function AccountsPage() {
   const router = useRouter();
+  const { hidden, toggle } = usePrivacy();
   const [accounts, setAccounts] = useState<FundedAccount[]>([]);
   const [payoutMap, setPayoutMap] = useState<Record<string, PayoutEvent[]>>({});
   const [loading, setLoading] = useState(true);
@@ -137,13 +139,30 @@ export default function AccountsPage() {
         title="Accounts"
         subtitle="Funded prop firm accounts"
         action={
-          <Link
-            href="/accounts/new"
-            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0 bg-primary text-primary-foreground"
-          >
-            <Plus className="w-4 h-4" />
-            Add account
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={toggle}
+              title={hidden ? "Show balances" : "Hide balances (privacy mode)"}
+              aria-pressed={hidden}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-all",
+                hidden
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+              )}
+            >
+              {hidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <span className="hidden sm:inline">{hidden ? "Hidden" : "Hide"}</span>
+            </button>
+            <Link
+              href="/accounts/new"
+              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px bg-primary text-primary-foreground"
+            >
+              <Plus className="w-4 h-4" />
+              Add account
+            </Link>
+          </div>
         }
       />
       <PageWrapper>
@@ -229,10 +248,10 @@ export default function AccountsPage() {
         {/* ── Summary stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Total Costs", value: `$${totalFeePaid.toLocaleString()}`, note: "all accounts", type: "cost" },
-            { label: "Total Payouts", value: `$${totalPayouts.toLocaleString()}`, note: "all accounts", type: "payout" },
-            { label: "Active Capital", value: `$${activeCapital.toLocaleString()}`, note: "active only", type: "capital" },
-            { label: "Return on Cost", value: `${overallRoi}x`, note: "all accounts", type: "roi" },
+            { label: "Total Costs", value: mask(`$${totalFeePaid.toLocaleString()}`, hidden), note: "all accounts", type: "cost" },
+            { label: "Total Payouts", value: mask(`$${totalPayouts.toLocaleString()}`, hidden), note: "all accounts", type: "payout" },
+            { label: "Active Capital", value: mask(`$${activeCapital.toLocaleString()}`, hidden), note: "active only", type: "capital" },
+            { label: "Return on Cost", value: mask(`${overallRoi}x`, hidden), note: "all accounts", type: "roi" },
           ].map(({ label, value, note, type }) => {
             const roiColor = type === "roi"
               ? overallRoi >= 5 ? "oklch(0.38 0.14 145)"
@@ -320,7 +339,7 @@ export default function AccountsPage() {
                           <div className="flex items-baseline gap-2">
                             <p className="font-semibold text-sm truncate">{acct.firm_name}</p>
                             <span className="text-xs text-muted-foreground font-mono shrink-0">
-                              ${(acct.account_size / 1000).toFixed(0)}K
+                              {mask(`$${(acct.account_size / 1000).toFixed(0)}K`, hidden)}
                             </span>
                           </div>
                         </div>
@@ -361,18 +380,18 @@ export default function AccountsPage() {
                       <div className="grid grid-cols-2 gap-2.5 mb-3">
                         <div>
                           <p className="text-xs text-muted-foreground mb-0.5">Total Costs</p>
-                          <p className="text-sm font-semibold font-mono" style={{ color: "#F97316" }}>${acct.purchase_cost.toLocaleString()}</p>
+                          <p className="text-sm font-semibold font-mono" style={{ color: "#F97316" }}>{mask(`$${acct.purchase_cost.toLocaleString()}`, hidden)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-0.5">Total Payout</p>
-                          <p className="text-sm font-semibold font-mono" style={{ color: "#F97316" }}>${totalPaid.toLocaleString()}</p>
+                          <p className="text-sm font-semibold font-mono" style={{ color: "#F97316" }}>{mask(`$${totalPaid.toLocaleString()}`, hidden)}</p>
                         </div>
                         <div className="col-span-2">
                           <p className="text-xs text-muted-foreground mb-0.5">Return on Cost</p>
                           <div className="flex items-center gap-1">
                             {roi >= 0 ? <TrendingUp className="w-3.5 h-3.5" style={{ color: roi >= 1 ? roiGreen(roi) : "oklch(0.70 0.16 72)" }} /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
                             <span className="text-sm font-bold" style={{ color: roi >= 1 ? roiGreen(roi) : roi > 0 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)" }}>
-                              {roi}x
+                              {mask(`${roi}x`, hidden)}
                             </span>
                           </div>
                         </div>
