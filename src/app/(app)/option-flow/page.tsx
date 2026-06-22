@@ -21,7 +21,6 @@ import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { getAllFlows, INSTRUMENT_KEYS } from "@/lib/option-flow/data";
 import type {
   InstrumentKey,
   Timeframe,
@@ -34,6 +33,8 @@ import type {
   GreeksProfile,
   InstrumentFlow,
 } from "@/lib/option-flow/types";
+
+const INSTRUMENT_KEYS: InstrumentKey[] = ["NQ", "GC"];
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
 function fmtPrice(p: number | null, key: InstrumentKey): string {
@@ -669,10 +670,15 @@ function GreeksPanel({ greeks, spot, instKey }: { greeks: GreeksProfile; spot: n
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
           <Waves className="w-3.5 h-3.5" />
           Dealer exposure via <span className="font-semibold text-foreground">{greeks.proxy}</span> options ·
           scaled ×{greeks.ratio} to {instKey} futures
+          {greeks.stale ? (
+            <span className="text-gold">· last good {format(new Date(greeks.asOf), "HH:mm")} (chain rate-limited)</span>
+          ) : (
+            <span className="text-success/70">· {format(new Date(greeks.asOf), "HH:mm")}</span>
+          )}
         </p>
         <Segmented
           options={[
@@ -783,7 +789,7 @@ function Segmented<T extends string>({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function OptionFlowPage() {
-  const [flows, setFlows] = useState<InstrumentFlow[]>(() => getAllFlows());
+  const [flows, setFlows] = useState<InstrumentFlow[]>([]);
   const [instrument, setInstrument] = useState<InstrumentKey>("NQ");
   const [timeframe, setTimeframe] = useState<Timeframe>("intraday");
   const [loading, setLoading] = useState(true);
@@ -826,6 +832,26 @@ export default function OptionFlowPage() {
   }, []);
 
   const flow = flows.find((f) => f.key === instrument) ?? flows[0];
+
+  // No data yet (cold start / upstream unreachable) — never show mock, just wait.
+  if (!flow) {
+    return (
+      <PageWrapper>
+        <PageHeader
+          badge="Market Structure"
+          title="Option Flow"
+          subtitle="Dealer positioning, session structure, and COT-driven weekly bias for NQ & GC."
+        />
+        <Card className="border-border/50">
+          <CardContent className="py-16 text-center text-sm text-muted-foreground">
+            <RefreshCw className={cn("w-6 h-6 mx-auto mb-3 opacity-40", loading && "animate-spin")} />
+            {loading ? "Loading live market data…" : "Live data is temporarily unavailable. Retrying shortly."}
+          </CardContent>
+        </Card>
+      </PageWrapper>
+    );
+  }
+
   const zones = flow.zones[timeframe];
 
   return (
@@ -838,7 +864,7 @@ export default function OptionFlowPage() {
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col items-end gap-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                {loading ? "⏳ Loading…" : flow.live ? "🟢 Live · Yahoo" : "🟡 Mock data"}
+                {loading ? "⏳ Loading…" : "🟢 Live · Yahoo"}
               </span>
               <span className="text-[11px] text-muted-foreground">
                 {format(new Date(flow.updatedAt), "HH:mm:ss")} · auto 60s

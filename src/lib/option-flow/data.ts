@@ -36,6 +36,8 @@ function buildGreeks(
   return {
     proxy,
     ratio,
+    asOf: "2026-06-21T13:42:00Z",
+    stale: false,
     totalGex,
     totalDex,
     gexRegime: totalGex >= 0 ? "positive" : "negative",

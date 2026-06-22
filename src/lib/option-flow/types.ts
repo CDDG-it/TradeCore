@@ -128,6 +128,10 @@ export interface GreekStrike {
 export interface GreeksProfile {
   proxy: string; // "QQQ" | "GLD"
   ratio: number; // proxy→futures scale
+  /** ISO timestamp of when this options snapshot was actually fetched (may be older than the page if rate-limited). */
+  asOf: string;
+  /** True when served from the last-known-good cache because a fresh fetch was rate-limited. */
+  stale: boolean;
   totalGex: number;
   totalDex: number;
   gexRegime: "positive" | "negative"; // positive = pinning, negative = amplifying

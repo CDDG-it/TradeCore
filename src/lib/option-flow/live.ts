@@ -109,6 +109,9 @@ let _crumbCache: { cookie: string; crumb: string } | null = null;
 let _crumbInflight: Promise<{ cookie: string; crumb: string }> | null = null;
 let _crumbFailUntil = 0; // back-off timestamp after a rate-limit, to stop hammering getcrumb
 
+// Last successful greeks per instrument — served (marked stale) when a refresh is rate-limited.
+const _lastGreeks: Partial<Record<InstrumentKey, { oi: OiContext; greeks: GreeksProfile }>> = {};
+
 function yahooCrumb(force = false): Promise<{ cookie: string; crumb: string }> {
   if (_crumbCache && !force) return Promise.resolve(_crumbCache);
   if (!force && Date.now() < _crumbFailUntil)
@@ -284,6 +287,8 @@ async function computeGreeks(
     const greeks: GreeksProfile = {
       proxy,
       ratio: rnd(ratio, 4),
+      asOf: new Date().toISOString(),
+      stale: false,
       totalGex: rnd(totalGex),
       totalDex: rnd(totalDex),
       gexRegime: totalGex >= 0 ? "positive" : "negative",
@@ -659,11 +664,21 @@ async function buildInstrument(
   // Intraday first to establish spot, then parallelise the rest (greeks needs spot).
   const intraday = await yahooChart(cfg.yahoo, "1m", "5d");
   const spot = rnd(intraday.price);
-  const [daily, cotRows, greeksRes] = await Promise.all([
+  const [daily, cotRows, freshGreeks] = await Promise.all([
     yahooChart(cfg.yahoo, "1d", "3mo"),
     fetchCot(cfg.cotMarket).catch(() => [] as CotRow[]),
     computeGreeks(cfg.proxy, spot),
   ]);
+
+  // Last-known-good greeks: if a fresh fetch was rate-limited, reuse the previous
+  // successful snapshot (marked stale) — never null once we've had one, never mock.
+  let greeksRes = freshGreeks;
+  if (freshGreeks) {
+    _lastGreeks[key] = freshGreeks;
+  } else if (_lastGreeks[key]) {
+    const cached = _lastGreeks[key]!;
+    greeksRes = { oi: cached.oi, greeks: { ...cached.greeks, stale: true } };
+  }
 
   const levels = computeSessionLevels(intraday.bars, key);
 
