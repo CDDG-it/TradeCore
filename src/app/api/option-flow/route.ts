@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { fetchLiveFlows } from "@/lib/option-flow/live";
 import type { InstrumentFlow } from "@/lib/option-flow/types";
 
-// Re-fetch live data at most once per minute (Yahoo futures are ~real-time).
-export const revalidate = 60;
+// Always run on-demand (live market fetches; the CBOE chain is multi-MB and
+// must not be statically cached). The route keeps its own last-good cache.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // Last successful full payload — served if a later fetch fails outright (network/upstream down).
 // Never falls back to mock: we only ever return real, last-known-good numbers.

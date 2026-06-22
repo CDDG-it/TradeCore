@@ -121,7 +121,9 @@ interface CboeOpt {
 /** Fetch an ETF options chain from CBOE; greeks come pre-computed. */
 async function fetchCboeChain(symbol: string): Promise<{ etfSpot: number; opts: CboeOpt[] }> {
   const url = `https://cdn.cboe.com/api/global/delayed_quotes/options/${symbol}.json`;
-  const res = await fetch(url, { headers: { "User-Agent": YF_UA }, next: { revalidate: 120 } });
+  // no-store: the chain JSON is several MB — over Next's 2MB fetch-cache limit, so
+  // attempting to cache it logs an error. We cache at the route level instead.
+  const res = await fetch(url, { headers: { "User-Agent": YF_UA }, cache: "no-store" });
   if (!res.ok) throw new Error(`CBOE ${symbol} ${res.status}`);
   const json = await res.json();
   const data = json?.data ?? {};

@@ -617,16 +617,26 @@ function GreeksTooltip({
   );
 }
 
+function safeTime(iso: string | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "—" : format(d, "HH:mm");
+}
+
 function GreeksPanel({ greeks, spot, instKey }: { greeks: GreeksProfile; spot: number; instKey: InstrumentKey }) {
   const [metric, setMetric] = useState<"gex" | "dex">("gex");
-  // Trim to strikes within a sensible window around spot for readability
-  const data = useMemo(
-    () =>
-      greeks.profile
-        .filter((p) => Math.abs(p.strike - spot) / spot <= 0.06)
-        .map((p) => ({ ...p, value: p[metric] })),
-    [greeks.profile, spot, metric]
-  );
+  const asOf = safeTime(greeks.asOf);
+  // Trim to strikes near spot for readability, but never end up empty: if the
+  // window is too tight (or strikes sit outside it), fall back to the nearest 40.
+  const data = useMemo(() => {
+    const all = greeks.profile.map((p) => ({ ...p, value: p[metric] }));
+    const windowed = all.filter((p) => Math.abs(p.strike - spot) / spot <= 0.06);
+    const base =
+      windowed.length >= 4
+        ? windowed
+        : [...all].sort((a, b) => Math.abs(a.strike - spot) - Math.abs(b.strike - spot)).slice(0, 40);
+    return [...base].sort((a, b) => a.strike - b.strike);
+  }, [greeks.profile, spot, metric]);
 
   const stats = [
     {
@@ -675,9 +685,9 @@ function GreeksPanel({ greeks, spot, instKey }: { greeks: GreeksProfile; spot: n
           Dealer exposure via <span className="font-semibold text-foreground">{greeks.proxy}</span> options ·
           scaled ×{greeks.ratio} to {instKey} futures
           {greeks.stale ? (
-            <span className="text-gold">· last good {format(new Date(greeks.asOf), "HH:mm")} (chain rate-limited)</span>
+            <span className="text-gold">· last good {asOf} (chain rate-limited)</span>
           ) : (
-            <span className="text-success/70">· {format(new Date(greeks.asOf), "HH:mm")}</span>
+            <span className="text-success/70">· {asOf}</span>
           )}
         </p>
         <Segmented
@@ -713,6 +723,11 @@ function GreeksPanel({ greeks, spot, instKey }: { greeks: GreeksProfile; spot: n
         </CardHeader>
         <CardContent className="pt-0">
           <div className="h-72">
+            {data.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                No per-strike exposure data in range.
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 8, right: 8, left: 4, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.3 0.01 252 / 0.3)" vertical={false} />
@@ -750,6 +765,7 @@ function GreeksPanel({ greeks, spot, instKey }: { greeks: GreeksProfile; spot: n
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            )}
           </div>
         </CardContent>
       </Card>
