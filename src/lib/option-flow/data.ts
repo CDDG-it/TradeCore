@@ -6,7 +6,46 @@
  * or Supabase cache) later — the consuming page only depends on the types.
  */
 
-import type { InstrumentFlow, InstrumentKey } from "./types";
+import type { InstrumentFlow, InstrumentKey, GreeksProfile, GreekStrike } from "./types";
+
+/** Build a plausible gamma/delta profile: negative GEX below the flip, positive above. */
+function buildGreeks(
+  proxy: string,
+  ratio: number,
+  spot: number,
+  step: number,
+  flip: number,
+  callWall: number,
+  putWall: number
+): GreeksProfile {
+  const profile: GreekStrike[] = [];
+  let totalGex = 0;
+  let totalDex = 0;
+  for (let k = -7; k <= 7; k++) {
+    const strike = Math.round((spot + k * step) / step) * step;
+    const distFlip = strike - flip;
+    const wall = distFlip > 0 ? callWall : putWall;
+    // deterministic shape (no Math.random — keeps SSR/client markup stable)
+    const proximity = Math.exp(-Math.abs(strike - wall) / (step * 3));
+    const gex = Math.round(Math.sign(distFlip || 1) * proximity * 9e8);
+    const dex = Math.round((strike - spot < 0 ? 1 : -1) * Math.exp(-Math.abs(strike - spot) / (step * 4)) * 6e8);
+    totalGex += gex;
+    totalDex += dex;
+    profile.push({ strike, gex, dex });
+  }
+  return {
+    proxy,
+    ratio,
+    totalGex,
+    totalDex,
+    gexRegime: totalGex >= 0 ? "positive" : "negative",
+    dexBias: totalDex >= 0 ? "long" : "short",
+    flip,
+    callWall,
+    putWall,
+    profile,
+  };
+}
 
 /** Build a 26-week net-spec history walking back from a current value. */
 function buildCotHistory(current: number, weeklyDrift: number, jitter: number): { date: string; net_spec: number }[] {
@@ -55,6 +94,7 @@ const FLOWS: Record<InstrumentKey, InstrumentFlow> = {
       { name: "COPPER", score: 0.34, label: "bullish", relationship: 0.5 },
     ],
     oi: { pcr: 0.78, pcr_bias: "bullish", max_pain: 22000, gex_flip: 21950 },
+    greeks: buildGreeks("QQQ", 41, 22148.5, 100, 21950, 22500, 21800),
     sessionLevels: {
       PDH: 22210,
       PDL: 21980,
@@ -135,6 +175,7 @@ const FLOWS: Record<InstrumentKey, InstrumentFlow> = {
       { name: "COPPER", score: 0.05, label: "neutral", relationship: 0.4 },
     ],
     oi: { pcr: 1.24, pcr_bias: "bearish", max_pain: 3400, gex_flip: 3410 },
+    greeks: buildGreeks("GLD", 10.8, 3384.6, 25, 3410, 3500, 3300),
     sessionLevels: {
       PDH: 3398,
       PDL: 3362,

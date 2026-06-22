@@ -4,6 +4,9 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -11,7 +14,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import { ArrowUp, ArrowDown, Minus, Target, Activity, Layers, Gauge, RefreshCw } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, Target, Activity, Layers, Gauge, RefreshCw, Waves } from "lucide-react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -28,6 +31,7 @@ import type {
   BiasDirection,
   ZoneStatus,
   ZoneConfidence,
+  GreeksProfile,
   InstrumentFlow,
 } from "@/lib/option-flow/types";
 
@@ -580,6 +584,173 @@ function CotPanel({ flow }: { flow: InstrumentFlow }) {
   );
 }
 
+// ── Greeks (GEX / DEX) ────────────────────────────────────────────────────────
+function compact(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
+  if (abs >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (abs >= 1e3) return `${(n / 1e3).toFixed(0)}k`;
+  return n.toFixed(0);
+}
+
+function GreeksTooltip({
+  active,
+  payload,
+  instKey,
+  metric,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: { strike: number; gex: number; dex: number } }>;
+  instKey: InstrumentKey;
+  metric: "gex" | "dex";
+}) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  return (
+    <div className="bg-card border border-border rounded-lg px-3 py-2 text-xs shadow-lg">
+      <p className="text-muted-foreground mb-1">Strike {fmtPrice(p.strike, instKey)}</p>
+      <p className={cn("font-semibold tabular-nums", p[metric] >= 0 ? "text-success" : "text-destructive")}>
+        {metric.toUpperCase()}: {compact(p[metric])}
+      </p>
+    </div>
+  );
+}
+
+function GreeksPanel({ greeks, spot, instKey }: { greeks: GreeksProfile; spot: number; instKey: InstrumentKey }) {
+  const [metric, setMetric] = useState<"gex" | "dex">("gex");
+  // Trim to strikes within a sensible window around spot for readability
+  const data = useMemo(
+    () =>
+      greeks.profile
+        .filter((p) => Math.abs(p.strike - spot) / spot <= 0.06)
+        .map((p) => ({ ...p, value: p[metric] })),
+    [greeks.profile, spot, metric]
+  );
+
+  const stats = [
+    {
+      label: "GEX Regime",
+      value: greeks.gexRegime === "positive" ? "🟢 Positive" : "🔴 Negative",
+      sub: greeks.gexRegime === "positive" ? "pinning / mean-revert" : "amplifying / trending",
+      color: greeks.gexRegime === "positive" ? "text-success" : "text-destructive",
+    },
+    {
+      label: "Net GEX",
+      value: compact(greeks.totalGex),
+      sub: "$ / 1% move",
+      color: greeks.totalGex >= 0 ? "text-success" : "text-destructive",
+    },
+    {
+      label: "DEX Bias",
+      value: greeks.dexBias === "long" ? "🟢 Net long" : "🔴 Net short",
+      sub: compact(greeks.totalDex),
+      color: greeks.dexBias === "long" ? "text-success" : "text-destructive",
+    },
+    {
+      label: "Gamma Flip",
+      value: greeks.flip ? fmtPrice(greeks.flip, instKey) : "—",
+      sub: greeks.flip ? (spot > greeks.flip ? "spot above" : "spot below") : "n/a",
+      color: "text-foreground",
+    },
+    {
+      label: "Call Wall",
+      value: greeks.callWall ? fmtPrice(greeks.callWall, instKey) : "—",
+      sub: "largest +GEX",
+      color: "text-destructive",
+    },
+    {
+      label: "Put Wall",
+      value: greeks.putWall ? fmtPrice(greeks.putWall, instKey) : "—",
+      sub: "largest −GEX",
+      color: "text-success",
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <Waves className="w-3.5 h-3.5" />
+          Dealer exposure via <span className="font-semibold text-foreground">{greeks.proxy}</span> options ·
+          scaled ×{greeks.ratio} to {instKey} futures
+        </p>
+        <Segmented
+          options={[
+            { value: "gex" as const, label: "Gamma (GEX)" },
+            { value: "dex" as const, label: "Delta (DEX)" },
+          ]}
+          value={metric}
+          onChange={setMetric}
+        />
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {stats.map((s) => (
+          <div key={s.label} className="rounded-lg border border-border/40 p-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{s.label}</p>
+            <p className={cn("text-base font-bold tabular-nums leading-tight mt-0.5", s.color)}>{s.value}</p>
+            <p className="text-[10px] text-muted-foreground/70">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Exposure profile chart */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold">
+            {metric === "gex" ? "Gamma" : "Delta"} Exposure by Strike
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Green = positive (dealers dampen moves) · Red = negative (dealers amplify)
+          </p>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ top: 8, right: 8, left: 4, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.3 0.01 252 / 0.3)" vertical={false} />
+                <XAxis
+                  dataKey="strike"
+                  tickFormatter={(v) => fmtPrice(v, instKey)}
+                  tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval="preserveStartEnd"
+                  minTickGap={28}
+                />
+                <YAxis
+                  tickFormatter={(v) => compact(v)}
+                  tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={44}
+                />
+                <Tooltip
+                  content={<GreeksTooltip instKey={instKey} metric={metric} />}
+                  cursor={{ fill: "oklch(0.5 0.01 252 / 0.08)" }}
+                />
+                <ReferenceLine y={0} stroke="var(--border)" />
+                <ReferenceLine
+                  x={data.reduce((best, p) => (Math.abs(p.strike - spot) < Math.abs(best - spot) ? p.strike : best), data[0]?.strike ?? spot)}
+                  stroke="oklch(0.72 0.22 45)"
+                  strokeDasharray="4 2"
+                  label={{ value: "Spot", fill: "oklch(0.72 0.22 45)", fontSize: 10, position: "top" }}
+                />
+                <Bar dataKey="value" radius={[2, 2, 0, 0]}>
+                  {data.map((d, i) => (
+                    <Cell key={i} fill={d.value >= 0 ? "oklch(0.68 0.20 130)" : "oklch(0.62 0.24 18)"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ── Toggle control ────────────────────────────────────────────────────────────
 function Segmented<T extends string>({
   options,
@@ -725,6 +896,9 @@ export default function OptionFlowPage() {
               <TabsTrigger value="session">
                 <Target className="w-3.5 h-3.5" /> Session Levels
               </TabsTrigger>
+              <TabsTrigger value="greeks">
+                <Waves className="w-3.5 h-3.5" /> Greeks
+              </TabsTrigger>
               <TabsTrigger value="cot">
                 <Activity className="w-3.5 h-3.5" /> COT & Bias
               </TabsTrigger>
@@ -751,6 +925,19 @@ export default function OptionFlowPage() {
 
             <TabsContent value="session">
               <SessionLevelsPanel levels={flow.sessionLevels} spot={flow.spot} instKey={instrument} />
+            </TabsContent>
+
+            <TabsContent value="greeks">
+              {flow.greeks ? (
+                <GreeksPanel greeks={flow.greeks} spot={flow.spot} instKey={instrument} />
+              ) : (
+                <div className="text-center py-12 text-sm text-muted-foreground">
+                  <Waves className="w-6 h-6 mx-auto mb-2 opacity-40" />
+                  Options proxy data unavailable right now (Yahoo rate limit or market closed).
+                  <br />
+                  Hit refresh in a moment — GEX/DEX come from {instrument === "NQ" ? "QQQ" : "GLD"} options.
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="cot">

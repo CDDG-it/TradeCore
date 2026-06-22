@@ -22,6 +22,9 @@ import type {
   BiasDirection,
   ZoneStatus,
   ZoneConfidence,
+  OiContext,
+  GreeksProfile,
+  GreekStrike,
 } from "./types";
 
 // ── Instrument config (mirrors /option/config.py) ─────────────────────────────
@@ -29,6 +32,7 @@ const INST = {
   NQ: {
     label: "E-mini Nasdaq-100",
     yahoo: "NQ=F",
+    proxy: "QQQ", // ETF options proxy for GEX/DEX
     cotMarket: "NASDAQ MINI",
     macro: { DXY: -0.4, CRUDE: 0.2, COPPER: 0.5 } as Record<MacroKey, number>,
     roundStep: 250,
@@ -36,11 +40,16 @@ const INST = {
   GC: {
     label: "Gold (GC)",
     yahoo: "GC=F",
+    proxy: "GLD",
     cotMarket: "GOLD - COMMODITY EXCHANGE",
     macro: { DXY: -0.8, CRUDE: 0.4, COPPER: 0.4 } as Record<MacroKey, number>,
     roundStep: 50,
   },
 } as const;
+
+const RISK_FREE = 0.05;
+const YF_UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 type MacroKey = "DXY" | "CRUDE" | "COPPER";
 const MACRO_TICKERS: Record<MacroKey, string> = {
@@ -93,6 +102,227 @@ async function yahooChart(symbol: string, interval: string, range: string): Prom
     prevClose: r.meta?.chartPreviousClose ?? r.meta?.previousClose ?? null,
     bars,
   };
+}
+
+// ── Yahoo options chain (cookie + crumb handshake) ────────────────────────────
+let _crumbCache: { cookie: string; crumb: string } | null = null;
+let _crumbInflight: Promise<{ cookie: string; crumb: string }> | null = null;
+let _crumbFailUntil = 0; // back-off timestamp after a rate-limit, to stop hammering getcrumb
+
+function yahooCrumb(force = false): Promise<{ cookie: string; crumb: string }> {
+  if (_crumbCache && !force) return Promise.resolve(_crumbCache);
+  if (!force && Date.now() < _crumbFailUntil)
+    return Promise.reject(new Error("Yahoo crumb backing off (recent rate-limit)"));
+  // Dedupe concurrent callers (both instruments) onto one handshake.
+  if (_crumbInflight && !force) return _crumbInflight;
+  _crumbInflight = doCrumb()
+    .catch((e) => {
+      _crumbFailUntil = Date.now() + 5 * 60_000; // cool down 5 min on failure
+      throw e;
+    })
+    .finally(() => {
+      _crumbInflight = null;
+    });
+  return _crumbInflight;
+}
+
+async function doCrumb(): Promise<{ cookie: string; crumb: string }> {
+  const r1 = await fetch("https://fc.yahoo.com", { headers: { "User-Agent": YF_UA } });
+  // undici exposes getSetCookie(); fall back to the combined header
+  const h = r1.headers as Headers & { getSetCookie?: () => string[] };
+  const setCookies = h.getSetCookie?.() ?? (r1.headers.get("set-cookie") ? [r1.headers.get("set-cookie")!] : []);
+  const cookie = setCookies.map((c) => c.split(";")[0]).join("; ");
+  const r2 = await fetch("https://query1.finance.yahoo.com/v1/test/getcrumb", {
+    headers: { "User-Agent": YF_UA, Cookie: cookie },
+  });
+  const crumb = (await r2.text()).trim();
+  if (!crumb || crumb.length > 40 || /too many|invalid|forbidden/i.test(crumb))
+    throw new Error(`Yahoo crumb failed: "${crumb.slice(0, 30)}"`);
+  _crumbCache = { cookie, crumb };
+  return _crumbCache;
+}
+
+interface OptStrike {
+  strike: number;
+  callOI: number;
+  putOI: number;
+  iv: number; // ATM-ish IV for this strike (avg of call/put)
+  expiry: number; // unix seconds
+}
+
+/** Fetch one expiry's calls/puts for an ETF symbol. */
+async function fetchOptionExpiry(
+  symbol: string,
+  date?: number
+): Promise<{ etfSpot: number; expiry: number; strikes: OptStrike[]; expirations: number[] }> {
+  const run = async (retry: boolean): Promise<Response> => {
+    const { cookie, crumb } = await yahooCrumb(retry);
+    const url =
+      `https://query1.finance.yahoo.com/v7/finance/options/${symbol}?crumb=${encodeURIComponent(crumb)}` +
+      (date ? `&date=${date}` : "");
+    const res = await fetch(url, { headers: { "User-Agent": YF_UA, Cookie: cookie }, next: { revalidate: 120 } });
+    if (res.status === 401 && !retry) return run(true); // stale crumb → refresh once
+    return res;
+  };
+  const res = await run(false);
+  if (!res.ok) throw new Error(`Yahoo options ${symbol} ${res.status}`);
+  const json = await res.json();
+  const r = json?.optionChain?.result?.[0];
+  if (!r?.options?.[0]) throw new Error(`Yahoo options ${symbol} empty`);
+  const etfSpot = r.quote?.regularMarketPrice ?? 0;
+  const opt = r.options[0];
+  const expiry = opt.expirationDate ?? date ?? 0;
+
+  const map = new Map<number, OptStrike>();
+  const add = (arr: Record<string, number>[], side: "call" | "put") => {
+    for (const o of arr ?? []) {
+      const k = o.strike;
+      if (k == null) continue;
+      const cur = map.get(k) ?? { strike: k, callOI: 0, putOI: 0, iv: 0, expiry };
+      const oi = o.openInterest ?? 0;
+      const iv = o.impliedVolatility ?? 0;
+      if (side === "call") cur.callOI = oi;
+      else cur.putOI = oi;
+      if (iv > 0) cur.iv = cur.iv ? (cur.iv + iv) / 2 : iv;
+      map.set(k, cur);
+    }
+  };
+  add(opt.calls, "call");
+  add(opt.puts, "put");
+  return {
+    etfSpot,
+    expiry,
+    strikes: [...map.values()].sort((a, b) => a.strike - b.strike),
+    expirations: r.expirationDates ?? [],
+  };
+}
+
+// ── Black-Scholes greeks ──────────────────────────────────────────────────────
+const normPdf = (x: number) => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+function normCdf(x: number): number {
+  // Abramowitz-Stegun approximation
+  const t = 1 / (1 + 0.2316419 * Math.abs(x));
+  const d = 0.3989423 * Math.exp(-(x * x) / 2);
+  let p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  if (x > 0) p = 1 - p;
+  return p;
+}
+
+function bsGreeks(S: number, K: number, T: number, sigma: number): { gamma: number; deltaCall: number } {
+  if (S <= 0 || K <= 0 || T <= 0 || sigma <= 0) return { gamma: 0, deltaCall: 0 };
+  const d1 = (Math.log(S / K) + (RISK_FREE + (sigma * sigma) / 2) * T) / (sigma * Math.sqrt(T));
+  return { gamma: normPdf(d1) / (S * sigma * Math.sqrt(T)), deltaCall: normCdf(d1) };
+}
+
+/** Compute dealer GEX/DEX profile + OI context from an ETF options proxy. */
+async function computeGreeks(
+  proxy: string,
+  futSpot: number
+): Promise<{ oi: OiContext; greeks: GreeksProfile } | null> {
+  try {
+    const nearest = await fetchOptionExpiry(proxy);
+    const { etfSpot } = nearest;
+    if (!etfSpot) return null;
+
+    // Add one ~monthly expiry for a fuller weekly profile (best-effort).
+    let strikes = nearest.strikes;
+    const monthly = nearest.expirations.find((e) => (e - Date.now() / 1000) / 86400 >= 21);
+    if (monthly && monthly !== nearest.expiry) {
+      try {
+        const m = await fetchOptionExpiry(proxy, monthly);
+        strikes = mergeStrikes(strikes, m.strikes);
+      } catch {
+        /* nearest expiry alone is fine */
+      }
+    }
+
+    const ratio = futSpot / etfSpot; // proxy → futures scale
+    const now = Date.now() / 1000;
+    const cs = 100; // ETF option contract size
+
+    let totalGex = 0,
+      totalDex = 0,
+      callOItot = 0,
+      putOItot = 0;
+    const profile: GreekStrike[] = [];
+
+    for (const s of strikes) {
+      const T = Math.max((s.expiry - now) / (365 * 86400), 1 / 365);
+      const sigma = s.iv > 0 ? s.iv : 0.2;
+      const { gamma, deltaCall } = bsGreeks(etfSpot, s.strike, T, sigma);
+      const deltaPut = deltaCall - 1;
+      // Naive dealer convention: long calls / short puts
+      const gex = gamma * (s.callOI - s.putOI) * cs * etfSpot * etfSpot * 0.01;
+      const dex = (deltaCall * s.callOI + deltaPut * s.putOI) * cs * etfSpot;
+      totalGex += gex;
+      totalDex += dex;
+      callOItot += s.callOI;
+      putOItot += s.putOI;
+      profile.push({ strike: rnd(s.strike * ratio), gex: rnd(gex), dex: rnd(dex) });
+    }
+    if (!profile.length) return null;
+
+    // Gamma flip: cumulative GEX zero-crossing
+    let cum = 0,
+      flip: number | null = null;
+    for (const p of profile) {
+      const prev = cum;
+      cum += p.gex;
+      if (prev <= 0 && cum > 0) flip = p.strike;
+      else if (prev >= 0 && cum < 0) flip = p.strike;
+    }
+
+    const callWall = profile.reduce((a, b) => (b.gex > a.gex ? b : a), profile[0]);
+    const putWall = profile.reduce((a, b) => (b.gex < a.gex ? b : a), profile[0]);
+
+    // Max pain: expiry price minimizing total option intrinsic value (in ETF space)
+    const maxPainEtf = computeMaxPain(strikes);
+    const pcr = callOItot > 0 ? rnd(putOItot / callOItot, 2) : null;
+    const pcrBias: OiContext["pcr_bias"] =
+      pcr == null ? "unavailable" : pcr > 1.1 ? "bullish" : pcr < 0.8 ? "bearish" : "neutral";
+
+    const greeks: GreeksProfile = {
+      proxy,
+      ratio: rnd(ratio, 4),
+      totalGex: rnd(totalGex),
+      totalDex: rnd(totalDex),
+      gexRegime: totalGex >= 0 ? "positive" : "negative",
+      dexBias: totalDex >= 0 ? "long" : "short",
+      flip,
+      callWall: callWall.strike,
+      putWall: putWall.strike,
+      profile,
+    };
+    const oi: OiContext = {
+      pcr,
+      pcr_bias: pcrBias,
+      max_pain: maxPainEtf ? rnd(maxPainEtf * ratio) : null,
+      gex_flip: flip,
+    };
+    return { oi, greeks };
+  } catch (e) {
+    console.error("[option-flow] greeks unavailable:", e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
+function mergeStrikes(a: OptStrike[], b: OptStrike[]): OptStrike[] {
+  // Combine two expiries; keep them as separate rows (different T) but merged list.
+  return [...a, ...b].sort((x, y) => x.strike - y.strike || x.expiry - y.expiry);
+}
+
+function computeMaxPain(strikes: OptStrike[]): number | null {
+  if (!strikes.length) return null;
+  const ks = strikes.map((s) => s.strike);
+  let best: { k: number; pain: number } | null = null;
+  for (const P of ks) {
+    let pain = 0;
+    for (const s of strikes) {
+      pain += s.callOI * Math.max(P - s.strike, 0) + s.putOI * Math.max(s.strike - P, 0);
+    }
+    if (!best || pain < best.pain) best = { k: P, pain };
+  }
+  return best?.k ?? null;
 }
 
 // ── Eastern-time helpers ──────────────────────────────────────────────────────
@@ -397,9 +627,18 @@ async function macroScore(key: MacroKey): Promise<number> {
   }
 }
 
-function biasFrom(cotScore: number, macroContribution: number): WeeklyBias {
-  // PCR unavailable from free source → renormalise COT (40%) + Macro (35%) to sum 1.
-  const score = Math.max(-1, Math.min(1, (0.4 * cotScore + 0.35 * macroContribution) / 0.75));
+function biasFrom(
+  cotScore: number,
+  macroContribution: number,
+  pcrScore: number,
+  pcrAvailable: boolean
+): WeeklyBias {
+  // Full model: COT 40% + Macro 35% + PCR 25%.
+  // If PCR is missing, renormalise COT+Macro to sum 1 so bias isn't dampened.
+  const raw = pcrAvailable
+    ? 0.4 * cotScore + 0.35 * macroContribution + 0.25 * pcrScore
+    : (0.4 * cotScore + 0.35 * macroContribution) / 0.75;
+  const score = Math.max(-1, Math.min(1, raw));
   const bias: BiasDirection = score > 0.2 ? "BULLISH" : score < -0.2 ? "BEARISH" : "NEUTRAL";
   const c = Math.abs(score);
   const confidence = c > 0.6 ? "High" : c > 0.3 ? "Moderate" : "Low";
@@ -407,7 +646,7 @@ function biasFrom(cotScore: number, macroContribution: number): WeeklyBias {
     bias,
     score: rnd(score, 3),
     confidence,
-    components: { cot: rnd(cotScore, 3), macro: rnd(macroContribution, 3), pcr: 0 },
+    components: { cot: rnd(cotScore, 3), macro: rnd(macroContribution, 3), pcr: pcrAvailable ? rnd(pcrScore, 3) : 0 },
   };
 }
 
@@ -417,13 +656,15 @@ async function buildInstrument(
   macroScores: Record<MacroKey, { score: number; label: MacroScore["label"] }>
 ): Promise<InstrumentFlow> {
   const cfg = INST[key];
-  const [intraday, daily, cotRows] = await Promise.all([
-    yahooChart(cfg.yahoo, "1m", "5d"),
+  // Intraday first to establish spot, then parallelise the rest (greeks needs spot).
+  const intraday = await yahooChart(cfg.yahoo, "1m", "5d");
+  const spot = rnd(intraday.price);
+  const [daily, cotRows, greeksRes] = await Promise.all([
     yahooChart(cfg.yahoo, "1d", "3mo"),
     fetchCot(cfg.cotMarket).catch(() => [] as CotRow[]),
+    computeGreeks(cfg.proxy, spot),
   ]);
 
-  const spot = rnd(intraday.price);
   const levels = computeSessionLevels(intraday.bars, key);
 
   const todayBars: ETBar[] = intraday.bars
@@ -437,7 +678,10 @@ async function buildInstrument(
     (s, mk) => s + (cfg.macro[mk] / relTotal) * macroScores[mk].score,
     0
   );
-  const bias = biasFrom(cot?.score ?? 0, macroContribution);
+  // Real PCR component now available from the ETF options proxy
+  const pcrBias = greeksRes?.oi.pcr_bias;
+  const pcrScore = pcrBias === "bullish" ? 0.5 : pcrBias === "bearish" ? -0.5 : 0;
+  const bias = biasFrom(cot?.score ?? 0, macroContribution, pcrScore, pcrBias != null && pcrBias !== "unavailable");
 
   // ── Intraday zones from session levels (+ round numbers as structural backstop) ──
   const intradayRaw: RawLevel[] = [];
@@ -490,11 +734,14 @@ async function buildInstrument(
     updatedAt: new Date().toISOString(),
     dataSource: "yahoo",
     live: true,
-    note: "PCR / GEX / Max Pain require options data (not in free Yahoo feed) — bias uses COT + macro only.",
+    note: greeksRes
+      ? `GEX / DEX / PCR derived from ${cfg.proxy} ETF options (proxy for ${key}), scaled to futures.`
+      : "Options proxy unavailable — bias uses COT + macro only.",
     bias,
     cot: cot ?? fallbackCot,
     macro,
-    oi: { pcr: null, pcr_bias: "unavailable", max_pain: null, gex_flip: null },
+    oi: greeksRes?.oi ?? { pcr: null, pcr_bias: "unavailable", max_pain: null, gex_flip: null },
+    greeks: greeksRes?.greeks ?? null,
     sessionLevels: levels,
     zones: { weekly: weeklyZones, intraday: intradayZones },
   };

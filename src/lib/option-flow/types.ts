@@ -105,13 +105,37 @@ export interface MacroScore {
 
 /**
  * Put/Call ratio context from the options chain.
- * Null when the source (e.g. free Yahoo Finance) does not expose futures options.
+ * Null when the source (e.g. free Yahoo Finance) does not expose options.
  */
 export interface OiContext {
   pcr: number | null;
   pcr_bias: "bullish" | "bearish" | "neutral" | "unavailable";
   max_pain: number | null;
   gex_flip: number | null;
+}
+
+/** One strike of dealer gamma/delta exposure, strike scaled to futures price. */
+export interface GreekStrike {
+  strike: number; // futures-scaled strike
+  gex: number; // net gamma exposure ($ / 1% move), call-positive / put-negative
+  dex: number; // net delta exposure ($)
+}
+
+/**
+ * Gamma/Delta exposure profile, derived from the ETF options proxy
+ * (NQ→QQQ, GC→GLD) and scaled to futures price.
+ */
+export interface GreeksProfile {
+  proxy: string; // "QQQ" | "GLD"
+  ratio: number; // proxy→futures scale
+  totalGex: number;
+  totalDex: number;
+  gexRegime: "positive" | "negative"; // positive = pinning, negative = amplifying
+  dexBias: "long" | "short";
+  flip: number | null; // gamma flip (futures price)
+  callWall: number | null; // strike with largest positive GEX (futures)
+  putWall: number | null; // strike with most negative GEX (futures)
+  profile: GreekStrike[]; // per-strike, sorted by strike
 }
 
 export interface InstrumentFlow {
@@ -129,6 +153,8 @@ export interface InstrumentFlow {
   cot: Cot;
   macro: MacroScore[];
   oi: OiContext;
+  /** Dealer gamma/delta exposure from the ETF options proxy; null if unavailable. */
+  greeks: GreeksProfile | null;
   sessionLevels: SessionLevels;
   zones: {
     weekly: Zones;
