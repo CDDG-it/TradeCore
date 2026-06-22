@@ -18,6 +18,8 @@ import {
   Trash2,
   X,
   Target,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +38,7 @@ import {
   getProfile,
 } from "@/lib/supabase/queries";
 import { subDays } from "date-fns";
+import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import type { TradeResult, Habit, HabitCompletion } from "@/lib/types";
 
@@ -431,6 +434,7 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
 }
 
 export default function DashboardPage() {
+  const { hidden, toggle } = usePrivacy();
   const [trades, setTrades] = useState<import("@/lib/types").TradeJournalEntry[]>([]);
   const [accounts, setAccounts] = useState<import("@/lib/types").FundedAccount[]>([]);
   const [greeting, setGreeting] = useState("");
@@ -501,6 +505,7 @@ export default function DashboardPage() {
 
   const statCards = [
     {
+      id: "trades",
       label: "Total Trades",
       value: totalTrades.toString(),
       sub: `${winRate}% win rate`,
@@ -510,8 +515,9 @@ export default function DashboardPage() {
       href: undefined as string | undefined,
     },
     {
+      id: "capital",
       label: "Active Capital",
-      value: totalCapital > 0 ? `$${totalCapital.toLocaleString()}` : "—",
+      value: totalCapital > 0 ? mask(`$${totalCapital.toLocaleString()}`, hidden) : "—",
       sub: `${activeAccounts.length} active account${activeAccounts.length !== 1 ? "s" : ""}`,
       icon: Wallet,
       accent: "oklch(0.58 0.17 145)",
@@ -548,7 +554,7 @@ export default function DashboardPage() {
       <PageWrapper>
         {/* Stats + Discipline */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-up">
-          {statCards.map(({ label, value, sub, icon: Icon, accent, accentBg, href }, i) => {
+          {statCards.map(({ id, label, value, sub, icon: Icon, accent, accentBg, href }, i) => {
             const inner = (
               <>
                 <div
@@ -557,8 +563,25 @@ export default function DashboardPage() {
                 />
                 <div className="flex items-start justify-between mb-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: accentBg }}>
-                    <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {id === "capital" && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggle();
+                        }}
+                        title={hidden ? "Show balance" : "Hide balance (privacy mode)"}
+                        aria-pressed={hidden}
+                        className="relative z-10 w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                      >
+                        {hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    )}
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: accentBg }}>
+                      <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
+                    </div>
                   </div>
                 </div>
                 <p className="text-3xl font-black tracking-tight mb-1 tabular-nums" style={{ color: accent }}>{value}</p>

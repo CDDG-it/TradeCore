@@ -139,30 +139,13 @@ export default function AccountsPage() {
         title="Accounts"
         subtitle="Funded prop firm accounts"
         action={
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={toggle}
-              title={hidden ? "Show balances" : "Hide balances (privacy mode)"}
-              aria-pressed={hidden}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-all",
-                hidden
-                  ? "border-primary/50 bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
-              )}
-            >
-              {hidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              <span className="hidden sm:inline">{hidden ? "Hidden" : "Hide"}</span>
-            </button>
-            <Link
-              href="/accounts/new"
-              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px bg-primary text-primary-foreground"
-            >
-              <Plus className="w-4 h-4" />
-              Add account
-            </Link>
-          </div>
+          <Link
+            href="/accounts/new"
+            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0 bg-primary text-primary-foreground"
+          >
+            <Plus className="w-4 h-4" />
+            Add account
+          </Link>
         }
       />
       <PageWrapper>
@@ -241,6 +224,24 @@ export default function AccountsPage() {
             >
               <ArrowUpDown className="w-3 h-3" />
               {sortOrder === "newest" ? "Newest first" : "Oldest first"}
+            </button>
+
+            <div className="h-4 w-px bg-border" />
+
+            {/* Privacy toggle — hide balances when in public */}
+            <button
+              type="button"
+              onClick={toggle}
+              aria-pressed={hidden}
+              title={hidden ? "Show balances" : "Hide balances (privacy mode)"}
+              className={cn(
+                filterBtnBase,
+                "flex items-center gap-1.5",
+                hidden ? "border-primary/50 bg-primary/10 text-primary" : filterBtnInactive
+              )}
+            >
+              {hidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              {hidden ? "Hidden" : "Hide"}
             </button>
           </div>
         )}
