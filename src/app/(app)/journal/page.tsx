@@ -234,9 +234,9 @@ export default function JournalPage() {
             { label: "BE", value: bes.toString(), color: "text-warning" },
             { label: "Avg R:R", value: avgRR, color: "text-primary" },
           ].map(({ label, value, color }, i) => (
-            <div key={label} className={cn("flex items-baseline gap-1.5 px-2.5 py-1", i > 0 && "border-l border-border/40")}>
-              <span className={cn("text-sm font-bold tabular-nums", color)}>{value}</span>
-              <span className="text-[11px] text-muted-foreground">{label}</span>
+            <div key={label} className={cn("flex items-baseline gap-1.5 px-3 py-1", i > 0 && "border-l border-border/40")}>
+              <span className={cn("text-lg font-bold tabular-nums", color)}>{value}</span>
+              <span className="text-xs text-muted-foreground">{label}</span>
             </div>
           ))}
         </div>
@@ -594,8 +594,8 @@ export default function JournalPage() {
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{trade.session} session</p>
                     </div>
-                    <div className="text-center w-12 shrink-0 hidden md:block">
-                      <p className={cn("text-sm font-semibold",
+                    <div className="text-center w-14 shrink-0 hidden md:block">
+                      <p className={cn("text-base font-bold tabular-nums",
                         trade.result === "win" ? "text-success"
                         : trade.result === "loss" ? "text-destructive"
                         : "text-warning")}>

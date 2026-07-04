@@ -372,40 +372,40 @@ export default function HabitsPage() {
         title="Habits"
         subtitle="Daily habit tracker"
         action={
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowHowItWorks(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold shadow-sm transition-all hover:-translate-y-px shrink-0"
-              style={{
-                background: "oklch(0.72 0.22 45 / 0.12)",
-                borderColor: "oklch(0.72 0.22 45 / 0.40)",
-                color: "oklch(0.72 0.22 45)",
-              }}
-            >
-              <HelpCircle className="w-4 h-4" />
-              How it works
-            </button>
-            <button
-              onClick={() => setShowNewHabit(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
-              style={{
-                background: "oklch(0.72 0.22 45)",
-                color: "oklch(0.07 0.003 28)",
-                boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
-              }}
-            >
-              <Plus className="w-4 h-4" />
-              New habit
-            </button>
-          </div>
+          <button
+            onClick={() => setShowNewHabit(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
+            style={{
+              background: "oklch(0.72 0.22 45)",
+              color: "oklch(0.07 0.003 28)",
+              boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            New habit
+          </button>
         }
       />
       <PageWrapper>
       {/* Insights header + range toggle — look beyond just today */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
-          <h2 className="text-sm font-semibold">Insights</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
+            <h2 className="text-sm font-semibold">Insights</h2>
+          </div>
+          <button
+            onClick={() => setShowHowItWorks(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:-translate-y-px"
+            style={{
+              background: "oklch(0.72 0.22 45 / 0.12)",
+              borderColor: "oklch(0.72 0.22 45 / 0.40)",
+              color: "oklch(0.72 0.22 45)",
+            }}
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            How it works
+          </button>
         </div>
         <div className="flex rounded-lg border border-border/50 overflow-hidden">
           {RANGES.map((r) => (
