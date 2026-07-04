@@ -18,6 +18,7 @@ import type { TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { TradeResult, Direction } from "@/lib/types";
 import { WeeklyReview } from "@/components/journal/weekly-review";
+import { tradeR, formatTotalR } from "@/lib/journal/weeks";
 
 type ViewMode = "list" | "calendar" | "review";
 type PeriodFilter = "all" | "day" | "week" | "month";
@@ -113,6 +114,18 @@ export default function JournalPage() {
     return map;
   }, [allTrades]);
 
+  // Total R for the currently displayed calendar period (matches what's on screen).
+  // Wins count their R:R, losses -1R, break-even 0R — via the shared tradeR helper,
+  // so calendar and list/weekly views can never disagree.
+  const calendarR = useMemo(() => {
+    const start = calendarPeriod === "month" ? calMonthStart : calWeekStart;
+    const end = calendarPeriod === "month" ? calMonthEnd : calWeekEnd;
+    return allTrades.reduce((sum, t) => {
+      const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
+      return d >= start && d <= end ? sum + tradeR(t) : sum;
+    }, 0);
+  }, [allTrades, calendarPeriod, calMonthStart, calMonthEnd, calWeekStart, calWeekEnd]);
+
   const periodLabel = periodFilter === "day"
     ? format(now, "EEEE, MMM d")
     : periodFilter === "week"
@@ -181,24 +194,29 @@ export default function JournalPage() {
 
       {/* Controls row */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* View toggle — always visible so you can switch modes */}
+        {/* Primary view toggle — Calendar first, then List */}
         <div className="flex rounded-lg border border-border/50 overflow-hidden">
-          <button onClick={() => setViewMode("list")}
-            className={cn("px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5",
-              viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-            <List className="w-3.5 h-3.5" /> List
-          </button>
           <button onClick={() => setViewMode("calendar")}
             className={cn("px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5",
               viewMode === "calendar" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
             <Calendar className="w-3.5 h-3.5" /> Calendar
           </button>
-          <button onClick={() => setViewMode("review")}
+          <button onClick={() => setViewMode("list")}
             className={cn("px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5",
-              viewMode === "review" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-            <CalendarCheck className="w-3.5 h-3.5" /> Weekly Review
+              viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+            <List className="w-3.5 h-3.5" /> List
           </button>
         </div>
+
+        {/* Weekly Reviews — a secondary sub-tab, kept easy to reach but visually
+            subordinate to the primary Calendar / List toggle above. */}
+        <button onClick={() => setViewMode(viewMode === "review" ? "calendar" : "review")}
+          className={cn("ml-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border",
+            viewMode === "review"
+              ? "bg-primary/10 text-primary border-primary/30"
+              : "text-muted-foreground border-transparent hover:text-foreground hover:border-border/50")}>
+          <CalendarCheck className="w-3.5 h-3.5" /> Weekly Reviews
+        </button>
 
         {/* Filters — list mode only */}
         {viewMode === "list" && (
@@ -276,10 +294,32 @@ export default function JournalPage() {
                   ))}
                 </div>
               </div>
-              <button onClick={nextCalendar} aria-label="Next"
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary">
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Period R summary — subtle, top-right of the calendar section */}
+                <div className="hidden sm:flex items-center gap-2 rounded-lg border border-border/50 bg-muted/20 px-3 py-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+                    {calendarPeriod === "month" ? "Month R" : "Week R"}
+                  </span>
+                  <span className={cn("text-sm font-bold tabular-nums",
+                    calendarR > 0 ? "text-success" : calendarR < 0 ? "text-destructive" : "text-muted-foreground")}>
+                    {formatTotalR(calendarR)}
+                  </span>
+                </div>
+                <button onClick={nextCalendar} aria-label="Next"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            {/* Compact R summary for narrow screens — kept visible, just below the nav */}
+            <div className="flex sm:hidden items-center justify-end gap-2 px-4 pb-2 -mt-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+                {calendarPeriod === "month" ? "Month R" : "Week R"}
+              </span>
+              <span className={cn("text-sm font-bold tabular-nums",
+                calendarR > 0 ? "text-success" : calendarR < 0 ? "text-destructive" : "text-muted-foreground")}>
+                {formatTotalR(calendarR)}
+              </span>
             </div>
 
             <CardContent className="p-4">

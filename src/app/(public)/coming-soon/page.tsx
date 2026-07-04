@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowLeft, Newspaper, Magnet, Waves, Users } from "lucide-react";
+import { ArrowLeft, Newspaper, Gauge } from "lucide-react";
 import { LandingFooter } from "@/components/landing/footer";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
@@ -12,22 +12,10 @@ export const metadata: Metadata = {
 
 const UPCOMING = [
   {
-    icon: Magnet,
-    name: "Gamma Exposure Levels",
+    icon: Gauge,
+    name: "Sentiment Tracker",
     status: "Planned",
-    desc: "See where dealer gamma pins price. Map the key GEX levels that act as magnets and walls intraday, so you know which strikes the market wants to defend.",
-  },
-  {
-    icon: Waves,
-    name: "CVD",
-    status: "Planned",
-    desc: "Read the order flow behind the candles. Cumulative Volume Delta shows whether buyers or sellers are actually in control, and where aggression is drying up.",
-  },
-  {
-    icon: Users,
-    name: "COT Data",
-    status: "Planned",
-    desc: "Track how the big players are positioned. Commitment of Traders data turns the weekly report into a clean read on what commercials and large speculators are doing.",
+    desc: "Gauge how the crowd is leaning before you commit. A clean read on positioning and market mood across your instruments, so you know when you are with the flow and when you are fading it.",
   },
   {
     icon: Newspaper,

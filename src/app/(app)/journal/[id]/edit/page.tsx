@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, X, Check, Clock } from "lucide-react";
 import { format } from "date-fns";
@@ -15,6 +15,8 @@ import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useFormDraft } from "@/lib/drafts";
+import { DraftBanner } from "@/components/ui/draft-banner";
 
 const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
@@ -63,8 +65,12 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [tradeInfo, setTradeInfo] = useState<{ instrument: string; session: string }>({ instrument: "", session: "" });
   const [userId, setUserId] = useState<string | null>(null);
   const [savedConfluences, setSavedConfluences] = useState<string[]>([]);
+  const [recordUpdatedAt, setRecordUpdatedAt] = useState<string | null>(null);
 
   const [form, setForm] = useState(DEFAULT_FORM);
+  // Snapshot of the saved trade — a draft only persists once the form diverges
+  // from this, so an unchanged edit never shows a spurious "draft restored".
+  const baselineRef = useRef<typeof DEFAULT_FORM | null>(null);
 
   useEffect(() => {
     Promise.all([getTradeById(id), getAnalyses(), getProfile()]).then(([trade, analyses, profile]) => {
@@ -98,7 +104,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         }
       }
 
-      setForm({
+      const loaded: typeof DEFAULT_FORM = {
         date_time: trade.date_time.slice(0, 10),
         instrument: trade.instrument,
         market: trade.market,
@@ -119,10 +125,29 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         discipline,
         execution_time: trade.execution_time ?? "",
         execution_quality: (trade as TradeJournalEntry).execution_quality,
-      });
+      };
+      baselineRef.current = loaded;
+      setRecordUpdatedAt(trade.updated_at);
+      setForm(loaded);
       setLoading(false);
     });
   }, [id]);
+
+  // Auto-save / restore unsaved edits. `ready` waits for the trade to load, and
+  // `recordUpdatedAt` discards any draft older than the last saved version.
+  const shouldPersist = useCallback(
+    (v: typeof DEFAULT_FORM) =>
+      baselineRef.current != null && JSON.stringify(v) !== JSON.stringify(baselineRef.current),
+    []
+  );
+  const { restored, clear: clearDraft, dismiss } = useFormDraft<typeof DEFAULT_FORM>({
+    key: `trade:edit:${id}`,
+    value: form,
+    apply: setForm,
+    ready: !loading,
+    shouldPersist,
+    recordUpdatedAt,
+  });
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -183,6 +208,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     setSaving(true);
     try {
       await updateTrade(id, form);
+      clearDraft(); // saved for real — drop the draft
       router.push(`/journal/${id}`);
     } catch (err) {
       console.error("Failed to save trade:", err);
@@ -215,6 +241,8 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         <h1 className="text-2xl font-bold tracking-tight">Edit Trade</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{tradeInfo.instrument} · {tradeInfo.session} session</p>
       </div>
+
+      {restored && <DraftBanner onDismiss={dismiss} label="Draft restored — you have unsaved edits from before." />}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <Card className="shadow-sm">

@@ -15,6 +15,24 @@ import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useFormDraft } from "@/lib/drafts";
+import { DraftBanner } from "@/components/ui/draft-banner";
+
+// A draft is only worth keeping once the trader has entered something real —
+// keeps pristine, untouched forms from persisting an empty draft.
+function tradeDraftHasContent(f: TradeJournalEntryInput): boolean {
+  return (
+    !!f.instrument ||
+    f.confluences.length > 0 ||
+    !!f.execution_notes ||
+    !!f.psychology_notes ||
+    !!f.mistakes ||
+    !!f.lessons ||
+    !!f.execution_time ||
+    (f.discipline?.custom_checks?.some((c) => c.passed) ?? false) ||
+    (f.screenshot_groups?.some((g) => g.urls.length > 0) ?? false)
+  );
+}
 
 const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
@@ -69,7 +87,12 @@ export default function NewTradePage() {
           .map((label) => ({ label, passed: false }));
         if (checks.length > 0) {
           const score = 0;
-          setForm((prev) => ({ ...prev, discipline: { ...prev.discipline!, custom_checks: checks, score } }));
+          setForm((prev) =>
+            // Don't overwrite checks a restored draft already brought back.
+            (prev.discipline?.custom_checks?.length ?? 0) > 0
+              ? prev
+              : { ...prev, discipline: { ...prev.discipline!, custom_checks: checks, score } }
+          );
         }
       }
     });
@@ -101,6 +124,14 @@ export default function NewTradePage() {
   });
 
   const analyses = allAnalyses.filter((a) => a.date === form.date_time);
+
+  // Auto-save / restore unsaved input so an accidental "back" never loses work.
+  const { restored, clear: clearDraft, dismiss } = useFormDraft<TradeJournalEntryInput>({
+    key: "trade:new",
+    value: form,
+    apply: setForm,
+    shouldPersist: tradeDraftHasContent,
+  });
 
   function set<K extends keyof TradeJournalEntryInput>(key: K, value: TradeJournalEntryInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -162,6 +193,7 @@ export default function NewTradePage() {
     setSaving(true);
     try {
       const created = await createTrade(form, entityId);
+      clearDraft(); // saved for real — drop the draft so it can't resurrect
       router.push(`/journal/${created.id}`);
     } catch (err) {
       console.error("Failed to save trade:", err);
@@ -181,6 +213,8 @@ export default function NewTradePage() {
         <h1 className="text-2xl font-bold tracking-tight">Log Trade</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Record a completed trade</p>
       </div>
+
+      {restored && <DraftBanner onDismiss={dismiss} />}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Trade Details */}

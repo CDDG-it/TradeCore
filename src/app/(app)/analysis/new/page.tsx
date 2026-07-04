@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ImagePlus, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
@@ -13,6 +13,8 @@ import { createAnalysis } from "@/lib/supabase/queries";
 import type { Bias } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useRef } from "react";
+import { useFormDraft } from "@/lib/drafts";
+import { DraftBanner } from "@/components/ui/draft-banner";
 
 const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const BIASES: Bias[] = ["bullish", "bearish", "choppy"];
@@ -190,6 +192,31 @@ export default function NewAnalysisPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  // Auto-save / restore the whole analysis (fields + chart tabs) as one draft.
+  const draftValue = useMemo(
+    () => ({ form, htfTF, ltfTF, htfUrls, ltfUrls }),
+    [form, htfTF, ltfTF, htfUrls, ltfUrls]
+  );
+  const applyDraft = useCallback((d: typeof draftValue) => {
+    setForm(d.form);
+    setHtfTF(d.htfTF);
+    setLtfTF(d.ltfTF);
+    setHtfUrls(d.htfUrls);
+    setLtfUrls(d.ltfUrls);
+  }, []);
+  const { restored, clear: clearDraft, dismiss } = useFormDraft<typeof draftValue>({
+    key: "analysis:new",
+    value: draftValue,
+    apply: applyDraft,
+    shouldPersist: (d) =>
+      !!d.form.instrument ||
+      !!d.form.thesis ||
+      !!d.form.long_scenario ||
+      !!d.form.short_scenario ||
+      d.htfUrls.length > 0 ||
+      d.ltfUrls.length > 0,
+  });
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.instrument || !form.thesis) return;
@@ -207,6 +234,7 @@ export default function NewAnalysisPage() {
           { label: `LTF${ltfTF ? ` · ${ltfTF}` : ""}`, urls: ltfUrls },
         ],
       });
+      clearDraft(); // saved for real — drop the draft
       router.push(`/analysis/${created.id}`);
     } catch (err) {
       console.error("Failed to save analysis:", err);
@@ -223,6 +251,8 @@ export default function NewAnalysisPage() {
         <h1 className="text-2xl font-bold tracking-tight">New Analysis</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Pre-trade structured preparation</p>
       </div>
+
+      {restored && <DraftBanner onDismiss={dismiss} />}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <Card className="bg-card border-border/50 shadow-sm">
