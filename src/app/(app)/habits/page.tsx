@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { computeHabitScore, DISCIPLINE_WEIGHTS } from "@/lib/discipline";
-import { startOfDay } from "date-fns";
+import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
 import {
   getHabits,
   getHabitCompletions,
@@ -56,6 +56,63 @@ function frequencyApplies(freq: Habit["frequency"], weekday: number): boolean {
   if (freq === "weekdays") return weekday >= 1 && weekday <= 5;
   if (freq === "weekends") return weekday === 0 || weekday === 6;
   return true;
+}
+
+/**
+ * GitHub-style history grid: weekday rows × week columns over [start, end].
+ * `intensityFor` returns 0–1 for a day (color strength), or null when the day
+ * doesn't apply (rendered dim) — so you can actually see earlier weeks/months.
+ */
+function ActivityHeatmap({
+  start,
+  end,
+  intensityFor,
+  color,
+  cell = 12,
+}: {
+  start: Date;
+  end: Date;
+  intensityFor: (dateKey: string, date: Date) => number | null;
+  color: string;
+  cell?: number;
+}) {
+  const firstMonday = startOfWeek(start, { weekStartsOn: 1 });
+  const rangeStart = startOfDay(start);
+  const days = eachDayOfInterval({ start: firstMonday, end });
+  const weeks: Date[][] = [];
+  for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
+
+  return (
+    <div className="flex gap-[3px] overflow-x-auto pb-1">
+      {weeks.map((wk, ci) => (
+        <div key={ci} className="flex flex-col gap-[3px]">
+          {wk.map((d) => {
+            const key = format(d, "yyyy-MM-dd");
+            const inRange = d >= rangeStart && d <= end;
+            let bg = "transparent";
+            let title = "";
+            if (inRange) {
+              const intensity = intensityFor(key, d);
+              if (intensity === null) {
+                bg = "oklch(0.15 0.004 28)";
+              } else if (intensity <= 0) {
+                bg = "oklch(0.19 0.005 28)";
+                title = `${format(d, "EEE MMM d")} · missed`;
+              } else {
+                const a = 0.3 + Math.min(1, intensity) * 0.6;
+                bg = color.replace(")", ` / ${a.toFixed(2)})`);
+                title = `${format(d, "EEE MMM d")} · ${Math.round(intensity * 100)}%`;
+              }
+            }
+            return (
+              <div key={key} title={title}
+                style={{ width: cell, height: cell, borderRadius: 3, background: bg }} />
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /** Applicable-day completion for one habit over the last `days` days. */
@@ -286,6 +343,22 @@ export default function HabitsPage() {
     return d >= rangeStart && d <= rangeEnd;
   }).length;
 
+  // Fast lookup for the heatmaps + a per-day overall completion rate.
+  const completedByKey = new Set(
+    completions.filter((c) => c.completed).map((c) => `${c.habit_id}|${c.date}`)
+  );
+  const overallIntensity = (key: string, d: Date): number | null => {
+    const wd = d.getDay();
+    let exp = 0;
+    let done = 0;
+    for (const h of habits) {
+      if (!frequencyApplies(h.frequency, wd)) continue;
+      exp += 1;
+      if (completedByKey.has(`${h.id}|${key}`)) done += 1;
+    }
+    return exp > 0 ? done / exp : null;
+  };
+
   const PRIORITY_CONFIG = {
     high:   { label: "High",   style: { color: "oklch(0.58 0.22 25)",  bg: "oklch(0.58 0.22 25 / 0.12)"  } },
     medium: { label: "Medium", style: { color: "oklch(0.70 0.16 72)",  bg: "oklch(0.70 0.16 72 / 0.12)"  } },
@@ -302,10 +375,15 @@ export default function HabitsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowHowItWorks(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-border shrink-0"
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold shadow-sm transition-all hover:-translate-y-px shrink-0"
+              style={{
+                background: "oklch(0.72 0.22 45 / 0.12)",
+                borderColor: "oklch(0.72 0.22 45 / 0.40)",
+                color: "oklch(0.72 0.22 45)",
+              }}
             >
               <HelpCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">How it works</span>
+              How it works
             </button>
             <button
               onClick={() => setShowNewHabit(true)}
@@ -437,6 +515,31 @@ export default function HabitsPage() {
           </div>
         ))}
       </div>
+
+      {/* Activity history — see completion across earlier weeks / months */}
+      {habits.length > 0 && (
+        <div
+          className="rounded-xl p-5"
+          style={{ background: "oklch(0.10 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
+        >
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="text-sm font-semibold">Activity</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Daily completion over the last {rangeDays} days
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground shrink-0">
+              <span>Less</span>
+              {[0.19, 0.4, 0.65, 0.9].map((a) => (
+                <span key={a} style={{ width: 11, height: 11, borderRadius: 3, background: a === 0.19 ? "oklch(0.19 0.005 28)" : `oklch(0.72 0.22 45 / ${a})` }} />
+              ))}
+              <span>More</span>
+            </div>
+          </div>
+          <ActivityHeatmap start={rangeStart} end={rangeEnd} intensityFor={overallIntensity} color="oklch(0.72 0.22 45)" />
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Habits list */}
@@ -574,6 +677,23 @@ export default function HabitsPage() {
                     <p className="text-xs text-muted-foreground">last {rangeDays}d · {rangeStat.pct}%</p>
                   </div>
                 </div>
+
+                {/* Range history — visible for 30d / 90d so earlier data shows */}
+                {rangeDays > 7 && (
+                  <div className="mt-3 pt-3 border-t border-border/30">
+                    <ActivityHeatmap
+                      start={rangeStart}
+                      end={rangeEnd}
+                      cell={10}
+                      color={habit.color}
+                      intensityFor={(key, d) =>
+                        frequencyApplies(habit.frequency, d.getDay())
+                          ? (completedByKey.has(`${habit.id}|${key}`) ? 1 : 0)
+                          : null
+                      }
+                    />
+                  </div>
+                )}
               </div>
             );
           })}

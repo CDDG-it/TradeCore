@@ -262,17 +262,18 @@ export default function JournalPage() {
         {viewMode === "list" && (
           <div className="relative ml-auto" ref={filtersRef}>
             <button onClick={() => setShowFilters((v) => !v)}
-              className={cn("inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+              className={cn("inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-semibold shadow-sm transition-all hover:-translate-y-px",
                 showFilters || activeFilterCount > 0
-                  ? "bg-primary/10 text-primary border-primary/30"
-                  : "text-muted-foreground border-border/50 hover:text-foreground hover:border-border")}>
-              <SlidersHorizontal className="w-3.5 h-3.5" />
+                  ? "bg-primary/15 text-primary border-primary/50"
+                  : "bg-card text-foreground border-border hover:border-primary/50 hover:bg-muted/40")}>
+              <SlidersHorizontal className={cn("w-4 h-4", showFilters || activeFilterCount > 0 ? "text-primary" : "text-primary/80")} />
               Filters
               {activeFilterCount > 0 && (
                 <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground tabular-nums">
                   {activeFilterCount}
                 </span>
               )}
+              <ChevronRight className={cn("w-3.5 h-3.5 transition-transform opacity-70", showFilters ? "-rotate-90" : "rotate-90")} />
             </button>
 
             {showFilters && (
