@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -10,17 +10,16 @@ import {
   getDay, isToday,
 } from "date-fns";
 import { Plus, TrendingUp, TrendingDown, Calendar, List, CalendarCheck,
-  ChevronLeft, ChevronRight } from "lucide-react";
+  ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getTrades } from "@/lib/supabase/queries";
 import type { TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { TradeResult, Direction } from "@/lib/types";
-import { WeeklyReview } from "@/components/journal/weekly-review";
 import { tradeR, formatTotalR } from "@/lib/journal/weeks";
 
-type ViewMode = "list" | "calendar" | "review";
+type ViewMode = "list" | "calendar";
 type PeriodFilter = "all" | "day" | "week" | "month";
 type CalendarPeriod = "month" | "week";
 type ExecutionQualityFilter = "all" | "good" | "bad";
@@ -48,6 +47,27 @@ function ResultBadge({ result }: { result: TradeResult }) {
   return <Badge className={cn("text-xs px-1.5", config[result])}>{labels[result]}</Badge>;
 }
 
+// Compact building blocks for the filters popover.
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{label}</p>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
+function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick}
+      className={cn("rounded-md px-2.5 py-1 text-xs font-medium transition-colors border",
+        active
+          ? "bg-primary text-primary-foreground border-primary"
+          : "bg-muted/40 text-muted-foreground border-transparent hover:text-foreground hover:bg-muted")}>
+      {children}
+    </button>
+  );
+}
+
 export default function JournalPage() {
   const [allTrades, setAllTrades] = useState<TradeJournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +83,29 @@ export default function JournalPage() {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [calendarPeriod, setCalendarPeriod] = useState<CalendarPeriod>("week");
   const [calendarWeekDate, setCalendarWeekDate] = useState(new Date());
+  const [showFilters, setShowFilters] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
+
+  // Close the filters popover on outside click / Escape.
+  useEffect(() => {
+    if (!showFilters) return;
+    function onClick(e: MouseEvent) {
+      if (filtersRef.current && !filtersRef.current.contains(e.target as Node)) setShowFilters(false);
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setShowFilters(false); }
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [showFilters]);
+
+  const activeFilterCount =
+    (periodFilter !== "all" ? 1 : 0) +
+    (filterResult !== "all" ? 1 : 0) +
+    (filterDirection !== "all" ? 1 : 0) +
+    (filterExecution !== "all" ? 1 : 0);
 
   const now = new Date();
   const dayStart = startOfDay(now);
@@ -148,6 +191,13 @@ export default function JournalPage() {
     ? format(calendarMonth, "MMMM yyyy")
     : `${format(calWeekStart, "MMM d")} – ${format(calWeekEnd, "MMM d, yyyy")}`;
 
+  // Review is now contextual to the calendar: week view → this week's review,
+  // month view → the monthly review. Navigate prev/next first to review a past period.
+  const reviewHref = calendarPeriod === "month"
+    ? `/journal/review/month/${format(calendarMonth, "yyyy-MM")}`
+    : `/journal/review/${format(calWeekStart, "yyyy-MM-dd")}`;
+  const reviewLabel = calendarPeriod === "month" ? "Monthly review" : "Weekly review";
+
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -175,18 +225,18 @@ export default function JournalPage() {
         }
       />
       <PageWrapper>
-      {/* Summary row — list mode only; the calendar speaks for itself */}
+      {/* Compact stats strip — list mode only; the calendar speaks for itself */}
       {viewMode === "list" && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="inline-flex items-center rounded-lg border border-border/50 bg-card px-1 py-1">
           {[
-            { label: "Wins", value: wins.toString(), color: "text-success" },
-            { label: "Losses", value: losses.toString(), color: "text-destructive" },
-            { label: "Break-Even", value: bes.toString(), color: "text-warning" },
+            { label: "W", value: wins.toString(), color: "text-success" },
+            { label: "L", value: losses.toString(), color: "text-destructive" },
+            { label: "BE", value: bes.toString(), color: "text-warning" },
             { label: "Avg R:R", value: avgRR, color: "text-primary" },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="bg-card border border-border/50 rounded-xl p-4 text-center card-hover">
-              <p className={cn("text-xl font-bold", color)}>{value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+          ].map(({ label, value, color }, i) => (
+            <div key={label} className={cn("flex items-baseline gap-1.5 px-2.5 py-1", i > 0 && "border-l border-border/40")}>
+              <span className={cn("text-sm font-bold tabular-nums", color)}>{value}</span>
+              <span className="text-[11px] text-muted-foreground">{label}</span>
             </div>
           ))}
         </div>
@@ -208,58 +258,72 @@ export default function JournalPage() {
           </button>
         </div>
 
-        {/* Weekly Reviews — a secondary sub-tab, kept easy to reach but visually
-            subordinate to the primary Calendar / List toggle above. */}
-        <button onClick={() => setViewMode(viewMode === "review" ? "calendar" : "review")}
-          className={cn("ml-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border",
-            viewMode === "review"
-              ? "bg-primary/10 text-primary border-primary/30"
-              : "text-muted-foreground border-transparent hover:text-foreground hover:border-border/50")}>
-          <CalendarCheck className="w-3.5 h-3.5" /> Weekly Reviews
-        </button>
-
-        {/* Filters — list mode only */}
+        {/* Filters — list mode only, tucked into a compact popover menu */}
         {viewMode === "list" && (
-          <>
-            {/* Period filter */}
-            <div className="flex rounded-lg border border-border/50 overflow-hidden">
-              {(["all", "day", "week", "month"] as const).map((p) => (
-                <button key={p} onClick={() => setPeriodFilter(p)}
-                  className={cn("px-3 py-1.5 text-xs font-medium transition-colors capitalize",
-                    periodFilter === p ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-                  {p === "all" ? "All time" : p === "day" ? "Today" : p === "week" ? "This week" : "This month"}
-                </button>
-              ))}
-            </div>
+          <div className="relative ml-auto" ref={filtersRef}>
+            <button onClick={() => setShowFilters((v) => !v)}
+              className={cn("inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+                showFilters || activeFilterCount > 0
+                  ? "bg-primary/10 text-primary border-primary/30"
+                  : "text-muted-foreground border-border/50 hover:text-foreground hover:border-border")}>
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground tabular-nums">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
 
-            <div className="flex rounded-lg border border-border/50 overflow-hidden">
-              {(["all", "win", "loss", "break-even"] as const).map((r) => (
-                <button key={r} onClick={() => setFilterResult(r)}
-                  className={cn("px-3 py-1.5 text-xs font-medium transition-colors",
-                    filterResult === r ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-                  {r === "break-even" ? "B/E" : r === "all" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)}
-                </button>
-              ))}
-            </div>
-            <div className="flex rounded-lg border border-border/50 overflow-hidden">
-              {(["all", "long", "short"] as const).map((d) => (
-                <button key={d} onClick={() => setFilterDirection(d)}
-                  className={cn("px-3 py-1.5 text-xs font-medium transition-colors capitalize",
-                    filterDirection === d ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-                  {d}
-                </button>
-              ))}
-            </div>
-            <div className="flex rounded-lg border border-border/50 overflow-hidden">
-              {(["all", "good", "bad"] as const).map((e) => (
-                <button key={e} onClick={() => setFilterExecution(e)}
-                  className={cn("px-3 py-1.5 text-xs font-medium transition-colors",
-                    filterExecution === e ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-                  {e === "all" ? "All exec" : e === "good" ? "✓ Good" : "✗ Bad"}
-                </button>
-              ))}
-            </div>
-          </>
+            {showFilters && (
+              <div className="absolute right-0 top-full z-40 mt-2 w-72 rounded-xl border border-border/60 bg-card p-3.5 shadow-xl shadow-black/20">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-foreground/80">Filter trades</span>
+                  {activeFilterCount > 0 && (
+                    <button
+                      onClick={() => { setPeriodFilter("all"); setFilterResult("all"); setFilterDirection("all"); setFilterExecution("all"); }}
+                      className="inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground">
+                      <X className="w-3 h-3" /> Reset
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <FilterGroup label="Period">
+                    {(["all", "day", "week", "month"] as const).map((p) => (
+                      <FilterChip key={p} active={periodFilter === p} onClick={() => setPeriodFilter(p)}>
+                        {p === "all" ? "All time" : p === "day" ? "Today" : p === "week" ? "This week" : "This month"}
+                      </FilterChip>
+                    ))}
+                  </FilterGroup>
+
+                  <FilterGroup label="Result">
+                    {(["all", "win", "loss", "break-even"] as const).map((r) => (
+                      <FilterChip key={r} active={filterResult === r} onClick={() => setFilterResult(r)}>
+                        {r === "break-even" ? "B/E" : r === "all" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)}
+                      </FilterChip>
+                    ))}
+                  </FilterGroup>
+
+                  <FilterGroup label="Direction">
+                    {(["all", "long", "short"] as const).map((d) => (
+                      <FilterChip key={d} active={filterDirection === d} onClick={() => setFilterDirection(d)}>
+                        <span className="capitalize">{d}</span>
+                      </FilterChip>
+                    ))}
+                  </FilterGroup>
+
+                  <FilterGroup label="Execution">
+                    {(["all", "good", "bad"] as const).map((e) => (
+                      <FilterChip key={e} active={filterExecution === e} onClick={() => setFilterExecution(e)}>
+                        {e === "all" ? "All" : e === "good" ? "✓ Good" : "✗ Bad"}
+                      </FilterChip>
+                    ))}
+                  </FilterGroup>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -294,7 +358,13 @@ export default function JournalPage() {
                   ))}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Contextual review — weekly in week view, monthly in month view */}
+                <Link href={reviewHref} title={reviewLabel}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15">
+                  <CalendarCheck className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{reviewLabel}</span>
+                </Link>
                 {/* Period R summary — subtle, top-right of the calendar section */}
                 <div className="hidden sm:flex items-center gap-2 rounded-lg border border-border/50 bg-muted/20 px-3 py-1.5">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
@@ -472,9 +542,6 @@ export default function JournalPage() {
           </div>
         </div>
       )}
-
-      {/* WEEKLY REVIEW VIEW */}
-      {viewMode === "review" && <WeeklyReview />}
 
       {/* LIST VIEW */}
       {viewMode === "list" && (

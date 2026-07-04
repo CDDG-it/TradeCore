@@ -10,13 +10,14 @@ import {
   Check,
   Trash2,
   X,
-  ChevronLeft,
-  ChevronRight,
   Target,
   Zap,
-  Star,
+  HelpCircle,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { computeHabitScore, DISCIPLINE_WEIGHTS } from "@/lib/discipline";
+import { startOfDay } from "date-fns";
 import {
   getHabits,
   getHabitCompletions,
@@ -41,6 +42,35 @@ const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label
 };
 
 const PRESET_ICONS = ["✍️", "📊", "🔍", "💪", "🧘", "📚", "💤", "🏃", "🎯", "📈", "🧠", "💧"];
+
+// How far back the insights look. Lets you see beyond just today/this week.
+const RANGES = [
+  { key: "week", label: "7d", days: 7 },
+  { key: "month", label: "30d", days: 30 },
+  { key: "quarter", label: "90d", days: 90 },
+] as const;
+type RangeKey = (typeof RANGES)[number]["key"];
+
+// Whether a habit's frequency expects it on a given weekday (0=Sun … 6=Sat).
+function frequencyApplies(freq: Habit["frequency"], weekday: number): boolean {
+  if (freq === "weekdays") return weekday >= 1 && weekday <= 5;
+  if (freq === "weekends") return weekday === 0 || weekday === 6;
+  return true;
+}
+
+/** Applicable-day completion for one habit over the last `days` days. */
+function habitRangeStat(habit: Habit, completions: HabitCompletion[], days: number) {
+  const done = new Set(completions.filter((c) => c.completed).map((c) => c.date));
+  let expected = 0;
+  let completed = 0;
+  for (let i = 0; i < days; i++) {
+    const d = subDays(new Date(), i);
+    if (!frequencyApplies(habit.frequency, d.getDay())) continue;
+    expected += 1;
+    if (done.has(format(d, "yyyy-MM-dd"))) completed += 1;
+  }
+  return { expected, completed, pct: expected > 0 ? Math.round((completed / expected) * 100) : 0 };
+}
 
 function ProgressRing({
   percent,
@@ -174,6 +204,10 @@ export default function HabitsPage() {
   });
 
   const [streaks, setStreaks] = useState<Record<string, number>>({});
+  const [range, setRange] = useState<RangeKey>("month");
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+
+  const rangeDays = RANGES.find((r) => r.key === range)!.days;
 
   const refresh = async () => {
     const [h, c, t] = await Promise.all([getHabits(), getHabitCompletions(), getDailyTasks(today)]);
@@ -240,16 +274,17 @@ export default function HabitsPage() {
 
   // Stats
   const totalHabits = habits.length;
-  const todayCompleted = habits.filter((h) =>
-    completions.some((c) => c.habit_id === h.id && c.date === today && c.completed)
-  ).length;
-  const completionRate = totalHabits > 0 ? Math.round((todayCompleted / totalHabits) * 100) : 0;
   const longestStreak = Object.values(streaks).reduce((max, s) => Math.max(max, s), 0);
 
-  // Last 7 days for each habit
-  const last7Days = Array.from({ length: 7 }, (_, i) =>
-    format(subDays(new Date(today + "T12:00:00"), i), "yyyy-MM-dd")
-  );
+  // Range-aware insights — same completion engine as the discipline score.
+  const rangeStart = startOfDay(subDays(new Date(), rangeDays - 1));
+  const rangeEnd = startOfDay(new Date());
+  const rangeCompletion = computeHabitScore(habits, completions, rangeStart, rangeEnd) ?? 0;
+  const rangeCompleted = completions.filter((c) => {
+    if (!c.completed) return false;
+    const d = new Date(c.date + "T12:00:00");
+    return d >= rangeStart && d <= rangeEnd;
+  }).length;
 
   const PRIORITY_CONFIG = {
     high:   { label: "High",   style: { color: "oklch(0.58 0.22 25)",  bg: "oklch(0.58 0.22 25 / 0.12)"  } },
@@ -264,32 +299,65 @@ export default function HabitsPage() {
         title="Habits"
         subtitle="Daily habit tracker"
         action={
-          <button
-            onClick={() => setShowNewHabit(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
-            style={{
-              background: "oklch(0.72 0.22 45)",
-              color: "oklch(0.07 0.003 28)",
-              boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            New habit
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowHowItWorks(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-border shrink-0"
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">How it works</span>
+            </button>
+            <button
+              onClick={() => setShowNewHabit(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
+              style={{
+                background: "oklch(0.72 0.22 45)",
+                color: "oklch(0.07 0.003 28)",
+                boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              New habit
+            </button>
+          </div>
         }
       />
       <PageWrapper>
-      {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Insights header + range toggle — look beyond just today */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
+          <h2 className="text-sm font-semibold">Insights</h2>
+        </div>
+        <div className="flex rounded-lg border border-border/50 overflow-hidden">
+          {RANGES.map((r) => (
+            <button
+              key={r.key}
+              onClick={() => setRange(r.key)}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium transition-colors",
+                range === r.key
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Summary stats — range-aware */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            label: "Today's Progress",
-            value: `${todayCompleted}/${totalHabits}`,
-            sub: `${completionRate}% complete`,
+            label: "Completion Rate",
+            value: `${rangeCompletion}%`,
+            sub: `last ${rangeDays} days`,
             icon: Target,
             accent: "oklch(0.72 0.22 45)",
             accentBg: "oklch(0.72 0.22 45 / 0.10)",
-            ring: completionRate,
+            ring: rangeCompletion,
           },
           {
             label: "Longest Streak",
@@ -301,7 +369,16 @@ export default function HabitsPage() {
             ring: null,
           },
           {
-            label: "Total Habits",
+            label: "Completed",
+            value: rangeCompleted.toString(),
+            sub: `in last ${rangeDays} days`,
+            icon: TrendingUp,
+            accent: "oklch(0.58 0.17 145)",
+            accentBg: "oklch(0.58 0.17 145 / 0.10)",
+            ring: null,
+          },
+          {
+            label: "Active Habits",
             value: totalHabits.toString(),
             sub: "being tracked",
             icon: Zap,
@@ -394,9 +471,7 @@ export default function HabitsPage() {
             const completedToday = habitCompletions.some(
               (c) => c.date === today && c.completed
             );
-            const weekDone = last7Days.filter((d) =>
-              habitCompletions.some((c) => c.date === d && c.completed)
-            ).length;
+            const rangeStat = habitRangeStat(habit, habitCompletions, rangeDays);
             const catConfig = CATEGORY_COLORS[habit.category];
 
             return (
@@ -494,9 +569,9 @@ export default function HabitsPage() {
                       className="text-xs font-bold tabular-nums"
                       style={{ color: habit.color }}
                     >
-                      {weekDone}/7
+                      {rangeStat.completed}/{rangeStat.expected}
                     </p>
-                    <p className="text-xs text-muted-foreground">this week</p>
+                    <p className="text-xs text-muted-foreground">last {rangeDays}d · {rangeStat.pct}%</p>
                   </div>
                 </div>
               </div>
@@ -650,6 +725,92 @@ export default function HabitsPage() {
       </div>
 
       </PageWrapper>
+
+      {/* How it works modal — explains the discipline calc + why habits matter */}
+      {showHowItWorks && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "oklch(0 0 0 / 70%)", backdropFilter: "blur(6px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowHowItWorks(false); }}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl p-6 animate-fade-up max-h-[85vh] overflow-y-auto"
+            style={{
+              background: "oklch(0.13 0.004 28)",
+              border: "1px solid oklch(0.25 0.005 28)",
+              boxShadow: "0 24px 64px oklch(0 0 0 / 0.5)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-bold flex items-center gap-2">
+                <Target className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
+                How your Discipline Score works
+              </h2>
+              <button onClick={() => setShowHowItWorks(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-5 text-sm leading-relaxed text-muted-foreground">
+              <p>
+                Discipline isn&apos;t only what happens at the screen — it&apos;s the whole routine around your trading.
+                Your score blends the two things you actually control:
+              </p>
+
+              {/* The weighting */}
+              <div className="space-y-2">
+                {[
+                  { label: "Trade rules", w: Math.round(DISCIPLINE_WEIGHTS.tradeRules * 100), desc: "Your per-trade discipline checklist, averaged over the period." },
+                  { label: "Habits", w: Math.round(DISCIPLINE_WEIGHTS.habits * 100), desc: "How consistently you complete your habits across the period." },
+                ].map(({ label, w, desc }) => (
+                  <div key={label} className="rounded-xl p-3" style={{ background: "oklch(0.10 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-foreground">{label}</span>
+                      <span className="text-xs font-bold tabular-nums" style={{ color: "oklch(0.72 0.22 45)" }}>{w}%</span>
+                    </div>
+                    <p className="text-xs">{desc}</p>
+                  </div>
+                ))}
+                <p className="text-xs text-center pt-1">
+                  Total&nbsp;=&nbsp;{Math.round(DISCIPLINE_WEIGHTS.tradeRules * 100)}% × trade-rule adherence&nbsp;+&nbsp;{Math.round(DISCIPLINE_WEIGHTS.habits * 100)}% × habit completion
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-xs">
+                  Habit completion is measured across <span className="text-foreground font-medium">every applicable day</span> in the
+                  period (respecting each habit&apos;s daily / weekday / weekend schedule), so showing up consistently scores higher than
+                  cramming everything into one day. If one side has no data yet — no habits set, or no scored trades — the other stands alone.
+                </p>
+              </div>
+
+              {/* Why it matters */}
+              <div className="rounded-xl p-4" style={{ background: "oklch(0.72 0.22 45 / 0.06)", border: "1px solid oklch(0.72 0.22 45 / 0.20)" }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "oklch(0.72 0.22 45)" }}>
+                  Why habits make you a better trader
+                </p>
+                <p className="text-xs">
+                  Sleep, preparation, journaling and review habits are what keep your decisions stable. A rested, prepared trader
+                  takes fewer impulsive entries, respects risk, and sticks to the plan when it matters. The discipline you build
+                  away from the charts is exactly what shows up on them — that&apos;s why habits are part of the score, not a separate box.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowHowItWorks(false)}
+              className="mt-6 w-full py-2.5 rounded-xl text-sm font-bold transition-all"
+              style={{
+                background: "linear-gradient(135deg, oklch(0.72 0.22 45) 0%, oklch(0.82 0.16 82) 100%)",
+                color: "oklch(0.07 0.003 28)",
+                boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.35)",
+              }}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* New habit modal */}
       {showNewHabit && (

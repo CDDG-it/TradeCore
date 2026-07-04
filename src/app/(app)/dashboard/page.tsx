@@ -137,29 +137,6 @@ function DisciplineScoreCard() {
         {avg !== null ? `${avg}%` : "—"}
       </p>
 
-      {/* Breakdown — makes clear discipline is part trading rules, part habits */}
-      {(breakdown.tradeRules !== null || breakdown.habits !== null) && (
-        <div className="mt-2 mb-1 space-y-1.5">
-          {[
-            { label: "Trade rules", val: breakdown.tradeRules, w: "70%" },
-            { label: "Habits", val: breakdown.habits, w: "30%" },
-          ].map(({ label, val, w }) => (
-            <div key={label} className="flex items-center justify-between text-[11px]">
-              <span className="text-muted-foreground">
-                {label}
-                <span className="text-muted-foreground/45"> · {w}</span>
-              </span>
-              <span
-                className="font-semibold tabular-nums"
-                style={{ color: val === null ? "var(--muted-foreground)" : "var(--foreground)" }}
-              >
-                {val === null ? "—" : `${val}%`}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
       <div className="flex items-center justify-between mt-2">
         <div className="flex items-center gap-1">
           {(["week", "month"] as const).map((p) => (
