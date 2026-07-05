@@ -155,12 +155,12 @@ function DisciplineScoreCard() {
           ))}
         </div>
         <Link
-          href="/analytics"
+          href="/discipline"
           className="text-[11px] font-medium flex items-center gap-0.5 transition-opacity hover:opacity-80"
           style={{ color: "var(--muted-foreground)" }}
           onClick={(e) => e.stopPropagation()}
         >
-          Analytics <ArrowRight className="w-2.5 h-2.5" />
+          How it works <ArrowRight className="w-2.5 h-2.5" />
         </Link>
       </div>
     </div>

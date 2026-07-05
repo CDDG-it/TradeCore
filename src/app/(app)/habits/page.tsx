@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { format, subDays } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -16,7 +17,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { computeHabitScore, DISCIPLINE_WEIGHTS } from "@/lib/discipline";
+import { computeHabitScore } from "@/lib/discipline";
 import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
 import {
   getHabits,
@@ -262,7 +263,6 @@ export default function HabitsPage() {
 
   const [streaks, setStreaks] = useState<Record<string, number>>({});
   const [range, setRange] = useState<RangeKey>("month");
-  const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   const rangeDays = RANGES.find((r) => r.key === range)!.days;
 
@@ -394,8 +394,8 @@ export default function HabitsPage() {
             <TrendingUp className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
             <h2 className="text-sm font-semibold">Insights</h2>
           </div>
-          <button
-            onClick={() => setShowHowItWorks(true)}
+          <Link
+            href="/discipline"
             className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:-translate-y-px"
             style={{
               background: "oklch(0.72 0.22 45 / 0.12)",
@@ -405,7 +405,7 @@ export default function HabitsPage() {
           >
             <HelpCircle className="w-3.5 h-3.5" />
             How it works
-          </button>
+          </Link>
         </div>
         <div className="flex rounded-lg border border-border/50 overflow-hidden">
           {RANGES.map((r) => (
@@ -845,92 +845,6 @@ export default function HabitsPage() {
       </div>
 
       </PageWrapper>
-
-      {/* How it works modal — explains the discipline calc + why habits matter */}
-      {showHowItWorks && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "oklch(0 0 0 / 70%)", backdropFilter: "blur(6px)" }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowHowItWorks(false); }}
-        >
-          <div
-            className="w-full max-w-lg rounded-2xl p-6 animate-fade-up max-h-[85vh] overflow-y-auto"
-            style={{
-              background: "oklch(0.13 0.004 28)",
-              border: "1px solid oklch(0.25 0.005 28)",
-              boxShadow: "0 24px 64px oklch(0 0 0 / 0.5)",
-            }}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-bold flex items-center gap-2">
-                <Target className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
-                How your Discipline Score works
-              </h2>
-              <button onClick={() => setShowHowItWorks(false)} className="text-muted-foreground hover:text-foreground transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-5 text-sm leading-relaxed text-muted-foreground">
-              <p>
-                Discipline isn&apos;t only what happens at the screen — it&apos;s the whole routine around your trading.
-                Your score blends the two things you actually control:
-              </p>
-
-              {/* The weighting */}
-              <div className="space-y-2">
-                {[
-                  { label: "Trade rules", w: Math.round(DISCIPLINE_WEIGHTS.tradeRules * 100), desc: "Your per-trade discipline checklist, averaged over the period." },
-                  { label: "Habits", w: Math.round(DISCIPLINE_WEIGHTS.habits * 100), desc: "How consistently you complete your habits across the period." },
-                ].map(({ label, w, desc }) => (
-                  <div key={label} className="rounded-xl p-3" style={{ background: "oklch(0.10 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-foreground">{label}</span>
-                      <span className="text-xs font-bold tabular-nums" style={{ color: "oklch(0.72 0.22 45)" }}>{w}%</span>
-                    </div>
-                    <p className="text-xs">{desc}</p>
-                  </div>
-                ))}
-                <p className="text-xs text-center pt-1">
-                  Total&nbsp;=&nbsp;{Math.round(DISCIPLINE_WEIGHTS.tradeRules * 100)}% × trade-rule adherence&nbsp;+&nbsp;{Math.round(DISCIPLINE_WEIGHTS.habits * 100)}% × habit completion
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <p className="text-xs">
-                  Habit completion is measured across <span className="text-foreground font-medium">every applicable day</span> in the
-                  period (respecting each habit&apos;s daily / weekday / weekend schedule), so showing up consistently scores higher than
-                  cramming everything into one day. If one side has no data yet — no habits set, or no scored trades — the other stands alone.
-                </p>
-              </div>
-
-              {/* Why it matters */}
-              <div className="rounded-xl p-4" style={{ background: "oklch(0.72 0.22 45 / 0.06)", border: "1px solid oklch(0.72 0.22 45 / 0.20)" }}>
-                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "oklch(0.72 0.22 45)" }}>
-                  Why habits make you a better trader
-                </p>
-                <p className="text-xs">
-                  Sleep, preparation, journaling and review habits are what keep your decisions stable. A rested, prepared trader
-                  takes fewer impulsive entries, respects risk, and sticks to the plan when it matters. The discipline you build
-                  away from the charts is exactly what shows up on them — that&apos;s why habits are part of the score, not a separate box.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowHowItWorks(false)}
-              className="mt-6 w-full py-2.5 rounded-xl text-sm font-bold transition-all"
-              style={{
-                background: "linear-gradient(135deg, oklch(0.72 0.22 45) 0%, oklch(0.82 0.16 82) 100%)",
-                color: "oklch(0.07 0.003 28)",
-                boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.35)",
-              }}
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* New habit modal */}
       {showNewHabit && (
