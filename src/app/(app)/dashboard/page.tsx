@@ -134,7 +134,7 @@ function DisciplineScoreCard() {
         className="text-3xl font-black tracking-tight mb-1 tabular-nums"
         style={{ color }}
       >
-        {avg !== null ? `${avg}%` : "—"}
+        {avg !== null ? `${avg}%` : "-"}
       </p>
 
       <div className="flex items-center justify-between mt-2">
@@ -238,10 +238,13 @@ function HabitTracker({ onToggle }: { onToggle?: (habits: Habit[], toggle: (id: 
     <Card className="shadow-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Flame className="w-4 h-4" style={{ color: "#F97316" }} />
-            Habits — {format(new Date(), "EEEE, MMMM d")}
-          </CardTitle>
+          <Link href="/habits" className="group inline-flex items-center gap-2 min-w-0" title="Open habits">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2 group-hover:text-primary transition-colors truncate">
+              <Flame className="w-4 h-4 shrink-0" style={{ color: "#F97316" }} />
+              Habits · {format(new Date(), "EEEE, MMMM d")}
+            </CardTitle>
+            <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-primary" />
+          </Link>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs tabular-nums">
               {doneCount}/{totalCount}

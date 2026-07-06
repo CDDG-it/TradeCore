@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { HabitGlyph } from "@/components/habit-glyph";
 import {
   getDailyJournal,
   saveDailyJournal,
@@ -71,13 +72,13 @@ function SectionCard({
     <div
       className={cn("rounded-xl overflow-hidden", className)}
       style={{
-        background: "oklch(0.10 0.003 28)",
-        border: "1px solid oklch(0.18 0.005 28)",
+        background: "var(--card)",
+        border: "1px solid var(--border)",
       }}
     >
       <div
         className="flex items-center gap-2.5 px-5 py-3.5"
-        style={{ borderBottom: "1px solid oklch(0.18 0.005 28)" }}
+        style={{ borderBottom: "1px solid var(--border)" }}
       >
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -192,7 +193,7 @@ export default function SelfImprovementPage() {
       <section className="animate-fade-up space-y-5">
         <div
           className="flex items-center gap-3"
-          style={{ borderBottom: "1px solid oklch(0.15 0.004 28)", paddingBottom: "12px" }}
+          style={{ borderBottom: "1px solid var(--muted)", paddingBottom: "12px" }}
         >
           <h2 className="text-base font-semibold">Daily Check-in</h2>
         </div>
@@ -200,7 +201,7 @@ export default function SelfImprovementPage() {
         {/* Date Navigator */}
         <div
           className="flex items-center justify-between px-5 py-3 rounded-xl"
-          style={{ background: "oklch(0.10 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
+          style={{ background: "var(--card)", border: "1px solid var(--border)" }}
         >
           <button
             onClick={prevDay}
@@ -270,8 +271,8 @@ export default function SelfImprovementPage() {
                     placeholder={placeholder}
                     className="w-full rounded-lg px-3 py-2.5 text-sm resize-none"
                     style={{
-                      background: "oklch(0.08 0.003 28)",
-                      border: "1px solid oklch(0.18 0.005 28)",
+                      background: "var(--secondary)",
+                      border: "1px solid var(--border)",
                       color: "oklch(0.94 0.002 28)",
                       outline: "none",
                     }}
@@ -304,7 +305,7 @@ export default function SelfImprovementPage() {
                   <button
                     onClick={() => { setHoursSlept(Math.max(0, hoursSlept - 0.5)); setTrackerDirty(true); }}
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
+                    style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
@@ -314,7 +315,7 @@ export default function SelfImprovementPage() {
                   <button
                     onClick={() => { setHoursSlept(Math.min(12, hoursSlept + 0.5)); setTrackerDirty(true); }}
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
+                    style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
@@ -356,9 +357,9 @@ export default function SelfImprovementPage() {
                             className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all hover:scale-110"
                             style={done
                               ? { background: habit.color }
-                              : { background: "oklch(0.08 0.003 28)", border: "1.5px solid oklch(0.22 0.005 28)" }}
+                              : { background: "var(--secondary)", border: "1.5px solid var(--border)" }}
                           >
-                            {done ? <Check className="w-3 h-3 text-white" /> : <span className="text-sm leading-none">{habit.icon}</span>}
+                            {done ? <Check className="w-3 h-3 text-white" /> : <HabitGlyph icon={habit.icon} className="w-3.5 h-3.5" style={{ color: "var(--muted-foreground)" }} />}
                           </button>
                           <span className="flex-1 text-sm truncate" style={{ color: done ? "oklch(0.90 0.003 28)" : "oklch(0.55 0.005 28)" }}>
                             {habit.name}
@@ -391,7 +392,7 @@ export default function SelfImprovementPage() {
                         className="w-4 h-4 rounded flex items-center justify-center shrink-0 transition-all"
                         style={task.done
                           ? { background: "oklch(0.58 0.17 145)", border: "none" }
-                          : { background: "oklch(0.08 0.003 28)", border: "1.5px solid oklch(0.22 0.005 28)" }}
+                          : { background: "var(--secondary)", border: "1.5px solid var(--border)" }}
                       >
                         {task.done && <Check className="w-2.5 h-2.5 text-white" />}
                       </button>
@@ -427,7 +428,7 @@ export default function SelfImprovementPage() {
                     }}
                     placeholder="Add a task..."
                     className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
-                    style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)", color: "oklch(0.94 0.002 28)" }}
+                    style={{ background: "var(--secondary)", border: "1px solid var(--border)", color: "oklch(0.94 0.002 28)" }}
                   />
                   <button
                     onClick={() => {
@@ -519,13 +520,13 @@ function DaySummaryBadges({ date }: { date: string }) {
           key={label}
           className="rounded-xl p-3 text-center"
           style={{
-            background: done ? `${color}0d` : "oklch(0.10 0.003 28)",
-            border: `1px solid ${done ? `${color}33` : "oklch(0.18 0.005 28)"}`,
+            background: done ? `${color}0d` : "var(--card)",
+            border: `1px solid ${done ? `${color}33` : "var(--border)"}`,
           }}
         >
           <div
             className="w-6 h-6 rounded-full flex items-center justify-center mx-auto mb-1.5"
-            style={{ background: done ? `${color}1a` : "oklch(0.15 0.004 28)" }}
+            style={{ background: done ? `${color}1a` : "var(--muted)" }}
           >
             {done ? (
               <Check className="w-3 h-3" style={{ color }} />
