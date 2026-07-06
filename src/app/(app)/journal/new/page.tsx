@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createTrade, getAnalyses, getProfile } from "@/lib/supabase/queries";
 import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
+import { ConfluenceInfo } from "@/components/journal/confluence-info";
 import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useFormDraft } from "@/lib/drafts";
@@ -420,20 +421,27 @@ export default function NewTradePage() {
                   {savedConfluences.map((c) => {
                     const active = form.confluences.includes(c);
                     return (
-                      <button
+                      <div
                         key={c}
-                        type="button"
-                        onClick={() => toggleConfluence(c)}
                         className={cn(
-                          "inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors",
+                          "inline-flex items-center gap-1 text-xs rounded-lg border transition-colors",
                           active
                             ? "bg-primary/15 text-primary border-primary/40"
                             : "bg-background/50 text-muted-foreground border-border/50 hover:text-foreground hover:border-border"
                         )}
                       >
-                        {active && <Check className="w-3 h-3" />}
-                        {c}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleConfluence(c)}
+                          className="inline-flex items-center gap-1 pl-2.5 py-1"
+                        >
+                          {active && <Check className="w-3 h-3" />}
+                          {c}
+                        </button>
+                        <span className="pr-2 flex items-center">
+                          <ConfluenceInfo label={c} />
+                        </span>
+                      </div>
                     );
                   })}
                 </div>

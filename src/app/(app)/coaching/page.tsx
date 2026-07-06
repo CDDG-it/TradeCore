@@ -221,7 +221,7 @@ export default function CoachingPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <PageHeader
-        badge="Mindset"
+        badge="MC Mindset Formula"
         title="Coaching"
         subtitle="Mentorship, frameworks, and growth"
         action={

@@ -53,6 +53,71 @@ export const WIDGET_MAP: Record<WidgetId, WidgetMeta> = Object.fromEntries(
   WIDGETS.map((w) => [w.id, w])
 ) as Record<WidgetId, WidgetMeta>;
 
+// ── Per-widget view options ──────────────────────────────────────────
+// A few widgets summarise trades, so it's useful to scope them the same way
+// the Journal/Analytics already let you filter: by period and by session.
+// Only the widgets that make sense to scope declare which controls they use;
+// the rest just render their fixed view.
+
+export type WidgetScope = "all" | "month" | "week";
+export type WidgetSessionFilter = "all" | "London" | "New York" | "Asia";
+
+export interface WidgetOptions {
+  scope?: WidgetScope;
+  session?: WidgetSessionFilter;
+  /** How many rows to show, for list-style widgets like Recent Trades. */
+  count?: number;
+}
+
+export interface WidgetControlConfig {
+  scope?: boolean;
+  session?: boolean;
+  counts?: number[];
+}
+
+/** Which controls each widget exposes in its options menu. Widgets absent
+ *  here have no configurable options. */
+export const WIDGET_CONTROLS: Partial<Record<WidgetId, WidgetControlConfig>> = {
+  "win-rate": { scope: true, session: true },
+  "weekly-r": { scope: true, session: true },
+  discipline: { scope: true },
+  "recent-trades": { session: true, counts: [3, 5, 10] },
+};
+
+export const DEFAULT_WIDGET_OPTIONS: WidgetOptions = { scope: "week", session: "all", count: 3 };
+
+const OPTIONS_LS_KEY = "home_widget_options_v1";
+
+function isWidgetOptions(v: unknown): v is WidgetOptions {
+  return typeof v === "object" && v !== null;
+}
+
+export function loadWidgetOptions(): Partial<Record<WidgetId, WidgetOptions>> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(OPTIONS_LS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return {};
+    const clean: Partial<Record<WidgetId, WidgetOptions>> = {};
+    for (const [id, opts] of Object.entries(parsed)) {
+      if (isWidgetId(id) && isWidgetOptions(opts)) clean[id] = opts as WidgetOptions;
+    }
+    return clean;
+  } catch {
+    return {};
+  }
+}
+
+export function saveWidgetOptions(options: Partial<Record<WidgetId, WidgetOptions>>): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(OPTIONS_LS_KEY, JSON.stringify(options));
+  } catch {
+    /* ignore quota / private-mode errors */
+  }
+}
+
 /** Widgets shown by default before the trader customises their Home. */
 export const DEFAULT_WIDGETS: WidgetId[] = [
   "weekly-r",

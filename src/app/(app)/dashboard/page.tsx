@@ -14,7 +14,8 @@ import { cn } from "@/lib/utils";
 import { HomeWidget } from "@/components/home/widgets";
 import {
   WIDGETS, DEFAULT_WIDGETS, loadWidgets, saveWidgets,
-  type WidgetId, type WidgetSource,
+  loadWidgetOptions, saveWidgetOptions,
+  type WidgetId, type WidgetSource, type WidgetOptions,
 } from "@/lib/home/widgets";
 
 export default function HomePage() {
@@ -23,6 +24,7 @@ export default function HomePage() {
   const [firstName, setFirstName] = useState<string | null>(null);
 
   const [widgets, setWidgets] = useState<WidgetId[]>(DEFAULT_WIDGETS);
+  const [widgetOptions, setWidgetOptions] = useState<Partial<Record<WidgetId, WidgetOptions>>>({});
   const [editing, setEditing] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -35,11 +37,20 @@ export default function HomePage() {
       if (p?.full_name) setFirstName(p.full_name.split(" ")[0]);
     });
     setWidgets(loadWidgets());
+    setWidgetOptions(loadWidgetOptions());
   }, []);
 
   function update(next: WidgetId[]) {
     setWidgets(next);
     saveWidgets(next);
+  }
+
+  function updateOptions(id: WidgetId, next: WidgetOptions) {
+    setWidgetOptions((prev) => {
+      const merged = { ...prev, [id]: next };
+      saveWidgetOptions(merged);
+      return merged;
+    });
   }
 
   function removeWidget(id: WidgetId) {
@@ -186,6 +197,8 @@ export default function HomePage() {
                   <HomeWidget
                     id={id}
                     editing={editing}
+                    options={widgetOptions[id]}
+                    onOptionsChange={updateOptions}
                     onRemove={removeWidget}
                     onMove={moveWidget}
                     canMoveBack={i > 0}

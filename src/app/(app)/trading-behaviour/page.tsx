@@ -12,7 +12,7 @@ export default function TradingBehaviourPage() {
   return (
     <div className="space-y-6 max-w-5xl">
       <PageHeader
-        badge="Mindset"
+        badge="MC Mindset Formula"
         title="Trading Behaviour"
         subtitle="Manage the rules and confluences that guide how you trade"
       />

@@ -243,7 +243,7 @@ export default function PlaybookPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <PageHeader
-        badge="Mindset"
+        badge="MC Mindset Formula"
         title="Playbook"
         subtitle="Rules, routine, and A+ criteria"
         action={

@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import {
   ArrowRight, X, TrendingUp, TrendingDown, Flame, Target,
   Wallet, ScrollText, CalendarClock, Loader2, GripVertical, ChevronLeft, ChevronRight,
+  SlidersHorizontal, Check,
 } from "lucide-react";
-import { format, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getHabitStreak, getProfile,
 } from "@/lib/supabase/queries";
@@ -14,17 +15,112 @@ import { computeDiscipline } from "@/lib/discipline";
 import { tradeR } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
-import { WIDGET_MAP, type WidgetId } from "@/lib/home/widgets";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
+  WIDGET_MAP, WIDGET_CONTROLS, DEFAULT_WIDGET_OPTIONS,
+  type WidgetId, type WidgetOptions, type WidgetScope, type WidgetSessionFilter,
+} from "@/lib/home/widgets";
 import type { TradeJournalEntry } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
+const SCOPE_LABEL: Record<WidgetScope, string> = { all: "All-time", month: "This month", week: "This week" };
+const SESSION_LABEL: Record<WidgetSessionFilter, string> = { all: "All sessions", London: "London", "New York": "New York", Asia: "Asia" };
+
+/** Trades within a widget's configured scope + session. */
+function scopeTrades(trades: TradeJournalEntry[], options: WidgetOptions): TradeJournalEntry[] {
+  const scope = options.scope ?? "week";
+  const session = options.session ?? "all";
+  let list = trades;
+  if (scope !== "all") {
+    const now = new Date();
+    const start = scope === "week" ? startOfWeek(now, { weekStartsOn: 1 }) : startOfMonth(now);
+    const end = scope === "week" ? endOfWeek(now, { weekStartsOn: 1 }) : endOfMonth(now);
+    list = list.filter((t) => isWithinInterval(new Date(t.date_time.slice(0, 10) + "T12:00:00"), { start, end }));
+  }
+  if (session !== "all") list = list.filter((t) => t.session === session);
+  return list;
+}
+
+/** Options menu shown on configurable widgets: scope / session / row count. */
+function WidgetOptionsMenu({
+  id,
+  options,
+  onChange,
+}: {
+  id: WidgetId;
+  options: WidgetOptions;
+  onChange: (id: WidgetId, next: WidgetOptions) => void;
+}) {
+  const controls = WIDGET_CONTROLS[id];
+  if (!controls) return null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            title="Widget options"
+            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all"
+          />
+        }
+      >
+        <SlidersHorizontal className="w-3.5 h-3.5" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        {controls.scope && (
+          <>
+            <DropdownMenuLabel>Period</DropdownMenuLabel>
+            {(["week", "month", "all"] as WidgetScope[]).map((scope) => (
+              <DropdownMenuItem key={scope} onClick={() => onChange(id, { ...options, scope })}>
+                {options.scope === scope && <Check className="w-3.5 h-3.5" />}
+                <span className={cn(options.scope !== scope && "pl-[22px]")}>{SCOPE_LABEL[scope]}</span>
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+        {controls.session && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Session</DropdownMenuLabel>
+            {(["all", "London", "New York", "Asia"] as WidgetSessionFilter[]).map((session) => (
+              <DropdownMenuItem key={session} onClick={() => onChange(id, { ...options, session })}>
+                {options.session === session && <Check className="w-3.5 h-3.5" />}
+                <span className={cn(options.session !== session && "pl-[22px]")}>{SESSION_LABEL[session]}</span>
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+        {controls.counts && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Show</DropdownMenuLabel>
+            {controls.counts.map((count) => (
+              <DropdownMenuItem key={count} onClick={() => onChange(id, { ...options, count })}>
+                {options.count === count && <Check className="w-3.5 h-3.5" />}
+                <span className={cn(options.count !== count && "pl-[22px]")}>{count} trades</span>
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 /** Shared shell: a clickable card linking to the full page. While the Home is
  *  in edit mode it stops navigating and exposes drag + move/remove controls so
- *  widgets can be rearranged. */
+ *  widgets can be rearranged. Configurable widgets also get an options menu. */
 function WidgetShell({
   id,
   editing,
+  options,
+  onOptionsChange,
   onRemove,
   onMove,
   canMoveBack,
@@ -33,6 +129,8 @@ function WidgetShell({
 }: {
   id: WidgetId;
   editing: boolean;
+  options: WidgetOptions;
+  onOptionsChange: (id: WidgetId, next: WidgetOptions) => void;
   onRemove: (id: WidgetId) => void;
   onMove?: (id: WidgetId, dir: -1 | 1) => void;
   canMoveBack?: boolean;
@@ -52,16 +150,19 @@ function WidgetShell({
         )}
         style={{ background: "var(--card)", border: "1px solid var(--border)" }}
       >
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 gap-2">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{meta.source}</p>
             <h3 className="text-sm font-semibold truncate">{meta.title}</h3>
           </div>
-          {editing ? (
-            <GripVertical className="w-4 h-4 shrink-0 text-muted-foreground/50" />
-          ) : (
-            <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40 transition-all group-hover:text-primary group-hover:translate-x-0.5" />
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            {!editing && <WidgetOptionsMenu id={id} options={options} onChange={onOptionsChange} />}
+            {editing ? (
+              <GripVertical className="w-4 h-4 shrink-0 text-muted-foreground/50" />
+            ) : (
+              <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40 transition-all group-hover:text-primary group-hover:translate-x-0.5" />
+            )}
+          </div>
         </div>
         <div className="flex-1">{children}</div>
       </Link>
@@ -117,60 +218,56 @@ function Loading() {
 const scoreColor = (v: number) =>
   v >= 80 ? "oklch(0.58 0.17 145)" : v >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)";
 
-// ── Weekly R ──────────────────────────────────────────────────────────
-function WeeklyRWidget() {
-  const [r, setR] = useState<number | null>(null);
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    getTrades().then((trades) => {
-      const start = startOfWeek(new Date(), { weekStartsOn: 1 });
-      const end = endOfWeek(new Date(), { weekStartsOn: 1 });
-      const inWeek = trades.filter((t) =>
-        isWithinInterval(new Date(t.date_time.slice(0, 10) + "T12:00:00"), { start, end })
-      );
-      setR(inWeek.reduce((s, t) => s + tradeR(t), 0));
-      setCount(inWeek.length);
-    });
-  }, []);
-  if (r === null) return <Loading />;
+function scopeSubtitle(options: WidgetOptions, suffix: string): string {
+  const scope = options.scope ?? "week";
+  const session = options.session ?? "all";
+  const base = scope === "all" ? `all-time ${suffix}` : scope === "week" ? `this week` : `this month`;
+  return session === "all" ? base : `${base} · ${session}`;
+}
+
+// ── Weekly R (net R for the configured scope/session) ────────────────
+function WeeklyRWidget({ options }: { options: WidgetOptions }) {
+  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
+  useEffect(() => { getTrades().then(setTrades); }, []);
+  if (!trades) return <Loading />;
+  const inScope = scopeTrades(trades, options);
+  const r = inScope.reduce((s, t) => s + tradeR(t), 0);
   const color = r > 0 ? "oklch(0.58 0.17 145)" : r < 0 ? "oklch(0.58 0.22 25)" : "var(--muted-foreground)";
   return (
     <div>
       <p className="text-3xl font-black tabular-nums" style={{ color }}>{r > 0 ? "+" : ""}{r.toFixed(1)}R</p>
-      <p className="text-xs text-muted-foreground mt-1">{count} trade{count !== 1 ? "s" : ""} this week</p>
+      <p className="text-xs text-muted-foreground mt-1">{inScope.length} trade{inScope.length !== 1 ? "s" : ""} · {scopeSubtitle(options, "")}</p>
     </div>
   );
 }
 
 // ── Win rate ──────────────────────────────────────────────────────────
-function WinRateWidget() {
-  const [pct, setPct] = useState<number | null>(null);
-  const [total, setTotal] = useState(0);
-  useEffect(() => {
-    getTrades().then((trades) => {
-      setTotal(trades.length);
-      setPct(trades.length ? Math.round((trades.filter((t) => t.result === "win").length / trades.length) * 100) : 0);
-    });
-  }, []);
-  if (pct === null) return <Loading />;
+function WinRateWidget({ options }: { options: WidgetOptions }) {
+  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
+  useEffect(() => { getTrades().then(setTrades); }, []);
+  if (!trades) return <Loading />;
+  const inScope = scopeTrades(trades, options);
+  const pct = inScope.length ? Math.round((inScope.filter((t) => t.result === "win").length / inScope.length) * 100) : 0;
   return (
     <div>
       <p className="text-3xl font-black tabular-nums" style={{ color: "oklch(0.72 0.14 220)" }}>{pct}%</p>
-      <p className="text-xs text-muted-foreground mt-1">across {total} trade{total !== 1 ? "s" : ""}</p>
+      <p className="text-xs text-muted-foreground mt-1">{inScope.length} trade{inScope.length !== 1 ? "s" : ""} · {scopeSubtitle(options, "")}</p>
     </div>
   );
 }
 
 // ── Discipline ────────────────────────────────────────────────────────
-function DisciplineWidget() {
+function DisciplineWidget({ options }: { options: WidgetOptions }) {
   const [score, setScore] = useState<number | null | undefined>(undefined);
   useEffect(() => {
     Promise.all([getTrades(), getHabits(), getHabitCompletions()]).then(([t, h, c]) => {
-      const start = startOfWeek(new Date(), { weekStartsOn: 1 });
-      const end = endOfWeek(new Date(), { weekStartsOn: 1 });
+      const scope = options.scope ?? "week";
+      const now = new Date();
+      const start = scope === "all" ? new Date(2000, 0, 1) : scope === "week" ? startOfWeek(now, { weekStartsOn: 1 }) : startOfMonth(now);
+      const end = scope === "all" ? now : scope === "week" ? endOfWeek(now, { weekStartsOn: 1 }) : endOfMonth(now);
       setScore(computeDiscipline(t, h, c, start, end).total);
     });
-  }, []);
+  }, [options.scope]);
   if (score === undefined) return <Loading />;
   const color = score === null ? "var(--muted-foreground)" : scoreColor(score);
   return (
@@ -178,7 +275,7 @@ function DisciplineWidget() {
       <Target className="w-8 h-8 shrink-0" style={{ color }} />
       <div>
         <p className="text-3xl font-black tabular-nums" style={{ color }}>{score === null ? "—" : `${score}%`}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">this week</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{SCOPE_LABEL[options.scope ?? "week"].toLowerCase()}</p>
       </div>
     </div>
   );
@@ -216,15 +313,18 @@ function ResultDot({ t }: { t: TradeJournalEntry }) {
     </span>
   );
 }
-function RecentTradesWidget() {
+function RecentTradesWidget({ options }: { options: WidgetOptions }) {
   const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
-  useEffect(() => { getTrades().then((t) => setTrades(t.slice(0, 3))); }, []);
+  useEffect(() => { getTrades().then(setTrades); }, []);
   if (!trades) return <Loading />;
-  if (trades.length === 0)
+  const session = options.session ?? "all";
+  const filtered = session === "all" ? trades : trades.filter((t) => t.session === session);
+  const shown = filtered.slice(0, options.count ?? 3);
+  if (shown.length === 0)
     return <p className="text-xs text-muted-foreground">No trades logged yet.</p>;
   return (
     <div className="space-y-1.5">
-      {trades.map((t) => {
+      {shown.map((t) => {
         const color = t.result === "win" ? "oklch(0.58 0.17 145)" : t.result === "loss" ? "oklch(0.58 0.22 25)" : "oklch(0.70 0.16 72)";
         return (
           <div key={t.id} className="flex items-center gap-2 text-xs">
@@ -275,7 +375,7 @@ function TradingRulesWidget() {
   }, []);
   if (!rules) return <Loading />;
   if (rules.length === 0)
-    return <p className="text-xs text-muted-foreground">No rules yet. Add them in Habits.</p>;
+    return <p className="text-xs text-muted-foreground">No rules yet. Add them in Trading Behaviour.</p>;
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -326,7 +426,7 @@ function CalendarWidget() {
   );
 }
 
-const COMPONENTS: Record<WidgetId, React.ComponentType> = {
+const COMPONENTS: Record<WidgetId, React.ComponentType<{ options: WidgetOptions }>> = {
   "weekly-r": WeeklyRWidget,
   "win-rate": WinRateWidget,
   discipline: DisciplineWidget,
@@ -341,6 +441,8 @@ const COMPONENTS: Record<WidgetId, React.ComponentType> = {
 export function HomeWidget({
   id,
   editing,
+  options,
+  onOptionsChange,
   onRemove,
   onMove,
   canMoveBack,
@@ -348,22 +450,27 @@ export function HomeWidget({
 }: {
   id: WidgetId;
   editing: boolean;
+  options?: WidgetOptions;
+  onOptionsChange: (id: WidgetId, next: WidgetOptions) => void;
   onRemove: (id: WidgetId) => void;
   onMove?: (id: WidgetId, dir: -1 | 1) => void;
   canMoveBack?: boolean;
   canMoveForward?: boolean;
 }) {
+  const resolved = { ...DEFAULT_WIDGET_OPTIONS, ...options };
   const Body = COMPONENTS[id];
   return (
     <WidgetShell
       id={id}
       editing={editing}
+      options={resolved}
+      onOptionsChange={onOptionsChange}
       onRemove={onRemove}
       onMove={onMove}
       canMoveBack={canMoveBack}
       canMoveForward={canMoveForward}
     >
-      <Body />
+      <Body options={resolved} />
     </WidgetShell>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Trash2, Pencil, Check, X, CheckCircle2, AlertCircle, Loader2, Layers } from "lucide-react";
 import { getProfile, upsertProfile } from "@/lib/supabase/queries";
 import { DEFAULT_CONFLUENCES } from "@/lib/journal/confluences";
+import { ConfluenceInfo } from "@/components/journal/confluence-info";
 
 /**
  * Confluences editor. This is the trader's saved confluence library — the
@@ -131,6 +132,7 @@ export function ConfluencesEditor() {
                 ) : (
                   <>
                     <span className="text-sm flex-1 min-w-0">{c}</span>
+                    <ConfluenceInfo label={c} />
                     <button
                       type="button"
                       onClick={() => startEdit(idx)}
@@ -178,14 +180,21 @@ export function ConfluencesEditor() {
               <p className="text-xs text-muted-foreground mb-2">Suggestions</p>
               <div className="flex flex-wrap gap-1.5">
                 {suggestions.map((c) => (
-                  <button
+                  <div
                     key={c}
-                    type="button"
-                    onClick={() => add(c)}
-                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors bg-background/50 text-muted-foreground border-border/50 hover:text-foreground hover:border-border"
+                    className="inline-flex items-center gap-1 text-xs rounded-lg border transition-colors bg-background/50 text-muted-foreground border-border/50 hover:text-foreground hover:border-border"
                   >
-                    <Plus className="w-3 h-3" /> {c}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => add(c)}
+                      className="inline-flex items-center gap-1 pl-2.5 py-1"
+                    >
+                      <Plus className="w-3 h-3" /> {c}
+                    </button>
+                    <span className="pr-2 flex items-center">
+                      <ConfluenceInfo label={c} />
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>

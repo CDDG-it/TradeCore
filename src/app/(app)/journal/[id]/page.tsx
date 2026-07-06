@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
+import { ConfluenceInfo } from "@/components/journal/confluence-info";
 import {
   getTradeById,
   getAnalysisById,
@@ -233,8 +234,9 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {trade.confluences.map((c) => (
-                <span key={c} className="text-sm bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg border border-border">
+                <span key={c} className="inline-flex items-center gap-1.5 text-sm bg-secondary text-secondary-foreground pl-3 pr-2.5 py-1.5 rounded-lg border border-border">
                   {c}
+                  <ConfluenceInfo label={c} />
                 </span>
               ))}
             </div>

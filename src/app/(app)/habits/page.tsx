@@ -366,7 +366,7 @@ export default function HabitsPage() {
   return (
     <div className="space-y-8 max-w-5xl">
       <PageHeader
-        badge="Mindset"
+        badge="MC Mindset Formula"
         title="Habits"
         subtitle="Daily habits & discipline tracking"
         action={

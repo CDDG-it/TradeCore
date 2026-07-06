@@ -854,7 +854,7 @@ export default function OptionFlowPage() {
     return (
       <PageWrapper>
         <PageHeader
-          badge="Market Structure"
+          badge="MC Option Flow"
           title="Option Flow"
           subtitle="Dealer positioning, session structure, and COT-driven weekly bias for NQ & GC."
         />
@@ -873,7 +873,7 @@ export default function OptionFlowPage() {
   return (
     <PageWrapper>
       <PageHeader
-        badge="Market Structure"
+        badge="MC Option Flow"
         title="Option Flow"
         subtitle="Dealer positioning, session structure, and COT-driven weekly bias for NQ & GC."
         action={
