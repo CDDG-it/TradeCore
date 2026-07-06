@@ -10,6 +10,8 @@ import {
   Wallet,
   Radar,
   Target,
+  Flame,
+  Sparkles,
   Settings,
   User,
   LogOut,
@@ -31,12 +33,19 @@ const navGroups = [
       { href: "/journal", label: "Journal", icon: BookOpen },
       { href: "/analysis", label: "Analysis", icon: LineChart },
       { href: "/analytics", label: "Analytics", icon: BarChart2 },
-      { href: "/discipline", label: "Discipline", icon: Target },
       { href: "/accounts", label: "Accounts", icon: Wallet },
     ],
   },
   {
-    label: "Market Structure",
+    label: "MC Mindset formula",
+    items: [
+      { href: "/habits", label: "Habits", icon: Flame },
+      { href: "/self-improvement", label: "Self-Improvement", icon: Sparkles },
+      { href: "/discipline", label: "Discipline", icon: Target },
+    ],
+  },
+  {
+    label: "MC Option Flow",
     items: [
       { href: "/option-flow", label: "Option Flow", icon: Radar },
     ],

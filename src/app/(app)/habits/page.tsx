@@ -24,7 +24,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { computeHabitScore } from "@/lib/discipline";
+import { frequencyApplies } from "@/lib/habits";
 import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
+import { HabitCalendar } from "@/components/habits/habit-calendar";
+import { CalendarConnect } from "@/components/habits/calendar-connect";
+import { CalendarDays, LayoutGrid } from "lucide-react";
 import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
 import {
   getHabits,
@@ -57,13 +61,6 @@ const RANGES = [
   { key: "quarter", label: "90d", days: 90 },
 ] as const;
 type RangeKey = (typeof RANGES)[number]["key"];
-
-// Whether a habit's frequency expects it on a given weekday (0=Sun … 6=Sat).
-function frequencyApplies(freq: Habit["frequency"], weekday: number): boolean {
-  if (freq === "weekdays") return weekday >= 1 && weekday <= 5;
-  if (freq === "weekends") return weekday === 0 || weekday === 6;
-  return true;
-}
 
 /**
  * GitHub-style history grid: weekday rows × week columns over [start, end].
@@ -269,6 +266,7 @@ export default function HabitsPage() {
 
   const [streaks, setStreaks] = useState<Record<string, number>>({});
   const [range, setRange] = useState<RangeKey>("month");
+  const [view, setView] = useState<"overview" | "calendar">("overview");
 
   const rangeDays = RANGES.find((r) => r.key === range)!.days;
 
@@ -393,6 +391,24 @@ export default function HabitsPage() {
         }
       />
       <PageWrapper>
+      {/* View toggle: overview vs a navigable calendar of earlier weeks/months */}
+      <div className="flex w-fit rounded-lg border border-border/60 overflow-hidden">
+        <button onClick={() => setView("overview")}
+          className={cn("inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium transition-colors",
+            view === "overview" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+          <LayoutGrid className="w-3.5 h-3.5" /> Overview
+        </button>
+        <button onClick={() => setView("calendar")}
+          className={cn("inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium transition-colors",
+            view === "calendar" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
+          <CalendarDays className="w-3.5 h-3.5" /> Calendar
+        </button>
+      </div>
+
+      {view === "calendar" ? (
+        <HabitCalendar habits={habits} completions={completions} onToggle={handleToggle} />
+      ) : (
+      <>
       {/* Insights header + range toggle - look beyond just today */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -861,8 +877,13 @@ export default function HabitsPage() {
               </div>
             </div>
           )}
+
+          {/* Connect your own Google / Apple calendar */}
+          <CalendarConnect />
         </div>
       </div>
+      </>
+      )}
 
       </PageWrapper>
 

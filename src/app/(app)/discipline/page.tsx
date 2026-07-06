@@ -45,54 +45,54 @@ const SCIENCE = [
 
 export default function DisciplinePage() {
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="w-full space-y-10">
       {/* Header */}
       <div>
         <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to dashboard
         </Link>
-        <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12">
-            <Target className="w-5 h-5 text-primary" />
+        <div className="flex items-center gap-4">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/12 shrink-0">
+            <Target className="w-7 h-7 text-primary" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">How your Discipline Score works</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Part trading process, part daily habits.</p>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight">How your Discipline Score works</h1>
+            <p className="text-base text-muted-foreground mt-1">Part trading process, part daily habits.</p>
           </div>
         </div>
       </div>
 
-      <p className="text-sm leading-relaxed text-muted-foreground">
+      <p className="text-base md:text-lg leading-relaxed text-muted-foreground max-w-4xl">
         Discipline is not only what happens at the screen. It is the whole routine around your trading.
         Your score blends the two things you actually control, over the selected week or month.
       </p>
 
       {/* The two components */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="rounded-2xl p-5 border border-border bg-card">
-          <div className="flex items-center justify-between mb-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/12">
-              <ListChecks className="w-4 h-4 text-primary" />
+      <div className="grid sm:grid-cols-2 gap-5">
+        <div className="rounded-2xl p-6 sm:p-7 border border-border bg-card">
+          <div className="flex items-center justify-between mb-4">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12">
+              <ListChecks className="w-5 h-5 text-primary" />
             </span>
-            <span className="text-lg font-black tabular-nums text-primary">{TRADE_PCT}%</span>
+            <span className="text-3xl font-black tabular-nums text-primary">{TRADE_PCT}%</span>
           </div>
-          <h2 className="text-sm font-bold">Trade rules</h2>
-          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+          <h2 className="text-lg font-bold">Trade rules</h2>
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             The average of your per-trade discipline checklist. These are the rules you tick off on each
             trade, like followed the plan, respected risk, no impulsive entries, plus your own custom rules.
             This is what happens at the screen, so it stays the dominant signal.
           </p>
         </div>
 
-        <div className="rounded-2xl p-5 border border-border bg-card">
-          <div className="flex items-center justify-between mb-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/12">
-              <Repeat className="w-4 h-4 text-success" />
+        <div className="rounded-2xl p-6 sm:p-7 border border-border bg-card">
+          <div className="flex items-center justify-between mb-4">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-success/12">
+              <Repeat className="w-5 h-5 text-success" />
             </span>
-            <span className="text-lg font-black tabular-nums text-success">{HABIT_PCT}%</span>
+            <span className="text-3xl font-black tabular-nums text-success">{HABIT_PCT}%</span>
           </div>
-          <h2 className="text-sm font-bold">Habits</h2>
-          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+          <h2 className="text-lg font-bold">Habits</h2>
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             How consistently you complete your habits, measured across <span className="text-foreground font-medium">every
             applicable day</span> in the period. It respects each habit&apos;s daily, weekday or weekend schedule, so showing
             up consistently scores higher than cramming it all into one day.
@@ -101,15 +101,15 @@ export default function DisciplinePage() {
       </div>
 
       {/* Formula */}
-      <div className="rounded-2xl p-5 text-center bg-muted/40 border border-border">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">The formula</p>
-        <p className="text-sm font-semibold">
+      <div className="rounded-2xl p-6 sm:p-8 text-center bg-muted/40 border border-border">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">The formula</p>
+        <p className="text-base md:text-xl font-semibold">
           Discipline&nbsp;=&nbsp;
           <span className="text-primary">{TRADE_PCT}% × trade-rule adherence</span>
           &nbsp;+&nbsp;
           <span className="text-success">{HABIT_PCT}% × habit completion</span>
         </p>
-        <p className="text-xs text-muted-foreground mt-3 max-w-xl mx-auto leading-relaxed">
+        <p className="text-sm text-muted-foreground mt-4 max-w-2xl mx-auto leading-relaxed">
           Trade rules dominate on purpose. Habits nudge the score, they never overpower your actual trading
           process. If one side has no data yet, say no habits set or no scored trades in the period, the other
           stands alone, so you are never punished for a dimension we cannot measure yet.
@@ -117,11 +117,11 @@ export default function DisciplinePage() {
       </div>
 
       {/* Why habits matter */}
-      <div className="rounded-2xl p-6 bg-primary/6 border border-primary/20">
-        <p className="text-xs font-semibold uppercase tracking-wider mb-2.5 text-primary">
+      <div className="rounded-2xl p-6 sm:p-8 bg-primary/6 border border-primary/20">
+        <p className="text-sm font-semibold uppercase tracking-wider mb-3 text-primary">
           Why habits make you a better trader
         </p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-base text-muted-foreground leading-relaxed max-w-4xl">
           Sleep, preparation, journaling and review habits are what keep your decisions stable. A rested, prepared
           trader takes fewer impulsive entries, respects risk, and sticks to the plan when it matters most. The
           discipline you build away from the charts is exactly what shows up on them, which is why habits are part
@@ -130,30 +130,30 @@ export default function DisciplinePage() {
       </div>
 
       {/* The science */}
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-bold">The science behind it</h2>
+          <TrendingUp className="w-5 h-5 text-primary" />
+          <h2 className="text-xl font-bold">The science behind it</h2>
         </div>
-        <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
+        <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-3xl">
           This weighting is not arbitrary. It leans on research into what actually separates strong performers,
           and on how discipline and habits are built. Here is why it matters for traders.
         </p>
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {SCIENCE.map((s) => (
-            <div key={s.title} className="rounded-2xl p-5 border border-border bg-card flex flex-col">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/12 mb-3">
-                <s.icon className="w-4 h-4 text-primary" />
+            <div key={s.title} className="rounded-2xl p-6 border border-border bg-card flex flex-col">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12 mb-4">
+                <s.icon className="w-5 h-5 text-primary" />
               </span>
-              <h3 className="text-sm font-bold">{s.title}</h3>
-              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed flex-1">{s.body}</p>
+              <h3 className="text-base font-bold">{s.title}</h3>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed flex-1">{s.body}</p>
               <a
                 href={s.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors"
+                className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
               >
-                <ExternalLink className="w-3 h-3 shrink-0" />
+                <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                 {s.source}
               </a>
             </div>
