@@ -17,7 +17,7 @@ import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem,
+  DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import {
   WIDGET_MAP, WIDGET_CONTROLS, DEFAULT_WIDGET_OPTIONS,
@@ -74,7 +74,7 @@ function WidgetOptionsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {controls.scope && (
-          <>
+          <DropdownMenuGroup>
             <DropdownMenuLabel>Period</DropdownMenuLabel>
             {(["week", "month", "all"] as WidgetScope[]).map((scope) => (
               <DropdownMenuItem key={scope} onClick={() => onChange(id, { ...options, scope })}>
@@ -82,30 +82,34 @@ function WidgetOptionsMenu({
                 <span className={cn(options.scope !== scope && "pl-[22px]")}>{SCOPE_LABEL[scope]}</span>
               </DropdownMenuItem>
             ))}
-          </>
+          </DropdownMenuGroup>
         )}
         {controls.session && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Session</DropdownMenuLabel>
-            {(["all", "London", "New York", "Asia"] as WidgetSessionFilter[]).map((session) => (
-              <DropdownMenuItem key={session} onClick={() => onChange(id, { ...options, session })}>
-                {options.session === session && <Check className="w-3.5 h-3.5" />}
-                <span className={cn(options.session !== session && "pl-[22px]")}>{SESSION_LABEL[session]}</span>
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Session</DropdownMenuLabel>
+              {(["all", "London", "New York", "Asia"] as WidgetSessionFilter[]).map((session) => (
+                <DropdownMenuItem key={session} onClick={() => onChange(id, { ...options, session })}>
+                  {options.session === session && <Check className="w-3.5 h-3.5" />}
+                  <span className={cn(options.session !== session && "pl-[22px]")}>{SESSION_LABEL[session]}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
           </>
         )}
         {controls.counts && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Show</DropdownMenuLabel>
-            {controls.counts.map((count) => (
-              <DropdownMenuItem key={count} onClick={() => onChange(id, { ...options, count })}>
-                {options.count === count && <Check className="w-3.5 h-3.5" />}
-                <span className={cn(options.count !== count && "pl-[22px]")}>{count} trades</span>
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Show</DropdownMenuLabel>
+              {controls.counts.map((count) => (
+                <DropdownMenuItem key={count} onClick={() => onChange(id, { ...options, count })}>
+                  {options.count === count && <Check className="w-3.5 h-3.5" />}
+                  <span className={cn(options.count !== count && "pl-[22px]")}>{count} trades</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
           </>
         )}
       </DropdownMenuContent>
