@@ -64,15 +64,15 @@ function WidgetOptionsMenu({
         render={
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
             title="Widget options"
-            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all"
+            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 shrink-0 w-6 h-6 rounded-md flex items-center justify-center border transition-all"
+            style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--muted-foreground)" }}
           />
         }
       >
         <SlidersHorizontal className="w-3.5 h-3.5" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+      <DropdownMenuContent align="end">
         {controls.scope && (
           <>
             <DropdownMenuLabel>Period</DropdownMenuLabel>
@@ -156,7 +156,11 @@ function WidgetShell({
             <h3 className="text-sm font-semibold truncate">{meta.title}</h3>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {!editing && <WidgetOptionsMenu id={id} options={options} onChange={onOptionsChange} />}
+            {/* Reserve space so the title never runs under the options button,
+                which is rendered as an independent sibling below (not nested
+                inside this anchor — nested interactive elements are invalid
+                HTML and click handling on them is unreliable). */}
+            {!editing && <span className="w-6 h-6" aria-hidden />}
             {editing ? (
               <GripVertical className="w-4 h-4 shrink-0 text-muted-foreground/50" />
             ) : (
@@ -166,6 +170,12 @@ function WidgetShell({
         </div>
         <div className="flex-1">{children}</div>
       </Link>
+
+      {!editing && (
+        <div className="absolute top-5 right-10 z-10">
+          <WidgetOptionsMenu id={id} options={options} onChange={onOptionsChange} />
+        </div>
+      )}
 
       {editing && (
         <>
