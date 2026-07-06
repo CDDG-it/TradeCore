@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   ArrowRight, X, TrendingUp, TrendingDown, Flame, Target,
-  Wallet, ScrollText, CalendarClock, Loader2,
+  Wallet, ScrollText, CalendarClock, Loader2, GripVertical, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import {
@@ -13,22 +13,30 @@ import {
 import { computeDiscipline } from "@/lib/discipline";
 import { tradeR } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
+import { cn } from "@/lib/utils";
 import { WIDGET_MAP, type WidgetId } from "@/lib/home/widgets";
 import type { TradeJournalEntry } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
-/** Shared shell: a clickable card linking to the full page, with an optional
- *  remove control shown while the Home is in edit mode. */
+/** Shared shell: a clickable card linking to the full page. While the Home is
+ *  in edit mode it stops navigating and exposes drag + move/remove controls so
+ *  widgets can be rearranged. */
 function WidgetShell({
   id,
   editing,
   onRemove,
+  onMove,
+  canMoveBack,
+  canMoveForward,
   children,
 }: {
   id: WidgetId;
   editing: boolean;
   onRemove: (id: WidgetId) => void;
+  onMove?: (id: WidgetId, dir: -1 | 1) => void;
+  canMoveBack?: boolean;
+  canMoveForward?: boolean;
   children: React.ReactNode;
 }) {
   const meta = WIDGET_MAP[id];
@@ -36,7 +44,12 @@ function WidgetShell({
     <div className="relative group h-full">
       <Link
         href={meta.href}
-        className="card-hover flex h-full flex-col rounded-xl p-5 overflow-hidden"
+        draggable={false}
+        onClick={editing ? (e) => e.preventDefault() : undefined}
+        className={cn(
+          "card-hover flex h-full flex-col rounded-xl p-5 overflow-hidden",
+          editing && "cursor-move select-none"
+        )}
         style={{ background: "var(--card)", border: "1px solid var(--border)" }}
       >
         <div className="flex items-center justify-between mb-3">
@@ -44,20 +57,50 @@ function WidgetShell({
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{meta.source}</p>
             <h3 className="text-sm font-semibold truncate">{meta.title}</h3>
           </div>
-          <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40 transition-all group-hover:text-primary group-hover:translate-x-0.5" />
+          {editing ? (
+            <GripVertical className="w-4 h-4 shrink-0 text-muted-foreground/50" />
+          ) : (
+            <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40 transition-all group-hover:text-primary group-hover:translate-x-0.5" />
+          )}
         </div>
         <div className="flex-1">{children}</div>
       </Link>
+
       {editing && (
-        <button
-          type="button"
-          onClick={() => onRemove(id)}
-          title="Remove widget"
-          className="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center shadow-sm transition-transform hover:scale-110"
-          style={{ background: "var(--destructive)", color: "var(--destructive-foreground, #fff)" }}
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
+        <>
+          {/* Move controls (also work on touch, where native drag doesn't) */}
+          <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onMove?.(id, -1)}
+              disabled={!canMoveBack}
+              title="Move earlier"
+              className="w-6 h-6 rounded-md flex items-center justify-center border transition-colors disabled:opacity-30 hover:bg-muted"
+              style={{ background: "var(--card)", borderColor: "var(--border)" }}
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onMove?.(id, 1)}
+              disabled={!canMoveForward}
+              title="Move later"
+              className="w-6 h-6 rounded-md flex items-center justify-center border transition-colors disabled:opacity-30 hover:bg-muted"
+              style={{ background: "var(--card)", borderColor: "var(--border)" }}
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => onRemove(id)}
+            title="Remove widget"
+            className="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center shadow-sm transition-transform hover:scale-110"
+            style={{ background: "var(--destructive)", color: "#fff" }}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </>
       )}
     </div>
   );
@@ -299,14 +342,27 @@ export function HomeWidget({
   id,
   editing,
   onRemove,
+  onMove,
+  canMoveBack,
+  canMoveForward,
 }: {
   id: WidgetId;
   editing: boolean;
   onRemove: (id: WidgetId) => void;
+  onMove?: (id: WidgetId, dir: -1 | 1) => void;
+  canMoveBack?: boolean;
+  canMoveForward?: boolean;
 }) {
   const Body = COMPONENTS[id];
   return (
-    <WidgetShell id={id} editing={editing} onRemove={onRemove}>
+    <WidgetShell
+      id={id}
+      editing={editing}
+      onRemove={onRemove}
+      onMove={onMove}
+      canMoveBack={canMoveBack}
+      canMoveForward={canMoveForward}
+    >
       <Body />
     </WidgetShell>
   );

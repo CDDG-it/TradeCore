@@ -9,9 +9,8 @@ import {
   BarChart2,
   Wallet,
   Radar,
-  Target,
+  ScrollText,
   Flame,
-  Sparkles,
   Settings,
   User,
   LogOut,
@@ -40,8 +39,7 @@ const navGroups = [
     label: "MC Mindset formula",
     items: [
       { href: "/habits", label: "Habits", icon: Flame },
-      { href: "/self-improvement", label: "Self-Improvement", icon: Sparkles },
-      { href: "/discipline", label: "Discipline", icon: Target },
+      { href: "/trading-behaviour", label: "Trading Behaviour", icon: ScrollText },
     ],
   },
   {

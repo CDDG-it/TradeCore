@@ -10,9 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { getTradeById, updateTrade, getAnalyses, getProfile, getTrades } from "@/lib/supabase/queries";
+import { getTradeById, updateTrade, getAnalyses, getProfile } from "@/lib/supabase/queries";
 import type { PreTradeAnalysis } from "@/lib/types";
-import { collectConfluenceOptions } from "@/lib/journal/confluences";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -74,11 +73,15 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const baselineRef = useRef<typeof DEFAULT_FORM | null>(null);
 
   useEffect(() => {
-    Promise.all([getTradeById(id), getAnalyses(), getProfile(), getTrades()]).then(([trade, analyses, profile, trades]) => {
+    Promise.all([getTradeById(id), getAnalyses(), getProfile()]).then(([trade, analyses, profile]) => {
       setAllAnalyses(analyses);
       if (profile?.id) setUserId(profile.id);
-      // Confluences live in the Journal now: preset library + anything used before.
-      setSavedConfluences(collectConfluenceOptions(trades));
+      // Quick-select confluences are the saved library from Trading Behaviour.
+      if (profile?.confluence_options) {
+        setSavedConfluences(
+          profile.confluence_options.split("\n").map((l) => l.trim()).filter(Boolean)
+        );
+      }
       if (!trade) { setNotFound(true); setLoading(false); return; }
       setTradeInfo({ instrument: trade.instrument, session: trade.session });
 

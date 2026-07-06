@@ -25,6 +25,8 @@ export default function HomePage() {
   const [widgets, setWidgets] = useState<WidgetId[]>(DEFAULT_WIDGETS);
   const [editing, setEditing] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -46,6 +48,29 @@ export default function HomePage() {
 
   function toggleWidget(id: WidgetId) {
     update(widgets.includes(id) ? widgets.filter((w) => w !== id) : [...widgets, id]);
+  }
+
+  function reorder(list: WidgetId[], from: number, to: number) {
+    const next = [...list];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    return next;
+  }
+
+  // Arrow controls (also used on touch, where native drag isn't available).
+  function moveWidget(id: WidgetId, dir: -1 | 1) {
+    const from = widgets.indexOf(id);
+    const to = from + dir;
+    if (from < 0 || to < 0 || to >= widgets.length) return;
+    update(reorder(widgets, from, to));
+  }
+
+  function handleDrop(target: number) {
+    if (dragIndex !== null && dragIndex !== target) {
+      update(reorder(widgets, dragIndex, target));
+    }
+    setDragIndex(null);
+    setOverIndex(null);
   }
 
   // Group the picker by the page each widget comes from.
@@ -136,11 +161,40 @@ export default function HomePage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-up">
-            {widgets.map((id) => (
-              <HomeWidget key={id} id={id} editing={editing} onRemove={removeWidget} />
-            ))}
-          </div>
+          <>
+            {editing && (
+              <p className="text-xs text-muted-foreground -mt-2 mb-3">
+                Drag a card to rearrange, or use the arrows. Changes save automatically.
+              </p>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-up">
+              {widgets.map((id, i) => (
+                <div
+                  key={id}
+                  draggable={editing}
+                  onDragStart={editing ? () => setDragIndex(i) : undefined}
+                  onDragOver={editing ? (e) => { e.preventDefault(); setOverIndex(i); } : undefined}
+                  onDragLeave={editing ? () => setOverIndex((v) => (v === i ? null : v)) : undefined}
+                  onDrop={editing ? (e) => { e.preventDefault(); handleDrop(i); } : undefined}
+                  onDragEnd={editing ? () => { setDragIndex(null); setOverIndex(null); } : undefined}
+                  className={cn(
+                    "rounded-xl transition-all",
+                    editing && dragIndex === i && "opacity-40",
+                    editing && overIndex === i && dragIndex !== null && dragIndex !== i && "ring-2 ring-primary/50"
+                  )}
+                >
+                  <HomeWidget
+                    id={id}
+                    editing={editing}
+                    onRemove={removeWidget}
+                    onMove={moveWidget}
+                    canMoveBack={i > 0}
+                    canMoveForward={i < widgets.length - 1}
+                  />
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </PageWrapper>
 

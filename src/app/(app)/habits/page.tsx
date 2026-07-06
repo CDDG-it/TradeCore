@@ -29,7 +29,6 @@ import { frequencyApplies } from "@/lib/habits";
 import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
 import { HabitCalendar } from "@/components/habits/habit-calendar";
 import { CalendarConnect } from "@/components/habits/calendar-connect";
-import { TradingRulesEditor } from "@/components/habits/trading-rules";
 import { CalendarDays, LayoutGrid } from "lucide-react";
 import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
 import {
@@ -369,7 +368,7 @@ export default function HabitsPage() {
       <PageHeader
         badge="Mindset"
         title="Habits"
-        subtitle="Habits, trading rules & discipline"
+        subtitle="Daily habits & discipline tracking"
         action={
           <button
             onClick={() => setShowNewHabit(true)}
@@ -730,9 +729,8 @@ export default function HabitsPage() {
           })}
         </div>
 
-        {/* Trading rules + calendar */}
+        {/* Calendar */}
         <div className="space-y-6 animate-fade-up" style={{ animationDelay: "300ms" }}>
-          <TradingRulesEditor />
           <CalendarConnect />
         </div>
       </div>
