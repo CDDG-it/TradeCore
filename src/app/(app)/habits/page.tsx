@@ -10,8 +10,7 @@ import {
   Flame,
   Check,
   Trash2,
-  X,
-  Target,
+  CheckCircle2,
   Zap,
   HelpCircle,
   TrendingUp,
@@ -21,6 +20,8 @@ import {
   BookOpen,
   Coffee,
   Circle,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { computeHabitScore } from "@/lib/discipline";
@@ -28,8 +29,16 @@ import { frequencyApplies } from "@/lib/habits";
 import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
 import { HabitCalendar } from "@/components/habits/habit-calendar";
 import { CalendarConnect } from "@/components/habits/calendar-connect";
+import { TradingRulesEditor } from "@/components/habits/trading-rules";
 import { CalendarDays, LayoutGrid } from "lucide-react";
 import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   getHabits,
   getHabitCompletions,
@@ -37,12 +46,8 @@ import {
   createHabit,
   deleteHabit,
   getHabitStreak,
-  getDailyTasks,
-  createDailyTask,
-  updateDailyTask,
-  deleteDailyTask,
 } from "@/lib/supabase/queries";
-import type { Habit, HabitCompletion, DailyTask, HabitCategory } from "@/lib/types";
+import type { Habit, HabitCompletion, HabitCategory } from "@/lib/types";
 
 const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label: string; Icon: React.ElementType }> = {
   mindset:  { accent: "oklch(0.72 0.22 45)",  bg: "oklch(0.72 0.22 45 / 0.12)",  label: "Mindset",  Icon: Brain },
@@ -247,22 +252,23 @@ interface NewHabitForm {
   icon: string;
 }
 
+const EMPTY_NEW_HABIT: NewHabitForm = {
+  name: "",
+  description: "",
+  category: "routine",
+  frequency: "daily",
+  icon: "checklist",
+};
+
 export default function HabitsPage() {
   const today = format(new Date(), "yyyy-MM-dd");
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
-  const [tasks, setTasks] = useState<DailyTask[]>([]);
-  const [newTaskText, setNewTaskText] = useState("");
-  const [newTaskPriority, setNewTaskPriority] = useState<"high" | "medium" | "low">("medium");
   const [showNewHabit, setShowNewHabit] = useState(false);
   const [deletingHabit, setDeletingHabit] = useState<string | null>(null);
-  const [newHabit, setNewHabit] = useState<NewHabitForm>({
-    name: "",
-    description: "",
-    category: "routine",
-    frequency: "daily",
-    icon: "goal",
-  });
+  const [newHabit, setNewHabit] = useState<NewHabitForm>(EMPTY_NEW_HABIT);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const [streaks, setStreaks] = useState<Record<string, number>>({});
   const [range, setRange] = useState<RangeKey>("month");
@@ -271,10 +277,9 @@ export default function HabitsPage() {
   const rangeDays = RANGES.find((r) => r.key === range)!.days;
 
   const refresh = async () => {
-    const [h, c, t] = await Promise.all([getHabits(), getHabitCompletions(), getDailyTasks(today)]);
+    const [h, c] = await Promise.all([getHabits(), getHabitCompletions()]);
     setHabits(h);
     setCompletions(c);
-    setTasks(t);
     const streakMap: Record<string, number> = {};
     await Promise.all(h.map(async (habit) => {
       streakMap[habit.id] = await getHabitStreak(habit.id);
@@ -291,46 +296,42 @@ export default function HabitsPage() {
   }
 
   async function handleCreateHabit() {
-    if (!newHabit.name.trim()) return;
-    const cat = CATEGORY_COLORS[newHabit.category];
-    await createHabit({
-      name: newHabit.name.trim(),
-      description: newHabit.description.trim(),
-      category: newHabit.category,
-      frequency: newHabit.frequency,
-      target_days: newHabit.frequency === "daily" ? 7 : newHabit.frequency === "weekdays" ? 5 : 2,
-      color: cat.accent,
-      icon: newHabit.icon,
-    });
-    await refresh();
-    setNewHabit({ name: "", description: "", category: "routine", frequency: "daily", icon: "goal" });
+    if (!newHabit.name.trim() || creating) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const cat = CATEGORY_COLORS[newHabit.category];
+      await createHabit({
+        name: newHabit.name.trim(),
+        description: newHabit.description.trim(),
+        category: newHabit.category,
+        frequency: newHabit.frequency,
+        target_days: newHabit.frequency === "daily" ? 7 : newHabit.frequency === "weekdays" ? 5 : 2,
+        color: cat.accent,
+        icon: newHabit.icon,
+      });
+      await refresh();
+      setNewHabit(EMPTY_NEW_HABIT);
+      setShowNewHabit(false);
+    } catch (err) {
+      console.error("Failed to create habit:", err);
+      setCreateError("Could not create habit. Please try again.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  function closeNewHabit() {
+    if (creating) return;
     setShowNewHabit(false);
+    setCreateError(null);
+    setNewHabit(EMPTY_NEW_HABIT);
   }
 
   async function handleDeleteHabit(id: string) {
     await deleteHabit(id);
     await refresh();
     setDeletingHabit(null);
-  }
-
-  async function handleAddTask() {
-    if (!newTaskText.trim()) return;
-    await createDailyTask({ date: today, text: newTaskText.trim(), completed: false, priority: newTaskPriority });
-    const t = await getDailyTasks(today);
-    setTasks(t);
-    setNewTaskText("");
-  }
-
-  async function handleToggleTask(id: string, completed: boolean) {
-    await updateDailyTask(id, { completed: !completed });
-    const t = await getDailyTasks(today);
-    setTasks(t);
-  }
-
-  async function handleDeleteTask(id: string) {
-    await deleteDailyTask(id);
-    const t = await getDailyTasks(today);
-    setTasks(t);
   }
 
   // Stats
@@ -363,18 +364,12 @@ export default function HabitsPage() {
     return exp > 0 ? done / exp : null;
   };
 
-  const PRIORITY_CONFIG = {
-    high:   { label: "High",   style: { color: "oklch(0.58 0.22 25)",  bg: "oklch(0.58 0.22 25 / 0.12)"  } },
-    medium: { label: "Medium", style: { color: "oklch(0.70 0.16 72)",  bg: "oklch(0.70 0.16 72 / 0.12)"  } },
-    low:    { label: "Low",    style: { color: "oklch(0.55 0.005 28)", bg: "oklch(0.55 0.005 28 / 0.12)" } },
-  };
-
   return (
     <div className="space-y-8 max-w-5xl">
       <PageHeader
         badge="Mindset"
         title="Habits"
-        subtitle="Daily habit tracker"
+        subtitle="Habits, trading rules & discipline"
         action={
           <button
             onClick={() => setShowNewHabit(true)}
@@ -454,7 +449,7 @@ export default function HabitsPage() {
             label: "Completion Rate",
             value: `${rangeCompletion}%`,
             sub: `last ${rangeDays} days`,
-            icon: Target,
+            icon: CheckCircle2,
             accent: "oklch(0.72 0.22 45)",
             accentBg: "oklch(0.72 0.22 45 / 0.10)",
             ring: rangeCompletion,
@@ -651,7 +646,7 @@ export default function HabitsPage() {
                 )}
 
                 <div className="flex items-start gap-3 mb-4">
-                  {/* Emoji + completion ring */}
+                  {/* Figure + completion ring */}
                   <div className="relative shrink-0">
                     <button
                       onClick={() => handleToggle(habit.id, today)}
@@ -735,150 +730,9 @@ export default function HabitsPage() {
           })}
         </div>
 
-        {/* Daily task planner */}
-        <div className="space-y-3 animate-fade-up" style={{ animationDelay: "300ms" }}>
-          <h2 className="text-sm font-semibold">Daily Planner</h2>
-
-          {/* Add task */}
-          <div
-            className="rounded-xl p-4"
-            style={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            <input
-              type="text"
-              value={newTaskText}
-              onChange={(e) => setNewTaskText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
-              placeholder="Add a task for today..."
-              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 mb-3"
-            />
-            <div className="flex items-center justify-between">
-              <div className="flex gap-1">
-                {(["high", "medium", "low"] as const).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setNewTaskPriority(p)}
-                    className="px-2 py-0.5 rounded-md text-xs font-medium capitalize transition-all"
-                    style={
-                      newTaskPriority === p
-                        ? {
-                            background: PRIORITY_CONFIG[p].style.bg,
-                            color: PRIORITY_CONFIG[p].style.color,
-                          }
-                        : { color: "oklch(0.40 0.005 28)" }
-                    }
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={handleAddTask}
-                disabled={!newTaskText.trim()}
-                className="text-xs px-3 py-1 rounded-lg font-semibold transition-all disabled:opacity-30"
-                style={{
-                  background: "oklch(0.72 0.22 45)",
-                  color: "oklch(0.07 0.003 28)",
-                }}
-              >
-                Add
-              </button>
-            </div>
-          </div>
-
-          {/* Task list */}
-          <div className="space-y-2">
-            {tasks.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-6">
-                No tasks for today. Add one above.
-              </p>
-            )}
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className="flex items-start gap-3 rounded-xl px-4 py-3 group transition-all"
-                style={{
-                  background: task.completed
-                    ? "var(--card)"
-                    : "var(--card)",
-                  border: `1px solid ${task.completed ? "var(--border)" : "var(--border)"}`,
-                }}
-              >
-                <button
-                  onClick={() => handleToggleTask(task.id, task.completed)}
-                  className="w-4 h-4 rounded shrink-0 mt-0.5 flex items-center justify-center transition-all border"
-                  style={
-                    task.completed
-                      ? {
-                          background: "oklch(0.58 0.17 145 / 0.20)",
-                          borderColor: "oklch(0.58 0.17 145)",
-                        }
-                      : {
-                          background: "transparent",
-                          borderColor: "oklch(0.30 0.005 28)",
-                        }
-                  }
-                >
-                  {task.completed && (
-                    <Check className="w-2.5 h-2.5" style={{ color: "oklch(0.58 0.17 145)" }} />
-                  )}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={cn("text-sm leading-snug", task.completed && "line-through")}
-                    style={{ color: task.completed ? "oklch(0.40 0.005 28)" : "oklch(0.90 0.003 28)" }}
-                  >
-                    {task.text}
-                  </p>
-                  <span
-                    className="text-xs font-medium capitalize"
-                    style={{ color: PRIORITY_CONFIG[task.priority].style.color }}
-                  >
-                    {task.priority}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleDeleteTask(task.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Task summary */}
-          {tasks.length > 0 && (
-            <div
-              className="rounded-xl px-4 py-3 flex items-center justify-between"
-              style={{
-                background: "var(--card)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <span className="text-xs text-muted-foreground">
-                {tasks.filter((t) => t.completed).length}/{tasks.length} done
-              </span>
-              <div className="flex items-center gap-1">
-                {tasks.map((t) => (
-                  <div
-                    key={t.id}
-                    className="w-2 h-2 rounded-full"
-                    style={{
-                      background: t.completed
-                        ? "oklch(0.58 0.17 145)"
-                        : PRIORITY_CONFIG[t.priority].style.color,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Connect your own Google / Apple calendar */}
+        {/* Trading rules + calendar */}
+        <div className="space-y-6 animate-fade-up" style={{ animationDelay: "300ms" }}>
+          <TradingRulesEditor />
           <CalendarConnect />
         </div>
       </div>
@@ -887,177 +741,168 @@ export default function HabitsPage() {
 
       </PageWrapper>
 
-      {/* New habit modal */}
-      {showNewHabit && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "oklch(0 0 0 / 70%)", backdropFilter: "blur(6px)" }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowNewHabit(false);
-          }}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl p-6 animate-fade-up"
-            style={{
-              background: "var(--popover)",
-              border: "1px solid var(--border)",
-              boxShadow: "0 24px 64px oklch(0 0 0 / 0.5)",
-            }}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-base font-bold">New Habit</h2>
-              <button
-                onClick={() => setShowNewHabit(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      {/* New habit dialog */}
+      <Dialog open={showNewHabit} onOpenChange={(o) => (o ? setShowNewHabit(true) : closeNewHabit())}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>New Habit</DialogTitle>
+          </DialogHeader>
 
-            <div className="space-y-4">
-              {/* Name */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Habit name *</label>
-                <input
-                  type="text"
-                  value={newHabit.name}
-                  onChange={(e) => setNewHabit({ ...newHabit, name: e.target.value })}
-                  placeholder="e.g. Morning journaling"
-                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
-                  style={{
-                    background: "var(--secondary)",
-                    border: "1px solid var(--border)",
-                    color: "oklch(0.94 0.002 28)",
-                  }}
-                  autoFocus
-                />
-              </div>
-
-              {/* Description */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Description</label>
-                <input
-                  type="text"
-                  value={newHabit.description}
-                  onChange={(e) => setNewHabit({ ...newHabit, description: e.target.value })}
-                  placeholder="Optional description..."
-                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
-                  style={{
-                    background: "var(--secondary)",
-                    border: "1px solid var(--border)",
-                    color: "oklch(0.94 0.002 28)",
-                  }}
-                />
-              </div>
-
-              {/* Icon selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Icon</label>
-                <div className="flex flex-wrap gap-2">
-                  {HABIT_ICONS.map(({ key, Icon }) => {
-                    const active = newHabit.icon === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        title={key}
-                        onClick={() => setNewHabit({ ...newHabit, icon: key })}
-                        className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
-                        style={{
-                          background: active ? "oklch(0.72 0.22 45 / 0.20)" : "var(--secondary)",
-                          border: `1px solid ${active ? "oklch(0.72 0.22 45 / 0.50)" : "var(--border)"}`,
-                        }}
-                      >
-                        <Icon className="w-4 h-4" style={{ color: active ? "oklch(0.72 0.22 45)" : "var(--muted-foreground)" }} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Category */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Category</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {(Object.keys(CATEGORY_COLORS) as HabitCategory[]).map((cat) => {
-                    const { accent, bg, label } = CATEGORY_COLORS[cat];
-                    const active = newHabit.category === cat;
-                    return (
-                      <button
-                        key={cat}
-                        onClick={() => setNewHabit({ ...newHabit, category: cat })}
-                        className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
-                        style={
-                          active
-                            ? { background: bg, color: accent, border: `1px solid ${accent.replace(")", " / 0.40)")}` }
-                            : { background: "var(--secondary)", color: "oklch(0.50 0.005 28)", border: "1px solid var(--border)" }
-                        }
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Frequency */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Frequency</label>
-                <div className="flex gap-2">
-                  {(["daily", "weekdays", "weekends"] as const).map((freq) => (
-                    <button
-                      key={freq}
-                      onClick={() => setNewHabit({ ...newHabit, frequency: freq })}
-                      className="flex-1 py-2 rounded-lg text-xs font-semibold capitalize transition-all"
-                      style={
-                        newHabit.frequency === freq
-                          ? {
-                              background: "oklch(0.72 0.22 45 / 0.15)",
-                              color: "oklch(0.72 0.22 45)",
-                              border: "1px solid oklch(0.72 0.22 45 / 0.40)",
-                            }
-                          : {
-                              background: "var(--secondary)",
-                              color: "oklch(0.50 0.005 28)",
-                              border: "1px solid var(--border)",
-                            }
-                      }
-                    >
-                      {freq}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowNewHabit(false)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
+          <div className="space-y-4">
+            {/* Name */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Habit name *</label>
+              <input
+                type="text"
+                value={newHabit.name}
+                onChange={(e) => setNewHabit({ ...newHabit, name: e.target.value })}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCreateHabit(); } }}
+                placeholder="e.g. Morning journaling"
+                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
                 style={{
                   background: "var(--secondary)",
-                  color: "oklch(0.55 0.005 28)",
                   border: "1px solid var(--border)",
+                  color: "var(--foreground)",
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateHabit}
-                disabled={!newHabit.name.trim()}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
-                style={{
-                  background: "linear-gradient(135deg, oklch(0.72 0.22 45) 0%, oklch(0.82 0.16 82) 100%)",
-                  color: "oklch(0.07 0.003 28)",
-                  boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.35)",
-                }}
-              >
-                Create habit
-              </button>
+                autoFocus
+              />
             </div>
+
+            {/* Description */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Description</label>
+              <input
+                type="text"
+                value={newHabit.description}
+                onChange={(e) => setNewHabit({ ...newHabit, description: e.target.value })}
+                placeholder="Optional description..."
+                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
+                style={{
+                  background: "var(--secondary)",
+                  border: "1px solid var(--border)",
+                  color: "var(--foreground)",
+                }}
+              />
+            </div>
+
+            {/* Icon selector */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Icon</label>
+              <div className="flex flex-wrap gap-2">
+                {HABIT_ICONS.map(({ key, Icon }) => {
+                  const active = newHabit.icon === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      title={key}
+                      onClick={() => setNewHabit({ ...newHabit, icon: key })}
+                      className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
+                      style={{
+                        background: active ? "oklch(0.72 0.22 45 / 0.20)" : "var(--secondary)",
+                        border: `1px solid ${active ? "oklch(0.72 0.22 45 / 0.50)" : "var(--border)"}`,
+                      }}
+                    >
+                      <Icon className="w-4 h-4" style={{ color: active ? "oklch(0.72 0.22 45)" : "var(--muted-foreground)" }} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Category */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Category</label>
+              <div className="flex flex-wrap gap-1.5">
+                {(Object.keys(CATEGORY_COLORS) as HabitCategory[]).map((cat) => {
+                  const { accent, bg, label } = CATEGORY_COLORS[cat];
+                  const active = newHabit.category === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setNewHabit({ ...newHabit, category: cat })}
+                      className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                      style={
+                        active
+                          ? { background: bg, color: accent, border: `1px solid ${accent.replace(")", " / 0.40)")}` }
+                          : { background: "var(--secondary)", color: "var(--muted-foreground)", border: "1px solid var(--border)" }
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Frequency */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Frequency</label>
+              <div className="flex gap-2">
+                {(["daily", "weekdays", "weekends"] as const).map((freq) => (
+                  <button
+                    key={freq}
+                    type="button"
+                    onClick={() => setNewHabit({ ...newHabit, frequency: freq })}
+                    className="flex-1 py-2 rounded-lg text-xs font-semibold capitalize transition-all"
+                    style={
+                      newHabit.frequency === freq
+                        ? {
+                            background: "oklch(0.72 0.22 45 / 0.15)",
+                            color: "oklch(0.72 0.22 45)",
+                            border: "1px solid oklch(0.72 0.22 45 / 0.40)",
+                          }
+                        : {
+                            background: "var(--secondary)",
+                            color: "var(--muted-foreground)",
+                            border: "1px solid var(--border)",
+                          }
+                    }
+                  >
+                    {freq}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {createError && (
+              <p className="flex items-center gap-1.5 text-xs text-destructive">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {createError}
+              </p>
+            )}
           </div>
-        </div>
-      )}
+
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={closeNewHabit}
+              disabled={creating}
+              className="py-2.5 px-4 rounded-xl text-sm font-medium transition-colors disabled:opacity-40"
+              style={{
+                background: "var(--secondary)",
+                color: "var(--muted-foreground)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateHabit}
+              disabled={!newHabit.name.trim() || creating}
+              className="inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
+              style={{
+                background: "linear-gradient(135deg, oklch(0.72 0.22 45) 0%, oklch(0.82 0.16 82) 100%)",
+                color: "oklch(0.07 0.003 28)",
+                boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.35)",
+              }}
+            >
+              {creating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating…</> : "Create habit"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

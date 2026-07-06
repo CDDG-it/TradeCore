@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { createTrade, getAnalyses, getProfile } from "@/lib/supabase/queries";
+import { createTrade, getAnalyses, getProfile, getTrades } from "@/lib/supabase/queries";
 import type { PreTradeAnalysis } from "@/lib/types";
+import { collectConfluenceOptions } from "@/lib/journal/confluences";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -68,17 +69,11 @@ export default function NewTradePage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([getAnalyses(), getProfile()]).then(([analyses, profile]) => {
+    Promise.all([getAnalyses(), getProfile(), getTrades()]).then(([analyses, profile, trades]) => {
       setAllAnalyses(analyses);
       if (profile?.id) setUserId(profile.id);
-      if (profile?.confluence_options) {
-        setSavedConfluences(
-          profile.confluence_options
-            .split("\n")
-            .map((l) => l.trim())
-            .filter(Boolean)
-        );
-      }
+      // Confluences live in the Journal now: preset library + anything used before.
+      setSavedConfluences(collectConfluenceOptions(trades));
       if (profile?.discipline_rules) {
         const checks = profile.discipline_rules
           .split("\n")

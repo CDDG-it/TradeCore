@@ -10,7 +10,8 @@ import {
   Droplets,
   Coffee,
   Sun,
-  Target,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 
 // Custom icon set for habits (replaces the generic emoji picker). A habit's
@@ -28,12 +29,16 @@ export const HABIT_ICONS: { key: string; Icon: React.ElementType }[] = [
   { key: "hydrate", Icon: Droplets },
   { key: "routine", Icon: Coffee },
   { key: "morning", Icon: Sun },
-  { key: "goal", Icon: Target },
+  { key: "checklist", Icon: CheckCircle2 },
 ];
 
-export const HABIT_ICON_MAP: Record<string, React.ElementType> = Object.fromEntries(
-  HABIT_ICONS.map((h) => [h.key, h.Icon])
-);
+export const HABIT_ICON_MAP: Record<string, React.ElementType> = {
+  ...Object.fromEntries(HABIT_ICONS.map((h) => [h.key, h.Icon])),
+  // Legacy habits created before the bullseye icon was retired map to a
+  // neutral figure instead of rendering a stray key or emoji.
+  goal: Sparkles,
+  "🎯": Sparkles,
+};
 
 /** Renders a habit's chosen figure, falling back to the raw value (e.g. an old emoji). */
 export function HabitGlyph({

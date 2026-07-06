@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { format, isToday, isTomorrow } from "date-fns";
-import { CalendarPlus, RefreshCw, X, Loader2, Info, CalendarClock } from "lucide-react";
+import { CalendarPlus, RefreshCw, Loader2, Info, CalendarClock, Check, Pencil, Unlink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LS_KEY = "mc_ical_url";
@@ -12,7 +12,11 @@ type Ev = { summary: string; start: string; allDay: boolean };
 /**
  * Connect your own Google or Apple calendar by pasting its iCal (.ics) address.
  * The feed is fetched server-side (see /api/ical) and the next two weeks of
- * events are shown alongside the day planner. The URL is stored locally.
+ * events are shown alongside your habits. The URL is stored locally.
+ *
+ * The connect/disconnect flow is deliberately safe: changing the address is an
+ * explicit edit-then-save action, and disconnecting requires a confirmation so
+ * a stray click can't wipe a configured calendar.
  */
 export function CalendarConnect() {
   const [url, setUrl] = useState<string>("");
@@ -21,6 +25,9 @@ export function CalendarConnect() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
 
   const load = useCallback(async (u: string) => {
     setLoading(true);
@@ -49,19 +56,34 @@ export function CalendarConnect() {
     }
   }, [load]);
 
-  function connect() {
+  function save() {
     const u = input.trim();
     if (!u) return;
     localStorage.setItem(LS_KEY, u);
     setUrl(u);
     setInput("");
+    setEditing(false);
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 2500);
     load(u);
   }
+
   function disconnect() {
     localStorage.removeItem(LS_KEY);
     setUrl("");
     setEvents([]);
     setError(null);
+    setConfirmDisconnect(false);
+  }
+
+  function startEdit() {
+    setInput(url);
+    setEditing(true);
+    setConfirmDisconnect(false);
+  }
+
+  function hostOf(u: string) {
+    try { return new URL(u.replace(/^webcal:\/\//i, "https://")).hostname; } catch { return u; }
   }
 
   function dayLabel(d: Date) {
@@ -70,6 +92,8 @@ export function CalendarConnect() {
     return format(d, "EEE MMM d");
   }
 
+  const showForm = !url || editing;
+
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
@@ -77,15 +101,15 @@ export function CalendarConnect() {
           <CalendarClock className="w-4 h-4 text-primary" />
           Calendar
         </h2>
-        {url ? (
+        {url && !editing ? (
           <div className="flex items-center gap-1">
             <button onClick={() => load(url)} title="Refresh"
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors">
               <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
             </button>
-            <button onClick={disconnect} title="Disconnect"
-              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive transition-colors">
-              <X className="w-3.5 h-3.5" />
+            <button onClick={startEdit} title="Change address"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors">
+              <Pencil className="w-3.5 h-3.5" />
             </button>
           </div>
         ) : (
@@ -96,25 +120,68 @@ export function CalendarConnect() {
         )}
       </div>
 
-      {!url && (
+      {/* Connected status */}
+      {url && !editing && (
+        <div className="flex items-center justify-between gap-2 rounded-lg px-3 py-2" style={{ background: "var(--secondary)" }}>
+          <span className="flex items-center gap-2 min-w-0 text-xs">
+            <Check className="w-3.5 h-3.5 text-success shrink-0" />
+            <span className="text-muted-foreground shrink-0">Connected ·</span>
+            <span className="truncate font-medium">{hostOf(url)}</span>
+          </span>
+          {confirmDisconnect ? (
+            <span className="flex items-center gap-1.5 shrink-0">
+              <button onClick={disconnect}
+                className="text-xs px-2 py-0.5 rounded-md font-medium transition-colors"
+                style={{ background: "oklch(0.58 0.22 25 / 0.15)", color: "oklch(0.58 0.22 25)" }}>
+                Disconnect
+              </button>
+              <button onClick={() => setConfirmDisconnect(false)}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                Cancel
+              </button>
+            </span>
+          ) : (
+            <button onClick={() => setConfirmDisconnect(true)} title="Disconnect calendar"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors shrink-0">
+              <Unlink className="w-3.5 h-3.5" /> Disconnect
+            </button>
+          )}
+        </div>
+      )}
+
+      {justSaved && (
+        <p className="flex items-center gap-1.5 text-xs text-success">
+          <Check className="w-3.5 h-3.5" /> Calendar address saved.
+        </p>
+      )}
+
+      {showForm && (
         <>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Add your Google or Apple calendar to see your events next to your habits.
-          </p>
+          {!url && (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Add your Google or Apple calendar to see your events next to your habits.
+            </p>
+          )}
           <div className="flex gap-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && connect()}
+              onKeyDown={(e) => e.key === "Enter" && save()}
               placeholder="Paste your iCal (.ics) address"
               className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
               style={{ background: "var(--secondary)", border: "1px solid var(--border)", color: "var(--foreground)" }}
             />
-            <button onClick={connect} disabled={!input.trim()}
+            <button onClick={save} disabled={!input.trim()}
               className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold shrink-0 transition-all disabled:opacity-40"
-              style={{ background: "oklch(0.72 0.22 45)", color: "oklch(0.07 0.003 28)" }}>
-              <CalendarPlus className="w-3.5 h-3.5" /> Add
+              style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
+              <CalendarPlus className="w-3.5 h-3.5" /> {url ? "Save" : "Add"}
             </button>
+            {editing && (
+              <button onClick={() => { setEditing(false); setInput(""); }}
+                className="text-xs px-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                Cancel
+              </button>
+            )}
           </div>
           {showHelp && (
             <div className="rounded-lg p-3 text-[11px] leading-relaxed text-muted-foreground space-y-2" style={{ background: "var(--secondary)", border: "1px solid var(--border)" }}>
@@ -126,7 +193,7 @@ export function CalendarConnect() {
         </>
       )}
 
-      {url && (
+      {url && !editing && (
         <div className="space-y-2">
           {loading && events.length === 0 ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
