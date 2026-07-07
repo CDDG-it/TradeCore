@@ -36,16 +36,16 @@ export function NasdaqHQ({
       />
       {/* Decorative skyline towers flanking the HQ (non-interactive). */}
       <group position={[-2.5, 0, -1.2]}>
-        <SkylineTower width={1.0} depth={1.0} height={2.4} base="#454e5b" />
+        <SkylineTower width={1.0} height={2.4} />
       </group>
       <group position={[2.5, 0, -0.9]}>
-        <SkylineTower width={0.9} depth={0.9} height={1.9} base="#4c5563" />
+        <SkylineTower width={0.9} height={1.9} />
       </group>
       <group position={[2.1, 0, 1.4]}>
-        <SkylineTower width={0.8} depth={0.8} height={1.5} base="#3f4855" />
+        <SkylineTower width={0.8} height={1.5} />
       </group>
       <group position={[-2.2, 0, 1.6]}>
-        <SkylineTower width={0.85} depth={0.85} height={1.7} base="#49525f" />
+        <SkylineTower width={0.85} height={1.7} />
       </group>
     </group>
   );

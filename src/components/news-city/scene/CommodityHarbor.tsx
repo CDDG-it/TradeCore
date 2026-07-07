@@ -7,15 +7,9 @@ import type { Commodity } from "@/lib/news-city/types";
 import type { CitySelection } from "../selection";
 
 const LAYOUT: Record<Commodity["id"], { position: [number, number, number]; rotationY: number; color: string }> = {
-  oil: { position: [5.2, 0, -8], rotationY: 0.15, color: "#2c241c" },
+  oil: { position: [5.2, 0, -8], rotationY: 0.15, color: "#2b3440" },
   gold: { position: [7.8, 0, -5.4], rotationY: -0.35, color: "#b8923f" },
 };
-
-const BOLLARDS: [number, number][] = [
-  [4.1, -9.1],
-  [4.5, -3.9],
-  [9.5, -8.9],
-];
 
 export function CommodityHarbor({
   commodities,
@@ -28,19 +22,22 @@ export function CommodityHarbor({
 }) {
   return (
     <group>
-      <WaterPlane position={[6.5, 0.008, -6.5]} size={5.6} />
-
-      {/* Wooden pier along the dock edge */}
-      <mesh position={[3.85, 0.05, -6.5]} receiveShadow castShadow>
-        <boxGeometry args={[0.5, 0.1, 5.8]} />
-        <meshStandardMaterial color="#5a4630" roughness={0.85} />
+      {/* Contained liquid basin with a glowing rim — a commodity reservoir. */}
+      <WaterPlane position={[6.5, 0.008, -6.5]} size={5.4} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[6.5, 0.02, -6.5]}>
+        <ringGeometry args={[2.72, 2.8, 64]} />
+        <meshBasicMaterial color="#5fc0d8" transparent opacity={0.6} toneMapped={false} depthWrite={false} />
       </mesh>
-      {BOLLARDS.map(([x, z]) => (
-        <mesh key={`${x}-${z}`} position={[x, 0.16, z]} castShadow>
-          <cylinderGeometry args={[0.05, 0.06, 0.22, 8]} />
-          <meshStandardMaterial color="#2a2119" roughness={0.8} />
-        </mesh>
-      ))}
+
+      {/* Docking platform — dark glass deck with an accent edge light */}
+      <mesh position={[3.7, 0.05, -6.5]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.55, 0.62, 0.1, 6]} />
+        <meshStandardMaterial color="#161c25" roughness={0.3} metalness={0.7} />
+      </mesh>
+      <mesh position={[3.7, 0.11, -6.5]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.42, 0.48, 6]} />
+        <meshBasicMaterial color="#f97316" transparent opacity={0.7} toneMapped={false} />
+      </mesh>
 
       {commodities.map((c) => {
         const layout = LAYOUT[c.id];

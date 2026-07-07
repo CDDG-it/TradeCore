@@ -5,10 +5,8 @@ import { ClickHintRing } from "./ClickHintRing";
 import { BiasLamp } from "./BiasLamp";
 import { CityLabel } from "./CityLabel";
 
-const CONTAINER_COLORS = ["#b5453a", "#2f6f9e", "#3f8f5c", "#c98a2e", "#7a5aa0"];
-
-/** A harbor cargo vessel: a stepped hull that tapers to a bow, a steel bridge,
- *  a funnel, stacked shipping containers, a mast, and a bias lamp on top. */
+/** A sleek hover freighter: capsule hull, cockpit dome, cargo pods, and a
+ *  glowing engine strip — smooth surfaces only, no boxes. */
 export function Ship({
   position,
   rotationY = 0,
@@ -30,7 +28,6 @@ export function Ship({
 }) {
   const { groupRef, ringRef, hovered, onPointerOver, onPointerOut, onClick } = useCityObject(active, onSelect);
   const glow = hovered || active;
-  const hullMat = <meshStandardMaterial color={color} emissive={color} emissiveIntensity={glow ? 0.3 : 0.1} roughness={0.55} metalness={0.4} />;
 
   return (
     <group
@@ -41,74 +38,46 @@ export function Ship({
       onPointerOut={onPointerOut}
       onClick={onClick}
     >
-      <ClickHintRing ringRef={ringRef} radius={1.9} color={accentColor} />
+      <ClickHintRing ringRef={ringRef} radius={1.7} color={accentColor} />
 
-      {/* Main hull */}
-      <mesh position={[-0.35, 0.28, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.9, 0.56, 0.9]} />
-        {hullMat}
+      {/* Hull — capsule laid along X, hovering above the liquid */}
+      <mesh position={[0, 0.5, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <capsuleGeometry args={[0.32, 1.5, 6, 20]} />
+        <meshStandardMaterial color={color} roughness={0.3} metalness={0.7} emissive={color} emissiveIntensity={glow ? 0.35 : 0.12} />
       </mesh>
-      {/* Stepped bow taper — shrinking segments toward the front. */}
-      <mesh position={[0.75, 0.3, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.7, 0.5, 0.72]} />
-        {hullMat}
+      {/* Cockpit dome toward the stern */}
+      <mesh position={[-0.72, 0.72, 0]} castShadow>
+        <sphereGeometry args={[0.26, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#101c26" roughness={0.12} metalness={0.85} emissive="#9fd8ea" emissiveIntensity={glow ? 0.5 : 0.25} />
       </mesh>
-      <mesh position={[1.22, 0.32, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.3, 0.42, 0.46]} />
-        {hullMat}
+      {/* Cargo pods amidships — rounded capsules */}
+      {[0.05, 0.62].map((x, i) => (
+        <mesh key={x} position={[x, 0.82, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <capsuleGeometry args={[0.14, 0.36, 4, 14]} />
+          <meshStandardMaterial
+            color={i === 0 ? "#33404e" : accentColor}
+            roughness={0.4}
+            metalness={0.6}
+            emissive={i === 0 ? "#33404e" : accentColor}
+            emissiveIntensity={glow ? 0.4 : 0.15}
+          />
+        </mesh>
+      ))}
+      {/* Engine strip under the hull */}
+      <mesh position={[0, 0.32, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <capsuleGeometry args={[0.06, 1.4, 4, 10]} />
+        <meshBasicMaterial color="#9fd8ea" transparent opacity={glow ? 0.95 : 0.7} toneMapped={false} />
       </mesh>
-      <mesh position={[1.48, 0.34, 0]} castShadow>
-        <boxGeometry args={[0.14, 0.32, 0.24]} />
-        {hullMat}
-      </mesh>
-      {/* Waterline hull-bottom, darker, gives the hull some draft. */}
-      <mesh position={[-0.3, 0.05, 0]}>
-        <boxGeometry args={[2.0, 0.14, 0.86]} />
-        <meshStandardMaterial color="#12100b" roughness={0.9} />
-      </mesh>
+      <pointLight position={[0, 0.28, 0]} color="#7fd4ea" intensity={0.5} distance={2.4} decay={2} />
 
-      {/* Bridge / superstructure toward the stern (steel white) */}
-      <mesh position={[-1.02, 0.72, 0]} castShadow>
-        <boxGeometry args={[0.46, 0.54, 0.72]} />
-        <meshStandardMaterial color="#e6e7ea" roughness={0.5} metalness={0.2} />
+      {/* Bias lamp on a short mast above the cockpit */}
+      <mesh position={[-0.72, 1.02, 0]}>
+        <cylinderGeometry args={[0.015, 0.015, 0.3, 8]} />
+        <meshStandardMaterial color="#2c3542" roughness={0.5} metalness={0.6} />
       </mesh>
-      <mesh position={[-1.02, 1.05, 0]} castShadow>
-        <boxGeometry args={[0.34, 0.2, 0.5]} />
-        <meshStandardMaterial color="#d5d7db" roughness={0.5} metalness={0.2} />
-      </mesh>
-      {/* Bridge windows */}
-      <mesh position={[-0.79, 0.82, 0]}>
-        <boxGeometry args={[0.02, 0.14, 0.5]} />
-        <meshStandardMaterial color="#243b48" emissive="#7fb4c8" emissiveIntensity={0.4} />
-      </mesh>
-      {/* Funnel with a bias-coloured band */}
-      <mesh position={[-1.02, 1.34, 0]}>
-        <cylinderGeometry args={[0.1, 0.12, 0.34, 12]} />
-        <meshStandardMaterial color="#33383e" roughness={0.6} metalness={0.3} />
-      </mesh>
-      <mesh position={[-1.02, 1.4, 0]}>
-        <cylinderGeometry args={[0.115, 0.115, 0.1, 12]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={glow ? 0.5 : 0.25} roughness={0.5} />
-      </mesh>
+      <BiasLamp position={[-0.72, 1.24, 0]} color={accentColor} radius={0.085} />
 
-      {/* Stacked shipping containers amidships */}
-      {[0.0, 0.42, 0.84].map((x, row) =>
-        [0, 1].map((layer) => (
-          <mesh key={`${x}-${layer}`} position={[x, 0.62 + layer * 0.24, layer % 2 ? 0.18 : -0.18]} castShadow>
-            <boxGeometry args={[0.36, 0.22, 0.34]} />
-            <meshStandardMaterial color={CONTAINER_COLORS[(row * 2 + layer) % CONTAINER_COLORS.length]} roughness={0.7} />
-          </mesh>
-        ))
-      )}
-
-      {/* Foremast with the bias lamp on top */}
-      <mesh position={[0.6, 0.85, 0]}>
-        <cylinderGeometry args={[0.02, 0.02, 0.75, 6]} />
-        <meshStandardMaterial color="#2a2119" roughness={0.8} />
-      </mesh>
-      <BiasLamp position={[0.6, 1.28, 0]} color={accentColor} radius={0.085} />
-
-      <CityLabel y={1.75} label={label} sublabel={sublabel} accent={accentColor} emphasized={glow} />
+      <CityLabel y={1.65} label={label} sublabel={sublabel} accent={accentColor} emphasized={glow} />
     </group>
   );
 }
