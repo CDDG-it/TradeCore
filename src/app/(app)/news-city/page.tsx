@@ -44,7 +44,7 @@ export default function NewsCityPage() {
 
         <div
           className="relative w-full overflow-hidden rounded-2xl border border-border h-[420px] sm:h-[540px] lg:h-[620px]"
-          style={{ background: "linear-gradient(180deg, #f7f9fb 0%, #eef1f5 100%)" }}
+          style={{ background: "linear-gradient(180deg, #10141c 0%, #0b0f16 100%)" }}
         >
           <City3D data={NEWS_CITY_DATA} selected={selection} onSelect={setSelection} />
 

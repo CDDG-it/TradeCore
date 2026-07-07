@@ -53,17 +53,17 @@ function Crane({ position, rotationY = 0 }: { position: [number, number, number]
     <group position={position} rotation={[0, rotationY, 0]}>
       <mesh position={[0, 0.6, 0]} castShadow>
         <cylinderGeometry args={[0.045, 0.06, 1.2, 12]} />
-        <meshStandardMaterial color="#c2ccd6" roughness={0.45} metalness={0.3} />
+        <meshStandardMaterial color="#2c3948" roughness={0.4} metalness={0.55} emissive="#5fc0d8" emissiveIntensity={0.2} />
       </mesh>
       {/* Jib reaching over the water */}
       <mesh position={[0.5, 1.16, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[0.03, 0.03, 1.15, 10]} />
-        <meshStandardMaterial color="#c2ccd6" roughness={0.45} metalness={0.3} />
+        <meshStandardMaterial color="#2c3948" roughness={0.4} metalness={0.55} emissive="#5fc0d8" emissiveIntensity={0.2} />
       </mesh>
       {/* Hoist cable + hook light */}
       <mesh position={[0.92, 0.92, 0]}>
         <cylinderGeometry args={[0.008, 0.008, 0.46, 6]} />
-        <meshStandardMaterial color="#8b96a2" roughness={0.5} />
+        <meshStandardMaterial color="#3c4a5c" roughness={0.5} />
       </mesh>
       <mesh position={[0.92, 0.66, 0]}>
         <sphereGeometry args={[0.035, 10, 10]} />
@@ -94,7 +94,7 @@ export function CommodityHarbor({
       {/* Quay platform + cranes on the shore side */}
       <mesh position={[3.8, 0.05, -6.2]} castShadow receiveShadow>
         <cylinderGeometry args={[0.55, 0.62, 0.1, 6]} />
-        <meshStandardMaterial color="#cdd5dd" roughness={0.45} metalness={0.25} />
+        <meshStandardMaterial color="#141b26" roughness={0.35} metalness={0.6} emissive="#1b2532" emissiveIntensity={0.4} />
       </mesh>
       <Crane position={[4.05, 0, -7.5]} rotationY={0.5} />
       <Crane position={[4.05, 0, -4.9]} rotationY={-0.4} />

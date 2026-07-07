@@ -38,16 +38,16 @@ export function City3D({
       className="!touch-none"
       dpr={[1, 1.75]}
     >
-      {/* Bright open atmosphere — an abstract intelligence space, not a sky. */}
-      <color attach="background" args={["#f2f5f9"]} />
-      <fog attach="fog" args={["#f2f5f9", 26, 48]} />
+      {/* Deep navy cyber atmosphere — the structures carry the light. */}
+      <color attach="background" args={["#0b0f16"]} />
+      <fog attach="fog" args={["#0b0f16", 26, 48]} />
 
-      <ambientLight intensity={0.85} color="#ffffff" />
-      <hemisphereLight args={["#ffffff", "#c4cdd8", 0.5]} />
+      <ambientLight intensity={0.5} color="#cfd9e8" />
+      <hemisphereLight args={["#2e3a50", "#0b0e14", 0.55]} />
       <directionalLight
         position={[10, 16, 8]}
-        intensity={1.35}
-        color="#ffffff"
+        intensity={0.9}
+        color="#dceaff"
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-16}
@@ -55,14 +55,16 @@ export function City3D({
         shadow-camera-top={16}
         shadow-camera-bottom={-16}
       />
+      {/* Warm brand glow rising from the core */}
+      <pointLight position={[0, 7, 0]} intensity={0.3} color="#f97316" distance={16} decay={2} />
 
       <Suspense fallback={null}>
         <CityGround />
 
         {/* Information pathways: how influence moves through the market. */}
-        <FlowLink from={CB} to={CORE} color="#d97a2e" lift={2.2} />
-        <FlowLink from={HARBOR} to={MACRO} color="#2b93b4" lift={2.6} speed={0.12} />
-        <FlowLink from={MACRO} to={CORE} color="#c9573a" lift={2.0} speed={0.14} />
+        <FlowLink from={CB} to={CORE} color="#f9a15c" lift={2.2} />
+        <FlowLink from={HARBOR} to={MACRO} color="#5fc0d8" lift={2.6} speed={0.12} />
+        <FlowLink from={MACRO} to={CORE} color="#ff8a66" lift={2.0} speed={0.14} />
         <FlowLink from={CORE} to={NQ} color="#f97316" lift={2.2} speed={0.2} pulses={3} />
 
         <MarketCore

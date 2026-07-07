@@ -59,40 +59,45 @@ export function MarketCore({
       {/* Pedestal */}
       <mesh position={[0, 0.09, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[0.85, 1.05, 0.18, 48]} />
-        <meshStandardMaterial color="#dde3e9" roughness={0.45} metalness={0.25} />
+        <meshStandardMaterial color="#141b26" roughness={0.35} metalness={0.6} emissive="#1b2532" emissiveIntensity={0.4} />
       </mesh>
       <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.62, 0.7, 48]} />
-        <meshBasicMaterial color="#f97316" transparent opacity={0.65} toneMapped={false} />
+        <meshBasicMaterial color="#f97316" transparent opacity={0.75} toneMapped={false} />
       </mesh>
 
-      {/* Levitating core sphere */}
-      <mesh ref={coreRef} position={[0, 1.35, 0]} castShadow>
-        <sphereGeometry args={[0.42, 32, 24]} />
+      {/* Levitating holographic globe: glowing core inside a wireframe earth */}
+      <mesh ref={coreRef} position={[0, 1.35, 0]}>
+        <sphereGeometry args={[0.32, 28, 20]} />
         <meshStandardMaterial
           color={sentiment.hex}
           emissive={sentiment.hex}
-          emissiveIntensity={glow ? 1.6 : 1.1}
+          emissiveIntensity={glow ? 1.7 : 1.2}
           roughness={0.3}
           metalness={0.2}
           toneMapped={false}
         />
       </mesh>
+      {/* Wireframe globe shell — latitude/longitude hologram */}
+      <mesh position={[0, 1.35, 0]}>
+        <sphereGeometry args={[0.5, 22, 14]} />
+        <meshBasicMaterial color="#7fd4ea" wireframe transparent opacity={glow ? 0.55 : 0.4} toneMapped={false} depthWrite={false} />
+      </mesh>
       {/* Halo */}
       <mesh position={[0, 1.35, 0]}>
-        <sphereGeometry args={[0.58, 24, 18]} />
-        <meshBasicMaterial color={sentiment.hex} transparent opacity={0.12} toneMapped={false} depthWrite={false} />
+        <sphereGeometry args={[0.62, 24, 18]} />
+        <meshBasicMaterial color={sentiment.hex} transparent opacity={0.1} toneMapped={false} depthWrite={false} />
       </mesh>
       <pointLight position={[0, 1.35, 0]} color={sentiment.hex} intensity={0.9} distance={6} decay={2} />
 
       {/* Counter-rotating gyroscope rings */}
       <mesh ref={gyroA} position={[0, 1.35, 0]}>
         <torusGeometry args={[0.72, 0.02, 8, 64]} />
-        <meshStandardMaterial color="#aab6c2" roughness={0.3} metalness={0.6} emissive="#f97316" emissiveIntensity={0.25} />
+        <meshStandardMaterial color="#2c3948" roughness={0.3} metalness={0.6} emissive="#f97316" emissiveIntensity={0.9} toneMapped={false} />
       </mesh>
       <mesh ref={gyroB} position={[0, 1.35, 0]} rotation={[Math.PI / 3, 0, Math.PI / 5]}>
         <torusGeometry args={[0.88, 0.016, 8, 64]} />
-        <meshStandardMaterial color="#aab6c2" roughness={0.3} metalness={0.6} emissive="#2b93b4" emissiveIntensity={0.3} />
+        <meshStandardMaterial color="#2c3948" roughness={0.3} metalness={0.6} emissive="#5fc0d8" emissiveIntensity={0.9} toneMapped={false} />
       </mesh>
 
       <CityLabel

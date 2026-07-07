@@ -62,7 +62,7 @@ export function Reactor({
       {/* Pedestal */}
       <mesh position={[0, 0.07, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[0.42, 0.52, 0.14, 32]} />
-        <meshStandardMaterial color="#dde3e9" roughness={0.45} metalness={0.25} />
+        <meshStandardMaterial color="#141b26" roughness={0.35} metalness={0.6} emissive="#1b2532" emissiveIntensity={0.4} />
       </mesh>
       <mesh position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.3, 0.36, 32]} />
@@ -90,7 +90,7 @@ export function Reactor({
       {/* Spinning containment ring */}
       <mesh ref={containment} position={[0, 0.78, 0]}>
         <torusGeometry args={[0.42, 0.028, 10, 48]} />
-        <meshStandardMaterial color="#aab6c2" roughness={0.3} metalness={0.6} emissive={accentColor} emissiveIntensity={0.3} />
+        <meshStandardMaterial color="#2c3948" roughness={0.3} metalness={0.6} emissive={accentColor} emissiveIntensity={0.8} toneMapped={false} />
       </mesh>
 
       <CityLabel y={1.55} label={label} sublabel={sublabel} accent={accentColor} emphasized={glow} />
