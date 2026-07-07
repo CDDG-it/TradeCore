@@ -26,13 +26,13 @@ export function CommodityHarbor({
       <WaterPlane position={[6.5, 0.008, -6.5]} size={5.4} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[6.5, 0.02, -6.5]}>
         <ringGeometry args={[2.72, 2.8, 64]} />
-        <meshBasicMaterial color="#5fc0d8" transparent opacity={0.6} toneMapped={false} depthWrite={false} />
+        <meshBasicMaterial color="#2b93b4" transparent opacity={0.65} toneMapped={false} depthWrite={false} />
       </mesh>
 
-      {/* Docking platform — dark glass deck with an accent edge light */}
+      {/* Docking platform — silver deck with an accent edge light */}
       <mesh position={[3.7, 0.05, -6.5]} castShadow receiveShadow>
         <cylinderGeometry args={[0.55, 0.62, 0.1, 6]} />
-        <meshStandardMaterial color="#161c25" roughness={0.3} metalness={0.7} />
+        <meshStandardMaterial color="#cdd5dd" roughness={0.45} metalness={0.25} />
       </mesh>
       <mesh position={[3.7, 0.11, -6.5]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.42, 0.48, 6]} />

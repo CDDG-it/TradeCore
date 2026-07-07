@@ -13,9 +13,9 @@ import type { Mesh } from "three";
  */
 
 const DISTRICTS: { center: [number, number]; radius: number; color: string; label: string }[] = [
-  { center: [-6.5, -6.5], radius: 3.4, color: "#f0954f", label: "Central Bank District" },
-  { center: [6.5, -6.5], radius: 3.4, color: "#5fc0d8", label: "Commodity Harbor" },
-  { center: [0, 6.8], radius: 3.8, color: "#e0705c", label: "Macro Battlefield" },
+  { center: [-6.5, -6.5], radius: 3.4, color: "#d97a2e", label: "Central Bank District" },
+  { center: [6.5, -6.5], radius: 3.4, color: "#2b93b4", label: "Commodity Harbor" },
+  { center: [0, 6.8], radius: 3.8, color: "#c9573a", label: "Macro Battlefield" },
   { center: [0, 0], radius: 3.0, color: "#f97316", label: "Nasdaq / ES HQ" },
 ];
 
@@ -44,12 +44,12 @@ function Conduit({ from, to, phase }: { from: [number, number]; to: [number, num
       <group position={[(from[0] + to[0]) / 2, 0.03, (from[1] + to[1]) / 2]} rotation={[0, angle, 0]}>
         <mesh rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[0.05, len]} />
-          <meshBasicMaterial color="#f97316" transparent opacity={0.35} toneMapped={false} depthWrite={false} />
+          <meshBasicMaterial color="#f97316" transparent opacity={0.5} toneMapped={false} depthWrite={false} />
         </mesh>
       </group>
       <mesh ref={pulseRef}>
         <sphereGeometry args={[0.07, 10, 10]} />
-        <meshBasicMaterial color="#ffb673" toneMapped={false} />
+        <meshBasicMaterial color="#f97316" toneMapped={false} />
       </mesh>
     </group>
   );
@@ -58,13 +58,13 @@ function Conduit({ from, to, phase }: { from: [number, number]; to: [number, num
 export function CityGround() {
   return (
     <group>
-      {/* Reflective deck */}
+      {/* Bright studio deck */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>
         <planeGeometry args={[46, 46]} />
-        <meshStandardMaterial color="#0d1015" roughness={0.35} metalness={0.65} />
+        <meshStandardMaterial color="#e9edf2" roughness={0.55} metalness={0.08} />
       </mesh>
       {/* Holographic grid */}
-      <gridHelper args={[46, 46, "#232a35", "#151a22"]} position={[0, 0.002, 0]} />
+      <gridHelper args={[46, 46, "#b9c4d0", "#d5dce4"]} position={[0, 0.002, 0]} />
 
       {CONDUITS.map((c, i) => (
         <Conduit key={i} from={c[0]} to={c[1]} phase={i * 0.33} />
@@ -90,7 +90,7 @@ export function CityGround() {
           >
             <p
               className="pointer-events-none select-none whitespace-nowrap font-heading text-[11px] font-bold uppercase tracking-[0.14em]"
-              style={{ color: d.color, textShadow: `0 0 12px ${d.color}66` }}
+              style={{ color: d.color, textShadow: "0 1px 2px rgba(255,255,255,0.7)" }}
             >
               {d.label}
             </p>

@@ -66,7 +66,7 @@ export function Ship({
       {/* Engine strip under the hull */}
       <mesh position={[0, 0.32, 0]} rotation={[0, 0, Math.PI / 2]}>
         <capsuleGeometry args={[0.06, 1.4, 4, 10]} />
-        <meshBasicMaterial color="#9fd8ea" transparent opacity={glow ? 0.95 : 0.7} toneMapped={false} />
+        <meshBasicMaterial color="#1f8fb4" transparent opacity={glow ? 0.95 : 0.75} toneMapped={false} />
       </mesh>
       <pointLight position={[0, 0.28, 0]} color="#7fd4ea" intensity={0.5} distance={2.4} decay={2} />
 

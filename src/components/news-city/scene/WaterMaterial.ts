@@ -9,8 +9,8 @@ import { extend, type ThreeElement } from "@react-three/fiber";
 export const WaterMaterial = shaderMaterial(
   {
     uTime: 0,
-    uColorDeep: new THREE.Color("#07222e"),
-    uColorShallow: new THREE.Color("#1a5d74"),
+    uColorDeep: new THREE.Color("#2a7d99"),
+    uColorShallow: new THREE.Color("#7fd0e2"),
   },
   /* vertex */ `
     uniform float uTime;

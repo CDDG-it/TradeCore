@@ -2,18 +2,18 @@
 
 /**
  * Futuristic building silhouettes — smooth cylinders, tapers, and domes
- * instead of boxes. Structures are dark brushed steel and glass; light comes
- * from thin emissive "data bands" so the city reads as a premium holographic
- * trading environment, not a toy town. The bias lamp (added by Building.tsx)
- * carries the market signal.
+ * instead of boxes. Structures are bright brushed silver and glass on a light
+ * studio backdrop; saturated "data bands" and the bias lamp (added by
+ * Building.tsx) carry the colour, so the city reads as a premium holographic
+ * trading environment with clearly visible buildings.
  */
 
 export type BuildingVariant = "classical" | "glass" | "domed" | "setback" | "skyline";
 
-const STEEL = "#1b212b";
-const STEEL_LIGHT = "#242c38";
-const GLASS = "#0f1b24";
-const BAND = "#9fd8ea"; // ice-blue data bands (dashboard primary family)
+const STEEL = "#c9d1da";
+const STEEL_LIGHT = "#e0e5eb";
+const GLASS = "#8fc2d9";
+const BAND = "#1f8fb4"; // deep ice-blue data bands (dashboard primary family)
 
 /** Where the bias lamp should sit for each silhouette. */
 export function lampHeightFor(variant: BuildingVariant, height: number): number {
@@ -41,13 +41,15 @@ function BandRing({ y, radius, color = BAND, opacity = 0.9 }: { y: number; radiu
 }
 
 function bodyMat(glow: boolean, color = STEEL) {
+  // Low metalness: with no environment map, metallic surfaces render nearly
+  // black — matte silver keeps the towers bright and clearly visible.
   return (
     <meshStandardMaterial
       color={color}
-      roughness={0.35}
-      metalness={0.7}
-      emissive={color}
-      emissiveIntensity={glow ? 0.5 : 0.15}
+      roughness={0.45}
+      metalness={0.25}
+      emissive="#ffffff"
+      emissiveIntensity={glow ? 0.22 : 0.04}
     />
   );
 }
@@ -92,10 +94,10 @@ export function GlassTower({ width, height, glow }: { width: number; depth?: num
           <cylinderGeometry args={[width * 0.3, width * 0.58, h, 40]} />
           <meshStandardMaterial
             color={GLASS}
-            roughness={0.12}
-            metalness={0.85}
-            emissive={BAND}
-            emissiveIntensity={glow ? 0.28 : 0.1}
+            roughness={0.2}
+            metalness={0.35}
+            emissive="#bfe4f2"
+            emissiveIntensity={glow ? 0.35 : 0.15}
           />
         </mesh>
         {[0.3, 0.55, 0.8].map((f) => (
@@ -121,10 +123,10 @@ export function DomedHall({ width, height, glow }: { width: number; depth?: numb
         <sphereGeometry args={[width * 0.52, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial
           color={STEEL_LIGHT}
-          roughness={0.25}
-          metalness={0.75}
-          emissive={BAND}
-          emissiveIntensity={glow ? 0.3 : 0.12}
+          roughness={0.3}
+          metalness={0.3}
+          emissive="#bfe4f2"
+          emissiveIntensity={glow ? 0.3 : 0.1}
         />
       </mesh>
       <BandRing y={plinthH + width * 0.28} radius={width * 0.435} opacity={glow ? 1 : 0.7} />
@@ -143,15 +145,15 @@ export function SetbackTower({ width, height, glow }: { width: number; depth?: n
       <mesh position={[0, height / 2 + 0.14, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[width * 0.24, width * 0.56, height, 48]} />
         <meshStandardMaterial
-          color={STEEL}
-          roughness={0.28}
-          metalness={0.75}
-          emissive={STEEL_LIGHT}
-          emissiveIntensity={glow ? 0.5 : 0.18}
+          color="#b6c0cb"
+          roughness={0.4}
+          metalness={0.3}
+          emissive="#ffffff"
+          emissiveIntensity={glow ? 0.22 : 0.05}
         />
       </mesh>
       {[0.22, 0.42, 0.62, 0.82].map((f) => (
-        <BandRing key={f} y={height * f + 0.14} radius={width * (0.56 - 0.32 * f) + 0.012} color="#f9a15c" opacity={glow ? 1 : 0.7} />
+        <BandRing key={f} y={height * f + 0.14} radius={width * (0.56 - 0.32 * f) + 0.012} color="#f97316" opacity={glow ? 1 : 0.85} />
       ))}
       {/* Crown + spire */}
       <mesh position={[0, height + 0.3, 0]}>

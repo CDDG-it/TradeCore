@@ -27,16 +27,16 @@ export function City3D({
       className="!touch-none"
       dpr={[1, 1.75]}
     >
-      {/* Deep graphite backdrop — an abstract holographic environment, not a sky. */}
-      <color attach="background" args={["#0a0d12"]} />
-      <fog attach="fog" args={["#0a0d12", 26, 46]} />
+      {/* Bright studio backdrop — an abstract holographic space, not a sky. */}
+      <color attach="background" args={["#f2f5f9"]} />
+      <fog attach="fog" args={["#f2f5f9", 26, 46]} />
 
-      <ambientLight intensity={0.4} color="#cfd8e6" />
-      <hemisphereLight args={["#3a4552", "#12151b", 0.55]} />
+      <ambientLight intensity={0.85} color="#ffffff" />
+      <hemisphereLight args={["#ffffff", "#c4cdd8", 0.5]} />
       <directionalLight
         position={[10, 16, 8]}
-        intensity={1.15}
-        color="#e8f1ff"
+        intensity={1.35}
+        color="#ffffff"
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-16}
@@ -44,8 +44,6 @@ export function City3D({
         shadow-camera-top={16}
         shadow-camera-bottom={-16}
       />
-      {/* Brand accent glow rising from the HQ core */}
-      <pointLight position={[0, 7, 0]} intensity={0.22} color="#f97316" distance={14} decay={2} />
 
       <Suspense fallback={null}>
         <CityGround />
