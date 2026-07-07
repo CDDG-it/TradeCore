@@ -27,7 +27,7 @@ export type Feature = {
 export const FEATURES: Feature[] = [
   {
     slug: "dashboard",
-    name: "Dashboard",
+    name: "Home",
     section: "Daily",
     tagline: "Your whole trading day on one screen.",
     blurb:
@@ -151,7 +151,7 @@ export const FEATURES: Feature[] = [
   },
   {
     slug: "accounts",
-    name: "Funded Accounts",
+    name: "Accounts",
     section: "Trading",
     tagline: "Every account, payout and drawdown in one place.",
     blurb:

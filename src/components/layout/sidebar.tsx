@@ -17,38 +17,43 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { APP_TABS } from "@/lib/nav";
 
+// Icons + the "highlight" treatment are sidebar-only presentation; the labels,
+// hrefs and grouping themselves come from APP_TABS so the landing page's
+// Features dropdown and footer Platform column can never say something
+// different from what's actually in the nav.
+const ICONS: Record<string, React.ElementType> = {
+  "/dashboard": LayoutDashboard,
+  "/journal": BookOpen,
+  "/analysis": LineChart,
+  "/analytics": BarChart2,
+  "/accounts": Wallet,
+  "/habits": Flame,
+  "/trading-behaviour": ScrollText,
+  "/option-flow": Radar,
+};
 
-const navGroups = [
-  {
-    label: null,
-    items: [
-      { href: "/dashboard", label: "Home", icon: LayoutDashboard, highlight: true },
-    ],
-  },
-  {
-    label: "Trading",
-    items: [
-      { href: "/journal", label: "Journal", icon: BookOpen },
-      { href: "/analysis", label: "Analysis", icon: LineChart },
-      { href: "/analytics", label: "Analytics", icon: BarChart2 },
-      { href: "/accounts", label: "Accounts", icon: Wallet },
-    ],
-  },
-  {
-    label: "MC Mindset formula",
-    items: [
-      { href: "/habits", label: "Habits", icon: Flame },
-      { href: "/trading-behaviour", label: "Trading Behaviour", icon: ScrollText },
-    ],
-  },
-  {
-    label: "MC Option Flow",
-    items: [
-      { href: "/option-flow", label: "Option Flow", icon: Radar },
-    ],
-  },
-];
+const navGroups = (() => {
+  const order: (string | null)[] = [];
+  const byGroup = new Map<string | null, typeof APP_TABS>();
+  for (const tab of APP_TABS) {
+    if (!byGroup.has(tab.group)) {
+      byGroup.set(tab.group, []);
+      order.push(tab.group);
+    }
+    byGroup.get(tab.group)!.push(tab);
+  }
+  return order.map((label) => ({
+    label,
+    items: byGroup.get(label)!.map((tab) => ({
+      href: tab.href,
+      label: tab.label,
+      icon: ICONS[tab.href],
+      highlight: tab.href === "/dashboard",
+    })),
+  }));
+})();
 
 const bottomItems = [
   { href: "/settings", label: "Settings", icon: Settings },

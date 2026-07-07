@@ -4,8 +4,27 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown, ArrowRight } from "lucide-react";
 import { FEATURES } from "@/lib/landing/features";
+import { APP_TABS } from "@/lib/nav";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
+
+// The dropdown always lists every current app tab, written exactly as in the
+// sidebar. Tabs with a deep marketing page (FEATURES) link there and reuse
+// its tagline; the rest link straight into the app with a short description.
+const FEATURE_BY_HREF = new Map(FEATURES.map((f) => [`/${f.slug}`, f]));
+const TAB_FALLBACK_TAGLINE: Record<string, string> = {
+  "/habits": "Track daily habits and discipline, in one streak.",
+  "/trading-behaviour": "Your trading rules and confluence library, in one place.",
+  "/option-flow": "Dealer positioning and session structure for NQ and GC.",
+};
+const NAV_ITEMS = APP_TABS.map((tab) => {
+  const feature = FEATURE_BY_HREF.get(tab.href);
+  return {
+    label: tab.label,
+    href: feature ? `/features/${feature.slug}` : tab.href,
+    tagline: feature?.tagline ?? TAB_FALLBACK_TAGLINE[tab.href] ?? "",
+  };
+});
 
 /* Top-of-hero navigation: brand, a Features dropdown listing every product page,
    a Coming soon link, then Sign in and a Make account button. */
@@ -85,7 +104,7 @@ export function LandingNav() {
               <div
                 onMouseEnter={cancelClose}
                 onMouseLeave={scheduleClose}
-                className="absolute left-1/2 top-full z-40 mt-2 w-[300px] -translate-x-1/2 overflow-hidden rounded-2xl p-1.5"
+                className="absolute left-1/2 top-full z-40 mt-2 w-[300px] max-h-[70vh] -translate-x-1/2 overflow-y-auto rounded-2xl p-1.5"
                 style={{
                   background: "rgba(255,253,250,0.97)",
                   backdropFilter: "blur(20px)",
@@ -94,10 +113,10 @@ export function LandingNav() {
                   boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 18px 50px rgba(16,11,6,0.12)",
                 }}
               >
-                {FEATURES.map((f) => (
+                {NAV_ITEMS.map((item) => (
                   <Link
-                    key={f.slug}
-                    href={`/features/${f.slug}`}
+                    key={item.href}
+                    href={item.href}
                     onClick={() => setOpen(false)}
                     className="group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors duration-200 hover:bg-[rgba(249,115,22,0.07)]"
                   >
@@ -107,14 +126,14 @@ export function LandingNav() {
                           className="text-sm font-bold"
                           style={{ color: "rgba(15,12,8,0.82)" }}
                         >
-                          {f.name}
+                          {item.label}
                         </span>
                       </div>
                       <p
                         className="mt-0.5 text-xs leading-snug"
                         style={{ color: "rgba(60,48,36,0.50)" }}
                       >
-                        {f.tagline}
+                        {item.tagline}
                       </p>
                     </div>
                     <ArrowRight className="mt-1 h-3.5 w-3.5 shrink-0 -translate-x-1 text-[#F97316] opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />

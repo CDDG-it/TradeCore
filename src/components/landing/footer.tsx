@@ -2,19 +2,16 @@
 
 import Link from "next/link";
 import { ArrowRight, ArrowUp } from "lucide-react";
+import { APP_TABS } from "@/lib/nav";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
 const COLUMNS = [
   {
     heading: "Platform",
-    links: [
-      { label: "Dashboard", href: "/dashboard" },
-      { label: "Trade Journal", href: "/journal" },
-      { label: "Pre-Market Analysis", href: "/analysis" },
-      { label: "Performance Analytics", href: "/analytics" },
-      { label: "Funded Accounts", href: "/accounts" },
-    ],
+    // Always the current app tabs, written exactly as they are in the
+    // sidebar — sourced from APP_TABS so this list can't drift out of sync.
+    links: APP_TABS.map((tab) => ({ label: tab.label, href: tab.href })),
   },
   {
     heading: "Account",
