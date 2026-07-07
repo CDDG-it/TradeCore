@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowUpRight, ArrowDownRight, Minus, Landmark, Ship as ShipIcon, Shield, Building2 } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus, Landmark, Ship as ShipIcon, Zap, Building2, Activity } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { DIRECTION_META, TREND_META, SENTIMENT_META } from "@/lib/news-city/ui";
+import { DIRECTION_META, TREND_META, SENTIMENT_META, RISK_META } from "@/lib/news-city/ui";
 import type { NewsCityData, TrendDirection } from "@/lib/news-city/types";
 import type { CitySelection } from "./selection";
 
@@ -50,11 +50,29 @@ export function InfoPanel({
     body = (
       <div className="space-y-4">
         <p className="font-body text-sm text-foreground/90 leading-relaxed">{bank.headline}</p>
-        <Badge variant="outline" className={cn("border", meta.className)}>
-          {meta.label} stance
-        </Badge>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className={cn("border", meta.className)}>
+            {meta.label} stance
+          </Badge>
+          {bank.impacts.map((i) => (
+            <Badge
+              key={i.label}
+              variant="outline"
+              className={cn(
+                "border gap-1",
+                i.direction === "up"
+                  ? "text-success bg-success/10 border-success/30"
+                  : "text-destructive bg-destructive/10 border-destructive/30"
+              )}
+            >
+              {i.label}
+              {i.direction === "up" ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            </Badge>
+          ))}
+        </div>
         <div>
           <StatRow label="Policy rate" value={bank.rate} />
+          <StatRow label="Liquidity" value={bank.liquidity} />
           <StatRow label="Market expectation" value={bank.rateExpectation} />
           <StatRow label="Last updated" value={bank.lastUpdated} />
         </div>
@@ -95,9 +113,9 @@ export function InfoPanel({
   } else if (selection?.kind === "macro") {
     const f = data.macroForces.find((x) => x.id === selection.id)!;
     const meta = TREND_META[f.direction];
-    icon = Shield;
-    title = `${f.name} Tank`;
-    tagline = "Macro Battlefield";
+    icon = Zap;
+    title = `${f.name} Engine`;
+    tagline = "Macro Intelligence Zone";
     body = (
       <div className="space-y-4">
         <p className="font-body text-sm text-foreground/90 leading-relaxed">{f.headline}</p>
@@ -107,6 +125,7 @@ export function InfoPanel({
         </Badge>
         <div>
           <StatRow label={f.metricLabel} value={f.metric} />
+          <StatRow label="Force strength" value={f.level} />
         </div>
         <div className="rounded-xl bg-muted/40 p-3">
           <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
@@ -144,6 +163,40 @@ export function InfoPanel({
               </li>
             ))}
           </ul>
+        </div>
+      </div>
+    );
+  } else if (selection?.kind === "core") {
+    const o = data.overview;
+    const meta = SENTIMENT_META[o.sentiment];
+    const risk = RISK_META[o.riskLevel];
+    icon = Activity;
+    title = "Market Core";
+    tagline = "The brain of Market City";
+    body = (
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className={cn("border", meta.className)}>
+            Sentiment: {meta.label}
+          </Badge>
+          <Badge variant="outline" className={cn("border", risk.className)}>
+            Risk: {risk.label}
+          </Badge>
+        </div>
+        <div>
+          <StatRow label="Volatility" value={o.volatility} />
+        </div>
+        <div className="rounded-xl bg-muted/40 p-3">
+          <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            Main driver
+          </p>
+          <p className="font-body text-sm text-foreground/90 leading-relaxed">{o.mainDriver}</p>
+        </div>
+        <div className="rounded-xl bg-muted/40 p-3">
+          <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            Latest event
+          </p>
+          <p className="font-body text-sm text-foreground/90 leading-relaxed">{o.latestEvent}</p>
         </div>
       </div>
     );

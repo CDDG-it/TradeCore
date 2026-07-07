@@ -28,19 +28,29 @@ export function CentralBankDistrict({
         const meta = DIRECTION_META[bank.direction];
         const active = selected?.kind === "bank" && selected.id === bank.id;
         return (
-          <Building
-            key={bank.id}
-            position={layout.position}
-            width={layout.width}
-            depth={layout.width}
-            height={layout.height}
-            variant={layout.variant}
-            biasColor={meta.hex}
-            label={bank.shortName}
-            sublabel={meta.label}
-            active={active}
-            onSelect={() => onSelect(bank.id)}
-          />
+          <group key={bank.id}>
+            <Building
+              position={layout.position}
+              width={layout.width}
+              depth={layout.width}
+              height={layout.height}
+              variant={layout.variant}
+              biasColor={meta.hex}
+              label={bank.shortName}
+              sublabel={`${bank.rate} · ${meta.label}`}
+              active={active}
+              onSelect={() => onSelect(bank.id)}
+            />
+            {/* Policy-stance energy field at the tower's base:
+                hawkish = red/orange, dovish = green, neutral = amber. */}
+            <mesh
+              rotation={[-Math.PI / 2, 0, 0]}
+              position={[layout.position[0], 0.018, layout.position[2]]}
+            >
+              <ringGeometry args={[layout.width * 0.75, layout.width * 0.95, 48]} />
+              <meshBasicMaterial color={meta.hex} transparent opacity={0.4} toneMapped={false} depthWrite={false} />
+            </mesh>
+          </group>
         );
       })}
     </group>

@@ -1,14 +1,16 @@
 "use client";
 
-import { Tank } from "./Tank";
+import { Reactor } from "./Reactor";
 import { TREND_META } from "@/lib/news-city/ui";
 import type { MacroForce } from "@/lib/news-city/types";
 import type { CitySelection } from "../selection";
 
-const LAYOUT: Record<MacroForce["id"], { position: [number, number, number]; rotationY: number }> = {
-  inflation: { position: [-2.4, 0, 6.6], rotationY: 0.5 },
-  employment: { position: [0.2, 0, 8.2], rotationY: 0.0 },
-  growth: { position: [2.6, 0, 6.4], rotationY: -0.5 },
+/** The Macro Intelligence Zone: three levitating macro reactors whose energy
+ *  scales with the strength of the force they represent. */
+const LAYOUT: Record<MacroForce["id"], { position: [number, number, number] }> = {
+  inflation: { position: [-7.9, 0, 5.4] },
+  employment: { position: [-6.4, 0, 7.5] },
+  growth: { position: [-4.9, 0, 5.5] },
 };
 
 export function MacroBattlefield({
@@ -27,13 +29,13 @@ export function MacroBattlefield({
         const meta = TREND_META[f.direction];
         const active = selected?.kind === "macro" && selected.id === f.id;
         return (
-          <Tank
+          <Reactor
             key={f.id}
             position={layout.position}
-            rotationY={layout.rotationY}
             accentColor={meta.hex}
+            intensity={f.intensity}
             label={f.name}
-            sublabel={f.metric}
+            sublabel={`${f.metric} · ${f.level}`}
             active={active}
             onSelect={() => onSelect(f.id)}
           />

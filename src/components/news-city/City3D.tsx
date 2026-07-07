@@ -8,8 +8,19 @@ import { CentralBankDistrict } from "./scene/CentralBankDistrict";
 import { CommodityHarbor } from "./scene/CommodityHarbor";
 import { MacroBattlefield } from "./scene/MacroBattlefield";
 import { NasdaqHQ } from "./scene/NasdaqHQ";
+import { MarketCore } from "./scene/MarketCore";
+import { FlowLink } from "./scene/FlowLink";
 import type { NewsCityData } from "@/lib/news-city/types";
 import type { CitySelection } from "./selection";
+
+// District anchors on the platform — flows run between these points so
+// influence visibly moves through the system: banks and macro feed the core,
+// the core drives the exchange, and commodities feed the macro engines.
+const CB: [number, number] = [-6.5, -6.5];
+const HARBOR: [number, number] = [6.5, -6.2];
+const MACRO: [number, number] = [-6.4, 6.2];
+const NQ: [number, number] = [6.5, 6.2];
+const CORE: [number, number] = [0, 0];
 
 export function City3D({
   data,
@@ -27,9 +38,9 @@ export function City3D({
       className="!touch-none"
       dpr={[1, 1.75]}
     >
-      {/* Bright studio backdrop — an abstract holographic space, not a sky. */}
+      {/* Bright open atmosphere — an abstract intelligence space, not a sky. */}
       <color attach="background" args={["#f2f5f9"]} />
-      <fog attach="fog" args={["#f2f5f9", 26, 46]} />
+      <fog attach="fog" args={["#f2f5f9", 26, 48]} />
 
       <ambientLight intensity={0.85} color="#ffffff" />
       <hemisphereLight args={["#ffffff", "#c4cdd8", 0.5]} />
@@ -47,6 +58,18 @@ export function City3D({
 
       <Suspense fallback={null}>
         <CityGround />
+
+        {/* Information pathways: how influence moves through the market. */}
+        <FlowLink from={CB} to={CORE} color="#d97a2e" lift={2.2} />
+        <FlowLink from={HARBOR} to={MACRO} color="#2b93b4" lift={2.6} speed={0.12} />
+        <FlowLink from={MACRO} to={CORE} color="#c9573a" lift={2.0} speed={0.14} />
+        <FlowLink from={CORE} to={NQ} color="#f97316" lift={2.2} speed={0.2} pulses={3} />
+
+        <MarketCore
+          overview={data.overview}
+          active={selected?.kind === "core"}
+          onSelect={() => onSelect({ kind: "core" })}
+        />
         <CentralBankDistrict banks={data.centralBanks} selected={selected} onSelect={(id) => onSelect({ kind: "bank", id })} />
         <CommodityHarbor commodities={data.commodities} selected={selected} onSelect={(id) => onSelect({ kind: "commodity", id })} />
         <MacroBattlefield forces={data.macroForces} selected={selected} onSelect={(id) => onSelect({ kind: "macro", id })} />

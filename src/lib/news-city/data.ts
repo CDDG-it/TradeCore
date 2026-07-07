@@ -11,6 +11,7 @@ export const NEWS_CITY_DATA: NewsCityData = {
     mainDriver: "Fed rate-path repricing after sticky core CPI",
     latestEvent: "Core CPI printed 3.1% YoY, above the 2.9% consensus",
     sentiment: "risk-on",
+    volatility: "Medium",
   },
   centralBanks: [
     {
@@ -21,6 +22,11 @@ export const NEWS_CITY_DATA: NewsCityData = {
       rate: "4.25% - 4.50%",
       rateExpectation: "1 cut priced in by December",
       direction: "hawkish",
+      liquidity: "Restrictive",
+      impacts: [
+        { label: "NASDAQ", direction: "down" },
+        { label: "USD", direction: "up" },
+      ],
       impact: "Pressures NQ/ES higher-for-longer discount rate; growth names most sensitive.",
       lastUpdated: "2h ago",
     },
@@ -32,6 +38,11 @@ export const NEWS_CITY_DATA: NewsCityData = {
       rate: "2.75%",
       rateExpectation: "Gradual easing path into 2027",
       direction: "dovish",
+      liquidity: "Easing",
+      impacts: [
+        { label: "EUR", direction: "down" },
+        { label: "DAX", direction: "up" },
+      ],
       impact: "Weaker EUR supports USD strength; modest tailwind for US dollar-denominated futures.",
       lastUpdated: "5h ago",
     },
@@ -43,6 +54,11 @@ export const NEWS_CITY_DATA: NewsCityData = {
       rate: "0.50%",
       rateExpectation: "Next hike unlikely before Q1",
       direction: "neutral",
+      liquidity: "Accommodative",
+      impacts: [
+        { label: "USD/JPY", direction: "up" },
+        { label: "Equity vol", direction: "up" },
+      ],
       impact: "Carry-trade unwind risk remains a tail risk for equity volatility.",
       lastUpdated: "1d ago",
     },
@@ -77,6 +93,8 @@ export const NEWS_CITY_DATA: NewsCityData = {
       metric: "3.1%",
       metricLabel: "Core CPI YoY",
       direction: "rising",
+      level: "HIGH",
+      intensity: 0.85,
       impact: "Keeps pressure on the Fed to stay patient; headwind for rate-sensitive growth names.",
     },
     {
@@ -86,6 +104,8 @@ export const NEWS_CITY_DATA: NewsCityData = {
       metric: "4.1%",
       metricLabel: "Unemployment rate",
       direction: "flat",
+      level: "MODERATE",
+      intensity: 0.55,
       impact: "Labor market cooling gradually, not breaking — supports a soft-landing narrative.",
     },
     {
@@ -95,6 +115,8 @@ export const NEWS_CITY_DATA: NewsCityData = {
       metric: "2.8%",
       metricLabel: "GDP growth (QoQ ann.)",
       direction: "rising",
+      level: "POSITIVE",
+      intensity: 0.7,
       impact: "Solid growth backdrop supports earnings, but complicates the case for near-term cuts.",
     },
   ],

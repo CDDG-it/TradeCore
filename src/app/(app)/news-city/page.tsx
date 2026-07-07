@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Building2, Landmark, Ship, Shield } from "lucide-react";
+import { Building2, Landmark, Ship, Zap, Activity } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { OverlayHud } from "@/components/news-city/OverlayHud";
@@ -21,9 +21,10 @@ const City3D = dynamic(() => import("@/components/news-city/City3D").then((m) =>
 });
 
 const LEGEND = [
+  { icon: Activity, label: "Market Core", hint: "Sentiment & risk hub" },
   { icon: Landmark, label: "Central Bank District", hint: "Fed, ECB, BoJ policy" },
   { icon: Ship, label: "Commodity Harbor", hint: "Oil & gold" },
-  { icon: Shield, label: "Macro Battlefield", hint: "Inflation, jobs, growth" },
+  { icon: Zap, label: "Macro Intelligence", hint: "Inflation, jobs, growth" },
   { icon: Building2, label: "Nasdaq / ES HQ", hint: "Index sentiment" },
 ];
 
@@ -35,7 +36,7 @@ export default function NewsCityPage() {
       <PageHeader
         badge="MC News City"
         title="MC News City"
-        subtitle="The forces moving the market, laid out as a city you can explore. Click a building, ship, or tank for the full story."
+        subtitle="A living map of the global market. Data flows from central banks, commodities, and macro forces into the Market Core, and out to the exchange. Click anything for the full story."
       />
 
       <PageWrapper>

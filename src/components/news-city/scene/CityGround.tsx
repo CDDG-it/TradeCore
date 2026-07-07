@@ -1,85 +1,57 @@
 "use client";
 
-import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
-import type { Mesh } from "three";
 
 /**
- * The city floor is a dark reflective deck with a faint holographic grid —
- * a trading-terminal "digital twin", not a natural landscape. Districts are
- * marked by thin glowing rings, and animated light pulses travel along data
- * conduits between the HQ and each district.
+ * Market City floats on a levitating intelligence platform — a circular deck
+ * with a radar-style polar grid, district halo rings, and open atmosphere all
+ * around. A soft shadow far below sells the sense of altitude.
  */
 
 const DISTRICTS: { center: [number, number]; radius: number; color: string; label: string }[] = [
   { center: [-6.5, -6.5], radius: 3.4, color: "#d97a2e", label: "Central Bank District" },
-  { center: [6.5, -6.5], radius: 3.4, color: "#2b93b4", label: "Commodity Harbor" },
-  { center: [0, 6.8], radius: 3.8, color: "#c9573a", label: "Macro Battlefield" },
-  { center: [0, 0], radius: 3.0, color: "#f97316", label: "Nasdaq / ES HQ" },
+  { center: [6.5, -6.2], radius: 3.4, color: "#2b93b4", label: "Commodity Harbor" },
+  { center: [-6.4, 6.2], radius: 3.4, color: "#c9573a", label: "Macro Intelligence Zone" },
+  { center: [6.5, 6.2], radius: 3.4, color: "#f97316", label: "Nasdaq / ES HQ" },
 ];
-
-const CONDUITS: [[number, number], [number, number]][] = [
-  [[0, 0], [-6.5, -6.5]],
-  [[0, 0], [6.5, -6.5]],
-  [[0, 0], [0, 6.8]],
-];
-
-/** A thin glowing line on the deck with a light pulse travelling along it. */
-function Conduit({ from, to, phase }: { from: [number, number]; to: [number, number]; phase: number }) {
-  const dx = to[0] - from[0];
-  const dz = to[1] - from[1];
-  const len = Math.hypot(dx, dz);
-  const angle = Math.atan2(dx, dz);
-  const pulseRef = useRef<Mesh>(null);
-
-  useFrame((state) => {
-    if (!pulseRef.current) return;
-    const t = (state.clock.elapsedTime * 0.22 + phase) % 1;
-    pulseRef.current.position.set(from[0] + dx * t, 0.06, from[1] + dz * t);
-  });
-
-  return (
-    <group>
-      <group position={[(from[0] + to[0]) / 2, 0.03, (from[1] + to[1]) / 2]} rotation={[0, angle, 0]}>
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.05, len]} />
-          <meshBasicMaterial color="#f97316" transparent opacity={0.5} toneMapped={false} depthWrite={false} />
-        </mesh>
-      </group>
-      <mesh ref={pulseRef}>
-        <sphereGeometry args={[0.07, 10, 10]} />
-        <meshBasicMaterial color="#f97316" toneMapped={false} />
-      </mesh>
-    </group>
-  );
-}
 
 export function CityGround() {
   return (
     <group>
-      {/* Bright studio deck */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>
-        <planeGeometry args={[46, 46]} />
-        <meshStandardMaterial color="#e9edf2" roughness={0.55} metalness={0.08} />
+      {/* Levitating platform deck */}
+      <mesh position={[0, -0.31, 0]} receiveShadow>
+        <cylinderGeometry args={[15.4, 14.0, 0.62, 96]} />
+        <meshStandardMaterial color="#e2e8ee" roughness={0.55} metalness={0.08} />
       </mesh>
-      {/* Holographic grid */}
-      <gridHelper args={[46, 46, "#b9c4d0", "#d5dce4"]} position={[0, 0.002, 0]} />
+      {/* Lower hull segment — gives the platform techy depth from the side */}
+      <mesh position={[0, -0.78, 0]}>
+        <cylinderGeometry args={[13.2, 11.6, 0.34, 96]} />
+        <meshStandardMaterial color="#c8d1da" roughness={0.6} metalness={0.12} />
+      </mesh>
+      {/* Accent edge light around the rim */}
+      <mesh position={[0, -0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[15.32, 0.03, 8, 96]} />
+        <meshBasicMaterial color="#2b93b4" transparent opacity={0.5} toneMapped={false} />
+      </mesh>
+      {/* Radar-style polar grid on the deck */}
+      <polarGridHelper args={[15.1, 16, 8, 64, "#c0cad4", "#d6dde5"]} position={[0, 0.012, 0]} />
 
-      {CONDUITS.map((c, i) => (
-        <Conduit key={i} from={c[0]} to={c[1]} phase={i * 0.33} />
-      ))}
+      {/* Soft drop shadow far below — the platform is airborne */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3.4, 0]}>
+        <circleGeometry args={[12.5, 48]} />
+        <meshBasicMaterial color="#334155" transparent opacity={0.07} depthWrite={false} />
+      </mesh>
 
       {/* District halo rings + labels */}
       {DISTRICTS.map((d) => (
         <group key={d.label}>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[d.center[0], 0.015, d.center[1]]}>
             <ringGeometry args={[d.radius - 0.06, d.radius, 64]} />
-            <meshBasicMaterial color={d.color} transparent opacity={0.55} toneMapped={false} depthWrite={false} />
+            <meshBasicMaterial color={d.color} transparent opacity={0.5} toneMapped={false} depthWrite={false} />
           </mesh>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[d.center[0], 0.012, d.center[1]]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[d.center[0], 0.013, d.center[1]]}>
             <circleGeometry args={[d.radius, 64]} />
-            <meshBasicMaterial color={d.color} transparent opacity={0.045} toneMapped={false} depthWrite={false} />
+            <meshBasicMaterial color={d.color} transparent opacity={0.05} toneMapped={false} depthWrite={false} />
           </mesh>
           <Html
             position={[d.center[0], 0.02, d.center[1] - d.radius + 0.3]}

@@ -11,6 +11,12 @@ export type TrendDirection = "rising" | "falling" | "flat";
 export type Sentiment = "risk-on" | "risk-off" | "neutral";
 export type RiskLevel = "low" | "moderate" | "elevated" | "high";
 
+/** A one-glance market consequence, e.g. { label: "NASDAQ", direction: "down" }. */
+export interface MarketImpact {
+  label: string;
+  direction: "up" | "down";
+}
+
 export interface CentralBank {
   id: "fed" | "ecb" | "boj";
   name: string;
@@ -19,6 +25,9 @@ export interface CentralBank {
   rate: string;
   rateExpectation: string;
   direction: Direction;
+  /** Liquidity stance, e.g. "Restrictive" / "Easing". */
+  liquidity: string;
+  impacts: MarketImpact[];
   impact: string;
   lastUpdated: string;
 }
@@ -41,6 +50,10 @@ export interface MacroForce {
   metric: string;
   metricLabel: string;
   direction: TrendDirection;
+  /** Display strength of the force, e.g. "HIGH" / "MODERATE" / "POSITIVE". */
+  level: string;
+  /** 0..1 — drives how much energy the engine radiates in the scene. */
+  intensity: number;
   impact: string;
 }
 
@@ -65,6 +78,8 @@ export interface CityOverview {
   mainDriver: string;
   latestEvent: string;
   sentiment: Sentiment;
+  /** Display volatility, e.g. "Medium". */
+  volatility: string;
 }
 
 export interface NewsCityData {
