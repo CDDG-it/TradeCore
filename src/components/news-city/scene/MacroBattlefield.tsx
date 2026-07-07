@@ -6,12 +6,10 @@ import type { MacroForce } from "@/lib/news-city/types";
 import type { CitySelection } from "../selection";
 
 const LAYOUT: Record<MacroForce["id"], { position: [number, number, number]; rotationY: number }> = {
-  inflation: { position: [-2.2, 0, 7.4], rotationY: 0.3 },
-  employment: { position: [0.2, 0, 8.4], rotationY: -0.1 },
-  growth: { position: [2.4, 0, 7.2], rotationY: -0.35 },
+  inflation: { position: [-2.4, 0, 6.6], rotationY: 0.5 },
+  employment: { position: [0.2, 0, 8.2], rotationY: 0.0 },
+  growth: { position: [2.6, 0, 6.4], rotationY: -0.5 },
 };
-
-const BASE_COLOR = "#5a4630";
 
 export function MacroBattlefield({
   forces,
@@ -33,7 +31,6 @@ export function MacroBattlefield({
             key={f.id}
             position={layout.position}
             rotationY={layout.rotationY}
-            color={BASE_COLOR}
             accentColor={meta.hex}
             label={f.name}
             sublabel={f.metric}

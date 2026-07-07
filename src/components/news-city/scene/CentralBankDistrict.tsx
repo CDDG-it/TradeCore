@@ -1,17 +1,16 @@
 "use client";
 
 import { Building } from "./Building";
+import type { BuildingVariant } from "./BuildingBodies";
 import { DIRECTION_META } from "@/lib/news-city/ui";
 import type { CentralBank } from "@/lib/news-city/types";
 import type { CitySelection } from "../selection";
 
-const LAYOUT: Record<CentralBank["id"], { position: [number, number, number]; height: number; width: number }> = {
-  fed: { position: [-7.6, 0, -7.4], height: 3.4, width: 1.7 },
-  ecb: { position: [-5.6, 0, -5.4], height: 2.7, width: 1.5 },
-  boj: { position: [-6.6, 0, -8.6], height: 2.3, width: 1.4 },
+const LAYOUT: Record<CentralBank["id"], { position: [number, number, number]; height: number; width: number; variant: BuildingVariant }> = {
+  fed: { position: [-7.7, 0, -7.5], height: 2.6, width: 1.9, variant: "classical" },
+  ecb: { position: [-5.4, 0, -5.3], height: 3.0, width: 1.3, variant: "glass" },
+  boj: { position: [-6.7, 0, -8.9], height: 2.1, width: 1.6, variant: "domed" },
 };
-
-const BASE_COLOR = "#8a6a45";
 
 export function CentralBankDistrict({
   banks,
@@ -35,8 +34,8 @@ export function CentralBankDistrict({
             width={layout.width}
             depth={layout.width}
             height={layout.height}
-            color={BASE_COLOR}
-            accentColor={meta.hex}
+            variant={layout.variant}
+            biasColor={meta.hex}
             label={bank.shortName}
             sublabel={meta.label}
             active={active}

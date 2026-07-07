@@ -2,13 +2,17 @@
 
 import { useCityObject } from "./useCityObject";
 import { ClickHintRing } from "./ClickHintRing";
+import { BiasLamp } from "./BiasLamp";
 import { CityLabel } from "./CityLabel";
 
-/** A macro-force "tank": tracked body + rotating-feel turret + barrel. */
+const OLIVE = "#5c633a";
+const OLIVE_DARK = "#474d2c";
+
+/** A macro-force "tank": tracked body + turret + barrel, in neutral olive, with
+ *  the bias shown by the lamp on the turret. */
 export function Tank({
   position,
   rotationY = 0,
-  color,
   accentColor,
   label,
   sublabel,
@@ -17,7 +21,6 @@ export function Tank({
 }: {
   position: [number, number, number];
   rotationY?: number;
-  color: string;
   accentColor: string;
   label: string;
   sublabel?: string;
@@ -45,22 +48,33 @@ export function Tank({
           <meshStandardMaterial color="#2a2119" roughness={0.9} metalness={0.1} />
         </mesh>
       ))}
-      {/* Hull */}
+      {/* Hull — sloped glacis at the front for a real-tank silhouette */}
       <mesh position={[0, 0.42, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.1, 0.4, 0.9]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={glow ? 0.45 : 0.14} roughness={0.45} metalness={0.3} />
+        <meshStandardMaterial color={OLIVE} emissive={OLIVE} emissiveIntensity={glow ? 0.28 : 0.1} roughness={0.6} metalness={0.2} />
+      </mesh>
+      <mesh position={[0, 0.36, 0.5]} rotation={[-0.5, 0, 0]} castShadow>
+        <boxGeometry args={[1.1, 0.3, 0.28]} />
+        <meshStandardMaterial color={OLIVE_DARK} roughness={0.6} metalness={0.2} />
       </mesh>
       {/* Turret */}
-      <mesh position={[0, 0.72, 0]}>
-        <cylinderGeometry args={[0.34, 0.4, 0.26, 12]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={glow ? 0.6 : 0.25} />
+      <mesh position={[0, 0.72, -0.05]} castShadow>
+        <cylinderGeometry args={[0.32, 0.4, 0.28, 14]} />
+        <meshStandardMaterial color={OLIVE} emissive={OLIVE} emissiveIntensity={glow ? 0.28 : 0.1} roughness={0.6} metalness={0.2} />
       </mesh>
       {/* Barrel */}
-      <mesh position={[0, 0.72, 0.75]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.06, 0.06, 0.9, 8]} />
-        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={glow ? 0.5 : 0.2} />
+      <mesh position={[0, 0.74, 0.7]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.05, 0.06, 1.0, 8]} />
+        <meshStandardMaterial color={OLIVE_DARK} roughness={0.6} metalness={0.3} />
       </mesh>
-      <CityLabel y={1.35} label={label} sublabel={sublabel} accent={accentColor} emphasized={glow} />
+      {/* Antenna + bias lamp on the turret */}
+      <mesh position={[0.2, 0.98, -0.15]}>
+        <cylinderGeometry args={[0.012, 0.012, 0.3, 6]} />
+        <meshStandardMaterial color="#2a2119" roughness={0.8} />
+      </mesh>
+      <BiasLamp position={[0, 1.05, -0.05]} color={accentColor} radius={0.085} />
+
+      <CityLabel y={1.5} label={label} sublabel={sublabel} accent={accentColor} emphasized={glow} />
     </group>
   );
 }

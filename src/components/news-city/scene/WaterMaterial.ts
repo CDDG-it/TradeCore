@@ -9,31 +9,40 @@ import { extend, type ThreeElement } from "@react-three/fiber";
 export const WaterMaterial = shaderMaterial(
   {
     uTime: 0,
-    uColorDeep: new THREE.Color("#3a92ad"),
-    uColorShallow: new THREE.Color("#9fe0ec"),
+    uColorDeep: new THREE.Color("#1f6b8c"),
+    uColorShallow: new THREE.Color("#6fc4d8"),
   },
   /* vertex */ `
     uniform float uTime;
     varying float vWave;
+    varying vec2 vUv;
     void main() {
+      vUv = uv;
       vec3 pos = position;
-      float wave = sin(pos.x * 1.5 + uTime * 1.1) * 0.045
-                 + sin(pos.y * 2.3 - uTime * 0.9) * 0.03;
+      // Two crossing wave trains for a less regular, more sea-like surface.
+      float wave = sin(pos.x * 1.6 + uTime * 1.1) * 0.045
+                 + sin(pos.y * 2.4 - uTime * 0.9) * 0.03
+                 + sin((pos.x + pos.y) * 3.1 + uTime * 1.7) * 0.02;
       pos.z += wave;
       vWave = wave;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
     }
   `,
   /* fragment */ `
+    uniform float uTime;
     uniform vec3 uColorDeep;
     uniform vec3 uColorShallow;
     varying float vWave;
+    varying vec2 vUv;
     void main() {
-      float mixAmt = smoothstep(-0.05, 0.06, vWave);
+      float mixAmt = smoothstep(-0.06, 0.07, vWave);
       vec3 color = mix(uColorDeep, uColorShallow, mixAmt);
-      float glint = smoothstep(0.035, 0.06, vWave);
-      color += glint * 0.35;
-      gl_FragColor = vec4(color, 0.9);
+      // Moving sparkle highlights that drift across the surface.
+      float sparkle = sin(vUv.x * 60.0 + uTime * 2.2) * sin(vUv.y * 48.0 - uTime * 1.8);
+      color += smoothstep(0.86, 1.0, sparkle) * 0.5;
+      // Crest foam on the tallest wave peaks.
+      color = mix(color, vec3(0.92, 0.97, 1.0), smoothstep(0.055, 0.08, vWave) * 0.6);
+      gl_FragColor = vec4(color, 0.92);
     }
   `
 );

@@ -27,23 +27,23 @@ export function City3D({
       className="!touch-none"
       dpr={[1, 1.75]}
     >
-      <color attach="background" args={["#ffffff"]} />
-      <fog attach="fog" args={["#ffffff", 22, 38]} />
+      <color attach="background" args={["#f4f8ff"]} />
+      <fog attach="fog" args={["#f4f8ff", 24, 40]} />
 
-      <ambientLight intensity={0.9} color="#ffffff" />
-      <hemisphereLight args={["#ffffff", "#d8ccb8", 0.6]} />
+      <ambientLight intensity={0.75} color="#ffffff" />
+      {/* Sky-blue fill from above, warm grass bounce from below. */}
+      <hemisphereLight args={["#dcebff", "#8aa863", 0.7]} />
       <directionalLight
-        position={[8, 14, 6]}
-        intensity={1.5}
-        color="#fff3e0"
+        position={[8, 15, 6]}
+        intensity={1.6}
+        color="#fff4e2"
         castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-14}
-        shadow-camera-right={14}
-        shadow-camera-top={14}
-        shadow-camera-bottom={-14}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-16}
+        shadow-camera-right={16}
+        shadow-camera-top={16}
+        shadow-camera-bottom={-16}
       />
-      <pointLight position={[0, 6, 0]} intensity={0.3} color="#f97316" distance={12} />
 
       <Suspense fallback={null}>
         <CityGround />

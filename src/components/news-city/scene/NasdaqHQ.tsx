@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { Building } from "./Building";
-import { getFacadeTexture } from "./buildingTexture";
+import { SkylineTower } from "./BuildingBodies";
 import { SENTIMENT_META } from "@/lib/news-city/ui";
 import type { MarketHQ } from "@/lib/news-city/types";
 import type { CitySelection } from "../selection";
@@ -19,32 +18,35 @@ export function NasdaqHQ({
   const meta = SENTIMENT_META[hq.sentiment];
   const active = selected?.kind === "hq";
   const nq = hq.indices.find((i) => i.id === "nq");
-  const skylineFacade = useMemo(() => getFacadeTexture("#2c2013", "#e8b878"), []);
 
   return (
     <group>
       {/* Main tower — the tallest structure in the city, so it always reads as "home base". */}
       <Building
         position={[0, 0, 0]}
-        width={2.1}
-        depth={2.1}
-        height={4.6}
-        color="#3a2a18"
-        accentColor={meta.hex}
+        width={2.0}
+        depth={2.0}
+        height={4.4}
+        variant="setback"
+        biasColor={meta.hex}
         label="Nasdaq / ES HQ"
         sublabel={`${nq?.price ?? ""} · ${meta.label}`}
         active={active}
         onSelect={onSelect}
       />
-      {/* Two flanking towers, purely decorative skyline context. */}
-      <mesh position={[-2.1, 1.1, -1.1]} castShadow receiveShadow>
-        <boxGeometry args={[1, 2.2, 1]} />
-        <meshStandardMaterial map={skylineFacade} color="#ffffff" roughness={0.55} metalness={0.2} emissive="#e8b878" emissiveMap={skylineFacade} emissiveIntensity={0.15} />
-      </mesh>
-      <mesh position={[2.2, 0.9, -0.8]} castShadow receiveShadow>
-        <boxGeometry args={[0.9, 1.8, 0.9]} />
-        <meshStandardMaterial map={skylineFacade} color="#ffffff" roughness={0.55} metalness={0.2} emissive="#e8b878" emissiveMap={skylineFacade} emissiveIntensity={0.15} />
-      </mesh>
+      {/* Decorative skyline towers flanking the HQ (non-interactive). */}
+      <group position={[-2.5, 0, -1.2]}>
+        <SkylineTower width={1.0} depth={1.0} height={2.4} base="#454e5b" />
+      </group>
+      <group position={[2.5, 0, -0.9]}>
+        <SkylineTower width={0.9} depth={0.9} height={1.9} base="#4c5563" />
+      </group>
+      <group position={[2.1, 0, 1.4]}>
+        <SkylineTower width={0.8} depth={0.8} height={1.5} base="#3f4855" />
+      </group>
+      <group position={[-2.2, 0, 1.6]}>
+        <SkylineTower width={0.85} depth={0.85} height={1.7} base="#49525f" />
+      </group>
     </group>
   );
 }
