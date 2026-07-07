@@ -1,6 +1,7 @@
 "use client";
 
 import { useCityObject } from "./useCityObject";
+import { ClickHintRing } from "./ClickHintRing";
 import { CityLabel } from "./CityLabel";
 
 /** A macro-force "tank": tracked body + rotating-feel turret + barrel. */
@@ -23,7 +24,7 @@ export function Tank({
   active: boolean;
   onSelect: () => void;
 }) {
-  const { groupRef, hovered, onPointerOver, onPointerOut, onClick } = useCityObject(active, onSelect);
+  const { groupRef, ringRef, hovered, onPointerOver, onPointerOut, onClick } = useCityObject(active, onSelect);
   const glow = hovered || active;
 
   return (
@@ -35,6 +36,8 @@ export function Tank({
       onPointerOut={onPointerOut}
       onClick={onClick}
     >
+      <ClickHintRing ringRef={ringRef} radius={1.1} color={accentColor} />
+
       {/* Tracks */}
       {[-0.5, 0.5].map((z) => (
         <mesh key={z} position={[0, 0.18, z]} castShadow>

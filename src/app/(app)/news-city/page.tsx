@@ -42,8 +42,7 @@ export default function NewsCityPage() {
         <OverlayHud overview={NEWS_CITY_DATA.overview} />
 
         <div
-          className="relative w-full overflow-hidden rounded-2xl border border-border h-[420px] sm:h-[560px] lg:h-[640px]"
-          style={{ background: "linear-gradient(180deg, rgba(24,17,10,0.4), rgba(10,7,4,0.9))" }}
+          className="relative w-full overflow-hidden rounded-2xl border border-border h-[420px] sm:h-[560px] lg:h-[640px] bg-white"
         >
           <City3D data={NEWS_CITY_DATA} selected={selection} onSelect={setSelection} />
 

@@ -14,15 +14,15 @@ export function CityGround() {
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>
         <planeGeometry args={[40, 40]} />
-        <meshStandardMaterial color="#161009" roughness={0.95} metalness={0.05} />
+        <meshStandardMaterial color="#eeeae1" roughness={0.95} metalness={0.02} />
       </mesh>
-      <gridHelper args={[40, 40, "#3a2a1a", "#241a10"]} position={[0, 0, 0]} />
+      <gridHelper args={[40, 40, "#d8d0c0", "#e2dccf"]} position={[0, 0, 0]} />
 
       {DISTRICTS.map((d) => (
         <group key={d.label}>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[d.center[0], 0.005, d.center[1]]}>
             <circleGeometry args={[d.radius, 48]} />
-            <meshStandardMaterial color={d.color} transparent opacity={0.08} />
+            <meshStandardMaterial color={d.color} transparent opacity={0.1} />
           </mesh>
           <Html
             position={[d.center[0], 0.02, d.center[1] - d.radius + 0.3]}
@@ -33,7 +33,7 @@ export function CityGround() {
           >
             <p
               className="pointer-events-none select-none whitespace-nowrap font-heading text-[11px] font-bold uppercase tracking-[0.14em]"
-              style={{ color: `${d.color}cc` }}
+              style={{ color: d.color }}
             >
               {d.label}
             </p>

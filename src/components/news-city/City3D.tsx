@@ -27,14 +27,15 @@ export function City3D({
       className="!touch-none"
       dpr={[1, 1.75]}
     >
-      <color attach="background" args={["#120c07"]} />
-      <fog attach="fog" args={["#120c07", 18, 34]} />
+      <color attach="background" args={["#ffffff"]} />
+      <fog attach="fog" args={["#ffffff", 22, 38]} />
 
-      <ambientLight intensity={0.55} color="#ffddb0" />
+      <ambientLight intensity={0.9} color="#ffffff" />
+      <hemisphereLight args={["#ffffff", "#d8ccb8", 0.6]} />
       <directionalLight
         position={[8, 14, 6]}
-        intensity={1.4}
-        color="#ffb673"
+        intensity={1.5}
+        color="#fff3e0"
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-camera-left={-14}
@@ -42,7 +43,7 @@ export function City3D({
         shadow-camera-top={14}
         shadow-camera-bottom={-14}
       />
-      <pointLight position={[0, 6, 0]} intensity={0.6} color="#f97316" distance={12} />
+      <pointLight position={[0, 6, 0]} intensity={0.3} color="#f97316" distance={12} />
 
       <Suspense fallback={null}>
         <CityGround />
@@ -50,7 +51,7 @@ export function City3D({
         <CommodityHarbor commodities={data.commodities} selected={selected} onSelect={(id) => onSelect({ kind: "commodity", id })} />
         <MacroBattlefield forces={data.macroForces} selected={selected} onSelect={(id) => onSelect({ kind: "macro", id })} />
         <NasdaqHQ hq={data.marketHQ} selected={selected} onSelect={() => onSelect({ kind: "hq" })} />
-        <ContactShadows position={[0, 0, 0]} opacity={0.45} scale={40} blur={2.2} far={10} color="#000000" />
+        <ContactShadows position={[0, 0, 0]} opacity={0.35} scale={40} blur={2.4} far={10} color="#000000" />
       </Suspense>
 
       <OrbitControls
@@ -60,6 +61,10 @@ export function City3D({
         minPolarAngle={0.35}
         maxPolarAngle={Math.PI / 2.15}
         target={[0, 1, 0]}
+        rotateSpeed={0.35}
+        zoomSpeed={0.6}
+        enableDamping
+        dampingFactor={0.08}
       />
     </Canvas>
   );

@@ -1,28 +1,42 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
-import type { Group } from "three";
+import type { Group, Mesh, MeshBasicMaterial } from "three";
 
 /**
  * Shared hover/click behaviour for every clickable object in the city (towers,
- * ships, tanks): a gentle scale-up on hover/active, a pointer cursor, and a
- * single onSelect callback. Kept as one hook so every location "feels" the
- * same to interact with.
+ * ships, tanks): a gentle scale-up on hover/active, a pointer cursor, a slow
+ * idle bob so objects read as "alive" even before you touch them, and a
+ * pulsing ground ring that hints "this is clickable" without needing a hover.
  */
 export function useCityObject(active: boolean, onSelect: () => void) {
   const [hovered, setHovered] = useState(false);
   const groupRef = useRef<Group>(null);
+  const ringRef = useRef<Mesh>(null);
+  // Random phase so objects don't all bob/pulse in lockstep.
+  const phase = useMemo(() => Math.random() * Math.PI * 2, []);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
+    const t = state.clock.elapsedTime + phase;
     const g = groupRef.current;
-    if (!g) return;
-    const targetXZ = hovered || active ? 1.08 : 1;
-    const targetY = hovered || active ? 1.05 : 1;
-    const k = Math.min(delta * 8, 1);
-    g.scale.x += (targetXZ - g.scale.x) * k;
-    g.scale.z += (targetXZ - g.scale.z) * k;
-    g.scale.y += (targetY - g.scale.y) * k;
+    if (g) {
+      const targetXZ = hovered || active ? 1.1 : 1;
+      const targetY = hovered || active ? 1.06 : 1;
+      const k = Math.min(delta * 8, 1);
+      g.scale.x += (targetXZ - g.scale.x) * k;
+      g.scale.z += (targetXZ - g.scale.z) * k;
+      g.scale.y += (targetY - g.scale.y) * k;
+      // Subtle idle bob so the city feels alive at rest.
+      g.position.y = Math.sin(t * 1.4) * 0.035;
+    }
+    if (ringRef.current) {
+      const pulse = (Math.sin(t * 1.8) + 1) / 2; // 0..1
+      const s = 1 + pulse * 0.4;
+      ringRef.current.scale.set(s, s, s);
+      const mat = ringRef.current.material as MeshBasicMaterial;
+      mat.opacity = hovered || active ? 0 : 0.45 - pulse * 0.25;
+    }
   });
 
   const onPointerOver = useCallback((e: ThreeEvent<PointerEvent>) => {
@@ -45,5 +59,5 @@ export function useCityObject(active: boolean, onSelect: () => void) {
     [onSelect]
   );
 
-  return { groupRef, hovered, onPointerOver, onPointerOut, onClick };
+  return { groupRef, ringRef, hovered, onPointerOver, onPointerOut, onClick };
 }
