@@ -74,13 +74,13 @@ export function NasdaqHQ({
       <EnergyRings height={4.0} radius={1.25} color={meta.hex} up={bullish} />
 
       {/* Decorative skyline towers around the exchange (non-interactive). */}
-      <group position={[-2.2, 0, -1.0]}>
+      <group position={[-2.9, 0, -1.5]}>
         <SkylineTower width={0.9} height={2.1} />
       </group>
-      <group position={[2.2, 0, -0.8]}>
+      <group position={[2.9, 0, -1.2]}>
         <SkylineTower width={0.8} height={1.7} />
       </group>
-      <group position={[1.9, 0, 1.5]}>
+      <group position={[2.5, 0, 2.1]}>
         <SkylineTower width={0.7} height={1.3} />
       </group>
     </group>

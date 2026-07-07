@@ -34,16 +34,16 @@ export function City3D({
   return (
     <Canvas
       shadows
-      camera={{ position: [0, 13, 21], fov: 38 }}
+      camera={{ position: [0, 13.5, 23], fov: 38 }}
       className="!touch-none"
       dpr={[1, 1.75]}
     >
-      {/* Deep navy cyber atmosphere — the structures carry the light. */}
-      <color attach="background" args={["#0b0f16"]} />
-      <fog attach="fog" args={["#0b0f16", 26, 48]} />
+      {/* Navy cyber atmosphere, lightened so depth reads clearly. */}
+      <color attach="background" args={["#1a2333"]} />
+      <fog attach="fog" args={["#1a2333", 26, 48]} />
 
-      <ambientLight intensity={0.5} color="#cfd9e8" />
-      <hemisphereLight args={["#2e3a50", "#0b0e14", 0.55]} />
+      <ambientLight intensity={0.62} color="#d5dfec" />
+      <hemisphereLight args={["#3c4c66", "#141a26", 0.55]} />
       <directionalLight
         position={[10, 16, 8]}
         intensity={0.9}

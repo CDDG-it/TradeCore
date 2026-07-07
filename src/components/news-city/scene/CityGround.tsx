@@ -61,12 +61,12 @@ export function CityGround() {
       {/* Levitating platform deck */}
       <mesh position={[0, -0.31, 0]} receiveShadow>
         <cylinderGeometry args={[15.4, 14.0, 0.62, 96]} />
-        <meshStandardMaterial color="#0d1119" roughness={0.35} metalness={0.6} />
+        <meshStandardMaterial color="#151c29" roughness={0.35} metalness={0.6} />
       </mesh>
       {/* Lower hull segment */}
       <mesh position={[0, -0.78, 0]}>
         <cylinderGeometry args={[13.2, 11.6, 0.34, 96]} />
-        <meshStandardMaterial color="#0a0e15" roughness={0.4} metalness={0.55} />
+        <meshStandardMaterial color="#101623" roughness={0.4} metalness={0.55} />
       </mesh>
       {/* Brand-orange rim light plus an ice underline */}
       <mesh position={[0, -0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -78,7 +78,7 @@ export function CityGround() {
         <meshBasicMaterial color="#5fc0d8" transparent opacity={0.45} toneMapped={false} />
       </mesh>
       {/* Radar-style polar grid */}
-      <polarGridHelper args={[15.1, 16, 8, 64, "#2a3a52", "#18222f"]} position={[0, 0.012, 0]} />
+      <polarGridHelper args={[15.1, 16, 8, 64, "#35486a", "#22304a"]} position={[0, 0.012, 0]} />
 
       {/* Ambient data particles — orange + ice */}
       <DataParticles count={140} color="#f9a15c" seed={7} />

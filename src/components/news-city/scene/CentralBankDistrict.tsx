@@ -7,9 +7,9 @@ import type { CentralBank } from "@/lib/news-city/types";
 import type { CitySelection } from "../selection";
 
 const LAYOUT: Record<CentralBank["id"], { position: [number, number, number]; height: number; width: number; variant: BuildingVariant }> = {
-  fed: { position: [-7.7, 0, -7.5], height: 2.6, width: 1.9, variant: "classical" },
-  ecb: { position: [-5.4, 0, -5.3], height: 3.0, width: 1.3, variant: "glass" },
-  boj: { position: [-6.7, 0, -8.9], height: 2.1, width: 1.6, variant: "domed" },
+  fed: { position: [-8.3, 0, -7.6], height: 2.4, width: 1.8, variant: "classical" },
+  ecb: { position: [-4.6, 0, -4.8], height: 3.0, width: 1.3, variant: "glass" },
+  boj: { position: [-6.3, 0, -9.6], height: 2.1, width: 1.6, variant: "domed" },
 };
 
 export function CentralBankDistrict({

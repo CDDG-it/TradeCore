@@ -32,19 +32,21 @@ export default function NewsCityPage() {
   const [selection, setSelection] = useState<CitySelection | null>(null);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
+        className="!mb-3"
         badge="MC News City"
         title="MC News City"
-        subtitle="A living map of the global market. Data flows from central banks, commodities, and macro forces into the Market Core, and out to the exchange. Click anything for the full story."
+        subtitle="A living map of the global market. Data flows from every district into the Market Core and out to the exchange. Click anything for details."
       />
 
-      <PageWrapper>
+      <PageWrapper className="space-y-4">
         <OverlayHud overview={NEWS_CITY_DATA.overview} />
 
+        {/* Height tracks the viewport so the whole page fits without scrolling. */}
         <div
-          className="relative w-full overflow-hidden rounded-2xl border border-border h-[420px] sm:h-[540px] lg:h-[620px]"
-          style={{ background: "linear-gradient(180deg, #10141c 0%, #0b0f16 100%)" }}
+          className="relative w-full overflow-hidden rounded-2xl border border-border h-[clamp(340px,calc(100dvh-380px),600px)]"
+          style={{ background: "linear-gradient(180deg, #202a3c 0%, #1a2333 100%)" }}
         >
           <City3D data={NEWS_CITY_DATA} selected={selection} onSelect={setSelection} />
 

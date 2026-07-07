@@ -12,8 +12,8 @@ import type { CitySelection } from "../selection";
 const CENTER: [number, number] = [6.5, -6.2];
 
 const ROUTES: Record<Commodity["id"], { center: [number, number]; rx: number; rz: number; speed: number; phase: number; color: string }> = {
-  oil: { center: [5.9, -7.0], rx: 0.55, rz: 0.4, speed: 0.1, phase: 0, color: "#2b3440" },
-  gold: { center: [7.5, -5.4], rx: 0.45, rz: 0.55, speed: 0.085, phase: 2.4, color: "#b8923f" },
+  oil: { center: [5.6, -7.4], rx: 0.55, rz: 0.4, speed: 0.06, phase: 0, color: "#1d242e" },
+  gold: { center: [7.8, -5.0], rx: 0.45, rz: 0.55, speed: 0.05, phase: 2.4, color: "#6e5a28" },
 };
 
 /** Slowly sails a vessel around a small elliptical route, bow first. */

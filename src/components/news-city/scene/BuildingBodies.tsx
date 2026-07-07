@@ -23,11 +23,11 @@ export function lampHeightFor(variant: BuildingVariant, height: number): number 
     case "setback":
       return height + 1.15;
     case "domed":
-      return height + 0.8;
+      return height * 0.5 + 1.0; // just above the central dome
     case "glass":
       return height * 1.12 + 0.45;
     case "classical":
-      return height + 0.5;
+      return height * 0.8 + 0.45; // just above the flat parapet roof
     default:
       return height + 0.4;
   }
@@ -107,16 +107,49 @@ function HoloWire({
   );
 }
 
-/** Ring of slim columns — a colonnade base for the institutional buildings. */
-function Colonnade({ radius, count, height, y0 }: { radius: number; count: number; height: number; y0: number }) {
+/** Straight row of columns — the portico front of a monumental facade. */
+function ColumnRow({ count, width, height, y0, z }: { count: number; width: number; height: number; y0: number; z: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => {
-        const a = (i / count) * Math.PI * 2;
+        const x = -width / 2 + (width / (count - 1)) * i;
         return (
-          <mesh key={i} position={[Math.cos(a) * radius, y0 + height / 2, Math.sin(a) * radius]} castShadow>
-            <cylinderGeometry args={[0.035, 0.045, height, 8]} />
-            <meshStandardMaterial color={BODY_LIGHT} roughness={0.4} metalness={0.5} emissive={FLOOR_WARM} emissiveIntensity={0.25} />
+          <mesh key={i} position={[x, y0 + height / 2, z]} castShadow>
+            <cylinderGeometry args={[0.035, 0.045, height, 10]} />
+            <meshStandardMaterial color={BODY_LIGHT} roughness={0.4} metalness={0.5} emissive={FLOOR_WARM} emissiveIntensity={0.3} />
+          </mesh>
+        );
+      })}
+    </>
+  );
+}
+
+/** Glowing floor bands wrapped around a rectangular block — lit office rows. */
+function BoxFloors({
+  y0,
+  h,
+  count,
+  w,
+  d,
+  color = FLOOR_WARM,
+  opacity = 0.55,
+}: {
+  y0: number;
+  h: number;
+  count: number;
+  w: number;
+  d: number;
+  color?: string;
+  opacity?: number;
+}) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => {
+        const f = (i + 0.5) / count;
+        return (
+          <mesh key={i} position={[0, y0 + f * h, 0]}>
+            <boxGeometry args={[w + 0.015, 0.012, d + 0.015]} />
+            <meshBasicMaterial color={color} transparent opacity={opacity} toneMapped={false} depthWrite={false} />
           </mesh>
         );
       })}
@@ -126,35 +159,51 @@ function Colonnade({ radius, count, height, y0 }: { radius: number; count: numbe
 
 // ── Fed: tiered reserve tower with colonnade base and lit tiers ───────────────
 export function ClassicalHall({ width, height, glow }: { width: number; depth?: number; height: number; glow: boolean }) {
-  const tiers = [
-    { r: width * 0.6, h: height * 0.42, y0: 0.55, floors: 5 },
-    { r: width * 0.47, h: height * 0.32, y0: 0.55 + height * 0.42, floors: 4 },
-    { r: width * 0.34, h: height * 0.26, y0: 0.55 + height * 0.74, floors: 3 },
-  ];
+  // Modelled on the Marriner S. Eccles Building: a wide, low marble block
+  // with a recessed colonnade portico between two projecting end pavilions
+  // and a flat parapet roof.
+  const w = width * 1.55;
+  const d = width * 0.85;
+  const blockH = height * 0.62;
+  const pavW = w * 0.2;
   return (
     <group>
-      {/* Plinth + colonnade arcade */}
-      <mesh position={[0, 0.07, 0]} receiveShadow castShadow>
-        <cylinderGeometry args={[width * 0.82, width * 0.9, 0.14, 48]} />
+      {/* Stepped base */}
+      <mesh position={[0, 0.06, 0]} receiveShadow castShadow>
+        <boxGeometry args={[w * 1.12, 0.12, d * 1.25]} />
         {glassMat(glow, BODY_LIGHT)}
       </mesh>
-      <Colonnade radius={width * 0.68} count={12} height={0.42} y0={0.14} />
-      <mesh position={[0, 0.55, 0]} receiveShadow castShadow>
-        <cylinderGeometry args={[width * 0.66, width * 0.74, 0.1, 48]} />
-        {glassMat(glow, BODY_LIGHT)}
+      {/* Main block */}
+      <mesh position={[0, 0.12 + blockH / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[w, blockH, d]} />
+        {glassMat(glow)}
       </mesh>
-
-      {tiers.map((t, i) => (
-        <group key={i}>
-          <mesh position={[0, t.y0 + t.h / 2, 0]} castShadow receiveShadow>
-            <cylinderGeometry args={[t.r * 0.94, t.r, t.h, 48]} />
-            {glassMat(glow)}
-          </mesh>
-          <Floors y0={t.y0} h={t.h} count={t.floors} rAt={(f) => t.r - (t.r - t.r * 0.94) * f + 0.008} opacity={glow ? 0.85 : 0.55} />
-          <SeamRing y={t.y0 + t.h} radius={t.r * 0.94} opacity={glow ? 1 : 0.75} />
-        </group>
+      <BoxFloors y0={0.12} h={blockH} count={4} w={w} d={d} opacity={glow ? 0.8 : 0.5} />
+      {/* Projecting end pavilions */}
+      {[-1, 1].map((s) => (
+        <mesh key={s} position={[s * (w / 2 - pavW / 2), 0.12 + (blockH * 1.06) / 2, d * 0.08]} castShadow receiveShadow>
+          <boxGeometry args={[pavW, blockH * 1.06, d * 1.12]} />
+          {glassMat(glow, BODY_LIGHT)}
+        </mesh>
       ))}
-      <HoloWire rBottom={tiers[0].r} rTop={tiers[2].r * 0.94} h={height} y0={0.55} />
+      {/* Recessed colonnade portico across the front */}
+      <ColumnRow count={8} width={w * 0.5} height={blockH * 0.78} y0={0.12} z={d / 2 + 0.05} />
+      {/* Entablature + parapet */}
+      <mesh position={[0, 0.12 + blockH + 0.05, 0]} castShadow>
+        <boxGeometry args={[w * 1.02, 0.1, d * 1.06]} />
+        {glassMat(glow, BODY_LIGHT)}
+      </mesh>
+      {/* Attic storey */}
+      <mesh position={[0, 0.12 + blockH + 0.1 + (height * 0.18) / 2, 0]} castShadow>
+        <boxGeometry args={[w * 0.6, height * 0.18, d * 0.7]} />
+        {glassMat(glow)}
+      </mesh>
+      <BoxFloors y0={0.12 + blockH + 0.1} h={height * 0.18} count={1} w={w * 0.6} d={d * 0.7} opacity={glow ? 0.8 : 0.5} />
+      {/* Orange cornice line under the parapet */}
+      <mesh position={[0, 0.12 + blockH + 0.005, 0]}>
+        <boxGeometry args={[w * 1.03, 0.014, d * 1.07]} />
+        <meshBasicMaterial color={SEAM} transparent opacity={glow ? 0.95 : 0.7} toneMapped={false} depthWrite={false} />
+      </mesh>
     </group>
   );
 }
@@ -189,21 +238,53 @@ export function GlassTower({ width, height, glow }: { width: number; depth?: num
   );
 }
 
-// ── BoJ: dome pavilion with pillar ring and glowing ribs ─────────────────────
+// ── BoJ: neo-baroque headquarters — stone base, side wings, central dome ─────
 export function DomedHall({ width, height, glow }: { width: number; depth?: number; height: number; glow: boolean }) {
-  const plinthH = height * 0.55;
-  const domeR = width * 0.52;
+  // Modelled on the Bank of Japan head office: a symmetrical stone block with
+  // two side wings and a central copper dome on an octagonal drum.
+  const w = width * 1.4;
+  const d = width * 0.85;
+  const baseH = height * 0.5;
+  const domeR = width * 0.3;
+  const drumH = 0.16;
+  const domeY = 0.1 + baseH + drumH;
   return (
     <group>
-      <mesh position={[0, plinthH / 2 + 0.02, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[width * 0.56, width * 0.66, plinthH, 48]} />
+      {/* Base slab */}
+      <mesh position={[0, 0.05, 0]} receiveShadow castShadow>
+        <boxGeometry args={[w * 1.15, 0.1, d * 1.3]} />
+        {glassMat(glow, BODY_LIGHT)}
+      </mesh>
+      {/* Central block */}
+      <mesh position={[0, 0.1 + baseH / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[w * 0.55, baseH, d]} />
         {glassMat(glow)}
       </mesh>
-      <Colonnade radius={width * 0.62} count={10} height={plinthH * 0.7} y0={0.05} />
-      <Floors y0={0.05} h={plinthH - 0.1} count={3} rAt={() => width * 0.6} opacity={glow ? 0.8 : 0.5} />
-
-      <mesh position={[0, plinthH, 0]} castShadow>
-        <sphereGeometry args={[domeR, 36, 22, 0, Math.PI * 2, 0, Math.PI / 2]} />
+      <BoxFloors y0={0.1} h={baseH} count={3} w={w * 0.55} d={d} opacity={glow ? 0.8 : 0.5} />
+      {/* Side wings, slightly lower */}
+      {[-1, 1].map((s) => (
+        <group key={s}>
+          <mesh position={[s * w * 0.39, 0.1 + (baseH * 0.82) / 2, 0]} castShadow receiveShadow>
+            <boxGeometry args={[w * 0.36, baseH * 0.82, d * 0.94]} />
+            {glassMat(glow, BODY_LIGHT)}
+          </mesh>
+          <BoxFloors y0={0.1} h={baseH * 0.82} count={2} w={w * 0.36} d={d * 0.94} opacity={glow ? 0.7 : 0.45} />
+        </group>
+      ))}
+      {/* Portico columns at the central entrance */}
+      <ColumnRow count={4} width={w * 0.3} height={baseH * 0.72} y0={0.1} z={d / 2 + 0.05} />
+      {/* Cornice */}
+      <mesh position={[0, 0.1 + baseH + 0.04, 0]} castShadow>
+        <boxGeometry args={[w * 0.58, 0.08, d * 1.04]} />
+        {glassMat(glow, BODY_LIGHT)}
+      </mesh>
+      {/* Octagonal drum + central dome */}
+      <mesh position={[0, domeY - drumH / 2 + 0.08, 0]} castShadow>
+        <cylinderGeometry args={[domeR * 0.92, domeR, drumH, 8]} />
+        {glassMat(glow, BODY_LIGHT)}
+      </mesh>
+      <mesh position={[0, domeY + 0.08, 0]} castShadow>
+        <sphereGeometry args={[domeR, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <meshStandardMaterial
           color={BODY_LIGHT}
           roughness={0.25}
@@ -212,18 +293,12 @@ export function DomedHall({ width, height, glow }: { width: number; depth?: numb
           emissiveIntensity={glow ? 1 : 0.45}
         />
       </mesh>
-      {/* Glowing latitude ribs on the dome */}
-      {[0.25, 0.55].map((f) => {
-        const y = plinthH + domeR * f;
-        const r = Math.sqrt(Math.max(domeR * domeR - (domeR * f) ** 2, 0.001));
-        return (
-          <mesh key={f} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r + 0.005, 0.012, 6, 48]} />
-            <meshBasicMaterial color={FLOOR_ICE} transparent opacity={glow ? 0.85 : 0.55} toneMapped={false} depthWrite={false} />
-          </mesh>
-        );
-      })}
-      <SeamRing y={plinthH + 0.01} radius={domeR + 0.01} opacity={glow ? 0.95 : 0.7} />
+      {/* Glowing rib + finial on the dome */}
+      <mesh position={[0, domeY + 0.08 + domeR * 0.4, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[Math.sqrt(Math.max(domeR * domeR - (domeR * 0.4) ** 2, 0.001)) + 0.005, 0.011, 6, 40]} />
+        <meshBasicMaterial color={FLOOR_ICE} transparent opacity={glow ? 0.85 : 0.55} toneMapped={false} depthWrite={false} />
+      </mesh>
+      <SeamRing y={domeY + 0.09} radius={domeR + 0.01} opacity={glow ? 0.95 : 0.7} />
     </group>
   );
 }
