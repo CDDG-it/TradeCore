@@ -17,7 +17,6 @@ export type WidgetId =
   | "habits-streak"
   | "recent-trades"
   | "active-accounts"
-  | "calendar"
   | "trading-rules"
   | "win-rate";
 
@@ -26,7 +25,6 @@ export type WidgetSource =
   | "Journal"
   | "Habits"
   | "Analytics"
-  | "Calendar"
   | "Trading Rules"
   | "Accounts";
 
@@ -46,7 +44,6 @@ export const WIDGETS: WidgetMeta[] = [
   { id: "habits-streak", title: "Habits Streak", source: "Habits", href: "/habits", description: "Longest active streak and today's progress." },
   { id: "trading-rules", title: "Trading Rules", source: "Trading Rules", href: "/habits", description: "Your pre-trade checklist at a glance." },
   { id: "active-accounts", title: "Active Accounts", source: "Accounts", href: "/accounts", description: "Funded accounts and capital in play." },
-  { id: "calendar", title: "Upcoming Events", source: "Calendar", href: "/habits", description: "The next items from your connected calendar." },
 ];
 
 export const WIDGET_MAP: Record<WidgetId, WidgetMeta> = Object.fromEntries(
@@ -61,12 +58,16 @@ export const WIDGET_MAP: Record<WidgetId, WidgetMeta> = Object.fromEntries(
 
 export type WidgetScope = "all" | "month" | "week";
 export type WidgetSessionFilter = "all" | "London" | "New York" | "Asia";
+/** Card footprint on the Home grid. Every widget can be resized, regardless
+ *  of whether it has other configurable options. */
+export type WidgetSize = "sm" | "md" | "lg";
 
 export interface WidgetOptions {
   scope?: WidgetScope;
   session?: WidgetSessionFilter;
   /** How many rows to show, for list-style widgets like Recent Trades. */
   count?: number;
+  size?: WidgetSize;
 }
 
 export interface WidgetControlConfig {
@@ -75,8 +76,8 @@ export interface WidgetControlConfig {
   counts?: number[];
 }
 
-/** Which controls each widget exposes in its options menu. Widgets absent
- *  here have no configurable options. */
+/** Which extra controls each widget exposes in its options menu, beyond the
+ *  universal size control. Widgets absent here only get resizing. */
 export const WIDGET_CONTROLS: Partial<Record<WidgetId, WidgetControlConfig>> = {
   "win-rate": { scope: true, session: true },
   "weekly-r": { scope: true, session: true },
@@ -84,7 +85,16 @@ export const WIDGET_CONTROLS: Partial<Record<WidgetId, WidgetControlConfig>> = {
   "recent-trades": { session: true, counts: [3, 5, 10] },
 };
 
-export const DEFAULT_WIDGET_OPTIONS: WidgetOptions = { scope: "week", session: "all", count: 3 };
+export const DEFAULT_WIDGET_OPTIONS: WidgetOptions = { scope: "week", session: "all", count: 3, size: "sm" };
+
+/** Tailwind classes for a widget's footprint on the `sm:grid-cols-2 lg:grid-cols-3` Home grid. */
+export const WIDGET_SIZE_CLASSES: Record<WidgetSize, string> = {
+  sm: "",
+  md: "sm:col-span-2",
+  lg: "sm:col-span-2 lg:col-span-3 lg:row-span-2",
+};
+
+export const WIDGET_SIZE_LABEL: Record<WidgetSize, string> = { sm: "Small", md: "Wide", lg: "Large" };
 
 const OPTIONS_LS_KEY = "home_widget_options_v1";
 
@@ -125,7 +135,6 @@ export const DEFAULT_WIDGETS: WidgetId[] = [
   "habits-streak",
   "recent-trades",
   "active-accounts",
-  "calendar",
 ];
 
 const LS_KEY = "home_widgets_v1";

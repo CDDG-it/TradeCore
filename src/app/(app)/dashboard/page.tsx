@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { HomeWidget } from "@/components/home/widgets";
 import {
   WIDGETS, DEFAULT_WIDGETS, loadWidgets, saveWidgets,
-  loadWidgetOptions, saveWidgetOptions,
+  loadWidgetOptions, saveWidgetOptions, DEFAULT_WIDGET_OPTIONS, WIDGET_SIZE_CLASSES,
   type WidgetId, type WidgetSource, type WidgetOptions,
 } from "@/lib/home/widgets";
 
@@ -178,34 +178,38 @@ export default function HomePage() {
                 Drag a card to rearrange, or use the arrows. Changes save automatically.
               </p>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-up">
-              {widgets.map((id, i) => (
-                <div
-                  key={id}
-                  draggable={editing}
-                  onDragStart={editing ? () => setDragIndex(i) : undefined}
-                  onDragOver={editing ? (e) => { e.preventDefault(); setOverIndex(i); } : undefined}
-                  onDragLeave={editing ? () => setOverIndex((v) => (v === i ? null : v)) : undefined}
-                  onDrop={editing ? (e) => { e.preventDefault(); handleDrop(i); } : undefined}
-                  onDragEnd={editing ? () => { setDragIndex(null); setOverIndex(null); } : undefined}
-                  className={cn(
-                    "rounded-xl transition-all",
-                    editing && dragIndex === i && "opacity-40",
-                    editing && overIndex === i && dragIndex !== null && dragIndex !== i && "ring-2 ring-primary/50"
-                  )}
-                >
-                  <HomeWidget
-                    id={id}
-                    editing={editing}
-                    options={widgetOptions[id]}
-                    onOptionsChange={updateOptions}
-                    onRemove={removeWidget}
-                    onMove={moveWidget}
-                    canMoveBack={i > 0}
-                    canMoveForward={i < widgets.length - 1}
-                  />
-                </div>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-[minmax(0,1fr)] animate-fade-up">
+              {widgets.map((id, i) => {
+                const size = widgetOptions[id]?.size ?? DEFAULT_WIDGET_OPTIONS.size!;
+                return (
+                  <div
+                    key={id}
+                    draggable={editing}
+                    onDragStart={editing ? () => setDragIndex(i) : undefined}
+                    onDragOver={editing ? (e) => { e.preventDefault(); setOverIndex(i); } : undefined}
+                    onDragLeave={editing ? () => setOverIndex((v) => (v === i ? null : v)) : undefined}
+                    onDrop={editing ? (e) => { e.preventDefault(); handleDrop(i); } : undefined}
+                    onDragEnd={editing ? () => { setDragIndex(null); setOverIndex(null); } : undefined}
+                    className={cn(
+                      "rounded-xl transition-all",
+                      WIDGET_SIZE_CLASSES[size],
+                      editing && dragIndex === i && "opacity-40",
+                      editing && overIndex === i && dragIndex !== null && dragIndex !== i && "ring-2 ring-primary/50"
+                    )}
+                  >
+                    <HomeWidget
+                      id={id}
+                      editing={editing}
+                      options={widgetOptions[id]}
+                      onOptionsChange={updateOptions}
+                      onRemove={removeWidget}
+                      onMove={moveWidget}
+                      canMoveBack={i > 0}
+                      canMoveForward={i < widgets.length - 1}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </>
         )}

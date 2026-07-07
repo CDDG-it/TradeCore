@@ -88,8 +88,9 @@ export default function HomePage() {
               color: "rgba(60,48,36,0.55)",
             }}
           >
-            Every trade logged. Every session prepped. Every payout tracked.
-            The quiet work that separates funded traders from former ones.
+            Great traders are built beyond the charts. Capture every trade,
+            analyze your performance, and develop the habits that drive
+            long-term consistency.
           </motion.p>
 
           <motion.div

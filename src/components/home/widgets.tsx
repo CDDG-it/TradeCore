@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   ArrowRight, X, TrendingUp, TrendingDown, Flame, Target,
-  Wallet, ScrollText, CalendarClock, Loader2, GripVertical, ChevronLeft, ChevronRight,
-  SlidersHorizontal, Check,
+  Wallet, ScrollText, Loader2, GripVertical, ChevronLeft, ChevronRight,
+  SlidersHorizontal, Check, Circle,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getHabitStreak, getProfile,
+  toggleHabitCompletion,
 } from "@/lib/supabase/queries";
 import { computeDiscipline } from "@/lib/discipline";
 import { tradeR } from "@/lib/journal/weeks";
@@ -20,10 +21,10 @@ import {
   DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import {
-  WIDGET_MAP, WIDGET_CONTROLS, DEFAULT_WIDGET_OPTIONS,
-  type WidgetId, type WidgetOptions, type WidgetScope, type WidgetSessionFilter,
+  WIDGET_MAP, WIDGET_CONTROLS, DEFAULT_WIDGET_OPTIONS, WIDGET_SIZE_LABEL,
+  type WidgetId, type WidgetOptions, type WidgetScope, type WidgetSessionFilter, type WidgetSize,
 } from "@/lib/home/widgets";
-import type { TradeJournalEntry } from "@/lib/types";
+import type { TradeJournalEntry, Habit, HabitCompletion } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
@@ -45,7 +46,8 @@ function scopeTrades(trades: TradeJournalEntry[], options: WidgetOptions): Trade
   return list;
 }
 
-/** Options menu shown on configurable widgets: scope / session / row count. */
+/** Options menu shown on every widget: size, plus scope / session / row count
+ *  for the widgets that declare those extra controls. */
 function WidgetOptionsMenu({
   id,
   options,
@@ -56,7 +58,6 @@ function WidgetOptionsMenu({
   onChange: (id: WidgetId, next: WidgetOptions) => void;
 }) {
   const controls = WIDGET_CONTROLS[id];
-  if (!controls) return null;
 
   return (
     <DropdownMenu>
@@ -73,18 +74,30 @@ function WidgetOptionsMenu({
         <SlidersHorizontal className="w-3.5 h-3.5" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {controls.scope && (
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Period</DropdownMenuLabel>
-            {(["week", "month", "all"] as WidgetScope[]).map((scope) => (
-              <DropdownMenuItem key={scope} onClick={() => onChange(id, { ...options, scope })}>
-                {options.scope === scope && <Check className="w-3.5 h-3.5" />}
-                <span className={cn(options.scope !== scope && "pl-[22px]")}>{SCOPE_LABEL[scope]}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Size</DropdownMenuLabel>
+          {(["sm", "md", "lg"] as WidgetSize[]).map((size) => (
+            <DropdownMenuItem key={size} onClick={() => onChange(id, { ...options, size })}>
+              {options.size === size && <Check className="w-3.5 h-3.5" />}
+              <span className={cn(options.size !== size && "pl-[22px]")}>{WIDGET_SIZE_LABEL[size]}</span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+        {controls?.scope && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Period</DropdownMenuLabel>
+              {(["week", "month", "all"] as WidgetScope[]).map((scope) => (
+                <DropdownMenuItem key={scope} onClick={() => onChange(id, { ...options, scope })}>
+                  {options.scope === scope && <Check className="w-3.5 h-3.5" />}
+                  <span className={cn(options.scope !== scope && "pl-[22px]")}>{SCOPE_LABEL[scope]}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </>
         )}
-        {controls.session && (
+        {controls?.session && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
@@ -98,7 +111,7 @@ function WidgetOptionsMenu({
             </DropdownMenuGroup>
           </>
         )}
-        {controls.counts && (
+        {controls?.counts && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
@@ -117,9 +130,13 @@ function WidgetOptionsMenu({
   );
 }
 
-/** Shared shell: a clickable card linking to the full page. While the Home is
- *  in edit mode it stops navigating and exposes drag + move/remove controls so
- *  widgets can be rearranged. Configurable widgets also get an options menu. */
+/**
+ * Shared shell for every widget. Only the header (source label, title, arrow)
+ * is a navigable `<Link>` to the widget's full page — the body renders as a
+ * plain sibling `<div>` so widgets are free to hold their own interactive
+ * elements (checkboxes, per-row links) without nesting them inside an anchor,
+ * which is invalid HTML and makes click handling unreliable.
+ */
 function WidgetShell({
   id,
   editing,
@@ -143,37 +160,34 @@ function WidgetShell({
 }) {
   const meta = WIDGET_MAP[id];
   return (
-    <div className="relative group h-full">
+    <div
+      className="relative group h-full flex flex-col rounded-xl p-5 overflow-hidden card-hover"
+      style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+    >
       <Link
         href={meta.href}
         draggable={false}
         onClick={editing ? (e) => e.preventDefault() : undefined}
-        className={cn(
-          "card-hover flex h-full flex-col rounded-xl p-5 overflow-hidden",
-          editing && "cursor-move select-none"
-        )}
-        style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+        className={cn("flex items-center justify-between mb-3 gap-2", editing && "cursor-move select-none")}
       >
-        <div className="flex items-center justify-between mb-3 gap-2">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{meta.source}</p>
-            <h3 className="text-sm font-semibold truncate">{meta.title}</h3>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Reserve space so the title never runs under the options button,
-                which is rendered as an independent sibling below (not nested
-                inside this anchor — nested interactive elements are invalid
-                HTML and click handling on them is unreliable). */}
-            {!editing && <span className="w-6 h-6" aria-hidden />}
-            {editing ? (
-              <GripVertical className="w-4 h-4 shrink-0 text-muted-foreground/50" />
-            ) : (
-              <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40 transition-all group-hover:text-primary group-hover:translate-x-0.5" />
-            )}
-          </div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{meta.source}</p>
+          <h3 className="text-sm font-semibold truncate">{meta.title}</h3>
         </div>
-        <div className="flex-1">{children}</div>
+        <div className="flex items-center gap-1 shrink-0">
+          {/* Reserve space so the title never runs under the options button,
+              which is an independent sibling (see absolute div below) so its
+              click handling never interferes with this Link's own. */}
+          {!editing && <span className="w-6 h-6" aria-hidden />}
+          {editing ? (
+            <GripVertical className="w-4 h-4 shrink-0 text-muted-foreground/50" />
+          ) : (
+            <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40 transition-all group-hover:text-primary group-hover:translate-x-0.5" />
+          )}
+        </div>
       </Link>
+
+      <div className="flex-1 min-h-0">{children}</div>
 
       {!editing && (
         <div className="absolute top-5 right-10 z-10">
@@ -239,6 +253,11 @@ function scopeSubtitle(options: WidgetOptions, suffix: string): string {
   return session === "all" ? base : `${base} · ${session}`;
 }
 
+/** How many list rows a widget should show for its current footprint. */
+function rowsForSize(size: WidgetSize | undefined, { sm, md, lg }: { sm: number; md: number; lg: number }) {
+  return size === "lg" ? lg : size === "md" ? md : sm;
+}
+
 // ── Weekly R (net R for the configured scope/session) ────────────────
 function WeeklyRWidget({ options }: { options: WidgetOptions }) {
   const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
@@ -295,25 +314,81 @@ function DisciplineWidget({ options }: { options: WidgetOptions }) {
   );
 }
 
-// ── Habits streak ─────────────────────────────────────────────────────
-function HabitsStreakWidget() {
-  const [data, setData] = useState<{ streak: number; done: number; total: number } | null>(null);
-  useEffect(() => {
-    Promise.all([getHabits(), getHabitCompletions()]).then(async ([habits, comps]) => {
-      const streaks = await Promise.all(habits.map((h) => getHabitStreak(h.id)));
-      const longest = streaks.reduce((m, s) => Math.max(m, s), 0);
-      const done = comps.filter((c) => c.date === TODAY && c.completed).length;
-      setData({ streak: longest, done, total: habits.length });
-    });
-  }, []);
-  if (!data) return <Loading />;
+// ── Habits streak — with an inline checklist so today's habits can be ─
+// ── checked off without leaving Home. ──────────────────────────────────
+function HabitsStreakWidget({ options }: { options: WidgetOptions }) {
+  const [habits, setHabits] = useState<Habit[] | null>(null);
+  const [completions, setCompletions] = useState<HabitCompletion[]>([]);
+  const [streaks, setStreaks] = useState<Record<string, number>>({});
+  const [pending, setPending] = useState<string | null>(null);
+
+  const refresh = async () => {
+    const [h, c] = await Promise.all([getHabits(), getHabitCompletions()]);
+    setHabits(h);
+    setCompletions(c);
+    const entries = await Promise.all(h.map(async (habit) => [habit.id, await getHabitStreak(habit.id)] as const));
+    setStreaks(Object.fromEntries(entries));
+  };
+
+  useEffect(() => { refresh(); }, []);
+
+  async function handleToggle(habitId: string) {
+    setPending(habitId);
+    await toggleHabitCompletion(habitId, TODAY);
+    const c = await getHabitCompletions();
+    setCompletions(c);
+    setPending(null);
+  }
+
+  if (!habits) return <Loading />;
+
+  const doneToday = new Set(completions.filter((c) => c.date === TODAY && c.completed).map((c) => c.habit_id));
+  const longestStreak = Object.values(streaks).reduce((m, s) => Math.max(m, s), 0);
+  const visible = habits.slice(0, rowsForSize(options.size, { sm: 3, md: 6, lg: habits.length }));
+
   return (
-    <div className="flex items-center gap-3">
-      <Flame className="w-8 h-8 shrink-0" style={{ color: "oklch(0.58 0.22 25)" }} />
-      <div>
-        <p className="text-3xl font-black tabular-nums" style={{ color: "oklch(0.58 0.22 25)" }}>{data.streak}d</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{data.done}/{data.total} done today</p>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-3 mb-3">
+        <Flame className="w-7 h-7 shrink-0" style={{ color: "oklch(0.58 0.22 25)" }} />
+        <div>
+          <p className="text-2xl font-black tabular-nums leading-none" style={{ color: "oklch(0.58 0.22 25)" }}>{longestStreak}d</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{doneToday.size}/{habits.length} done today</p>
+        </div>
       </div>
+
+      {habits.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No habits yet. Add some in Habits.</p>
+      ) : (
+        <div className="space-y-1 overflow-y-auto">
+          {visible.map((habit) => {
+            const done = doneToday.has(habit.id);
+            return (
+              <button
+                key={habit.id}
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggle(habit.id); }}
+                disabled={pending === habit.id}
+                className={cn(
+                  "w-full flex items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors",
+                  done ? "bg-success/8" : "hover:bg-muted/50"
+                )}
+              >
+                {done ? (
+                  <Check className="w-3.5 h-3.5 shrink-0" style={{ color: habit.color }} />
+                ) : (
+                  <Circle className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40" />
+                )}
+                <span className={cn("text-xs truncate", done ? "text-foreground" : "text-muted-foreground")}>
+                  {habit.name}
+                </span>
+              </button>
+            );
+          })}
+          {visible.length < habits.length && (
+            <p className="text-[11px] text-muted-foreground/60 pl-2 pt-0.5">+{habits.length - visible.length} more, resize to see all</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -337,50 +412,78 @@ function RecentTradesWidget({ options }: { options: WidgetOptions }) {
   if (shown.length === 0)
     return <p className="text-xs text-muted-foreground">No trades logged yet.</p>;
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1 overflow-y-auto">
       {shown.map((t) => {
         const color = t.result === "win" ? "oklch(0.58 0.17 145)" : t.result === "loss" ? "oklch(0.58 0.22 25)" : "oklch(0.70 0.16 72)";
         return (
-          <div key={t.id} className="flex items-center gap-2 text-xs">
+          <Link
+            key={t.id}
+            href={`/journal/${t.id}`}
+            className="flex items-center gap-2 text-xs rounded-lg px-1.5 py-1 -mx-1.5 hover:bg-muted/50 transition-colors"
+          >
             <ResultDot t={t} />
             <span className="font-semibold">{t.instrument}</span>
             <span className="text-muted-foreground truncate flex-1">{format(new Date(t.date_time.slice(0, 10) + "T12:00:00"), "MMM d")}</span>
             <span className="font-bold tabular-nums shrink-0" style={{ color }}>
               {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
             </span>
-          </div>
+          </Link>
         );
       })}
     </div>
   );
 }
 
-// ── Active accounts ───────────────────────────────────────────────────
-function ActiveAccountsWidget() {
+// ── Active accounts — lists individual accounts once there's room ────
+function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
   const { hidden } = usePrivacy();
-  const [data, setData] = useState<{ count: number; capital: number } | null>(null);
-  useEffect(() => {
-    getAccounts().then((accts) => {
-      const active = accts.filter((a) => a.status === "active");
-      setData({ count: active.length, capital: active.reduce((s, a) => s + a.current_balance, 0) });
-    });
-  }, []);
-  if (!data) return <Loading />;
+  const [accounts, setAccounts] = useState<import("@/lib/types").FundedAccount[] | null>(null);
+  useEffect(() => { getAccounts().then(setAccounts); }, []);
+  if (!accounts) return <Loading />;
+
+  const active = accounts.filter((a) => a.status === "active");
+  const capital = active.reduce((s, a) => s + a.current_balance, 0);
+
+  if (options.size === "sm" || active.length === 0) {
+    return (
+      <div className="flex items-center gap-3">
+        <Wallet className="w-8 h-8 shrink-0" style={{ color: "oklch(0.58 0.17 145)" }} />
+        <div className="min-w-0">
+          <p className="text-2xl font-black tabular-nums truncate" style={{ color: "oklch(0.58 0.17 145)" }}>
+            {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "—"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{active.length} active account{active.length !== 1 ? "s" : ""}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const visible = active.slice(0, rowsForSize(options.size, { sm: 3, md: 4, lg: active.length }));
   return (
-    <div className="flex items-center gap-3">
-      <Wallet className="w-8 h-8 shrink-0" style={{ color: "oklch(0.58 0.17 145)" }} />
-      <div className="min-w-0">
-        <p className="text-2xl font-black tabular-nums truncate" style={{ color: "oklch(0.58 0.17 145)" }}>
-          {data.capital > 0 ? mask(`$${data.capital.toLocaleString()}`, hidden) : "—"}
-        </p>
-        <p className="text-xs text-muted-foreground mt-0.5">{data.count} active account{data.count !== 1 ? "s" : ""}</p>
+    <div className="flex flex-col h-full">
+      <p className="text-xl font-black tabular-nums mb-2" style={{ color: "oklch(0.58 0.17 145)" }}>
+        {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "—"}
+      </p>
+      <div className="space-y-1 overflow-y-auto">
+        {visible.map((a) => (
+          <Link
+            key={a.id}
+            href={`/accounts/${a.id}`}
+            className="flex items-center justify-between gap-2 text-xs rounded-lg px-1.5 py-1 -mx-1.5 hover:bg-muted/50 transition-colors"
+          >
+            <span className="truncate">{a.account_name || a.firm_name}</span>
+            <span className="font-bold tabular-nums shrink-0" style={{ color: "oklch(0.58 0.17 145)" }}>
+              {mask(`$${a.current_balance.toLocaleString()}`, hidden)}
+            </span>
+          </Link>
+        ))}
       </div>
     </div>
   );
 }
 
 // ── Trading rules ─────────────────────────────────────────────────────
-function TradingRulesWidget() {
+function TradingRulesWidget({ options }: { options: WidgetOptions }) {
   const [rules, setRules] = useState<string[] | null>(null);
   useEffect(() => {
     getProfile().then((p) => {
@@ -390,6 +493,7 @@ function TradingRulesWidget() {
   if (!rules) return <Loading />;
   if (rules.length === 0)
     return <p className="text-xs text-muted-foreground">No rules yet. Add them in Trading Behaviour.</p>;
+  const visible = rules.slice(0, rowsForSize(options.size, { sm: 2, md: 5, lg: rules.length }));
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -397,45 +501,11 @@ function TradingRulesWidget() {
         <span className="text-2xl font-black tabular-nums">{rules.length}</span>
         <span className="text-xs text-muted-foreground">rules</span>
       </div>
-      <ul className="space-y-0.5">
-        {rules.slice(0, 2).map((r, i) => (
+      <ul className="space-y-0.5 overflow-y-auto">
+        {visible.map((r, i) => (
           <li key={i} className="text-xs text-muted-foreground truncate">· {r}</li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-// ── Calendar ──────────────────────────────────────────────────────────
-type Ev = { summary: string; start: string; allDay: boolean };
-function CalendarWidget() {
-  const [events, setEvents] = useState<Ev[] | null>(null);
-  const [connected, setConnected] = useState(true);
-  useEffect(() => {
-    const url = typeof window !== "undefined" ? localStorage.getItem("mc_ical_url") : null;
-    if (!url) { setConnected(false); setEvents([]); return; }
-    fetch(`/api/ical?url=${encodeURIComponent(url)}`)
-      .then((r) => r.json())
-      .then((d) => setEvents(d.events || []))
-      .catch(() => setEvents([]));
-  }, []);
-  if (events === null) return <Loading />;
-  if (!connected)
-    return <p className="text-xs text-muted-foreground">Connect a calendar in Habits to see events.</p>;
-  if (events.length === 0)
-    return <p className="text-xs text-muted-foreground">No events in the next two weeks.</p>;
-  return (
-    <div className="space-y-1.5">
-      {events.slice(0, 3).map((e, i) => {
-        const d = new Date(e.start);
-        return (
-          <div key={i} className="flex items-center gap-2 text-xs">
-            <CalendarClock className="w-3.5 h-3.5 shrink-0 text-primary" />
-            <span className="text-muted-foreground shrink-0 w-16">{format(d, "EEE HH:mm")}</span>
-            <span className="truncate flex-1">{e.summary}</span>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -448,10 +518,9 @@ const COMPONENTS: Record<WidgetId, React.ComponentType<{ options: WidgetOptions 
   "recent-trades": RecentTradesWidget,
   "active-accounts": ActiveAccountsWidget,
   "trading-rules": TradingRulesWidget,
-  calendar: CalendarWidget,
 };
 
-/** Renders a single widget by id inside the shared clickable shell. */
+/** Renders a single widget by id inside the shared shell. */
 export function HomeWidget({
   id,
   editing,

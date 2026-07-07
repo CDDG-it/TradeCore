@@ -28,7 +28,6 @@ import { computeHabitScore } from "@/lib/discipline";
 import { frequencyApplies } from "@/lib/habits";
 import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
 import { HabitCalendar } from "@/components/habits/habit-calendar";
-import { CalendarConnect } from "@/components/habits/calendar-connect";
 import { CalendarDays, LayoutGrid } from "lucide-react";
 import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
 import {
@@ -557,9 +556,9 @@ export default function HabitsPage() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid gap-6">
         {/* Habits list */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="space-y-3">
           <div className="animate-fade-up space-y-2" style={{ animationDelay: "200ms" }}>
             <h2 className="text-sm font-semibold">Daily Habits</h2>
             {/* Category legend - little figures so each type is recognisable at a glance */}
@@ -727,11 +726,6 @@ export default function HabitsPage() {
               </div>
             );
           })}
-        </div>
-
-        {/* Calendar */}
-        <div className="space-y-6 animate-fade-up" style={{ animationDelay: "300ms" }}>
-          <CalendarConnect />
         </div>
       </div>
       </>

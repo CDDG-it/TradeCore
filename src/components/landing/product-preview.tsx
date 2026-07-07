@@ -218,7 +218,7 @@ export function ProductPreview() {
             color:      "rgba(60,48,36,0.50)",
           }}
         >
-          Built around the way funded traders actually work — from pre-market prep to end-of-day review.
+          Built around the way funded traders actually work, from pre-market prep to end-of-day review.
         </p>
       </motion.div>
 
