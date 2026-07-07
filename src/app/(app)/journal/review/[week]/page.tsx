@@ -260,7 +260,7 @@ function Switch({ checked, onChange }: { checked: boolean; onChange: () => void 
 function ReviewField({
   icon: Icon, iconClass, label, placeholder, value, onChange, fill,
 }: {
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   iconClass: string;
   label: string;
   placeholder: string;

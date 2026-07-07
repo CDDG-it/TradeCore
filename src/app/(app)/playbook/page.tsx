@@ -194,7 +194,7 @@ function Section({
   color,
   children,
 }: {
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   title: string;
   color: string;
   children: React.ReactNode;

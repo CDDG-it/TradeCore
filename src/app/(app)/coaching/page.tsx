@@ -18,9 +18,11 @@ import {
 import { cn } from "@/lib/utils";
 import type { CoachingInsight, InsightType, InsightCategory } from "@/lib/types";
 
+type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+
 const TYPE_CONFIG: Record<InsightType, {
   label: string;
-  icon: React.ElementType;
+  icon: IconComponent;
   color: string;
   bg: string;
 }> = {

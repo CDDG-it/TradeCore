@@ -47,7 +47,9 @@ import {
 } from "@/lib/supabase/queries";
 import type { Habit, HabitCompletion, HabitCategory } from "@/lib/types";
 
-const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label: string; Icon: React.ElementType }> = {
+type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+
+const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label: string; Icon: IconComponent }> = {
   mindset:  { accent: "oklch(0.72 0.22 45)",  bg: "oklch(0.72 0.22 45 / 0.12)",  label: "Mindset",  Icon: Brain },
   routine:  { accent: "oklch(0.72 0.22 45)",  bg: "oklch(0.72 0.22 45 / 0.12)",  label: "Routine",  Icon: Coffee },
   research: { accent: "oklch(0.58 0.17 145)", bg: "oklch(0.58 0.17 145 / 0.12)", label: "Research", Icon: Search },

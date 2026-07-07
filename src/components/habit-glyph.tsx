@@ -17,7 +17,9 @@ import {
 // Custom icon set for habits (replaces the generic emoji picker). A habit's
 // `icon` field stores one of these keys; legacy emoji values still render as a
 // fallback so older habits keep showing something sensible.
-export const HABIT_ICONS: { key: string; Icon: React.ElementType }[] = [
+type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+
+export const HABIT_ICONS: { key: string; Icon: IconComponent }[] = [
   { key: "journal", Icon: Pencil },
   { key: "markets", Icon: LineChart },
   { key: "research", Icon: Search },
@@ -32,7 +34,7 @@ export const HABIT_ICONS: { key: string; Icon: React.ElementType }[] = [
   { key: "checklist", Icon: CheckCircle2 },
 ];
 
-export const HABIT_ICON_MAP: Record<string, React.ElementType> = {
+export const HABIT_ICON_MAP: Record<string, IconComponent> = {
   ...Object.fromEntries(HABIT_ICONS.map((h) => [h.key, h.Icon])),
   // Legacy habits created before the bullseye icon was retired map to a
   // neutral figure instead of rendering a stray key or emoji.

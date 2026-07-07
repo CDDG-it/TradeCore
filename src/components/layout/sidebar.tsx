@@ -11,6 +11,7 @@ import {
   Radar,
   ScrollText,
   Flame,
+  Building2,
   Settings,
   User,
   LogOut,
@@ -23,7 +24,7 @@ import { APP_TABS } from "@/lib/nav";
 // hrefs and grouping themselves come from APP_TABS so the landing page's
 // Features dropdown and footer Platform column can never say something
 // different from what's actually in the nav.
-const ICONS: Record<string, React.ElementType> = {
+const ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   "/dashboard": LayoutDashboard,
   "/journal": BookOpen,
   "/analysis": LineChart,
@@ -32,6 +33,7 @@ const ICONS: Record<string, React.ElementType> = {
   "/habits": Flame,
   "/trading-behaviour": ScrollText,
   "/option-flow": Radar,
+  "/news-city": Building2,
 };
 
 const navGroups = (() => {
@@ -70,7 +72,7 @@ function NavItem({
 }: {
   href: string;
   label: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   isActive: boolean;
   highlight?: boolean;
   onClick?: () => void;
