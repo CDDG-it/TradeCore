@@ -19,9 +19,10 @@ import { cn } from "@/lib/utils";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import {
-  WIDGET_MAP, WIDGET_CONTROLS, DEFAULT_WIDGET_OPTIONS, WIDGET_SIZE_LABEL,
+  WIDGET_MAP, WIDGET_CONTROLS, DEFAULT_WIDGET_OPTIONS, WIDGET_SIZE_LABEL, WIDGET_SIZE_CARD_CLASSES,
   type WidgetId, type WidgetOptions, type WidgetScope, type WidgetSessionFilter, type WidgetSize,
 } from "@/lib/home/widgets";
 import type { TradeJournalEntry, Habit, HabitCompletion } from "@/lib/types";
@@ -46,8 +47,8 @@ function scopeTrades(trades: TradeJournalEntry[], options: WidgetOptions): Trade
   return list;
 }
 
-/** Options menu shown on every widget: size, plus scope / session / row count
- *  for the widgets that declare those extra controls. */
+/** Options menu shown on every widget: size, plus scope / session / row count /
+ *  a "Show details" toggle for the widgets that declare those extra controls. */
 function WidgetOptionsMenu({
   id,
   options,
@@ -76,7 +77,7 @@ function WidgetOptionsMenu({
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Size</DropdownMenuLabel>
-          {(["sm", "md", "lg"] as WidgetSize[]).map((size) => (
+          {(["small", "wide", "tall"] as WidgetSize[]).map((size) => (
             <DropdownMenuItem key={size} onClick={() => onChange(id, { ...options, size })}>
               {options.size === size && <Check className="w-3.5 h-3.5" />}
               <span className={cn(options.size !== size && "pl-[22px]")}>{WIDGET_SIZE_LABEL[size]}</span>
@@ -125,6 +126,18 @@ function WidgetOptionsMenu({
             </DropdownMenuGroup>
           </>
         )}
+        {controls?.details && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              checked={options.details ?? false}
+              closeOnClick={false}
+              onCheckedChange={(details) => onChange(id, { ...options, details })}
+            >
+              Show details
+            </DropdownMenuCheckboxItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -159,9 +172,10 @@ function WidgetShell({
   children: React.ReactNode;
 }) {
   const meta = WIDGET_MAP[id];
+  const sizeClasses = WIDGET_SIZE_CARD_CLASSES[options.size ?? "small"];
   return (
     <div
-      className="relative group h-full flex flex-col rounded-xl p-5 overflow-hidden card-hover"
+      className={cn("relative group h-full flex flex-col rounded-xl overflow-hidden card-hover", sizeClasses)}
       style={{ background: "var(--card)", border: "1px solid var(--border)" }}
     >
       <Link
@@ -190,7 +204,7 @@ function WidgetShell({
       <div className="flex-1 min-h-0">{children}</div>
 
       {!editing && (
-        <div className="absolute top-5 right-10 z-10">
+        <div className="absolute top-4 right-9 z-10">
           <WidgetOptionsMenu id={id} options={options} onChange={onOptionsChange} />
         </div>
       )}
@@ -254,8 +268,8 @@ function scopeSubtitle(options: WidgetOptions, suffix: string): string {
 }
 
 /** How many list rows a widget should show for its current footprint. */
-function rowsForSize(size: WidgetSize | undefined, { sm, md, lg }: { sm: number; md: number; lg: number }) {
-  return size === "lg" ? lg : size === "md" ? md : sm;
+function rowsForSize(size: WidgetSize | undefined, { small, wide, tall }: { small: number; wide: number; tall: number }) {
+  return size === "tall" ? tall : size === "wide" ? wide : small;
 }
 
 // ── Weekly R (net R for the configured scope/session) ────────────────
@@ -266,10 +280,19 @@ function WeeklyRWidget({ options }: { options: WidgetOptions }) {
   const inScope = scopeTrades(trades, options);
   const r = inScope.reduce((s, t) => s + tradeR(t), 0);
   const color = r > 0 ? "oklch(0.58 0.17 145)" : r < 0 ? "oklch(0.58 0.22 25)" : "var(--muted-foreground)";
+  const wins = inScope.filter((t) => t.result === "win").length;
+  const losses = inScope.filter((t) => t.result === "loss").length;
+  const avg = inScope.length ? r / inScope.length : 0;
   return (
     <div>
       <p className="text-3xl font-black tabular-nums" style={{ color }}>{r > 0 ? "+" : ""}{r.toFixed(1)}R</p>
       <p className="text-xs text-muted-foreground mt-1">{inScope.length} trade{inScope.length !== 1 ? "s" : ""} · {scopeSubtitle(options, "")}</p>
+      {options.details && inScope.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground space-y-0.5">
+          <p>{wins}W · {losses}L · {inScope.length - wins - losses}BE</p>
+          <p>avg {avg > 0 ? "+" : ""}{avg.toFixed(2)}R per trade</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -280,36 +303,52 @@ function WinRateWidget({ options }: { options: WidgetOptions }) {
   useEffect(() => { getTrades().then(setTrades); }, []);
   if (!trades) return <Loading />;
   const inScope = scopeTrades(trades, options);
-  const pct = inScope.length ? Math.round((inScope.filter((t) => t.result === "win").length / inScope.length) * 100) : 0;
+  const wins = inScope.filter((t) => t.result === "win").length;
+  const losses = inScope.filter((t) => t.result === "loss").length;
+  const pct = inScope.length ? Math.round((wins / inScope.length) * 100) : 0;
   return (
     <div>
       <p className="text-3xl font-black tabular-nums" style={{ color: "oklch(0.72 0.14 220)" }}>{pct}%</p>
       <p className="text-xs text-muted-foreground mt-1">{inScope.length} trade{inScope.length !== 1 ? "s" : ""} · {scopeSubtitle(options, "")}</p>
+      {options.details && inScope.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground space-y-0.5">
+          <p>{wins}W · {losses}L · {inScope.length - wins - losses}BE</p>
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Discipline ────────────────────────────────────────────────────────
 function DisciplineWidget({ options }: { options: WidgetOptions }) {
-  const [score, setScore] = useState<number | null | undefined>(undefined);
+  const [breakdown, setBreakdown] = useState<ReturnType<typeof computeDiscipline> | undefined>(undefined);
   useEffect(() => {
     Promise.all([getTrades(), getHabits(), getHabitCompletions()]).then(([t, h, c]) => {
       const scope = options.scope ?? "week";
       const now = new Date();
       const start = scope === "all" ? new Date(2000, 0, 1) : scope === "week" ? startOfWeek(now, { weekStartsOn: 1 }) : startOfMonth(now);
       const end = scope === "all" ? now : scope === "week" ? endOfWeek(now, { weekStartsOn: 1 }) : endOfMonth(now);
-      setScore(computeDiscipline(t, h, c, start, end).total);
+      setBreakdown(computeDiscipline(t, h, c, start, end));
     });
   }, [options.scope]);
-  if (score === undefined) return <Loading />;
+  if (breakdown === undefined) return <Loading />;
+  const score = breakdown.total;
   const color = score === null ? "var(--muted-foreground)" : scoreColor(score);
   return (
-    <div className="flex items-center gap-3">
-      <Target className="w-8 h-8 shrink-0" style={{ color }} />
-      <div>
-        <p className="text-3xl font-black tabular-nums" style={{ color }}>{score === null ? "—" : `${score}%`}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{SCOPE_LABEL[options.scope ?? "week"].toLowerCase()}</p>
+    <div>
+      <div className="flex items-center gap-3">
+        <Target className="w-8 h-8 shrink-0" style={{ color }} />
+        <div>
+          <p className="text-3xl font-black tabular-nums" style={{ color }}>{score === null ? "—" : `${score}%`}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{SCOPE_LABEL[options.scope ?? "week"].toLowerCase()}</p>
+        </div>
       </div>
+      {options.details && (
+        <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground space-y-0.5">
+          <p>Trade rules: {breakdown.tradeRules === null ? "—" : `${breakdown.tradeRules}%`}</p>
+          <p>Habits: {breakdown.habits === null ? "—" : `${breakdown.habits}%`}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -344,7 +383,7 @@ function HabitsStreakWidget({ options }: { options: WidgetOptions }) {
 
   const doneToday = new Set(completions.filter((c) => c.date === TODAY && c.completed).map((c) => c.habit_id));
   const longestStreak = Object.values(streaks).reduce((m, s) => Math.max(m, s), 0);
-  const visible = habits.slice(0, rowsForSize(options.size, { sm: 3, md: 6, lg: habits.length }));
+  const visible = habits.slice(0, rowsForSize(options.size, { small: 2, wide: 4, tall: habits.length }));
 
   return (
     <div className="flex flex-col h-full">
@@ -378,9 +417,14 @@ function HabitsStreakWidget({ options }: { options: WidgetOptions }) {
                 ) : (
                   <Circle className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40" />
                 )}
-                <span className={cn("text-xs truncate", done ? "text-foreground" : "text-muted-foreground")}>
+                <span className={cn("text-xs truncate flex-1", done ? "text-foreground" : "text-muted-foreground")}>
                   {habit.name}
                 </span>
+                {options.details && (streaks[habit.id] ?? 0) > 0 && (
+                  <span className="text-[10px] font-bold tabular-nums shrink-0 text-muted-foreground/70">
+                    {streaks[habit.id]}d
+                  </span>
+                )}
               </button>
             );
           })}
@@ -419,14 +463,21 @@ function RecentTradesWidget({ options }: { options: WidgetOptions }) {
           <Link
             key={t.id}
             href={`/journal/${t.id}`}
-            className="flex items-center gap-2 text-xs rounded-lg px-1.5 py-1 -mx-1.5 hover:bg-muted/50 transition-colors"
+            className="block rounded-lg px-1.5 py-1 -mx-1.5 hover:bg-muted/50 transition-colors"
           >
-            <ResultDot t={t} />
-            <span className="font-semibold">{t.instrument}</span>
-            <span className="text-muted-foreground truncate flex-1">{format(new Date(t.date_time.slice(0, 10) + "T12:00:00"), "MMM d")}</span>
-            <span className="font-bold tabular-nums shrink-0" style={{ color }}>
-              {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
-            </span>
+            <div className="flex items-center gap-2 text-xs">
+              <ResultDot t={t} />
+              <span className="font-semibold">{t.instrument}</span>
+              <span className="text-muted-foreground truncate flex-1">{format(new Date(t.date_time.slice(0, 10) + "T12:00:00"), "MMM d")}</span>
+              <span className="font-bold tabular-nums shrink-0" style={{ color }}>
+                {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+              </span>
+            </div>
+            {options.details && (
+              <p className="text-[10px] text-muted-foreground/70 pl-[22px] mt-0.5 truncate">
+                {t.session} session{t.timeframe ? ` · ${t.timeframe}` : ""}{t.confluences.length ? ` · ${t.confluences.join(", ")}` : ""}
+              </p>
+            )}
           </Link>
         );
       })}
@@ -444,7 +495,7 @@ function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
   const active = accounts.filter((a) => a.status === "active");
   const capital = active.reduce((s, a) => s + a.current_balance, 0);
 
-  if (options.size === "sm" || active.length === 0) {
+  if ((options.size === "small" && !options.details) || active.length === 0) {
     return (
       <div className="flex items-center gap-3">
         <Wallet className="w-8 h-8 shrink-0" style={{ color: "oklch(0.58 0.17 145)" }} />
@@ -458,7 +509,7 @@ function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
     );
   }
 
-  const visible = active.slice(0, rowsForSize(options.size, { sm: 3, md: 4, lg: active.length }));
+  const visible = active.slice(0, rowsForSize(options.size, { small: 3, wide: 4, tall: active.length }));
   return (
     <div className="flex flex-col h-full">
       <p className="text-xl font-black tabular-nums mb-2" style={{ color: "oklch(0.58 0.17 145)" }}>
@@ -469,12 +520,19 @@ function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
           <Link
             key={a.id}
             href={`/accounts/${a.id}`}
-            className="flex items-center justify-between gap-2 text-xs rounded-lg px-1.5 py-1 -mx-1.5 hover:bg-muted/50 transition-colors"
+            className="block rounded-lg px-1.5 py-1 -mx-1.5 hover:bg-muted/50 transition-colors"
           >
-            <span className="truncate">{a.account_name || a.firm_name}</span>
-            <span className="font-bold tabular-nums shrink-0" style={{ color: "oklch(0.58 0.17 145)" }}>
-              {mask(`$${a.current_balance.toLocaleString()}`, hidden)}
-            </span>
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="truncate">{a.account_name || a.firm_name}</span>
+              <span className="font-bold tabular-nums shrink-0" style={{ color: "oklch(0.58 0.17 145)" }}>
+                {mask(`$${a.current_balance.toLocaleString()}`, hidden)}
+              </span>
+            </div>
+            {options.details && (
+              <p className="text-[10px] text-muted-foreground/70 mt-0.5 truncate capitalize">
+                {a.phase} · {mask(`${a.drawdown_used.toLocaleString()} drawdown used`, hidden)}
+              </p>
+            )}
           </Link>
         ))}
       </div>
@@ -493,7 +551,7 @@ function TradingRulesWidget({ options }: { options: WidgetOptions }) {
   if (!rules) return <Loading />;
   if (rules.length === 0)
     return <p className="text-xs text-muted-foreground">No rules yet. Add them in Trading Behaviour.</p>;
-  const visible = rules.slice(0, rowsForSize(options.size, { sm: 2, md: 5, lg: rules.length }));
+  const visible = rules.slice(0, rowsForSize(options.size, { small: 2, wide: 4, tall: rules.length }));
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">

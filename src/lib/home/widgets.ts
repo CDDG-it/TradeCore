@@ -58,9 +58,14 @@ export const WIDGET_MAP: Record<WidgetId, WidgetMeta> = Object.fromEntries(
 
 export type WidgetScope = "all" | "month" | "week";
 export type WidgetSessionFilter = "all" | "London" | "New York" | "Asia";
-/** Card footprint on the Home grid. Every widget can be resized, regardless
- *  of whether it has other configurable options. */
-export type WidgetSize = "sm" | "md" | "lg";
+/**
+ * Card footprint on the Home grid. Every widget can be resized, regardless of
+ * whether it has other configurable options:
+ * - `small` is the compact default footprint.
+ * - `wide` grows sideways (spans extra columns), same height as `small`.
+ * - `tall` grows downward (spans extra rows), same width as `small`.
+ */
+export type WidgetSize = "small" | "wide" | "tall";
 
 export interface WidgetOptions {
   scope?: WidgetScope;
@@ -68,38 +73,63 @@ export interface WidgetOptions {
   /** How many rows to show, for list-style widgets like Recent Trades. */
   count?: number;
   size?: WidgetSize;
+  /** Opt-in extra detail (breakdowns, per-row context) for users who want it. */
+  details?: boolean;
 }
 
 export interface WidgetControlConfig {
   scope?: boolean;
   session?: boolean;
   counts?: number[];
+  /** Whether this widget has a meaningful "Show details" toggle. */
+  details?: boolean;
 }
 
 /** Which extra controls each widget exposes in its options menu, beyond the
  *  universal size control. Widgets absent here only get resizing. */
 export const WIDGET_CONTROLS: Partial<Record<WidgetId, WidgetControlConfig>> = {
-  "win-rate": { scope: true, session: true },
-  "weekly-r": { scope: true, session: true },
-  discipline: { scope: true },
-  "recent-trades": { session: true, counts: [3, 5, 10] },
+  "win-rate": { scope: true, session: true, details: true },
+  "weekly-r": { scope: true, session: true, details: true },
+  discipline: { scope: true, details: true },
+  "recent-trades": { session: true, counts: [3, 5, 10], details: true },
+  "active-accounts": { details: true },
+  "habits-streak": { details: true },
 };
 
-export const DEFAULT_WIDGET_OPTIONS: WidgetOptions = { scope: "week", session: "all", count: 3, size: "sm" };
+export const DEFAULT_WIDGET_OPTIONS: WidgetOptions = { scope: "week", session: "all", count: 3, size: "small", details: false };
 
-/** Tailwind classes for a widget's footprint on the `sm:grid-cols-2 lg:grid-cols-3` Home grid. */
+/** Tailwind classes for a widget's footprint on the Home grid (grid item). */
 export const WIDGET_SIZE_CLASSES: Record<WidgetSize, string> = {
-  sm: "",
-  md: "sm:col-span-2",
-  lg: "sm:col-span-2 lg:col-span-3 lg:row-span-2",
+  small: "",
+  wide: "sm:col-span-2",
+  tall: "row-span-2",
 };
 
-export const WIDGET_SIZE_LABEL: Record<WidgetSize, string> = { sm: "Small", md: "Wide", lg: "Large" };
+/** Tailwind classes applied to the card itself so size differences are
+ *  actually visible, not just the grid placement. */
+export const WIDGET_SIZE_CARD_CLASSES: Record<WidgetSize, string> = {
+  small: "p-4 min-h-[6.5rem]",
+  wide: "p-4 min-h-[6.5rem]",
+  tall: "p-5 min-h-[19rem]",
+};
+
+export const WIDGET_SIZE_LABEL: Record<WidgetSize, string> = { small: "Small", wide: "Wide", tall: "Tall" };
 
 const OPTIONS_LS_KEY = "home_widget_options_v1";
 
 function isWidgetOptions(v: unknown): v is WidgetOptions {
   return typeof v === "object" && v !== null;
+}
+
+const isWidgetSize = (v: unknown): v is WidgetSize => v === "small" || v === "wide" || v === "tall";
+
+// Legacy sizes from before the size scale was reworked (sm/md/lg -> small/wide/tall).
+const LEGACY_SIZE_MAP: Record<string, WidgetSize> = { sm: "small", md: "wide", lg: "tall" };
+
+function normalizeOptions(opts: WidgetOptions): WidgetOptions {
+  if (opts.size === undefined || isWidgetSize(opts.size)) return opts;
+  const mapped = LEGACY_SIZE_MAP[opts.size as string];
+  return mapped ? { ...opts, size: mapped } : { ...opts, size: undefined };
 }
 
 export function loadWidgetOptions(): Partial<Record<WidgetId, WidgetOptions>> {
@@ -111,7 +141,7 @@ export function loadWidgetOptions(): Partial<Record<WidgetId, WidgetOptions>> {
     if (typeof parsed !== "object" || parsed === null) return {};
     const clean: Partial<Record<WidgetId, WidgetOptions>> = {};
     for (const [id, opts] of Object.entries(parsed)) {
-      if (isWidgetId(id) && isWidgetOptions(opts)) clean[id] = opts as WidgetOptions;
+      if (isWidgetId(id) && isWidgetOptions(opts)) clean[id] = normalizeOptions(opts as WidgetOptions);
     }
     return clean;
   } catch {

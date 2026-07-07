@@ -178,7 +178,7 @@ export default function HomePage() {
                 Drag a card to rearrange, or use the arrows. Changes save automatically.
               </p>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-[minmax(0,1fr)] animate-fade-up">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-min grid-flow-row-dense animate-fade-up">
               {widgets.map((id, i) => {
                 const size = widgetOptions[id]?.size ?? DEFAULT_WIDGET_OPTIONS.size!;
                 return (
