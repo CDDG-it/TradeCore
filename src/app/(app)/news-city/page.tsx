@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import { Building2, Landmark, Ship, Zap, Activity, Newspaper, Globe } from "lucide-react";
+import { Building2, Landmark, Ship, Zap, Newspaper, Globe } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { OverlayHud } from "@/components/news-city/OverlayHud";
@@ -26,11 +26,10 @@ const City3D = dynamic(() => import("@/components/news-city/City3D").then((m) =>
 });
 
 const LEGEND = [
-  { icon: Activity, label: "Market Core", hint: "Sentiment & risk hub" },
-  { icon: Landmark, label: "Central Bank District", hint: "Fed, ECB, BoJ policy" },
-  { icon: Ship, label: "Commodity Harbor", hint: "Oil & gold" },
-  { icon: Zap, label: "Macro Intelligence", hint: "Inflation, jobs, growth" },
-  { icon: Building2, label: "Nasdaq / ES HQ", hint: "Index sentiment" },
+  { icon: Landmark, label: "Central Banks", hint: "Fed, ECB, BoJ" },
+  { icon: Ship, label: "Commodities", hint: "Oil & gold" },
+  { icon: Zap, label: "Macro", hint: "Inflation, jobs, growth" },
+  { icon: Building2, label: "Indexes", hint: "NQ & ES" },
 ];
 
 type View = "feed" | "city";
@@ -121,7 +120,7 @@ export default function NewsCityPage() {
                     ))}
                   </div>
                   <p className="font-body text-[11px] text-muted-foreground text-center">
-                    Scroll to fast-forward the wheel · click any structure for details
+                    Scroll to spin the reel · click a concept for details
                   </p>
                 </div>
               </div>
