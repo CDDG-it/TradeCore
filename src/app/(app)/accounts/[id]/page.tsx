@@ -163,9 +163,9 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
             <div className="text-right">
               <div className="flex items-center gap-1.5 justify-end">
                 {roi >= 0
-                ? <TrendingUp className="w-5 h-5" style={{ color: roi >= 1 ? roiGreenDetail(roi) : "oklch(0.70 0.16 72)" }} />
+                ? <TrendingUp className="w-5 h-5" style={{ color: roi >= 1 ? roiGreenDetail(roi) : "#EAB308" }} />
                 : <TrendingDown className="w-5 h-5 text-destructive" />}
-                <span className="text-3xl font-bold" style={{ color: roi >= 1 ? roiGreenDetail(roi) : roi > 0 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)" }}>
+                <span className="text-3xl font-bold" style={{ color: roi >= 1 ? roiGreenDetail(roi) : roi > 0 ? "#EAB308" : "oklch(0.58 0.22 25)" }}>
                   {roi}x
                 </span>
               </div>
@@ -179,8 +179,8 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Account Size", value: `$${account.account_size.toLocaleString()}`, color: undefined },
-          { label: "Total Costs", value: `$${account.purchase_cost.toLocaleString()}`, color: "#F97316" },
-          { label: "Total Payouts", value: `$${totalPaidOut.toLocaleString()}`, color: "#F97316" },
+          { label: "Total Costs", value: `$${account.purchase_cost.toLocaleString()}`, color: "#14B8A6" },
+          { label: "Total Payouts", value: `$${totalPaidOut.toLocaleString()}`, color: "#06B6D4" },
         ].map(({ label, value, color }) => (
           <Card key={label} className="bg-card border-border/50">
             <CardContent className="p-4">

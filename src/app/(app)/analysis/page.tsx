@@ -94,9 +94,9 @@ export default function AnalysisPage() {
             href="/analysis/new"
             className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
             style={{
-              background: "oklch(0.72 0.22 45)",
+              background: "#14B8A6",
               color: "oklch(0.07 0.003 28)",
-              boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
+              boxShadow: "0 4px 14px rgba(20,184,166,0.30)",
             }}
           >
             <Plus className="w-4 h-4" />
@@ -120,8 +120,8 @@ export default function AnalysisPage() {
               <span
                 className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-md"
                 style={{
-                  background: "oklch(0.72 0.22 45 / 0.12)",
-                  color: "oklch(0.72 0.22 45)",
+                  background: "rgba(20,184,166,0.12)",
+                  color: "#14B8A6",
                 }}
               >
                 W{listWeekNum}
@@ -148,7 +148,7 @@ export default function AnalysisPage() {
                     )}
                     style={
                       hasAnalysis
-                        ? { background: "oklch(0.72 0.22 45 / 0.15)", color: "oklch(0.72 0.22 45)" }
+                        ? { background: "rgba(20,184,166,0.15)", color: "#14B8A6" }
                         : { color: "oklch(0.38 0.005 28)" }
                     }
                   >
@@ -173,7 +173,7 @@ export default function AnalysisPage() {
             <button
               onClick={() => setListWeekDate(new Date())}
               className="text-xs font-medium transition-colors"
-              style={{ color: "oklch(0.72 0.22 45)" }}
+              style={{ color: "#14B8A6" }}
             >
               → Back to current week
             </button>
@@ -189,7 +189,7 @@ export default function AnalysisPage() {
             <Link
               href="/analysis/new"
               className="inline-flex items-center gap-1 text-xs font-medium mt-2 transition-colors"
-              style={{ color: "oklch(0.72 0.22 45)" }}
+              style={{ color: "#14B8A6" }}
             >
               <Plus className="w-3 h-3" /> Add an analysis
             </Link>
@@ -214,7 +214,7 @@ export default function AnalysisPage() {
                       {isTodayDay && (
                         <span
                           className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                          style={{ background: "oklch(0.72 0.22 45 / 0.15)", color: "oklch(0.72 0.22 45)" }}
+                          style={{ background: "rgba(20,184,166,0.15)", color: "#14B8A6" }}
                         >
                           Today
                         </span>

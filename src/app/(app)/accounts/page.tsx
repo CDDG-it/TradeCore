@@ -259,7 +259,7 @@ export default function AccountsPage() {
                 : overallRoi >= 3 ? "oklch(0.45 0.16 145)"
                 : overallRoi >= 2 ? "oklch(0.52 0.17 145)"
                 : overallRoi >= 1 ? "oklch(0.58 0.17 145)"
-                : overallRoi > 0 ? "oklch(0.70 0.16 72)"
+                : overallRoi > 0 ? "#EAB308"
                 : "oklch(0.58 0.22 25)"
               : undefined;
             return (
@@ -270,8 +270,8 @@ export default function AccountsPage() {
               <p
                 className="text-xl font-bold"
                 style={{
-                  color: type === "cost" ? "#F97316"
-                    : type === "payout" ? "#F97316"
+                  color: type === "cost" ? "#14B8A6"
+                    : type === "payout" ? "#06B6D4"
                     : type === "roi" ? roiColor
                     : type === "capital" ? "oklch(0.58 0.17 145)"
                     : undefined,
@@ -381,17 +381,17 @@ export default function AccountsPage() {
                       <div className="grid grid-cols-2 gap-2.5 mb-3">
                         <div>
                           <p className="text-xs text-muted-foreground mb-0.5">Total Costs</p>
-                          <p className="text-sm font-semibold font-mono" style={{ color: "#F97316" }}>{mask(`$${acct.purchase_cost.toLocaleString()}`, hidden)}</p>
+                          <p className="text-sm font-semibold font-mono" style={{ color: "#14B8A6" }}>{mask(`$${acct.purchase_cost.toLocaleString()}`, hidden)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-0.5">Total Payout</p>
-                          <p className="text-sm font-semibold font-mono" style={{ color: "#F97316" }}>{mask(`$${totalPaid.toLocaleString()}`, hidden)}</p>
+                          <p className="text-sm font-semibold font-mono" style={{ color: "#06B6D4" }}>{mask(`$${totalPaid.toLocaleString()}`, hidden)}</p>
                         </div>
                         <div className="col-span-2">
                           <p className="text-xs text-muted-foreground mb-0.5">Return on Cost</p>
                           <div className="flex items-center gap-1">
-                            {roi >= 0 ? <TrendingUp className="w-3.5 h-3.5" style={{ color: roi >= 1 ? roiGreen(roi) : "oklch(0.70 0.16 72)" }} /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
-                            <span className="text-sm font-bold" style={{ color: roi >= 1 ? roiGreen(roi) : roi > 0 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)" }}>
+                            {roi >= 0 ? <TrendingUp className="w-3.5 h-3.5" style={{ color: roi >= 1 ? roiGreen(roi) : "#EAB308" }} /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
+                            <span className="text-sm font-bold" style={{ color: roi >= 1 ? roiGreen(roi) : roi > 0 ? "#EAB308" : "oklch(0.58 0.22 25)" }}>
                               {mask(`${roi}x`, hidden)}
                             </span>
                           </div>

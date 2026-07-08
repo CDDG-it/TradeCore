@@ -16,7 +16,7 @@ const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 const Logo = () => (
   <span className="font-black text-xl tracking-tight" style={{ fontFamily: NUNITO }}>
     <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
-    <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+    <span style={{ background: "linear-gradient(90deg,#14B8A6,#06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
   </span>
 );
 
@@ -60,8 +60,8 @@ const inputClass =
   "w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all duration-200 outline-none " +
   "border-[rgba(16,11,6,0.12)] bg-[rgba(255,255,255,0.65)] text-[rgba(15,12,8,0.88)] " +
   "placeholder:text-[rgba(60,48,36,0.35)] " +
-  "hover:border-[rgba(249,115,22,0.35)] " +
-  "focus:border-[rgba(249,115,22,0.55)] focus:bg-white focus:ring-2 focus:ring-[rgba(249,115,22,0.15)]";
+  "hover:border-[rgba(20,184,166,0.35)] " +
+  "focus:border-[rgba(20,184,166,0.55)] focus:bg-white focus:ring-2 focus:ring-[rgba(20,184,166,0.15)]";
 
 function SubmitButton({ loading, children }: { loading: boolean; children: React.ReactNode }) {
   return (
@@ -71,8 +71,8 @@ function SubmitButton({ loading, children }: { loading: boolean; children: React
       className="group inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
       style={{
         fontFamily: NUNITO,
-        background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
-        boxShadow: "0 4px 20px rgba(249,115,22,0.30), 0 1px 3px rgba(0,0,0,0.10)",
+        background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
+        boxShadow: "0 4px 20px rgba(20,184,166,0.30), 0 1px 3px rgba(0,0,0,0.10)",
       }}
     >
       {loading ? (
@@ -95,7 +95,7 @@ function SecondaryButton({ onClick, children }: { onClick: () => void; children:
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-xl border px-4 py-2.5 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(249,115,22,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
+      className="w-full rounded-xl border px-4 py-2.5 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
       style={{ fontFamily: NUNITO, borderColor: "rgba(16,11,6,0.12)", background: "rgba(255,255,255,0.55)" }}
     >
       {children}
@@ -257,7 +257,7 @@ function LoginForm() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-x-2">
               <Label htmlFor="password" style={{ color: "rgba(15,12,8,0.75)" }}>Password</Label>
-              <Link href="/reset-password" className="text-xs transition-colors text-[rgba(60,48,36,0.45)] hover:text-[#F97316]">
+              <Link href="/reset-password" className="text-xs transition-colors text-[rgba(60,48,36,0.45)] hover:text-[#14B8A6]">
                 Forgot password?
               </Link>
             </div>
@@ -276,7 +276,7 @@ function LoginForm() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgba(60,48,36,0.40)] transition-colors hover:text-[#F97316]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgba(60,48,36,0.40)] transition-colors hover:text-[#14B8A6]"
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -291,7 +291,7 @@ function LoginForm() {
 
         <p className="mt-6 text-center text-sm" style={{ color: "rgba(60,48,36,0.50)" }}>
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-semibold text-[#F97316] transition-colors hover:text-[#d97706]">Sign up</Link>
+          <Link href="/signup" className="font-semibold text-[#14B8A6] transition-colors hover:text-[#0D9488]">Sign up</Link>
         </p>
       </AuthCard>
     </AuthShell>

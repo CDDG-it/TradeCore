@@ -23,7 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── Ambient hero glow ── */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[280px] z-0" aria-hidden
-        style={{ background: "radial-gradient(ellipse at top, rgba(249,115,22,0.06) 0%, transparent 70%)" }} />
+        style={{ background: "radial-gradient(ellipse at top, rgba(20,184,166,0.06) 0%, transparent 70%)" }} />
 
       {/* Desktop sidebar */}
       <div className="hidden lg:block relative z-40">

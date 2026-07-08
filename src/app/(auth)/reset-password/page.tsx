@@ -44,7 +44,7 @@ export default function ResetPasswordPage() {
         <div className="flex flex-col items-center gap-2">
           <span className="font-black text-xl tracking-tight" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
             <span style={{ color: "#111" }}>Trading</span>
-            <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+            <span style={{ background: "linear-gradient(90deg,#14B8A6,#06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
           </span>
           <p className="mt-1 text-sm text-muted-foreground">Reset your password</p>
         </div>
