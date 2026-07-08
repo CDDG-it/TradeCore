@@ -113,7 +113,7 @@ function ChecklistInput({
             >
               <span
                 className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                style={{ background: "oklch(0.70 0.12 183) / 0.15)", color: "oklch(0.70 0.12 183)" }}
+                style={{ background: "oklch(0.70 0.12 183 / 0.15)", color: "oklch(0.70 0.12 183)" }}
               >
                 {i + 1}
               </span>
@@ -175,7 +175,7 @@ function MultiSelect({
               className="px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all"
               style={
                 active
-                  ? { background: "oklch(0.70 0.12 183) / 0.20)", color: "oklch(0.70 0.12 183)", border: "1px solid oklch(0.70 0.12 183) / 0.40)" }
+                  ? { background: "oklch(0.70 0.12 183 / 0.20)", color: "oklch(0.70 0.12 183)", border: "1px solid oklch(0.70 0.12 183 / 0.40)" }
                   : { background: "oklch(0.08 0.003 28)", color: "oklch(0.50 0.005 28)", border: "1px solid oklch(0.18 0.005 28)" }
               }
             >
@@ -253,7 +253,7 @@ export default function PlaybookPage() {
             style={{
               background: saved ? "oklch(0.58 0.17 145)" : "oklch(0.70 0.12 183)",
               color: "oklch(0.07 0.003 28)",
-              boxShadow: "0 4px 14px oklch(0.70 0.12 183) / 0.30)",
+              boxShadow: "0 4px 14px oklch(0.70 0.12 183 / 0.30)",
             }}
           >
             <Save className="w-4 h-4" />
@@ -275,7 +275,7 @@ export default function PlaybookPage() {
                 className={cn("p-3 rounded-xl text-left transition-all", form.trader_type === value ? "ring-2" : "")}
                 style={
                   form.trader_type === value
-                    ? { background: "oklch(0.70 0.12 183) / 0.15)", border: "1px solid oklch(0.70 0.12 183) / 0.50)", outline: "2px solid oklch(0.70 0.12 183) / 0.30)" }
+                    ? { background: "oklch(0.70 0.12 183 / 0.15)", border: "1px solid oklch(0.70 0.12 183 / 0.50)", outline: "2px solid oklch(0.70 0.12 183 / 0.30)" }
                     : { background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }
                 }
               >
@@ -412,7 +412,7 @@ export default function PlaybookPage() {
           style={{
             background: saved ? "oklch(0.58 0.17 145)" : "linear-gradient(135deg, oklch(0.70 0.12 183) 0%, oklch(0.71 0.13 215) 100%)",
             color: "oklch(0.07 0.003 28)",
-            boxShadow: "0 4px 20px oklch(0.70 0.12 183) / 0.35)",
+            boxShadow: "0 4px 20px oklch(0.70 0.12 183 / 0.35)",
           }}
         >
           <Save className="w-4 h-4" />
