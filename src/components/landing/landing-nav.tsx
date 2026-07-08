@@ -16,7 +16,7 @@ const TAB_FALLBACK_TAGLINE: Record<string, string> = {
   "/habits": "Track daily habits and discipline, in one streak.",
   "/trading-behaviour": "Your trading rules and confluence library, in one place.",
   "/option-flow": "Dealer positioning and session structure for NQ and GC.",
-  "/news-city": "The forces moving the market, as a city you can explore.",
+  "/news-city": "Scan the market news feed and explore the forces in a live city.",
 };
 const NAV_ITEMS = APP_TABS.map((tab) => {
   const feature = FEATURE_BY_HREF.get(tab.href);

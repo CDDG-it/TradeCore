@@ -13,10 +13,10 @@ import type { Group } from "three";
  */
 
 const DISTRICTS: { center: [number, number]; radius: number; color: string; label: string }[] = [
-  { center: [-6.5, -6.5], radius: 3.4, color: "#f9a15c", label: "Central Bank District" },
-  { center: [6.5, -6.2], radius: 3.4, color: "#5fc0d8", label: "Commodity Harbor" },
-  { center: [-6.4, 6.2], radius: 3.4, color: "#e0705c", label: "Macro Intelligence Zone" },
-  { center: [6.5, 6.2], radius: 3.4, color: "#f97316", label: "Nasdaq / ES HQ" },
+  { center: [-8.4, -8.4], radius: 3.9, color: "#f9a15c", label: "Central Bank District" },
+  { center: [8.4, -7.8], radius: 3.9, color: "#5fc0d8", label: "Commodity Harbor" },
+  { center: [-8.4, 7.8], radius: 3.9, color: "#e0705c", label: "Macro Intelligence Zone" },
+  { center: [8.4, 7.8], radius: 3.9, color: "#f97316", label: "Nasdaq / ES HQ" },
 ];
 
 /** Slow-drifting luminous specks — ambient market data in the air. */
@@ -60,25 +60,25 @@ export function CityGround() {
     <group>
       {/* Levitating platform deck */}
       <mesh position={[0, -0.31, 0]} receiveShadow>
-        <cylinderGeometry args={[15.4, 14.0, 0.62, 96]} />
+        <cylinderGeometry args={[17.6, 16.0, 0.62, 96]} />
         <meshStandardMaterial color="#151c29" roughness={0.35} metalness={0.6} />
       </mesh>
       {/* Lower hull segment */}
       <mesh position={[0, -0.78, 0]}>
-        <cylinderGeometry args={[13.2, 11.6, 0.34, 96]} />
+        <cylinderGeometry args={[15.1, 13.2, 0.34, 96]} />
         <meshStandardMaterial color="#101623" roughness={0.4} metalness={0.55} />
       </mesh>
       {/* Brand-orange rim light plus an ice underline */}
       <mesh position={[0, -0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[15.32, 0.035, 8, 96]} />
+        <torusGeometry args={[17.5, 0.038, 8, 96]} />
         <meshBasicMaterial color="#f97316" transparent opacity={0.75} toneMapped={false} />
       </mesh>
       <mesh position={[0, -0.62, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[13.1, 0.025, 8, 96]} />
+        <torusGeometry args={[15.0, 0.028, 8, 96]} />
         <meshBasicMaterial color="#5fc0d8" transparent opacity={0.45} toneMapped={false} />
       </mesh>
       {/* Radar-style polar grid */}
-      <polarGridHelper args={[15.1, 16, 8, 64, "#35486a", "#22304a"]} position={[0, 0.012, 0]} />
+      <polarGridHelper args={[17.3, 16, 8, 64, "#35486a", "#22304a"]} position={[0, 0.012, 0]} />
 
       {/* Ambient data particles — orange + ice */}
       <DataParticles count={140} color="#f9a15c" seed={7} />

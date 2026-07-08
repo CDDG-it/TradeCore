@@ -56,7 +56,7 @@ export function NasdaqHQ({
   const bullish = hq.sentiment === "risk-on";
 
   return (
-    <group position={[6.5, 0, 6.2]}>
+    <group position={[8.4, 0, 7.8]}>
       {/* Main tower — the exchange itself. */}
       <Building
         position={[0, 0, 0]}

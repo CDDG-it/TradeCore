@@ -8,9 +8,9 @@ import type { CitySelection } from "../selection";
 /** The Macro Intelligence Zone: three levitating macro reactors whose energy
  *  scales with the strength of the force they represent. */
 const LAYOUT: Record<MacroForce["id"], { position: [number, number, number] }> = {
-  inflation: { position: [-8.6, 0, 5.1] },
-  employment: { position: [-6.4, 0, 8.3] },
-  growth: { position: [-4.2, 0, 5.2] },
+  inflation: { position: [-10.2, 0, 6.4] },
+  employment: { position: [-7.6, 0, 10.4] },
+  growth: { position: [-5.4, 0, 6.4] },
 };
 
 export function MacroBattlefield({

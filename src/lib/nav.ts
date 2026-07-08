@@ -21,5 +21,5 @@ export const APP_TABS: AppTab[] = [
   { label: "Habits", href: "/habits", group: "MC Mindset formula" },
   { label: "Trading Behaviour", href: "/trading-behaviour", group: "MC Mindset formula" },
   { label: "Option Flow", href: "/option-flow", group: "MC Option Flow" },
-  { label: "MC News City", href: "/news-city", group: "MC News City" },
+  { label: "MC News Dashboard", href: "/news-city", group: "MC News Dashboard" },
 ];

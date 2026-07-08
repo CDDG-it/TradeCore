@@ -9,11 +9,11 @@ import { TREND_META } from "@/lib/news-city/ui";
 import type { Commodity } from "@/lib/news-city/types";
 import type { CitySelection } from "../selection";
 
-const CENTER: [number, number] = [6.5, -6.2];
+const CENTER: [number, number] = [8.4, -7.8];
 
 const ROUTES: Record<Commodity["id"], { center: [number, number]; rx: number; rz: number; speed: number; phase: number; color: string }> = {
-  oil: { center: [5.6, -7.4], rx: 0.55, rz: 0.4, speed: 0.06, phase: 0, color: "#1d242e" },
-  gold: { center: [7.8, -5.0], rx: 0.45, rz: 0.55, speed: 0.05, phase: 2.4, color: "#6e5a28" },
+  oil: { center: [7.5, -9.0], rx: 0.55, rz: 0.4, speed: 0.06, phase: 0, color: "#1d242e" },
+  gold: { center: [9.7, -6.6], rx: 0.45, rz: 0.55, speed: 0.05, phase: 2.4, color: "#6e5a28" },
 };
 
 /** Slowly sails a vessel around a small elliptical route, bow first. */
@@ -92,12 +92,12 @@ export function CommodityHarbor({
       </mesh>
 
       {/* Quay platform + cranes on the shore side */}
-      <mesh position={[3.8, 0.05, -6.2]} castShadow receiveShadow>
+      <mesh position={[5.7, 0.05, -7.8]} castShadow receiveShadow>
         <cylinderGeometry args={[0.55, 0.62, 0.1, 6]} />
         <meshStandardMaterial color="#141b26" roughness={0.35} metalness={0.6} emissive="#1b2532" emissiveIntensity={0.4} />
       </mesh>
-      <Crane position={[4.05, 0, -7.5]} rotationY={0.5} />
-      <Crane position={[4.05, 0, -4.9]} rotationY={-0.4} />
+      <Crane position={[5.95, 0, -9.1]} rotationY={0.5} />
+      <Crane position={[5.95, 0, -6.5]} rotationY={-0.4} />
 
       {commodities.map((c) => {
         const route = ROUTES[c.id];

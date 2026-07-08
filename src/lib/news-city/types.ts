@@ -82,10 +82,43 @@ export interface CityOverview {
   volatility: string;
 }
 
+// ── News feed ────────────────────────────────────────────────────────────
+// The scanner feed that sits alongside the 3D city. Each item is tagged with
+// the district it belongs to so it can deep-link the user into that location.
+
+export type NewsCategory = "central-bank" | "commodity" | "macro" | "markets" | "geopolitics";
+export type NewsImpact = "high" | "medium" | "low";
+
+/** Where in the city a headline points — mirrors the scene's selectable places. */
+export type NewsLink =
+  | { kind: "bank"; id: CentralBank["id"] }
+  | { kind: "commodity"; id: Commodity["id"] }
+  | { kind: "macro"; id: MacroForce["id"] }
+  | { kind: "hq" }
+  | { kind: "core" };
+
+export interface NewsItem {
+  id: string;
+  /** Human label, e.g. "12m ago". */
+  time: string;
+  /** Minutes since publication — used for sorting/filtering. */
+  minutesAgo: number;
+  source: string;
+  category: NewsCategory;
+  impact: NewsImpact;
+  direction: "up" | "down" | "neutral";
+  title: string;
+  summary: string;
+  tickers: string[];
+  /** The district this headline maps to in the city, if any. */
+  link?: NewsLink;
+}
+
 export interface NewsCityData {
   overview: CityOverview;
   centralBanks: CentralBank[];
   commodities: Commodity[];
   macroForces: MacroForce[];
   marketHQ: MarketHQ;
+  news: NewsItem[];
 }

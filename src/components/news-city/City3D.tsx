@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Suspense, useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import type { Group } from "three";
 import { CityGround } from "./scene/CityGround";
 import { CentralBankDistrict } from "./scene/CentralBankDistrict";
 import { CommodityHarbor } from "./scene/CommodityHarbor";
@@ -16,11 +17,31 @@ import type { CitySelection } from "./selection";
 // District anchors on the platform — flows run between these points so
 // influence visibly moves through the system: banks and macro feed the core,
 // the core drives the exchange, and commodities feed the macro engines.
-const CB: [number, number] = [-6.5, -6.5];
-const HARBOR: [number, number] = [6.5, -6.2];
-const MACRO: [number, number] = [-6.4, 6.2];
-const NQ: [number, number] = [6.5, 6.2];
+const CB: [number, number] = [-8.4, -8.4];
+const HARBOR: [number, number] = [8.4, -7.8];
+const MACRO: [number, number] = [-8.4, 7.8];
+const NQ: [number, number] = [8.4, 7.8];
 const CORE: [number, number] = [0, 0];
+
+/** One-shot "materialise into the city" intro: the whole platform rises and
+ *  scales up from the core as you enter, then settles. */
+function IntroGroup({ children }: { children: React.ReactNode }) {
+  const ref = useRef<Group>(null);
+  const t = useRef(0);
+  useFrame((_, delta) => {
+    if (!ref.current || t.current >= 1) return;
+    t.current = Math.min(t.current + delta / 1.1, 1);
+    // easeOutCubic
+    const e = 1 - Math.pow(1 - t.current, 3);
+    ref.current.scale.setScalar(0.82 + 0.18 * e);
+    ref.current.position.y = -1.6 * (1 - e);
+  });
+  return (
+    <group ref={ref} scale={0.82} position={[0, -1.6, 0]}>
+      {children}
+    </group>
+  );
+}
 
 export function City3D({
   data,
@@ -34,7 +55,7 @@ export function City3D({
   return (
     <Canvas
       shadows
-      camera={{ position: [0, 13.5, 23], fov: 38 }}
+      camera={{ position: [0, 15, 26], fov: 38 }}
       className="!touch-none"
       dpr={[1, 1.75]}
     >
@@ -59,29 +80,31 @@ export function City3D({
       <pointLight position={[0, 7, 0]} intensity={0.3} color="#f97316" distance={16} decay={2} />
 
       <Suspense fallback={null}>
-        <CityGround />
+        <IntroGroup>
+          <CityGround />
 
-        {/* Information pathways: how influence moves through the market. */}
-        <FlowLink from={CB} to={CORE} color="#f9a15c" lift={2.2} />
-        <FlowLink from={HARBOR} to={MACRO} color="#5fc0d8" lift={2.6} speed={0.12} />
-        <FlowLink from={MACRO} to={CORE} color="#ff8a66" lift={2.0} speed={0.14} />
-        <FlowLink from={CORE} to={NQ} color="#f97316" lift={2.2} speed={0.2} pulses={3} />
+          {/* Information pathways: how influence moves through the market. */}
+          <FlowLink from={CB} to={CORE} color="#f9a15c" lift={2.2} />
+          <FlowLink from={HARBOR} to={MACRO} color="#5fc0d8" lift={2.6} speed={0.12} />
+          <FlowLink from={MACRO} to={CORE} color="#ff8a66" lift={2.0} speed={0.14} />
+          <FlowLink from={CORE} to={NQ} color="#f97316" lift={2.2} speed={0.2} pulses={3} />
 
-        <MarketCore
-          overview={data.overview}
-          active={selected?.kind === "core"}
-          onSelect={() => onSelect({ kind: "core" })}
-        />
-        <CentralBankDistrict banks={data.centralBanks} selected={selected} onSelect={(id) => onSelect({ kind: "bank", id })} />
-        <CommodityHarbor commodities={data.commodities} selected={selected} onSelect={(id) => onSelect({ kind: "commodity", id })} />
-        <MacroBattlefield forces={data.macroForces} selected={selected} onSelect={(id) => onSelect({ kind: "macro", id })} />
-        <NasdaqHQ hq={data.marketHQ} selected={selected} onSelect={() => onSelect({ kind: "hq" })} />
+          <MarketCore
+            overview={data.overview}
+            active={selected?.kind === "core"}
+            onSelect={() => onSelect({ kind: "core" })}
+          />
+          <CentralBankDistrict banks={data.centralBanks} selected={selected} onSelect={(id) => onSelect({ kind: "bank", id })} />
+          <CommodityHarbor commodities={data.commodities} selected={selected} onSelect={(id) => onSelect({ kind: "commodity", id })} />
+          <MacroBattlefield forces={data.macroForces} selected={selected} onSelect={(id) => onSelect({ kind: "macro", id })} />
+          <NasdaqHQ hq={data.marketHQ} selected={selected} onSelect={() => onSelect({ kind: "hq" })} />
+        </IntroGroup>
       </Suspense>
 
       <OrbitControls
         enablePan={false}
-        minDistance={11}
-        maxDistance={30}
+        minDistance={12}
+        maxDistance={34}
         minPolarAngle={0.35}
         maxPolarAngle={Math.PI / 2.15}
         target={[0, 1, 0]}
