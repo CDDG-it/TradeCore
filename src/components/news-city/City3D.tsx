@@ -2,79 +2,155 @@
 
 import { Suspense, useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import type { Group } from "three";
-import { Building } from "./scene/Building";
-import { Ship } from "./scene/Ship";
-import { Reactor } from "./scene/Reactor";
-import { DIRECTION_META, TREND_META, SENTIMENT_META } from "@/lib/news-city/ui";
+import { OrbitControls, Stars } from "@react-three/drei";
+import * as THREE from "three";
+import { CityGround } from "./scene/CityGround";
+import { MarketCore } from "./scene/MarketCore";
+import { CentralBankDistrict } from "./scene/CentralBankDistrict";
+import { CommodityHarbor } from "./scene/CommodityHarbor";
+import { MacroBattlefield } from "./scene/MacroBattlefield";
+import { NasdaqHQ } from "./scene/NasdaqHQ";
+import { FlowLink } from "./scene/FlowLink";
+import { SENTIMENT_META } from "@/lib/news-city/ui";
 import type { NewsCityData } from "@/lib/news-city/types";
 import type { CitySelection } from "./selection";
+import { selectionKey } from "./selection";
 
-const SITE_BG = "#f6f5f4";
-const SPACING = 4.7; // vertical gap between concepts on the reel
-const CURVE = 0.5; // how much the reel recedes toward its edges (3D bend)
-const TILT = 0.09; // how much each concept tilts as it leaves centre
-const BASE_SPEED = 0.13; // concepts per second — one passes centre roughly every ~7.5s
+const SKY_BG = "#05070c";
 
-type ReelItem = {
-  key: string;
-  /** Uniform scale so the different structures read as similar-sized symbols. */
-  scale: number;
-  /** Vertical offset (scaled half-height) so the structure sits centred. */
-  offset: number;
-  node: React.ReactNode;
+/** Default "sit above the whole map" establishing view. */
+const OVERVIEW = {
+  position: new THREE.Vector3(0, 13.5, 21),
+  target: new THREE.Vector3(0, 1, 0),
 };
 
+/** Where the camera dollies in to when a location is selected — mirrors the
+ *  fixed world positions each district renders at. */
+const FOCUS_TARGETS: Record<string, [number, number, number]> = {
+  core: [0, 1.3, 0],
+  "bank:fed": [-10.0, 1.2, -8.6],
+  "bank:ecb": [-6.0, 1.5, -6.0],
+  "bank:boj": [-8.6, 1.1, -11.0],
+  "commodity:oil": [7.5, 0.6, -9.0],
+  "commodity:gold": [9.7, 0.6, -6.6],
+  "macro:inflation": [-10.2, 0.8, 6.4],
+  "macro:employment": [-7.6, 0.8, 10.4],
+  "macro:growth": [-5.4, 0.8, 6.4],
+  hq: [8.4, 2.0, 7.8],
+};
+
+function easeInOutCubic(x: number) {
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+}
+
 /**
- * A vertical slot-machine reel. The concept structures ride a wrapping strip
- * that scrolls from the top of the frame, past the centre, and out the bottom
- * (with a subtle 3D bend + tilt so it reads like a casino reel rather than a
- * flat list). It idles slowly; scrolling over the canvas spins it faster (a
- * burst that decays back to the idle drift) and it spins up then settles on
- * entry.
+ * Drives the camera: a one-time cinematic descent into the world on load,
+ * then hands full rotate/zoom control to the user via OrbitControls. Selecting
+ * a location dollies the camera toward it along the current viewing angle
+ * (rather than cutting or orbiting around it), so it reads as "the camera
+ * moves through a fixed world" instead of "the world spins past the camera".
  */
-function SlotReel({ items }: { items: ReelItem[] }) {
-  const refs = useRef<(Group | null)[]>([]);
-  const t = useRef(0);
-  const vel = useRef(4.5); // "pull the lever" intro spin, decelerating to idle
-  const { gl } = useThree();
+function CameraRig({ selected }: { selected: CitySelection | null }) {
+  const { camera } = useThree();
+  const controls = useRef<React.ComponentRef<typeof OrbitControls>>(null);
+
+  const introDone = useRef(false);
+  const introT = useRef(0);
+  const introFrom = useRef({
+    pos: new THREE.Vector3(2, 32, 44),
+    target: new THREE.Vector3(0, 2, 0),
+  });
+
+  const focusT = useRef(1); // 1 = settled, nothing in flight
+  const focusFromPos = useRef(new THREE.Vector3());
+  const focusFromTarget = useRef(new THREE.Vector3());
+  const focusToPos = useRef(new THREE.Vector3());
+  const focusToTarget = useRef(new THREE.Vector3());
+  const prevKey = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    const el = gl.domElement;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      vel.current += e.deltaY * 0.004;
-      vel.current = Math.max(Math.min(vel.current, 6), -6);
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, [gl]);
+    camera.position.copy(introFrom.current.pos);
+    if (controls.current) {
+      controls.current.target.copy(introFrom.current.target);
+      controls.current.enabled = false;
+      controls.current.update();
+    }
+    // Intro/focus rig owns the camera imperatively; only run on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const key = selectionKey(selected);
+    if (key === prevKey.current) return;
+    prevKey.current = key;
+    if (!introDone.current || !controls.current) return; // let the intro finish first
+
+    const dir = new THREE.Vector3().subVectors(camera.position, controls.current.target);
+    if (dir.lengthSq() < 1e-6) dir.set(0, 6, 10);
+    dir.normalize();
+
+    focusFromPos.current.copy(camera.position);
+    focusFromTarget.current.copy(controls.current.target);
+
+    if (key === null) {
+      focusToTarget.current.copy(OVERVIEW.target);
+      focusToPos.current.copy(OVERVIEW.position);
+    } else {
+      const point = FOCUS_TARGETS[key] ?? [0, 1, 0];
+      const targetVec = new THREE.Vector3(...point);
+      focusToTarget.current.copy(targetVec);
+      focusToPos.current.copy(targetVec).addScaledVector(dir, 6.5);
+      focusToPos.current.y = Math.max(focusToPos.current.y, targetVec.y + 3);
+    }
+
+    focusT.current = 0;
+    controls.current.enabled = false;
+  }, [selected, camera]);
 
   useFrame((_, delta) => {
-    t.current += (BASE_SPEED + vel.current) * delta;
-    vel.current *= Math.exp(-delta * 1.8);
-    const n = items.length;
-    for (let i = 0; i < n; i++) {
-      const g = refs.current[i];
-      if (!g) continue;
-      // Signed slot in [-n/2, n/2): 0 = centre of the window.
-      let s = (((i - t.current) % n) + n) % n;
-      if (s > n / 2) s -= n;
-      g.position.set(0, s * SPACING, -CURVE * s * s);
-      g.rotation.x = s * TILT;
+    if (!introDone.current) {
+      introT.current = Math.min(introT.current + delta / 2.8, 1);
+      const e = easeInOutCubic(introT.current);
+      camera.position.lerpVectors(introFrom.current.pos, OVERVIEW.position, e);
+      if (controls.current) {
+        controls.current.target.lerpVectors(introFrom.current.target, OVERVIEW.target, e);
+        controls.current.update();
+      }
+      if (introT.current >= 1) {
+        introDone.current = true;
+        if (controls.current) controls.current.enabled = true;
+      }
+      return;
+    }
+
+    if (focusT.current < 1) {
+      focusT.current = Math.min(focusT.current + delta / 1.1, 1);
+      const e = easeInOutCubic(focusT.current);
+      camera.position.lerpVectors(focusFromPos.current, focusToPos.current, e);
+      if (controls.current) {
+        controls.current.target.lerpVectors(focusFromTarget.current, focusToTarget.current, e);
+        controls.current.update();
+      }
+      if (focusT.current >= 1 && controls.current) {
+        controls.current.enabled = true;
+      }
     }
   });
 
   return (
-    <>
-      {items.map((it, i) => (
-        <group key={it.key} ref={(el) => { refs.current[i] = el; }}>
-          <group position={[0, -it.offset, 0]}>
-            <group scale={it.scale}>{it.node}</group>
-          </group>
-        </group>
-      ))}
-    </>
+    <OrbitControls
+      ref={controls}
+      makeDefault
+      enablePan={false}
+      enableDamping
+      dampingFactor={0.08}
+      rotateSpeed={0.5}
+      zoomSpeed={0.7}
+      minDistance={5.5}
+      maxDistance={34}
+      minPolarAngle={0.3}
+      maxPolarAngle={1.4}
+    />
   );
 }
 
@@ -87,107 +163,66 @@ export function City3D({
   selected: CitySelection | null;
   onSelect: (sel: CitySelection) => void;
 }) {
-  const fed = data.centralBanks.find((b) => b.id === "fed")!;
-  const oil = data.commodities.find((c) => c.id === "oil")!;
-  const inflation = data.macroForces.find((m) => m.id === "inflation")!;
-  const nq = data.marketHQ.indices.find((i) => i.id === "nq");
-  const sent = SENTIMENT_META[data.marketHQ.sentiment];
-
-  // One structure per concept — clicking opens that concept's flagship panel.
-  const items: ReelItem[] = [
-    {
-      key: "banks",
-      scale: 1.0,
-      offset: 1.3,
-      node: (
-        <Building
-          position={[0, 0, 0]}
-          width={1.8}
-          depth={1.8}
-          height={2.4}
-          variant="classical"
-          biasColor={DIRECTION_META[fed.direction].hex}
-          label="Central Banks"
-          sublabel="Fed · ECB · BoJ"
-          active={selected?.kind === "bank"}
-          onSelect={() => onSelect({ kind: "bank", id: "fed" })}
-        />
-      ),
-    },
-    {
-      key: "commodities",
-      scale: 1.25,
-      offset: 0.75,
-      node: (
-        <Ship
-          position={[0, 0, 0]}
-          rotationY={-0.5}
-          color="#1d242e"
-          accentColor={TREND_META[oil.direction].hex}
-          label="Commodities"
-          sublabel="Oil · Gold"
-          active={selected?.kind === "commodity"}
-          onSelect={() => onSelect({ kind: "commodity", id: "oil" })}
-        />
-      ),
-    },
-    {
-      key: "macro",
-      scale: 1.8,
-      offset: 1.35,
-      node: (
-        <Reactor
-          position={[0, 0, 0]}
-          accentColor={TREND_META[inflation.direction].hex}
-          intensity={inflation.intensity}
-          label="Macro"
-          sublabel="CPI · Jobs · GDP"
-          active={selected?.kind === "macro"}
-          onSelect={() => onSelect({ kind: "macro", id: "inflation" })}
-        />
-      ),
-    },
-    {
-      key: "indexes",
-      scale: 0.62,
-      offset: 1.55,
-      node: (
-        <Building
-          position={[0, 0, 0]}
-          width={1.9}
-          depth={1.9}
-          height={4.0}
-          variant="setback"
-          biasColor={sent.hex}
-          label="Indexes"
-          sublabel={`NQ ${nq?.price ?? ""} · ES`}
-          active={selected?.kind === "hq"}
-          onSelect={() => onSelect({ kind: "hq" })}
-        />
-      ),
-    },
-  ];
+  const sentiment = SENTIMENT_META[data.marketHQ.sentiment];
 
   return (
     <Canvas
-      camera={{ position: [0, 0, 15], fov: 36 }}
-      className="!touch-none"
+      shadows
       dpr={[1, 1.75]}
-      onCreated={({ camera }) => camera.lookAt(0, 0, 0)}
+      className="!touch-none"
+      camera={{ position: [2, 32, 44], fov: 42, near: 0.1, far: 120 }}
     >
-      {/* Match the rest of the site's background. */}
-      <color attach="background" args={[SITE_BG]} />
-      <fog attach="fog" args={[SITE_BG, 13, 26]} />
+      <color attach="background" args={[SKY_BG]} />
+      <fog attach="fog" args={[SKY_BG, 20, 46]} />
 
-      <ambientLight intensity={0.95} color="#ffffff" />
-      <hemisphereLight args={["#ffffff", "#dfe3e8", 0.6]} />
-      <directionalLight position={[6, 12, 10]} intensity={1.1} color="#ffffff" />
-      {/* Front fill so the dark glass faces nearest the camera stay legible. */}
-      <pointLight position={[0, 2, 14]} intensity={0.6} color="#ffffff" distance={40} decay={1.5} />
+      <ambientLight intensity={0.32} color="#7fa8c9" />
+      <hemisphereLight args={["#1c2c42", "#05070c", 0.4]} />
+      <directionalLight position={[10, 18, 8]} intensity={0.55} color="#bcd7ea" castShadow />
+      <pointLight position={[0, 6, 0]} intensity={0.7} color={sentiment.hex} distance={30} decay={2} />
+
+      <Stars radius={90} depth={40} count={2200} factor={2.4} saturation={0} fade speed={0.35} />
 
       <Suspense fallback={null}>
-        <SlotReel items={items} />
+        <CityGround />
+
+        {/* Data highways linking every district back to the Market Core. */}
+        <FlowLink from={[0, 0]} to={[-8.4, -8.4]} color="#f9a15c" />
+        <FlowLink from={[0, 0]} to={[8.4, -7.8]} color="#5fc0d8" />
+        <FlowLink from={[0, 0]} to={[-8.4, 7.8]} color="#e0705c" />
+        <FlowLink from={[0, 0]} to={[8.4, 7.8]} color="#f97316" />
+
+        <MarketCore
+          overview={data.overview}
+          active={selected?.kind === "core"}
+          onSelect={() => onSelect({ kind: "core" })}
+        />
+
+        <CentralBankDistrict
+          banks={data.centralBanks}
+          selected={selected}
+          onSelect={(id) => onSelect({ kind: "bank", id })}
+        />
+
+        <CommodityHarbor
+          commodities={data.commodities}
+          selected={selected}
+          onSelect={(id) => onSelect({ kind: "commodity", id })}
+        />
+
+        <MacroBattlefield
+          forces={data.macroForces}
+          selected={selected}
+          onSelect={(id) => onSelect({ kind: "macro", id })}
+        />
+
+        <NasdaqHQ
+          hq={data.marketHQ}
+          selected={selected}
+          onSelect={() => onSelect({ kind: "hq" })}
+        />
       </Suspense>
+
+      <CameraRig selected={selected} />
     </Canvas>
   );
 }
