@@ -15,12 +15,12 @@ import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { TIMEFRAMES, normalizeTimeframe } from "@/lib/timeframes";
 import { useFormDraft } from "@/lib/drafts";
 import { DraftBanner } from "@/components/ui/draft-banner";
 
 const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
-const TIMEFRAMES = ["1m", "5m", "15m", "1H", "4H", "Daily"];
 
 import type { Market } from "@/lib/types";
 
@@ -375,16 +375,16 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                 {showCustomTF && (
                   <div className="flex gap-2 mt-1.5">
                     <Input value={customTF} onChange={(e) => setCustomTF(e.target.value)}
-                      placeholder="e.g. 2H" className="h-8 text-xs font-mono max-w-32"
+                      placeholder="e.g. 15s, 2H" className="h-8 text-xs font-mono max-w-32"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
-                          const v = customTF.trim();
+                          const v = normalizeTimeframe(customTF);
                           if (v) { const parts = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : []; if (!parts.includes(v)) set("timeframe", [...parts, v].join(" / ")); setCustomTF(""); setShowCustomTF(false); }
                         }
                       }} />
                     <Button type="button" size="sm" variant="outline" className="h-8 px-3 text-xs"
-                      onClick={() => { const v = customTF.trim(); if (v) { const parts = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : []; if (!parts.includes(v)) set("timeframe", [...parts, v].join(" / ")); setCustomTF(""); setShowCustomTF(false); } }}>
+                      onClick={() => { const v = normalizeTimeframe(customTF); if (v) { const parts = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : []; if (!parts.includes(v)) set("timeframe", [...parts, v].join(" / ")); setCustomTF(""); setShowCustomTF(false); } }}>
                       Add
                     </Button>
                   </div>
