@@ -99,31 +99,32 @@ export default function NewsCityPage() {
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               className="space-y-3"
             >
-              {/* Height tracks the viewport so the page fits without scrolling. */}
+              {/* Tall stage that fills down toward the bottom of the screen. */}
               <div
-                className="relative w-full overflow-hidden rounded-2xl border border-border h-[clamp(320px,calc(100dvh-430px),580px)]"
-                style={{ background: "linear-gradient(180deg, #202a3c 0%, #1a2333 100%)" }}
+                className="relative w-full overflow-hidden rounded-2xl border border-border h-[clamp(360px,calc(100dvh-350px),780px)]"
+                style={{ background: "linear-gradient(180deg, #ffffff 0%, #f6f5f4 100%)" }}
               >
                 <City3D data={NEWS_CITY_DATA} selected={selection} onSelect={setSelection} />
-              </div>
 
-              {/* Legend, below the scene */}
-              <div className="flex flex-wrap justify-center gap-2">
-                {LEGEND.map((l) => (
-                  <div
-                    key={l.label}
-                    className="flex items-center gap-2 rounded-full bg-card border border-border px-3 py-1.5"
-                  >
-                    <l.icon className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span className="font-body text-xs font-semibold text-foreground">{l.label}</span>
-                    <span className="font-body text-[11px] text-muted-foreground hidden sm:inline">· {l.hint}</span>
+                {/* Legend + hint, docked at the bottom of the stage */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-3 sm:p-4 space-y-2">
+                  <div className="pointer-events-auto flex flex-wrap justify-center gap-2">
+                    {LEGEND.map((l) => (
+                      <div
+                        key={l.label}
+                        className="flex items-center gap-2 rounded-full bg-card/90 backdrop-blur-md border border-border px-3 py-1.5"
+                      >
+                        <l.icon className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span className="font-body text-xs font-semibold text-foreground">{l.label}</span>
+                        <span className="font-body text-[11px] text-muted-foreground hidden sm:inline">· {l.hint}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                  <p className="font-body text-[11px] text-muted-foreground text-center">
+                    Scroll to fast-forward the wheel · click any structure for details
+                  </p>
+                </div>
               </div>
-
-              <p className="font-body text-xs text-muted-foreground text-center">
-                Drag to rotate, scroll to zoom. Mock data for now — live news, economic calendar, and AI summaries plug in here next.
-              </p>
             </motion.div>
           )}
         </AnimatePresence>
