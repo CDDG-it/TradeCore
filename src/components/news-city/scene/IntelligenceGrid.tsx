@@ -6,9 +6,9 @@ import type { Group } from "three";
 
 /**
  * The hub's HUD floor: a levitating dark platform with a glowing radar grid,
- * an orange rim light, an ice-blue underline, and slow-drifting data
+ * a turquoise rim light, a cyan underline, and slow-drifting data
  * particles in the air — the brand's cyber-holographic theme (deep navy with
- * orange + ice-blue light), matching the rest of the site's palette. Pure
+ * turquoise + cyan light), matching the rest of the site's palette. Pure
  * ambient backdrop for the intelligence hub — no fixed districts or labels.
  */
 
@@ -61,21 +61,21 @@ export function IntelligenceGrid() {
         <cylinderGeometry args={[11.7, 10.2, 0.34, 96]} />
         <meshStandardMaterial color="#101623" roughness={0.4} metalness={0.55} />
       </mesh>
-      {/* Brand-orange rim light plus an ice underline */}
+      {/* Brand-turquoise rim light plus a cyan underline */}
       <mesh position={[0, -0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <torusGeometry args={[13.5, 0.038, 8, 96]} />
-        <meshBasicMaterial color="#f97316" transparent opacity={0.75} toneMapped={false} />
+        <meshBasicMaterial color="#14B8A6" transparent opacity={0.75} toneMapped={false} />
       </mesh>
       <mesh position={[0, -0.62, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <torusGeometry args={[11.6, 0.028, 8, 96]} />
-        <meshBasicMaterial color="#5fc0d8" transparent opacity={0.45} toneMapped={false} />
+        <meshBasicMaterial color="#06B6D4" transparent opacity={0.45} toneMapped={false} />
       </mesh>
       {/* Radar-style polar grid */}
       <polarGridHelper args={[13.3, 16, 8, 64, "#35486a", "#22304a"]} position={[0, 0.012, 0]} />
 
-      {/* Ambient data particles — orange + ice */}
-      <DataParticles count={140} color="#f9a15c" seed={7} />
-      <DataParticles count={120} color="#7fd4ea" seed={31} size={0.05} />
+      {/* Ambient data particles — turquoise + cyan */}
+      <DataParticles count={140} color="#2dd4bf" seed={7} />
+      <DataParticles count={120} color="#67e8f9" seed={31} size={0.05} />
     </group>
   );
 }

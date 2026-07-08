@@ -477,13 +477,13 @@ export default function NewTradePage() {
                         style={{
                           width: `${disciplineScore}%`,
                           background: disciplineScore >= 80 ? "oklch(0.58 0.17 145)"
-                            : disciplineScore >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
+                            : disciplineScore >= 60 ? "#EAB308" : "oklch(0.58 0.22 25)",
                         }} />
                     </div>
                     <span className="text-xs font-bold tabular-nums shrink-0"
                       style={{
                         color: disciplineScore >= 80 ? "oklch(0.58 0.17 145)"
-                          : disciplineScore >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)",
+                          : disciplineScore >= 60 ? "#EAB308" : "oklch(0.58 0.22 25)",
                       }}>
                       {disciplineScore}%
                     </span>

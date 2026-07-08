@@ -30,7 +30,7 @@ function ScreenshotFrame({ src, alt, eager }: { src: string; alt: string; eager?
     <div
       className="group/frame relative w-full overflow-hidden rounded-2xl"
       style={{
-        boxShadow: "0 0 0 1.5px rgba(249,115,22,0.22), 0 0 20px rgba(249,115,22,0.08), 0 8px 40px rgba(0,0,0,0.08)",
+        boxShadow: "0 0 0 1.5px rgba(20,184,166,0.22), 0 0 20px rgba(20,184,166,0.08), 0 8px 40px rgba(0,0,0,0.08)",
       }}
     >
       {/* Screenshot — aspect ratio matches 1200×900 crop */}
@@ -49,8 +49,8 @@ function ScreenshotFrame({ src, alt, eager }: { src: string; alt: string; eager?
       <div
         className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover/frame:opacity-100"
         style={{
-          boxShadow: "inset 0 0 0 2px rgba(249,115,22,0.60)",
-          background: "linear-gradient(135deg, rgba(249,115,22,0.05) 0%, transparent 50%)",
+          boxShadow: "inset 0 0 0 2px rgba(20,184,166,0.60)",
+          background: "linear-gradient(135deg, rgba(20,184,166,0.05) 0%, transparent 50%)",
         }}
       />
     </div>
@@ -87,14 +87,14 @@ function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
                 className="text-xs font-black tabular-nums leading-none"
                 style={{
                   fontFamily: "var(--font-nunito), system-ui, sans-serif",
-                  color:      "rgba(249,115,22,0.90)",
+                  color:      "rgba(20,184,166,0.90)",
                 }}
               >
                 {String(card.index + 1).padStart(2, "0")}
               </span>
               <span
                 className="h-px flex-1 max-w-[24px]"
-                style={{ background: "rgba(249,115,22,0.30)" }}
+                style={{ background: "rgba(20,184,166,0.30)" }}
               />
               <span
                 style={{
@@ -141,8 +141,8 @@ function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
               className="self-start inline-flex items-center gap-2.5 rounded-full px-7 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
               style={{
                 fontFamily: "var(--font-nunito), system-ui, sans-serif",
-                background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
-                boxShadow:  "0 4px 24px rgba(249,115,22,0.28), 0 1px 3px rgba(0,0,0,0.10)",
+                background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
+                boxShadow:  "0 4px 24px rgba(20,184,166,0.28), 0 1px 3px rgba(0,0,0,0.10)",
               }}
             >
               {card.cta}

@@ -53,7 +53,7 @@ export function MobileHeader() {
           className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
           style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
           <span className="text-sidebar-foreground">Trading</span>
-          <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+          <span style={{ background: "linear-gradient(90deg,#14B8A6,#06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
         </Link>
         <button
           onClick={() => setOpen(true)}
@@ -84,7 +84,7 @@ export function MobileHeader() {
             style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
             onClick={() => setOpen(false)}>
             <span className="text-sidebar-foreground">Trading</span>
-            <span style={{ background: "linear-gradient(90deg,#F97316,#FBBF24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+            <span style={{ background: "linear-gradient(90deg,#14B8A6,#06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
           </Link>
           <button
             onClick={() => setOpen(false)}
@@ -113,7 +113,7 @@ export function MobileHeader() {
                 {isActive && (
                   <span
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                    style={{ background: "#F97316" }}
+                    style={{ background: "#14B8A6" }}
                   />
                 )}
                 <Icon
@@ -132,11 +132,11 @@ export function MobileHeader() {
           <div className="flex items-center gap-2.5 px-3 py-2.5">
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center"
-              style={{ background: "oklch(0.72 0.22 45 / 18%)" }}
+              style={{ background: "oklch(0.72 0.14 220 / 18%)" }}
             >
               <span
                 className="text-xs font-bold"
-                style={{ color: "#F97316" }}
+                style={{ color: "#14B8A6" }}
               >
                 {initials}
               </span>

@@ -27,7 +27,7 @@ export default function HomePage() {
     // No overflow class here: overflow-x-hidden disables the sticky header and
     // overflow-x-clip kills page scrolling entirely. Sections that animate
     // horizontally contain their own overflow instead.
-    <div style={{ background: "oklch(0.98 0.003 45)" }}>
+    <div style={{ background: "oklch(0.98 0.003 250)" }}>
 
       {/* ── Top navigation: Features dropdown, Coming soon, Sign in, Make account ── */}
       <LandingNav />
@@ -43,7 +43,7 @@ export default function HomePage() {
         <motion.div
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(249,115,22,0.10) 0%, transparent 65%)" }}
+          style={{ background: "radial-gradient(circle, rgba(20,184,166,0.10) 0%, transparent 65%)" }}
           animate={{ scale: [1, 1.18, 1], opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 9, ease: "easeInOut", repeat: Infinity }}
         />
@@ -66,7 +66,7 @@ export default function HomePage() {
           >
             Trading
             <span style={{
-              background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
+              background: "linear-gradient(135deg,#14B8A6 0%,#06B6D4 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -104,8 +104,8 @@ export default function HomePage() {
               className="inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
               style={{
                 fontFamily: NUNITO,
-                background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
-                boxShadow: "0 4px 28px rgba(249,115,22,0.35), 0 1px 3px rgba(0,0,0,0.12)",
+                background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
+                boxShadow: "0 4px 28px rgba(20,184,166,0.35), 0 1px 3px rgba(0,0,0,0.12)",
               }}
             >
               Open dashboard
@@ -113,7 +113,7 @@ export default function HomePage() {
             </Link>
             <a
               href="#product"
-              className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(249,115,22,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
+              className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
               style={{
                 fontFamily: NUNITO,
                 borderColor: "rgba(16,11,6,0.14)",

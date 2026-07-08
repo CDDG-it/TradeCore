@@ -15,12 +15,12 @@ export function LogoMark({ size = 32 }: LogoProps) {
     >
       <defs>
         <linearGradient id="gD" x1="100" y1="180" x2="100" y2="5" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#F97316" />
-          <stop offset="100%" stopColor="#FBBF24" />
+          <stop offset="0%" stopColor="#14B8A6" />
+          <stop offset="100%" stopColor="#06B6D4" />
         </linearGradient>
         <linearGradient id="gC" x1="168" y1="175" x2="168" y2="5" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#F97316" />
-          <stop offset="100%" stopColor="#FBBF24" />
+          <stop offset="0%" stopColor="#14B8A6" />
+          <stop offset="100%" stopColor="#06B6D4" />
         </linearGradient>
       </defs>
 
@@ -147,7 +147,7 @@ export function Logo({
       >
         <span style={{ color: tradeColor }}>Trading</span>
         <span style={{
-          background: "linear-gradient(90deg, #F97316 0%, #FBBF24 100%)",
+          background: "linear-gradient(90deg, #14B8A6 0%, #06B6D4 100%)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           backgroundClip: "text",

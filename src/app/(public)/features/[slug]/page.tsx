@@ -40,7 +40,7 @@ export default async function FeaturePage({
   const next = FEATURES[(idx + 1) % FEATURES.length];
 
   return (
-    <div style={{ background: "oklch(0.98 0.003 45)", fontFamily: NUNITO }}>
+    <div style={{ background: "oklch(0.98 0.003 250)", fontFamily: NUNITO }}>
       {/* Slim header */}
       <header
         className="sticky top-0 z-30 px-6 py-4"
@@ -57,14 +57,14 @@ export default async function FeaturePage({
             className="font-black tracking-tight text-base leading-none hover:opacity-80 transition-opacity"
           >
             <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
-            <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+            <span style={{ background: "linear-gradient(90deg,#14B8A6,#0D9488)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
           </Link>
           <Link
             href="/signup"
             className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
             style={{
-              background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
-              boxShadow: "0 2px 14px rgba(249,115,22,0.30), 0 1px 2px rgba(0,0,0,0.10)",
+              background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
+              boxShadow: "0 2px 14px rgba(20,184,166,0.30), 0 1px 2px rgba(0,0,0,0.10)",
             }}
           >
             Make account
@@ -76,7 +76,7 @@ export default async function FeaturePage({
       <section className="mx-auto max-w-5xl px-6 pt-16 pb-10 sm:pt-24">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[rgba(60,48,36,0.45)] transition-colors duration-200 hover:text-[#F97316]"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[rgba(60,48,36,0.45)] transition-colors duration-200 hover:text-[#14B8A6]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           All features
@@ -85,11 +85,11 @@ export default async function FeaturePage({
         <div className="mt-7 flex items-center gap-3">
           <span
             className="text-[0.625rem] font-bold uppercase tracking-[0.18em]"
-            style={{ color: "rgba(249,115,22,0.90)" }}
+            style={{ color: "rgba(20,184,166,0.90)" }}
           >
             {feature.section}
           </span>
-          <span className="h-px w-6" style={{ background: "rgba(249,115,22,0.30)" }} />
+          <span className="h-px w-6" style={{ background: "rgba(20,184,166,0.30)" }} />
         </div>
 
         <h1
@@ -113,7 +113,7 @@ export default async function FeaturePage({
           style={{
             aspectRatio: "4/3",
             boxShadow:
-              "0 0 0 1.5px rgba(249,115,22,0.22), 0 0 24px rgba(249,115,22,0.08), 0 12px 50px rgba(0,0,0,0.10)",
+              "0 0 0 1.5px rgba(20,184,166,0.22), 0 0 24px rgba(20,184,166,0.08), 0 12px 50px rgba(0,0,0,0.10)",
           }}
         >
           <Image
@@ -150,9 +150,9 @@ export default async function FeaturePage({
                     <li key={i} className="flex items-start gap-3">
                       <span
                         className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                        style={{ background: "rgba(249,115,22,0.12)" }}
+                        style={{ background: "rgba(20,184,166,0.12)" }}
                       >
-                        <Check className="h-3 w-3" style={{ color: "#d97706" }} strokeWidth={3} />
+                        <Check className="h-3 w-3" style={{ color: "#0D9488" }} strokeWidth={3} />
                       </span>
                       <span
                         className="leading-relaxed"
@@ -172,8 +172,8 @@ export default async function FeaturePage({
         <div
           className="mt-20 rounded-2xl px-7 py-9 text-center sm:px-10"
           style={{
-            background: "rgba(249,115,22,0.06)",
-            border: "1px solid rgba(249,115,22,0.16)",
+            background: "rgba(20,184,166,0.06)",
+            border: "1px solid rgba(20,184,166,0.16)",
           }}
         >
           <h3
@@ -190,8 +190,8 @@ export default async function FeaturePage({
               href="/signup"
               className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
               style={{
-                background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
-                boxShadow: "0 4px 24px rgba(249,115,22,0.28), 0 1px 3px rgba(0,0,0,0.10)",
+                background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
+                boxShadow: "0 4px 24px rgba(20,184,166,0.28), 0 1px 3px rgba(0,0,0,0.10)",
               }}
             >
               Make account
@@ -199,7 +199,7 @@ export default async function FeaturePage({
             </Link>
             <Link
               href={`/features/${next.slug}`}
-              className="inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(249,115,22,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
+              className="inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
               style={{ borderColor: "rgba(16,11,6,0.14)" }}
             >
               Next: {next.name}

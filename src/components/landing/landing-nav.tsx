@@ -77,7 +77,7 @@ export function LandingNav() {
           style={{ fontFamily: NUNITO }}
         >
           <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
-          <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+          <span style={{ background: "linear-gradient(90deg,#14B8A6,#0D9488)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
         </Link>
 
         {/* Center / right nav */}
@@ -119,7 +119,7 @@ export function LandingNav() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setOpen(false)}
-                    className="group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors duration-200 hover:bg-[rgba(249,115,22,0.07)]"
+                    className="group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors duration-200 hover:bg-[rgba(20,184,166,0.07)]"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -137,7 +137,7 @@ export function LandingNav() {
                         {item.tagline}
                       </p>
                     </div>
-                    <ArrowRight className="mt-1 h-3.5 w-3.5 shrink-0 -translate-x-1 text-[#F97316] opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
+                    <ArrowRight className="mt-1 h-3.5 w-3.5 shrink-0 -translate-x-1 text-[#14B8A6] opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
                   </Link>
                 ))}
               </div>
@@ -168,8 +168,8 @@ export function LandingNav() {
             href="/signup"
             className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
             style={{
-              background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
-              boxShadow: "0 2px 14px rgba(249,115,22,0.30), 0 1px 2px rgba(0,0,0,0.10)",
+              background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
+              boxShadow: "0 2px 14px rgba(20,184,166,0.30), 0 1px 2px rgba(0,0,0,0.10)",
             }}
           >
             Make account

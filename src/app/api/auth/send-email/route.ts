@@ -39,7 +39,7 @@ function getEmailContent(type: string, confirmUrl: string): { subject: string; h
     <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;padding:40px 24px;background:#fff;">
       <div style="margin-bottom:32px;">
         <span style="font-size:20px;font-weight:900;letter-spacing:-0.5px;">
-          <span style="color:#111;">Trading</span><span style="color:#F97316;">MC</span>
+          <span style="color:#111;">Trading</span><span style="color:#14B8A6;">MC</span>
         </span>
       </div>
   `;
@@ -47,8 +47,8 @@ function getEmailContent(type: string, confirmUrl: string): { subject: string; h
       <p style="margin-top:32px;font-size:12px;color:#999;">If you didn't request this, you can safely ignore this email.</p>
     </div>
   `;
-  const btn = `<a href="${confirmUrl}" style="display:inline-block;background:#F97316;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">`;
-  const link = `<p style="margin-top:20px;font-size:13px;color:#999;">Or copy this link: <a href="${confirmUrl}" style="color:#F97316;">${confirmUrl}</a></p>`;
+  const btn = `<a href="${confirmUrl}" style="display:inline-block;background:#14B8A6;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">`;
+  const link = `<p style="margin-top:20px;font-size:13px;color:#999;">Or copy this link: <a href="${confirmUrl}" style="color:#14B8A6;">${confirmUrl}</a></p>`;
 
   if (type === "signup") {
     return {

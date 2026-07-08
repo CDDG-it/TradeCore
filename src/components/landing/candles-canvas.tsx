@@ -116,14 +116,14 @@ export function CandlesCanvas() {
         const cx = x + W / 2;
 
         // Wick
-        ctx.strokeStyle = bull ? "rgba(249,115,22,0.55)" : "rgba(16,11,6,0.45)";
+        ctx.strokeStyle = bull ? "rgba(20,184,166,0.55)" : "rgba(16,11,6,0.45)";
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
         // Body fill
-        ctx.fillStyle = bull ? "rgba(249,115,22,0.22)" : "rgba(16,11,6,0.12)";
+        ctx.fillStyle = bull ? "rgba(20,184,166,0.22)" : "rgba(16,11,6,0.12)";
         ctx.fillRect(x, bTop, W, bH);
         // Body border
-        ctx.strokeStyle = bull ? "rgba(249,115,22,0.72)" : "rgba(16,11,6,0.55)";
+        ctx.strokeStyle = bull ? "rgba(20,184,166,0.72)" : "rgba(16,11,6,0.55)";
         ctx.lineWidth = 0.75;
         ctx.strokeRect(x, bTop, W, bH);
       }

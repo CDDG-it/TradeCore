@@ -27,7 +27,7 @@ const UPCOMING = [
 
 export default function ComingSoonPage() {
   return (
-    <div style={{ background: "oklch(0.98 0.003 45)", fontFamily: NUNITO }}>
+    <div style={{ background: "oklch(0.98 0.003 250)", fontFamily: NUNITO }}>
       {/* Slim header */}
       <header
         className="sticky top-0 z-30 px-6 py-4"
@@ -44,14 +44,14 @@ export default function ComingSoonPage() {
             className="font-black tracking-tight text-base leading-none hover:opacity-80 transition-opacity"
           >
             <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
-            <span style={{ background: "linear-gradient(90deg,#F97316,#d97706)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+            <span style={{ background: "linear-gradient(90deg,#14B8A6,#0D9488)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
           </Link>
           <Link
             href="/signup"
             className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
             style={{
-              background: "linear-gradient(135deg,#F97316 0%,#d97706 100%)",
-              boxShadow: "0 2px 14px rgba(249,115,22,0.30), 0 1px 2px rgba(0,0,0,0.10)",
+              background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
+              boxShadow: "0 2px 14px rgba(20,184,166,0.30), 0 1px 2px rgba(0,0,0,0.10)",
             }}
           >
             Make account
@@ -63,7 +63,7 @@ export default function ComingSoonPage() {
       <section className="mx-auto max-w-5xl px-6 pt-16 pb-10 sm:pt-24">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[rgba(60,48,36,0.45)] transition-colors duration-200 hover:text-[#F97316]"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[rgba(60,48,36,0.45)] transition-colors duration-200 hover:text-[#14B8A6]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back home
@@ -72,11 +72,11 @@ export default function ComingSoonPage() {
         <div className="mt-7 flex items-center gap-3">
           <span
             className="text-[0.625rem] font-bold uppercase tracking-[0.18em]"
-            style={{ color: "rgba(249,115,22,0.90)" }}
+            style={{ color: "rgba(20,184,166,0.90)" }}
           >
             On the roadmap
           </span>
-          <span className="h-px w-6" style={{ background: "rgba(249,115,22,0.30)" }} />
+          <span className="h-px w-6" style={{ background: "rgba(20,184,166,0.30)" }} />
         </div>
 
         <h1
@@ -109,13 +109,13 @@ export default function ComingSoonPage() {
               <div className="flex items-center justify-between">
                 <span
                   className="flex h-10 w-10 items-center justify-center rounded-xl"
-                  style={{ background: "rgba(249,115,22,0.10)" }}
+                  style={{ background: "rgba(20,184,166,0.10)" }}
                 >
-                  <item.icon className="h-5 w-5" style={{ color: "#F97316" }} strokeWidth={1.9} />
+                  <item.icon className="h-5 w-5" style={{ color: "#14B8A6" }} strokeWidth={1.9} />
                 </span>
                 <span
                   className="rounded-full px-2.5 py-1 text-[0.625rem] font-bold uppercase tracking-[0.12em]"
-                  style={{ background: "rgba(249,115,22,0.10)", color: "#d97706" }}
+                  style={{ background: "rgba(20,184,166,0.10)", color: "#0D9488" }}
                 >
                   {item.status}
                 </span>
