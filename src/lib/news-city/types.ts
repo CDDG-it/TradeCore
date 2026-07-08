@@ -1,9 +1,9 @@
 /**
- * MC News City — data model.
+ * Market Intelligence Hub — data model.
  *
- * Every location in the city is backed by a plain data object so the scene
- * (Three.js meshes) stays a dumb renderer and the content can later be swapped
- * for a live news / economic-calendar feed without touching any component.
+ * Every signal is backed by a plain data object so the scene (Three.js nodes)
+ * stays a dumb renderer and the content can later be swapped for a live news /
+ * economic-calendar / AI-summary feed without touching any component.
  */
 
 export type Direction = "hawkish" | "dovish" | "neutral";
@@ -52,8 +52,19 @@ export interface MacroForce {
   direction: TrendDirection;
   /** Display strength of the force, e.g. "HIGH" / "MODERATE" / "POSITIVE". */
   level: string;
-  /** 0..1 — drives how much energy the engine radiates in the scene. */
+  /** 0..1 — drives how much energy the node radiates in the scene. */
   intensity: number;
+  impact: string;
+}
+
+export interface EarningsEvent {
+  id: string;
+  ticker: string;
+  company: string;
+  headline: string;
+  /** e.g. "+12% beat" / "-4% miss". */
+  surprise: string;
+  direction: TrendDirection;
   impact: string;
 }
 
@@ -82,23 +93,17 @@ export interface CityOverview {
   volatility: string;
 }
 
-// ── News feed ────────────────────────────────────────────────────────────
-// The scanner feed that sits alongside the 3D city. Each item is tagged with
-// the district it belongs to so it can deep-link the user into that location.
+// ── Intelligence feed ────────────────────────────────────────────────────
+// The live signal feed that sits alongside the 3D hub. Each signal is tagged
+// with the category node it belongs to so it can focus the camera there.
 
-export type NewsCategory = "central-bank" | "commodity" | "macro" | "markets" | "geopolitics";
-export type NewsImpact = "high" | "medium" | "low";
-
-/** Where in the city a headline points — mirrors the scene's selectable places. */
-export type NewsLink =
-  | { kind: "bank"; id: CentralBank["id"] }
-  | { kind: "commodity"; id: Commodity["id"] }
-  | { kind: "macro"; id: MacroForce["id"] }
-  | { kind: "hq" }
-  | { kind: "core" };
+export type NewsCategory = "central-bank" | "commodity" | "macro" | "markets" | "earnings" | "geopolitics";
+export type NewsImpact = "low" | "medium" | "high" | "very-high";
+export type SignalTag = "alert" | "event";
 
 export interface NewsItem {
   id: string;
+  tag: SignalTag;
   /** Human label, e.g. "12m ago". */
   time: string;
   /** Minutes since publication — used for sorting/filtering. */
@@ -108,10 +113,15 @@ export interface NewsItem {
   impact: NewsImpact;
   direction: "up" | "down" | "neutral";
   title: string;
-  summary: string;
+  /** Short "Market Impact:" line, e.g. "NASDAQ ↓". */
+  marketImpact: string;
+  /** 0..100 — how confident the read on this signal is. */
+  confidence: number;
+  whatHappened: string;
+  whyItMatters: string;
+  historicalContext: string;
+  affectedAssets: string[];
   tickers: string[];
-  /** The district this headline maps to in the city, if any. */
-  link?: NewsLink;
 }
 
 export interface NewsCityData {
@@ -119,6 +129,7 @@ export interface NewsCityData {
   centralBanks: CentralBank[];
   commodities: Commodity[];
   macroForces: MacroForce[];
+  earnings: EarningsEvent[];
   marketHQ: MarketHQ;
   news: NewsItem[];
 }

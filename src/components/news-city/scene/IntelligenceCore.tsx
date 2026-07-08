@@ -10,11 +10,12 @@ import { SENTIMENT_META, RISK_META } from "@/lib/news-city/ui";
 import type { CityOverview } from "@/lib/news-city/types";
 
 /**
- * The Market Core — the brain of Market City. A levitating arc-reactor style
- * sphere with two counter-rotating gyroscope rings, glowing in the current
- * sentiment colour. Every district's data stream flows into or out of it.
+ * The Market Intelligence Core — the brain of the hub. A levitating
+ * holographic globe with two counter-rotating gyroscope rings, glowing in
+ * the current sentiment colour. Every category node's data stream flows
+ * into it.
  */
-export function MarketCore({
+export function IntelligenceCore({
   overview,
   active,
   onSelect,
@@ -54,21 +55,21 @@ export function MarketCore({
       onPointerOut={onPointerOut}
       onClick={onClick}
     >
-      <ClickHintRing ringRef={ringRef} radius={1.6} color={sentiment.hex} />
+      <ClickHintRing ringRef={ringRef} radius={1.9} color={sentiment.hex} />
 
       {/* Pedestal */}
       <mesh position={[0, 0.09, 0]} receiveShadow castShadow>
-        <cylinderGeometry args={[0.85, 1.05, 0.18, 48]} />
+        <cylinderGeometry args={[1.0, 1.2, 0.18, 48]} />
         <meshStandardMaterial color="#141b26" roughness={0.35} metalness={0.6} emissive="#1b2532" emissiveIntensity={0.4} />
       </mesh>
       <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.62, 0.7, 48]} />
+        <ringGeometry args={[0.72, 0.82, 48]} />
         <meshBasicMaterial color="#f97316" transparent opacity={0.75} toneMapped={false} />
       </mesh>
 
-      {/* Levitating holographic globe: glowing core inside a wireframe earth */}
-      <mesh ref={coreRef} position={[0, 1.35, 0]}>
-        <sphereGeometry args={[0.32, 28, 20]} />
+      {/* Levitating holographic globe: glowing core inside a wireframe shell */}
+      <mesh ref={coreRef} position={[0, 1.55, 0]}>
+        <sphereGeometry args={[0.38, 28, 20]} />
         <meshStandardMaterial
           color={sentiment.hex}
           emissive={sentiment.hex}
@@ -79,30 +80,30 @@ export function MarketCore({
         />
       </mesh>
       {/* Wireframe globe shell — latitude/longitude hologram */}
-      <mesh position={[0, 1.35, 0]}>
-        <sphereGeometry args={[0.5, 22, 14]} />
+      <mesh position={[0, 1.55, 0]}>
+        <sphereGeometry args={[0.58, 22, 14]} />
         <meshBasicMaterial color="#7fd4ea" wireframe transparent opacity={glow ? 0.55 : 0.4} toneMapped={false} depthWrite={false} />
       </mesh>
       {/* Halo */}
-      <mesh position={[0, 1.35, 0]}>
-        <sphereGeometry args={[0.62, 24, 18]} />
+      <mesh position={[0, 1.55, 0]}>
+        <sphereGeometry args={[0.72, 24, 18]} />
         <meshBasicMaterial color={sentiment.hex} transparent opacity={0.1} toneMapped={false} depthWrite={false} />
       </mesh>
-      <pointLight position={[0, 1.35, 0]} color={sentiment.hex} intensity={0.9} distance={6} decay={2} />
+      <pointLight position={[0, 1.55, 0]} color={sentiment.hex} intensity={1.1} distance={8} decay={2} />
 
       {/* Counter-rotating gyroscope rings */}
-      <mesh ref={gyroA} position={[0, 1.35, 0]}>
-        <torusGeometry args={[0.72, 0.02, 8, 64]} />
+      <mesh ref={gyroA} position={[0, 1.55, 0]}>
+        <torusGeometry args={[0.84, 0.022, 8, 64]} />
         <meshStandardMaterial color="#2c3948" roughness={0.3} metalness={0.6} emissive="#f97316" emissiveIntensity={0.9} toneMapped={false} />
       </mesh>
-      <mesh ref={gyroB} position={[0, 1.35, 0]} rotation={[Math.PI / 3, 0, Math.PI / 5]}>
-        <torusGeometry args={[0.88, 0.016, 8, 64]} />
+      <mesh ref={gyroB} position={[0, 1.55, 0]} rotation={[Math.PI / 3, 0, Math.PI / 5]}>
+        <torusGeometry args={[1.02, 0.018, 8, 64]} />
         <meshStandardMaterial color="#2c3948" roughness={0.3} metalness={0.6} emissive="#5fc0d8" emissiveIntensity={0.9} toneMapped={false} />
       </mesh>
 
       <CityLabel
-        y={2.45}
-        label="Market Core"
+        y={2.75}
+        label="Market Intelligence Core"
         sublabel={`${sentiment.label} · Risk ${risk.label}`}
         accent={sentiment.hex}
         emphasized={glow}

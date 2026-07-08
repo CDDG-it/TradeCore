@@ -3,44 +3,47 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import { Building2, Landmark, Ship, Zap, Newspaper, Globe } from "lucide-react";
+import { Building2, Landmark, Ship, Zap, TrendingUp, Newspaper, Globe } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { OverlayHud } from "@/components/news-city/OverlayHud";
 import { InfoPanel } from "@/components/news-city/InfoPanel";
-import { NewsFeed } from "@/components/news-city/NewsFeed";
+import { IntelligenceFeed } from "@/components/news-city/IntelligenceFeed";
 import { NEWS_CITY_DATA } from "@/lib/news-city/data";
 import { cn } from "@/lib/utils";
 import type { CitySelection } from "@/components/news-city/selection";
-import type { NewsLink } from "@/lib/news-city/types";
 
 // The scene relies on WebGL / the DOM, so it must never run during SSR and is
-// only mounted while the City view is active.
-const City3D = dynamic(() => import("@/components/news-city/City3D").then((m) => m.City3D), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center">
-      <p className="font-body text-sm text-muted-foreground animate-pulse">Entering Market City…</p>
-    </div>
-  ),
-});
+// only mounted while the Hub view is active.
+const IntelligenceHub3D = dynamic(
+  () => import("@/components/news-city/IntelligenceHub3D").then((m) => m.IntelligenceHub3D),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center">
+        <p className="font-body text-sm text-muted-foreground animate-pulse">Booting the Intelligence Hub…</p>
+      </div>
+    ),
+  }
+);
 
 const LEGEND = [
+  { icon: Zap, label: "Macro", hint: "CPI, jobs, GDP" },
   { icon: Landmark, label: "Central Banks", hint: "Fed, ECB, BoJ" },
   { icon: Ship, label: "Commodities", hint: "Oil & gold" },
-  { icon: Zap, label: "Macro", hint: "Inflation, jobs, growth" },
-  { icon: Building2, label: "Indexes", hint: "NQ & ES" },
+  { icon: TrendingUp, label: "Earnings", hint: "NVDA, MSFT" },
+  { icon: Building2, label: "Nasdaq / ES", hint: "NQ & ES" },
 ];
 
-type View = "feed" | "city";
+type View = "feed" | "hub";
 
 export default function NewsCityPage() {
   const [selection, setSelection] = useState<CitySelection | null>(null);
-  const [view, setView] = useState<View>("city");
+  const [view, setView] = useState<View>("hub");
 
-  function openInCity(link: NewsLink) {
-    setView("city");
-    setSelection(link as CitySelection);
+  function openInHub(eventId: string) {
+    setView("hub");
+    setSelection({ kind: "event", id: eventId });
   }
 
   return (
@@ -49,14 +52,14 @@ export default function NewsCityPage() {
         <PageHeader
           className="!mb-0"
           badge="Market intelligence"
-          title="MC News Dashboard"
-          subtitle="Scan the live market feed, then step into Market City to explore the forces behind every headline."
+          title="Market Intelligence Hub"
+          subtitle="Scan live intelligence signals, then explore the hub to see what's actually moving markets right now."
         />
         <div className="inline-flex items-center rounded-lg border border-border bg-muted p-[3px] shrink-0">
           {(
             [
               { value: "feed", label: "Live Feed", icon: Newspaper },
-              { value: "city", label: "Market City", icon: Globe },
+              { value: "hub", label: "Intelligence Hub", icon: Globe },
             ] as const
           ).map((t) => (
             <button
@@ -87,12 +90,12 @@ export default function NewsCityPage() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             >
-              <NewsFeed news={NEWS_CITY_DATA.news} onOpenInCity={openInCity} />
+              <IntelligenceFeed news={NEWS_CITY_DATA.news} onOpenInHub={openInHub} />
             </motion.div>
           ) : (
             <motion.div
-              key="city"
-              // "Materialise into the city" entrance.
+              key="hub"
+              // "Materialise the hologram" entrance.
               initial={{ opacity: 0, scale: 1.04, filter: "blur(8px)" }}
               animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -103,7 +106,7 @@ export default function NewsCityPage() {
                 className="relative w-full overflow-hidden rounded-2xl border border-border h-[clamp(360px,calc(100dvh-350px),780px)]"
                 style={{ background: "linear-gradient(180deg, #05070c 0%, #0a0f18 100%)" }}
               >
-                <City3D data={NEWS_CITY_DATA} selected={selection} onSelect={setSelection} />
+                <IntelligenceHub3D data={NEWS_CITY_DATA} selected={selection} onSelect={setSelection} />
 
                 {/* Legend + hint, docked at the bottom of the stage */}
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-3 sm:p-4 space-y-2">
@@ -120,7 +123,7 @@ export default function NewsCityPage() {
                     ))}
                   </div>
                   <p className="font-body text-[11px] text-muted-foreground text-center">
-                    Drag to look around · scroll to zoom · click a location for details
+                    Drag to look around · scroll to zoom · click a node for details
                   </p>
                 </div>
               </div>

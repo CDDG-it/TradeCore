@@ -6,11 +6,11 @@ import { useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
 
 /**
- * A curved, glowing information pathway between two places on the map, with
- * light pulses travelling along it — how influence moves through the market
- * (e.g. Central Banks → Market Core → Nasdaq).
+ * A curved, glowing information pathway between a category node and the
+ * Market Intelligence Core, with light pulses travelling along it — how
+ * each signal source feeds the core in real time.
  */
-export function FlowLink({
+export function DataFlow({
   from,
   to,
   color,

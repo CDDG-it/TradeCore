@@ -1,24 +1,27 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import type { Group, Mesh, MeshBasicMaterial } from "three";
 
 /**
- * Shared hover/click behaviour for every clickable object in the city (towers,
- * ships, tanks): a gentle scale-up on hover/active, a pointer cursor, a slow
- * idle bob so objects read as "alive" even before you touch them, and a
- * pulsing ground ring that hints "this is clickable" without needing a hover.
+ * Shared hover/click behaviour for every clickable object in the hub (nodes,
+ * the core): a gentle scale-up on hover/active, a pointer cursor, a slow idle
+ * bob so objects read as "alive" even before you touch them, and a pulsing
+ * ground ring that hints "this is clickable" without needing a hover.
  */
 export function useCityObject(active: boolean, onSelect: () => void) {
   const [hovered, setHovered] = useState(false);
   const groupRef = useRef<Group>(null);
   const ringRef = useRef<Mesh>(null);
-  // Random phase so objects don't all bob/pulse in lockstep.
-  const phase = useMemo(() => Math.random() * Math.PI * 2, []);
+  // Random phase so objects don't all bob/pulse in lockstep. Lazily
+  // initialized on first animation frame (outside React's render phase) so
+  // the impure Math.random() call never runs during render.
+  const phaseRef = useRef<number | null>(null);
 
   useFrame((state, delta) => {
-    const t = state.clock.elapsedTime + phase;
+    if (phaseRef.current === null) phaseRef.current = Math.random() * Math.PI * 2;
+    const t = state.clock.elapsedTime + phaseRef.current;
     const g = groupRef.current;
     if (g) {
       const targetXZ = hovered || active ? 1.1 : 1;

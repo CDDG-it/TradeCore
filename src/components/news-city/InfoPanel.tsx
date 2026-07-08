@@ -1,13 +1,16 @@
 "use client";
 
-import { ArrowUpRight, ArrowDownRight, Minus, Landmark, Ship as ShipIcon, Zap, Building2, Activity } from "lucide-react";
+import { useState } from "react";
+import {
+  ArrowUpRight, ArrowDownRight, Minus, Landmark, Ship, Zap, Building2, Activity, ChevronDown,
+} from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { DIRECTION_META, TREND_META, SENTIMENT_META, RISK_META } from "@/lib/news-city/ui";
-import type { NewsCityData, TrendDirection } from "@/lib/news-city/types";
+import { DIRECTION_META, TREND_META, SENTIMENT_META, RISK_META, NEWS_CATEGORY_META, NEWS_IMPACT_META, SIGNAL_TAG_META } from "@/lib/news-city/ui";
+import type { NewsCityData, TrendDirection, NewsCategory } from "@/lib/news-city/types";
 import type { CitySelection } from "./selection";
 
 function TrendIcon({ direction, className }: { direction: TrendDirection; className?: string }) {
@@ -25,6 +28,46 @@ function StatRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** A single expandable row inside a category panel — collapsed shows a
+ *  one-line summary, expanded reveals the full detail for that sub-entity. */
+function ExpandableRow({
+  id,
+  title,
+  subtitle,
+  badge,
+  expanded,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  subtitle: string;
+  badge?: React.ReactNode;
+  expanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div key={id} className="rounded-xl border border-border overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-3 p-3 text-left hover:bg-muted/40 transition-colors"
+      >
+        <div className="min-w-0">
+          <p className="font-body text-sm font-semibold text-foreground truncate">{title}</p>
+          <p className="font-body text-xs text-muted-foreground truncate">{subtitle}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {badge}
+          <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", expanded && "rotate-180")} />
+        </div>
+      </button>
+      {expanded && <div className="p-3 pt-0 space-y-3">{children}</div>}
+    </div>
+  );
+}
+
 export function InfoPanel({
   data,
   selection,
@@ -35,144 +78,20 @@ export function InfoPanel({
   onClose: () => void;
 }) {
   const open = selection !== null;
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   let icon = Building2;
   let title = "";
   let tagline = "";
   let body: React.ReactNode = null;
 
-  if (selection?.kind === "bank") {
-    const bank = data.centralBanks.find((b) => b.id === selection.id)!;
-    const meta = DIRECTION_META[bank.direction];
-    icon = Landmark;
-    title = bank.name;
-    tagline = "Central Bank District";
-    body = (
-      <div className="space-y-4">
-        <p className="font-body text-sm text-foreground/90 leading-relaxed">{bank.headline}</p>
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline" className={cn("border", meta.className)}>
-            {meta.label} stance
-          </Badge>
-          {bank.impacts.map((i) => (
-            <Badge
-              key={i.label}
-              variant="outline"
-              className={cn(
-                "border gap-1",
-                i.direction === "up"
-                  ? "text-success bg-success/10 border-success/30"
-                  : "text-destructive bg-destructive/10 border-destructive/30"
-              )}
-            >
-              {i.label}
-              {i.direction === "up" ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-            </Badge>
-          ))}
-        </div>
-        <div>
-          <StatRow label="Policy rate" value={bank.rate} />
-          <StatRow label="Liquidity" value={bank.liquidity} />
-          <StatRow label="Market expectation" value={bank.rateExpectation} />
-          <StatRow label="Last updated" value={bank.lastUpdated} />
-        </div>
-        <div className="rounded-xl bg-muted/40 p-3">
-          <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-            Impact on ES / NQ
-          </p>
-          <p className="font-body text-sm text-foreground/90 leading-relaxed">{bank.impact}</p>
-        </div>
-      </div>
-    );
-  } else if (selection?.kind === "commodity") {
-    const c = data.commodities.find((x) => x.id === selection.id)!;
-    const meta = TREND_META[c.direction];
-    icon = ShipIcon;
-    title = c.name;
-    tagline = "Commodity Harbor";
-    body = (
-      <div className="space-y-4">
-        <p className="font-body text-sm text-foreground/90 leading-relaxed">{c.headline}</p>
-        <Badge variant="outline" className={cn("border gap-1", meta.className)}>
-          <TrendIcon direction={c.direction} className="w-3 h-3" />
-          {meta.label}
-        </Badge>
-        <div>
-          <StatRow label="Price" value={c.price} />
-          <StatRow label="Change" value={c.change} />
-          <StatRow label="Supply risk" value={c.supplyRisk} />
-        </div>
-        <div className="rounded-xl bg-muted/40 p-3">
-          <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-            Geopolitical impact
-          </p>
-          <p className="font-body text-sm text-foreground/90 leading-relaxed">{c.geopoliticalImpact}</p>
-        </div>
-      </div>
-    );
-  } else if (selection?.kind === "macro") {
-    const f = data.macroForces.find((x) => x.id === selection.id)!;
-    const meta = TREND_META[f.direction];
-    icon = Zap;
-    title = `${f.name} Engine`;
-    tagline = "Macro Intelligence Zone";
-    body = (
-      <div className="space-y-4">
-        <p className="font-body text-sm text-foreground/90 leading-relaxed">{f.headline}</p>
-        <Badge variant="outline" className={cn("border gap-1", meta.className)}>
-          <TrendIcon direction={f.direction} className="w-3 h-3" />
-          {meta.label}
-        </Badge>
-        <div>
-          <StatRow label={f.metricLabel} value={f.metric} />
-          <StatRow label="Force strength" value={f.level} />
-        </div>
-        <div className="rounded-xl bg-muted/40 p-3">
-          <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-            Market impact
-          </p>
-          <p className="font-body text-sm text-foreground/90 leading-relaxed">{f.impact}</p>
-        </div>
-      </div>
-    );
-  } else if (selection?.kind === "hq") {
-    const hq = data.marketHQ;
-    const meta = SENTIMENT_META[hq.sentiment];
-    icon = Building2;
-    title = "Nasdaq / ES Headquarters";
-    tagline = "The main trading building";
-    body = (
-      <div className="space-y-4">
-        <Badge variant="outline" className={cn("border", meta.className)}>
-          Market regime: {hq.regime}
-        </Badge>
-        <div>
-          {hq.indices.map((idx) => (
-            <StatRow key={idx.id} label={idx.name} value={`${idx.price}  (${idx.change})`} />
-          ))}
-        </div>
-        <div className="rounded-xl bg-muted/40 p-3">
-          <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Main drivers
-          </p>
-          <ul className="space-y-1.5">
-            {hq.drivers.map((d) => (
-              <li key={d} className="font-body text-sm text-foreground/90 flex items-start gap-2">
-                <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
-                {d}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    );
-  } else if (selection?.kind === "core") {
+  if (selection?.kind === "core") {
     const o = data.overview;
     const meta = SENTIMENT_META[o.sentiment];
     const risk = RISK_META[o.riskLevel];
     icon = Activity;
-    title = "Market Core";
-    tagline = "The brain of Market City";
+    title = "Market Intelligence Core";
+    tagline = "The brain of the hub";
     body = (
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
@@ -200,13 +119,292 @@ export function InfoPanel({
         </div>
       </div>
     );
+  } else if (selection?.kind === "category") {
+    const cat = selection.id;
+    const catMeta = NEWS_CATEGORY_META[cat];
+    tagline = "Category node";
+    title = catMeta.label;
+
+    if (cat === "central-bank") {
+      icon = Landmark;
+      body = (
+        <div className="space-y-2">
+          {data.centralBanks.map((bank) => {
+            const meta = DIRECTION_META[bank.direction];
+            const rowId = `bank:${bank.id}`;
+            const expanded = expandedRow === rowId;
+            return (
+              <ExpandableRow
+                key={rowId}
+                id={rowId}
+                title={bank.name}
+                subtitle={`${bank.rate} · ${meta.label}`}
+                badge={<Badge variant="outline" className={cn("border", meta.className)}>{meta.label}</Badge>}
+                expanded={expanded}
+                onToggle={() => setExpandedRow(expanded ? null : rowId)}
+              >
+                <p className="font-body text-sm text-foreground/90 leading-relaxed">{bank.headline}</p>
+                <div className="flex flex-wrap gap-2">
+                  {bank.impacts.map((im) => (
+                    <Badge
+                      key={im.label}
+                      variant="outline"
+                      className={cn(
+                        "border gap-1",
+                        im.direction === "up"
+                          ? "text-success bg-success/10 border-success/30"
+                          : "text-destructive bg-destructive/10 border-destructive/30"
+                      )}
+                    >
+                      {im.label}
+                      {im.direction === "up" ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                    </Badge>
+                  ))}
+                </div>
+                <div>
+                  <StatRow label="Liquidity" value={bank.liquidity} />
+                  <StatRow label="Market expectation" value={bank.rateExpectation} />
+                  <StatRow label="Last updated" value={bank.lastUpdated} />
+                </div>
+                <div className="rounded-xl bg-muted/40 p-3">
+                  <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Impact on ES / NQ
+                  </p>
+                  <p className="font-body text-sm text-foreground/90 leading-relaxed">{bank.impact}</p>
+                </div>
+              </ExpandableRow>
+            );
+          })}
+        </div>
+      );
+    } else if (cat === "commodity") {
+      icon = Ship;
+      body = (
+        <div className="space-y-2">
+          {data.commodities.map((c) => {
+            const meta = TREND_META[c.direction];
+            const rowId = `commodity:${c.id}`;
+            const expanded = expandedRow === rowId;
+            return (
+              <ExpandableRow
+                key={rowId}
+                id={rowId}
+                title={c.name}
+                subtitle={`${c.price} · ${meta.label}`}
+                badge={
+                  <Badge variant="outline" className={cn("border gap-1", meta.className)}>
+                    <TrendIcon direction={c.direction} className="w-3 h-3" />
+                    {meta.label}
+                  </Badge>
+                }
+                expanded={expanded}
+                onToggle={() => setExpandedRow(expanded ? null : rowId)}
+              >
+                <p className="font-body text-sm text-foreground/90 leading-relaxed">{c.headline}</p>
+                <div>
+                  <StatRow label="Price" value={c.price} />
+                  <StatRow label="Change" value={c.change} />
+                  <StatRow label="Supply risk" value={c.supplyRisk} />
+                </div>
+                <div className="rounded-xl bg-muted/40 p-3">
+                  <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Geopolitical impact
+                  </p>
+                  <p className="font-body text-sm text-foreground/90 leading-relaxed">{c.geopoliticalImpact}</p>
+                </div>
+              </ExpandableRow>
+            );
+          })}
+        </div>
+      );
+    } else if (cat === "macro") {
+      icon = Zap;
+      body = (
+        <div className="space-y-2">
+          {data.macroForces.map((f) => {
+            const meta = TREND_META[f.direction];
+            const rowId = `macro:${f.id}`;
+            const expanded = expandedRow === rowId;
+            return (
+              <ExpandableRow
+                key={rowId}
+                id={rowId}
+                title={`${f.name} Engine`}
+                subtitle={`${f.metric} · ${f.level}`}
+                badge={
+                  <Badge variant="outline" className={cn("border gap-1", meta.className)}>
+                    <TrendIcon direction={f.direction} className="w-3 h-3" />
+                    {meta.label}
+                  </Badge>
+                }
+                expanded={expanded}
+                onToggle={() => setExpandedRow(expanded ? null : rowId)}
+              >
+                <p className="font-body text-sm text-foreground/90 leading-relaxed">{f.headline}</p>
+                <div>
+                  <StatRow label={f.metricLabel} value={f.metric} />
+                  <StatRow label="Force strength" value={f.level} />
+                </div>
+                <div className="rounded-xl bg-muted/40 p-3">
+                  <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Market impact
+                  </p>
+                  <p className="font-body text-sm text-foreground/90 leading-relaxed">{f.impact}</p>
+                </div>
+              </ExpandableRow>
+            );
+          })}
+        </div>
+      );
+    } else if (cat === "earnings") {
+      icon = Building2;
+      body = (
+        <div className="space-y-2">
+          {data.earnings.map((e) => {
+            const meta = TREND_META[e.direction];
+            const rowId = `earnings:${e.id}`;
+            const expanded = expandedRow === rowId;
+            return (
+              <ExpandableRow
+                key={rowId}
+                id={rowId}
+                title={`${e.company} (${e.ticker})`}
+                subtitle={e.surprise}
+                badge={
+                  <Badge variant="outline" className={cn("border gap-1", meta.className)}>
+                    <TrendIcon direction={e.direction} className="w-3 h-3" />
+                    {meta.label}
+                  </Badge>
+                }
+                expanded={expanded}
+                onToggle={() => setExpandedRow(expanded ? null : rowId)}
+              >
+                <p className="font-body text-sm text-foreground/90 leading-relaxed">{e.headline}</p>
+                <div className="rounded-xl bg-muted/40 p-3">
+                  <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Market impact
+                  </p>
+                  <p className="font-body text-sm text-foreground/90 leading-relaxed">{e.impact}</p>
+                </div>
+              </ExpandableRow>
+            );
+          })}
+        </div>
+      );
+    } else if (cat === "markets") {
+      const hq = data.marketHQ;
+      const meta = SENTIMENT_META[hq.sentiment];
+      icon = Building2;
+      body = (
+        <div className="space-y-4">
+          <Badge variant="outline" className={cn("border", meta.className)}>
+            Market regime: {hq.regime}
+          </Badge>
+          <div>
+            {hq.indices.map((idx) => (
+              <StatRow key={idx.id} label={idx.name} value={`${idx.price}  (${idx.change})`} />
+            ))}
+          </div>
+          <div className="rounded-xl bg-muted/40 p-3">
+            <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Main drivers
+            </p>
+            <ul className="space-y-1.5">
+              {hq.drivers.map((d) => (
+                <li key={d} className="font-body text-sm text-foreground/90 flex items-start gap-2">
+                  <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
+                  {d}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      );
+    }
+  } else if (selection?.kind === "event") {
+    const item = data.news.find((n) => n.id === selection.id);
+    if (item) {
+      const catMeta = NEWS_CATEGORY_META[item.category as NewsCategory];
+      const impMeta = NEWS_IMPACT_META[item.impact];
+      const tagMeta = SIGNAL_TAG_META[item.tag];
+      icon = Activity;
+      title = item.title;
+      tagline = catMeta.label;
+      body = (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className={cn("border font-mono", tagMeta.className)}>
+              [{tagMeta.label}]
+            </Badge>
+            <Badge variant="outline" className={cn("border", impMeta.className)}>
+              {impMeta.label}
+            </Badge>
+            <span className="font-body text-xs text-muted-foreground ml-auto">{item.time} · {item.source}</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-muted/40 p-3">
+              <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                Market impact
+              </p>
+              <p className="font-body text-sm font-semibold text-foreground">{item.marketImpact}</p>
+            </div>
+            <div className="rounded-xl bg-muted/40 p-3">
+              <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                Confidence
+              </p>
+              <p className="font-body text-sm font-semibold text-foreground">{item.confidence}%</p>
+            </div>
+          </div>
+
+          <div>
+            <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              What happened
+            </p>
+            <p className="font-body text-sm text-foreground/90 leading-relaxed">{item.whatHappened}</p>
+          </div>
+          <div>
+            <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              Why it matters
+            </p>
+            <p className="font-body text-sm text-foreground/90 leading-relaxed">{item.whyItMatters}</p>
+          </div>
+          <div>
+            <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Markets affected
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {item.affectedAssets.map((a) => (
+                <span key={a} className="font-body text-xs font-semibold rounded-full px-2.5 py-1 bg-muted/60 text-foreground">
+                  {a}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl bg-muted/40 p-3">
+            <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              Historical context
+            </p>
+            <p className="font-body text-sm text-foreground/90 leading-relaxed">{item.historicalContext}</p>
+          </div>
+        </div>
+      );
+    }
   }
 
   const Icon = icon;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          setExpandedRow(null);
+          onClose();
+        }
+      }}
+    >
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2.5 mb-1">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary/10 shrink-0">

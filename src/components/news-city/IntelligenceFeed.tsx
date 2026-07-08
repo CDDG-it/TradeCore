@@ -5,8 +5,8 @@ import { motion } from "motion/react";
 import { ArrowUpRight, ArrowDownRight, Minus, Radar, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { NEWS_CATEGORY_META, NEWS_IMPACT_META } from "@/lib/news-city/ui";
-import type { NewsItem, NewsCategory, NewsImpact, NewsLink } from "@/lib/news-city/types";
+import { NEWS_CATEGORY_META, NEWS_IMPACT_META, SIGNAL_TAG_META } from "@/lib/news-city/ui";
+import type { NewsItem, NewsCategory, NewsImpact } from "@/lib/news-city/types";
 
 type CategoryFilter = "all" | NewsCategory;
 type ImpactFilter = "all" | NewsImpact;
@@ -16,12 +16,14 @@ const CATEGORY_FILTERS: { value: CategoryFilter; label: string }[] = [
   { value: "central-bank", label: "Central Banks" },
   { value: "commodity", label: "Commodities" },
   { value: "macro", label: "Macro" },
+  { value: "earnings", label: "Earnings" },
   { value: "markets", label: "Markets" },
   { value: "geopolitics", label: "Geopolitics" },
 ];
 
 const IMPACT_FILTERS: { value: ImpactFilter; label: string }[] = [
   { value: "all", label: "Any impact" },
+  { value: "very-high", label: "Very high" },
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
   { value: "low", label: "Low" },
@@ -58,12 +60,12 @@ function FilterChip({
   );
 }
 
-export function NewsFeed({
+export function IntelligenceFeed({
   news,
-  onOpenInCity,
+  onOpenInHub,
 }: {
   news: NewsItem[];
-  onOpenInCity: (link: NewsLink) => void;
+  onOpenInHub: (eventId: string) => void;
 }) {
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [impact, setImpact] = useState<ImpactFilter>("all");
@@ -84,10 +86,10 @@ export function NewsFeed({
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
           </span>
           <Radar className="w-4 h-4 text-primary" />
-          <p className="font-body text-sm font-semibold text-foreground">Live news scan</p>
+          <p className="font-body text-sm font-semibold text-foreground">Live intelligence signals</p>
         </div>
         <p className="font-body text-xs text-muted-foreground tabular-nums">
-          {filtered.length} of {news.length} headlines
+          {filtered.length} of {news.length} signals
         </p>
       </div>
 
@@ -112,20 +114,23 @@ export function NewsFeed({
       {/* Feed */}
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-10 text-center">
-          <p className="font-body text-sm text-muted-foreground">No headlines match these filters.</p>
+          <p className="font-body text-sm text-muted-foreground">No signals match these filters.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((item, i) => {
             const cat = NEWS_CATEGORY_META[item.category];
             const imp = NEWS_IMPACT_META[item.impact];
+            const tag = SIGNAL_TAG_META[item.tag];
             return (
-              <motion.div
+              <motion.button
+                type="button"
                 key={item.id}
+                onClick={() => onOpenInHub(item.id)}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.28, delay: Math.min(i * 0.03, 0.3), ease: [0.22, 1, 0.36, 1] }}
-                className="group relative flex gap-3 rounded-xl border border-border bg-card/60 p-3 pl-4 transition-colors hover:border-primary/30 hover:bg-muted/40"
+                className="group relative flex w-full gap-3 rounded-xl border border-border bg-card/60 p-3 pl-4 text-left transition-colors hover:border-primary/30 hover:bg-muted/40"
               >
                 {/* Category colour rail */}
                 <span
@@ -134,6 +139,9 @@ export function NewsFeed({
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1">
+                    <span className={cn("font-mono text-[10px] font-bold uppercase tracking-wider rounded border px-1.5 py-0.5", tag.className)}>
+                      {tag.label}
+                    </span>
                     <span className="font-body text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {item.source}
                     </span>
@@ -142,12 +150,17 @@ export function NewsFeed({
                     <DirectionIcon direction={item.direction} className="w-3.5 h-3.5" />
                   </div>
                   <p className="font-body text-sm font-semibold text-foreground leading-snug">{item.title}</p>
-                  <p className="font-body text-xs text-muted-foreground leading-relaxed mt-0.5 line-clamp-2">
-                    {item.summary}
-                  </p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="font-body text-xs text-muted-foreground">
+                      Market impact: <span className="font-semibold text-foreground/90">{item.marketImpact}</span>
+                    </p>
+                    <p className="font-body text-xs text-muted-foreground tabular-nums">
+                      Confidence: <span className="font-semibold text-foreground/90">{item.confidence}%</span>
+                    </p>
+                  </div>
                   <div className="flex flex-wrap items-center gap-1.5 mt-2">
                     <Badge variant="outline" className={cn("border", cat.className)}>
-                      {cat.label}
+                      {cat.short}
                     </Badge>
                     <Badge variant="outline" className={cn("border", imp.className)}>
                       {imp.label}
@@ -162,17 +175,11 @@ export function NewsFeed({
                     ))}
                   </div>
                 </div>
-                {item.link && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenInCity(item.link!)}
-                    className="shrink-0 self-center inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary border border-primary/20 bg-primary/5 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 hover:bg-primary/10"
-                  >
-                    View in city
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </motion.div>
+                <span className="shrink-0 self-center inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary border border-primary/20 bg-primary/5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                  Expand
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </span>
+              </motion.button>
             );
           })}
         </div>
