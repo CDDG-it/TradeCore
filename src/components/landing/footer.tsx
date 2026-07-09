@@ -33,7 +33,7 @@ const COLUMNS = [
 export function LandingFooter() {
   return (
     <footer
-      style={{ background: "rgba(249,246,242,1)", borderTop: "1px solid rgba(0,0,0,0.07)" }}
+      style={{ background: "#0B1120", borderTop: "1px solid rgba(248,250,252,0.09)" }}
     >
       <div className="mx-auto max-w-6xl px-6 sm:px-10">
 
@@ -47,7 +47,7 @@ export function LandingFooter() {
               className="font-black text-lg tracking-tight leading-none transition-opacity hover:opacity-70"
               style={{ fontFamily: NUNITO }}
             >
-              <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
+              <span style={{ color: "rgba(248,250,252,0.92)" }}>Trading</span>
               <span style={{
                 background: "linear-gradient(90deg,#14B8A6,#0D9488)",
                 WebkitBackgroundClip: "text",
@@ -57,7 +57,7 @@ export function LandingFooter() {
             </Link>
             <p
               className="mt-3 text-sm leading-relaxed"
-              style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.55)" }}
+              style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.60)" }}
             >
               Where self-improvement meets trading. Built for futures traders
               who take their preparation as seriously as their entries.
@@ -77,7 +77,7 @@ export function LandingFooter() {
             <nav key={col.heading} aria-label={col.heading}>
               <p
                 className="text-[0.625rem] font-bold uppercase tracking-[0.18em]"
-                style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.40)" }}
+                style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.45)" }}
               >
                 {col.heading}
               </p>
@@ -86,7 +86,7 @@ export function LandingFooter() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[rgba(60,48,36,0.55)] transition-colors duration-200 hover:text-[rgba(15,12,8,0.88)]"
+                      className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[rgba(248,250,252,0.60)] transition-colors duration-200 hover:text-[rgba(248,250,252,0.92)]"
                       style={{ fontFamily: NUNITO }}
                     >
                       {/* Accent dash that slides in on hover */}
@@ -106,19 +106,19 @@ export function LandingFooter() {
         {/* Bottom bar */}
         <div
           className="flex flex-col items-center justify-between gap-4 py-6 sm:flex-row"
-          style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}
+          style={{ borderTop: "1px solid rgba(248,250,252,0.08)" }}
         >
-          <p className="text-xs" style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.40)" }}>
+          <p className="text-xs" style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.45)" }}>
             © {new Date().getFullYear()} TradingMC. All rights reserved.
           </p>
-          <p className="text-xs" style={{ fontFamily: NUNITO, color: "rgba(60,48,36,0.40)" }}>
+          <p className="text-xs" style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.45)" }}>
             Plan the session. Log the trade. Review the week.
           </p>
           <button
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold text-[rgba(60,48,36,0.55)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[#14B8A6]"
-            style={{ fontFamily: NUNITO, borderColor: "rgba(16,11,6,0.12)" }}
+            className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold text-[rgba(248,250,252,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[#14B8A6]"
+            style={{ fontFamily: NUNITO, borderColor: "rgba(248,250,252,0.12)" }}
           >
             Back to top
             <ArrowUp className="h-3 w-3" />

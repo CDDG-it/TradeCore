@@ -157,12 +157,12 @@ export function CandlestickBackground() {
         const cx = x + wCandle / 2;
 
         if (isDark) {
-          ctx.strokeStyle = bull ? "rgba(20,184,166,0.55)" : "rgba(172,48,14,0.45)";
+          ctx.strokeStyle = bull ? "rgba(20,184,166,0.55)" : "rgba(100,116,139,0.45)";
           ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
-          ctx.fillStyle = bull ? "rgba(20,184,166,0.22)" : "rgba(172,48,14,0.18)";
+          ctx.fillStyle = bull ? "rgba(20,184,166,0.22)" : "rgba(100,116,139,0.18)";
           ctx.fillRect(x, bTop, wCandle, bH);
-          ctx.strokeStyle = bull ? "rgba(20,184,166,0.72)" : "rgba(172,48,14,0.55)";
+          ctx.strokeStyle = bull ? "rgba(20,184,166,0.72)" : "rgba(100,116,139,0.55)";
           ctx.lineWidth = 0.75;
           ctx.strokeRect(x, bTop, wCandle, bH);
         } else {

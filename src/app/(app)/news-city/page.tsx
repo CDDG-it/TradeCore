@@ -104,7 +104,7 @@ export default function NewsCityPage() {
               {/* Tall stage that fills down toward the bottom of the screen. */}
               <div
                 className="relative w-full overflow-hidden rounded-2xl border border-border h-[clamp(360px,calc(100dvh-350px),780px)]"
-                style={{ background: "linear-gradient(180deg, #05070c 0%, #0a0f18 100%)" }}
+                style={{ background: "#0b1120" }}
               >
                 <IntelligenceHub3D data={NEWS_CITY_DATA} selected={selection} onSelect={setSelection} />
 

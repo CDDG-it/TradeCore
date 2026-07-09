@@ -6,10 +6,10 @@ import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import { FEATURES } from "@/lib/landing/features";
 
-// Exact same warm-white as hero background
-const BG = "rgba(249,246,242,1)";
+// Exact same dark navy as hero background
+const BG = "#0B1120";
 
-// The preview cards mirror the feature pages. The orange CTA on each card now
+// The preview cards mirror the feature pages. The turquoise CTA on each card now
 // leads to that feature's explainer page, not straight into the gated app.
 const CARDS = FEATURES.map((f, index) => ({
   index,
@@ -21,7 +21,7 @@ const CARDS = FEATURES.map((f, index) => ({
   screenshot: f.screenshot,
 }));
 
-// ── Screenshot frame — no browser chrome, just the app with orange glow ───────
+// ── Screenshot frame — no browser chrome, just the app with turquoise glow ───────
 function ScreenshotFrame({ src, alt, eager }: { src: string; alt: string; eager?: boolean }) {
   // Pure CSS hover: no React state, and the glow lives on its own layer whose
   // opacity fades — gradients and stacked shadows can't be interpolated, so
@@ -30,7 +30,7 @@ function ScreenshotFrame({ src, alt, eager }: { src: string; alt: string; eager?
     <div
       className="group/frame relative w-full overflow-hidden rounded-2xl"
       style={{
-        boxShadow: "0 0 0 1.5px rgba(20,184,166,0.22), 0 0 20px rgba(20,184,166,0.08), 0 8px 40px rgba(0,0,0,0.08)",
+        boxShadow: "0 0 0 1.5px rgba(20,184,166,0.28), 0 0 20px rgba(20,184,166,0.12), 0 8px 40px rgba(0,0,0,0.45)",
       }}
     >
       {/* Screenshot — aspect ratio matches 1200×900 crop */}
@@ -69,7 +69,7 @@ function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
   return (
     <div
       className="min-h-screen flex items-center py-24 border-b"
-      style={{ borderColor: "rgba(0,0,0,0.06)" }}
+      style={{ borderColor: "rgba(248,250,252,0.08)" }}
     >
       <div className="mx-auto w-full max-w-7xl px-6 sm:px-10">
         <div className={`grid grid-cols-1 ${gridCols} gap-12 lg:gap-20 items-center`}>
@@ -103,7 +103,7 @@ function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
                   fontWeight:    700,
                   textTransform: "uppercase" as const,
                   letterSpacing: "0.18em",
-                  color:         "rgba(60,48,36,0.40)",
+                  color:         "rgba(248,250,252,0.45)",
                 }}
               >
                 {card.section}
@@ -116,7 +116,7 @@ function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
               style={{
                 fontFamily: "var(--font-nunito), system-ui, sans-serif",
                 fontSize:   "clamp(2.8rem, 5vw, 4.8rem)",
-                color:      "rgba(15,12,8,0.90)",
+                color:      "rgba(248,250,252,0.94)",
               }}
             >
               {card.name}
@@ -129,7 +129,7 @@ function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
                 fontFamily: "var(--font-nunito), system-ui, sans-serif",
                 fontSize:   "clamp(0.95rem, 1.5vw, 1.05rem)",
                 fontWeight: 400,
-                color:      "rgba(60,48,36,0.55)",
+                color:      "rgba(248,250,252,0.62)",
               }}
             >
               {card.desc}
@@ -142,7 +142,7 @@ function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
               style={{
                 fontFamily: "var(--font-nunito), system-ui, sans-serif",
                 background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
-                boxShadow:  "0 4px 24px rgba(20,184,166,0.28), 0 1px 3px rgba(0,0,0,0.10)",
+                boxShadow:  "0 4px 24px rgba(20,184,166,0.32), 0 1px 3px rgba(0,0,0,0.30)",
               }}
             >
               {card.cta}
@@ -177,7 +177,7 @@ export function ProductPreview() {
       {/* Top border matching hero bottom strip */}
       <div
         className="h-px w-full"
-        style={{ background: "rgba(0,0,0,0.06)" }}
+        style={{ background: "rgba(248,250,252,0.08)" }}
       />
 
       {/* Section intro */}
@@ -195,7 +195,7 @@ export function ProductPreview() {
             fontWeight:    700,
             textTransform: "uppercase",
             letterSpacing: "0.20em",
-            color:         "rgba(60,48,36,0.40)",
+            color:         "rgba(248,250,252,0.45)",
           }}
         >
           The workspace
@@ -205,7 +205,7 @@ export function ProductPreview() {
           style={{
             fontFamily: "var(--font-nunito), system-ui, sans-serif",
             fontSize:   "clamp(2rem, 5vw, 3rem)",
-            color:      "rgba(15,12,8,0.88)",
+            color:      "rgba(248,250,252,0.92)",
           }}
         >
           Five tools. One platform.
@@ -215,7 +215,7 @@ export function ProductPreview() {
           style={{
             fontFamily: "var(--font-nunito), system-ui, sans-serif",
             fontSize:   "0.9rem",
-            color:      "rgba(60,48,36,0.50)",
+            color:      "rgba(248,250,252,0.55)",
           }}
         >
           Built around the way funded traders actually work, from pre-market prep to end-of-day review.

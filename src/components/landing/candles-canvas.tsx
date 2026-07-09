@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
-// Light bg constant – warm white  oklch(0.98 0.003 45) ≈ rgba(249,246,242)
-const LIGHT = "rgba(249,246,242,";
+// Dark bg constant – app navy background  #0B1120 ≈ rgba(11,17,32)
+const DARK = "rgba(11,17,32,";
 
 // ── Candle generation ────────────────────────────────────────────────────────
 interface Candle { o: number; h: number; l: number; c: number }
@@ -31,8 +31,8 @@ const GAP = 6;
 const STEP = W + GAP;
 
 /**
- * Slowly drifting candlestick chart on the warm-white landing background.
- * Orange bulls, near-black bears, with a radial mask that keeps the center
+ * Slowly drifting candlestick chart on the dark navy landing background.
+ * Turquoise bulls, neutral gray bears, with a radial mask that keeps the center
  * readable for overlaid content. Used on the landing hero and auth pages.
  */
 export function CandlesCanvas() {
@@ -102,7 +102,7 @@ export function CandlesCanvas() {
       const cH = cBot - cTop;
       const py = (p: number) => cTop + ((sc.max - p) / pRange) * cH;
 
-      // Orange bulls, near-black bears on white bg
+      // Turquoise bulls, neutral gray bears on dark navy bg
       for (let i = 0; i < count; i++) {
         const ci = (startIdx + i) % N;
         const c = CANDLES[ci];
@@ -116,52 +116,52 @@ export function CandlesCanvas() {
         const cx = x + W / 2;
 
         // Wick
-        ctx.strokeStyle = bull ? "rgba(20,184,166,0.55)" : "rgba(16,11,6,0.45)";
+        ctx.strokeStyle = bull ? "rgba(20,184,166,0.55)" : "rgba(100,116,139,0.45)";
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
         // Body fill
-        ctx.fillStyle = bull ? "rgba(20,184,166,0.22)" : "rgba(16,11,6,0.12)";
+        ctx.fillStyle = bull ? "rgba(20,184,166,0.22)" : "rgba(100,116,139,0.18)";
         ctx.fillRect(x, bTop, W, bH);
         // Body border
-        ctx.strokeStyle = bull ? "rgba(20,184,166,0.72)" : "rgba(16,11,6,0.55)";
+        ctx.strokeStyle = bull ? "rgba(20,184,166,0.72)" : "rgba(100,116,139,0.55)";
         ctx.lineWidth = 0.75;
         ctx.strokeRect(x, bTop, W, bH);
       }
 
-      // Center radial mask — softens candles in the content area on light bg
+      // Center radial mask — softens candles in the content area on dark bg
       const radialCx = cw / 2;
       const radialCy = ch * 0.42;
       const radialR = Math.min(cw * 0.46, ch * 0.56);
       const radial = ctx.createRadialGradient(radialCx, radialCy, radialR * 0.10, radialCx, radialCy, radialR);
-      radial.addColorStop(0, `${LIGHT}0.92)`);
-      radial.addColorStop(0.38, `${LIGHT}0.66)`);
-      radial.addColorStop(0.72, `${LIGHT}0.18)`);
-      radial.addColorStop(1, `${LIGHT}0)`);
+      radial.addColorStop(0, `${DARK}0.92)`);
+      radial.addColorStop(0.38, `${DARK}0.66)`);
+      radial.addColorStop(0.72, `${DARK}0.18)`);
+      radial.addColorStop(1, `${DARK}0)`);
       ctx.fillStyle = radial;
       ctx.fillRect(0, 0, cw, ch);
 
       // Edge fades
       const fadeTop = ctx.createLinearGradient(0, 0, 0, ch * 0.14);
-      fadeTop.addColorStop(0, `${LIGHT}0.98)`);
-      fadeTop.addColorStop(1, `${LIGHT}0)`);
+      fadeTop.addColorStop(0, `${DARK}0.98)`);
+      fadeTop.addColorStop(1, `${DARK}0)`);
       ctx.fillStyle = fadeTop;
       ctx.fillRect(0, 0, cw, ch * 0.14);
 
       const fadeBot = ctx.createLinearGradient(0, ch * 0.75, 0, ch);
-      fadeBot.addColorStop(0, `${LIGHT}0)`);
-      fadeBot.addColorStop(1, `${LIGHT}0.96)`);
+      fadeBot.addColorStop(0, `${DARK}0)`);
+      fadeBot.addColorStop(1, `${DARK}0.96)`);
       ctx.fillStyle = fadeBot;
       ctx.fillRect(0, ch * 0.75, cw, ch);
 
       const fadeL = ctx.createLinearGradient(0, 0, 100, 0);
-      fadeL.addColorStop(0, `${LIGHT}0.95)`);
-      fadeL.addColorStop(1, `${LIGHT}0)`);
+      fadeL.addColorStop(0, `${DARK}0.95)`);
+      fadeL.addColorStop(1, `${DARK}0)`);
       ctx.fillStyle = fadeL;
       ctx.fillRect(0, 0, 100, ch);
 
       const fadeR = ctx.createLinearGradient(cw - 100, 0, cw, 0);
-      fadeR.addColorStop(0, `${LIGHT}0)`);
-      fadeR.addColorStop(1, `${LIGHT}0.95)`);
+      fadeR.addColorStop(0, `${DARK}0)`);
+      fadeR.addColorStop(1, `${DARK}0.95)`);
       ctx.fillStyle = fadeR;
       ctx.fillRect(cw - 100, 0, 100, ch);
 

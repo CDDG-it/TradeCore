@@ -27,12 +27,12 @@ export default function HomePage() {
     // No overflow class here: overflow-x-hidden disables the sticky header and
     // overflow-x-clip kills page scrolling entirely. Sections that animate
     // horizontally contain their own overflow instead.
-    <div style={{ background: "oklch(0.98 0.003 250)" }}>
+    <div style={{ background: "#0B1120" }}>
 
       {/* ── Top navigation: Features dropdown, Coming soon, Sign in, Make account ── */}
       <LandingNav />
 
-      {/* ── Hero — light background, orange + black candle visuals ── */}
+      {/* ── Hero — dark navy background, turquoise + neutral candle visuals ── */}
       {/* 53px = header height (py-4 + text-base logo + 1px border) */}
       <section ref={heroRef} className="relative flex flex-col" style={{ minHeight: "calc(100svh - 53px)" }}>
 
@@ -43,7 +43,7 @@ export default function HomePage() {
         <motion.div
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(20,184,166,0.10) 0%, transparent 65%)" }}
+          style={{ background: "radial-gradient(circle, rgba(20,184,166,0.16) 0%, transparent 65%)" }}
           animate={{ scale: [1, 1.18, 1], opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 9, ease: "easeInOut", repeat: Infinity }}
         />
@@ -61,7 +61,7 @@ export default function HomePage() {
             style={{
               fontFamily: NUNITO,
               fontSize: "clamp(3.5rem,11vw,9rem)",
-              color: "rgba(15,12,8,0.90)",
+              color: "rgba(248,250,252,0.94)",
             }}
           >
             Trading
@@ -85,7 +85,7 @@ export default function HomePage() {
               fontSize: "clamp(1rem,2.4vw,1.2rem)",
               fontWeight: 400,
               letterSpacing: "0.01em",
-              color: "rgba(60,48,36,0.55)",
+              color: "rgba(248,250,252,0.60)",
             }}
           >
             Great traders are built beyond the charts. Capture every trade,
@@ -105,7 +105,7 @@ export default function HomePage() {
               style={{
                 fontFamily: NUNITO,
                 background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
-                boxShadow: "0 4px 28px rgba(20,184,166,0.35), 0 1px 3px rgba(0,0,0,0.12)",
+                boxShadow: "0 4px 28px rgba(20,184,166,0.40), 0 1px 3px rgba(0,0,0,0.35)",
               }}
             >
               Open dashboard
@@ -113,11 +113,11 @@ export default function HomePage() {
             </Link>
             <a
               href="#product"
-              className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
+              className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold text-[rgba(248,250,252,0.65)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[rgba(248,250,252,0.92)] active:translate-y-0"
               style={{
                 fontFamily: NUNITO,
-                borderColor: "rgba(16,11,6,0.14)",
-                background: "rgba(249,246,242,0.65)",
+                borderColor: "rgba(248,250,252,0.14)",
+                background: "rgba(248,250,252,0.06)",
                 backdropFilter: "blur(8px)",
                 WebkitBackdropFilter: "blur(8px)",
               }}

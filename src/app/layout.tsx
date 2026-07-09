@@ -20,7 +20,7 @@ const instrumentSerif = Instrument_Serif({
 const barlow = Barlow({
   variable: "--font-barlow",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "block",
 });
 
@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} ${nunito.variable} h-full antialiased light`}
+      className={`${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} ${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-body">
         <AuthProvider>

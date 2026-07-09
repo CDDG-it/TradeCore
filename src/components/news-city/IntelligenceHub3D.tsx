@@ -13,7 +13,7 @@ import type { NewsCategory, NewsCityData } from "@/lib/news-city/types";
 import type { CitySelection } from "./selection";
 import { selectionKey } from "./selection";
 
-const SKY_BG = "#05070c";
+const SKY_BG = "#0b1120"; // matches the app's --background token
 
 /** The five signal sources the hub visualises, arranged as a pentagon around
  *  the Market Intelligence Core — matches the reading order Macro → Central

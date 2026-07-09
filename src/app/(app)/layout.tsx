@@ -1,15 +1,11 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
-import { VideoBackground } from "@/components/layout/video-background";
 import { CandlestickBackground } from "@/components/layout/candlestick-background";
 import { TransitionLayout } from "@/components/layout/transition-layout";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden z-[4]">
-
-      {/* ── HLS video background ── */}
-      <VideoBackground />
 
       {/* ── Interactive candlestick chart (dashboard only) ── */}
       <CandlestickBackground />

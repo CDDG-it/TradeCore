@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Shield, Lock, KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle, BarChart2 } from "lucide-react";
+import { Shield, Lock, KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle, BarChart2, Palette, Sun, Moon } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,11 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { getProfile, upsertProfile } from "@/lib/supabase/queries";
+import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
 
 const PREFERRED_INSTRUMENTS = ["NQ", "ES", "Gold"] as const;
 
 export default function SettingsPage() {
+  const { theme, toggleTheme } = useTheme();
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNext, setShowNext] = useState(false);
@@ -80,6 +82,47 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-2xl">
       <PageHeader badge="Account" title="Settings" subtitle="Security and account configuration" />
       <PageWrapper>
+        {/* Appearance */}
+        <Card className="bg-card border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Palette className="w-4 h-4 text-primary" />
+              Appearance
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Label className="text-xs mb-2 block">Theme</Label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => theme !== "dark" && toggleTheme()}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all",
+                  theme === "dark"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                )}
+              >
+                <Moon className="w-3.5 h-3.5" />
+                Dark
+              </button>
+              <button
+                type="button"
+                onClick={() => theme !== "light" && toggleTheme()}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all",
+                  theme === "light"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                )}
+              >
+                <Sun className="w-3.5 h-3.5" />
+                Light
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Trading Preferences */}
         <Card className="bg-card border-border/50">
           <CardHeader className="pb-3">

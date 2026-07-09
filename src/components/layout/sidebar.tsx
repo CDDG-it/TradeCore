@@ -3,10 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, ChevronDown, Sun, Moon } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { useTheme } from "@/lib/theme-context";
 import { APP_TABS } from "@/lib/nav";
 
 // The "highlight" treatment is sidebar-only presentation; the labels, hrefs
@@ -65,7 +64,7 @@ function NavItem({
           style={{ background: "#14B8A6" }}
         />
       )}
-      <span className={cn("font-bold", isActive ? "text-sidebar-foreground" : "", !isActive && "group-hover/nav:text-[#14B8A6]")}>{label}</span>
+      <span className={cn("font-extrabold", isActive ? "text-sidebar-foreground" : "", !isActive && "group-hover/nav:text-[#14B8A6]")}>{label}</span>
     </Link>
   );
 }
@@ -88,7 +87,7 @@ function NavGroup({
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between px-3 mb-2 group/toggle"
       >
-        <span className="font-body text-[9px] font-bold uppercase tracking-[0.14em] text-sidebar-foreground/30 group-hover/toggle:text-sidebar-foreground/50 transition-colors">
+        <span className="font-body text-[9px] font-extrabold uppercase tracking-[0.14em] text-sidebar-foreground/30 group-hover/toggle:text-sidebar-foreground/50 transition-colors">
           {label}
         </span>
         <ChevronDown
@@ -106,7 +105,6 @@ function NavGroup({
 export function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
 
   const displayName: string = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
   const initials = displayName
@@ -183,13 +181,6 @@ export function Sidebar() {
                 {user?.email || ""}
               </p>
             </div>
-            <button
-              onClick={toggleTheme}
-              className="transition-all opacity-0 group-hover:opacity-60 hover:!opacity-100 text-sidebar-foreground/50"
-              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            </button>
             <button
               onClick={signOut}
               className="transition-all opacity-0 group-hover:opacity-60 hover:!opacity-100 text-sidebar-foreground/50"

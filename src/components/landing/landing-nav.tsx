@@ -63,10 +63,10 @@ export function LandingNav() {
     <header
       className="sticky top-0 z-30 px-6 py-4"
       style={{
-        background: "rgba(249,246,242,0.88)",
+        background: "rgba(11,17,32,0.88)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(0,0,0,0.07)",
+        borderBottom: "1px solid rgba(248,250,252,0.09)",
       }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
@@ -76,7 +76,7 @@ export function LandingNav() {
           className="font-black tracking-tight text-base leading-none hover:opacity-80 transition-opacity"
           style={{ fontFamily: NUNITO }}
         >
-          <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
+          <span style={{ color: "rgba(248,250,252,0.92)" }}>Trading</span>
           <span style={{ background: "linear-gradient(90deg,#14B8A6,#0D9488)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
         </Link>
 
@@ -93,7 +93,7 @@ export function LandingNav() {
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
-              className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(60,48,36,0.55)] transition-colors duration-200 hover:text-[rgba(15,12,8,0.85)]"
+              className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(248,250,252,0.60)] transition-colors duration-200 hover:text-[rgba(248,250,252,0.92)]"
             >
               Features
               <ChevronDown
@@ -107,11 +107,11 @@ export function LandingNav() {
                 onMouseLeave={scheduleClose}
                 className="absolute left-1/2 top-full z-40 mt-2 w-[300px] max-h-[70vh] -translate-x-1/2 overflow-y-auto rounded-2xl p-1.5"
                 style={{
-                  background: "rgba(255,253,250,0.97)",
+                  background: "rgba(19,27,46,0.97)",
                   backdropFilter: "blur(20px)",
                   WebkitBackdropFilter: "blur(20px)",
-                  border: "1px solid rgba(0,0,0,0.08)",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 18px 50px rgba(16,11,6,0.12)",
+                  border: "1px solid rgba(248,250,252,0.10)",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.25), 0 18px 50px rgba(0,0,0,0.45)",
                 }}
               >
                 {NAV_ITEMS.map((item) => (
@@ -125,14 +125,14 @@ export function LandingNav() {
                       <div className="flex items-center gap-2">
                         <span
                           className="text-sm font-bold"
-                          style={{ color: "rgba(15,12,8,0.82)" }}
+                          style={{ color: "rgba(248,250,252,0.90)" }}
                         >
                           {item.label}
                         </span>
                       </div>
                       <p
                         className="mt-0.5 text-xs leading-snug"
-                        style={{ color: "rgba(60,48,36,0.50)" }}
+                        style={{ color: "rgba(248,250,252,0.55)" }}
                       >
                         {item.tagline}
                       </p>
@@ -147,18 +147,18 @@ export function LandingNav() {
           {/* Coming soon */}
           <Link
             href="/coming-soon"
-            className="rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(60,48,36,0.55)] transition-colors duration-200 hover:text-[rgba(15,12,8,0.85)]"
+            className="rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(248,250,252,0.60)] transition-colors duration-200 hover:text-[rgba(248,250,252,0.92)]"
           >
             Coming soon
           </Link>
 
           {/* Divider */}
-          <span className="mx-1 hidden h-4 w-px bg-[rgba(0,0,0,0.10)] sm:block" />
+          <span className="mx-1 hidden h-4 w-px bg-[rgba(248,250,252,0.12)] sm:block" />
 
           {/* Sign in */}
           <Link
             href="/login"
-            className="rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(60,48,36,0.55)] transition-colors duration-200 hover:text-[rgba(15,12,8,0.85)]"
+            className="rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(248,250,252,0.60)] transition-colors duration-200 hover:text-[rgba(248,250,252,0.92)]"
           >
             Sign in
           </Link>
@@ -169,7 +169,7 @@ export function LandingNav() {
             className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
             style={{
               background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
-              boxShadow: "0 2px 14px rgba(20,184,166,0.30), 0 1px 2px rgba(0,0,0,0.10)",
+              boxShadow: "0 2px 14px rgba(20,184,166,0.35), 0 1px 2px rgba(0,0,0,0.30)",
             }}
           >
             Make account
