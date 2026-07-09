@@ -1,6 +1,5 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
-import { CandlestickBackground } from "@/components/layout/candlestick-background";
 import { VideoBackground } from "@/components/layout/video-background";
 import { TransitionLayout } from "@/components/layout/transition-layout";
 
@@ -10,16 +9,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── Ambient dashboard video (all app pages) ── */}
       <VideoBackground />
-
-      {/* ── Interactive candlestick chart (dashboard only) ── */}
-      <CandlestickBackground />
-
-      {/* ── Decorative editorial grid lines (desktop) ── */}
-      <div className="pointer-events-none fixed inset-0 z-0 hidden lg:block" aria-hidden>
-        <div className="absolute inset-y-0 w-px" style={{ left: "25%", background: "var(--border)" }} />
-        <div className="absolute inset-y-0 w-px" style={{ left: "50%", background: "var(--border)" }} />
-        <div className="absolute inset-y-0 w-px" style={{ left: "75%", background: "var(--border)" }} />
-      </div>
 
       {/* ── Ambient hero glow ── */}
       <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[280px] z-0" aria-hidden
