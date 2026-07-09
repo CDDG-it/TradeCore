@@ -50,11 +50,11 @@ import type { Habit, HabitCompletion, HabitCategory } from "@/lib/types";
 type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 
 const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label: string; Icon: IconComponent }> = {
-  mindset:  { accent: "oklch(0.72 0.22 45)",  bg: "oklch(0.72 0.22 45 / 0.12)",  label: "Mindset",  Icon: Brain },
-  routine:  { accent: "oklch(0.72 0.22 45)",  bg: "oklch(0.72 0.22 45 / 0.12)",  label: "Routine",  Icon: Coffee },
+  mindset:  { accent: "oklch(0.70 0.12 183)",  bg: "oklch(0.70 0.12 183 / 0.12)",  label: "Mindset",  Icon: Brain },
+  routine:  { accent: "oklch(0.71 0.13 215)",  bg: "oklch(0.71 0.13 215 / 0.12)",  label: "Routine",  Icon: Coffee },
   research: { accent: "oklch(0.58 0.17 145)", bg: "oklch(0.58 0.17 145 / 0.12)", label: "Research", Icon: Search },
   health:   { accent: "oklch(0.58 0.22 25)",  bg: "oklch(0.58 0.22 25 / 0.12)",  label: "Health",   Icon: Dumbbell },
-  review:   { accent: "oklch(0.70 0.16 72)",  bg: "oklch(0.70 0.16 72 / 0.12)",  label: "Review",   Icon: BookOpen },
+  review:   { accent: "oklch(0.80 0.16 86)",  bg: "oklch(0.80 0.16 86 / 0.12)",  label: "Review",   Icon: BookOpen },
   other:    { accent: "var(--muted-foreground)", bg: "oklch(0.62 0.012 40 / 0.12)", label: "Other",  Icon: Circle },
 };
 
@@ -375,9 +375,9 @@ export default function HabitsPage() {
             onClick={() => setShowNewHabit(true)}
             className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
             style={{
-              background: "oklch(0.72 0.22 45)",
+              background: "oklch(0.70 0.12 183)",
               color: "oklch(0.07 0.003 28)",
-              boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.30)",
+              boxShadow: "0 4px 14px oklch(0.70 0.12 183 / 0.30)",
             }}
           >
             <Plus className="w-4 h-4" />
@@ -408,16 +408,16 @@ export default function HabitsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" style={{ color: "oklch(0.72 0.22 45)" }} />
+            <TrendingUp className="w-4 h-4" style={{ color: "oklch(0.70 0.12 183)" }} />
             <h2 className="text-sm font-semibold">Insights</h2>
           </div>
           <Link
             href="/discipline"
             className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:-translate-y-px"
             style={{
-              background: "oklch(0.72 0.22 45 / 0.12)",
-              borderColor: "oklch(0.72 0.22 45 / 0.40)",
-              color: "oklch(0.72 0.22 45)",
+              background: "oklch(0.70 0.12 183 / 0.12)",
+              borderColor: "oklch(0.70 0.12 183 / 0.40)",
+              color: "oklch(0.70 0.12 183)",
             }}
           >
             <HelpCircle className="w-3.5 h-3.5" />
@@ -450,8 +450,8 @@ export default function HabitsPage() {
             value: `${rangeCompletion}%`,
             sub: `last ${rangeDays} days`,
             icon: CheckCircle2,
-            accent: "oklch(0.72 0.22 45)",
-            accentBg: "oklch(0.72 0.22 45 / 0.10)",
+            accent: "oklch(0.70 0.12 183)",
+            accentBg: "oklch(0.70 0.12 183 / 0.10)",
             ring: rangeCompletion,
           },
           {
@@ -477,8 +477,8 @@ export default function HabitsPage() {
             value: totalHabits.toString(),
             sub: "being tracked",
             icon: Zap,
-            accent: "oklch(0.72 0.22 45)",
-            accentBg: "oklch(0.72 0.22 45 / 0.10)",
+            accent: "oklch(0.70 0.12 183)",
+            accentBg: "oklch(0.70 0.12 183 / 0.10)",
             ring: null,
           },
         ].map(({ label, value, sub, icon: Icon, accent, accentBg, ring }, i) => (
@@ -549,12 +549,12 @@ export default function HabitsPage() {
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground shrink-0">
               <span>Less</span>
               {[0.19, 0.4, 0.65, 0.9].map((a) => (
-                <span key={a} style={{ width: 11, height: 11, borderRadius: 3, background: a === 0.19 ? "var(--secondary)" : `oklch(0.72 0.22 45 / ${a})` }} />
+                <span key={a} style={{ width: 11, height: 11, borderRadius: 3, background: a === 0.19 ? "var(--secondary)" : `oklch(0.70 0.12 183 / ${a})` }} />
               ))}
               <span>More</span>
             </div>
           </div>
-          <ActivityHeatmap start={rangeStart} end={rangeEnd} intensityFor={overallIntensity} color="oklch(0.72 0.22 45)" />
+          <ActivityHeatmap start={rangeStart} end={rangeEnd} intensityFor={overallIntensity} color="oklch(0.70 0.12 183)" />
         </div>
       )}
 
@@ -592,7 +592,7 @@ export default function HabitsPage() {
               <button
                 onClick={() => setShowNewHabit(true)}
                 className="text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
-                style={{ color: "oklch(0.72 0.22 45)" }}
+                style={{ color: "oklch(0.70 0.12 183)" }}
               >
                 <Plus className="w-3.5 h-3.5" /> Create your first habit
               </button>
@@ -670,7 +670,7 @@ export default function HabitsPage() {
                           className="inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-full"
                           style={{
                             background: "oklch(0.58 0.22 25 / 0.15)",
-                            color: "oklch(0.70 0.16 72)",
+                            color: "oklch(0.80 0.16 86)",
                           }}
                         >
                           <Flame className="w-2.5 h-2.5" />
@@ -793,11 +793,11 @@ export default function HabitsPage() {
                       onClick={() => setNewHabit({ ...newHabit, icon: key })}
                       className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
                       style={{
-                        background: active ? "oklch(0.72 0.22 45 / 0.20)" : "var(--secondary)",
-                        border: `1px solid ${active ? "oklch(0.72 0.22 45 / 0.50)" : "var(--border)"}`,
+                        background: active ? "oklch(0.70 0.12 183 / 0.20)" : "var(--secondary)",
+                        border: `1px solid ${active ? "oklch(0.70 0.12 183 / 0.50)" : "var(--border)"}`,
                       }}
                     >
-                      <Icon className="w-4 h-4" style={{ color: active ? "oklch(0.72 0.22 45)" : "var(--muted-foreground)" }} />
+                      <Icon className="w-4 h-4" style={{ color: active ? "oklch(0.70 0.12 183)" : "var(--muted-foreground)" }} />
                     </button>
                   );
                 })}
@@ -843,9 +843,9 @@ export default function HabitsPage() {
                     style={
                       newHabit.frequency === freq
                         ? {
-                            background: "oklch(0.72 0.22 45 / 0.15)",
-                            color: "oklch(0.72 0.22 45)",
-                            border: "1px solid oklch(0.72 0.22 45 / 0.40)",
+                            background: "oklch(0.70 0.12 183 / 0.15)",
+                            color: "oklch(0.70 0.12 183)",
+                            border: "1px solid oklch(0.70 0.12 183 / 0.40)",
                           }
                         : {
                             background: "var(--secondary)",
@@ -887,9 +887,9 @@ export default function HabitsPage() {
               disabled={!newHabit.name.trim() || creating}
               className="inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
               style={{
-                background: "linear-gradient(135deg, oklch(0.72 0.22 45) 0%, oklch(0.82 0.16 82) 100%)",
+                background: "linear-gradient(135deg, oklch(0.70 0.12 183) 0%, oklch(0.71 0.13 215) 100%)",
                 color: "oklch(0.07 0.003 28)",
-                boxShadow: "0 4px 14px oklch(0.72 0.22 45 / 0.35)",
+                boxShadow: "0 4px 14px oklch(0.70 0.12 183 / 0.35)",
               }}
             >
               {creating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating…</> : "Create habit"}

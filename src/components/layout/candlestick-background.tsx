@@ -194,7 +194,7 @@ export function CandlestickBackground() {
       ctx.stroke();
 
       // ── SMA 50 ───────────────────────────────────────────────────────────
-      ctx.strokeStyle = isDark ? "rgba(251,191,36,0.20)" : "rgba(202,138,4,0.38)";
+      ctx.strokeStyle = isDark ? "rgba(6,182,212,0.20)" : "rgba(8,145,178,0.38)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([6, 5]);
       ctx.beginPath();

@@ -492,8 +492,8 @@ function CotPanel({ flow }: { flow: InstrumentFlow }) {
                 <AreaChart data={cot.history} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
                   <defs>
                     <linearGradient id="cotFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="oklch(0.72 0.22 45)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="oklch(0.72 0.22 45)" stopOpacity={0} />
+                      <stop offset="0%" stopColor="oklch(0.71 0.13 215)" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="oklch(0.71 0.13 215)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.3 0.01 252 / 0.3)" vertical={false} />
@@ -517,7 +517,7 @@ function CotPanel({ flow }: { flow: InstrumentFlow }) {
                   <Area
                     type="monotone"
                     dataKey="net_spec"
-                    stroke="oklch(0.72 0.22 45)"
+                    stroke="oklch(0.71 0.13 215)"
                     strokeWidth={2}
                     fill="url(#cotFill)"
                   />
@@ -754,9 +754,9 @@ function GreeksPanel({ greeks, spot, instKey }: { greeks: GreeksProfile; spot: n
                 <ReferenceLine y={0} stroke="var(--border)" />
                 <ReferenceLine
                   x={data.reduce((best, p) => (Math.abs(p.strike - spot) < Math.abs(best - spot) ? p.strike : best), data[0]?.strike ?? spot)}
-                  stroke="oklch(0.72 0.22 45)"
+                  stroke="oklch(0.71 0.13 215)"
                   strokeDasharray="4 2"
-                  label={{ value: "Spot", fill: "oklch(0.72 0.22 45)", fontSize: 10, position: "top" }}
+                  label={{ value: "Spot", fill: "oklch(0.71 0.13 215)", fontSize: 10, position: "top" }}
                 />
                 <Bar dataKey="value" radius={[2, 2, 0, 0]}>
                   {data.map((d, i) => (

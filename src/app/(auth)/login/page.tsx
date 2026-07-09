@@ -24,7 +24,7 @@ const Logo = () => (
    landing page, so signing in feels like part of the same product. */
 function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-svh items-center justify-center px-4" style={{ background: "oklch(0.98 0.003 45)" }}>
+    <div className="relative flex min-h-svh items-center justify-center px-4" style={{ background: "oklch(0.98 0.003 250)" }}>
       <CandlesCanvas />
       <motion.div
         initial={{ opacity: 0, y: 16 }}
