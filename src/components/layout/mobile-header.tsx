@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-context";
 
 
 const navItems = [
@@ -26,6 +27,7 @@ export function MobileHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const displayName: string = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -128,6 +130,13 @@ export function MobileHeader() {
                 {user?.email || ""}
               </p>
             </div>
+            <button
+              onClick={toggleTheme}
+              className="transition-colors text-sidebar-foreground/35"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <button
               onClick={signOut}
               className="transition-colors text-sidebar-foreground/35"

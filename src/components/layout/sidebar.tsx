@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme } from "@/lib/theme-context";
 import { APP_TABS } from "@/lib/nav";
 
 // The "highlight" treatment is sidebar-only presentation; the labels, hrefs
@@ -105,6 +106,7 @@ function NavGroup({
 export function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const displayName: string = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
   const initials = displayName
@@ -181,6 +183,13 @@ export function Sidebar() {
                 {user?.email || ""}
               </p>
             </div>
+            <button
+              onClick={toggleTheme}
+              className="transition-all opacity-0 group-hover:opacity-60 hover:!opacity-100 text-sidebar-foreground/50"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
             <button
               onClick={signOut}
               className="transition-all opacity-0 group-hover:opacity-60 hover:!opacity-100 text-sidebar-foreground/50"

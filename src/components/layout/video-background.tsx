@@ -31,7 +31,7 @@ export function VideoBackground() {
         className="absolute inset-0 w-full h-full object-cover"
         style={{
           opacity: 0.38,
-          filter: "sepia(0.75) saturate(3.5) hue-rotate(10deg) brightness(0.80)",
+          filter: "sepia(0.75) saturate(3.5) hue-rotate(170deg) brightness(0.65)",
         }}
       >
         <source src={src} type="video/mp4" />
@@ -53,7 +53,7 @@ export function VideoBackground() {
       />
       <div
         className="absolute inset-0"
-        style={{ background: "rgba(180,70,0,0.22)" }}
+        style={{ background: "rgba(11,17,32,0.40)" }}
       />
       <div
         className="absolute inset-0 opacity-[0.025]"
