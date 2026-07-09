@@ -40,15 +40,15 @@ export default async function FeaturePage({
   const next = FEATURES[(idx + 1) % FEATURES.length];
 
   return (
-    <div style={{ background: "oklch(0.98 0.003 250)", fontFamily: NUNITO }}>
+    <div style={{ background: "#0B1120", fontFamily: NUNITO }}>
       {/* Slim header */}
       <header
         className="sticky top-0 z-30 px-6 py-4"
         style={{
-          background: "rgba(249,246,242,0.88)",
+          background: "rgba(11,17,32,0.85)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(0,0,0,0.07)",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
         }}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
@@ -56,15 +56,15 @@ export default async function FeaturePage({
             href="/"
             className="font-black tracking-tight text-base leading-none hover:opacity-80 transition-opacity"
           >
-            <span style={{ color: "rgba(15,12,8,0.88)" }}>Trading</span>
-            <span style={{ background: "linear-gradient(90deg,#14B8A6,#0D9488)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+            <span style={{ color: "#F8FAFC" }}>Trading</span>
+            <span style={{ background: "linear-gradient(90deg,#14B8A6,#06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
           </Link>
           <Link
             href="/signup"
             className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
             style={{
-              background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
-              boxShadow: "0 2px 14px rgba(20,184,166,0.30), 0 1px 2px rgba(0,0,0,0.10)",
+              background: "linear-gradient(135deg,#14B8A6 0%,#06B6D4 100%)",
+              boxShadow: "0 2px 14px rgba(20,184,166,0.30), 0 1px 2px rgba(0,0,0,0.30)",
             }}
           >
             Make account
@@ -76,7 +76,7 @@ export default async function FeaturePage({
       <section className="mx-auto max-w-5xl px-6 pt-16 pb-10 sm:pt-24">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[rgba(60,48,36,0.45)] transition-colors duration-200 hover:text-[#14B8A6]"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#CBD5E1]/50 transition-colors duration-200 hover:text-[#14B8A6]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           All features
@@ -85,22 +85,22 @@ export default async function FeaturePage({
         <div className="mt-7 flex items-center gap-3">
           <span
             className="text-[0.625rem] font-bold uppercase tracking-[0.18em]"
-            style={{ color: "rgba(20,184,166,0.90)" }}
+            style={{ color: "#14B8A6" }}
           >
             {feature.section}
           </span>
-          <span className="h-px w-6" style={{ background: "rgba(20,184,166,0.30)" }} />
+          <span className="h-px w-6" style={{ background: "rgba(20,184,166,0.35)" }} />
         </div>
 
         <h1
           className="mt-4 font-black tracking-tight leading-[0.9]"
-          style={{ fontSize: "clamp(2.6rem, 7vw, 5rem)", color: "rgba(15,12,8,0.90)" }}
+          style={{ fontSize: "clamp(2.6rem, 7vw, 5rem)", color: "#F8FAFC" }}
         >
           {feature.name}
         </h1>
         <p
           className="mt-5 max-w-2xl leading-relaxed"
-          style={{ fontSize: "clamp(1.05rem, 2.2vw, 1.35rem)", color: "rgba(60,48,36,0.60)" }}
+          style={{ fontSize: "clamp(1.05rem, 2.2vw, 1.35rem)", color: "rgba(203,213,225,0.75)" }}
         >
           {feature.intro}
         </p>
@@ -113,7 +113,7 @@ export default async function FeaturePage({
           style={{
             aspectRatio: "4/3",
             boxShadow:
-              "0 0 0 1.5px rgba(20,184,166,0.22), 0 0 24px rgba(20,184,166,0.08), 0 12px 50px rgba(0,0,0,0.10)",
+              "0 0 0 1.5px rgba(20,184,166,0.25), 0 0 34px rgba(6,182,212,0.10), 0 12px 50px rgba(0,0,0,0.45)",
           }}
         >
           <Image
@@ -134,13 +134,13 @@ export default async function FeaturePage({
             <div key={block.heading}>
               <h2
                 className="font-black tracking-tight leading-tight"
-                style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.2rem)", color: "rgba(15,12,8,0.88)" }}
+                style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.2rem)", color: "#F8FAFC" }}
               >
                 {block.heading}
               </h2>
               <p
                 className="mt-4 leading-relaxed"
-                style={{ fontSize: "1.05rem", color: "rgba(60,48,36,0.60)" }}
+                style={{ fontSize: "1.05rem", color: "rgba(203,213,225,0.72)" }}
               >
                 {block.body}
               </p>
@@ -150,13 +150,13 @@ export default async function FeaturePage({
                     <li key={i} className="flex items-start gap-3">
                       <span
                         className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                        style={{ background: "rgba(20,184,166,0.12)" }}
+                        style={{ background: "rgba(20,184,166,0.15)" }}
                       >
-                        <Check className="h-3 w-3" style={{ color: "#0D9488" }} strokeWidth={3} />
+                        <Check className="h-3 w-3" style={{ color: "#14B8A6" }} strokeWidth={3} />
                       </span>
                       <span
                         className="leading-relaxed"
-                        style={{ fontSize: "1rem", color: "rgba(60,48,36,0.62)" }}
+                        style={{ fontSize: "1rem", color: "rgba(203,213,225,0.70)" }}
                       >
                         {point}
                       </span>
@@ -172,17 +172,17 @@ export default async function FeaturePage({
         <div
           className="mt-20 rounded-2xl px-7 py-9 text-center sm:px-10"
           style={{
-            background: "rgba(20,184,166,0.06)",
-            border: "1px solid rgba(20,184,166,0.16)",
+            background: "rgba(20,184,166,0.07)",
+            border: "1px solid rgba(20,184,166,0.20)",
           }}
         >
           <h3
             className="font-black tracking-tight"
-            style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", color: "rgba(15,12,8,0.88)" }}
+            style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", color: "#F8FAFC" }}
           >
             Put {feature.name.toLowerCase()} to work
           </h3>
-          <p className="mx-auto mt-3 max-w-md leading-relaxed" style={{ color: "rgba(60,48,36,0.58)" }}>
+          <p className="mx-auto mt-3 max-w-md leading-relaxed" style={{ color: "rgba(203,213,225,0.65)" }}>
             Start logging the quiet work that separates funded traders from former ones.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -190,8 +190,8 @@ export default async function FeaturePage({
               href="/signup"
               className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
               style={{
-                background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
-                boxShadow: "0 4px 24px rgba(20,184,166,0.28), 0 1px 3px rgba(0,0,0,0.10)",
+                background: "linear-gradient(135deg,#14B8A6 0%,#06B6D4 100%)",
+                boxShadow: "0 4px 24px rgba(20,184,166,0.30), 0 1px 3px rgba(0,0,0,0.30)",
               }}
             >
               Make account
@@ -199,8 +199,8 @@ export default async function FeaturePage({
             </Link>
             <Link
               href={`/features/${next.slug}`}
-              className="inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold text-[rgba(60,48,36,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[rgba(15,12,8,0.85)] active:translate-y-0"
-              style={{ borderColor: "rgba(16,11,6,0.14)" }}
+              className="inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold text-[rgba(203,213,225,0.70)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.50)] hover:text-[#F8FAFC] active:translate-y-0"
+              style={{ borderColor: "rgba(255,255,255,0.12)" }}
             >
               Next: {next.name}
               <ArrowRight className="h-3.5 w-3.5" />

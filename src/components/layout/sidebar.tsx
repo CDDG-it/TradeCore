@@ -87,12 +87,12 @@ function NavGroup({
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between px-3 mb-2 group/toggle"
       >
-        <span className="font-body text-[9px] font-extrabold uppercase tracking-[0.14em] text-sidebar-foreground/30 group-hover/toggle:text-sidebar-foreground/50 transition-colors">
+        <span className="font-body text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#14B8A6]/80 group-hover/toggle:text-[#14B8A6] transition-colors">
           {label}
         </span>
         <ChevronDown
           className={cn(
-            "w-3 h-3 text-sidebar-foreground/30 transition-transform duration-200 group-hover/toggle:text-sidebar-foreground/50",
+            "w-3.5 h-3.5 text-[#14B8A6]/70 transition-transform duration-200 group-hover/toggle:text-[#14B8A6]",
             !open && "-rotate-90"
           )}
         />

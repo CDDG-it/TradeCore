@@ -41,7 +41,7 @@ export default function AccountsPage() {
   const [payoutMap, setPayoutMap] = useState<Record<string, PayoutEvent[]>>({});
   const [loading, setLoading] = useState(true);
   const [firmFilter, setFirmFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
 
