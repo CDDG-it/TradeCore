@@ -1,18 +1,10 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileHeader } from "@/components/layout/mobile-header";
-import { VideoBackground } from "@/components/layout/video-background";
 import { TransitionLayout } from "@/components/layout/transition-layout";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden z-[4]">
-
-      {/* ── Ambient dashboard video (all app pages) ── */}
-      <VideoBackground />
-
-      {/* ── Ambient hero glow ── */}
-      <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[280px] z-0" aria-hidden
-        style={{ background: "radial-gradient(ellipse at top, rgba(20,184,166,0.06) 0%, transparent 70%)" }} />
 
       {/* Desktop sidebar */}
       <div className="hidden lg:block relative z-40">
