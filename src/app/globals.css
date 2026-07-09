@@ -473,19 +473,6 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   .progress-ring {
     transform: rotate(-90deg);
   }
-
-  /* Streak badge */
-  .streak-badge {
-    background: linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%);
-    color: #030712;
-    border-radius: 9999px;
-    font-weight: 700;
-    font-size: 0.75rem;
-    padding: 0.2rem 0.6rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
 }
 
 /* ── Interactive card hover ─────────────────────── */
@@ -557,12 +544,6 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes streak-pop {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.15); }
-  100% { transform: scale(1); }
-}
-
 .animate-fade-up {
   animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -614,10 +595,6 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 .animate-pulse-glow-ice {
   animation: pulse-glow-ice 2.5s ease-in-out infinite;
 }
-.animate-streak-pop {
-  animation: streak-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
 @keyframes drift-a {
   0%   { transform: translate(0, 0) scale(1); }
   33%  { transform: translate(60px, -40px) scale(1.08); }

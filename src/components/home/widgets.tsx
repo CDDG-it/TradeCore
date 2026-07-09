@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  ArrowRight, X, TrendingUp, TrendingDown, Flame, Target,
+  ArrowRight, X, TrendingUp, TrendingDown, Repeat, Target,
   Wallet, ScrollText, Loader2, GripVertical, ChevronLeft, ChevronRight,
   SlidersHorizontal, Check, Circle,
 } from "lucide-react";
@@ -388,9 +388,9 @@ function HabitsStreakWidget({ options }: { options: WidgetOptions }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 mb-3">
-        <Flame className="w-7 h-7 shrink-0" style={{ color: "oklch(0.58 0.22 25)" }} />
+        <Repeat className="w-7 h-7 shrink-0 text-primary" />
         <div>
-          <p className="text-2xl font-black tabular-nums leading-none" style={{ color: "oklch(0.58 0.22 25)" }}>{longestStreak}d</p>
+          <p className="text-2xl font-black tabular-nums leading-none text-primary">{longestStreak}d</p>
           <p className="text-xs text-muted-foreground mt-0.5">{doneToday.size}/{habits.length} done today</p>
         </div>
       </div>

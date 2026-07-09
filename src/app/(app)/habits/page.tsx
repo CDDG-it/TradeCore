@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
   Plus,
-  Flame,
+  Repeat,
   Check,
   Trash2,
   CheckCircle2,
@@ -458,7 +458,7 @@ export default function HabitsPage() {
             label: "Longest Streak",
             value: `${longestStreak}d`,
             sub: "consecutive days",
-            icon: Flame,
+            icon: Repeat,
             accent: "oklch(0.58 0.22 25)",
             accentBg: "oklch(0.58 0.22 25 / 0.10)",
             ring: null,
@@ -666,15 +666,8 @@ export default function HabitsPage() {
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-sm font-semibold">{habit.name}</span>
                       {streak > 0 && (
-                        <span
-                          className="inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-full"
-                          style={{
-                            background: "oklch(0.58 0.22 25 / 0.15)",
-                            color: "oklch(0.80 0.16 86)",
-                          }}
-                        >
-                          <Flame className="w-2.5 h-2.5" />
-                          {streak}
+                        <span className="text-xs font-medium text-muted-foreground tabular-nums">
+                          {streak}d streak
                         </span>
                       )}
                       <span

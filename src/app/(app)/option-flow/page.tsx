@@ -641,7 +641,7 @@ function GreeksPanel({ greeks, spot, instKey }: { greeks: GreeksProfile; spot: n
   const stats = [
     {
       label: "GEX Regime",
-      value: greeks.gexRegime === "positive" ? "🟢 Positive" : "🔴 Negative",
+      value: greeks.gexRegime === "positive" ? "Positive" : "Negative",
       sub: greeks.gexRegime === "positive" ? "pinning / mean-revert" : "amplifying / trending",
       color: greeks.gexRegime === "positive" ? "text-success" : "text-destructive",
     },
@@ -653,7 +653,7 @@ function GreeksPanel({ greeks, spot, instKey }: { greeks: GreeksProfile; spot: n
     },
     {
       label: "DEX Bias",
-      value: greeks.dexBias === "long" ? "🟢 Net long" : "🔴 Net short",
+      value: greeks.dexBias === "long" ? "Net long" : "Net short",
       sub: compact(greeks.totalDex),
       color: greeks.dexBias === "long" ? "text-success" : "text-destructive",
     },
@@ -879,8 +879,13 @@ export default function OptionFlowPage() {
         action={
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col items-end gap-1">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                {loading ? "⏳ Loading…" : "🟢 Live · Yahoo"}
+              <span className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wide">
+                {loading ? (
+                  <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                ) : (
+                  <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                )}
+                {loading ? "Loading…" : "Live · Yahoo"}
               </span>
               <span className="text-[11px] text-muted-foreground">
                 {format(new Date(flow.updatedAt), "HH:mm:ss")} · auto 60s
