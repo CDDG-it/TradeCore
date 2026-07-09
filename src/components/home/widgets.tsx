@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  ArrowRight, X, TrendingUp, TrendingDown, Repeat, Target,
-  Wallet, ScrollText, Loader2, GripVertical, ChevronLeft, ChevronRight,
+  ArrowRight, X, TrendingUp, TrendingDown,
+  ScrollText, Loader2, GripVertical, ChevronLeft, ChevronRight,
   SlidersHorizontal, Check, Circle,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
@@ -336,12 +336,9 @@ function DisciplineWidget({ options }: { options: WidgetOptions }) {
   const color = score === null ? "var(--muted-foreground)" : scoreColor(score);
   return (
     <div>
-      <div className="flex items-center gap-3">
-        <Target className="w-8 h-8 shrink-0" style={{ color }} />
-        <div>
-          <p className="text-3xl font-black tabular-nums" style={{ color }}>{score === null ? "—" : `${score}%`}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{SCOPE_LABEL[options.scope ?? "week"].toLowerCase()}</p>
-        </div>
+      <div>
+        <p className="text-3xl font-black tabular-nums" style={{ color }}>{score === null ? "—" : `${score}%`}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{SCOPE_LABEL[options.scope ?? "week"].toLowerCase()}</p>
       </div>
       {options.details && (
         <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground space-y-0.5">
@@ -387,12 +384,9 @@ function HabitsStreakWidget({ options }: { options: WidgetOptions }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 mb-3">
-        <Repeat className="w-7 h-7 shrink-0 text-primary" />
-        <div>
-          <p className="text-2xl font-black tabular-nums leading-none text-primary">{longestStreak}d</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{doneToday.size}/{habits.length} done today</p>
-        </div>
+      <div className="mb-3">
+        <p className="text-2xl font-black tabular-nums leading-none text-primary">{longestStreak}d</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{doneToday.size}/{habits.length} done today</p>
       </div>
 
       {habits.length === 0 ? (
@@ -497,14 +491,11 @@ function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
 
   if ((options.size === "small" && !options.details) || active.length === 0) {
     return (
-      <div className="flex items-center gap-3">
-        <Wallet className="w-8 h-8 shrink-0" style={{ color: "oklch(0.58 0.17 145)" }} />
-        <div className="min-w-0">
-          <p className="text-2xl font-black tabular-nums truncate" style={{ color: "oklch(0.58 0.17 145)" }}>
-            {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "—"}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">{active.length} active account{active.length !== 1 ? "s" : ""}</p>
-        </div>
+      <div className="min-w-0">
+        <p className="text-2xl font-black tabular-nums truncate" style={{ color: "oklch(0.58 0.17 145)" }}>
+          {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "—"}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">{active.length} active account{active.length !== 1 ? "s" : ""}</p>
       </div>
     );
   }

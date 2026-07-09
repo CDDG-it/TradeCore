@@ -89,7 +89,7 @@ export function MobileHeader() {
                 href={href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative",
+                  "flex items-center px-3 py-2.5 rounded-lg text-sm font-bold transition-colors relative",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-foreground"
                     : "text-sidebar-foreground/40 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/60"

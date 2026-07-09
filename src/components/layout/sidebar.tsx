@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { APP_TABS } from "@/lib/nav";
@@ -63,8 +64,41 @@ function NavItem({
           style={{ background: "#14B8A6" }}
         />
       )}
-      <span className={cn(isActive ? "text-sidebar-foreground" : "", !isActive && "group-hover/nav:text-[#14B8A6]")}>{label}</span>
+      <span className={cn("font-bold", isActive ? "text-sidebar-foreground" : "", !isActive && "group-hover/nav:text-[#14B8A6]")}>{label}</span>
     </Link>
+  );
+}
+
+/** A collapsible group header — click to toggle its subtabs open/closed. */
+function NavGroup({
+  label,
+  defaultOpen,
+  children,
+}: {
+  label: string;
+  defaultOpen: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-3 mb-2 group/toggle"
+      >
+        <span className="font-body text-[9px] font-bold uppercase tracking-[0.14em] text-sidebar-foreground/30 group-hover/toggle:text-sidebar-foreground/50 transition-colors">
+          {label}
+        </span>
+        <ChevronDown
+          className={cn(
+            "w-3 h-3 text-sidebar-foreground/30 transition-transform duration-200 group-hover/toggle:text-sidebar-foreground/50",
+            !open && "-rotate-90"
+          )}
+        />
+      </button>
+      {open && <div className="space-y-0.5">{children}</div>}
+    </div>
   );
 }
 
@@ -96,29 +130,28 @@ export function Sidebar() {
 
       {/* Main nav */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-5">
-        {navGroups.map((group) => (
-          <div key={group.label ?? "primary"}>
-            {group.label && (
-              <p className="font-body text-[9px] font-semibold uppercase tracking-[0.14em] px-3 mb-2 text-sidebar-foreground/30">
-                {group.label}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {group.items.map((item) => {
-                const isActive =
-                  pathname === item.href || pathname.startsWith(item.href + "/");
-                return (
-                  <NavItem
-                    key={item.href}
-                    href={item.href}
-                    label={item.label}
-                    isActive={isActive}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        ))}
+        {navGroups.map((group) => {
+          const items = group.items.map((item) => ({
+            ...item,
+            isActive: pathname === item.href || pathname.startsWith(item.href + "/"),
+          }));
+          const rows = items.map((item) => (
+            <NavItem key={item.href} href={item.href} label={item.label} isActive={item.isActive} />
+          ));
+
+          if (!group.label) {
+            return <div key="primary" className="space-y-0.5">{rows}</div>;
+          }
+
+          // Remounting on active-membership change re-opens a collapsed group
+          // when the user navigates to a page inside it.
+          const hasActive = items.some((i) => i.isActive);
+          return (
+            <NavGroup key={`${group.label}:${hasActive}`} label={group.label} defaultOpen>
+              {rows}
+            </NavGroup>
+          );
+        })}
       </nav>
 
       {/* Bottom nav + user */}
