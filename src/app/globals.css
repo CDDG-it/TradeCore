@@ -59,11 +59,11 @@
 
 :root {
   /* ── Core backgrounds ───────────────────────── */
-  --background: #05070D;                       /* deep black */
+  --background: #030712;                       /* deep navy black */
   --foreground: #F8FAFC;                       /* white text */
 
   /* ── Cards ──────────────────────────────────── */
-  --card: #111827;                             /* card / panel background */
+  --card: #0F172A;                             /* card / panel background — navy */
   --card-foreground: #F8FAFC;
 
   /* ── Popover ────────────────────────────────── */
@@ -89,9 +89,9 @@
   /* ── Semantic ───────────────────────────────── */
   --destructive: #EF4444;                      /* negative red */
   --success: #22C55E;                          /* positive green */
-  --success-foreground: #05070D;
+  --success-foreground: #030712;
   --warning: #EAB308;                          /* warning yellow */
-  --warning-foreground: #05070D;
+  --warning-foreground: #030712;
 
   /* ── Turquoise brand accent ──────────────────── */
   --gold: #14B8A6;                             /* turquoise */
@@ -99,11 +99,11 @@
 
   /* ── Cyan secondary accent ──────────────────── */
   --ice: #06B6D4;                              /* cyan */
-  --ice-foreground: #05070D;
+  --ice-foreground: #030712;
 
   /* ── Borders & inputs ───────────────────────── */
   --border: #1E293B;
-  --input: #111827;
+  --input: #0F172A;
   --ring: #14B8A6;                             /* turquoise focus ring */
 
   /* ── Charts ─────────────────────────────────── */
@@ -116,11 +116,11 @@
   --radius: 0.75rem;
 
   /* ── Sidebar — deepest black ─────────────────── */
-  --sidebar: #05070D;
+  --sidebar: #030712;
   --sidebar-foreground: #F8FAFC;
   --sidebar-primary: #14B8A6;                  /* turquoise active */
-  --sidebar-primary-foreground: #05070D;
-  --sidebar-accent: #111827;
+  --sidebar-primary-foreground: #030712;
+  --sidebar-accent: #0F172A;
   --sidebar-accent-foreground: #F8FAFC;
   --sidebar-border: oklch(1 0 0 / 5%);
   --sidebar-ring: #14B8A6;
@@ -135,13 +135,13 @@
 /* ── Light mode overrides ────────────────────────── */
 html.light {
   --background: #F8FAFC;
-  --foreground: #05070D;
+  --foreground: #030712;
 
   --card: #FFFFFF;
-  --card-foreground: #05070D;
+  --card-foreground: #030712;
 
   --popover: #FFFFFF;
-  --popover-foreground: #05070D;
+  --popover-foreground: #030712;
 
   --primary: #0D9488;
   --primary-foreground: #F8FAFC;
@@ -153,7 +153,7 @@ html.light {
   --muted-foreground: #64748B;
 
   --accent: #CBD5E1;
-  --accent-foreground: #05070D;
+  --accent-foreground: #030712;
 
   --destructive: #DC2626;
   --success: #16A34A;
@@ -179,18 +179,18 @@ html.light {
 
   /* sidebar */
   --sidebar: #E2E8F0;
-  --sidebar-foreground: #05070D;
+  --sidebar-foreground: #030712;
   --sidebar-primary: #0D9488;
   --sidebar-primary-foreground: #F8FAFC;
   --sidebar-accent: #CBD5E1;
-  --sidebar-accent-foreground: #05070D;
+  --sidebar-accent-foreground: #030712;
   --sidebar-border: oklch(0 0 0 / 6%);
   --sidebar-ring: #0D9488;
 
   /* sidebar helpers */
   --sidebar-separator: oklch(0 0 0 / 6%);
   --sidebar-label-muted: oklch(0 0 0 / 30%);
-  --sidebar-text-active: #05070D;
+  --sidebar-text-active: #030712;
   --sidebar-meta: oklch(0 0 0 / 40%);
 }
 
@@ -435,7 +435,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   .card-gold-border {
     position: relative;
     border-radius: var(--radius);
-    background: #111827;
+    background: #0F172A;
   }
   .card-gold-border::before {
     content: "";
@@ -454,7 +454,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   .card-ice-border {
     position: relative;
     border-radius: var(--radius);
-    background: #111827;
+    background: #0F172A;
   }
   .card-ice-border::before {
     content: "";
@@ -477,7 +477,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   /* Streak badge */
   .streak-badge {
     background: linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%);
-    color: #05070D;
+    color: #030712;
     border-radius: 9999px;
     font-weight: 700;
     font-size: 0.75rem;
