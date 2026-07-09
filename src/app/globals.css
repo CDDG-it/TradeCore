@@ -59,15 +59,15 @@
 
 :root {
   /* ── Core backgrounds ───────────────────────── */
-  --background: #030712;                       /* deep navy black */
+  --background: #020408;                       /* deep navy black — darker */
   --foreground: #F8FAFC;                       /* white text */
 
   /* ── Cards ──────────────────────────────────── */
-  --card: #0F172A;                             /* card / panel background — navy */
+  --card: #0A0F1D;                             /* card / panel background — navy */
   --card-foreground: #F8FAFC;
 
   /* ── Popover ────────────────────────────────── */
-  --popover: #1E293B;
+  --popover: #141B2E;
   --popover-foreground: #F8FAFC;
 
   /* ── Primary — turquoise ─────────────────────── */
@@ -75,23 +75,23 @@
   --primary-foreground: #F8FAFC;                /* white */
 
   /* ── Secondary ──────────────────────────────── */
-  --secondary: #1E293B;
+  --secondary: #141B2E;
   --secondary-foreground: #CBD5E1;
 
   /* ── Muted ──────────────────────────────────── */
-  --muted: #1E293B;
+  --muted: #141B2E;
   --muted-foreground: #64748B;
 
   /* ── Accent ─────────────────────────────────── */
-  --accent: #334155;
+  --accent: #26314A;
   --accent-foreground: #F8FAFC;
 
   /* ── Semantic ───────────────────────────────── */
   --destructive: #EF4444;                      /* negative red */
   --success: #22C55E;                          /* positive green */
-  --success-foreground: #030712;
+  --success-foreground: #020408;
   --warning: #EAB308;                          /* warning yellow */
-  --warning-foreground: #030712;
+  --warning-foreground: #020408;
 
   /* ── Turquoise brand accent ──────────────────── */
   --gold: #14B8A6;                             /* turquoise */
@@ -99,11 +99,11 @@
 
   /* ── Cyan secondary accent ──────────────────── */
   --ice: #06B6D4;                              /* cyan */
-  --ice-foreground: #030712;
+  --ice-foreground: #020408;
 
   /* ── Borders & inputs ───────────────────────── */
-  --border: #1E293B;
-  --input: #0F172A;
+  --border: #141B2E;
+  --input: #0A0F1D;
   --ring: #14B8A6;                             /* turquoise focus ring */
 
   /* ── Charts ─────────────────────────────────── */
@@ -116,11 +116,11 @@
   --radius: 0.75rem;
 
   /* ── Sidebar — deepest black ─────────────────── */
-  --sidebar: #030712;
+  --sidebar: #020408;
   --sidebar-foreground: #F8FAFC;
   --sidebar-primary: #14B8A6;                  /* turquoise active */
-  --sidebar-primary-foreground: #030712;
-  --sidebar-accent: #0F172A;
+  --sidebar-primary-foreground: #020408;
+  --sidebar-accent: #0A0F1D;
   --sidebar-accent-foreground: #F8FAFC;
   --sidebar-border: oklch(1 0 0 / 5%);
   --sidebar-ring: #14B8A6;
@@ -255,11 +255,11 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.22 0.005 28);
+    background: #1E293B;
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.35 0.005 28);
+    background: #334155;
   }
 }
 
@@ -417,8 +417,8 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
   /* Premium stat card */
   .stat-card {
-    background: oklch(0.10 0.003 28);
-    border: 1px solid oklch(0.18 0.005 28);
+    background: #0A0F1D;
+    border: 1px solid #141B2E;
     border-radius: var(--radius);
     position: relative;
     overflow: hidden;
@@ -435,7 +435,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   .card-gold-border {
     position: relative;
     border-radius: var(--radius);
-    background: #0F172A;
+    background: #0A0F1D;
   }
   .card-gold-border::before {
     content: "";
@@ -454,7 +454,7 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   .card-ice-border {
     position: relative;
     border-radius: var(--radius);
-    background: #0F172A;
+    background: #0A0F1D;
   }
   .card-ice-border::before {
     content: "";

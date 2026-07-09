@@ -3,38 +3,23 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Menu,
-  X,
-  LayoutDashboard,
-  BookOpen,
-  LineChart,
-  BarChart2,
-  Wallet,
-  Radar,
-  ScrollText,
-  CheckCircle2,
-  Settings,
-  User,
-  LogOut,
-  Compass,
-} from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 
 
 const navItems = [
-  { href: "/command", label: "Command Center", icon: Compass },
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/journal", label: "Journal", icon: BookOpen },
-  { href: "/analysis", label: "Analysis", icon: LineChart },
-  { href: "/analytics", label: "Analytics", icon: BarChart2 },
-  { href: "/accounts", label: "Accounts", icon: Wallet },
-  { href: "/habits", label: "Habits", icon: CheckCircle2 },
-  { href: "/trading-behaviour", label: "Trading Behaviour", icon: ScrollText },
-  { href: "/option-flow", label: "Option Flow", icon: Radar },
-  { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/profile", label: "Profile", icon: User },
+  { href: "/command", label: "Command Center" },
+  { href: "/dashboard", label: "Home" },
+  { href: "/journal", label: "Journal" },
+  { href: "/analysis", label: "Analysis" },
+  { href: "/analytics", label: "Analytics" },
+  { href: "/accounts", label: "Accounts" },
+  { href: "/habits", label: "Habits" },
+  { href: "/trading-behaviour", label: "Trading Behaviour" },
+  { href: "/option-flow", label: "Option Flow" },
+  { href: "/settings", label: "Settings" },
+  { href: "/profile", label: "Profile" },
 ];
 
 export function MobileHeader() {
@@ -95,7 +80,7 @@ export function MobileHeader() {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {navItems.map(({ href, label, icon: Icon }) => {
+          {navItems.map(({ href, label }) => {
             const isActive =
               pathname === href || pathname.startsWith(href + "/");
             return (
@@ -104,7 +89,7 @@ export function MobileHeader() {
                 href={href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative",
+                  "flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-foreground"
                     : "text-sidebar-foreground/40 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
@@ -116,12 +101,6 @@ export function MobileHeader() {
                     style={{ background: "#14B8A6" }}
                   />
                 )}
-                <Icon
-                  className={cn(
-                    "w-4 h-4 shrink-0",
-                    isActive ? "text-sidebar-primary" : ""
-                  )}
-                />
                 {label}
               </Link>
             );

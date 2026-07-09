@@ -2,40 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  BookOpen,
-  LineChart,
-  BarChart2,
-  Wallet,
-  Radar,
-  ScrollText,
-  CheckCircle2,
-  Building2,
-  Settings,
-  User,
-  LogOut,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { APP_TABS } from "@/lib/nav";
 
-// Icons + the "highlight" treatment are sidebar-only presentation; the labels,
-// hrefs and grouping themselves come from APP_TABS so the landing page's
-// Features dropdown and footer Platform column can never say something
-// different from what's actually in the nav.
-const ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  "/dashboard": LayoutDashboard,
-  "/journal": BookOpen,
-  "/analysis": LineChart,
-  "/analytics": BarChart2,
-  "/accounts": Wallet,
-  "/habits": CheckCircle2,
-  "/trading-behaviour": ScrollText,
-  "/option-flow": Radar,
-  "/news-city": Building2,
-};
-
+// The "highlight" treatment is sidebar-only presentation; the labels, hrefs
+// and grouping themselves come from APP_TABS so the landing page's Features
+// dropdown and footer Platform column can never say something different from
+// what's actually in the nav.
 const navGroups = (() => {
   const order: (string | null)[] = [];
   const byGroup = new Map<string | null, typeof APP_TABS>();
@@ -51,30 +26,24 @@ const navGroups = (() => {
     items: byGroup.get(label)!.map((tab) => ({
       href: tab.href,
       label: tab.label,
-      icon: ICONS[tab.href],
-      highlight: tab.href === "/dashboard",
     })),
   }));
 })();
 
 const bottomItems = [
-  { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/profile", label: "Profile", icon: User },
+  { href: "/settings", label: "Settings" },
+  { href: "/profile", label: "Profile" },
 ];
 
 function NavItem({
   href,
   label,
-  icon: Icon,
   isActive,
-  highlight,
   onClick,
 }: {
   href: string;
   label: string;
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   isActive: boolean;
-  highlight?: boolean;
   onClick?: () => void;
 }) {
   return (
@@ -82,10 +51,10 @@ function NavItem({
       href={href}
       onClick={onClick}
       className={cn(
-        "font-body flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 relative group/nav",
+        "font-body flex items-center px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 relative group/nav",
         isActive
           ? "bg-sidebar-accent text-sidebar-foreground"
-          : "text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 hover:scale-[1.03] hover:shadow-sm"
+          : "text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/60"
       )}
     >
       {isActive && (
@@ -94,16 +63,6 @@ function NavItem({
           style={{ background: "#14B8A6" }}
         />
       )}
-      <Icon
-        className={cn("w-[15px] h-[15px] shrink-0 transition-colors", !isActive && "group-hover/nav:text-[#14B8A6]")}
-        style={
-          isActive
-            ? { color: "#14B8A6" }
-            : highlight
-            ? { color: "rgba(20,184,166,0.55)" }
-            : undefined
-        }
-      />
       <span className={cn(isActive ? "text-sidebar-foreground" : "", !isActive && "group-hover/nav:text-[#14B8A6]")}>{label}</span>
     </Link>
   );
@@ -148,15 +107,12 @@ export function Sidebar() {
               {group.items.map((item) => {
                 const isActive =
                   pathname === item.href || pathname.startsWith(item.href + "/");
-                const highlight = "highlight" in item ? item.highlight : false;
                 return (
                   <NavItem
                     key={item.href}
                     href={item.href}
                     label={item.label}
-                    icon={item.icon}
                     isActive={isActive}
-                    highlight={highlight}
                   />
                 );
               })}
@@ -167,10 +123,10 @@ export function Sidebar() {
 
       {/* Bottom nav + user */}
       <div className="px-3 pb-3 space-y-0.5 pt-3 shrink-0 border-t border-sidebar-border">
-        {bottomItems.map(({ href, label, icon }) => {
+        {bottomItems.map(({ href, label }) => {
           const isActive = pathname === href;
           return (
-            <NavItem key={href} href={href} label={label} icon={icon} isActive={isActive} />
+            <NavItem key={href} href={href} label={label} isActive={isActive} />
           );
         })}
 
