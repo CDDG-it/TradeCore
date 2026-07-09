@@ -4,22 +4,22 @@ import { motion, AnimatePresence } from "motion/react";
 import { usePathname } from "next/navigation";
 
 /**
- * Wraps the main content with a pathname-keyed AnimatePresence so that
- * every route change gets a smooth fade + slight upward drift enter animation.
- * Exit animation: fast fade-out so it doesn't feel laggy.
+ * Wraps the main content with a pathname-keyed AnimatePresence. The new page
+ * fades in immediately (no mode="wait", so it doesn't sit and wait for the old
+ * page to leave) with just a quick opacity fade — no blur filter, which was
+ * GPU-heavy and made routes feel like they slowly "loaded in".
  */
 export function TransitionLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence initial={false}>
       <motion.div
         key={pathname}
-        initial={{ opacity: 0, y: 10, filter: "blur(2px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        // Quick exit so the next page enters without a noticeable pause
-        exit={{ opacity: 0, filter: "blur(2px)", transition: { duration: 0.16, ease: "easeIn" } }}
-        transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.12, ease: "easeOut" }}
       >
         {children}
       </motion.div>
