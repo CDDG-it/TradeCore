@@ -18,7 +18,11 @@ export type WidgetId =
   | "recent-trades"
   | "active-accounts"
   | "trading-rules"
-  | "win-rate";
+  | "win-rate"
+  | "avg-rr"
+  | "execution"
+  | "market-intel"
+  | "premarket-analysis";
 
 /** The page/area a widget belongs to — used to group the "Add widget" picker. */
 export type WidgetSource =
@@ -26,7 +30,9 @@ export type WidgetSource =
   | "Habits"
   | "Analytics"
   | "Trading Rules"
-  | "Accounts";
+  | "Accounts"
+  | "Analysis"
+  | "Market";
 
 export interface WidgetMeta {
   id: WidgetId;
@@ -40,7 +46,11 @@ export const WIDGETS: WidgetMeta[] = [
   { id: "weekly-r", title: "Weekly R", source: "Journal", href: "/journal", description: "Your net R for the current week." },
   { id: "recent-trades", title: "Recent Trades", source: "Journal", href: "/journal", description: "Your latest logged trades." },
   { id: "win-rate", title: "Win Rate", source: "Analytics", href: "/analytics", description: "Win rate across all trades." },
+  { id: "avg-rr", title: "Avg R:R", source: "Analytics", href: "/analytics", description: "Average reward on your winning trades." },
+  { id: "execution", title: "Execution", source: "Analytics", href: "/analytics", description: "How cleanly you executed your trades." },
   { id: "discipline", title: "Discipline Score", source: "Habits", href: "/discipline", description: "Trade-rule and habit consistency this week." },
+  { id: "premarket-analysis", title: "Pre-Market Analysis", source: "Analysis", href: "/analysis", description: "Your latest pre-trade preparation." },
+  { id: "market-intel", title: "Market Intelligence", source: "Market", href: "/news-city", description: "Live market regime, risk and sentiment." },
   { id: "habits-streak", title: "Habits Streak", source: "Habits", href: "/habits", description: "Longest active streak and today's progress." },
   { id: "trading-rules", title: "Trading Rules", source: "Trading Rules", href: "/habits", description: "Your pre-trade checklist at a glance." },
   { id: "active-accounts", title: "Active Accounts", source: "Accounts", href: "/accounts", description: "Funded accounts and capital in play." },
@@ -93,8 +103,11 @@ export interface WidgetControlConfig {
  *  resizing. */
 export const WIDGET_CONTROLS: Partial<Record<WidgetId, WidgetControlConfig>> = {
   "win-rate": { scope: true, session: true, details: true },
+  "avg-rr": { scope: true, session: true, details: true },
+  execution: { scope: true, session: true, details: true },
   "weekly-r": { scope: true, session: true, details: true },
   discipline: { scope: true, details: true },
+  "premarket-analysis": { counts: [3, 5, 10], countsLabel: "analyses", details: true },
   "recent-trades": { session: true, counts: [3, 5, 10], countsLabel: "trades", details: true },
   "active-accounts": { counts: [3, 5, 8], countsLabel: "accounts", details: true },
   "habits-streak": { counts: [3, 5, 8], countsLabel: "habits", details: true },

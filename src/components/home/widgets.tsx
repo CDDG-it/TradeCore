@@ -5,13 +5,15 @@ import { useEffect, useState } from "react";
 import {
   ArrowRight, X, TrendingUp, TrendingDown,
   ScrollText, Loader2, GripVertical, ChevronLeft, ChevronRight,
-  SlidersHorizontal, Check, Circle,
+  SlidersHorizontal, Check, Circle, Crosshair, Radar, FileText,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getHabitStreak, getProfile,
-  toggleHabitCompletion,
+  toggleHabitCompletion, getAnalyses,
 } from "@/lib/supabase/queries";
+import { NEWS_CITY_DATA } from "@/lib/news-city/data";
+import { SENTIMENT_META, RISK_META } from "@/lib/news-city/ui";
 import { computeDiscipline } from "@/lib/discipline";
 import { tradeR } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
@@ -25,7 +27,7 @@ import {
   WIDGET_MAP, WIDGET_CONTROLS, DEFAULT_WIDGET_OPTIONS, WIDGET_SIZE_LABEL, WIDGET_SIZE_CARD_CLASSES,
   type WidgetId, type WidgetOptions, type WidgetScope, type WidgetSessionFilter, type WidgetSize,
 } from "@/lib/home/widgets";
-import type { TradeJournalEntry, Habit, HabitCompletion } from "@/lib/types";
+import type { TradeJournalEntry, Habit, HabitCompletion, PreTradeAnalysis } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
@@ -323,6 +325,116 @@ function WinRateWidget({ options }: { options: WidgetOptions }) {
           <p>{wins}W · {losses}L · {inScope.length - wins - losses}BE</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Avg R:R (reward on winning trades) ───────────────────────────────
+function AvgRRWidget({ options }: { options: WidgetOptions }) {
+  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
+  useEffect(() => { getTrades().then(setTrades); }, []);
+  if (!trades) return <Loading />;
+  const inScope = scopeTrades(trades, options);
+  const wins = inScope.filter((t) => t.result === "win");
+  const avg = wins.length ? wins.reduce((s, t) => s + t.rr, 0) / wins.length : 0;
+  const best = wins.reduce((m, t) => Math.max(m, t.rr), 0);
+  return (
+    <div>
+      <p className="text-3xl font-black tabular-nums" style={{ color: "oklch(0.70 0.12 183)" }}>{avg.toFixed(1)}R</p>
+      <p className="text-xs text-muted-foreground mt-1">{wins.length} win{wins.length !== 1 ? "s" : ""} · {scopeSubtitle(options, "")}</p>
+      {options.details && wins.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground space-y-0.5">
+          <p>Best +{best}R · winning trades only</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Execution (how cleanly trades were run) ──────────────────────────
+function ExecutionWidget({ options }: { options: WidgetOptions }) {
+  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
+  useEffect(() => { getTrades().then(setTrades); }, []);
+  if (!trades) return <Loading />;
+  const inScope = scopeTrades(trades, options);
+  const rated = inScope.filter((t) => t.execution_quality === "good" || t.execution_quality === "bad");
+  const good = rated.filter((t) => t.execution_quality === "good").length;
+  const bad = rated.length - good;
+  const pct = rated.length ? Math.round((good / rated.length) * 100) : null;
+  const color = pct === null ? "var(--muted-foreground)" : scoreColor(pct);
+  return (
+    <div>
+      <p className="text-3xl font-black tabular-nums" style={{ color }}>{pct === null ? "—" : `${pct}%`}</p>
+      <p className="text-xs text-muted-foreground mt-1">
+        {rated.length ? `${good} of ${rated.length} well executed` : "no rated trades"} · {scopeSubtitle(options, "")}
+      </p>
+      {options.details && rated.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-border/50 space-y-1.5">
+          <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-border/60">
+            <div className="h-full" style={{ width: `${(good / rated.length) * 100}%`, background: "oklch(0.58 0.17 145)" }} />
+            <div className="h-full" style={{ width: `${(bad / rated.length) * 100}%`, background: "oklch(0.58 0.22 25)" }} />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            <span style={{ color: "oklch(0.58 0.17 145)" }}>{good} good</span> · <span style={{ color: "oklch(0.58 0.22 25)" }}>{bad} bad</span>
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Pre-Market Analysis (latest pre-trade prep) ──────────────────────
+const BIAS_COLOR: Record<string, string> = {
+  bullish: "oklch(0.58 0.17 145)", bearish: "oklch(0.58 0.22 25)", choppy: "oklch(0.70 0.16 72)",
+};
+function PreMarketAnalysisWidget({ options }: { options: WidgetOptions }) {
+  const [analyses, setAnalyses] = useState<PreTradeAnalysis[] | null>(null);
+  useEffect(() => { getAnalyses().then(setAnalyses); }, []);
+  if (!analyses) return <Loading />;
+  if (analyses.length === 0)
+    return <p className="text-xs text-muted-foreground">No analyses yet. Prep one in Analysis.</p>;
+  const visible = analyses.slice(0, listCap(options, analyses.length, 3));
+  return (
+    <div className="space-y-1 overflow-y-auto">
+      {visible.map((a) => (
+        <Link
+          key={a.id}
+          href={`/analysis/${a.id}`}
+          className="block rounded-lg px-1.5 py-1 -mx-1.5 hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-2 text-xs">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: BIAS_COLOR[a.bias] ?? "var(--muted-foreground)" }} />
+            <span className="font-semibold truncate flex-1">{a.title || a.instrument}</span>
+            <span className="text-muted-foreground shrink-0 tabular-nums">{format(new Date(a.date + "T12:00:00"), "MMM d")}</span>
+          </div>
+          {options.details && (
+            <p className="text-[10px] text-muted-foreground/70 pl-[14px] mt-0.5 truncate capitalize">
+              {a.instrument} · {a.bias}{a.session ? ` · ${a.session}` : ""}
+            </p>
+          )}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+// ── Market Intelligence (live regime snapshot) ───────────────────────
+function MarketIntelWidget() {
+  const o = NEWS_CITY_DATA.overview;
+  const sent = SENTIMENT_META[o.sentiment];
+  const risk = RISK_META[o.riskLevel];
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2">
+        <Radar className="w-4 h-4 text-primary" />
+        <span className={cn("text-xs font-bold rounded-md border px-1.5 py-0.5", sent.className)}>{sent.label}</span>
+        <span className={cn("text-xs font-bold rounded-md border px-1.5 py-0.5", risk.className)}>Risk {risk.label}</span>
+      </div>
+      <p className="mt-2.5 text-sm font-semibold text-foreground leading-snug">{o.latestEvent}</p>
+      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+        <span className="font-medium text-foreground/70">Driver:</span> {o.mainDriver}
+      </p>
+      <p className="mt-auto pt-2 text-[11px] text-muted-foreground/70">Volatility {o.volatility}</p>
     </div>
   );
 }
@@ -644,11 +756,15 @@ function TradingRulesWidget({ options }: { options: WidgetOptions }) {
 const COMPONENTS: Record<WidgetId, React.ComponentType<{ options: WidgetOptions }>> = {
   "weekly-r": WeeklyRWidget,
   "win-rate": WinRateWidget,
+  "avg-rr": AvgRRWidget,
+  execution: ExecutionWidget,
   discipline: DisciplineWidget,
   "habits-streak": HabitsStreakWidget,
   "recent-trades": RecentTradesWidget,
   "active-accounts": ActiveAccountsWidget,
   "trading-rules": TradingRulesWidget,
+  "premarket-analysis": PreMarketAnalysisWidget,
+  "market-intel": MarketIntelWidget,
 };
 
 /** Renders a single widget by id inside the shared shell. */
