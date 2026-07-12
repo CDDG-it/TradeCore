@@ -334,7 +334,17 @@ function DisciplineWidget({ options }: { options: WidgetOptions }) {
     Promise.all([getTrades(), getHabits(), getHabitCompletions()]).then(([t, h, c]) => {
       const scope = options.scope ?? "week";
       const now = new Date();
-      const start = scope === "all" ? new Date(2000, 0, 1) : scope === "week" ? startOfWeek(now, { weekStartsOn: 1 }) : startOfMonth(now);
+      // "All-time" begins at your earliest real data point (first habit created
+      // or first trade), never an arbitrary epoch — otherwise the expected
+      // count balloons across empty decades (e.g. "14/29070").
+      const allStart = () => {
+        const times = [
+          ...h.map((hb) => new Date(hb.created_at).getTime()),
+          ...t.map((tr) => new Date(tr.date_time.slice(0, 10) + "T00:00:00").getTime()),
+        ].filter((n) => Number.isFinite(n));
+        return times.length ? new Date(Math.min(...times)) : now;
+      };
+      const start = scope === "all" ? allStart() : scope === "week" ? startOfWeek(now, { weekStartsOn: 1 }) : startOfMonth(now);
       const end = scope === "all" ? now : scope === "week" ? endOfWeek(now, { weekStartsOn: 1 }) : endOfMonth(now);
       setBreakdown(computeDiscipline(t, h, c, start, end));
     });

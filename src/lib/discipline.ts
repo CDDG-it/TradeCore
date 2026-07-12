@@ -61,6 +61,25 @@ export function computeTradeRulesScore(
   return Math.round(sum / scored.length);
 }
 
+// Anything earlier than this is treated as a bogus created_at (e.g. a null that
+// parsed to the 1970 epoch). Habits realistically can't predate the app.
+const SANE_EPOCH = new Date("2015-01-01T00:00:00").getTime();
+
+/** Day (ms) a habit should start being scored from: its created_at when that is
+ *  a plausible date, otherwise its first-ever completion, otherwise never. */
+function habitStartTime(h: Habit, completions: HabitCompletion[]): number {
+  const created = startOfDay(new Date(h.created_at)).getTime();
+  if (Number.isFinite(created) && created >= SANE_EPOCH) return created;
+
+  let earliest = Infinity;
+  for (const c of completions) {
+    if (c.habit_id !== h.id || !c.completed) continue;
+    const t = new Date(c.date + "T00:00:00").getTime();
+    if (Number.isFinite(t) && t < earliest) earliest = t;
+  }
+  return earliest; // Infinity ⇒ no data, so the habit contributes nothing.
+}
+
 /**
  * Habit completion rate across [start, end], only counting days up to today
  * (future days are not "misses"). Each applicable habit-day is one expected
@@ -82,10 +101,15 @@ export function computeHabitCounts(
     completions.filter((c) => c.completed).map((c) => `${c.habit_id}|${c.date}`)
   );
 
-  // A habit only starts counting from the day it was created — days before it
+  // A habit only starts counting from the day it became active — days before it
   // existed are neither expected nor a "miss", so a fresh habit isn't penalised
-  // for history it was never part of.
-  const createdOn = new Map(habits.map((h) => [h.id, startOfDay(new Date(h.created_at)).getTime()]));
+  // for history it was never part of. `created_at` is the source of truth, but
+  // guard against missing/bogus values (a null date parses to 1970, which would
+  // otherwise balloon the "all-time" expected count): if it's not a plausible
+  // date, fall back to the habit's earliest completion, or exclude it entirely.
+  const createdOn = new Map(
+    habits.map((h) => [h.id, habitStartTime(h, completions)])
+  );
 
   let expected = 0;
   let completed = 0;
