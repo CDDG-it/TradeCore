@@ -124,14 +124,17 @@ function ActivityHeatmap({
   );
 }
 
-/** Applicable-day completion for one habit over the last `days` days. */
+/** Applicable-day completion for one habit over the last `days` days, counting
+ *  only from the day the habit was created (no penalty for pre-existence). */
 function habitRangeStat(habit: Habit, completions: HabitCompletion[], days: number) {
   const done = new Set(completions.filter((c) => c.completed).map((c) => c.date));
+  const createdOn = startOfDay(new Date(habit.created_at)).getTime();
   let expected = 0;
   let completed = 0;
   for (let i = 0; i < days; i++) {
     const d = subDays(new Date(), i);
     if (!frequencyApplies(habit.frequency, d.getDay())) continue;
+    if (startOfDay(d).getTime() < createdOn) continue;
     expected += 1;
     if (done.has(format(d, "yyyy-MM-dd"))) completed += 1;
   }
@@ -354,10 +357,12 @@ export default function HabitsPage() {
   );
   const overallIntensity = (key: string, d: Date): number | null => {
     const wd = d.getDay();
+    const dayTime = startOfDay(d).getTime();
     let exp = 0;
     let done = 0;
     for (const h of habits) {
       if (!frequencyApplies(h.frequency, wd)) continue;
+      if (dayTime < startOfDay(new Date(h.created_at)).getTime()) continue;
       exp += 1;
       if (completedByKey.has(`${h.id}|${key}`)) done += 1;
     }
@@ -711,7 +716,8 @@ export default function HabitsPage() {
                       cell={10}
                       color={habit.color}
                       intensityFor={(key, d) =>
-                        frequencyApplies(habit.frequency, d.getDay())
+                        frequencyApplies(habit.frequency, d.getDay()) &&
+                        startOfDay(d).getTime() >= startOfDay(new Date(habit.created_at)).getTime()
                           ? (completedByKey.has(`${habit.id}|${key}`) ? 1 : 0)
                           : null
                       }

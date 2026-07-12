@@ -82,15 +82,22 @@ export function computeHabitCounts(
     completions.filter((c) => c.completed).map((c) => `${c.habit_id}|${c.date}`)
   );
 
+  // A habit only starts counting from the day it was created — days before it
+  // existed are neither expected nor a "miss", so a fresh habit isn't penalised
+  // for history it was never part of.
+  const createdOn = new Map(habits.map((h) => [h.id, startOfDay(new Date(h.created_at)).getTime()]));
+
   let expected = 0;
   let completed = 0;
   for (const day of eachDayOfInterval({ start: rangeStart, end: rangeEnd })) {
     const weekday = day.getDay();
+    const dayTime = day.getTime();
     const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(
       day.getDate()
     ).padStart(2, "0")}`;
     for (const h of habits) {
       if (!frequencyAppliesOn(h.frequency, weekday)) continue;
+      if (dayTime < (createdOn.get(h.id) ?? 0)) continue;
       expected += 1;
       if (done.has(`${h.id}|${key}`)) completed += 1;
     }

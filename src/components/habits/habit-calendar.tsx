@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval,
-  addMonths, subMonths, addWeeks, subWeeks, getDay, isToday,
+  addMonths, subMonths, addWeeks, subWeeks, getDay, isToday, startOfDay,
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,12 +32,16 @@ export function HabitCalendar({
   const doneSet = new Set(completions.filter((c) => c.completed).map((c) => `${c.habit_id}|${c.date}`));
   const key = (d: Date) => format(d, "yyyy-MM-dd");
 
+  // A habit only applies on days from its creation onward.
+  const appliesOn = (h: Habit, d: Date) =>
+    frequencyApplies(h.frequency, d.getDay()) &&
+    startOfDay(d).getTime() >= startOfDay(new Date(h.created_at)).getTime();
+
   function stat(d: Date) {
-    const wd = d.getDay();
     let exp = 0;
     let done = 0;
     for (const h of habits) {
-      if (!frequencyApplies(h.frequency, wd)) continue;
+      if (!appliesOn(h, d)) continue;
       exp += 1;
       if (doneSet.has(`${h.id}|${key(d)}`)) done += 1;
     }
@@ -58,7 +62,7 @@ export function HabitCalendar({
   const next = () => setCursor(period === "month" ? addMonths(cursor, 1) : addWeeks(cursor, 1));
 
   const selDate = new Date(selected + "T12:00:00");
-  const selApplicable = habits.filter((h) => frequencyApplies(h.frequency, selDate.getDay()));
+  const selApplicable = habits.filter((h) => appliesOn(h, selDate));
 
   function renderCell(d: Date) {
     const s = stat(d);
