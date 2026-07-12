@@ -208,7 +208,7 @@ export function ProductPreview() {
             color:      "rgba(248,250,252,0.92)",
           }}
         >
-          Five tools. One platform.
+          Seven tools. One platform.
         </h2>
         <p
           className="mt-4 mx-auto max-w-sm leading-relaxed"

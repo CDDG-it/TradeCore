@@ -180,6 +180,68 @@ export const FEATURES: Feature[] = [
       },
     ],
   },
+  {
+    slug: "habits",
+    name: "Habits",
+    section: "Daily",
+    tagline: "The routine behind the results.",
+    blurb:
+      "Track the daily habits that keep your trading sharp. Completion streaks, discipline trends and a calendar you can check off for any day.",
+    cta: "Track habits",
+    screenshot: "/screenshots/habits.jpg",
+    intro:
+      "Your edge is built long before the open. Habits tracks the routine that keeps you sharp, so the discipline you show away from the charts is the same discipline that shows up on them.",
+    blocks: [
+      {
+        heading: "How it works",
+        body: "Set the habits that matter and keep them honest, one day at a time.",
+        points: [
+          "Build daily, weekday or weekend habits and check them off from the overview or a full calendar you can backfill for any date.",
+          "Watch completion rate, longest streak and an activity heatmap that shows consistency across weeks, not just today.",
+          "Every habit only starts counting from the day you add it, so a fresh habit is never punished for history it was not part of.",
+        ],
+      },
+      {
+        heading: "Why it works",
+        body: "Consistency is a curve, not a switch. By scoring how often you actually show up on every applicable day, Habits rewards the slow, repeated work that builds automaticity instead of a single burst of motivation that fades by Wednesday.",
+      },
+      {
+        heading: "Why every trader needs this",
+        body: "Sleep, preparation and review are what keep your decisions stable under pressure. Track them and they compound. Ignore them and they quietly decide your worst days for you.",
+      },
+    ],
+  },
+  {
+    slug: "news-city",
+    name: "Market Intelligence",
+    section: "Trading",
+    tagline: "See what is actually moving the market.",
+    blurb:
+      "A live map of the forces driving price. Central banks, macro data, commodities and earnings, scored by impact, direction and confidence.",
+    cta: "Open the hub",
+    screenshot: "/screenshots/market-intelligence.jpg",
+    intro:
+      "Price does not move in a vacuum. Market Intelligence turns the day's noise into a clear picture of what is driving risk right now, so you walk into the session knowing the context instead of reacting to it.",
+    blocks: [
+      {
+        heading: "How it works",
+        body: "The signals that move index futures, gathered into one readable view.",
+        points: [
+          "Scan a live feed of signals from central banks, macro data, commodities, earnings and geopolitics, each scored by impact, direction and confidence.",
+          "Explore an interactive hub that shows how every source feeds into the current market regime, risk level and sentiment.",
+          "Filter to the categories and impact levels you care about, so you see the events that actually matter for your instrument.",
+        ],
+      },
+      {
+        heading: "Why it works",
+        body: "Most traders check five tabs and still miss the one number that mattered. Pulling the drivers into a single scored view means the context is already framed before the open, so you spend the session executing instead of scrambling to find out why price is moving.",
+      },
+      {
+        heading: "Why every trader needs this",
+        body: "The difference between a clean read and a blindside is usually knowing the regime you are trading in. A single view of risk and sentiment keeps you on the right side of the days that break the range.",
+      },
+    ],
+  },
 ];
 
 export const FEATURE_BY_SLUG: Record<string, Feature> = Object.fromEntries(
