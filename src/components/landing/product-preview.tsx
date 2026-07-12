@@ -19,10 +19,11 @@ const CARDS = FEATURES.map((f, index) => ({
   desc: f.blurb,
   cta: "Learn more",
   screenshot: f.screenshot,
+  aspect: f.aspect,
 }));
 
 // ── Screenshot frame — no browser chrome, just the app with turquoise glow ───────
-function ScreenshotFrame({ src, alt, eager }: { src: string; alt: string; eager?: boolean }) {
+function ScreenshotFrame({ src, alt, aspect, eager }: { src: string; alt: string; aspect: string; eager?: boolean }) {
   // Pure CSS hover: no React state, and the glow lives on its own layer whose
   // opacity fades — gradients and stacked shadows can't be interpolated, so
   // transitioning them directly snaps on mouse-leave.
@@ -33,13 +34,14 @@ function ScreenshotFrame({ src, alt, eager }: { src: string; alt: string; eager?
         boxShadow: "0 0 0 1.5px rgba(20,184,166,0.28), 0 0 20px rgba(20,184,166,0.12), 0 8px 40px rgba(0,0,0,0.45)",
       }}
     >
-      {/* Screenshot — aspect ratio matches 1200×900 crop */}
-      <div className="relative w-full" style={{ aspectRatio: "4/3" }}>
+      {/* Frame matches the screenshot's native aspect ratio — no crop, no letterbox */}
+      <div className="relative w-full" style={{ aspectRatio: aspect }}>
         <Image
           src={src}
           alt={alt}
           fill
           sizes="(max-width: 768px) 100vw, 60vw"
+          quality={92}
           className="object-cover object-top"
           priority={eager}
         />
@@ -161,6 +163,7 @@ function FeatureCard({ card }: { card: (typeof CARDS)[number] }) {
             <ScreenshotFrame
               src={card.screenshot}
               alt={`${card.name} page screenshot`}
+              aspect={card.aspect}
               eager={card.index === 0}
             />
           </motion.div>

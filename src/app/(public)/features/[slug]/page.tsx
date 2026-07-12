@@ -111,7 +111,7 @@ export default async function FeaturePage({
         <div
           className="relative w-full overflow-hidden rounded-2xl"
           style={{
-            aspectRatio: "4/3",
+            aspectRatio: feature.aspect,
             boxShadow:
               "0 0 0 1.5px rgba(20,184,166,0.25), 0 0 34px rgba(6,182,212,0.10), 0 12px 50px rgba(0,0,0,0.45)",
           }}
@@ -121,6 +121,7 @@ export default async function FeaturePage({
             alt={`${feature.name} page in TradingMC`}
             fill
             sizes="(max-width: 1024px) 100vw, 1024px"
+            quality={92}
             className="object-cover object-top"
             priority
           />
