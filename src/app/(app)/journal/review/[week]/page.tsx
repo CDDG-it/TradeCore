@@ -280,7 +280,7 @@ function ReviewField({
         placeholder={placeholder}
         rows={fill ? undefined : 7}
         className={cn(
-          "w-full rounded-xl border border-border/70 bg-white px-4 py-3 text-sm leading-relaxed text-foreground shadow-sm outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15",
+          "w-full rounded-xl border border-border/70 bg-input px-4 py-3 text-sm leading-relaxed text-foreground shadow-sm outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15",
           fill ? "flex-1 min-h-[220px] resize-none" : "min-h-[180px] resize-y"
         )}
       />

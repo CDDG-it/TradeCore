@@ -65,20 +65,31 @@ export function HabitCalendar({
     const k = key(d);
     const isSel = k === selected;
     const filled = s.exp > 0 && s.pct > 0;
-    const alpha = 0.18 + s.pct * 0.6;
+    // Turquoise "heat" — more habits done = brighter & more saturated tile.
+    // Lightness climbs and alpha climbs together so the ramp reads clearly in
+    // both dark and light mode. Empty days stay a flat muted panel.
+    const light = 0.55 + s.pct * 0.24;
+    const chroma = 0.06 + s.pct * 0.09;
+    const alpha = 0.22 + s.pct * 0.66;
+    const complete = s.exp > 0 && s.pct >= 1;
     return (
       <button
         key={k}
         onClick={() => setSelected(k)}
+        title={s.exp > 0 ? `${s.done} of ${s.exp} habits` : undefined}
         className={cn(
-          "aspect-square rounded-lg border flex flex-col items-center justify-center gap-0.5 transition-colors",
-          isSel ? "border-primary/60 ring-1 ring-primary/40"
+          "relative aspect-square rounded-lg border flex flex-col items-center justify-center gap-0.5 transition-colors",
+          isSel ? "border-primary/70 ring-1 ring-primary/40"
+            : complete ? "border-primary/50"
             : isToday(d) ? "border-primary/40" : "border-border/50 hover:border-primary/30"
         )}
-        style={{ background: filled ? `oklch(0.72 0.22 45 / ${alpha.toFixed(2)})` : "var(--muted)" }}
+        style={{ background: filled ? `oklch(${light.toFixed(3)} ${chroma.toFixed(3)} 185 / ${alpha.toFixed(2)})` : "var(--muted)" }}
       >
-        <span className={cn("text-xs font-bold leading-none", isToday(d) && "text-primary")}>{format(d, "d")}</span>
-        {s.exp > 0 && <span className="text-[9px] text-muted-foreground tabular-nums leading-none">{s.done}/{s.exp}</span>}
+        {complete && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" />}
+        <span className={cn("text-xs font-bold leading-none", (filled && s.pct > 0.5) ? "text-white" : isToday(d) ? "text-primary" : "text-foreground")}>{format(d, "d")}</span>
+        {s.exp > 0 && (
+          <span className={cn("text-[9px] tabular-nums leading-none", (filled && s.pct > 0.5) ? "text-white/80" : "text-muted-foreground")}>{s.done}/{s.exp}</span>
+        )}
       </button>
     );
   }
