@@ -95,7 +95,7 @@ export function HabitCalendar({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] items-start">
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         {/* Nav */}
         <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/60">
@@ -135,8 +135,18 @@ export function HabitCalendar({
       </div>
 
       {/* Selected day - check habits off for any date */}
-      <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
-        <p className="text-sm font-semibold">{format(selDate, "EEEE, MMMM d")}</p>
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3 lg:sticky lg:top-4">
+        <div className="flex items-end justify-between gap-2 border-b border-border/50 pb-3">
+          <div>
+            <p className="text-sm font-semibold leading-tight">{format(selDate, "EEEE")}</p>
+            <p className="text-xs text-muted-foreground">{format(selDate, "MMMM d, yyyy")}</p>
+          </div>
+          {selApplicable.length > 0 && (
+            <span className="text-xs font-bold tabular-nums text-primary">
+              {selApplicable.filter((h) => doneSet.has(`${h.id}|${selected}`)).length}/{selApplicable.length}
+            </span>
+          )}
+        </div>
         {selApplicable.length === 0 ? (
           <p className="text-xs text-muted-foreground">No habits scheduled for this day.</p>
         ) : (

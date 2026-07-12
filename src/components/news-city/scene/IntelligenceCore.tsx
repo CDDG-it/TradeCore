@@ -55,7 +55,7 @@ export function IntelligenceCore({
       onPointerOut={onPointerOut}
       onClick={onClick}
     >
-      <ClickHintRing ringRef={ringRef} radius={1.9} color={sentiment.hex} />
+      <ClickHintRing ringRef={ringRef} radius={2.2} color={sentiment.hex} />
 
       {/* Pedestal */}
       <mesh position={[0, 0.09, 0]} receiveShadow castShadow>
@@ -69,7 +69,7 @@ export function IntelligenceCore({
 
       {/* Levitating holographic globe: glowing core inside a wireframe shell */}
       <mesh ref={coreRef} position={[0, 1.55, 0]}>
-        <sphereGeometry args={[0.38, 28, 20]} />
+        <sphereGeometry args={[0.52, 28, 20]} />
         <meshStandardMaterial
           color={sentiment.hex}
           emissive={sentiment.hex}
@@ -81,28 +81,28 @@ export function IntelligenceCore({
       </mesh>
       {/* Wireframe globe shell — latitude/longitude hologram */}
       <mesh position={[0, 1.55, 0]}>
-        <sphereGeometry args={[0.58, 22, 14]} />
+        <sphereGeometry args={[0.76, 22, 14]} />
         <meshBasicMaterial color="#7fd4ea" wireframe transparent opacity={glow ? 0.55 : 0.4} toneMapped={false} depthWrite={false} />
       </mesh>
       {/* Halo */}
       <mesh position={[0, 1.55, 0]}>
-        <sphereGeometry args={[0.72, 24, 18]} />
+        <sphereGeometry args={[0.94, 24, 18]} />
         <meshBasicMaterial color={sentiment.hex} transparent opacity={0.1} toneMapped={false} depthWrite={false} />
       </mesh>
-      <pointLight position={[0, 1.55, 0]} color={sentiment.hex} intensity={1.1} distance={8} decay={2} />
+      <pointLight position={[0, 1.55, 0]} color={sentiment.hex} intensity={1.2} distance={9} decay={2} />
 
       {/* Counter-rotating gyroscope rings */}
       <mesh ref={gyroA} position={[0, 1.55, 0]}>
-        <torusGeometry args={[0.84, 0.022, 8, 64]} />
+        <torusGeometry args={[1.08, 0.026, 8, 64]} />
         <meshStandardMaterial color="#2c3948" roughness={0.3} metalness={0.6} emissive="#14B8A6" emissiveIntensity={0.9} toneMapped={false} />
       </mesh>
       <mesh ref={gyroB} position={[0, 1.55, 0]} rotation={[Math.PI / 3, 0, Math.PI / 5]}>
-        <torusGeometry args={[1.02, 0.018, 8, 64]} />
+        <torusGeometry args={[1.32, 0.022, 8, 64]} />
         <meshStandardMaterial color="#2c3948" roughness={0.3} metalness={0.6} emissive="#5fc0d8" emissiveIntensity={0.9} toneMapped={false} />
       </mesh>
 
       <CityLabel
-        y={2.75}
+        y={3.05}
         label="Market Intelligence Core"
         sublabel={`${sentiment.label} · Risk ${risk.label}`}
         accent={sentiment.hex}

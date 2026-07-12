@@ -81,19 +81,24 @@ export interface WidgetControlConfig {
   scope?: boolean;
   session?: boolean;
   counts?: number[];
+  /** Noun for the counts control, e.g. "trades" / "rules" / "accounts". */
+  countsLabel?: string;
   /** Whether this widget has a meaningful "Show details" toggle. */
   details?: boolean;
 }
 
 /** Which extra controls each widget exposes in its options menu, beyond the
- *  universal size control. Widgets absent here only get resizing. */
+ *  universal size control. Each domain surfaces the filters that actually make
+ *  sense for it, so no two widgets feel identical. Widgets absent here only get
+ *  resizing. */
 export const WIDGET_CONTROLS: Partial<Record<WidgetId, WidgetControlConfig>> = {
   "win-rate": { scope: true, session: true, details: true },
   "weekly-r": { scope: true, session: true, details: true },
   discipline: { scope: true, details: true },
-  "recent-trades": { session: true, counts: [3, 5, 10], details: true },
-  "active-accounts": { details: true },
-  "habits-streak": { details: true },
+  "recent-trades": { session: true, counts: [3, 5, 10], countsLabel: "trades", details: true },
+  "active-accounts": { counts: [3, 5, 8], countsLabel: "accounts", details: true },
+  "habits-streak": { counts: [3, 5, 8], countsLabel: "habits", details: true },
+  "trading-rules": { counts: [3, 5, 10], countsLabel: "rules", details: true },
 };
 
 export const DEFAULT_WIDGET_OPTIONS: WidgetOptions = { scope: "week", session: "all", count: 3, size: "small", details: false };

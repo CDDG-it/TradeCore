@@ -19,7 +19,7 @@ const SKY_BG = "#0b1120"; // matches the app's --background token
  *  the Market Intelligence Core — matches the reading order Macro → Central
  *  Banks → Commodities → Earnings → Nasdaq/ES Impact. */
 const NODE_CATEGORIES: NewsCategory[] = ["macro", "central-bank", "commodity", "earnings", "markets"];
-const NODE_RADIUS = 6.5;
+const NODE_RADIUS = 7.2;
 
 function nodePosition(index: number): [number, number, number] {
   const angle = -Math.PI / 2 + index * ((2 * Math.PI) / NODE_CATEGORIES.length);
@@ -28,7 +28,7 @@ function nodePosition(index: number): [number, number, number] {
 
 /** Default "sit above the whole hub" establishing view. */
 const OVERVIEW = {
-  position: new THREE.Vector3(0, 12.5, 19),
+  position: new THREE.Vector3(0, 13.5, 21),
   target: new THREE.Vector3(0, 1.2, 0),
 };
 

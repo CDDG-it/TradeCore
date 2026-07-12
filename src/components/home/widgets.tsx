@@ -120,7 +120,7 @@ function WidgetOptionsMenu({
               {controls.counts.map((count) => (
                 <DropdownMenuItem key={count} onClick={() => onChange(id, { ...options, count })}>
                   {options.count === count && <Check className="w-3.5 h-3.5" />}
-                  <span className={cn(options.count !== count && "pl-[22px]")}>{count} trades</span>
+                  <span className={cn(options.count !== count && "pl-[22px]")}>{count} {controls.countsLabel ?? "trades"}</span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuGroup>
@@ -175,7 +175,13 @@ function WidgetShell({
   const sizeClasses = WIDGET_SIZE_CARD_CLASSES[options.size ?? "small"];
   return (
     <div
-      className={cn("relative group h-full flex flex-col rounded-xl overflow-hidden card-hover", sizeClasses)}
+      className={cn(
+        "relative group h-full flex flex-col rounded-xl card-hover",
+        // While editing, let the remove/move controls sit just outside the card
+        // without being clipped; otherwise clip content to the rounded corners.
+        editing ? "overflow-visible" : "overflow-hidden",
+        sizeClasses
+      )}
       style={{ background: "var(--card)", border: "1px solid var(--border)" }}
     >
       <Link
@@ -267,9 +273,11 @@ function scopeSubtitle(options: WidgetOptions, suffix: string): string {
   return session === "all" ? base : `${base} · ${session}`;
 }
 
-/** How many list rows a widget should show for its current footprint. */
-function rowsForSize(size: WidgetSize | undefined, { small, wide, tall }: { small: number; wide: number; tall: number }) {
-  return size === "tall" ? tall : size === "wide" ? wide : small;
+/** Row cap for list widgets that expose a "count" control: a tall card always
+ *  shows everything, otherwise the chosen count (falling back to `fallback`). */
+function listCap(options: WidgetOptions, total: number, fallback: number): number {
+  if (options.size === "tall") return total;
+  return options.count ?? fallback;
 }
 
 // ── Weekly R (net R for the configured scope/session) ────────────────
@@ -334,18 +342,73 @@ function DisciplineWidget({ options }: { options: WidgetOptions }) {
   if (breakdown === undefined) return <Loading />;
   const score = breakdown.total;
   const color = score === null ? "var(--muted-foreground)" : scoreColor(score);
+  const { tradeRules, habits, tradeCount, habitCompleted, habitExpected } = breakdown;
+  const scopeWord = SCOPE_LABEL[options.scope ?? "week"].toLowerCase();
+
+  // Plain-language read of where the score comes from.
+  const label = score === null ? "No data yet" : score >= 80 ? "Locked in" : score >= 60 ? "Holding the line" : "Slipping — tighten up";
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-baseline gap-2">
+        <p className="text-3xl font-black tabular-nums" style={{ color }}>{score === null ? "—" : `${score}%`}</p>
+        <p className="text-xs font-semibold" style={{ color }}>{label}</p>
+      </div>
+      <p className="text-xs text-muted-foreground mt-0.5">Discipline · {scopeWord}</p>
+
+      {/* Contribution breakdown — how much each side is pulling the score */}
+      <div className="mt-3 space-y-2.5">
+        <ContributionRow
+          label="Trading rules"
+          weight="70%"
+          score={tradeRules}
+          detail={tradeRules === null ? "no scored trades" : `across ${tradeCount} scored trade${tradeCount !== 1 ? "s" : ""}`}
+          color="oklch(0.72 0.14 220)"
+        />
+        <ContributionRow
+          label="Habits"
+          weight="30%"
+          score={habits}
+          detail={habitExpected === 0 ? "no habits due" : `${habitCompleted}/${habitExpected} check-ins done`}
+          color="oklch(0.70 0.12 183)"
+        />
+      </div>
+
+      {options.details && (
+        <p className="mt-3 pt-2.5 border-t border-border/50 text-[11px] leading-relaxed text-muted-foreground">
+          Your discipline score blends how well you followed your <span className="text-foreground/80 font-medium">trading rules at the screen</span> (weighted 70%) with your <span className="text-foreground/80 font-medium">habit consistency away from the charts</span> (30%). Trade rules dominate on purpose — habits should nudge the score, never overpower the actual process.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** One line of the discipline breakdown: label, weight, a mini bar, and the raw
+ *  numbers behind it so the score never feels like a black box. */
+function ContributionRow({
+  label, weight, score, detail, color,
+}: {
+  label: string;
+  weight: string;
+  score: number | null;
+  detail: string;
+  color: string;
+}) {
   return (
     <div>
-      <div>
-        <p className="text-3xl font-black tabular-nums" style={{ color }}>{score === null ? "—" : `${score}%`}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{SCOPE_LABEL[options.scope ?? "week"].toLowerCase()}</p>
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className="flex items-center gap-1.5">
+          <span className="font-medium text-foreground/85">{label}</span>
+          <span className="text-[10px] font-semibold text-muted-foreground/60 tabular-nums">{weight}</span>
+        </span>
+        <span className="font-bold tabular-nums" style={{ color: score === null ? "var(--muted-foreground)" : color }}>
+          {score === null ? "—" : `${score}%`}
+        </span>
       </div>
-      {options.details && (
-        <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground space-y-0.5">
-          <p>Trade rules: {breakdown.tradeRules === null ? "—" : `${breakdown.tradeRules}%`}</p>
-          <p>Habits: {breakdown.habits === null ? "—" : `${breakdown.habits}%`}</p>
-        </div>
-      )}
+      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-border/60">
+        <div className="h-full rounded-full transition-all" style={{ width: `${score ?? 0}%`, background: color }} />
+      </div>
+      <p className="mt-1 text-[10px] text-muted-foreground/70">{detail}</p>
     </div>
   );
 }
@@ -380,7 +443,7 @@ function HabitsStreakWidget({ options }: { options: WidgetOptions }) {
 
   const doneToday = new Set(completions.filter((c) => c.date === TODAY && c.completed).map((c) => c.habit_id));
   const longestStreak = Object.values(streaks).reduce((m, s) => Math.max(m, s), 0);
-  const visible = habits.slice(0, rowsForSize(options.size, { small: 2, wide: 4, tall: habits.length }));
+  const visible = habits.slice(0, listCap(options, habits.length, 2));
 
   return (
     <div className="flex flex-col h-full">
@@ -500,7 +563,7 @@ function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
     );
   }
 
-  const visible = active.slice(0, rowsForSize(options.size, { small: 3, wide: 4, tall: active.length }));
+  const visible = active.slice(0, listCap(options, active.length, 3));
   return (
     <div className="flex flex-col h-full">
       <p className="text-xl font-black tabular-nums mb-2" style={{ color: "oklch(0.58 0.17 145)" }}>
@@ -542,7 +605,7 @@ function TradingRulesWidget({ options }: { options: WidgetOptions }) {
   if (!rules) return <Loading />;
   if (rules.length === 0)
     return <p className="text-xs text-muted-foreground">No rules yet. Add them in Trading Behaviour.</p>;
-  const visible = rules.slice(0, rowsForSize(options.size, { small: 2, wide: 4, tall: rules.length }));
+  const visible = rules.slice(0, listCap(options, rules.length, 2));
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -550,10 +613,19 @@ function TradingRulesWidget({ options }: { options: WidgetOptions }) {
         <span className="text-2xl font-black tabular-nums">{rules.length}</span>
         <span className="text-xs text-muted-foreground">rules</span>
       </div>
-      <ul className="space-y-0.5 overflow-y-auto">
+      <ul className="space-y-1 overflow-y-auto">
         {visible.map((r, i) => (
-          <li key={i} className="text-xs text-muted-foreground truncate">· {r}</li>
+          <li
+            key={i}
+            className={cn("flex gap-1.5 text-xs text-muted-foreground", !options.details && "truncate")}
+          >
+            <span className="text-primary/60">·</span>
+            <span className={cn("min-w-0", options.details ? "leading-relaxed" : "truncate")}>{r}</span>
+          </li>
         ))}
+        {visible.length < rules.length && (
+          <li className="text-[11px] text-muted-foreground/60 pt-0.5">+{rules.length - visible.length} more</li>
+        )}
       </ul>
     </div>
   );

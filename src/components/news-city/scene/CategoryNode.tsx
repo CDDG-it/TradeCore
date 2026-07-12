@@ -39,7 +39,7 @@ export function CategoryNode({
   const containment = useRef<Mesh>(null);
   const shellRef = useRef<Mesh>(null);
   const coreRef = useRef<Mesh>(null);
-  const coreR = 0.24 + intensity * 0.18;
+  const coreR = 0.36 + intensity * 0.22;
 
   useFrame((state, delta) => {
     if (containment.current) {
@@ -63,7 +63,7 @@ export function CategoryNode({
       onPointerOut={onPointerOut}
       onClick={onClick}
     >
-      <ClickHintRing ringRef={ringRef} radius={1.35} color={color} />
+      <ClickHintRing ringRef={ringRef} radius={1.6} color={color} />
 
       {/* Pedestal */}
       <mesh position={[0, 0.09, 0]} receiveShadow castShadow>
@@ -91,21 +91,21 @@ export function CategoryNode({
         <sphereGeometry args={[coreR * 1.7, 18, 14]} />
         <meshBasicMaterial color={color} transparent opacity={0.1 + intensity * 0.08} toneMapped={false} depthWrite={false} />
       </mesh>
-      <pointLight position={[0, 1.05, 0]} color={color} intensity={0.5 + intensity * 0.6} distance={4.2} decay={2} />
+      <pointLight position={[0, 1.05, 0]} color={color} intensity={0.6 + intensity * 0.6} distance={5} decay={2} />
 
       {/* Spinning containment ring */}
       <mesh ref={containment} position={[0, 1.05, 0]}>
-        <torusGeometry args={[0.56, 0.032, 10, 48]} />
+        <torusGeometry args={[0.74, 0.038, 10, 48]} />
         <meshStandardMaterial color="#2c3948" roughness={0.3} metalness={0.6} emissive={color} emissiveIntensity={0.8} toneMapped={false} />
       </mesh>
 
       {/* Faint holographic wireframe shell */}
       <mesh ref={shellRef} position={[0, 1.05, 0]}>
-        <icosahedronGeometry args={[0.82, 1]} />
+        <icosahedronGeometry args={[1.04, 1]} />
         <meshBasicMaterial color="#7fd4ea" wireframe transparent opacity={glow ? 0.35 : 0.2} toneMapped={false} depthWrite={false} />
       </mesh>
 
-      <CityLabel y={2.05} label={label} sublabel={sublabel} accent={color} emphasized={glow} />
+      <CityLabel y={2.35} label={label} sublabel={sublabel} accent={color} emphasized={glow} />
     </group>
   );
 }

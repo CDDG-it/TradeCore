@@ -28,6 +28,11 @@ export interface DisciplineBreakdown {
   habits: number | null;
   /** 0–100 blended score, or null when there is nothing to measure. */
   total: number | null;
+  /** Number of scored trades that fed the trade-rule score. */
+  tradeCount: number;
+  /** Habit check-ins completed vs expected across the period. */
+  habitCompleted: number;
+  habitExpected: number;
 }
 
 const tradeDate = (t: TradeJournalEntry) => new Date(t.date_time.slice(0, 10) + "T12:00:00");
@@ -61,18 +66,16 @@ export function computeTradeRulesScore(
  * (future days are not "misses"). Each applicable habit-day is one expected
  * completion; the score is completed / expected.
  */
-export function computeHabitScore(
+export function computeHabitCounts(
   habits: Habit[],
   completions: HabitCompletion[],
   start: Date,
   end: Date
-): number | null {
-  if (habits.length === 0) return null;
-
+): { completed: number; expected: number } {
   const today = startOfDay(new Date());
   const rangeStart = startOfDay(start);
   const rangeEnd = startOfDay(minDate([end, today]));
-  if (rangeEnd < rangeStart) return null;
+  if (habits.length === 0 || rangeEnd < rangeStart) return { completed: 0, expected: 0 };
 
   // Fast lookup of the days a habit was actually completed.
   const done = new Set(
@@ -92,7 +95,16 @@ export function computeHabitScore(
       if (done.has(`${h.id}|${key}`)) completed += 1;
     }
   }
+  return { completed, expected };
+}
 
+export function computeHabitScore(
+  habits: Habit[],
+  completions: HabitCompletion[],
+  start: Date,
+  end: Date
+): number | null {
+  const { completed, expected } = computeHabitCounts(habits, completions, start, end);
   if (expected === 0) return null;
   return Math.round((completed / expected) * 100);
 }
@@ -106,7 +118,14 @@ export function computeDiscipline(
   end: Date
 ): DisciplineBreakdown {
   const tradeRules = computeTradeRulesScore(trades, start, end);
-  const habitsScore = computeHabitScore(habits, completions, start, end);
+  const { completed: habitCompleted, expected: habitExpected } = computeHabitCounts(habits, completions, start, end);
+  const habitsScore = habitExpected === 0 ? null : Math.round((habitCompleted / habitExpected) * 100);
+
+  const tradeCount = trades.filter((t) => {
+    if (!t.discipline) return false;
+    const d = tradeDate(t);
+    return d >= start && d <= end;
+  }).length;
 
   let total: number | null;
   if (tradeRules === null && habitsScore === null) total = null;
@@ -117,5 +136,5 @@ export function computeDiscipline(
       DISCIPLINE_WEIGHTS.tradeRules * tradeRules + DISCIPLINE_WEIGHTS.habits * habitsScore
     );
 
-  return { tradeRules, habits: habitsScore, total };
+  return { tradeRules, habits: habitsScore, total, tradeCount, habitCompleted, habitExpected };
 }
