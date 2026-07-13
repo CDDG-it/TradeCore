@@ -120,11 +120,9 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="h-14 flex items-center px-5 shrink-0 border-b border-sidebar-border">
-        <Link href="/"
-          className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
-          style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
-          <span className="text-sidebar-foreground">Trading</span>
-          <span style={{ background: "linear-gradient(90deg,#14B8A6,#06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+        <Link href="/" aria-label="TradingMC" className="hover:opacity-80 transition-opacity">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={40} height={40} className="h-10 w-10" />
         </Link>
       </div>
 

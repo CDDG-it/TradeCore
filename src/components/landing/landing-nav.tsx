@@ -70,10 +70,17 @@ export function LandingNav() {
       }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-        {/* Brand */}
-        <Link href="/" aria-label="TradingMC" className="hover:opacity-80 transition-opacity">
+        {/* Brand — logo + wordmark, same font family as the hero heading, much smaller */}
+        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={38} height={38} className="h-9 w-9" />
+          <img src="/tradingmc-app-dark.svg" alt="" width={44} height={44} className="h-11 w-11 shrink-0" />
+          <span
+            className="font-black tracking-tight text-base leading-none"
+            style={{ fontFamily: NUNITO }}
+          >
+            <span style={{ color: "rgba(248,250,252,0.92)" }}>Trading</span>
+            <span style={{ background: "linear-gradient(90deg,#14B8A6,#0D9488)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+          </span>
         </Link>
 
         {/* Center / right nav */}

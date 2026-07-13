@@ -34,11 +34,9 @@ export function MobileHeader() {
     <>
       {/* Header bar */}
       <header className="bg-sidebar border-b border-sidebar-border lg:hidden fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 z-50">
-        <Link href="/"
-          className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
-          style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
-          <span className="text-sidebar-foreground">Trading</span>
-          <span style={{ background: "linear-gradient(90deg,#14B8A6,#06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+        <Link href="/" aria-label="TradingMC" className="hover:opacity-80 transition-opacity">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={36} height={36} className="h-9 w-9" />
         </Link>
         <button
           onClick={() => setOpen(true)}
@@ -64,12 +62,9 @@ export function MobileHeader() {
         )}
       >
         <div className="h-14 flex items-center justify-between px-5 border-b border-sidebar-border">
-          <Link href="/"
-            className="font-black text-base tracking-tight leading-none hover:opacity-80 transition-opacity"
-            style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
-            onClick={() => setOpen(false)}>
-            <span className="text-sidebar-foreground">Trading</span>
-            <span style={{ background: "linear-gradient(90deg,#14B8A6,#06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>MC</span>
+          <Link href="/" aria-label="TradingMC" onClick={() => setOpen(false)} className="hover:opacity-80 transition-opacity">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={36} height={36} className="h-9 w-9" />
           </Link>
           <button
             onClick={() => setOpen(false)}

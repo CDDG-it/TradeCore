@@ -22,8 +22,8 @@ import type {
   WeeklyReflection,
   WeeklyTradeReview,
   WeeklyTradeReviewInput,
-  DailyEdge,
-  DailyEdgeInput,
+  PsychEdgeSession,
+  PsychEdgeSessionInput,
   DashboardStats,
 } from "@/lib/types";
 
@@ -946,55 +946,54 @@ export {
   getDisciplineFieldLabel,
 } from "@/lib/mock/store";
 
-// ── Psychological Edge (daily_edge) ──────────────────────────────────
-// Fail-soft: if the daily_edge table has not been created yet, reads return
-// empty/null so the page still renders and saving shows a migration hint.
+// ── Psychological Edge (psych_edge_sessions) ─────────────────────────
+// Fail-soft: if the psych_edge_sessions table has not been created yet,
+// reads return empty so the page still renders the computed reflection —
+// it just can't persist history or check prior commitments until the
+// migration runs.
 
-export async function getDailyEdge(date: string): Promise<DailyEdge | null> {
+export async function getPsychEdgeSessions(): Promise<PsychEdgeSession[]> {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("daily_edge")
+    .from("psych_edge_sessions")
     .select("*")
-    .eq("date", date)
-    .maybeSingle();
-  if (error) return null;
-  return (data as DailyEdge) ?? null;
-}
-
-export async function getAllDailyEdge(): Promise<DailyEdge[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase.from("daily_edge").select("*");
+    .order("date", { ascending: false });
   if (error) return [];
-  return (data ?? []) as DailyEdge[];
+  return (data ?? []).map((r) => ({
+    ...r,
+    narrative: (r.narrative ?? []) as string[],
+  })) as PsychEdgeSession[];
 }
 
-export async function saveDailyEdge(input: DailyEdgeInput): Promise<DailyEdge> {
+export async function savePsychEdgeSession(
+  input: PsychEdgeSessionInput
+): Promise<PsychEdgeSession> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
   const { data: existing } = await supabase
-    .from("daily_edge")
+    .from("psych_edge_sessions")
     .select("id")
     .eq("date", input.date)
     .maybeSingle();
 
   if (existing) {
     const { data, error } = await supabase
-      .from("daily_edge")
+      .from("psych_edge_sessions")
       .update({ ...input, updated_at: now() })
       .eq("id", existing.id)
       .select()
       .single();
     if (error) throw error;
-    return data as DailyEdge;
+    return data as PsychEdgeSession;
   }
 
   const { data, error } = await supabase
-    .from("daily_edge")
+    .from("psych_edge_sessions")
     .insert({ ...input, user_id: user.id, created_at: now(), updated_at: now() })
     .select()
     .single();
   if (error) throw error;
-  return data as DailyEdge;
+  return data as PsychEdgeSession;
 }

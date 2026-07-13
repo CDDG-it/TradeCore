@@ -351,29 +351,35 @@ export interface DashboardStats {
   total_drawdown_used: number;
 }
 
-// ── Psychological Edge (day-after-loss protocol) ─────────────────────────────
-export type RuleFollowed = "ja" | "deels" | "nee";
-
-export interface DailyEdge {
+// ── Psychological Edge ────────────────────────────────────────────────────────
+// A generated coaching session: reads the trade journal, finds contradictions
+// and behavioral patterns, and produces one measurable objective for the next
+// session. This is NOT a form the trader fills in — it's a report the engine
+// writes, so there is nothing here for the user to type beyond what the
+// journal already captures.
+export interface PsychEdgeSession {
   id: string;
   user_id: string;
-  /** ISO date (day) this entry belongs to. */
+  /** ISO date (day) this session was generated on. */
   date: string;
-  /** Whether the previous trading day was a loss (drives the protocol). */
-  yesterday_loss: boolean;
-  loss_trade: string | null;
-  /** true = own mistake, false = valid setup that didn't work. */
-  was_own_fault: boolean | null;
-  fault_reason: string | null;
-  /** 1..5 urge to win it back today. */
-  revenge_urge: number | null;
-  daily_rule: string | null;
-  rule_followed: RuleFollowed | null;
-  triggered_extra: boolean;
-  sized_up: boolean;
-  note: string | null;
+  /** The most recent trade this session's analysis is based on, if any. */
+  trade_id: string | null;
+  /** Stable key identifying the behavioral pattern driving this session's
+   *  focus, e.g. "recurring_rule:no-revenge-trade" or "bias_mismatch" — used
+   *  to check next session whether the same pattern recurred. */
+  pattern_key: string | null;
+  /** Human label for the pattern, e.g. the broken rule's own wording. */
+  recurring_pattern_label: string | null;
+  /** The natural-language coaching paragraphs, in reading order. */
+  narrative: string[];
+  primary_objective: string | null;
+  reminder: string | null;
+  success_metric: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export type DailyEdgeInput = Omit<DailyEdge, "id" | "user_id" | "created_at" | "updated_at">;
+export type PsychEdgeSessionInput = Omit<
+  PsychEdgeSession,
+  "id" | "user_id" | "created_at" | "updated_at"
+>;
