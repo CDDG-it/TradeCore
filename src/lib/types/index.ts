@@ -354,9 +354,13 @@ export interface DashboardStats {
 // ── Psychological Edge ────────────────────────────────────────────────────────
 // A generated coaching session: reads the trade journal, finds contradictions
 // and behavioral patterns, and produces one measurable objective for the next
-// session. This is NOT a form the trader fills in — it's a report the engine
-// writes, so there is nothing here for the user to type beyond what the
-// journal already captures.
+// session. The facts (report/relate) come entirely from the journal — the
+// trader is never asked to re-type anything that's already logged. The only
+// things the trader adds are a one-tap emotional tag and a short written
+// answer to the engine's targeted "why" question, which becomes memory for
+// the next session's commitment check.
+export type PsychEdgeResponseTag = "calm" | "anxious" | "euphoric" | "frustrated" | "rushed" | "numb";
+
 export interface PsychEdgeSession {
   id: string;
   user_id: string;
@@ -365,16 +369,28 @@ export interface PsychEdgeSession {
   /** The most recent trade this session's analysis is based on, if any. */
   trade_id: string | null;
   /** Stable key identifying the behavioral pattern driving this session's
-   *  focus, e.g. "recurring_rule:no-revenge-trade" or "bias_mismatch" — used
+   *  focus, e.g. "recurring-rule:no-revenge-trade" or "bias-mismatch" — used
    *  to check next session whether the same pattern recurred. */
   pattern_key: string | null;
   /** Human label for the pattern, e.g. the broken rule's own wording. */
   recurring_pattern_label: string | null;
-  /** The natural-language coaching paragraphs, in reading order. */
-  narrative: string[];
+  /** Report — a factual, no-judgement recap of the trade this session covers. */
+  report: string;
+  /** Relate — how this trade connects to trailing history, if anything does. */
+  relate: string | null;
+  /** Reason — the engine's targeted challenge question for this trade. */
+  reason: string;
   primary_objective: string | null;
   reminder: string | null;
   success_metric: string | null;
+  /** Respond — one-tap emotional read of the trade, set by the trader. */
+  response_tag: PsychEdgeResponseTag | null;
+  /** Reason, trader's side — their own written answer to `reason`. */
+  reasoning_answer: string | null;
+  /** Reconstruct — optional trader override/addition to `primary_objective`. */
+  reconstruction_note: string | null;
+  /** Whether the trader has explicitly committed to today's objective. */
+  reconstruction_confirmed: boolean;
   created_at: string;
   updated_at: string;
 }

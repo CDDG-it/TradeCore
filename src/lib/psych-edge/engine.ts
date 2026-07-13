@@ -384,9 +384,30 @@ function actionPlanFor(f: Finding): ActionPlan {
   }
 }
 
+// ── Report (Report) — a factual, no-judgement recap of the latest trade ─
+function buildReport(latest: Signal): string {
+  const t = latest.trade;
+  const resultLabel = t.result === "win" ? "won" : t.result === "loss" ? "lost" : "closed break-even";
+  const parts = [
+    `${instrumentName(t.instrument)} ${t.direction}`,
+    `${t.session} session`,
+    `${resultLabel} (${fmtR(latest.netR)})`,
+  ];
+  if (t.execution_quality) parts.push(`execution rated ${t.execution_quality}`);
+  if (latest.ruleCount > 0) parts.push(`${latest.ruleCount - latest.brokenRules.length}/${latest.ruleCount} of your rules followed`);
+  return parts.join(" · ") + ".";
+}
+
 // ── Composition ───────────────────────────────────────────────────────
+export const RESPONSE_TAGS = ["calm", "anxious", "euphoric", "frustrated", "rushed", "numb"] as const;
+
 export interface PsychEdgeReflection {
-  narrative: string[];
+  /** Report — factual recap of the latest trade, always present. */
+  report: string;
+  /** Relate — how this trade connects to trailing history, if it does. */
+  relate: string | null;
+  /** Reason — the targeted challenge question the trader answers. */
+  reason: string;
   patternKey: string | null;
   recurringPatternLabel: string | null;
   primaryObjective: string | null;
@@ -435,7 +456,7 @@ export function computeReflection(
 
   findings.sort((a, b) => b.priority - a.priority);
 
-  // One finding per "family" so the narrative never repeats the same theme.
+  // One finding per "family" so Reason and Relate never repeat the same theme.
   const seen = new Set<string>();
   const chosen: Finding[] = [];
   for (const f of findings) {
@@ -443,14 +464,17 @@ export function computeReflection(
     if (seen.has(family)) continue;
     seen.add(family);
     chosen.push(f);
-    if (chosen.length >= 3) break;
+    if (chosen.length >= 2) break;
   }
 
   const driver = chosen.find((f) => f.kind !== "strength") ?? chosen[0] ?? null;
+  const secondary = chosen.find((f) => f !== driver) ?? null;
   const plan = driver ? actionPlanFor(driver) : null;
 
   return {
-    narrative: chosen.map((f) => f.text),
+    report: buildReport(latest),
+    relate: secondary?.text ?? null,
+    reason: driver?.text ?? "Nothing here contradicts itself yet — keep logging so a pattern has room to show up.",
     patternKey: driver?.patternKey ?? null,
     recurringPatternLabel: driver?.recurringLabel ?? null,
     primaryObjective: plan?.primaryObjective ?? null,
@@ -458,5 +482,61 @@ export function computeReflection(
     successMetric: plan?.successMetric ?? null,
     tradeId: latest.trade.id,
     tradesAnalyzed: signals.length,
+  };
+}
+
+// ── Pre-market briefing ───────────────────────────────────────────────
+// Shown before the trader takes a trade: what's carrying over from the last
+// session, whether that pattern held or recurred, and a quick reminder of
+// recent mistakes pulled verbatim from the journal — never re-asked, only
+// recapped.
+export interface PreMarketBriefing {
+  hasHistory: boolean;
+  objective: string | null;
+  reminder: string | null;
+  patternLabel: string | null;
+  /** Ready-made sentence: whether the last objective held or recurred. */
+  statusText: string | null;
+  held: boolean | null;
+  recentMistakes: { date: string; text: string }[];
+}
+
+export function buildPreMarketBriefing(
+  trades: TradeJournalEntry[],
+  analyses: PreTradeAnalysis[],
+  priorSessions: PsychEdgeSession[]
+): PreMarketBriefing {
+  const recentMistakes = [...trades]
+    .filter((t) => t.mistakes && t.mistakes.trim() !== "")
+    .sort((a, b) => b.date_time.localeCompare(a.date_time))
+    .slice(0, 3)
+    .map((t) => ({ date: t.date_time.slice(0, 10), text: t.mistakes.trim() }));
+
+  const prior = priorSessions[0] ?? null;
+  if (!prior) {
+    return { hasHistory: false, objective: null, reminder: null, patternLabel: null, statusText: null, held: null, recentMistakes };
+  }
+
+  let statusText: string | null = null;
+  let held: boolean | null = null;
+  if (trades.length > 0) {
+    const sorted = [...trades].sort((a, b) => a.date_time.localeCompare(b.date_time));
+    const analysisById = new Map(analyses.map((a) => [a.id, a]));
+    const signals = sorted.map((t) => buildSignal(t, analysisById));
+    const check = commitmentFinding(signals, priorSessions);
+    if (check) {
+      statusText = check.text;
+      held = check.kind === "strength";
+    }
+  }
+
+  return {
+    hasHistory: true,
+    objective: prior.primary_objective,
+    reminder: prior.reminder,
+    patternLabel: prior.recurring_pattern_label,
+    statusText,
+    held,
+    recentMistakes,
   };
 }

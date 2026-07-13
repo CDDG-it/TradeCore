@@ -2,16 +2,24 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Brain, Loader2, RefreshCw, Target, Bell, Gauge, Sparkles } from "lucide-react";
+import {
+  Brain, Loader2, RefreshCw, Target, Bell, Gauge, Sparkles, Sunrise,
+  Check, ChevronRight, Quote,
+} from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { cn } from "@/lib/utils";
 import { getTrades, getAnalyses, getPsychEdgeSessions, savePsychEdgeSession } from "@/lib/supabase/queries";
-import { computeReflection, type PsychEdgeReflection } from "@/lib/psych-edge/engine";
-import type { TradeJournalEntry, PreTradeAnalysis, PsychEdgeSession } from "@/lib/types";
+import { computeReflection, buildPreMarketBriefing, RESPONSE_TAGS, type PsychEdgeReflection, type PreMarketBriefing } from "@/lib/psych-edge/engine";
+import type { TradeJournalEntry, PreTradeAnalysis, PsychEdgeSession, PsychEdgeResponseTag } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 const ACCENT = "oklch(0.70 0.12 183)"; // turquoise, matches the Mindset formula
+
+const TAG_LABEL: Record<PsychEdgeResponseTag, string> = {
+  calm: "Calm", anxious: "Anxious", euphoric: "Euphoric",
+  frustrated: "Frustrated", rushed: "Rushed", numb: "Numb",
+};
 
 export default function PsychologicalEdgePage() {
   const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
@@ -19,6 +27,9 @@ export default function PsychologicalEdgePage() {
   const [sessions, setSessions] = useState<PsychEdgeSession[]>([]);
   const [saveError, setSaveError] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [savingAnswer, setSavingAnswer] = useState(false);
+  const [answerDraft, setAnswerDraft] = useState("");
+  const [noteDraft, setNoteDraft] = useState("");
 
   async function load() {
     const [t, a, s] = await Promise.all([getTrades(), getAnalyses(), getPsychEdgeSessions()]);
@@ -33,7 +44,6 @@ export default function PsychologicalEdgePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sessions before today, newest-first — what the engine checks commitments against.
   const priorSessions = useMemo(() => sessions.filter((s) => s.date !== TODAY), [sessions]);
   const todaysSession = useMemo(() => sessions.find((s) => s.date === TODAY) ?? null, [sessions]);
 
@@ -41,18 +51,26 @@ export default function PsychologicalEdgePage() {
     () => (trades ? computeReflection(trades, analyses, priorSessions) : null),
     [trades, analyses, priorSessions]
   );
+  const briefing = useMemo(
+    () => (trades ? buildPreMarketBriefing(trades, analyses, priorSessions) : null),
+    [trades, analyses, priorSessions]
+  );
 
-  // Persist whenever the latest trade differs from what today's saved session
-  // (if any) is based on — this is what "regenerates" the session as new
-  // trades come in, with no button required on first load.
+  // Regenerate whenever the latest trade differs from what today's saved
+  // session (if any) is based on — a new trade means a new 5R reflection.
   useEffect(() => {
     if (!live) return;
     if (todaysSession && todaysSession.trade_id === live.tradeId) return;
-    void persist(live);
+    void persistNew(live);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live?.tradeId]);
 
-  async function persist(r: PsychEdgeReflection) {
+  useEffect(() => {
+    setAnswerDraft(todaysSession?.reasoning_answer ?? "");
+    setNoteDraft(todaysSession?.reconstruction_note ?? "");
+  }, [todaysSession?.id]);
+
+  async function persistNew(r: PsychEdgeReflection) {
     setSaveError(false);
     try {
       const saved = await savePsychEdgeSession({
@@ -60,10 +78,44 @@ export default function PsychologicalEdgePage() {
         trade_id: r.tradeId,
         pattern_key: r.patternKey,
         recurring_pattern_label: r.recurringPatternLabel,
-        narrative: r.narrative,
+        report: r.report,
+        relate: r.relate,
+        reason: r.reason,
         primary_objective: r.primaryObjective,
         reminder: r.reminder,
         success_metric: r.successMetric,
+        response_tag: null,
+        reasoning_answer: null,
+        reconstruction_note: null,
+        reconstruction_confirmed: false,
+      });
+      setSessions((prev) => [saved, ...prev.filter((s) => s.date !== TODAY)]);
+    } catch {
+      setSaveError(true);
+    }
+  }
+
+  /** Patches a field on today's session without disturbing the rest. */
+  async function patch(fields: Partial<Pick<PsychEdgeSession, "response_tag" | "reasoning_answer" | "reconstruction_note" | "reconstruction_confirmed">>) {
+    if (!todaysSession) return;
+    setSaveError(false);
+    try {
+      const saved = await savePsychEdgeSession({
+        date: todaysSession.date,
+        trade_id: todaysSession.trade_id,
+        pattern_key: todaysSession.pattern_key,
+        recurring_pattern_label: todaysSession.recurring_pattern_label,
+        report: todaysSession.report,
+        relate: todaysSession.relate,
+        reason: todaysSession.reason,
+        primary_objective: todaysSession.primary_objective,
+        reminder: todaysSession.reminder,
+        success_metric: todaysSession.success_metric,
+        response_tag: todaysSession.response_tag,
+        reasoning_answer: todaysSession.reasoning_answer,
+        reconstruction_note: todaysSession.reconstruction_note,
+        reconstruction_confirmed: todaysSession.reconstruction_confirmed,
+        ...fields,
       });
       setSessions((prev) => [saved, ...prev.filter((s) => s.date !== TODAY)]);
     } catch {
@@ -72,23 +124,24 @@ export default function PsychologicalEdgePage() {
   }
 
   async function regenerate() {
-    if (!live) return;
     setRegenerating(true);
-    await load();
-    await persist(live);
+    const { t, a } = await load();
+    const s = await getPsychEdgeSessions();
+    const prior = s.filter((x) => x.date !== TODAY);
+    const fresh = computeReflection(t, a, prior);
+    if (fresh) await persistNew(fresh);
     setRegenerating(false);
   }
 
-  const displayed = todaysSession ?? (live
-    ? {
-        date: TODAY,
-        narrative: live.narrative,
-        primary_objective: live.primaryObjective,
-        reminder: live.reminder,
-        success_metric: live.successMetric,
-        recurring_pattern_label: live.recurringPatternLabel,
-      }
-    : null);
+  async function saveAnswer() {
+    setSavingAnswer(true);
+    await patch({ reasoning_answer: answerDraft.trim() || null });
+    setSavingAnswer(false);
+  }
+
+  async function saveNote() {
+    await patch({ reconstruction_note: noteDraft.trim() || null });
+  }
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -105,18 +158,32 @@ export default function PsychologicalEdgePage() {
           </div>
         ) : trades.length === 0 ? (
           <EmptyState />
-        ) : displayed ? (
+        ) : (
           <>
-            <Session
-              session={displayed}
-              tradesAnalyzed={live?.tradesAnalyzed ?? trades.length}
-              onRegenerate={regenerate}
-              regenerating={regenerating}
-              saveError={saveError}
-            />
+            {briefing && <PreMarketCheckUp briefing={briefing} />}
+
+            {todaysSession && (
+              <Reflection
+                session={todaysSession}
+                tradesAnalyzed={live?.tradesAnalyzed ?? trades.length}
+                onRegenerate={regenerate}
+                regenerating={regenerating}
+                saveError={saveError}
+                answerDraft={answerDraft}
+                setAnswerDraft={setAnswerDraft}
+                onSaveAnswer={saveAnswer}
+                savingAnswer={savingAnswer}
+                noteDraft={noteDraft}
+                setNoteDraft={setNoteDraft}
+                onSaveNote={saveNote}
+                onSetTag={(tag) => patch({ response_tag: tag })}
+                onConfirm={() => patch({ reconstruction_confirmed: !todaysSession.reconstruction_confirmed })}
+              />
+            )}
+
             {priorSessions.length > 0 && <History sessions={priorSessions} />}
           </>
-        ) : null}
+        )}
       </PageWrapper>
     </div>
   );
@@ -132,31 +199,101 @@ function EmptyState() {
   );
 }
 
-interface DisplaySession {
-  date: string;
-  narrative: string[];
-  primary_objective: string | null;
-  reminder: string | null;
-  success_metric: string | null;
-  recurring_pattern_label: string | null;
+// ── Pre-market check-up — a briefing, no input ───────────────────────
+function PreMarketCheckUp({ briefing }: { briefing: PreMarketBriefing }) {
+  if (!briefing.hasHistory) {
+    return (
+      <div className="rounded-xl border border-dashed border-border p-4 flex items-center gap-3">
+        <Sunrise className="w-4 h-4 shrink-0 text-muted-foreground" />
+        <p className="text-xs text-muted-foreground">First session — your pre-market check-up fills in once you've reflected at least once.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <Sunrise className="w-4 h-4" style={{ color: ACCENT }} />
+        <p className="text-sm font-semibold">Pre-market check-up</p>
+      </div>
+
+      {briefing.statusText && (
+        <p className={cn("text-sm leading-relaxed", briefing.held ? "text-success" : "text-destructive")}>
+          {briefing.statusText}
+        </p>
+      )}
+
+      {briefing.objective && !briefing.statusText && (
+        <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">Carrying into today</p>
+          <p className="text-sm text-foreground/85">{briefing.objective}</p>
+          {briefing.reminder && <p className="text-xs text-muted-foreground mt-1">{briefing.reminder}</p>}
+        </div>
+      )}
+
+      {briefing.recentMistakes.length > 0 && (
+        <div className="space-y-1.5 pt-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Recent mistakes on record</p>
+          {briefing.recentMistakes.map((m, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+              <Quote className="w-3 h-3 mt-0.5 shrink-0 text-muted-foreground/50" />
+              <span>
+                <span className="tabular-nums text-muted-foreground/60">{format(new Date(m.date + "T12:00:00"), "MMM d")}</span>
+                {" — "}
+                <span className="text-foreground/70">&quot;{m.text}&quot;</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
-function Session({
+// ── Post-trade reflection — the 5R walkthrough ───────────────────────
+function StepLabel({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 mb-2">
+      <span
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+        style={{ background: "oklch(0.70 0.12 183 / 0.15)", color: ACCENT }}
+      >
+        {n}
+      </span>
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">{children}</p>
+    </div>
+  );
+}
+
+function Reflection({
   session, tradesAnalyzed, onRegenerate, regenerating, saveError,
+  answerDraft, setAnswerDraft, onSaveAnswer, savingAnswer,
+  noteDraft, setNoteDraft, onSaveNote, onSetTag, onConfirm,
 }: {
-  session: DisplaySession;
+  session: PsychEdgeSession;
   tradesAnalyzed: number;
   onRegenerate: () => void;
   regenerating: boolean;
   saveError: boolean;
+  answerDraft: string;
+  setAnswerDraft: (v: string) => void;
+  onSaveAnswer: () => void;
+  savingAnswer: boolean;
+  noteDraft: string;
+  setNoteDraft: (v: string) => void;
+  onSaveNote: () => void;
+  onSetTag: (tag: PsychEdgeResponseTag) => void;
+  onConfirm: () => void;
 }) {
+  const answerDirty = answerDraft.trim() !== (session.reasoning_answer ?? "").trim();
+  const noteDirty = noteDraft.trim() !== (session.reconstruction_note ?? "").trim();
+
   return (
     <div className="space-y-4">
-      {/* Header row */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4" style={{ color: ACCENT }} />
-          <p className="text-sm font-semibold">Today's session</p>
+          <p className="text-sm font-semibold">Post-trade reflection</p>
           <span className="text-xs text-muted-foreground/60 tabular-nums">· based on {tradesAnalyzed} trade{tradesAnalyzed !== 1 ? "s" : ""}</span>
         </div>
         <button
@@ -171,31 +308,79 @@ function Session({
       </div>
 
       {saveError && (
-        <p className="text-xs text-destructive">Could not save this session. Run the latest SQL migration (psych_edge_sessions) in Supabase.</p>
+        <p className="text-xs text-destructive">Could not save. Run the latest SQL migration (psych_edge_sessions) in Supabase.</p>
       )}
 
-      {/* Narrative */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        {session.narrative.map((p, i) => (
-          <p
-            key={i}
-            className={cn(
-              "leading-relaxed",
-              i === 0 ? "text-[15px] font-semibold text-foreground" : "text-sm text-foreground/80"
-            )}
-          >
-            {p}
-          </p>
-        ))}
+      <div className="rounded-xl border border-border bg-card p-5 space-y-5">
+        {/* 1 — Report */}
+        <div>
+          <StepLabel n={1}>What happened</StepLabel>
+          <p className="text-sm text-foreground/80">{session.report}</p>
+        </div>
+
+        {/* 2 — Respond */}
+        <div>
+          <StepLabel n={2}>How did it feel in the moment</StepLabel>
+          <div className="flex flex-wrap gap-1.5">
+            {RESPONSE_TAGS.map((tag) => {
+              const active = session.response_tag === tag;
+              return (
+                <button
+                  key={tag}
+                  onClick={() => onSetTag(tag)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-medium border transition-colors",
+                    active ? "text-white" : "text-muted-foreground border-border bg-secondary hover:text-foreground"
+                  )}
+                  style={active ? { background: ACCENT, borderColor: ACCENT } : undefined}
+                >
+                  {TAG_LABEL[tag]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 3 — Relate */}
+        {session.relate && (
+          <div>
+            <StepLabel n={3}>What this connects to</StepLabel>
+            <p className="text-sm text-foreground/80">{session.relate}</p>
+          </div>
+        )}
+
+        {/* 4 — Reason */}
+        <div>
+          <StepLabel n={session.relate ? 4 : 3}>Why</StepLabel>
+          <p className="text-[15px] font-semibold text-foreground leading-relaxed mb-2.5">{session.reason}</p>
+          <textarea
+            value={answerDraft}
+            onChange={(e) => setAnswerDraft(e.target.value)}
+            placeholder="Answer honestly — this is what the next session checks against."
+            rows={3}
+            className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
+          />
+          {answerDirty && (
+            <button
+              onClick={onSaveAnswer}
+              disabled={savingAnswer}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all disabled:opacity-50"
+              style={{ background: ACCENT }}
+            >
+              {savingAnswer ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronRight className="w-3 h-3" />}
+              Save answer
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Action plan */}
+      {/* 5 — Reconstruct */}
       {session.primary_objective && (
         <div
           className="rounded-xl border p-5 space-y-3"
           style={{ borderColor: "oklch(0.70 0.12 183 / 0.4)", background: "oklch(0.70 0.12 183 / 0.06)" }}
         >
-          <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: ACCENT }}>Tomorrow&apos;s focus</p>
+          <StepLabel n={session.relate ? 5 : 4}>What changes</StepLabel>
 
           <div className="flex items-start gap-2.5">
             <Target className="w-4 h-4 mt-0.5 shrink-0" style={{ color: ACCENT }} />
@@ -218,6 +403,35 @@ function Session({
               </p>
             </div>
           )}
+
+          <textarea
+            value={noteDraft}
+            onChange={(e) => setNoteDraft(e.target.value)}
+            placeholder="Optional — phrase this in your own words, or add a condition."
+            rows={2}
+            className="w-full rounded-lg border border-border bg-input px-3 py-2 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
+          />
+          {noteDirty && (
+            <button
+              onClick={onSaveNote}
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+              style={{ borderColor: ACCENT, color: ACCENT }}
+            >
+              Save note
+            </button>
+          )}
+
+          <button
+            onClick={onConfirm}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+              session.reconstruction_confirmed ? "text-white" : "border text-muted-foreground hover:text-foreground"
+            )}
+            style={session.reconstruction_confirmed ? { background: "oklch(0.58 0.17 145)" } : { borderColor: "var(--border)" }}
+          >
+            <Check className="w-3.5 h-3.5" />
+            {session.reconstruction_confirmed ? "Committed" : "Commit to this"}
+          </button>
         </div>
       )}
     </div>
@@ -230,13 +444,14 @@ function History({ sessions }: { sessions: PsychEdgeSession[] }) {
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Session history</p>
       <div className="space-y-1.5">
         {sessions.slice(0, 10).map((s, i, arr) => {
-          const older = arr[i + 1]; // chronologically earlier session (list is newest-first)
+          const older = arr[i + 1];
           const carried = older && s.pattern_key && older.pattern_key === s.pattern_key;
           return (
             <div key={s.id} className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/20 px-3 py-2">
               <span className="text-xs text-muted-foreground tabular-nums w-16 shrink-0">
                 {format(new Date(s.date + "T12:00:00"), "MMM d")}
               </span>
+              {s.reconstruction_confirmed && <Check className="w-3 h-3 shrink-0 text-success" />}
               <span className="text-xs text-foreground/80 flex-1 truncate">{s.primary_objective ?? "—"}</span>
               {carried && (
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-destructive shrink-0">Repeated</span>

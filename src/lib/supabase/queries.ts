@@ -959,10 +959,7 @@ export async function getPsychEdgeSessions(): Promise<PsychEdgeSession[]> {
     .select("*")
     .order("date", { ascending: false });
   if (error) return [];
-  return (data ?? []).map((r) => ({
-    ...r,
-    narrative: (r.narrative ?? []) as string[],
-  })) as PsychEdgeSession[];
+  return (data ?? []) as PsychEdgeSession[];
 }
 
 export async function savePsychEdgeSession(
