@@ -17,7 +17,7 @@ function HudStat({
   valueClassName?: string;
 }) {
   return (
-    <div className="flex items-start gap-2.5 rounded-xl bg-card/90 backdrop-blur-md border border-border px-3.5 py-2.5 min-w-0">
+    <div className="flex items-start gap-2.5 rounded-xl bg-card/90 backdrop-blur-md px-3.5 py-2.5 min-w-0">
       <Icon className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
       <div className="min-w-0">
         <p className="font-body text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-none mb-1">
