@@ -1,0 +1,23 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TradingMC">
+  <defs>
+    <linearGradient id="bg" x1="80" y1="0" x2="320" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#16233A"></stop>
+      <stop offset="0.82" stop-color="#0B1220"></stop>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="500" height="500" rx="120" fill="url(#bg)" stroke="#22314A" stroke-width="4"></rect>
+  <g transform="translate(93 120) scale(1.75)">
+    <defs>
+      <linearGradient id="acc" x1="8" y1="134" x2="162" y2="26" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#17BFA0"></stop>
+        <stop offset="1" stop-color="#3DC7F0"></stop>
+      </linearGradient>
+    </defs>
+    <path d="M28 56 L56 98 L84 56" fill="none" stroke="url(#acc)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></path>
+    <line x1="28" y1="30" x2="28" y2="126" stroke="url(#acc)" stroke-width="5" stroke-linecap="round"></line>
+    <line x1="84" y1="30" x2="84" y2="126" stroke="url(#acc)" stroke-width="5" stroke-linecap="round"></line>
+    <rect x="14.5" y="52" width="27" height="54" rx="7" fill="url(#acc)"></rect>
+    <rect x="70.5" y="52" width="27" height="54" rx="7" fill="url(#acc)"></rect>
+    <path d="M150 52 A33 33 0 1 0 150 108" fill="none" stroke="url(#acc)" stroke-width="12" stroke-linecap="round"></path>
+  </g>
+</svg>

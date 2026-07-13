@@ -22,6 +22,8 @@ import type {
   WeeklyReflection,
   WeeklyTradeReview,
   WeeklyTradeReviewInput,
+  DailyEdge,
+  DailyEdgeInput,
   DashboardStats,
 } from "@/lib/types";
 
@@ -943,3 +945,56 @@ export {
   getAvgDisciplineScore,
   getDisciplineFieldLabel,
 } from "@/lib/mock/store";
+
+// ── Psychological Edge (daily_edge) ──────────────────────────────────
+// Fail-soft: if the daily_edge table has not been created yet, reads return
+// empty/null so the page still renders and saving shows a migration hint.
+
+export async function getDailyEdge(date: string): Promise<DailyEdge | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("daily_edge")
+    .select("*")
+    .eq("date", date)
+    .maybeSingle();
+  if (error) return null;
+  return (data as DailyEdge) ?? null;
+}
+
+export async function getAllDailyEdge(): Promise<DailyEdge[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("daily_edge").select("*");
+  if (error) return [];
+  return (data ?? []) as DailyEdge[];
+}
+
+export async function saveDailyEdge(input: DailyEdgeInput): Promise<DailyEdge> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: existing } = await supabase
+    .from("daily_edge")
+    .select("id")
+    .eq("date", input.date)
+    .maybeSingle();
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from("daily_edge")
+      .update({ ...input, updated_at: now() })
+      .eq("id", existing.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as DailyEdge;
+  }
+
+  const { data, error } = await supabase
+    .from("daily_edge")
+    .insert({ ...input, user_id: user.id, created_at: now(), updated_at: now() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as DailyEdge;
+}

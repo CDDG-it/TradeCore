@@ -350,3 +350,30 @@ export interface DashboardStats {
   total_payouts: number;
   total_drawdown_used: number;
 }
+
+// ── Psychological Edge (day-after-loss protocol) ─────────────────────────────
+export type RuleFollowed = "ja" | "deels" | "nee";
+
+export interface DailyEdge {
+  id: string;
+  user_id: string;
+  /** ISO date (day) this entry belongs to. */
+  date: string;
+  /** Whether the previous trading day was a loss (drives the protocol). */
+  yesterday_loss: boolean;
+  loss_trade: string | null;
+  /** true = own mistake, false = valid setup that didn't work. */
+  was_own_fault: boolean | null;
+  fault_reason: string | null;
+  /** 1..5 urge to win it back today. */
+  revenge_urge: number | null;
+  daily_rule: string | null;
+  rule_followed: RuleFollowed | null;
+  triggered_extra: boolean;
+  sized_up: boolean;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type DailyEdgeInput = Omit<DailyEdge, "id" | "user_id" | "created_at" | "updated_at">;

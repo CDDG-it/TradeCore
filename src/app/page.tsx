@@ -53,6 +53,19 @@ export default function HomePage() {
           style={{ y: contentY, opacity: contentOpacity }}
           className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-20">
 
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <motion.img
+            src="/tradingmc-app-dark.svg"
+            alt="TradingMC"
+            width={104}
+            height={104}
+            initial={{ opacity: 0, y: 18, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-8 h-24 w-24 sm:h-28 sm:w-28"
+            style={{ filter: "drop-shadow(0 8px 30px rgba(20,184,166,0.22))" }}
+          />
+
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
