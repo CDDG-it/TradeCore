@@ -73,7 +73,7 @@ export default function HomePage() {
             className="font-black tracking-tight leading-[0.88] mb-6"
             style={{
               fontFamily: NUNITO,
-              fontSize: "clamp(3.5rem,11vw,9rem)",
+              fontSize: "clamp(2.5rem,8vw,6rem)",
               color: "rgba(248,250,252,0.94)",
             }}
           >
