@@ -86,10 +86,10 @@ function FilterChip({
 
 export function IntelligenceFeed({
   news,
-  onOpenInHub,
+  onSelect,
 }: {
   news: NewsItem[];
-  onOpenInHub: (eventId: string) => void;
+  onSelect: (eventId: string) => void;
 }) {
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [impact, setImpact] = useState<ImpactFilter>("all");
@@ -151,7 +151,7 @@ export function IntelligenceFeed({
               <motion.button
                 type="button"
                 key={item.id}
-                onClick={() => onOpenInHub(item.id)}
+                onClick={() => onSelect(item.id)}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.28, delay: Math.min(i * 0.03, 0.3), ease: [0.22, 1, 0.36, 1] }}

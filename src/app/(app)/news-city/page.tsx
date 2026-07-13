@@ -33,8 +33,9 @@ export default function NewsCityPage() {
   const [selection, setSelection] = useState<CitySelection | null>(null);
   const [view, setView] = useState<View>("hub");
 
-  function openInHub(eventId: string) {
-    setView("hub");
+  // Selecting a signal from the feed just opens its detail panel — it must not
+  // yank the user over to the 3D hub view.
+  function openSignal(eventId: string) {
     setSelection({ kind: "event", id: eventId });
   }
 
@@ -82,7 +83,7 @@ export default function NewsCityPage() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             >
-              <IntelligenceFeed news={NEWS_CITY_DATA.news} onOpenInHub={openInHub} />
+              <IntelligenceFeed news={NEWS_CITY_DATA.news} onSelect={openSignal} />
             </motion.div>
           ) : (
             <motion.div
@@ -93,9 +94,9 @@ export default function NewsCityPage() {
               transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
               className="space-y-3"
             >
-              {/* Tall stage that fills down toward the bottom of the screen. */}
+              {/* Full-screen stage — fills the viewport down to the bottom edge. */}
               <div
-                className="relative w-full overflow-hidden rounded-2xl h-[clamp(340px,calc(100dvh-420px),720px)]"
+                className="relative w-full overflow-hidden rounded-2xl min-h-[420px] h-[calc(100dvh-15rem)]"
                 style={{ background: "#0b1120" }}
               >
                 <IntelligenceHub3D data={NEWS_CITY_DATA} selected={selection} onSelect={setSelection} />
