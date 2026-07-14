@@ -31,6 +31,7 @@ function tradeDraftHasContent(f: TradeJournalEntryInput): boolean {
     !!f.mistakes ||
     !!f.lessons ||
     !!f.execution_time ||
+    !!f.execution_end_time ||
     (f.discipline?.custom_checks?.some((c) => c.passed) ?? false) ||
     (f.screenshot_groups?.some((g) => g.urls.length > 0) ?? false)
   );
@@ -119,6 +120,7 @@ export default function NewTradePage() {
     discipline: { ...EMPTY_DISCIPLINE },
     market_context: undefined,
     execution_time: "",
+    execution_end_time: "",
     execution_quality: undefined as TradeJournalEntry["execution_quality"],
   });
 
@@ -357,16 +359,20 @@ export default function NewTradePage() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="rr" className="text-xs">R:R *</Label>
                 <Input id="rr" type="number" step="0.1" min="0" value={form.rr}
                   onChange={(e) => set("rr", parseFloat(e.target.value) || 0)}
-                  className="h-9 text-sm bg-background/50 font-mono" required />
+                  className="h-11 text-sm bg-background/50 font-mono" required />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Execution Time</Label>
+                <Label className="text-xs">Entry Time</Label>
                 <TimeField value={form.execution_time ?? ""} onChange={(v) => set("execution_time", v)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Exit Time</Label>
+                <TimeField value={form.execution_end_time ?? ""} onChange={(v) => set("execution_end_time", v)} />
               </div>
             </div>
           </CardContent>

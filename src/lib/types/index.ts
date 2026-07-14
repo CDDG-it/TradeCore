@@ -139,8 +139,10 @@ export interface TradeJournalEntry {
   psychology_notes: string;
   mistakes: string;
   lessons: string;
-  /** Execution time e.g. "09:32" */
+  /** Entry (execution) time e.g. "09:32" */
   execution_time?: string;
+  /** Exit time e.g. "10:14" */
+  execution_end_time?: string;
   /** Subjective execution quality rating */
   execution_quality?: "good" | "bad";
   /** Optional process discipline self-assessment */

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
-  ArrowLeft, TrendingUp, TrendingDown, Calendar,
+  ArrowLeft, TrendingUp, TrendingDown, Calendar, Clock,
   Brain, AlertCircle, Lightbulb, CheckCircle2,
   LinkIcon, Pencil, Trash2, Target, Check,
 } from "lucide-react";
@@ -126,6 +126,13 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
                 <Calendar className="w-3.5 h-3.5" />
                 {format(new Date(trade.date_time.slice(0, 10) + "T12:00:00"), "EEEE, MMMM d, yyyy")}
               </span>
+              {(trade.execution_time || trade.execution_end_time) && (
+                <span className="flex items-center gap-1.5 tabular-nums">
+                  <Clock className="w-3.5 h-3.5" />
+                  {trade.execution_time || "—"}
+                  {trade.execution_end_time ? ` → ${trade.execution_end_time}` : ""}
+                </span>
+              )}
               <span>{trade.session} session{trade.timeframe ? ` · ${trade.timeframe}` : ""}</span>
             </div>
           </div>

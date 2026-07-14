@@ -48,6 +48,7 @@ const DEFAULT_FORM = {
     score: 0, notes: "", custom_checks: [],
   } as TradeDiscipline,
   execution_time: "" as string | undefined,
+  execution_end_time: "" as string | undefined,
   execution_quality: undefined as TradeJournalEntry["execution_quality"],
 };
 
@@ -123,6 +124,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         linked_analysis_id: trade.linked_analysis_id,
         discipline,
         execution_time: trade.execution_time ?? "",
+        execution_end_time: trade.execution_end_time ?? "",
         execution_quality: (trade as TradeJournalEntry).execution_quality,
       };
       baselineRef.current = loaded;
@@ -388,16 +390,20 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">R:R</Label>
                 <Input type="number" step="0.1" min="0" value={form.rr}
                   onChange={(e) => set("rr", parseFloat(e.target.value) || 0)}
-                  className="h-9 text-sm font-mono" required />
+                  className="h-11 text-sm font-mono" required />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Execution Time</Label>
+                <Label className="text-xs">Entry Time</Label>
                 <TimeField value={form.execution_time ?? ""} onChange={(v) => set("execution_time", v)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Exit Time</Label>
+                <TimeField value={form.execution_end_time ?? ""} onChange={(v) => set("execution_end_time", v)} />
               </div>
             </div>
           </CardContent>
