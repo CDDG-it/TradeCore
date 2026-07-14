@@ -243,20 +243,30 @@ export default function NewAnalysisPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <Link href="/analysis" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Analysis
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight">New Analysis</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Pre-trade structured preparation</p>
+    <div className="space-y-4">
+      {/* Compact header — actions stay in view so the form needs no scroll to submit */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/analysis" aria-label="Back to Analysis"
+            className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <h1 className="text-xl font-bold tracking-tight leading-none">New Analysis</h1>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link href="/analysis"><Button type="button" variant="outline" size="sm">Cancel</Button></Link>
+          <Button type="submit" form="analysis-form" size="sm" disabled={saving}>{saving ? "Saving..." : "Save analysis"}</Button>
+        </div>
       </div>
 
       {restored && <DraftBanner onDismiss={dismiss} />}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form id="analysis-form" onSubmit={handleSubmit}>
+        <div className="grid lg:grid-cols-2 gap-4 items-start">
+        {/* ── LEFT: setup & thesis ─────────────────────────────────── */}
+        <div className="space-y-4 min-w-0">
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Basics</CardTitle></CardHeader>
+          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Basics</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -298,7 +308,7 @@ export default function NewAnalysisPage() {
         </Card>
 
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Analysis</CardTitle></CardHeader>
+          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Analysis</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="thesis" className="text-xs">Thesis *</Label>
@@ -306,7 +316,7 @@ export default function NewAnalysisPage() {
                 placeholder="What is your read on this market? What is the overall context?"
                 className="text-sm bg-background/50 min-h-24 resize-none" required />
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="long_scenario" className="text-xs">
                   Long Scenario
@@ -330,10 +340,13 @@ export default function NewAnalysisPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
 
+        {/* ── RIGHT: charts ────────────────────────────────────────── */}
+        <div className="space-y-4 min-w-0">
         {/* Charts — HTF / LTF */}
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2.5">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold">Charts</CardTitle>
               <div className="flex gap-1">
@@ -382,10 +395,7 @@ export default function NewAnalysisPage() {
             )}
           </CardContent>
         </Card>
-
-        <div className="flex items-center justify-end gap-3">
-          <Link href="/analysis"><Button type="button" variant="outline">Cancel</Button></Link>
-          <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save analysis"}</Button>
+        </div>
         </div>
       </form>
     </div>

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { Plus, Menu, X, Settings, User as UserIcon, LogOut, ChevronDown } from "lucide-react";
+import { Menu, X, Settings, User as UserIcon, LogOut, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { APP_TABS } from "@/lib/nav";
@@ -82,21 +82,11 @@ export function TopNav() {
 
           {/* Desktop right actions */}
           <div className="hidden lg:flex items-center gap-2 shrink-0">
-            <Link
-              href="/journal/new"
-              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 h-9 text-[13px] font-semibold text-white transition-all hover:-translate-y-px"
-              style={{ background: TURQUOISE, boxShadow: "0 2px 14px rgba(20,184,166,0.30)" }}
-            >
-              <Plus className="w-4 h-4" /> Log Trade
-            </Link>
             <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} onSignOut={signOut} />
           </div>
 
           {/* Mobile right actions */}
           <div className="flex lg:hidden items-center gap-2 ml-auto">
-            <Link href="/journal/new" aria-label="Log trade" className="inline-flex items-center justify-center rounded-lg h-9 w-9 text-white" style={{ background: TURQUOISE }}>
-              <Plus className="w-4 h-4" />
-            </Link>
             <button type="button" onClick={() => setOpen(true)} aria-label="Open menu"
               className="inline-flex items-center justify-center rounded-lg h-9 w-9 border border-sidebar-border text-sidebar-foreground/70">
               <Menu className="w-5 h-5" />

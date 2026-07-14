@@ -206,22 +206,32 @@ export default function NewTradePage() {
   const disciplineScore = form.discipline?.score ?? 0;
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <Link href="/journal" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Journal
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Log Trade</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Record a completed trade</p>
+    <div className="space-y-4">
+      {/* Compact header — actions stay in view so the form needs no scroll to submit */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/journal" aria-label="Back to Journal"
+            className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <h1 className="text-xl font-bold tracking-tight leading-none">Log Trade</h1>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link href="/journal"><Button type="button" variant="outline" size="sm">Cancel</Button></Link>
+          <Button type="submit" form="trade-form" size="sm" disabled={saving}>{saving ? "Saving..." : "Log trade"}</Button>
+        </div>
       </div>
 
       {restored && <DraftBanner onDismiss={dismiss} />}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form id="trade-form" onSubmit={handleSubmit}>
+        <div className="grid lg:grid-cols-2 gap-4 items-start">
+        {/* ── LEFT: trade details + notes ─────────────────────────── */}
+        <div className="space-y-4 min-w-0">
         {/* Trade Details */}
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Trade Details</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
+          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Trade Details</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Instrument *</Label>
@@ -364,7 +374,7 @@ export default function NewTradePage() {
                 <Label htmlFor="rr" className="text-xs">R:R *</Label>
                 <Input id="rr" type="number" step="0.1" min="0" value={form.rr}
                   onChange={(e) => set("rr", parseFloat(e.target.value) || 0)}
-                  className="h-11 text-sm bg-background/50 font-mono" required />
+                  className="h-9 text-sm bg-background/50 font-mono" required />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Entry Time</Label>
@@ -378,9 +388,55 @@ export default function NewTradePage() {
           </CardContent>
         </Card>
 
+        {/* Notes — execution, psychology, mistakes & lessons in one compact block */}
+        <Card className="bg-card border-border/50 shadow-sm">
+          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Notes</CardTitle></CardHeader>
+          <CardContent className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Execution</Label>
+              <Textarea
+                value={form.execution_notes ?? ""}
+                onChange={(e) => set("execution_notes", e.target.value)}
+                placeholder="Entry timing, management, exit..."
+                className="min-h-[68px] text-sm bg-background/50 resize-none"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Psychology</Label>
+              <Textarea
+                value={form.psychology_notes ?? ""}
+                onChange={(e) => set("psychology_notes", e.target.value)}
+                placeholder="Emotions, mindset, discipline..."
+                className="min-h-[68px] text-sm bg-background/50 resize-none"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Mistakes</Label>
+              <Textarea
+                value={form.mistakes ?? ""}
+                onChange={(e) => set("mistakes", e.target.value)}
+                placeholder="What could have been better?"
+                className="min-h-[68px] text-sm bg-background/50 resize-none"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Lessons</Label>
+              <Textarea
+                value={form.lessons ?? ""}
+                onChange={(e) => set("lessons", e.target.value)}
+                placeholder="What did you learn?"
+                className="min-h-[68px] text-sm bg-background/50 resize-none"
+              />
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+
+        {/* ── RIGHT: confluences, discipline, analysis & screenshots ── */}
+        <div className="space-y-4 min-w-0">
         {/* Link to Analysis */}
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2.5">
             <CardTitle className="text-sm font-semibold">
               Analysis — {form.date_time}
             </CardTitle>
@@ -409,7 +465,7 @@ export default function NewTradePage() {
 
         {/* Confluences */}
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Confluences</CardTitle></CardHeader>
+          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Confluences</CardTitle></CardHeader>
           <CardContent>
             {savedConfluences.length > 0 && (
               <div className="mb-3">
@@ -544,59 +600,9 @@ export default function NewTradePage() {
           )}
         </Card>
 
-        {/* Execution & Psychology */}
-        <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Execution Notes</CardTitle></CardHeader>
-          <CardContent>
-            <Textarea
-              value={form.execution_notes ?? ""}
-              onChange={(e) => set("execution_notes", e.target.value)}
-              placeholder="How did you execute the trade? Entry timing, management, exit..."
-              className="min-h-24 text-sm bg-background/50 resize-none"
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Psychology</CardTitle></CardHeader>
-          <CardContent>
-            <Textarea
-              value={form.psychology_notes ?? ""}
-              onChange={(e) => set("psychology_notes", e.target.value)}
-              placeholder="How did you feel? Emotions, mindset, discipline during this trade..."
-              className="min-h-24 text-sm bg-background/50 resize-none"
-            />
-          </CardContent>
-        </Card>
-
-        <div className="grid sm:grid-cols-2 gap-5">
-          <Card className="bg-card border-border/50 shadow-sm">
-            <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Mistakes</CardTitle></CardHeader>
-            <CardContent>
-              <Textarea
-                value={form.mistakes ?? ""}
-                onChange={(e) => set("mistakes", e.target.value)}
-                placeholder="What went wrong or could have been better?"
-                className="min-h-20 text-sm bg-background/50 resize-none"
-              />
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border/50 shadow-sm">
-            <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Lessons</CardTitle></CardHeader>
-            <CardContent>
-              <Textarea
-                value={form.lessons ?? ""}
-                onChange={(e) => set("lessons", e.target.value)}
-                placeholder="What did you learn from this trade?"
-                className="min-h-20 text-sm bg-background/50 resize-none"
-              />
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Screenshots */}
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Screenshots</CardTitle></CardHeader>
+          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Screenshots</CardTitle></CardHeader>
           <CardContent>
             <ScreenshotUpload
               groups={form.screenshot_groups}
@@ -605,10 +611,7 @@ export default function NewTradePage() {
             />
           </CardContent>
         </Card>
-
-        <div className="flex items-center justify-end gap-3 pt-1">
-          <Link href="/journal"><Button type="button" variant="outline">Cancel</Button></Link>
-          <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Log trade"}</Button>
+        </div>
         </div>
       </form>
     </div>
