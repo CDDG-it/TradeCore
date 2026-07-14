@@ -16,10 +16,10 @@ export function TransitionLayout({ children }: { children: React.ReactNode }) {
     <AnimatePresence initial={false}>
       <motion.div
         key={pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.12, ease: "easeOut" }}
+        initial={{ opacity: 0, y: 10, filter: "blur(2px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       >
         {children}
       </motion.div>

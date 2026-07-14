@@ -13,13 +13,11 @@ export interface AppTab {
 }
 
 export const APP_TABS: AppTab[] = [
-  { label: "Home", href: "/dashboard", group: null },
+  { label: "Dashboard", href: "/dashboard", group: null },
   { label: "Journal", href: "/journal", group: "Trading" },
   { label: "Analysis", href: "/analysis", group: "Trading" },
   { label: "Analytics", href: "/analytics", group: "Trading" },
   { label: "Accounts", href: "/accounts", group: "Trading" },
-  { label: "Habits", href: "/habits", group: "MC Mindset formula" },
-  { label: "Trading Behaviour", href: "/trading-behaviour", group: "MC Mindset formula" },
   { label: "Psychological Edge", href: "/psychological-edge", group: "MC Mindset formula" },
   { label: "Option Flow", href: "/option-flow", group: "MC Option Flow" },
   { label: "MC News Dashboard", href: "/news-city", group: "MC News Dashboard" },

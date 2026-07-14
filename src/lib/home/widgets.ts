@@ -22,7 +22,8 @@ export type WidgetId =
   | "avg-rr"
   | "execution"
   | "market-intel"
-  | "premarket-analysis";
+  | "premarket-analysis"
+  | "journal-calendar";
 
 /** The page/area a widget belongs to — used to group the "Add widget" picker. */
 export type WidgetSource =
@@ -43,6 +44,7 @@ export interface WidgetMeta {
 }
 
 export const WIDGETS: WidgetMeta[] = [
+  { id: "journal-calendar", title: "Journal Calendar", source: "Journal", href: "/journal", description: "A month at a glance — open the full journal for detail." },
   { id: "weekly-r", title: "Weekly R", source: "Journal", href: "/journal", description: "Your net R for the current week." },
   { id: "recent-trades", title: "Recent Trades", source: "Journal", href: "/journal", description: "Your latest logged trades." },
   { id: "win-rate", title: "Win Rate", source: "Analytics", href: "/analytics", description: "Win rate across all trades." },
@@ -51,8 +53,8 @@ export const WIDGETS: WidgetMeta[] = [
   { id: "discipline", title: "Discipline Score", source: "Habits", href: "/discipline", description: "Trade-rule and habit consistency this week." },
   { id: "premarket-analysis", title: "Pre-Market Analysis", source: "Analysis", href: "/analysis", description: "Your latest pre-trade preparation." },
   { id: "market-intel", title: "Market Intelligence", source: "Market", href: "/news-city", description: "Live market regime, risk and sentiment." },
-  { id: "habits-streak", title: "Habits Streak", source: "Habits", href: "/habits", description: "Longest active streak and today's progress." },
-  { id: "trading-rules", title: "Trading Rules", source: "Trading Rules", href: "/habits", description: "Your pre-trade checklist at a glance." },
+  { id: "habits-streak", title: "Habits Streak", source: "Habits", href: "/psychological-edge", description: "Longest active streak and today's progress." },
+  { id: "trading-rules", title: "Trading Rules", source: "Trading Rules", href: "/psychological-edge", description: "Your pre-trade checklist at a glance." },
   { id: "active-accounts", title: "Active Accounts", source: "Accounts", href: "/accounts", description: "Funded accounts and capital in play." },
 ];
 
@@ -177,15 +179,21 @@ export function saveWidgetOptions(options: Partial<Record<WidgetId, WidgetOption
 }
 
 /** Widgets shown by default before the trader customises their Home. */
+// The curated default dashboard: a journal calendar, pre-market analysis,
+// active capital, a habits shortcut, the discipline score and recent trades.
+// Users can still reorder/resize these, but this is the standard layout.
 export const DEFAULT_WIDGETS: WidgetId[] = [
-  "weekly-r",
-  "discipline",
-  "habits-streak",
-  "recent-trades",
+  "journal-calendar",
+  "premarket-analysis",
   "active-accounts",
+  "habits-streak",
+  "discipline",
+  "recent-trades",
 ];
 
-const LS_KEY = "home_widgets_v1";
+// Bumped to v2 when the curated default dashboard (journal calendar, analysis,
+// active capital, habits, discipline, recent trades) replaced the old set.
+const LS_KEY = "home_widgets_v2";
 
 const isWidgetId = (v: unknown): v is WidgetId =>
   typeof v === "string" && v in WIDGET_MAP;

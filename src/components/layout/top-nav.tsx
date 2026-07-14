@@ -1,43 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Home, NotebookPen, Crosshair, BarChart3, Wallet, Flame, ScrollText,
-  Brain, Waves, Globe, Plus, Menu, X, Settings, User as UserIcon, LogOut,
-  type LucideIcon,
-} from "lucide-react";
+import { motion } from "motion/react";
+import { Plus, Menu, X, Settings, User as UserIcon, LogOut, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { APP_TABS } from "@/lib/nav";
-import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 
 const TURQUOISE = "#14B8A6";
-
-// Icon + compact label per route. Labels shorten the long group items so all
-// ten sections fit on one horizontal bar; the full sidebar wording lives in
-// APP_TABS and shows as the hover tooltip.
-const META: Record<string, { icon: LucideIcon; short: string }> = {
-  "/dashboard": { icon: Home, short: "Home" },
-  "/journal": { icon: NotebookPen, short: "Journal" },
-  "/analysis": { icon: Crosshair, short: "Analysis" },
-  "/analytics": { icon: BarChart3, short: "Analytics" },
-  "/accounts": { icon: Wallet, short: "Accounts" },
-  "/habits": { icon: Flame, short: "Habits" },
-  "/trading-behaviour": { icon: ScrollText, short: "Behaviour" },
-  "/psychological-edge": { icon: Brain, short: "Edge" },
-  "/option-flow": { icon: Waves, short: "Flow" },
-  "/news-city": { icon: Globe, short: "News" },
-};
 
 const isActive = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(href + "/");
 
-// Grouped for the mobile overlay (keeps the original section wording).
+// Grouped for both the desktop dividers and the mobile overlay.
 const groups = (() => {
   const order: (string | null)[] = [];
   const byGroup = new Map<string | null, typeof APP_TABS>();
@@ -49,20 +26,23 @@ const groups = (() => {
 })();
 
 function DesktopItem({ href, label, active }: { href: string; label: string; active: boolean }) {
-  const meta = META[href];
-  const Icon = meta?.icon ?? Home;
   return (
     <Link
       href={href}
-      title={label}
       className={cn(
-        "group relative flex items-center gap-2 rounded-lg px-3 h-9 text-[13px] font-semibold whitespace-nowrap transition-colors",
+        "relative flex items-center h-9 px-3.5 rounded-lg text-[13px] font-semibold whitespace-nowrap transition-colors",
         active ? "text-white" : "text-sidebar-foreground/55 hover:text-sidebar-foreground"
       )}
-      style={active ? { background: "rgba(20,184,166,0.14)" } : undefined}
     >
-      <Icon className={cn("w-4 h-4 shrink-0 transition-colors", active ? "text-[#14B8A6]" : "text-sidebar-foreground/40 group-hover:text-[#14B8A6]")} />
-      {meta?.short ?? label}
+      {active && (
+        <motion.span
+          layoutId="nav-active-pill"
+          className="absolute inset-0 rounded-lg"
+          style={{ background: "rgba(20,184,166,0.16)" }}
+          transition={{ type: "spring", stiffness: 500, damping: 34 }}
+        />
+      )}
+      <span className="relative z-10">{label}</span>
     </Link>
   );
 }
@@ -77,65 +57,55 @@ export function TopNav() {
 
   return (
     <>
-    <header
-      className="sticky top-0 z-40 border-b border-sidebar-border"
-      style={{ background: "color-mix(in oklch, var(--sidebar) 82%, transparent)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
-    >
-      <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
-        {/* Logo */}
-        <Link href="/dashboard" aria-label="TradingMC" className="shrink-0 hover:opacity-80 transition-opacity">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={38} height={38} className="h-9 w-9" />
-        </Link>
-
-        {/* Desktop nav — every section, grouped with thin dividers */}
-        <nav className="hidden lg:flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {groups.map((group, gi) => (
-            <div key={gi} className="flex items-center gap-0.5">
-              {gi > 0 && <span className="mx-1.5 h-5 w-px bg-sidebar-border shrink-0" />}
-              {group.items.map((tab) => (
-                <DesktopItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} />
-              ))}
-            </div>
-          ))}
-        </nav>
-
-        {/* Desktop right actions */}
-        <div className="hidden lg:flex items-center gap-2 shrink-0">
-          <Link
-            href="/journal/new"
-            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 h-9 text-[13px] font-semibold text-white transition-all hover:-translate-y-px"
-            style={{ background: TURQUOISE, boxShadow: "0 2px 14px rgba(20,184,166,0.30)" }}
-          >
-            <Plus className="w-4 h-4" /> Log Trade
+      <header
+        className="sticky top-0 z-40 border-b border-sidebar-border"
+        style={{ background: "color-mix(in oklch, var(--sidebar) 82%, transparent)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+      >
+        <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
+          {/* Logo */}
+          <Link href="/dashboard" aria-label="TradingMC" className="shrink-0 hover:opacity-80 transition-opacity">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={38} height={38} className="h-9 w-9" />
           </Link>
-          <UserMenu displayName={displayName} email={user?.email ?? ""} initials={initials} onSignOut={signOut} />
-        </div>
 
-        {/* Mobile right actions */}
-        <div className="flex lg:hidden items-center gap-2 ml-auto">
-          <Link
-            href="/journal/new"
-            aria-label="Log trade"
-            className="inline-flex items-center justify-center rounded-lg h-9 w-9 text-white"
-            style={{ background: TURQUOISE }}
-          >
-            <Plus className="w-4 h-4" />
-          </Link>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="Open menu"
-            className="inline-flex items-center justify-center rounded-lg h-9 w-9 border border-sidebar-border text-sidebar-foreground/70"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-    </header>
+          {/* Desktop nav — text only, grouped with thin dividers */}
+          <nav className="hidden lg:flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {groups.map((group, gi) => (
+              <div key={gi} className="flex items-center gap-0.5">
+                {gi > 0 && <span className="mx-1.5 h-5 w-px bg-sidebar-border shrink-0" />}
+                {group.items.map((tab) => (
+                  <DesktopItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} />
+                ))}
+              </div>
+            ))}
+          </nav>
 
-      {/* Mobile full-screen overlay menu — a sibling of the (backdrop-filtered)
-          header so `fixed` is relative to the viewport, not the bar. */}
+          {/* Desktop right actions */}
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
+            <Link
+              href="/journal/new"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 h-9 text-[13px] font-semibold text-white transition-all hover:-translate-y-px"
+              style={{ background: TURQUOISE, boxShadow: "0 2px 14px rgba(20,184,166,0.30)" }}
+            >
+              <Plus className="w-4 h-4" /> Log Trade
+            </Link>
+            <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} onSignOut={signOut} />
+          </div>
+
+          {/* Mobile right actions */}
+          <div className="flex lg:hidden items-center gap-2 ml-auto">
+            <Link href="/journal/new" aria-label="Log trade" className="inline-flex items-center justify-center rounded-lg h-9 w-9 text-white" style={{ background: TURQUOISE }}>
+              <Plus className="w-4 h-4" />
+            </Link>
+            <button type="button" onClick={() => setOpen(true)} aria-label="Open menu"
+              className="inline-flex items-center justify-center rounded-lg h-9 w-9 border border-sidebar-border text-sidebar-foreground/70">
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile full-screen overlay — sibling of the backdrop-filtered header */}
       {open && (
         <div className="lg:hidden fixed inset-0 z-50 flex flex-col" style={{ background: "var(--sidebar)" }}>
           <div className="flex h-14 items-center justify-between px-4 border-b border-sidebar-border">
@@ -155,10 +125,8 @@ export function TopNav() {
                     {group.label}
                   </p>
                 )}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
                   {group.items.map((tab) => {
-                    const meta = META[tab.href];
-                    const Icon = meta?.icon ?? Home;
                     const active = isActive(pathname, tab.href);
                     return (
                       <Link
@@ -166,13 +134,12 @@ export function TopNav() {
                         href={tab.href}
                         onClick={() => setOpen(false)}
                         className={cn(
-                          "flex items-center gap-2.5 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors",
-                          active ? "text-white border-transparent" : "text-sidebar-foreground/70 border-sidebar-border"
+                          "flex items-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors",
+                          active ? "text-white" : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
                         )}
                         style={active ? { background: "rgba(20,184,166,0.14)" } : undefined}
                       >
-                        <Icon className="w-4 h-4 shrink-0" style={{ color: active ? TURQUOISE : undefined }} />
-                        <span className="truncate">{tab.label}</span>
+                        {tab.label}
                       </Link>
                     );
                   })}
@@ -181,7 +148,7 @@ export function TopNav() {
             ))}
           </div>
 
-          <div className="border-t border-sidebar-border p-4 space-y-2">
+          <div className="border-t border-sidebar-border p-4 space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(20,184,166,0.15)" }}>
                 <span className="text-xs font-bold" style={{ color: TURQUOISE }}>{initials}</span>
@@ -191,12 +158,12 @@ export function TopNav() {
                 <p className="text-xs text-sidebar-foreground/40 truncate">{user?.email}</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 pt-1">
-              <Link href="/settings" onClick={() => setOpen(false)} className="flex items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-2 text-xs font-medium text-sidebar-foreground/70">
-                <Settings className="w-3.5 h-3.5" /> Settings
-              </Link>
+            <div className="grid grid-cols-3 gap-2">
               <Link href="/profile" onClick={() => setOpen(false)} className="flex items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-2 text-xs font-medium text-sidebar-foreground/70">
                 <UserIcon className="w-3.5 h-3.5" /> Profile
+              </Link>
+              <Link href="/settings" onClick={() => setOpen(false)} className="flex items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-2 text-xs font-medium text-sidebar-foreground/70">
+                <Settings className="w-3.5 h-3.5" /> Settings
               </Link>
               <button onClick={signOut} className="flex items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-2 text-xs font-medium text-destructive">
                 <LogOut className="w-3.5 h-3.5" /> Sign out
@@ -209,7 +176,9 @@ export function TopNav() {
   );
 }
 
-function UserMenu({
+/** Lightweight click-to-open profile menu showing the name, linking to the
+ *  existing Profile and Settings pages. */
+function ProfileMenu({
   displayName, email, initials, onSignOut,
 }: {
   displayName: string;
@@ -217,37 +186,55 @@ function UserMenu({
   initials: string;
   onSignOut: () => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDocClick); document.removeEventListener("keydown", onKey); };
+  }, []);
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <button
-            type="button"
-            aria-label="Account menu"
-            className="flex h-9 w-9 items-center justify-center rounded-full transition-transform hover:scale-105"
-            style={{ background: "rgba(20,184,166,0.15)" }}
-          />
-        }
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-lg h-9 pl-1.5 pr-2.5 border border-transparent hover:border-sidebar-border transition-colors"
       >
-        <span className="text-[11px] font-bold" style={{ color: TURQUOISE }}>{initials}</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <p className="text-sm font-semibold truncate">{displayName}</p>
-          <p className="text-xs font-normal text-muted-foreground truncate">{email}</p>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem render={<Link href="/settings" />}>
-          <Settings className="w-4 h-4" /> Settings
-        </DropdownMenuItem>
-        <DropdownMenuItem render={<Link href="/profile" />}>
-          <UserIcon className="w-4 h-4" /> Profile
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onSignOut} className="text-destructive">
-          <LogOut className="w-4 h-4" /> Sign out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <span className="flex h-7 w-7 items-center justify-center rounded-full shrink-0" style={{ background: "rgba(20,184,166,0.15)" }}>
+          <span className="text-[11px] font-bold" style={{ color: TURQUOISE }}>{initials}</span>
+        </span>
+        <span className="text-[13px] font-semibold text-sidebar-foreground/80 max-w-[120px] truncate">{displayName}</span>
+        <ChevronDown className={cn("w-3.5 h-3.5 text-sidebar-foreground/40 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border p-1.5 shadow-xl z-50"
+          style={{ background: "var(--popover, var(--card))" }}
+        >
+          <div className="px-2.5 py-2">
+            <p className="text-sm font-semibold truncate">{displayName}</p>
+            <p className="text-xs text-muted-foreground truncate">{email}</p>
+          </div>
+          <div className="h-px bg-border my-1" />
+          <Link href="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-foreground/85 hover:bg-muted transition-colors">
+            <UserIcon className="w-4 h-4" /> Profile
+          </Link>
+          <Link href="/settings" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-foreground/85 hover:bg-muted transition-colors">
+            <Settings className="w-4 h-4" /> Settings
+          </Link>
+          <div className="h-px bg-border my-1" />
+          <button onClick={() => { setOpen(false); onSignOut(); }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors">
+            <LogOut className="w-4 h-4" /> Sign out
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

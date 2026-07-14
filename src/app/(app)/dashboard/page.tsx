@@ -108,7 +108,7 @@ export default function HomePage() {
             Daily
           </p>
           <h1 className="font-heading font-black text-3xl md:text-4xl text-foreground tracking-tight leading-[0.95]">
-            Home
+            Dashboard
           </h1>
           {greeting && (
             <p className="font-body text-lg font-semibold text-foreground mt-3">

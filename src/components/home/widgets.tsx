@@ -5,9 +5,12 @@ import { useEffect, useState } from "react";
 import {
   ArrowRight, X, TrendingUp, TrendingDown,
   ScrollText, Loader2, GripVertical, ChevronLeft, ChevronRight,
-  SlidersHorizontal, Check, Circle, Crosshair, Radar, FileText,
+  SlidersHorizontal, Check, Circle, Crosshair, Radar, FileText, Maximize2,
 } from "lucide-react";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import {
+  format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval,
+  eachDayOfInterval, getDay, addMonths, subMonths, isToday,
+} from "date-fns";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getHabitStreak, getProfile,
   toggleHabitCompletion, getAnalyses,
@@ -753,7 +756,85 @@ function TradingRulesWidget({ options }: { options: WidgetOptions }) {
   );
 }
 
+// ── Journal calendar — a month at a glance, opens the full journal ────
+function JournalCalendarWidget() {
+  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
+  const [cursor, setCursor] = useState(new Date());
+  useEffect(() => { getTrades().then(setTrades); }, []);
+  if (!trades) return <Loading />;
+
+  // Net R per day → dot colour.
+  const dayR = new Map<string, number>();
+  for (const t of trades) {
+    const k = t.date_time.slice(0, 10);
+    dayR.set(k, (dayR.get(k) ?? 0) + tradeR(t));
+  }
+  const dotColor = (r: number) =>
+    r > 0 ? "oklch(0.58 0.17 145)" : r < 0 ? "oklch(0.58 0.22 25)" : "oklch(0.70 0.16 72)";
+
+  const monthStart = startOfMonth(cursor);
+  const days = eachDayOfInterval({ start: monthStart, end: endOfMonth(cursor) });
+  const pad = (getDay(monthStart) + 6) % 7; // Monday-first
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={(e) => { e.preventDefault(); setCursor(subMonths(cursor, 1)); }}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <span className="text-sm font-semibold tabular-nums w-24 text-center">{format(cursor, "MMM yyyy")}</span>
+          <button type="button" onClick={(e) => { e.preventDefault(); setCursor(addMonths(cursor, 1)); }}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <Link href="/journal" title="Open full journal"
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline">
+          <Maximize2 className="w-3 h-3" /> Open
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+          <span key={i} className="text-[9px] font-semibold uppercase text-muted-foreground/50">{d}</span>
+        ))}
+        {Array.from({ length: pad }).map((_, i) => <span key={`p${i}`} />)}
+        {days.map((d) => {
+          const k = format(d, "yyyy-MM-dd");
+          const r = dayR.get(k);
+          const has = r !== undefined;
+          const today = isToday(d);
+          return (
+            <Link
+              key={k}
+              href="/journal"
+              className={cn(
+                "relative aspect-square rounded-md flex flex-col items-center justify-center text-[11px] tabular-nums transition-colors",
+                today ? "font-bold text-primary" : "text-foreground/70",
+                has ? "hover:bg-muted/60" : "hover:bg-muted/40"
+              )}
+              style={has ? { background: `${dotColor(r!)}1a` } : undefined}
+            >
+              {format(d, "d")}
+              {has && <span className="absolute bottom-1 h-1 w-1 rounded-full" style={{ background: dotColor(r!) }} />}
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="mt-auto pt-2 flex items-center gap-3 text-[10px] text-muted-foreground/70">
+        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: "oklch(0.58 0.17 145)" }} /> Win</span>
+        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: "oklch(0.58 0.22 25)" }} /> Loss</span>
+        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: "oklch(0.70 0.16 72)" }} /> B/E</span>
+      </div>
+    </div>
+  );
+}
+
 const COMPONENTS: Record<WidgetId, React.ComponentType<{ options: WidgetOptions }>> = {
+  "journal-calendar": JournalCalendarWidget,
   "weekly-r": WeeklyRWidget,
   "win-rate": WinRateWidget,
   "avg-rr": AvgRRWidget,

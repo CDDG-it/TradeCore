@@ -11,6 +11,9 @@ import { PageWrapper } from "@/components/ui/page-wrapper";
 import { cn } from "@/lib/utils";
 import { getTrades, getAnalyses, getPsychEdgeSessions, savePsychEdgeSession } from "@/lib/supabase/queries";
 import { computeReflection, buildPreMarketBriefing, RESPONSE_TAGS, type PsychEdgeReflection, type PreMarketBriefing } from "@/lib/psych-edge/engine";
+import { HabitsView } from "@/components/habits/habits-view";
+import { TradingRulesEditor } from "@/components/habits/trading-rules";
+import { ConfluencesEditor } from "@/components/habits/confluences-editor";
 import type { TradeJournalEntry, PreTradeAnalysis, PsychEdgeSession, PsychEdgeResponseTag } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
@@ -21,7 +24,7 @@ const TAG_LABEL: Record<PsychEdgeResponseTag, string> = {
   frustrated: "Frustrated", rushed: "Rushed", numb: "Numb",
 };
 
-export default function PsychologicalEdgePage() {
+function EdgeReflectionView() {
   const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
   const [analyses, setAnalyses] = useState<PreTradeAnalysis[]>([]);
   const [sessions, setSessions] = useState<PsychEdgeSession[]>([]);
@@ -145,46 +148,88 @@ export default function PsychologicalEdgePage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {trades === null ? (
+        <div className="flex items-center justify-center h-40">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : trades.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <>
+          {briefing && <PreMarketCheckUp briefing={briefing} />}
+
+          {todaysSession && (
+            <Reflection
+              session={todaysSession}
+              tradesAnalyzed={live?.tradesAnalyzed ?? trades.length}
+              onRegenerate={regenerate}
+              regenerating={regenerating}
+              saveError={saveError}
+              answerDraft={answerDraft}
+              setAnswerDraft={setAnswerDraft}
+              onSaveAnswer={saveAnswer}
+              savingAnswer={savingAnswer}
+              noteDraft={noteDraft}
+              setNoteDraft={setNoteDraft}
+              onSaveNote={saveNote}
+              onSetTag={(tag) => patch({ response_tag: tag })}
+              onConfirm={() => patch({ reconstruction_confirmed: !todaysSession.reconstruction_confirmed })}
+            />
+          )}
+
+          {priorSessions.length > 0 && <History sessions={priorSessions} />}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Hub: one dashboard combining Reflection, Habits and Behaviour ─────
+type EdgeTab = "reflection" | "habits" | "behaviour";
+
+export default function PsychologicalEdgePage() {
+  const [tab, setTab] = useState<EdgeTab>("reflection");
+  return (
+    <div className="space-y-6">
       <PageHeader
         badge="MC Mindset Formula"
         title="Psychological Edge"
-        subtitle="The journal records what happened. This explains why — and what has to change before your next trade."
+        subtitle="Your reflection, habits and trading rules — the whole mindset formula in one place."
       />
 
-      <PageWrapper className="space-y-6">
-        {trades === null ? (
-          <div className="flex items-center justify-center h-40">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : trades.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <>
-            {briefing && <PreMarketCheckUp briefing={briefing} />}
-
-            {todaysSession && (
-              <Reflection
-                session={todaysSession}
-                tradesAnalyzed={live?.tradesAnalyzed ?? trades.length}
-                onRegenerate={regenerate}
-                regenerating={regenerating}
-                saveError={saveError}
-                answerDraft={answerDraft}
-                setAnswerDraft={setAnswerDraft}
-                onSaveAnswer={saveAnswer}
-                savingAnswer={savingAnswer}
-                noteDraft={noteDraft}
-                setNoteDraft={setNoteDraft}
-                onSaveNote={saveNote}
-                onSetTag={(tag) => patch({ response_tag: tag })}
-                onConfirm={() => patch({ reconstruction_confirmed: !todaysSession.reconstruction_confirmed })}
-              />
+      <div className="flex w-full sm:w-fit rounded-lg border border-border/60 overflow-hidden">
+        {([
+          { key: "reflection", label: "Reflection" },
+          { key: "habits", label: "Habits" },
+          { key: "behaviour", label: "Behaviour" },
+        ] as const).map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={cn(
+              "flex-1 sm:flex-none px-5 py-2 text-sm font-semibold transition-colors",
+              tab === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
             )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-            {priorSessions.length > 0 && <History sessions={priorSessions} />}
-          </>
-        )}
+      <PageWrapper>
+        {tab === "reflection" ? <EdgeReflectionView />
+          : tab === "habits" ? <HabitsView />
+          : <BehaviourView />}
       </PageWrapper>
+    </div>
+  );
+}
+
+function BehaviourView() {
+  return (
+    <div className="grid lg:grid-cols-2 gap-6 items-start">
+      <TradingRulesEditor />
+      <ConfluencesEditor />
     </div>
   );
 }
