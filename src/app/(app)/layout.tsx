@@ -1,22 +1,15 @@
-import { Sidebar } from "@/components/layout/sidebar";
-import { MobileHeader } from "@/components/layout/mobile-header";
+import { TopNav } from "@/components/layout/top-nav";
 import { TransitionLayout } from "@/components/layout/transition-layout";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden z-[4]">
+    <div className="min-h-screen bg-background relative overflow-x-hidden">
+      {/* Full-width top navigation — no fixed left sidebar */}
+      <TopNav />
 
-      {/* Desktop sidebar */}
-      <div className="hidden lg:block relative z-40">
-        <Sidebar />
-      </div>
-
-      {/* Mobile header */}
-      <MobileHeader />
-
-      {/* Main content */}
-      <main className="lg:pl-60 pt-14 lg:pt-0 min-h-screen relative z-10">
-        <div className="px-4 py-8 sm:px-6 lg:px-8 w-full">
+      {/* Main content fills the whole width beneath the bar */}
+      <main className="relative z-10">
+        <div className="mx-auto w-full max-w-[1700px] px-4 py-8 sm:px-6 lg:px-10">
           <TransitionLayout>{children}</TransitionLayout>
         </div>
       </main>

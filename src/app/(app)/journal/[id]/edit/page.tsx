@@ -2,7 +2,8 @@
 
 import { use, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, X, Check, Clock } from "lucide-react";
+import { ArrowLeft, Plus, X, Check } from "lucide-react";
+import { DateField, TimeField } from "@/components/journal/field-inputs";
 import { format } from "date-fns";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -264,17 +265,12 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs flex items-center gap-2">
-                  Date
-                  {form.date_time && (
-                    <span className="text-muted-foreground font-normal">
-                      {format(new Date(form.date_time + "T12:00:00"), "EEEE")}
-                    </span>
-                  )}
-                </Label>
-                <Input type="date" value={form.date_time}
-                  onChange={(e) => { set("date_time", e.target.value); set("linked_analysis_id", undefined); }}
-                  className="h-9 text-sm" required />
+                <Label className="text-xs">Date</Label>
+                <DateField
+                  value={form.date_time}
+                  onChange={(v) => { set("date_time", v); set("linked_analysis_id", undefined); }}
+                  required
+                />
               </div>
             </div>
 
@@ -400,12 +396,8 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                   className="h-9 text-sm font-mono" required />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" /> Execution Time
-                </Label>
-                <Input type="time" value={form.execution_time ?? ""}
-                  onChange={(e) => set("execution_time", e.target.value)}
-                  className="h-9 text-sm font-mono" />
+                <Label className="text-xs">Execution Time</Label>
+                <TimeField value={form.execution_time ?? ""} onChange={(v) => set("execution_time", v)} />
               </div>
             </div>
           </CardContent>

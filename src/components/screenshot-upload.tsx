@@ -190,29 +190,42 @@ export function ScreenshotUpload({
     const populated = groups.filter((g) => g.urls.length > 0);
     if (!populated.length) return null;
     return (
-      <div className={cn("space-y-5", className)}>
+      <div className={cn("space-y-7", className)}>
         {populated.map((group) => (
           <div key={group.label}>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              {group.label}
-            </p>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span
+                className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider"
+                style={{ background: "rgba(20,184,166,0.12)", color: "#14B8A6" }}
+              >
+                {group.label}
+              </span>
+              <span className="text-[11px] text-muted-foreground/60 tabular-nums">
+                {group.urls.length} chart{group.urls.length !== 1 ? "s" : ""}
+              </span>
+              <span className="h-px flex-1 bg-border/50" />
+            </div>
+            {/* Full charts, never cropped — one per row on the widest layouts */}
+            <div className={cn("grid gap-4", group.urls.length > 1 && "lg:grid-cols-2")}>
               {group.urls.map((url, i) => (
-                <div
+                <button
                   key={i}
-                  className="relative group aspect-video rounded-lg overflow-hidden border border-border/60 bg-muted/30 cursor-pointer"
+                  type="button"
                   onClick={() => setLightbox(display(url))}
+                  className="group relative block w-full overflow-hidden rounded-xl border border-border/60 transition-all hover:border-primary/40 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)]"
+                  style={{ background: "#0b1120" }}
+                  title="View full size"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={display(url)}
                     alt={`${group.label} ${i + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-auto max-h-[540px] object-contain"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <ZoomIn className="w-4 h-4 text-white" />
-                  </div>
-                </div>
+                  <span className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-lg bg-black/50 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                    <ZoomIn className="w-3.5 h-3.5" />
+                  </span>
+                </button>
               ))}
             </div>
           </div>
@@ -386,19 +399,20 @@ export function ScreenshotUpload({
       {/* Current group screenshots + upload zone */}
       {currentGroup && (
         <>
-          {/* Thumbnails */}
+          {/* Thumbnails — full charts, never cropped */}
           {currentGroup.urls.length > 0 && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {currentGroup.urls.map((url, i) => (
                 <div
                   key={i}
-                  className="relative group aspect-video rounded-lg overflow-hidden border border-border/60 bg-muted/30"
+                  className="relative group overflow-hidden rounded-xl border border-border/60"
+                  style={{ background: "#0b1120" }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={url}
+                    src={display(url)}
                     alt={`${currentGroup.label} ${i + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-auto max-h-[320px] object-contain"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                     <button
