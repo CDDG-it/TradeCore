@@ -72,6 +72,16 @@ export function ScreenshotUpload({
   const safeTab = Math.min(activeTab, Math.max(0, groups.length - 1));
   const currentGroup = groups[safeTab];
 
+  // Close the lightbox with the Escape key
+  useEffect(() => {
+    if (!lightbox) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightbox(null);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [lightbox]);
+
   // Resolve storage paths → signed URLs whenever groups change
   useEffect(() => {
     const paths = groups

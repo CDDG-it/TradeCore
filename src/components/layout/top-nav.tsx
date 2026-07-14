@@ -63,7 +63,7 @@ export function TopNav() {
       >
         <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
           {/* Logo */}
-          <Link href="/dashboard" aria-label="TradingMC" className="shrink-0 hover:opacity-80 transition-opacity">
+          <Link href="/" aria-label="TradingMC — home" className="shrink-0 hover:opacity-80 transition-opacity">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={38} height={38} className="h-9 w-9" />
           </Link>

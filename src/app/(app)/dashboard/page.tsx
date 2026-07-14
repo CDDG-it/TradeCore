@@ -1,34 +1,65 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { format } from "date-fns";
 import { motion } from "motion/react";
-import { Plus, Check, Eye, EyeOff, LayoutGrid, Settings2 } from "lucide-react";
+import {
+  Plus, ArrowUpRight, NotebookPen, Target, BarChart3, Wallet,
+  Brain, Activity, Newspaper, ScanSearch,
+} from "lucide-react";
 import { PageWrapper } from "@/components/ui/page-wrapper";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
-} from "@/components/ui/dialog";
 import { getProfile } from "@/lib/supabase/queries";
-import { usePrivacy } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
-import { HomeWidget } from "@/components/home/widgets";
-import {
-  WIDGETS, DEFAULT_WIDGETS, loadWidgets, saveWidgets,
-  loadWidgetOptions, saveWidgetOptions, DEFAULT_WIDGET_OPTIONS, WIDGET_SIZE_CLASSES,
-  type WidgetId, type WidgetSource, type WidgetOptions,
-} from "@/lib/home/widgets";
 
-export default function HomePage() {
-  const { hidden, toggle } = usePrivacy();
+/** Every feature the product offers today, grouped exactly like the top nav.
+ *  This is the curated overview — one card per destination, no widgets. */
+const SECTIONS: {
+  label: string;
+  features: {
+    href: string;
+    title: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }[];
+}[] = [
+  {
+    label: "Trading",
+    features: [
+      { href: "/journal", title: "Journal", description: "Log and review every trade with screenshots and notes.", icon: NotebookPen },
+      { href: "/analysis", title: "Analysis", description: "Structured pre-trade plans across your timeframes.", icon: Target },
+      { href: "/analytics", title: "Analytics", description: "Performance, edge and P&L broken down by every angle.", icon: BarChart3 },
+      { href: "/accounts", title: "Accounts", description: "Track balances and risk across your trading accounts.", icon: Wallet },
+    ],
+  },
+  {
+    label: "MC Mindset formula",
+    features: [
+      { href: "/psychological-edge", title: "Psychological Edge", description: "Pre-market check-up and the 5R reflection engine.", icon: Brain },
+    ],
+  },
+  {
+    label: "MC Option Flow",
+    features: [
+      { href: "/option-flow", title: "Option Flow", description: "Follow institutional options positioning in real time.", icon: Activity },
+    ],
+  },
+  {
+    label: "MC News Dashboard",
+    features: [
+      { href: "/news-city", title: "MC News Dashboard", description: "The market's moving headlines, curated and ranked.", icon: Newspaper },
+    ],
+  },
+];
+
+const QUICK_ACTIONS = [
+  { href: "/journal/new", title: "Log a trade", description: "Add a new entry to your journal", icon: Plus, primary: true },
+  { href: "/analysis/new", title: "New analysis", description: "Plan your next setup", icon: ScanSearch, primary: false },
+];
+
+export default function DashboardPage() {
   const [greeting, setGreeting] = useState("");
   const [firstName, setFirstName] = useState<string | null>(null);
-
-  const [widgets, setWidgets] = useState<WidgetId[]>(DEFAULT_WIDGETS);
-  const [widgetOptions, setWidgetOptions] = useState<Partial<Record<WidgetId, WidgetOptions>>>({});
-  const [editing, setEditing] = useState(false);
-  const [showPicker, setShowPicker] = useState(false);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -36,235 +67,89 @@ export default function HomePage() {
     getProfile().then((p) => {
       if (p?.full_name) setFirstName(p.full_name.split(" ")[0]);
     });
-    setWidgets(loadWidgets());
-    setWidgetOptions(loadWidgetOptions());
-  }, []);
-
-  function update(next: WidgetId[]) {
-    setWidgets(next);
-    saveWidgets(next);
-  }
-
-  function updateOptions(id: WidgetId, next: WidgetOptions) {
-    setWidgetOptions((prev) => {
-      const merged = { ...prev, [id]: next };
-      saveWidgetOptions(merged);
-      return merged;
-    });
-  }
-
-  function removeWidget(id: WidgetId) {
-    update(widgets.filter((w) => w !== id));
-  }
-
-  function toggleWidget(id: WidgetId) {
-    update(widgets.includes(id) ? widgets.filter((w) => w !== id) : [...widgets, id]);
-  }
-
-  function reorder(list: WidgetId[], from: number, to: number) {
-    const next = [...list];
-    const [item] = next.splice(from, 1);
-    next.splice(to, 0, item);
-    return next;
-  }
-
-  // Arrow controls (also used on touch, where native drag isn't available).
-  function moveWidget(id: WidgetId, dir: -1 | 1) {
-    const from = widgets.indexOf(id);
-    const to = from + dir;
-    if (from < 0 || to < 0 || to >= widgets.length) return;
-    update(reorder(widgets, from, to));
-  }
-
-  function handleDrop(target: number) {
-    if (dragIndex !== null && dragIndex !== target) {
-      update(reorder(widgets, dragIndex, target));
-    }
-    setDragIndex(null);
-    setOverIndex(null);
-  }
-
-  // Group the picker by the page each widget comes from.
-  const grouped = useMemo(() => {
-    const map = new Map<WidgetSource, typeof WIDGETS>();
-    for (const w of WIDGETS) {
-      const list = map.get(w.source) ?? [];
-      list.push(w);
-      map.set(w.source, list);
-    }
-    return Array.from(map.entries());
   }, []);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-wrap items-start justify-between gap-4 mb-8"
       >
-        <div>
-          <p className="font-body text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">
-            Daily
-          </p>
-          <h1 className="font-heading font-black text-3xl md:text-4xl text-foreground tracking-tight leading-[0.95]">
-            Dashboard
-          </h1>
-          {greeting && (
-            <p className="font-body text-lg font-semibold text-foreground mt-3">
-              {greeting}{firstName ? `, ${firstName}` : ""}
-            </p>
-          )}
-          <p className="font-body text-sm font-light text-muted-foreground mt-1 leading-relaxed">
-            {format(new Date(), "EEEE, MMMM d, yyyy")}
-          </p>
-        </div>
-
-        {/* Home controls */}
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={toggle}
-            title={hidden ? "Show balances" : "Hide balances (privacy mode)"}
-            aria-pressed={hidden}
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors border border-border"
-          >
-            {hidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditing((v) => !v)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors border",
-              editing
-                ? "bg-primary/10 border-primary/30 text-primary"
-                : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/60"
-            )}
-          >
-            <Settings2 className="w-4 h-4" />
-            {editing ? "Done" : "Customize"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowPicker(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px"
-            style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
-          >
-            <Plus className="w-4 h-4" />
-            Add widget
-          </button>
-        </div>
+        <p className="font-body text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">
+          {format(new Date(), "EEEE, MMMM d, yyyy")}
+        </p>
+        <h1 className="font-heading font-black text-3xl md:text-4xl text-foreground tracking-tight leading-[0.95]">
+          {greeting ? `${greeting}${firstName ? `, ${firstName}` : ""}` : "Dashboard"}
+        </h1>
+        <p className="font-body text-sm font-light text-muted-foreground mt-3 leading-relaxed max-w-xl">
+          Your complete workspace — jump straight into any part of the platform.
+        </p>
       </motion.div>
 
-      <PageWrapper>
-        {widgets.length === 0 ? (
-          <div
-            className="rounded-xl p-12 text-center animate-fade-up"
-            style={{ background: "var(--card)", border: "1px solid var(--border)", borderStyle: "dashed" }}
-          >
-            <LayoutGrid className="w-8 h-8 mx-auto mb-3 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground mb-3">Your Home is empty.</p>
-            <button
-              onClick={() => setShowPicker(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold transition-colors text-primary"
+      <PageWrapper className="space-y-10">
+        {/* Quick actions */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {QUICK_ACTIONS.map((a) => (
+            <Link
+              key={a.href}
+              href={a.href}
+              className={cn(
+                "group relative flex items-center gap-4 rounded-2xl px-5 py-5 transition-all hover:-translate-y-0.5",
+                a.primary
+                  ? "text-white"
+                  : "border border-border bg-card hover:border-primary/40"
+              )}
+              style={a.primary ? {
+                background: "linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%)",
+                boxShadow: "0 8px 30px rgba(20,184,166,0.28)",
+              } : undefined}
             >
-              <Plus className="w-3.5 h-3.5" /> Add your first widget
-            </button>
-          </div>
-        ) : (
-          <>
-            {editing && (
-              <p className="text-xs text-muted-foreground -mt-2 mb-3">
-                Drag a card to rearrange, or use the arrows. Changes save automatically.
-              </p>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-min grid-flow-row-dense animate-fade-up">
-              {widgets.map((id, i) => {
-                const size = widgetOptions[id]?.size ?? DEFAULT_WIDGET_OPTIONS.size!;
-                return (
-                  <div
-                    key={id}
-                    draggable={editing}
-                    onDragStart={editing ? () => setDragIndex(i) : undefined}
-                    onDragOver={editing ? (e) => { e.preventDefault(); setOverIndex(i); } : undefined}
-                    onDragLeave={editing ? () => setOverIndex((v) => (v === i ? null : v)) : undefined}
-                    onDrop={editing ? (e) => { e.preventDefault(); handleDrop(i); } : undefined}
-                    onDragEnd={editing ? () => { setDragIndex(null); setOverIndex(null); } : undefined}
-                    className={cn(
-                      "rounded-xl transition-all",
-                      WIDGET_SIZE_CLASSES[size],
-                      editing && dragIndex === i && "opacity-40",
-                      editing && overIndex === i && dragIndex !== null && dragIndex !== i && "ring-2 ring-primary/50"
-                    )}
-                  >
-                    <HomeWidget
-                      id={id}
-                      editing={editing}
-                      options={widgetOptions[id]}
-                      onOptionsChange={updateOptions}
-                      onRemove={removeWidget}
-                      onMove={moveWidget}
-                      canMoveBack={i > 0}
-                      canMoveForward={i < widgets.length - 1}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </PageWrapper>
-
-      {/* Add widget picker */}
-      <Dialog open={showPicker} onOpenChange={setShowPicker}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add widgets</DialogTitle>
-            <DialogDescription>
-              Pick widgets from across the app. Each one links to its full page.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-5">
-            {grouped.map(([source, list]) => (
-              <div key={source} className="space-y-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{source}</p>
-                <div className="space-y-1.5">
-                  {list.map((w) => {
-                    const enabled = widgets.includes(w.id);
-                    return (
-                      <button
-                        key={w.id}
-                        type="button"
-                        onClick={() => toggleWidget(w.id)}
-                        className={cn(
-                          "w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors border",
-                          enabled
-                            ? "bg-primary/8 border-primary/30"
-                            : "bg-secondary/40 border-border hover:border-primary/30 hover:bg-muted/50"
-                        )}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">{w.title}</p>
-                          <p className="text-xs text-muted-foreground truncate">{w.description}</p>
-                        </div>
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1 text-xs font-semibold shrink-0 rounded-md px-2 py-1 transition-colors",
-                            enabled ? "text-primary" : "text-muted-foreground"
-                          )}
-                        >
-                          {enabled ? <><Check className="w-3.5 h-3.5" /> Added</> : <><Plus className="w-3.5 h-3.5" /> Add</>}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+              <span className={cn(
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+                a.primary ? "bg-white/20" : "bg-primary/10 text-primary"
+              )}>
+                <a.icon className="w-5 h-5" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className={cn("text-base font-bold leading-tight", !a.primary && "text-foreground")}>{a.title}</p>
+                <p className={cn("text-sm mt-0.5", a.primary ? "text-white/80" : "text-muted-foreground")}>{a.description}</p>
               </div>
-            ))}
+              <ArrowUpRight className={cn(
+                "w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5",
+                a.primary ? "text-white/80" : "text-muted-foreground"
+              )} />
+            </Link>
+          ))}
+        </div>
+
+        {/* Feature sections */}
+        {SECTIONS.map((section) => (
+          <div key={section.label} className="space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary/80">
+              {section.label}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {section.features.map((f) => (
+                <Link
+                  key={f.href}
+                  href={f.href}
+                  className="group relative flex flex-col rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                      <f.icon className="w-5 h-5" />
+                    </span>
+                    <ArrowUpRight className="w-4 h-4 text-muted-foreground/40 transition-all group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </div>
+                  <p className="text-base font-bold text-foreground leading-tight">{f.title}</p>
+                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{f.description}</p>
+                </Link>
+              ))}
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        ))}
+      </PageWrapper>
     </div>
   );
 }

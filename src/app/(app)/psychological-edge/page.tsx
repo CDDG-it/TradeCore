@@ -6,7 +6,6 @@ import {
   Brain, Loader2, RefreshCw, Target, Bell, Gauge, Sparkles, Sunrise,
   Check, ChevronRight, Quote,
 } from "lucide-react";
-import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { cn } from "@/lib/utils";
 import { getTrades, getAnalyses, getPsychEdgeSessions, savePsychEdgeSession } from "@/lib/supabase/queries";
@@ -146,40 +145,44 @@ function EdgeReflectionView() {
     await patch({ reconstruction_note: noteDraft.trim() || null });
   }
 
+  if (trades === null) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  if (trades.length === 0) return <EmptyState />;
+
   return (
-    <div className="space-y-6 max-w-3xl">
-      {trades === null ? (
-        <div className="flex items-center justify-center h-40">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : trades.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <>
-          {briefing && <PreMarketCheckUp briefing={briefing} />}
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
+      {/* Main column — the 5R reflection, compact & screen-filling */}
+      <div className="min-w-0">
+        {todaysSession && (
+          <Reflection
+            session={todaysSession}
+            tradesAnalyzed={live?.tradesAnalyzed ?? trades.length}
+            onRegenerate={regenerate}
+            regenerating={regenerating}
+            saveError={saveError}
+            answerDraft={answerDraft}
+            setAnswerDraft={setAnswerDraft}
+            onSaveAnswer={saveAnswer}
+            savingAnswer={savingAnswer}
+            noteDraft={noteDraft}
+            setNoteDraft={setNoteDraft}
+            onSaveNote={saveNote}
+            onSetTag={(tag) => patch({ response_tag: tag })}
+            onConfirm={() => patch({ reconstruction_confirmed: !todaysSession.reconstruction_confirmed })}
+          />
+        )}
+      </div>
 
-          {todaysSession && (
-            <Reflection
-              session={todaysSession}
-              tradesAnalyzed={live?.tradesAnalyzed ?? trades.length}
-              onRegenerate={regenerate}
-              regenerating={regenerating}
-              saveError={saveError}
-              answerDraft={answerDraft}
-              setAnswerDraft={setAnswerDraft}
-              onSaveAnswer={saveAnswer}
-              savingAnswer={savingAnswer}
-              noteDraft={noteDraft}
-              setNoteDraft={setNoteDraft}
-              onSaveNote={saveNote}
-              onSetTag={(tag) => patch({ response_tag: tag })}
-              onConfirm={() => patch({ reconstruction_confirmed: !todaysSession.reconstruction_confirmed })}
-            />
-          )}
-
-          {priorSessions.length > 0 && <History sessions={priorSessions} />}
-        </>
-      )}
+      {/* Side column — briefing + history, glanceable at a fixed width */}
+      <aside className="space-y-4">
+        {briefing && <PreMarketCheckUp briefing={briefing} />}
+        {priorSessions.length > 0 && <History sessions={priorSessions} />}
+      </aside>
     </div>
   );
 }
@@ -190,30 +193,36 @@ type EdgeTab = "reflection" | "habits" | "behaviour";
 export default function PsychologicalEdgePage() {
   const [tab, setTab] = useState<EdgeTab>("reflection");
   return (
-    <div className="space-y-6">
-      <PageHeader
-        badge="MC Mindset Formula"
-        title="Psychological Edge"
-        subtitle="Your reflection, habits and trading rules — the whole mindset formula in one place."
-      />
+    <div className="space-y-5">
+      {/* Compact header — title and tabs share one row to save vertical space */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="font-body text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
+            MC Mindset Formula
+          </p>
+          <h1 className="font-heading font-black text-2xl md:text-3xl text-foreground tracking-tight leading-[0.95]">
+            Psychological Edge
+          </h1>
+        </div>
 
-      <div className="flex w-full sm:w-fit rounded-lg border border-border/60 overflow-hidden">
-        {([
-          { key: "reflection", label: "Reflection" },
-          { key: "habits", label: "Habits" },
-          { key: "behaviour", label: "Behaviour" },
-        ] as const).map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={cn(
-              "flex-1 sm:flex-none px-5 py-2 text-sm font-semibold transition-colors",
-              tab === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            )}
-          >
-            {label}
-          </button>
-        ))}
+        <div className="flex w-full sm:w-fit rounded-lg border border-border/60 overflow-hidden">
+          {([
+            { key: "reflection", label: "Reflection" },
+            { key: "habits", label: "Habits" },
+            { key: "behaviour", label: "Behaviour" },
+          ] as const).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={cn(
+                "flex-1 sm:flex-none px-5 py-2 text-sm font-semibold transition-colors",
+                tab === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <PageWrapper>
@@ -256,7 +265,7 @@ function PreMarketCheckUp({ briefing }: { briefing: PreMarketBriefing }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+    <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
       <div className="flex items-center gap-2">
         <Sunrise className="w-4 h-4" style={{ color: ACCENT }} />
         <p className="text-sm font-semibold">Pre-market check-up</p>
@@ -332,20 +341,21 @@ function Reflection({
 }) {
   const answerDirty = answerDraft.trim() !== (session.reasoning_answer ?? "").trim();
   const noteDirty = noteDraft.trim() !== (session.reconstruction_note ?? "").trim();
+  const reasonStep = session.relate ? 4 : 3;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4" style={{ color: ACCENT }} />
+        <div className="flex items-center gap-2 min-w-0">
+          <Sparkles className="w-4 h-4 shrink-0" style={{ color: ACCENT }} />
           <p className="text-sm font-semibold">Post-trade reflection</p>
-          <span className="text-xs text-muted-foreground/60 tabular-nums">· based on {tradesAnalyzed} trade{tradesAnalyzed !== 1 ? "s" : ""}</span>
+          <span className="text-xs text-muted-foreground/60 tabular-nums hidden sm:inline">· {tradesAnalyzed} trade{tradesAnalyzed !== 1 ? "s" : ""}</span>
         </div>
         <button
           onClick={onRegenerate}
           disabled={regenerating}
           title="Re-read the journal for new trades"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-primary/30 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-primary/30 disabled:opacity-50 shrink-0"
         >
           <RefreshCw className={cn("w-3.5 h-3.5", regenerating && "animate-spin")} />
           Refresh
@@ -356,138 +366,144 @@ function Reflection({
         <p className="text-xs text-destructive">Could not save. Run the latest SQL migration (psych_edge_sessions) in Supabase.</p>
       )}
 
-      <div className="rounded-xl border border-border bg-card p-5 space-y-5">
-        {/* 1 — Report */}
-        <div>
-          <StepLabel n={1}>What happened</StepLabel>
-          <p className="text-sm text-foreground/80">{session.report}</p>
-        </div>
-
-        {/* 2 — Respond */}
-        <div>
-          <StepLabel n={2}>How did it feel in the moment</StepLabel>
-          <div className="flex flex-wrap gap-1.5">
-            {RESPONSE_TAGS.map((tag) => {
-              const active = session.response_tag === tag;
-              return (
-                <button
-                  key={tag}
-                  onClick={() => onSetTag(tag)}
-                  className={cn(
-                    "rounded-full px-3 py-1 text-xs font-medium border transition-colors",
-                    active ? "text-white" : "text-muted-foreground border-border bg-secondary hover:text-foreground"
-                  )}
-                  style={active ? { background: ACCENT, borderColor: ACCENT } : undefined}
-                >
-                  {TAG_LABEL[tag]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 3 — Relate */}
-        {session.relate && (
+      {/* Two columns: the read-back / reasoning steps (1–4) beside the
+          reconstruction (5), so the whole 5R loop fits one screen. */}
+      <div className="grid gap-3 md:grid-cols-2 items-start">
+        {/* Steps 1–4 */}
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3.5">
+          {/* 1 — Report */}
           <div>
-            <StepLabel n={3}>What this connects to</StepLabel>
-            <p className="text-sm text-foreground/80">{session.relate}</p>
-          </div>
-        )}
-
-        {/* 4 — Reason */}
-        <div>
-          <StepLabel n={session.relate ? 4 : 3}>Why</StepLabel>
-          <p className="text-[15px] font-semibold text-foreground leading-relaxed mb-2.5">{session.reason}</p>
-          <textarea
-            value={answerDraft}
-            onChange={(e) => setAnswerDraft(e.target.value)}
-            placeholder="Answer honestly — this is what the next session checks against."
-            rows={3}
-            className="w-full rounded-lg border border-border bg-input px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
-          />
-          {answerDirty && (
-            <button
-              onClick={onSaveAnswer}
-              disabled={savingAnswer}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all disabled:opacity-50"
-              style={{ background: ACCENT }}
-            >
-              {savingAnswer ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronRight className="w-3 h-3" />}
-              Save answer
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* 5 — Reconstruct */}
-      {session.primary_objective && (
-        <div
-          className="rounded-xl border p-5 space-y-3"
-          style={{ borderColor: "oklch(0.70 0.12 183 / 0.4)", background: "oklch(0.70 0.12 183 / 0.06)" }}
-        >
-          <StepLabel n={session.relate ? 5 : 4}>What changes</StepLabel>
-
-          <div className="flex items-start gap-2.5">
-            <Target className="w-4 h-4 mt-0.5 shrink-0" style={{ color: ACCENT }} />
-            <p className="text-sm font-semibold text-foreground">{session.primary_objective}</p>
+            <StepLabel n={1}>What happened</StepLabel>
+            <p className="text-sm text-foreground/80">{session.report}</p>
           </div>
 
-          {session.reminder && (
-            <div className="flex items-start gap-2.5">
-              <Bell className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">{session.reminder}</p>
+          {/* 2 — Respond */}
+          <div>
+            <StepLabel n={2}>How did it feel in the moment</StepLabel>
+            <div className="flex flex-wrap gap-1.5">
+              {RESPONSE_TAGS.map((tag) => {
+                const active = session.response_tag === tag;
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => onSetTag(tag)}
+                    className={cn(
+                      "rounded-full px-2.5 py-0.5 text-xs font-medium border transition-colors",
+                      active ? "text-white" : "text-muted-foreground border-border bg-secondary hover:text-foreground"
+                    )}
+                    style={active ? { background: ACCENT, borderColor: ACCENT } : undefined}
+                  >
+                    {TAG_LABEL[tag]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3 — Relate */}
+          {session.relate && (
+            <div>
+              <StepLabel n={3}>What this connects to</StepLabel>
+              <p className="text-sm text-foreground/80">{session.relate}</p>
             </div>
           )}
 
-          {session.success_metric && (
-            <div className="flex items-start gap-2.5">
-              <Gauge className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground/70">Success metric — </span>
-                {session.success_metric}
-              </p>
-            </div>
-          )}
-
-          <textarea
-            value={noteDraft}
-            onChange={(e) => setNoteDraft(e.target.value)}
-            placeholder="Optional — phrase this in your own words, or add a condition."
-            rows={2}
-            className="w-full rounded-lg border border-border bg-input px-3 py-2 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
-          />
-          {noteDirty && (
-            <button
-              onClick={onSaveNote}
-              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
-              style={{ borderColor: ACCENT, color: ACCENT }}
-            >
-              Save note
-            </button>
-          )}
-
-          <button
-            onClick={onConfirm}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
-              session.reconstruction_confirmed ? "text-white" : "border text-muted-foreground hover:text-foreground"
+          {/* 4 — Reason */}
+          <div>
+            <StepLabel n={reasonStep}>Why</StepLabel>
+            <p className="text-sm font-semibold text-foreground leading-snug mb-2">{session.reason}</p>
+            <textarea
+              value={answerDraft}
+              onChange={(e) => setAnswerDraft(e.target.value)}
+              placeholder="Answer honestly — this is what the next session checks against."
+              rows={2}
+              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
+            />
+            {answerDirty && (
+              <button
+                onClick={onSaveAnswer}
+                disabled={savingAnswer}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all disabled:opacity-50"
+                style={{ background: ACCENT }}
+              >
+                {savingAnswer ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronRight className="w-3 h-3" />}
+                Save answer
+              </button>
             )}
-            style={session.reconstruction_confirmed ? { background: "oklch(0.58 0.17 145)" } : { borderColor: "var(--border)" }}
-          >
-            <Check className="w-3.5 h-3.5" />
-            {session.reconstruction_confirmed ? "Committed" : "Commit to this"}
-          </button>
+          </div>
         </div>
-      )}
+
+        {/* 5 — Reconstruct */}
+        {session.primary_objective ? (
+          <div
+            className="rounded-xl border p-4 space-y-3"
+            style={{ borderColor: "oklch(0.70 0.12 183 / 0.4)", background: "oklch(0.70 0.12 183 / 0.06)" }}
+          >
+            <StepLabel n={reasonStep + 1}>What changes</StepLabel>
+
+            <div className="flex items-start gap-2.5">
+              <Target className="w-4 h-4 mt-0.5 shrink-0" style={{ color: ACCENT }} />
+              <p className="text-sm font-semibold text-foreground">{session.primary_objective}</p>
+            </div>
+
+            {session.reminder && (
+              <div className="flex items-start gap-2.5">
+                <Bell className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">{session.reminder}</p>
+              </div>
+            )}
+
+            {session.success_metric && (
+              <div className="flex items-start gap-2.5">
+                <Gauge className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground/70">Success metric — </span>
+                  {session.success_metric}
+                </p>
+              </div>
+            )}
+
+            <textarea
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              placeholder="Optional — phrase this in your own words, or add a condition."
+              rows={2}
+              className="w-full rounded-lg border border-border bg-input px-3 py-2 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              {noteDirty && (
+                <button
+                  onClick={onSaveNote}
+                  className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+                  style={{ borderColor: ACCENT, color: ACCENT }}
+                >
+                  Save note
+                </button>
+              )}
+              <button
+                onClick={onConfirm}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+                  session.reconstruction_confirmed ? "text-white" : "border text-muted-foreground hover:text-foreground"
+                )}
+                style={session.reconstruction_confirmed ? { background: "oklch(0.58 0.17 145)" } : { borderColor: "var(--border)" }}
+              >
+                <Check className="w-3.5 h-3.5" />
+                {session.reconstruction_confirmed ? "Committed" : "Commit to this"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
 
 function History({ sessions }: { sessions: PsychEdgeSession[] }) {
   return (
-    <div className="space-y-2 border-t border-border/50 pt-4">
+    <div className="rounded-xl border border-border bg-card p-4 space-y-2">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Session history</p>
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 max-h-64 overflow-y-auto pr-0.5">
         {sessions.slice(0, 10).map((s, i, arr) => {
           const older = arr[i + 1];
           const carried = older && s.pattern_key && older.pattern_key === s.pattern_key;
