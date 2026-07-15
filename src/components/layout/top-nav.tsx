@@ -7,23 +7,12 @@ import { motion } from "motion/react";
 import { Menu, X, Settings, User as UserIcon, LogOut, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
-import { APP_TABS } from "@/lib/nav";
+import { PRIMARY_NAV } from "@/lib/nav";
 
 const TURQUOISE = "#14B8A6";
 
 const isActive = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(href + "/");
-
-// Grouped for both the desktop dividers and the mobile overlay.
-const groups = (() => {
-  const order: (string | null)[] = [];
-  const byGroup = new Map<string | null, typeof APP_TABS>();
-  for (const tab of APP_TABS) {
-    if (!byGroup.has(tab.group)) { byGroup.set(tab.group, []); order.push(tab.group); }
-    byGroup.get(tab.group)!.push(tab);
-  }
-  return order.map((label) => ({ label, items: byGroup.get(label)! }));
-})();
 
 function DesktopItem({ href, label, active }: { href: string; label: string; active: boolean }) {
   return (
@@ -31,7 +20,7 @@ function DesktopItem({ href, label, active }: { href: string; label: string; act
       href={href}
       className={cn(
         "relative flex items-center h-9 px-3.5 rounded-lg text-[13px] font-semibold whitespace-nowrap transition-colors",
-        active ? "text-white" : "text-sidebar-foreground/55 hover:text-sidebar-foreground"
+        active ? "text-foreground" : "text-sidebar-foreground/55 hover:text-sidebar-foreground"
       )}
     >
       {active && (
@@ -68,15 +57,10 @@ export function TopNav() {
             <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={38} height={38} className="h-9 w-9" />
           </Link>
 
-          {/* Desktop nav — text only, grouped with thin dividers */}
-          <nav className="hidden lg:flex items-center gap-0.5 flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {groups.map((group, gi) => (
-              <div key={gi} className="flex items-center gap-0.5">
-                {gi > 0 && <span className="mx-1.5 h-5 w-px bg-sidebar-border shrink-0" />}
-                {group.items.map((tab) => (
-                  <DesktopItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} />
-                ))}
-              </div>
+          {/* Desktop nav — four primary destinations; everything else lives on the Dashboard hub */}
+          <nav className="hidden lg:flex items-center gap-1 flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {PRIMARY_NAV.map((tab) => (
+              <DesktopItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} />
             ))}
           </nav>
 
@@ -107,35 +91,24 @@ export function TopNav() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
-            {groups.map((group, gi) => (
-              <div key={gi}>
-                {group.label && (
-                  <p className="mb-2 px-1 text-[10px] font-extrabold uppercase tracking-[0.16em]" style={{ color: "rgba(20,184,166,0.8)" }}>
-                    {group.label}
-                  </p>
-                )}
-                <div className="space-y-1">
-                  {group.items.map((tab) => {
-                    const active = isActive(pathname, tab.href);
-                    return (
-                      <Link
-                        key={tab.href}
-                        href={tab.href}
-                        onClick={() => setOpen(false)}
-                        className={cn(
-                          "flex items-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors",
-                          active ? "text-white" : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
-                        )}
-                        style={active ? { background: "rgba(20,184,166,0.14)" } : undefined}
-                      >
-                        {tab.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-1">
+            {PRIMARY_NAV.map((tab) => {
+              const active = isActive(pathname, tab.href);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    "flex items-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors",
+                    active ? "text-foreground" : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
+                  )}
+                  style={active ? { background: "rgba(20,184,166,0.14)" } : undefined}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
           </div>
 
           <div className="border-t border-sidebar-border p-4 space-y-3">

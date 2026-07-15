@@ -22,3 +22,15 @@ export const APP_TABS: AppTab[] = [
   { label: "Option Flow", href: "/option-flow", group: "MC Option Flow" },
   { label: "MC News Dashboard", href: "/news-city", group: "MC News Dashboard" },
 ];
+
+/**
+ * The trimmed top-bar navigation. The Trading pages (Journal, Analysis,
+ * Analytics, Accounts) are reached from the Dashboard hub instead, keeping the
+ * bar itself down to the four primary destinations.
+ */
+export const PRIMARY_NAV: AppTab[] = [
+  { label: "Dashboard", href: "/dashboard", group: null },
+  { label: "Psychological Edge", href: "/psychological-edge", group: null },
+  { label: "Option Flow", href: "/option-flow", group: null },
+  { label: "MC News Dashboard", href: "/news-city", group: null },
+];
