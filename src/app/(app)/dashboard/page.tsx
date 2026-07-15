@@ -146,12 +146,12 @@ export default function DashboardPage() {
             <AnalysisWidget analyses={analyses} />
           </div>
 
-          {/* Row 2 — compact journal week + capital & habits */}
-          <div className="grid gap-3 lg:grid-cols-3 shrink-0">
-            <div className="lg:col-span-2">
+          {/* Row 2 — journal fills to the bottom, capital & habits beside it */}
+          <div className="grid gap-3 lg:grid-cols-3 flex-1 min-h-0">
+            <div className="lg:col-span-2 min-h-0">
               <WeekStrip days={weekDays} />
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 min-h-0">
               <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
               <HabitsCard habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit} />
             </div>
@@ -389,7 +389,7 @@ function HabitsCard({ habits, doneToday, pendingHabit, onToggle }: {
 /* ── Journal — this week (compact) ────────────────────────────────────── */
 function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; r: number }[] }) {
   return (
-    <div className={cn(CARD_BASE, "flex flex-col")}>
+    <div className={cn(CARD_BASE, "h-full flex flex-col")}>
       <CardFx accent={TURQUOISE} />
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -401,23 +401,26 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
         <Link href="/journal" className="text-[11px] font-semibold text-primary hover:underline">Open journal →</Link>
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-2 flex-1 min-h-0">
         {days.map(({ date, trades: dt, r }) => {
           const has = dt.length > 0;
           const color = r > 0 ? GREEN : r < 0 ? RED : AMBER;
           const today = isToday(date);
           return (
             <Link key={date.toISOString()} href="/journal"
-              className={cn("group flex flex-col items-center rounded-xl border px-1 py-2.5 transition-all hover:-translate-y-0.5",
+              className={cn("group flex flex-col items-center rounded-xl border px-1 py-3 transition-all hover:-translate-y-0.5",
                 today ? "border-primary/50" : "border-border/60 hover:border-border")}
               style={has ? { background: alpha(color, 9) } : undefined}>
               <span className={cn("text-[10px] font-semibold uppercase tracking-wide", today ? "text-primary" : "text-muted-foreground/60")}>{format(date, "EEE")}</span>
-              <span className={cn("text-base font-bold tabular-nums mt-0.5", today ? "text-primary" : "text-foreground/85")}>{format(date, "d")}</span>
+              <span className={cn("text-lg font-bold tabular-nums mt-0.5", today ? "text-primary" : "text-foreground/85")}>{format(date, "d")}</span>
               {has ? (
-                <span className="mt-1.5 text-[11px] font-bold tabular-nums" style={{ color }}>{r > 0 ? "+" : ""}{r.toFixed(1)}R</span>
+                <span className="mt-2 text-[12px] font-bold tabular-nums" style={{ color }}>{r > 0 ? "+" : ""}{r.toFixed(1)}R</span>
               ) : (
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-border" />
+                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-border" />
               )}
+              <span className="mt-auto text-[10px] text-muted-foreground/50">
+                {has ? `${dt.length} trade${dt.length !== 1 ? "s" : ""}` : ""}
+              </span>
             </Link>
           );
         })}
