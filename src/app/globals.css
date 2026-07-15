@@ -676,3 +676,9 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     scroll-behavior: smooth;
   }
 }
+
+/* ── MC mind score — liquid-fill wave animation ──────────────────── */
+@keyframes mc-wave {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}

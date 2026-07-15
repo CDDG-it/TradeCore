@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type Quote = { symbol: string; label: string; price: number; change: number; changePct: number };
+type Quote = { symbol: string; label: string; price: number; change: number; changePct: number; spark: number[] };
 
 // Yahoo Finance continuous futures symbols → the labels traders use here.
 const SYMBOLS: { yahoo: string; symbol: string; label: string }[] = [
@@ -18,21 +18,33 @@ const SYMBOLS: { yahoo: string; symbol: string; label: string }[] = [
 let _lastGood: Quote[] | null = null;
 
 async function fetchQuote(y: { yahoo: string; symbol: string; label: string }): Promise<Quote | null> {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(y.yahoo)}?interval=1d&range=1d`;
+  // 5-minute bars over the last 2 days give both a fresh last price and enough
+  // points for an intraday sparkline.
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(y.yahoo)}?interval=5m&range=2d`;
   const res = await fetch(url, {
     headers: { "User-Agent": "Mozilla/5.0 (compatible; TradingMC/1.0)" },
     cache: "no-store",
   });
   if (!res.ok) return null;
   const json = await res.json();
-  const meta = json?.chart?.result?.[0]?.meta;
+  const result = json?.chart?.result?.[0];
+  const meta = result?.meta;
   if (!meta) return null;
   const price: number = meta.regularMarketPrice;
   const prev: number = meta.chartPreviousClose ?? meta.previousClose ?? price;
   if (typeof price !== "number") return null;
   const change = price - prev;
   const changePct = prev ? (change / prev) * 100 : 0;
-  return { symbol: y.symbol, label: y.label, price, change, changePct };
+
+  // Downsample the intraday closes to ~40 points for a lightweight sparkline.
+  const closes: number[] = (result?.indicators?.quote?.[0]?.close ?? []).filter(
+    (v: number | null): v is number => typeof v === "number"
+  );
+  const recent = closes.slice(-160);
+  const stride = Math.max(1, Math.floor(recent.length / 40));
+  const spark = recent.filter((_, i) => i % stride === 0);
+
+  return { symbol: y.symbol, label: y.label, price, change, changePct, spark };
 }
 
 export async function GET() {
