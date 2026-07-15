@@ -59,7 +59,7 @@ export function TopNav() {
     <>
       <header
         className="sticky top-0 z-40 border-b border-sidebar-border"
-        style={{ background: "color-mix(in oklch, var(--sidebar) 82%, transparent)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+        style={{ background: "var(--nav-bg)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
       >
         <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
           {/* Logo */}

@@ -130,6 +130,10 @@
   --sidebar-label-muted: oklch(1 0 0 / 35%);
   --sidebar-text-active: #F8FAFC;
   --sidebar-meta: oklch(1 0 0 / 35%);
+
+  /* Top-nav background — glassy navy in dark. Solid in light (see html.light)
+     so nothing behind the bar can bleed through and tint it. */
+  --nav-bg: color-mix(in oklch, var(--sidebar) 82%, transparent);
 }
 
 /* ── Light mode overrides ────────────────────────── */
@@ -192,6 +196,10 @@ html.light {
   --sidebar-label-muted: oklch(0 0 0 / 30%);
   --sidebar-text-active: #030712;
   --sidebar-meta: oklch(0 0 0 / 40%);
+
+  /* Solid light-blue top-nav in light mode — opaque so no content bleeds
+     through (which previously tinted the bar orange). */
+  --nav-bg: #E0F2FE;
 }
 
 /* Light mode — liquid glass overrides */
