@@ -10,7 +10,7 @@ import { motion } from "motion/react";
 import { Loader2 } from "lucide-react";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
-  getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, toggleHabitCompletion,
+  getTrades, getAccounts, getHabits, getHabitCompletions, getProfile,
 } from "@/lib/supabase/queries";
 import { computeDiscipline } from "@/lib/discipline";
 import { tradeR } from "@/lib/journal/weeks";
@@ -23,10 +23,29 @@ const CYAN = "oklch(0.72 0.14 220)";
 const GREEN = "oklch(0.58 0.17 145)";
 const RED = "oklch(0.58 0.22 25)";
 const AMBER = "oklch(0.70 0.16 72)";
+const VIOLET = "oklch(0.68 0.14 290)";
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
 function scoreColor(pct: number) {
   return pct >= 80 ? TURQUOISE : pct >= 60 ? AMBER : RED;
+}
+
+/** Alpha-blend a colour toward transparent — works for oklch() strings, unlike
+ *  the 8-digit-hex suffix trick which is hex-only. `pct` is 0–100. */
+const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
+
+const CARD_BASE =
+  "relative rounded-2xl border border-border/60 bg-card p-4 overflow-hidden " +
+  "shadow-[0_4px_20px_-10px_rgba(0,0,0,0.25)]";
+
+/** Shared aesthetic layer: a soft accent glow from the top-left + a top hairline. */
+function CardFx({ accent }: { accent: string }) {
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(115% 85% at 0% 0%, ${alpha(accent, 9)}, transparent 55%)` }} />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${alpha(accent, 55)}, transparent)` }} />
+    </>
+  );
 }
 
 export default function DashboardPage() {
@@ -38,7 +57,6 @@ export default function DashboardPage() {
   const [accounts, setAccounts] = useState<FundedAccount[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
-  const [pendingHabit, setPendingHabit] = useState<string | null>(null);
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -49,13 +67,6 @@ export default function DashboardPage() {
         if (p?.full_name) setFirstName(p.full_name.split(" ")[0]);
       });
   }, []);
-
-  async function handleToggleHabit(habitId: string) {
-    setPendingHabit(habitId);
-    await toggleHabitCompletion(habitId, TODAY);
-    setCompletions(await getHabitCompletions());
-    setPendingHabit(null);
-  }
 
   const now = new Date();
 
@@ -90,7 +101,7 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trades]);
 
-  const doneToday = new Set(completions.filter((c) => c.date === TODAY && c.completed).map((c) => c.habit_id));
+  const doneTodayCount = completions.filter((c) => c.date === TODAY && c.completed).length;
   const loading = trades === null;
 
   return (
@@ -122,22 +133,22 @@ export default function DashboardPage() {
         </div>
       ) : (
         <PageWrapper className="space-y-3">
-          {/* Row 1 — four compact widgets, each links to its own page */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Row 1 — three hero widgets */}
+          <div className="grid gap-3 md:grid-cols-3">
             <MindScoreOrb score={mcMindScore} />
             <WinRateCard winRate={winRate} wins={wins} losses={losses} be={be} total={monthTrades.length} />
-            <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
             <PricesWidget />
           </div>
 
-          {/* Row 2 — journal week + habits */}
+          {/* Row 2 — journal week + (compact capital, habits shortcut) */}
           <div className="grid gap-3 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <WeekStrip days={weekDays} />
             </div>
-            <HabitsCard
-              habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit}
-            />
+            <div className="grid grid-rows-2 gap-3">
+              <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
+              <HabitsShortcut done={doneTodayCount} total={habits.length} />
+            </div>
           </div>
         </PageWrapper>
       )}
@@ -169,33 +180,30 @@ function MindScoreOrb({ score }: { score: number | null }) {
 
   const color = score === null ? "var(--muted-foreground)" : scoreColor(target);
   const label = score === null ? "No data yet" : target >= 80 ? "Locked in" : target >= 60 ? "Holding the line" : "Slipping";
-  const glow = score === null ? 0 : 5 + (target / 100) * 20;
-  const SIZE = 82;
+  const glow = score === null ? 0 : 5 + (target / 100) * 22;
+  const SIZE = 84;
 
   return (
-    <div className="relative rounded-2xl border border-border bg-card p-4 overflow-hidden flex flex-col items-center">
-      <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}66, transparent)` }} />
+    <div className={cn(CARD_BASE, "flex flex-col items-center")}>
+      <CardFx accent={color} />
       <p className="self-start text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
 
       <div className="relative my-1.5 rounded-full overflow-hidden shrink-0"
-        style={{ width: SIZE, height: SIZE, border: `2px solid ${color}55`, boxShadow: `0 0 ${glow}px ${color}55` }}>
-        {/* Liquid body rising to the score level */}
+        style={{ width: SIZE, height: SIZE, border: `2px solid ${alpha(color, 40)}`, boxShadow: `0 0 ${glow}px ${alpha(color, 40)}` }}>
         <div className="absolute inset-x-0 bottom-0" style={{ height: `${fill}%` }}>
-          {/* Moving wave crest */}
           <div className="absolute -top-2 left-0 h-3 w-[200%]" style={{ animation: "mc-wave 2.6s linear infinite" }}>
             <svg viewBox="0 0 200 20" preserveAspectRatio="none" className="h-full w-full">
               <path d="M0 12 Q 25 2 50 12 T 100 12 T 150 12 T 200 12 V20 H0 Z" fill={color} opacity="0.9" />
             </svg>
           </div>
           <div className="absolute inset-x-0 top-1 bottom-0" style={{ background: color, opacity: 0.9 }} />
-          {/* second, slower wave for depth */}
           <div className="absolute -top-1.5 left-0 h-3 w-[200%]" style={{ animation: "mc-wave 4s linear infinite reverse" }}>
             <svg viewBox="0 0 200 20" preserveAspectRatio="none" className="h-full w-full">
               <path d="M0 12 Q 25 4 50 12 T 100 12 T 150 12 T 200 12 V20 H0 Z" fill={color} opacity="0.5" />
             </svg>
           </div>
         </div>
-        <div className="absolute inset-0 rounded-full pointer-events-none" style={{ boxShadow: "inset 0 2px 8px rgba(255,255,255,0.14)" }} />
+        <div className="absolute inset-0 rounded-full pointer-events-none" style={{ boxShadow: "inset 0 2px 8px rgba(255,255,255,0.16)" }} />
       </div>
 
       <p className="text-2xl font-black tabular-nums leading-none" style={{ color }}>{score === null ? "—" : `${display}%`}</p>
@@ -211,28 +219,27 @@ function WinRateCard({ winRate, wins, losses, be, total }: {
 }) {
   const seg = (n: number) => (total ? (n / total) * 100 : 0);
   return (
-    <div className="relative rounded-2xl border border-border bg-card p-4 overflow-hidden flex flex-col">
-      <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${CYAN}66, transparent)` }} />
+    <div className={cn(CARD_BASE, "flex flex-col")}>
+      <CardFx accent={CYAN} />
       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Win rate</p>
 
       <div className="flex items-baseline gap-1.5 mt-1.5">
-        <span className="text-3xl font-black tabular-nums leading-none" style={{ color: CYAN }}>
+        <span className="text-4xl font-black tabular-nums leading-none" style={{ color: CYAN }}>
           {winRate === null ? "—" : `${winRate}%`}
         </span>
         <span className="text-[11px] text-muted-foreground">this month</span>
       </div>
 
-      {/* Proportion bar */}
-      <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-border/60">
+      <div className="mt-3.5 flex h-2 w-full overflow-hidden rounded-full bg-border/60">
         <div className="h-full" style={{ width: `${seg(wins)}%`, background: GREEN }} />
         <div className="h-full" style={{ width: `${seg(be)}%`, background: AMBER }} />
         <div className="h-full" style={{ width: `${seg(losses)}%`, background: RED }} />
       </div>
-      <div className="mt-2 flex items-center gap-3 text-[11px] tabular-nums">
+      <div className="mt-2 flex items-center gap-3 text-[11px] tabular-nums font-semibold">
         <span style={{ color: GREEN }}>{wins}W</span>
         <span style={{ color: RED }}>{losses}L</span>
         <span style={{ color: AMBER }}>{be}BE</span>
-        <span className="text-muted-foreground/70 ml-auto">{total} trades</span>
+        <span className="text-muted-foreground/70 ml-auto font-normal">{total} trades</span>
       </div>
 
       <Link href="/analytics" className="mt-auto pt-3 text-[11px] font-semibold text-primary hover:underline">
@@ -242,34 +249,47 @@ function WinRateCard({ winRate, wins, losses, be, total }: {
   );
 }
 
-/* ── Active capital — polished + link to Accounts ─────────────────────── */
+/* ── Active capital — compact + link to Accounts ──────────────────────── */
 function ActiveCapitalCard({ capital, count, hidden, onToggle }: {
   capital: number; count: number; hidden: boolean; onToggle: () => void;
 }) {
   return (
-    <div className="relative rounded-2xl border border-border bg-card p-4 overflow-hidden flex flex-col">
-      <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full blur-2xl" style={{ background: `radial-gradient(circle, ${TURQUOISE}33, transparent 70%)` }} />
-      <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${TURQUOISE}66, transparent)` }} />
+    <div className={cn(CARD_BASE, "flex flex-col justify-center py-3")}>
+      <CardFx accent={TURQUOISE} />
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Active capital</p>
         <button type="button" onClick={onToggle} aria-pressed={hidden}
-          className="text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+          className="text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
           {hidden ? "Show" : "Hide"}
         </button>
       </div>
-
-      <p className="text-3xl font-black tabular-nums leading-none mt-2" style={{ color: TURQUOISE }}>
+      <p className="text-xl font-black tabular-nums leading-none mt-1.5" style={{ color: TURQUOISE }}>
         {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "—"}
       </p>
-      <div className="mt-2 flex items-center gap-1.5">
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: TURQUOISE }} />
+      <div className="mt-1.5 flex items-center justify-between">
         <p className="text-[11px] text-muted-foreground">{count} active account{count !== 1 ? "s" : ""}</p>
+        <Link href="/accounts" className="text-[11px] font-semibold text-primary hover:underline">View →</Link>
       </div>
-
-      <Link href="/accounts" className="mt-auto pt-3 text-[11px] font-semibold text-primary hover:underline">
-        View accounts →
-      </Link>
     </div>
+  );
+}
+
+/* ── Habits — shortcut to the Habits page ─────────────────────────────── */
+function HabitsShortcut({ done, total }: { done: number; total: number }) {
+  return (
+    <Link href="/habits" className={cn(CARD_BASE, "group flex flex-col justify-center py-3 transition-[transform,border-color] hover:-translate-y-0.5 hover:border-border")}>
+      <CardFx accent={VIOLET} />
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Habits</p>
+        <span className="text-[11px] font-semibold tabular-nums" style={{ color: VIOLET }}>{done}/{total}</span>
+      </div>
+      <p className="text-sm font-semibold text-foreground mt-1.5">
+        {total === 0 ? "Set up your routine" : `${done} of ${total} done today`}
+      </p>
+      <span className="mt-1.5 inline-block text-[11px] font-semibold text-primary group-hover:underline">
+        Open habits →
+      </span>
+    </Link>
   );
 }
 
@@ -316,8 +336,8 @@ function PricesWidget() {
   const c = up ? GREEN : RED;
 
   return (
-    <div className="relative rounded-2xl border border-border bg-card p-4 overflow-hidden flex flex-col">
-      <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${CYAN}66, transparent)` }} />
+    <div className={cn(CARD_BASE, "flex flex-col")}>
+      <CardFx accent={CYAN} />
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Live prices</p>
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
@@ -326,7 +346,6 @@ function PricesWidget() {
         </span>
       </div>
 
-      {/* Tabs */}
       <div className="mt-2 flex gap-1 rounded-lg bg-muted/50 p-0.5">
         {symbols.map((s) => (
           <button key={s} type="button" onClick={() => setActive(s)}
@@ -337,12 +356,10 @@ function PricesWidget() {
         ))}
       </div>
 
-      {/* Sparkline */}
       <div className="mt-2">
         {sel ? <Sparkline data={sel.spark} color={c} /> : <div className="h-9 flex items-center text-[11px] text-muted-foreground/50">{failed ? "unavailable" : "loading…"}</div>}
       </div>
 
-      {/* Price + change */}
       <div className="flex items-baseline justify-between">
         <span className="text-lg font-black tabular-nums" style={{ color: sel ? "var(--foreground)" : "var(--muted-foreground)" }}>
           {sel ? sel.price.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—"}
@@ -364,7 +381,8 @@ function PricesWidget() {
 /* ── Journal — this week ──────────────────────────────────────────────── */
 function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; r: number }[] }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 h-full flex flex-col">
+    <div className={cn(CARD_BASE, "h-full flex flex-col")}>
+      <CardFx accent={TURQUOISE} />
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">This week</p>
@@ -384,7 +402,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
             <Link key={date.toISOString()} href="/journal"
               className={cn("group flex flex-col items-center justify-center rounded-xl border px-1 py-3 transition-all hover:-translate-y-0.5",
                 today ? "border-primary/50" : "border-border/60 hover:border-border")}
-              style={has ? { background: `${color}14` } : undefined}>
+              style={has ? { background: alpha(color, 9) } : undefined}>
               <span className={cn("text-[10px] font-semibold uppercase tracking-wide", today ? "text-primary" : "text-muted-foreground/60")}>{format(date, "EEE")}</span>
               <span className={cn("text-base font-bold tabular-nums mt-0.5", today ? "text-primary" : "text-foreground/85")}>{format(date, "d")}</span>
               {has ? (
@@ -402,41 +420,6 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} /> Loss</span>
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: AMBER }} /> B/E</span>
       </div>
-    </div>
-  );
-}
-
-/* ── Habits — compact ─────────────────────────────────────────────────── */
-function HabitsCard({ habits, doneToday, pendingHabit, onToggle }: {
-  habits: Habit[]; doneToday: Set<string>; pendingHabit: string | null; onToggle: (id: string) => void;
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-2.5">
-        <p className="text-sm font-semibold">Today&apos;s habits</p>
-        <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">{doneToday.size}/{habits.length}</span>
-      </div>
-      {habits.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center py-4">
-          <p className="text-xs text-muted-foreground mb-1.5">No habits yet.</p>
-          <Link href="/habits" className="text-xs font-semibold text-primary hover:underline">Add habits</Link>
-        </div>
-      ) : (
-        <div className="space-y-0.5 flex-1 overflow-y-auto pr-0.5">
-          {habits.map((habit) => {
-            const done = doneToday.has(habit.id);
-            return (
-              <button key={habit.id} type="button" onClick={() => onToggle(habit.id)} disabled={pendingHabit === habit.id}
-                className={cn("w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors disabled:opacity-60",
-                  done ? "bg-success/8" : "hover:bg-muted/50")}>
-                <span className="h-3.5 w-3.5 shrink-0 rounded-full border-2 transition-colors"
-                  style={done ? { background: habit.color, borderColor: habit.color } : { borderColor: "var(--border)" }} />
-                <span className={cn("text-[13px] truncate flex-1", done ? "text-foreground" : "text-muted-foreground")}>{habit.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
