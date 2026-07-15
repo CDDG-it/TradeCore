@@ -166,12 +166,14 @@ export function CandlestickBackground() {
           ctx.lineWidth = 0.75;
           ctx.strokeRect(x, bTop, wCandle, bH);
         } else {
-          ctx.strokeStyle = bull ? "rgba(20,184,166,0.55)" : "rgba(16,11,6,0.45)";
+          // Bearish candles use brand slate (navy family) — never the old
+          // brown, which bled through the translucent nav as an orange tint.
+          ctx.strokeStyle = bull ? "rgba(20,184,166,0.55)" : "rgba(71,85,105,0.45)";
           ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
-          ctx.fillStyle = bull ? "rgba(20,184,166,0.22)" : "rgba(16,11,6,0.12)";
+          ctx.fillStyle = bull ? "rgba(20,184,166,0.22)" : "rgba(71,85,105,0.12)";
           ctx.fillRect(x, bTop, wCandle, bH);
-          ctx.strokeStyle = bull ? "rgba(20,184,166,0.72)" : "rgba(16,11,6,0.55)";
+          ctx.strokeStyle = bull ? "rgba(20,184,166,0.72)" : "rgba(71,85,105,0.55)";
           ctx.lineWidth = 0.75;
           ctx.strokeRect(x, bTop, wCandle, bH);
         }

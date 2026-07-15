@@ -4,13 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay,
-  startOfDay, endOfDay, startOfMonth, endOfMonth, isWithinInterval,
+  startOfMonth, endOfMonth, isWithinInterval,
 } from "date-fns";
 import { motion } from "motion/react";
-import {
-  Eye, EyeOff, Check, Circle, ArrowRight, Wallet, Target,
-  Activity, ShieldCheck, Plus, Loader2,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, toggleHabitCompletion,
@@ -89,9 +86,11 @@ export default function DashboardPage() {
   const goodExec = rated.filter((t) => t.execution_quality === "good").length;
   const execRate = rated.length ? Math.round((goodExec / rated.length) * 100) : null;
 
-  const disciplineToday = useMemo(() => {
+  // MC mind score — blends trading rules (70%) with habit consistency (30%),
+  // over the current month.
+  const mcMindScore = useMemo(() => {
     if (!trades) return null;
-    return computeDiscipline(trades, habits, completions, startOfDay(now), endOfDay(now)).total;
+    return computeDiscipline(trades, habits, completions, startOfMonth(now), endOfMonth(now)).total;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trades, habits, completions]);
 
@@ -132,7 +131,7 @@ export default function DashboardPage() {
           className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px"
           style={{ background: "#14B8A6", boxShadow: "0 2px 14px rgba(20,184,166,0.30)" }}
         >
-          <Plus className="w-4 h-4" /> Log Trade
+          Log Trade
         </Link>
       </motion.div>
 
@@ -145,19 +144,18 @@ export default function DashboardPage() {
           {/* Row 1 — four glanceable stat tiles */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Active capital */}
-            <StatCard accent={TURQUOISE} icon={Wallet} label="Active capital">
-              <div className="flex items-center justify-between">
+            <StatCard accent={TURQUOISE} label="Active capital">
+              <div className="flex items-center justify-between gap-2">
                 <p className="text-2xl md:text-[26px] font-black tabular-nums leading-none" style={{ color: TURQUOISE }}>
                   {activeCapital > 0 ? mask(`$${activeCapital.toLocaleString()}`, hidden) : "—"}
                 </p>
                 <button
                   type="button"
                   onClick={toggle}
-                  title={hidden ? "Show balances" : "Hide balances"}
                   aria-pressed={hidden}
-                  className="w-7 h-7 -mr-1 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors shrink-0"
+                  className="text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors shrink-0"
                 >
-                  {hidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {hidden ? "Show" : "Hide"}
                 </button>
               </div>
               <p className="text-[11px] text-muted-foreground mt-1.5">
@@ -166,7 +164,7 @@ export default function DashboardPage() {
             </StatCard>
 
             {/* Win rate — this month */}
-            <StatCard accent={CYAN} icon={Target} label="Win rate" href="/analytics">
+            <StatCard accent={CYAN} label="Win rate" href="/analytics">
               <p className="text-2xl md:text-[26px] font-black tabular-nums leading-none" style={{ color: CYAN }}>
                 {winRate === null ? "—" : `${winRate}%`}
               </p>
@@ -176,7 +174,7 @@ export default function DashboardPage() {
             </StatCard>
 
             {/* Execution rate — this month */}
-            <StatCard accent={execRate === null ? "var(--muted-foreground)" : scoreColor(execRate)} icon={Activity} label="Execution" href="/analytics">
+            <StatCard accent={execRate === null ? "var(--muted-foreground)" : scoreColor(execRate)} label="Execution" href="/analytics">
               <p className="text-2xl md:text-[26px] font-black tabular-nums leading-none"
                 style={{ color: execRate === null ? "var(--muted-foreground)" : scoreColor(execRate) }}>
                 {execRate === null ? "—" : `${execRate}%`}
@@ -186,13 +184,13 @@ export default function DashboardPage() {
               </p>
             </StatCard>
 
-            {/* Discipline — today */}
-            <StatCard accent={disciplineToday === null ? "var(--muted-foreground)" : scoreColor(disciplineToday)} icon={ShieldCheck} label="Discipline" href="/discipline">
+            {/* MC mind score — this month */}
+            <StatCard accent={mcMindScore === null ? "var(--muted-foreground)" : scoreColor(mcMindScore)} label="MC mind score" href="/discipline">
               <p className="text-2xl md:text-[26px] font-black tabular-nums leading-none"
-                style={{ color: disciplineToday === null ? "var(--muted-foreground)" : scoreColor(disciplineToday) }}>
-                {disciplineToday === null ? "—" : `${disciplineToday}%`}
+                style={{ color: mcMindScore === null ? "var(--muted-foreground)" : scoreColor(mcMindScore) }}>
+                {mcMindScore === null ? "—" : `${mcMindScore}%`}
               </p>
-              <p className="text-[11px] text-muted-foreground mt-1.5">today&apos;s score</p>
+              <p className="text-[11px] text-muted-foreground mt-1.5">rules + habits · this month</p>
             </StatCard>
           </div>
 
@@ -207,8 +205,8 @@ export default function DashboardPage() {
                     {format(weekDays[0].date, "MMM d")} – {format(weekDays[6].date, "MMM d")}
                   </span>
                 </div>
-                <Link href="/journal" className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline">
-                  Open journal <ArrowRight className="w-3 h-3" />
+                <Link href="/journal" className="text-[11px] font-semibold text-primary hover:underline">
+                  Open journal
                 </Link>
               </div>
 
@@ -286,11 +284,12 @@ export default function DashboardPage() {
                           done ? "bg-success/8" : "hover:bg-muted/50"
                         )}
                       >
-                        {done ? (
-                          <Check className="w-4 h-4 shrink-0" style={{ color: habit.color }} />
-                        ) : (
-                          <Circle className="w-4 h-4 shrink-0 text-muted-foreground/40" />
-                        )}
+                        <span
+                          className="h-4 w-4 shrink-0 rounded-full border-2 transition-colors"
+                          style={done
+                            ? { background: habit.color, borderColor: habit.color }
+                            : { borderColor: "var(--border)" }}
+                        />
                         <span className={cn("text-sm truncate flex-1", done ? "text-foreground" : "text-muted-foreground")}>
                           {habit.name}
                         </span>
@@ -301,8 +300,8 @@ export default function DashboardPage() {
               )}
 
               {habits.length > 0 && (
-                <Link href="/habits" className="mt-3 pt-3 border-t border-border/40 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline">
-                  Manage habits <ArrowRight className="w-3 h-3" />
+                <Link href="/habits" className="mt-3 pt-3 border-t border-border/40 text-[11px] font-semibold text-primary hover:underline">
+                  Manage habits
                 </Link>
               )}
             </div>
@@ -314,10 +313,9 @@ export default function DashboardPage() {
 }
 
 function StatCard({
-  accent, icon: Icon, label, href, children,
+  accent, label, href, children,
 }: {
   accent: string;
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string;
   href?: string;
   children: React.ReactNode;
@@ -325,12 +323,7 @@ function StatCard({
   const inner = (
     <div className="relative rounded-2xl border border-border bg-card p-4 h-full overflow-hidden transition-all hover:border-border/80">
       <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${accent}66, transparent)` }} />
-      <div className="flex items-center gap-1.5 mb-2.5">
-        <span className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: `${accent}1f` }}>
-          <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
-        </span>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-      </div>
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{label}</p>
       {children}
     </div>
   );
