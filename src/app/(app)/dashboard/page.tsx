@@ -7,7 +7,7 @@ import {
   startOfMonth, endOfMonth, isWithinInterval,
 } from "date-fns";
 import { motion } from "motion/react";
-import { Loader2, ChevronRight, TrendingUp, TrendingDown, Minus, LineChart } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, getAnalyses, toggleHabitCompletion,
   getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews,
@@ -125,12 +125,12 @@ export default function DashboardPage() {
   const loading = trades === null;
 
   return (
-    <div className="flex flex-col gap-4" style={{ minHeight: "calc(100dvh - 8rem)" }}>
+    <div className="flex flex-col gap-3 h-[calc(100dvh-8rem)] overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-wrap items-end justify-between gap-3"
+        className="flex flex-wrap items-end justify-between gap-3 shrink-0"
       >
         <div>
           <p className="font-body text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">
@@ -206,7 +206,6 @@ function MindScoreOrb({ mind, board }: { mind: DisciplineBreakdown | null; board
   }, [target]);
 
   const color = hasData ? scoreColor(target) : "var(--muted-foreground)";
-  const label = !hasData ? "No data yet" : target >= 80 ? "Locked in" : target >= 60 ? "Holding the line" : "Slipping";
   const filled = Math.round(prog * METER_BARS);
 
   const { level, weeklyPoints, weeklyMax, quests } = board;
@@ -226,7 +225,7 @@ function MindScoreOrb({ mind, board }: { mind: DisciplineBreakdown | null; board
           <p className="text-[40px] font-black tabular-nums leading-none" style={{ color }}>
             {hasData ? display : "—"}
           </p>
-          <p className="text-[11px] font-semibold mt-1" style={{ color }}>{label}</p>
+          <p className="text-[11px] font-medium mt-1 text-muted-foreground">{hasData ? "of 100" : "No data yet"}</p>
         </div>
         <div className="flex-1 flex items-end gap-[3px] h-16 pb-0.5" aria-hidden>
           {Array.from({ length: METER_BARS }).map((_, i) => {
@@ -255,7 +254,7 @@ function MindScoreOrb({ mind, board }: { mind: DisciplineBreakdown | null; board
       </div>
 
       {/* Progression — level + weekly quest points */}
-      <Link href="/psychological-edge" className="group mt-auto pt-3">
+      <Link href="/psychological-edge?tab=levels" className="group mt-auto pt-3">
         <div className="h-px bg-border/60 mb-3" />
         <div className="flex items-center gap-2.5">
           <LevelRing level={level.level} pct={ringPct} />
@@ -281,8 +280,8 @@ function MindScoreOrb({ mind, board }: { mind: DisciplineBreakdown | null; board
             <span key={q.key} className="h-1.5 flex-1 rounded-full"
               style={{ background: q.done ? GREEN : alpha("var(--muted-foreground)", 18) }} />
           ))}
-          <span className="text-[10px] font-medium text-muted-foreground/70 group-hover:text-primary transition-colors inline-flex items-center gap-0.5 ml-1 shrink-0">
-            Quests <ChevronRight className="w-3 h-3" />
+          <span className="text-[10px] font-medium text-muted-foreground/70 group-hover:text-primary transition-colors ml-1 shrink-0">
+            Quests
           </span>
         </div>
       </Link>
@@ -365,9 +364,9 @@ function WinRateCard({ winRate, wins, losses, be, total, netR }: {
       </div>
 
       {/* Donut */}
-      <div className="flex-1 flex items-center justify-center py-2 min-h-0">
-        <div className="relative shrink-0" style={{ width: 148, height: 148 }}>
-          <svg width={148} height={148} viewBox="0 0 132 132" className="block">
+      <div className="flex-1 flex items-center justify-center py-1 min-h-0">
+        <div className="relative shrink-0" style={{ width: 132, height: 132 }}>
+          <svg width={132} height={132} viewBox="0 0 132 132" className="block">
             {/* Track */}
             <circle cx={66} cy={66} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
             {/* Segments */}
@@ -428,8 +427,6 @@ function WinRateCard({ winRate, wins, losses, be, total, netR }: {
 /* ── Analysis — recent pre-trade prep + add ───────────────────────────── */
 const BIAS_COLOR: Record<string, string> = { bullish: GREEN, bearish: RED, choppy: AMBER };
 
-const BIAS_ICON: Record<string, typeof TrendingUp> = { bullish: TrendingUp, bearish: TrendingDown, choppy: Minus };
-
 function AnalysisWidget({ analyses }: { analyses: PreTradeAnalysis[] }) {
   const sorted = useMemo(
     () => [...analyses].sort((a, b) => b.date.localeCompare(a.date)),
@@ -447,27 +444,20 @@ function AnalysisWidget({ analyses }: { analyses: PreTradeAnalysis[] }) {
       </div>
 
       {!featured ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 py-4">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: alpha(CYAN, 12) }}>
-            <LineChart className="w-4 h-4" style={{ color: CYAN }} />
-          </div>
-          <p className="text-xs text-muted-foreground">No pre-trade analysis yet — plan your next setup.</p>
+        <div className="flex-1 flex items-center justify-center text-center py-4">
+          <p className="text-xs text-muted-foreground">No pre-trade analysis yet.</p>
         </div>
       ) : (
         <div className="mt-2.5 flex-1 flex flex-col gap-2 min-h-0">
           {/* Featured — the latest plan, given room to breathe */}
           {(() => {
             const c = BIAS_COLOR[featured.bias] ?? "var(--muted-foreground)";
-            const Icon = BIAS_ICON[featured.bias] ?? Minus;
             return (
               <Link href={`/analysis/${featured.id}`}
-                className="group relative overflow-hidden rounded-xl border border-border/60 p-3 transition-all hover:border-border"
+                className="group relative overflow-hidden rounded-xl border border-border/60 p-3 pl-3.5 transition-all hover:border-border"
                 style={{ background: `linear-gradient(120deg, ${alpha(c, 10)}, transparent 70%)` }}>
                 <span className="absolute inset-y-0 left-0 w-[3px]" style={{ background: c }} />
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg shrink-0" style={{ background: alpha(c, 16) }}>
-                    <Icon className="w-3.5 h-3.5" style={{ color: c }} />
-                  </span>
                   <span className="text-sm font-black font-mono tracking-tight">{featured.instrument}</span>
                   <span className="text-[11px] font-bold uppercase tracking-wide capitalize" style={{ color: c }}>{featured.bias}</span>
                   <span className="ml-auto text-[10px] text-muted-foreground/70 tabular-nums shrink-0">
@@ -486,11 +476,10 @@ function AnalysisWidget({ analyses }: { analyses: PreTradeAnalysis[] }) {
           {/* Recent — compact rows with a bias accent */}
           {rest.map((a) => {
             const c = BIAS_COLOR[a.bias] ?? "var(--muted-foreground)";
-            const Icon = BIAS_ICON[a.bias] ?? Minus;
             return (
               <Link key={a.id} href={`/analysis/${a.id}`}
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 -mx-1 transition-colors hover:bg-muted/50">
-                <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: c }} />
+                className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 -mx-1 transition-colors hover:bg-muted/50">
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: c }} />
                 <span className="text-[12px] font-bold font-mono shrink-0">{a.instrument}</span>
                 <span className="text-[11px] font-medium capitalize shrink-0" style={{ color: c }}>{a.bias}</span>
                 <span className="text-[10px] text-muted-foreground/70 ml-auto tabular-nums shrink-0">

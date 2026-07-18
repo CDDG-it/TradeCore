@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import {
-  Brain, Loader2, RefreshCw, Target, Bell, Gauge, Sparkles, Sunrise,
-  Check, ChevronRight, Quote,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { cn } from "@/lib/utils";
 import { getTrades, getAnalyses, getPsychEdgeSessions, savePsychEdgeSession } from "@/lib/supabase/queries";
@@ -180,9 +177,8 @@ function EdgeReflectionView() {
         )}
       </div>
 
-      {/* Side column — quests, briefing + history, glanceable at a fixed width */}
+      {/* Side column — briefing + history, glanceable at a fixed width */}
       <aside className="space-y-4">
-        <QuestBoard />
         {briefing && <PreMarketCheckUp briefing={briefing} />}
         {priorSessions.length > 0 && <History sessions={priorSessions} />}
       </aside>
@@ -190,11 +186,25 @@ function EdgeReflectionView() {
   );
 }
 
-// ── Hub: one dashboard combining Reflection, Habits and My Strategy ─────
-type EdgeTab = "reflection" | "habits" | "strategy";
+// ── Hub: Reflection, Habits, My Strategy and Levels ────────────────────
+type EdgeTab = "reflection" | "habits" | "strategy" | "levels";
+const EDGE_TABS: { key: EdgeTab; label: string }[] = [
+  { key: "reflection", label: "Reflection" },
+  { key: "habits", label: "Habits" },
+  { key: "strategy", label: "My Strategy" },
+  { key: "levels", label: "Levels" },
+];
 
 export default function PsychologicalEdgePage() {
   const [tab, setTab] = useState<EdgeTab>("reflection");
+
+  // Allow deep-linking to a tab (e.g. the dashboard's "Quests" link).
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t === "quests") setTab("levels");
+    else if (EDGE_TABS.some((x) => x.key === t)) setTab(t as EdgeTab);
+  }, []);
+
   return (
     <div className="space-y-5">
       {/* Compact header — title and tabs share one row to save vertical space */}
@@ -209,16 +219,12 @@ export default function PsychologicalEdgePage() {
         </div>
 
         <div className="flex w-full sm:w-fit rounded-lg border border-border/60 overflow-hidden">
-          {([
-            { key: "reflection", label: "Reflection" },
-            { key: "habits", label: "Habits" },
-            { key: "strategy", label: "My Strategy" },
-          ] as const).map(({ key, label }) => (
+          {EDGE_TABS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
               className={cn(
-                "flex-1 sm:flex-none px-5 py-2 text-sm font-semibold transition-colors",
+                "flex-1 sm:flex-none px-4 sm:px-5 py-2 text-sm font-semibold transition-colors",
                 tab === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
@@ -231,8 +237,23 @@ export default function PsychologicalEdgePage() {
       <PageWrapper>
         {tab === "reflection" ? <EdgeReflectionView />
           : tab === "habits" ? <HabitsView />
-          : <MyStrategyView />}
+          : tab === "strategy" ? <MyStrategyView />
+          : <LevelsView />}
       </PageWrapper>
+    </div>
+  );
+}
+
+function LevelsView() {
+  return (
+    <div className="max-w-xl mx-auto space-y-4">
+      <div>
+        <h2 className="text-sm font-semibold">Levels &amp; quests</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Earn points each week for journaling, reflecting and logging your best trade. Points build your level.
+        </p>
+      </div>
+      <QuestBoard />
     </div>
   );
 }
@@ -254,7 +275,6 @@ function MyStrategyView() {
 function EmptyState() {
   return (
     <div className="rounded-xl border border-dashed border-border p-10 text-center">
-      <Brain className="w-8 h-8 mx-auto mb-3 text-muted-foreground/40" />
       <p className="text-sm text-muted-foreground mb-1">Nothing to analyze yet.</p>
       <p className="text-xs text-muted-foreground/70">Log a trade in the Journal and your first session appears here.</p>
     </div>
@@ -265,19 +285,15 @@ function EmptyState() {
 function PreMarketCheckUp({ briefing }: { briefing: PreMarketBriefing }) {
   if (!briefing.hasHistory) {
     return (
-      <div className="rounded-xl border border-dashed border-border p-4 flex items-center gap-3">
-        <Sunrise className="w-4 h-4 shrink-0 text-muted-foreground" />
-        <p className="text-xs text-muted-foreground">First session — your pre-market check-up fills in once you've reflected at least once.</p>
+      <div className="rounded-xl border border-dashed border-border p-4">
+        <p className="text-xs text-muted-foreground">Your pre-market check-up fills in once you&apos;ve reflected at least once.</p>
       </div>
     );
   }
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
-      <div className="flex items-center gap-2">
-        <Sunrise className="w-4 h-4" style={{ color: ACCENT }} />
-        <p className="text-sm font-semibold">Pre-market check-up</p>
-      </div>
+      <p className="text-sm font-semibold">Pre-market check-up</p>
 
       {briefing.statusText && (
         <p className={cn("text-sm leading-relaxed", briefing.held ? "text-success" : "text-destructive")}>
@@ -298,7 +314,6 @@ function PreMarketCheckUp({ briefing }: { briefing: PreMarketBriefing }) {
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Recent mistakes on record</p>
           {briefing.recentMistakes.map((m, i) => (
             <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-              <Quote className="w-3 h-3 mt-0.5 shrink-0 text-muted-foreground/50" />
               <span>
                 <span className="tabular-nums text-muted-foreground/60">{format(new Date(m.date + "T12:00:00"), "MMM d")}</span>
                 {" — "}
@@ -355,7 +370,6 @@ function Reflection({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <Sparkles className="w-4 h-4 shrink-0" style={{ color: ACCENT }} />
           <p className="text-sm font-semibold">Post-trade reflection</p>
           <span className="text-xs text-muted-foreground/60 tabular-nums hidden sm:inline">· {tradesAnalyzed} trade{tradesAnalyzed !== 1 ? "s" : ""}</span>
         </div>
@@ -363,10 +377,9 @@ function Reflection({
           onClick={onRegenerate}
           disabled={regenerating}
           title="Re-read the journal for new trades"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-primary/30 disabled:opacity-50 shrink-0"
+          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:border-primary/30 disabled:opacity-50 shrink-0"
         >
-          <RefreshCw className={cn("w-3.5 h-3.5", regenerating && "animate-spin")} />
-          Refresh
+          {regenerating ? "Refreshing…" : "Refresh"}
         </button>
       </div>
 
@@ -434,7 +447,7 @@ function Reflection({
                 className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all disabled:opacity-50"
                 style={{ background: ACCENT }}
               >
-                {savingAnswer ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronRight className="w-3 h-3" />}
+                {savingAnswer && <Loader2 className="w-3 h-3 animate-spin" />}
                 Save answer
               </button>
             )}
@@ -449,26 +462,17 @@ function Reflection({
           >
             <StepLabel n={reasonStep + 1}>What changes</StepLabel>
 
-            <div className="flex items-start gap-2.5">
-              <Target className="w-4 h-4 mt-0.5 shrink-0" style={{ color: ACCENT }} />
-              <p className="text-sm font-semibold text-foreground">{session.primary_objective}</p>
-            </div>
+            <p className="text-sm font-semibold text-foreground">{session.primary_objective}</p>
 
             {session.reminder && (
-              <div className="flex items-start gap-2.5">
-                <Bell className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">{session.reminder}</p>
-              </div>
+              <p className="text-xs text-muted-foreground">{session.reminder}</p>
             )}
 
             {session.success_metric && (
-              <div className="flex items-start gap-2.5">
-                <Gauge className="w-3.5 h-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground/70">Success metric — </span>
-                  {session.success_metric}
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground/70">Success metric — </span>
+                {session.success_metric}
+              </p>
             )}
 
             <textarea
@@ -496,7 +500,6 @@ function Reflection({
                 )}
                 style={session.reconstruction_confirmed ? { background: "oklch(0.58 0.17 145)" } : { borderColor: "var(--border)" }}
               >
-                <Check className="w-3.5 h-3.5" />
                 {session.reconstruction_confirmed ? "Committed" : "Commit to this"}
               </button>
             </div>
@@ -520,7 +523,7 @@ function History({ sessions }: { sessions: PsychEdgeSession[] }) {
               <span className="text-xs text-muted-foreground tabular-nums w-16 shrink-0">
                 {format(new Date(s.date + "T12:00:00"), "MMM d")}
               </span>
-              {s.reconstruction_confirmed && <Check className="w-3 h-3 shrink-0 text-success" />}
+              {s.reconstruction_confirmed && <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" title="Committed" />}
               <span className="text-xs text-foreground/80 flex-1 truncate">{s.primary_objective ?? "—"}</span>
               {carried && (
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-destructive shrink-0">Repeated</span>

@@ -10,7 +10,7 @@ import {
   getDay, isToday,
 } from "date-fns";
 import { Plus, TrendingUp, TrendingDown, Calendar, List, CalendarCheck,
-  ChevronLeft, ChevronRight, SlidersHorizontal, X, Target, Trophy } from "lucide-react";
+  ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getTrades, getProfile, getBestTradesOfDay } from "@/lib/supabase/queries";
@@ -80,7 +80,7 @@ function BestTradeCellButton({ best, onClick }: { best?: BestTradeOfDay; onClick
       onClick={onClick}
       title="Best trade of the day"
       className={cn(
-        "mt-auto w-full inline-flex items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-[10px] font-semibold transition-colors border",
+        "mt-auto w-full inline-flex items-center justify-center rounded-lg px-1.5 py-1.5 text-[10px] font-semibold transition-colors border",
         taken
           ? "border-success/40 bg-success/12 text-success"
           : logged
@@ -88,7 +88,6 @@ function BestTradeCellButton({ best, onClick }: { best?: BestTradeOfDay; onClick
             : "border-transparent bg-muted/40 text-muted-foreground/70 hover:text-foreground hover:bg-muted"
       )}
     >
-      {taken ? <Trophy className="w-3 h-3 shrink-0" /> : <Target className="w-3 h-3 shrink-0" />}
       <span className="truncate">{taken ? "Best taken" : logged ? "Best logged" : "Best trade"}</span>
     </button>
   );

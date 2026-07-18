@@ -5,14 +5,12 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, ReferenceLine,
   BarChart, Bar, Cell,
 } from "recharts";
-import { Dice5, Target, ShieldAlert, Clock, TrendingUp, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { runMonteCarlo, type MonteCarloInputs, type DrawdownMode } from "@/lib/strategy/monte-carlo";
 
 const GREEN = "#22c55e";
 const RED = "#ef4444";
 const AMBER = "#f59e0b";
-const TURQUOISE = "#14B8A6";
 const CYAN = "#06B6D4";
 
 /** Representative prop-firm setups. Numbers are typical, round starting points —
@@ -105,17 +103,11 @@ export function MonteCarloSimulator() {
   return (
     <div className="space-y-5">
       {/* Intro */}
-      <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary/10 shrink-0">
-          <Dice5 className="w-5 h-5 text-primary" />
-        </div>
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold">Monte Carlo — Eval &amp; Funded Simulator</h2>
-          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-            Play your edge out over thousands of randomised runs to see how often it passes the eval,
-            blows the drawdown, or runs out of time. Every number below is yours to tune.
-          </p>
-        </div>
+      <div className="min-w-0">
+        <h2 className="text-sm font-semibold">Monte Carlo — Eval &amp; Funded Simulator</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Runs your inputs across thousands of randomised trade sequences to estimate pass, fail and timeout rates.
+        </p>
       </div>
 
       {/* Presets */}
@@ -138,9 +130,9 @@ export function MonteCarloSimulator() {
         <button
           type="button"
           onClick={reset}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          className="ml-auto rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
-          <RotateCcw className="w-3.5 h-3.5" /> Reset
+          Reset
         </button>
       </div>
 
@@ -202,11 +194,11 @@ export function MonteCarloSimulator() {
         <div className="space-y-4 min-w-0">
           {/* Outcome cards */}
           <div className="grid grid-cols-3 gap-3">
-            <OutcomeCard icon={Target} label="Pass rate" value={pct(result.passRate)} color={GREEN}
+            <OutcomeCard label="Pass rate" value={pct(result.passRate)} color={GREEN}
               hint="Hit the target" />
-            <OutcomeCard icon={ShieldAlert} label="Fail rate" value={pct(result.failRate)} color={RED}
+            <OutcomeCard label="Fail rate" value={pct(result.failRate)} color={RED}
               hint="Breached drawdown" />
-            <OutcomeCard icon={Clock} label="Timed out" value={pct(result.timeoutRate)} color={AMBER}
+            <OutcomeCard label="Timed out" value={pct(result.timeoutRate)} color={AMBER}
               hint={input.maxDays > 0 ? `No result in ${input.maxDays}d` : "Still running"} />
           </div>
 
@@ -222,8 +214,8 @@ export function MonteCarloSimulator() {
               <span className="flex items-center gap-1.5"><Dot c={AMBER} /> Timeout {pct(result.timeoutRate)}</span>
               <span className="flex items-center gap-1.5"><Dot c={RED} /> Fail {pct(result.failRate)}</span>
               {result.medianDaysToPass !== null && (
-                <span className="ml-auto flex items-center gap-1.5 text-muted-foreground">
-                  <TrendingUp className="w-3.5 h-3.5" /> Median pass in {result.medianDaysToPass} days
+                <span className="ml-auto text-muted-foreground">
+                  Median pass in {result.medianDaysToPass} days
                 </span>
               )}
             </div>
@@ -231,7 +223,7 @@ export function MonteCarloSimulator() {
 
           {!edgePositive && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-xs text-destructive">
-              This edge is negative — over enough trades it loses money. The pass rate you see is variance, not skill.
+              Negative expectancy — this edge loses money over a large sample.
             </div>
           )}
 
@@ -297,9 +289,7 @@ export function MonteCarloSimulator() {
               </ResponsiveContainer>
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">
-              <span style={{ color: GREEN }}>Green</span> = passed the target ·
-              {" "}<span style={{ color: RED }}>red</span> = below the drawdown floor ·
-              {" "}<span style={{ color: TURQUOISE }}>—</span> bars use closed-balance outcomes across all {input.simulations.toLocaleString()} runs.
+              Ending balances across {input.simulations.toLocaleString()} runs. Green = above target, red = below the drawdown floor.
             </p>
           </div>
         </div>
@@ -379,18 +369,15 @@ function SliderField({
 }
 
 function OutcomeCard({
-  icon: Icon, label, value, color, hint,
+  label, value, color, hint,
 }: {
-  icon: typeof Target; label: string; value: string; color: string; hint: string;
+  label: string; value: string; color: string; hint: string;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card p-3.5 relative overflow-hidden">
       <div className="absolute -right-3 -top-3 w-14 h-14 rounded-full blur-2xl opacity-20" style={{ background: color }} />
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <Icon className="w-3.5 h-3.5" style={{ color }} />
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-      </div>
-      <p className="text-2xl font-black tabular-nums leading-none" style={{ color }}>{value}</p>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+      <p className="text-2xl font-black tabular-nums leading-none mt-1.5" style={{ color }}>{value}</p>
       <p className="text-[10px] text-muted-foreground mt-1">{hint}</p>
     </div>
   );
