@@ -8,7 +8,7 @@ import { uploadScreenshot, deleteScreenshot, getScreenshotUrls } from "@/lib/sup
 
 interface StorageConfig {
   userId: string;
-  entityType: "trades" | "analyses";
+  entityType: "trades" | "analyses" | "best-trade";
   entityId: string;
 }
 

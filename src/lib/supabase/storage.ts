@@ -10,7 +10,7 @@ const BUCKET = "trade-screenshots";
 /** Upload a file and return its storage path (not a public URL). */
 export async function uploadScreenshot(
   userId: string,
-  entityType: "trades" | "analyses",
+  entityType: "trades" | "analyses" | "best-trade",
   entityId: string,
   file: File
 ): Promise<string> {

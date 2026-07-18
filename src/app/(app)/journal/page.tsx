@@ -10,11 +10,12 @@ import {
   getDay, isToday,
 } from "date-fns";
 import { Plus, TrendingUp, TrendingDown, Calendar, List, CalendarCheck,
-  ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
+  ChevronLeft, ChevronRight, SlidersHorizontal, X, Target, Trophy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getTrades } from "@/lib/supabase/queries";
-import type { TradeJournalEntry } from "@/lib/types";
+import { getTrades, getProfile, getBestTradesOfDay } from "@/lib/supabase/queries";
+import { BestTradeDayDialog } from "@/components/journal/best-trade-day";
+import type { TradeJournalEntry, BestTradeOfDay } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { TradeResult, Direction } from "@/lib/types";
 import { tradeR, formatTotalR } from "@/lib/journal/weeks";
@@ -68,15 +69,58 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   );
 }
 
+/** Footer control on each week-view day cell — opens the Best-trade-of-the-day
+ *  dialog and reflects whether that day already has an entry. */
+function BestTradeCellButton({ best, onClick }: { best?: BestTradeOfDay; onClick: () => void }) {
+  const taken = best?.taken_was_best;
+  const logged = best && !taken;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Best trade of the day"
+      className={cn(
+        "mt-auto w-full inline-flex items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-[10px] font-semibold transition-colors border",
+        taken
+          ? "border-success/40 bg-success/12 text-success"
+          : logged
+            ? "border-primary/40 bg-primary/12 text-primary"
+            : "border-transparent bg-muted/40 text-muted-foreground/70 hover:text-foreground hover:bg-muted"
+      )}
+    >
+      {taken ? <Trophy className="w-3 h-3 shrink-0" /> : <Target className="w-3 h-3 shrink-0" />}
+      <span className="truncate">{taken ? "Best taken" : logged ? "Best logged" : "Best trade"}</span>
+    </button>
+  );
+}
+
 export default function JournalPage() {
   const [allTrades, setAllTrades] = useState<TradeJournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterResult, setFilterResult] = useState<TradeResult | "all">("all");
   const [filterExecution, setFilterExecution] = useState<ExecutionQualityFilter>("all");
 
+  const [userId, setUserId] = useState<string | null>(null);
+  const [bestTrades, setBestTrades] = useState<Record<string, BestTradeOfDay>>({});
+  const [btdDate, setBtdDate] = useState<string | null>(null); // open dialog for this date
+
   useEffect(() => {
     getTrades().then(setAllTrades).finally(() => setLoading(false));
+    getProfile().then((p) => { if (p?.id) setUserId(p.id); });
+    getBestTradesOfDay().then((rows) => {
+      setBestTrades(Object.fromEntries(rows.map((r) => [r.date, r])));
+    });
   }, []);
+
+  // Reflect a saved/cleared best-trade entry without a full refetch.
+  function applyBestTrade(date: string, entry: BestTradeOfDay | null) {
+    setBestTrades((prev) => {
+      const next = { ...prev };
+      if (entry) next[date] = entry;
+      else delete next[date];
+      return next;
+    });
+  }
   const [filterDirection, setFilterDirection] = useState<Direction | "all">("all");
   const [viewMode, setViewMode] = useState<ViewMode>("calendar");
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
@@ -485,46 +529,55 @@ export default function JournalPage() {
                   {calWeekDays.map((day) => {
                     const key = format(day, "yyyy-MM-dd");
                     const dayTrades = tradesByDay[key] || [];
+                    const best = bestTrades[key];
                     return (
                       <div key={key}
                         className={cn("min-h-[160px] rounded-xl p-1.5 flex flex-col gap-1 transition-colors",
-                          isToday(day) ? "bg-primary/4 ring-1 ring-primary/20" : "bg-muted/20",
-                          dayTrades.length === 0 ? "items-center justify-center" : ""
+                          isToday(day) ? "bg-primary/4 ring-1 ring-primary/20" : "bg-muted/20"
                         )}>
-                        {dayTrades.length === 0 ? (
-                          <span className="text-[10px] text-muted-foreground/30 text-center">—</span>
-                        ) : (
-                          dayTrades.map((t) => (
-                            <Link key={t.id} href={`/journal/${t.id}`}
-                              className={cn("flex-1 flex flex-col items-center justify-center gap-1.5 rounded-lg px-1.5 py-2.5 transition-colors min-h-0",
-                                t.result === "win" ? "bg-success/15 hover:bg-success/25"
-                                  : t.result === "loss" ? "bg-destructive/15 hover:bg-destructive/25"
-                                  : "bg-warning/15 hover:bg-warning/25")}>
-                              {/* Trade pair — full name, prominent */}
-                              <p className={cn("text-base font-extrabold text-center leading-tight tracking-tight",
-                                t.result === "win" ? "text-success"
-                                  : t.result === "loss" ? "text-destructive"
-                                  : "text-warning")}>
-                                {instrumentName(t.instrument)}
-                              </p>
-                              {/* Execution quality — directly under the pair */}
-                              {t.execution_quality && (
-                                <span className={cn(
-                                  "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold leading-none",
-                                  t.execution_quality === "good"
-                                    ? "bg-success/20 text-success"
-                                    : "bg-destructive/20 text-destructive"
-                                )}>
-                                  {t.execution_quality === "good" ? "✓ Good" : "✗ Bad"}
-                                </span>
-                              )}
-                              {/* R multiple */}
-                              <p className="text-xs font-semibold text-muted-foreground/80 text-center leading-none">
-                                {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
-                              </p>
-                            </Link>
-                          ))
-                        )}
+                        <div className={cn("flex-1 flex flex-col gap-1 min-h-0",
+                          dayTrades.length === 0 && "items-center justify-center")}>
+                          {dayTrades.length === 0 ? (
+                            <span className="text-[10px] text-muted-foreground/30 text-center">—</span>
+                          ) : (
+                            dayTrades.map((t) => (
+                              <Link key={t.id} href={`/journal/${t.id}`}
+                                className={cn("flex-1 flex flex-col items-center justify-center gap-1.5 rounded-lg px-1.5 py-2.5 transition-colors min-h-0",
+                                  t.result === "win" ? "bg-success/15 hover:bg-success/25"
+                                    : t.result === "loss" ? "bg-destructive/15 hover:bg-destructive/25"
+                                    : "bg-warning/15 hover:bg-warning/25")}>
+                                {/* Trade pair — full name, prominent */}
+                                <p className={cn("text-base font-extrabold text-center leading-tight tracking-tight",
+                                  t.result === "win" ? "text-success"
+                                    : t.result === "loss" ? "text-destructive"
+                                    : "text-warning")}>
+                                  {instrumentName(t.instrument)}
+                                </p>
+                                {/* Execution quality — directly under the pair */}
+                                {t.execution_quality && (
+                                  <span className={cn(
+                                    "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold leading-none",
+                                    t.execution_quality === "good"
+                                      ? "bg-success/20 text-success"
+                                      : "bg-destructive/20 text-destructive"
+                                  )}>
+                                    {t.execution_quality === "good" ? "✓ Good" : "✗ Bad"}
+                                  </span>
+                                )}
+                                {/* R multiple */}
+                                <p className="text-xs font-semibold text-muted-foreground/80 text-center leading-none">
+                                  {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+                                </p>
+                              </Link>
+                            ))
+                          )}
+                        </div>
+
+                        {/* Best trade of the day — available on every day */}
+                        <BestTradeCellButton
+                          best={best}
+                          onClick={() => setBtdDate(key)}
+                        />
                       </div>
                     );
                   })}
@@ -619,6 +672,16 @@ export default function JournalPage() {
         </>
       )}
       </PageWrapper>
+
+      {btdDate && (
+        <BestTradeDayDialog
+          date={btdDate}
+          userId={userId}
+          open={btdDate !== null}
+          onOpenChange={(v) => { if (!v) setBtdDate(null); }}
+          onSaved={(entry) => applyBestTrade(btdDate, entry)}
+        />
+      )}
     </div>
   );
 }

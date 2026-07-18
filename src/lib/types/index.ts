@@ -28,6 +28,18 @@ export interface ScreenshotGroup {
   urls: string[];
 }
 
+/** Best trade of the day — one per calendar day, whether or not you traded. */
+export interface BestTradeOfDay {
+  id: string;
+  user_id: string;
+  date: string; // ISO date (day)
+  taken_was_best: boolean;
+  notes: string;
+  screenshot_groups: ScreenshotGroup[];
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Trader Playbook ─────────────────────────────────────────────────────────
 export interface TraderPlaybook {
   trader_type: TraderType;

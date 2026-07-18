@@ -24,6 +24,7 @@ import type {
   WeeklyTradeReviewInput,
   PsychEdgeSession,
   PsychEdgeSessionInput,
+  BestTradeOfDay,
   DashboardStats,
 } from "@/lib/types";
 
@@ -993,4 +994,71 @@ export async function savePsychEdgeSession(
     .single();
   if (error) throw error;
   return data as PsychEdgeSession;
+}
+
+// ── Best Trade of the Day ────────────────────────────────────────────
+// Fail-soft: if the best_trade_of_day table hasn't been created yet, reads
+// return empty/null so the Journal still renders.
+
+export async function getBestTradesOfDay(): Promise<BestTradeOfDay[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("best_trade_of_day")
+    .select("*")
+    .order("date", { ascending: false });
+  if (error) return [];
+  return (data ?? []).map((r) => ({
+    ...r,
+    screenshot_groups: (r.screenshot_groups ?? []) as BestTradeOfDay["screenshot_groups"],
+  })) as BestTradeOfDay[];
+}
+
+export async function getBestTradeOfDay(date: string): Promise<BestTradeOfDay | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("best_trade_of_day")
+    .select("*")
+    .eq("date", date)
+    .maybeSingle();
+  if (error || !data) return null;
+  return { ...data, screenshot_groups: (data.screenshot_groups ?? []) } as BestTradeOfDay;
+}
+
+export async function saveBestTradeOfDay(
+  input: Pick<BestTradeOfDay, "date" | "taken_was_best" | "notes" | "screenshot_groups">
+): Promise<BestTradeOfDay> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: existing } = await supabase
+    .from("best_trade_of_day")
+    .select("id")
+    .eq("date", input.date)
+    .maybeSingle();
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from("best_trade_of_day")
+      .update({ ...input, updated_at: now() })
+      .eq("id", existing.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as BestTradeOfDay;
+  }
+
+  const { data, error } = await supabase
+    .from("best_trade_of_day")
+    .insert({ ...input, user_id: user.id, created_at: now(), updated_at: now() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as BestTradeOfDay;
+}
+
+export async function deleteBestTradeOfDay(date: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("best_trade_of_day").delete().eq("date", date);
+  if (error) throw error;
 }

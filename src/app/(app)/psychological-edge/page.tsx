@@ -14,6 +14,7 @@ import { HabitsView } from "@/components/habits/habits-view";
 import { TradingRulesEditor } from "@/components/habits/trading-rules";
 import { ConfluencesEditor } from "@/components/habits/confluences-editor";
 import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
+import { QuestBoard } from "@/components/mind-score/quest-board";
 import type { TradeJournalEntry, PreTradeAnalysis, PsychEdgeSession, PsychEdgeResponseTag } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
@@ -179,8 +180,9 @@ function EdgeReflectionView() {
         )}
       </div>
 
-      {/* Side column — briefing + history, glanceable at a fixed width */}
+      {/* Side column — quests, briefing + history, glanceable at a fixed width */}
       <aside className="space-y-4">
+        <QuestBoard />
         {briefing && <PreMarketCheckUp briefing={briefing} />}
         {priorSessions.length > 0 && <History sessions={priorSessions} />}
       </aside>

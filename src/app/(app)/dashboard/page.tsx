@@ -7,15 +7,17 @@ import {
   startOfMonth, endOfMonth, isWithinInterval,
 } from "date-fns";
 import { motion } from "motion/react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronRight, TrendingUp, TrendingDown, Minus, LineChart } from "lucide-react";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, getAnalyses, toggleHabitCompletion,
+  getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews,
 } from "@/lib/supabase/queries";
 import { computeDiscipline, type DisciplineBreakdown } from "@/lib/discipline";
+import { computeQuestBoard, type QuestBoard } from "@/lib/mind-score/quests";
 import { tradeR } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
-import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis } from "@/lib/types";
+import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview } from "@/lib/types";
 
 const TURQUOISE = "oklch(0.70 0.13 183)";
 const CYAN = "oklch(0.72 0.14 220)";
@@ -55,6 +57,9 @@ export default function DashboardPage() {
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
   const [analyses, setAnalyses] = useState<PreTradeAnalysis[]>([]);
   const [pendingHabit, setPendingHabit] = useState<string | null>(null);
+  const [psychSessions, setPsychSessions] = useState<PsychEdgeSession[]>([]);
+  const [bestTrades, setBestTrades] = useState<BestTradeOfDay[]>([]);
+  const [weeklyReviews, setWeeklyReviews] = useState<WeeklyTradeReview[]>([]);
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -64,6 +69,10 @@ export default function DashboardPage() {
         setTrades(t); setAccounts(a); setHabits(hb); setCompletions(c); setAnalyses(an);
         if (p?.full_name) setFirstName(p.full_name.split(" ")[0]);
       });
+    // Progression data (quests + level) loads independently so it never blocks the hero widgets.
+    Promise.all([getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews()])
+      .then(([ps, bt, wr]) => { setPsychSessions(ps); setBestTrades(bt); setWeeklyReviews(wr); })
+      .catch(() => {});
   }, []);
 
   async function handleToggleHabit(habitId: string) {
@@ -97,6 +106,11 @@ export default function DashboardPage() {
     return computeDiscipline(trades, habits, completions, startOfMonth(now), endOfMonth(now));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trades, habits, completions]);
+
+  const questBoard = useMemo(
+    () => computeQuestBoard({ trades: trades ?? [], psychSessions, bestTrades, weeklyReviews }),
+    [trades, psychSessions, bestTrades, weeklyReviews]
+  );
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(now, { weekStartsOn: 1 });
@@ -141,7 +155,7 @@ export default function DashboardPage() {
         <div className="flex flex-1 flex-col gap-3 min-h-0">
           {/* Row 1 — hero widgets grow to fill the freed height */}
           <div className="grid gap-3 md:grid-cols-3 flex-1 min-h-0">
-            <MindScoreOrb mind={mcMind} />
+            <MindScoreOrb mind={mcMind} board={questBoard} />
             <WinRateCard winRate={winRate} wins={wins} losses={losses} be={be} total={monthTrades.length} netR={monthR} />
             <AnalysisWidget analyses={analyses} />
           </div>
@@ -162,34 +176,18 @@ export default function DashboardPage() {
   );
 }
 
-/* ── MC mind score — a trader's discipline instrument ─────────────────────
-   A 270° radial gauge for the blended score, backed by the two things a trader
-   actually controls: rule adherence at the screen and habit consistency away
-   from it. The needle-arc reads like a cockpit dial; the sub-meters break the
-   score into its trade-driven and routine-driven halves. */
-const GAUGE = { size: 150, stroke: 11, get r() { return (this.size - this.stroke) / 2 - 6; }, sweep: 270, start: 225 };
+/* ── MC mind score — discipline signal meter + progression ────────────────
+   The score reads as a rising "signal-strength" bar meter (trade-desk energy),
+   split into its rule-adherence and habit halves. Below it, the MC Mindset
+   progression: your level, this week's quest points, and how many quests you've
+   cleared — turning discipline into something you level up. */
+const METER_BARS = 22;
 
-/** Point on the gauge circle for an angle measured clockwise from the top. */
-function gaugePoint(angle: number) {
-  const c = GAUGE.size / 2;
-  const rad = ((angle - 90) * Math.PI) / 180;
-  return [c + GAUGE.r * Math.cos(rad), c + GAUGE.r * Math.sin(rad)];
-}
-
-/** SVG arc path from the gauge start, spanning `fraction` (0..1) of the sweep. */
-function gaugeArc(fraction: number) {
-  const f = Math.max(0.0001, Math.min(1, fraction));
-  const [sx, sy] = gaugePoint(GAUGE.start);
-  const [ex, ey] = gaugePoint(GAUGE.start + GAUGE.sweep * f);
-  const large = GAUGE.sweep * f > 180 ? 1 : 0;
-  return `M ${sx} ${sy} A ${GAUGE.r} ${GAUGE.r} 0 ${large} 1 ${ex} ${ey}`;
-}
-
-function MindScoreOrb({ mind }: { mind: DisciplineBreakdown | null }) {
+function MindScoreOrb({ mind, board }: { mind: DisciplineBreakdown | null; board: QuestBoard }) {
   const target = mind?.total ?? 0;
   const hasData = mind?.total != null;
   const [display, setDisplay] = useState(0);
-  const [prog, setProg] = useState(0); // 0..1 animated arc fraction
+  const [prog, setProg] = useState(0); // 0..1 animated fill
   const raf = useRef(0);
 
   useEffect(() => {
@@ -209,7 +207,10 @@ function MindScoreOrb({ mind }: { mind: DisciplineBreakdown | null }) {
 
   const color = hasData ? scoreColor(target) : "var(--muted-foreground)";
   const label = !hasData ? "No data yet" : target >= 80 ? "Locked in" : target >= 60 ? "Holding the line" : "Slipping";
-  const [tipX, tipY] = gaugePoint(GAUGE.start + GAUGE.sweep * prog);
+  const filled = Math.round(prog * METER_BARS);
+
+  const { level, weeklyPoints, weeklyMax, quests } = board;
+  const ringPct = level.span > 0 ? (level.intoLevel / level.span) * 100 : 0;
 
   return (
     <div className={cn(CARD_BASE, "flex flex-col")}>
@@ -219,64 +220,106 @@ function MindScoreOrb({ mind }: { mind: DisciplineBreakdown | null }) {
         <span className="text-[10px] text-muted-foreground/70">this month</span>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 py-1">
-        {/* Radial gauge */}
-        <div className="relative shrink-0" style={{ width: GAUGE.size, height: GAUGE.size }}>
-          <svg width={GAUGE.size} height={GAUGE.size} className="block">
-            <defs>
-              <linearGradient id="mc-gauge" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={color} stopOpacity="0.65" />
-                <stop offset="100%" stopColor={color} stopOpacity="1" />
-              </linearGradient>
-            </defs>
-            {/* Track */}
-            <path d={gaugeArc(1)} fill="none" stroke={alpha("var(--muted-foreground)", 16)} strokeWidth={GAUGE.stroke} strokeLinecap="round" />
-            {/* Progress */}
-            {hasData && (
-              <path d={gaugeArc(prog)} fill="none" stroke="url(#mc-gauge)" strokeWidth={GAUGE.stroke} strokeLinecap="round"
-                style={{ filter: `drop-shadow(0 0 5px ${alpha(color, 55)})` }} />
-            )}
-            {/* Leading tip */}
-            {hasData && prog > 0.02 && <circle cx={tipX} cy={tipY} r={GAUGE.stroke / 2 + 1.5} fill={color} style={{ filter: `drop-shadow(0 0 6px ${alpha(color, 70)})` }} />}
-          </svg>
-          {/* Centre readout */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-[34px] font-black tabular-nums leading-none" style={{ color }}>{hasData ? display : "—"}</p>
-            {hasData && <p className="text-[10px] font-semibold tabular-nums text-muted-foreground/70 -mt-0.5">/ 100</p>}
-            <p className="text-[11px] font-semibold mt-1" style={{ color }}>{label}</p>
-          </div>
+      {/* Score + signal meter */}
+      <div className="flex items-end gap-3 mt-2.5">
+        <div className="shrink-0">
+          <p className="text-[40px] font-black tabular-nums leading-none" style={{ color }}>
+            {hasData ? display : "—"}
+          </p>
+          <p className="text-[11px] font-semibold mt-1" style={{ color }}>{label}</p>
         </div>
-
-        {/* Sub-meters — the two halves of the score */}
-        <div className="w-full space-y-2">
-          <SubMeter label="Rule adherence" value={mind?.tradeRules ?? null} weight="70%" accent={color}
-            caption={mind && mind.tradeCount > 0 ? `${mind.tradeCount} scored trade${mind.tradeCount !== 1 ? "s" : ""}` : "No scored trades"} />
-          <SubMeter label="Habit consistency" value={mind?.habits ?? null} weight="30%" accent={CYAN}
-            caption={mind && mind.habitExpected > 0 ? `${mind.habitCompleted}/${mind.habitExpected} check-ins` : "No habits yet"} />
+        <div className="flex-1 flex items-end gap-[3px] h-16 pb-0.5" aria-hidden>
+          {Array.from({ length: METER_BARS }).map((_, i) => {
+            const on = i < filled;
+            const h = 30 + (i / (METER_BARS - 1)) * 70; // 30%..100% rising profile
+            return (
+              <div
+                key={i}
+                className="flex-1 rounded-[2px]"
+                style={{
+                  height: `${h}%`,
+                  background: on ? color : alpha("var(--muted-foreground)", 14),
+                  boxShadow: on ? `0 0 6px ${alpha(color, 35)}` : "none",
+                  transition: "background 0.3s ease, box-shadow 0.3s ease",
+                }}
+              />
+            );
+          })}
         </div>
       </div>
+
+      {/* The two halves */}
+      <div className="flex items-center gap-4 mt-2.5">
+        <MiniStat label="Rules" weight="70%" value={mind?.tradeRules ?? null} accent={color} />
+        <MiniStat label="Habits" weight="30%" value={mind?.habits ?? null} accent={CYAN} />
+      </div>
+
+      {/* Progression — level + weekly quest points */}
+      <Link href="/psychological-edge" className="group mt-auto pt-3">
+        <div className="h-px bg-border/60 mb-3" />
+        <div className="flex items-center gap-2.5">
+          <LevelRing level={level.level} pct={ringPct} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <p className="text-[13px] font-bold leading-none">Level {level.level}</p>
+              <span className="text-[9px] font-semibold uppercase tracking-wider px-1 py-0.5 rounded"
+                style={{ background: alpha(TURQUOISE, 14), color: TURQUOISE }}>{level.title}</span>
+            </div>
+            <div className="mt-1.5 h-1 w-full rounded-full bg-muted-foreground/15 overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${weeklyMax ? (weeklyPoints / weeklyMax) * 100 : 0}%`, background: TURQUOISE }} />
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-sm font-black tabular-nums leading-none" style={{ color: TURQUOISE }}>
+              {weeklyPoints}<span className="text-muted-foreground/50 text-[10px]">/{weeklyMax}</span>
+            </p>
+            <p className="text-[9px] text-muted-foreground">wk pts</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 mt-2">
+          {quests.map((q) => (
+            <span key={q.key} className="h-1.5 flex-1 rounded-full"
+              style={{ background: q.done ? GREEN : alpha("var(--muted-foreground)", 18) }} />
+          ))}
+          <span className="text-[10px] font-medium text-muted-foreground/70 group-hover:text-primary transition-colors inline-flex items-center gap-0.5 ml-1 shrink-0">
+            Quests <ChevronRight className="w-3 h-3" />
+          </span>
+        </div>
+      </Link>
     </div>
   );
 }
 
-/** A thin labelled progress bar for one half of the mind score. */
-function SubMeter({ label, value, weight, accent, caption }: {
-  label: string; value: number | null; weight: string; accent: string; caption: string;
+/** Compact inline half-score for the mind score card. */
+function MiniStat({ label, weight, value, accent }: {
+  label: string; weight: string; value: number | null; accent: string;
 }) {
   return (
-    <div>
-      <div className="flex items-baseline justify-between gap-2 mb-1">
-        <span className="text-[11px] font-medium text-foreground/80">{label}</span>
-        <span className="text-[10px] text-muted-foreground/60">{weight}</span>
-        <span className="ml-auto text-[11px] font-bold tabular-nums" style={{ color: value == null ? "var(--muted-foreground)" : accent }}>
-          {value == null ? "—" : `${value}%`}
-        </span>
+    <div className="flex items-center gap-1.5">
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: value == null ? "var(--muted-foreground)" : accent }} />
+      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <span className="text-[11px] font-bold tabular-nums" style={{ color: value == null ? "var(--muted-foreground)" : accent }}>
+        {value == null ? "—" : `${value}%`}
+      </span>
+      <span className="text-[9px] text-muted-foreground/50">{weight}</span>
+    </div>
+  );
+}
+
+/** Small level ring with the level number in the centre. */
+function LevelRing({ level, pct }: { level: number; pct: number }) {
+  const R = 16;
+  const C = 2 * Math.PI * R;
+  return (
+    <div className="relative w-10 h-10 shrink-0">
+      <svg width={40} height={40} viewBox="0 0 40 40" className="block -rotate-90">
+        <circle cx={20} cy={20} r={R} fill="none" stroke={alpha(TURQUOISE, 16)} strokeWidth={3} />
+        <circle cx={20} cy={20} r={R} fill="none" stroke={TURQUOISE} strokeWidth={3} strokeLinecap="round"
+          strokeDasharray={`${(pct / 100) * C} ${C}`} style={{ transition: "stroke-dasharray 0.7s ease" }} />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-[13px] font-black tabular-nums" style={{ color: TURQUOISE }}>{level}</span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-muted-foreground/15 overflow-hidden">
-        <div className="h-full rounded-full transition-[width] duration-700 ease-out"
-          style={{ width: `${value ?? 0}%`, background: accent, boxShadow: value ? `0 0 6px ${alpha(accent, 45)}` : "none" }} />
-      </div>
-      <p className="text-[9.5px] text-muted-foreground/60 mt-0.5">{caption}</p>
     </div>
   );
 }
@@ -329,11 +372,16 @@ function WinRateCard({ winRate, wins, losses, be, total, netR }: {
 /* ── Analysis — recent pre-trade prep + add ───────────────────────────── */
 const BIAS_COLOR: Record<string, string> = { bullish: GREEN, bearish: RED, choppy: AMBER };
 
+const BIAS_ICON: Record<string, typeof TrendingUp> = { bullish: TrendingUp, bearish: TrendingDown, choppy: Minus };
+
 function AnalysisWidget({ analyses }: { analyses: PreTradeAnalysis[] }) {
-  const recent = useMemo(
-    () => [...analyses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4),
+  const sorted = useMemo(
+    () => [...analyses].sort((a, b) => b.date.localeCompare(a.date)),
     [analyses]
   );
+  const featured = sorted[0];
+  const rest = sorted.slice(1, 4);
+
   return (
     <div className={cn(CARD_BASE, "flex flex-col")}>
       <CardFx accent={CYAN} />
@@ -342,21 +390,54 @@ function AnalysisWidget({ analyses }: { analyses: PreTradeAnalysis[] }) {
         <Link href="/analysis" className="text-[11px] font-semibold text-primary hover:underline">All →</Link>
       </div>
 
-      {recent.length === 0 ? (
-        <div className="flex-1 flex items-center py-3">
+      {!featured ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 py-4">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: alpha(CYAN, 12) }}>
+            <LineChart className="w-4 h-4" style={{ color: CYAN }} />
+          </div>
           <p className="text-xs text-muted-foreground">No pre-trade analysis yet — plan your next setup.</p>
         </div>
       ) : (
-        <div className="mt-2 space-y-1 flex-1">
-          {recent.map((a) => {
+        <div className="mt-2.5 flex-1 flex flex-col gap-2 min-h-0">
+          {/* Featured — the latest plan, given room to breathe */}
+          {(() => {
+            const c = BIAS_COLOR[featured.bias] ?? "var(--muted-foreground)";
+            const Icon = BIAS_ICON[featured.bias] ?? Minus;
+            return (
+              <Link href={`/analysis/${featured.id}`}
+                className="group relative overflow-hidden rounded-xl border border-border/60 p-3 transition-all hover:border-border"
+                style={{ background: `linear-gradient(120deg, ${alpha(c, 10)}, transparent 70%)` }}>
+                <span className="absolute inset-y-0 left-0 w-[3px]" style={{ background: c }} />
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg shrink-0" style={{ background: alpha(c, 16) }}>
+                    <Icon className="w-3.5 h-3.5" style={{ color: c }} />
+                  </span>
+                  <span className="text-sm font-black font-mono tracking-tight">{featured.instrument}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wide capitalize" style={{ color: c }}>{featured.bias}</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground/70 tabular-nums shrink-0">
+                    {format(new Date(featured.date + "T12:00:00"), "MMM d")}
+                  </span>
+                </div>
+                {(featured.title || featured.thesis) && (
+                  <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2 leading-snug">
+                    {featured.title || featured.thesis}
+                  </p>
+                )}
+              </Link>
+            );
+          })()}
+
+          {/* Recent — compact rows with a bias accent */}
+          {rest.map((a) => {
             const c = BIAS_COLOR[a.bias] ?? "var(--muted-foreground)";
+            const Icon = BIAS_ICON[a.bias] ?? Minus;
             return (
               <Link key={a.id} href={`/analysis/${a.id}`}
-                className="flex items-center gap-2.5 rounded-lg px-2 py-2 -mx-1 transition-colors hover:bg-muted/50">
-                <span className="h-2 w-2 rounded-full shrink-0" style={{ background: c }} />
-                <span className="text-[13px] font-bold font-mono shrink-0">{a.instrument}</span>
-                <span className="text-xs font-medium capitalize shrink-0" style={{ color: c }}>{a.bias}</span>
-                <span className="text-[11px] text-muted-foreground/70 ml-auto tabular-nums shrink-0">
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 -mx-1 transition-colors hover:bg-muted/50">
+                <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: c }} />
+                <span className="text-[12px] font-bold font-mono shrink-0">{a.instrument}</span>
+                <span className="text-[11px] font-medium capitalize shrink-0" style={{ color: c }}>{a.bias}</span>
+                <span className="text-[10px] text-muted-foreground/70 ml-auto tabular-nums shrink-0">
                   {format(new Date(a.date + "T12:00:00"), "MMM d")}
                 </span>
               </Link>
