@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   ArrowUpRight, ArrowDownRight, Minus, Landmark, Ship, Zap, Building2, Activity, ChevronDown,
+  ChevronLeft, Radio, ChevronRight,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -10,8 +11,68 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DIRECTION_META, TREND_META, SENTIMENT_META, RISK_META, NEWS_CATEGORY_META, NEWS_IMPACT_META, SIGNAL_TAG_META } from "@/lib/news-city/ui";
-import type { NewsCityData, TrendDirection, NewsCategory } from "@/lib/news-city/types";
+import type { NewsCityData, TrendDirection, NewsCategory, NewsItem } from "@/lib/news-city/types";
 import type { CitySelection } from "./selection";
+
+/** The category-node signals live under one label in the hub, but a couple of
+ *  feed categories fold into that same node (e.g. geopolitics reads as a
+ *  commodity-supply story). This maps a node to every feed category it owns. */
+const NODE_FEED_CATEGORIES: Record<NewsCategory, NewsCategory[]> = {
+  "central-bank": ["central-bank"],
+  commodity: ["commodity", "geopolitics"],
+  macro: ["macro"],
+  markets: ["markets"],
+  earnings: ["earnings"],
+  geopolitics: ["geopolitics"],
+};
+
+function DirectionArrow({ direction, className }: { direction: NewsItem["direction"]; className?: string }) {
+  if (direction === "up") return <ArrowUpRight className={className} />;
+  if (direction === "down") return <ArrowDownRight className={className} />;
+  return <Minus className={className} />;
+}
+
+/** The "Latest signals" list shown under every category node — repurposes the
+ *  old live-feed items as sub-messages, each opening its own detail view. */
+function SignalList({ items, onOpen }: { items: NewsItem[]; onOpen: (id: string) => void }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="space-y-2 pt-1">
+      <div className="flex items-center gap-1.5">
+        <Radio className="w-3.5 h-3.5 text-primary" />
+        <p className="font-body text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Latest signals · {items.length}
+        </p>
+      </div>
+      <div className="space-y-1.5">
+        {items.map((n) => {
+          const tagMeta = SIGNAL_TAG_META[n.tag];
+          const dirColor = n.direction === "up" ? "text-success" : n.direction === "down" ? "text-destructive" : "text-warning";
+          return (
+            <button
+              key={n.id}
+              type="button"
+              onClick={() => onOpen(n.id)}
+              className="w-full flex items-center gap-2.5 rounded-xl border border-border p-2.5 text-left hover:bg-muted/40 hover:border-primary/30 transition-colors"
+            >
+              <span className={cn("shrink-0", dirColor)}>
+                <DirectionArrow direction={n.direction} className="w-4 h-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-body text-sm font-semibold text-foreground truncate">{n.title}</p>
+                <p className="font-body text-xs text-muted-foreground truncate">
+                  <span className={cn("font-semibold", tagMeta.className.split(" ")[0])}>[{tagMeta.label}]</span>
+                  {" · "}{n.marketImpact}{" · "}{n.time}
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function TrendIcon({ direction, className }: { direction: TrendDirection; className?: string }) {
   if (direction === "rising") return <ArrowUpRight className={className} />;
@@ -71,19 +132,32 @@ function ExpandableRow({
 export function InfoPanel({
   data,
   selection,
+  onSelect,
   onClose,
 }: {
   data: NewsCityData;
   selection: CitySelection | null;
+  onSelect: (sel: CitySelection) => void;
   onClose: () => void;
 }) {
   const open = selection !== null;
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
+  // Which category an event belongs to — so the event view can offer a "back to
+  // the node" affordance.
+  const eventItem = selection?.kind === "event" ? data.news.find((n) => n.id === selection.id) : null;
+
+  /** Opens a signal's detail view from a category's signal list. */
+  const openSignal = (id: string) => {
+    setExpandedRow(null);
+    onSelect({ kind: "event", id });
+  };
+
   let icon = Building2;
   let title = "";
   let tagline = "";
   let body: React.ReactNode = null;
+  let backTo: { label: string; sel: CitySelection } | null = null;
 
   if (selection?.kind === "core") {
     const o = data.overview;
@@ -321,8 +395,19 @@ export function InfoPanel({
         </div>
       );
     }
+
+    // Every category node carries its own live signals as sub-messages —
+    // repurposing the old feed so each node is a drill-in of its own right.
+    const feedCats = NODE_FEED_CATEGORIES[cat] ?? [cat];
+    const signals = data.news.filter((n) => feedCats.includes(n.category));
+    body = (
+      <div className="space-y-4">
+        {body}
+        <SignalList items={signals} onOpen={openSignal} />
+      </div>
+    );
   } else if (selection?.kind === "event") {
-    const item = data.news.find((n) => n.id === selection.id);
+    const item = eventItem;
     if (item) {
       const catMeta = NEWS_CATEGORY_META[item.category as NewsCategory];
       const impMeta = NEWS_IMPACT_META[item.impact];
@@ -330,6 +415,13 @@ export function InfoPanel({
       icon = Activity;
       title = item.title;
       tagline = catMeta.label;
+      // Offer a route back to the node this signal belongs to (only for the
+      // five categories that have a node in the hub — geopolitics folds into
+      // the commodity node).
+      const backCat: NewsCategory = item.category === "geopolitics" ? "commodity" : item.category;
+      if (NEWS_CATEGORY_META[backCat]) {
+        backTo = { label: NEWS_CATEGORY_META[backCat].label, sel: { kind: "category", id: backCat } };
+      }
       body = (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -406,6 +498,16 @@ export function InfoPanel({
     >
       <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
+          {backTo && (
+            <button
+              type="button"
+              onClick={() => onSelect(backTo!.sel)}
+              className="inline-flex items-center gap-1 self-start -ml-1 mb-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              Back to {backTo.label}
+            </button>
+          )}
           <div className="flex items-center gap-2.5 mb-1">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary/10 shrink-0">
               <Icon className="w-4 h-4 text-primary" />

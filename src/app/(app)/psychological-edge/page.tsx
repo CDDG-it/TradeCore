@@ -13,6 +13,7 @@ import { computeReflection, buildPreMarketBriefing, RESPONSE_TAGS, type PsychEdg
 import { HabitsView } from "@/components/habits/habits-view";
 import { TradingRulesEditor } from "@/components/habits/trading-rules";
 import { ConfluencesEditor } from "@/components/habits/confluences-editor";
+import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
 import type { TradeJournalEntry, PreTradeAnalysis, PsychEdgeSession, PsychEdgeResponseTag } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
@@ -187,8 +188,8 @@ function EdgeReflectionView() {
   );
 }
 
-// ── Hub: one dashboard combining Reflection, Habits and Behaviour ─────
-type EdgeTab = "reflection" | "habits" | "behaviour";
+// ── Hub: one dashboard combining Reflection, Habits and My Strategy ─────
+type EdgeTab = "reflection" | "habits" | "strategy";
 
 export default function PsychologicalEdgePage() {
   const [tab, setTab] = useState<EdgeTab>("reflection");
@@ -209,7 +210,7 @@ export default function PsychologicalEdgePage() {
           {([
             { key: "reflection", label: "Reflection" },
             { key: "habits", label: "Habits" },
-            { key: "behaviour", label: "Behaviour" },
+            { key: "strategy", label: "My Strategy" },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -228,17 +229,22 @@ export default function PsychologicalEdgePage() {
       <PageWrapper>
         {tab === "reflection" ? <EdgeReflectionView />
           : tab === "habits" ? <HabitsView />
-          : <BehaviourView />}
+          : <MyStrategyView />}
       </PageWrapper>
     </div>
   );
 }
 
-function BehaviourView() {
+function MyStrategyView() {
   return (
-    <div className="grid lg:grid-cols-2 gap-6 items-start">
-      <TradingRulesEditor />
-      <ConfluencesEditor />
+    <div className="space-y-6">
+      <div className="grid lg:grid-cols-2 gap-6 items-start">
+        <TradingRulesEditor />
+        <ConfluencesEditor />
+      </div>
+      <div className="border-t border-border/60 pt-6">
+        <MonteCarloSimulator />
+      </div>
     </div>
   );
 }

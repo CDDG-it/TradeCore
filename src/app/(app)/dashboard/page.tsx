@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, getAnalyses, toggleHabitCompletion,
 } from "@/lib/supabase/queries";
-import { computeDiscipline } from "@/lib/discipline";
+import { computeDiscipline, type DisciplineBreakdown } from "@/lib/discipline";
 import { tradeR } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
@@ -92,9 +92,9 @@ export default function DashboardPage() {
   const winRate = monthTrades.length ? Math.round((wins / monthTrades.length) * 100) : null;
   const monthR = monthTrades.reduce((s, t) => s + tradeR(t), 0);
 
-  const mcMindScore = useMemo(() => {
+  const mcMind = useMemo(() => {
     if (!trades) return null;
-    return computeDiscipline(trades, habits, completions, startOfMonth(now), endOfMonth(now)).total;
+    return computeDiscipline(trades, habits, completions, startOfMonth(now), endOfMonth(now));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trades, habits, completions]);
 
@@ -141,7 +141,7 @@ export default function DashboardPage() {
         <div className="flex flex-1 flex-col gap-3 min-h-0">
           {/* Row 1 — hero widgets grow to fill the freed height */}
           <div className="grid gap-3 md:grid-cols-3 flex-1 min-h-0">
-            <MindScoreOrb score={mcMindScore} />
+            <MindScoreOrb mind={mcMind} />
             <WinRateCard winRate={winRate} wins={wins} losses={losses} be={be} total={monthTrades.length} netR={monthR} />
             <AnalysisWidget analyses={analyses} />
           </div>
@@ -162,11 +162,34 @@ export default function DashboardPage() {
   );
 }
 
-/* ── MC mind score — creative liquid-fill orb ─────────────────────────── */
-function MindScoreOrb({ score }: { score: number | null }) {
-  const target = score ?? 0;
-  const [fill, setFill] = useState(0);
+/* ── MC mind score — a trader's discipline instrument ─────────────────────
+   A 270° radial gauge for the blended score, backed by the two things a trader
+   actually controls: rule adherence at the screen and habit consistency away
+   from it. The needle-arc reads like a cockpit dial; the sub-meters break the
+   score into its trade-driven and routine-driven halves. */
+const GAUGE = { size: 150, stroke: 11, get r() { return (this.size - this.stroke) / 2 - 6; }, sweep: 270, start: 225 };
+
+/** Point on the gauge circle for an angle measured clockwise from the top. */
+function gaugePoint(angle: number) {
+  const c = GAUGE.size / 2;
+  const rad = ((angle - 90) * Math.PI) / 180;
+  return [c + GAUGE.r * Math.cos(rad), c + GAUGE.r * Math.sin(rad)];
+}
+
+/** SVG arc path from the gauge start, spanning `fraction` (0..1) of the sweep. */
+function gaugeArc(fraction: number) {
+  const f = Math.max(0.0001, Math.min(1, fraction));
+  const [sx, sy] = gaugePoint(GAUGE.start);
+  const [ex, ey] = gaugePoint(GAUGE.start + GAUGE.sweep * f);
+  const large = GAUGE.sweep * f > 180 ? 1 : 0;
+  return `M ${sx} ${sy} A ${GAUGE.r} ${GAUGE.r} 0 ${large} 1 ${ex} ${ey}`;
+}
+
+function MindScoreOrb({ mind }: { mind: DisciplineBreakdown | null }) {
+  const target = mind?.total ?? 0;
+  const hasData = mind?.total != null;
   const [display, setDisplay] = useState(0);
+  const [prog, setProg] = useState(0); // 0..1 animated arc fraction
   const raf = useRef(0);
 
   useEffect(() => {
@@ -176,49 +199,84 @@ function MindScoreOrb({ score }: { score: number | null }) {
     const tick = (t: number) => {
       const p = Math.min(1, (t - start) / dur);
       const e = 1 - Math.pow(1 - p, 3);
-      setFill(e * target);
       setDisplay(Math.round(e * target));
+      setProg((e * target) / 100);
       if (p < 1) raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf.current);
   }, [target]);
 
-  const color = score === null ? "var(--muted-foreground)" : scoreColor(target);
-  const label = score === null ? "No data yet" : target >= 80 ? "Locked in" : target >= 60 ? "Holding the line" : "Slipping";
-  const glow = score === null ? 0 : 6 + (target / 100) * 26;
-  const SIZE = 116;
+  const color = hasData ? scoreColor(target) : "var(--muted-foreground)";
+  const label = !hasData ? "No data yet" : target >= 80 ? "Locked in" : target >= 60 ? "Holding the line" : "Slipping";
+  const [tipX, tipY] = gaugePoint(GAUGE.start + GAUGE.sweep * prog);
 
   return (
     <div className={cn(CARD_BASE, "flex flex-col")}>
       <CardFx accent={color} />
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
+        <span className="text-[10px] text-muted-foreground/70">this month</span>
+      </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-2 py-2">
-        <div className="relative rounded-full overflow-hidden shrink-0"
-          style={{ width: SIZE, height: SIZE, border: `2px solid ${alpha(color, 40)}`, boxShadow: `0 0 ${glow}px ${alpha(color, 40)}` }}>
-          <div className="absolute inset-x-0 bottom-0" style={{ height: `${fill}%` }}>
-            <div className="absolute -top-2 left-0 h-3 w-[200%]" style={{ animation: "mc-wave 2.6s linear infinite" }}>
-              <svg viewBox="0 0 200 20" preserveAspectRatio="none" className="h-full w-full">
-                <path d="M0 12 Q 25 2 50 12 T 100 12 T 150 12 T 200 12 V20 H0 Z" fill={color} opacity="0.9" />
-              </svg>
-            </div>
-            <div className="absolute inset-x-0 top-1 bottom-0" style={{ background: color, opacity: 0.9 }} />
-            <div className="absolute -top-1.5 left-0 h-3 w-[200%]" style={{ animation: "mc-wave 4s linear infinite reverse" }}>
-              <svg viewBox="0 0 200 20" preserveAspectRatio="none" className="h-full w-full">
-                <path d="M0 12 Q 25 4 50 12 T 100 12 T 150 12 T 200 12 V20 H0 Z" fill={color} opacity="0.5" />
-              </svg>
-            </div>
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 py-1">
+        {/* Radial gauge */}
+        <div className="relative shrink-0" style={{ width: GAUGE.size, height: GAUGE.size }}>
+          <svg width={GAUGE.size} height={GAUGE.size} className="block">
+            <defs>
+              <linearGradient id="mc-gauge" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={color} stopOpacity="0.65" />
+                <stop offset="100%" stopColor={color} stopOpacity="1" />
+              </linearGradient>
+            </defs>
+            {/* Track */}
+            <path d={gaugeArc(1)} fill="none" stroke={alpha("var(--muted-foreground)", 16)} strokeWidth={GAUGE.stroke} strokeLinecap="round" />
+            {/* Progress */}
+            {hasData && (
+              <path d={gaugeArc(prog)} fill="none" stroke="url(#mc-gauge)" strokeWidth={GAUGE.stroke} strokeLinecap="round"
+                style={{ filter: `drop-shadow(0 0 5px ${alpha(color, 55)})` }} />
+            )}
+            {/* Leading tip */}
+            {hasData && prog > 0.02 && <circle cx={tipX} cy={tipY} r={GAUGE.stroke / 2 + 1.5} fill={color} style={{ filter: `drop-shadow(0 0 6px ${alpha(color, 70)})` }} />}
+          </svg>
+          {/* Centre readout */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <p className="text-[34px] font-black tabular-nums leading-none" style={{ color }}>{hasData ? display : "—"}</p>
+            {hasData && <p className="text-[10px] font-semibold tabular-nums text-muted-foreground/70 -mt-0.5">/ 100</p>}
+            <p className="text-[11px] font-semibold mt-1" style={{ color }}>{label}</p>
           </div>
-          <div className="absolute inset-0 rounded-full pointer-events-none" style={{ boxShadow: "inset 0 2px 8px rgba(255,255,255,0.16)" }} />
         </div>
 
-        <div className="text-center">
-          <p className="text-4xl font-black tabular-nums leading-none" style={{ color }}>{score === null ? "—" : `${display}%`}</p>
-          <p className="text-xs font-semibold mt-1.5" style={{ color }}>{label}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">rules + habits · this month</p>
+        {/* Sub-meters — the two halves of the score */}
+        <div className="w-full space-y-2">
+          <SubMeter label="Rule adherence" value={mind?.tradeRules ?? null} weight="70%" accent={color}
+            caption={mind && mind.tradeCount > 0 ? `${mind.tradeCount} scored trade${mind.tradeCount !== 1 ? "s" : ""}` : "No scored trades"} />
+          <SubMeter label="Habit consistency" value={mind?.habits ?? null} weight="30%" accent={CYAN}
+            caption={mind && mind.habitExpected > 0 ? `${mind.habitCompleted}/${mind.habitExpected} check-ins` : "No habits yet"} />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** A thin labelled progress bar for one half of the mind score. */
+function SubMeter({ label, value, weight, accent, caption }: {
+  label: string; value: number | null; weight: string; accent: string; caption: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2 mb-1">
+        <span className="text-[11px] font-medium text-foreground/80">{label}</span>
+        <span className="text-[10px] text-muted-foreground/60">{weight}</span>
+        <span className="ml-auto text-[11px] font-bold tabular-nums" style={{ color: value == null ? "var(--muted-foreground)" : accent }}>
+          {value == null ? "—" : `${value}%`}
+        </span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-muted-foreground/15 overflow-hidden">
+        <div className="h-full rounded-full transition-[width] duration-700 ease-out"
+          style={{ width: `${value ?? 0}%`, background: accent, boxShadow: value ? `0 0 6px ${alpha(accent, 45)}` : "none" }} />
+      </div>
+      <p className="text-[9.5px] text-muted-foreground/60 mt-0.5">{caption}</p>
     </div>
   );
 }

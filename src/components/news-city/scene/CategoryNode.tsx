@@ -65,6 +65,15 @@ export function CategoryNode({
     >
       <ClickHintRing ringRef={ringRef} radius={1.6} color={color} />
 
+      {/* Invisible, generous hit-area so the entire node — core, ring, shell and
+          the space between them — is a single reliable click target. Without it,
+          raycasts slip between the thin ring/wireframe geometry and the click
+          is lost. */}
+      <mesh position={[0, 1.05, 0]}>
+        <sphereGeometry args={[1.5, 16, 12]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
       {/* Pedestal */}
       <mesh position={[0, 0.09, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[0.58, 0.7, 0.16, 40]} />

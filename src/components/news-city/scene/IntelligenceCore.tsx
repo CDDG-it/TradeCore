@@ -57,6 +57,14 @@ export function IntelligenceCore({
     >
       <ClickHintRing ringRef={ringRef} radius={2.2} color={sentiment.hex} />
 
+      {/* Invisible, generous hit-area so the whole core — globe, gyro rings and
+          halo — is one reliable click target rather than a set of thin meshes
+          the raycast can slip between. */}
+      <mesh position={[0, 1.55, 0]}>
+        <sphereGeometry args={[1.9, 16, 12]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
       {/* Pedestal */}
       <mesh position={[0, 0.09, 0]} receiveShadow castShadow>
         <cylinderGeometry args={[1.0, 1.2, 0.18, 48]} />

@@ -361,7 +361,7 @@ function actionPlanFor(f: Finding): ActionPlan {
       return {
         primaryObjective: label ? `Stand down on "${label}" until you've reviewed why it's failing.` : "Stand down on this setup until you've reviewed why it's failing.",
         reminder: "A setup with a repeating loss pattern is data, not bad luck.",
-        successMetric: label ? `Zero "${label}" trades until reviewed in Trading Behaviour.` : "Zero trades on this setup until reviewed.",
+        successMetric: label ? `Zero "${label}" trades until reviewed in My Strategy.` : "Zero trades on this setup until reviewed.",
       };
     case "score-divergence":
       return {

@@ -682,3 +682,35 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
+
+/* Range slider used by the Monte Carlo simulator controls. Turquoise thumb on a
+   subtle track, themed off the app tokens. */
+.mc-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: color-mix(in oklch, var(--border) 90%, transparent);
+  outline: none;
+  cursor: pointer;
+}
+.mc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--primary);
+  border: 2px solid var(--card);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 60%, transparent), 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease;
+}
+.mc-range::-webkit-slider-thumb:hover { transform: scale(1.12); }
+.mc-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--primary);
+  border: 2px solid var(--card);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 60%, transparent), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
