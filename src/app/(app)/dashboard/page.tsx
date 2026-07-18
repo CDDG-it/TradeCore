@@ -153,22 +153,22 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="flex flex-1 flex-col gap-3 min-h-0">
-          {/* Row 1 — hero widgets grow to fill the freed height */}
+          {/* Row 1 — capital + habits (left), win rate (middle), mind score (right) */}
           <div className="grid gap-3 md:grid-cols-3 flex-1 min-h-0">
-            <MindScoreOrb mind={mcMind} board={questBoard} />
-            <WinRateCard winRate={winRate} wins={wins} losses={losses} be={be} total={monthTrades.length} netR={monthR} />
-            <AnalysisWidget analyses={analyses} />
-          </div>
-
-          {/* Row 2 — journal fills to the bottom, capital & habits beside it */}
-          <div className="grid gap-3 lg:grid-cols-3 flex-1 min-h-0">
-            <div className="lg:col-span-2 min-h-0">
-              <WeekStrip days={weekDays} />
-            </div>
             <div className="flex flex-col gap-3 min-h-0">
               <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
               <HabitsCard habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit} />
             </div>
+            <WinRateCard winRate={winRate} wins={wins} losses={losses} be={be} total={monthTrades.length} netR={monthR} />
+            <MindScoreOrb mind={mcMind} board={questBoard} />
+          </div>
+
+          {/* Row 2 — journal fills to the bottom, analysis beside it */}
+          <div className="grid gap-3 lg:grid-cols-3 flex-1 min-h-0">
+            <div className="lg:col-span-2 min-h-0">
+              <WeekStrip days={weekDays} />
+            </div>
+            <AnalysisWidget analyses={analyses} />
           </div>
         </div>
       )}
@@ -324,38 +324,94 @@ function LevelRing({ level, pct }: { level: number; pct: number }) {
   );
 }
 
-/* ── Win rate — the analytics widget: breakdown + net R + link ────────── */
+/* ── Win rate — hero donut of the month's W/L/BE split + net R ─────────── */
 function WinRateCard({ winRate, wins, losses, be, total, netR }: {
   winRate: number | null; wins: number; losses: number; be: number; total: number; netR: number;
 }) {
-  const seg = (n: number) => (total ? (n / total) * 100 : 0);
   const rColor = netR > 0 ? GREEN : netR < 0 ? RED : "var(--muted-foreground)";
+  const [display, setDisplay] = useState(0);
+  const raf = useRef(0);
+  const targetWr = winRate ?? 0;
+
+  // Count the win-rate number up on load / change.
+  useEffect(() => {
+    cancelAnimationFrame(raf.current);
+    const start = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / 1200);
+      const e = 1 - Math.pow(1 - p, 3);
+      setDisplay(Math.round(e * targetWr));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, [targetWr]);
+
+  // Donut geometry — a full ring split into W / BE / L arcs by share of trades.
+  const R = 52, SW = 13, C = 2 * Math.PI * R;
+  const segs = [
+    { v: wins, c: GREEN },
+    { v: be, c: AMBER },
+    { v: losses, c: RED },
+  ];
+  let acc = 0; // accumulated fraction, for each arc's rotation
+
   return (
     <div className={cn(CARD_BASE, "flex flex-col")}>
       <CardFx accent={CYAN} />
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Win rate</p>
-
-      <div className="flex items-baseline gap-1.5 mt-1.5">
-        <span className="text-5xl font-black tabular-nums leading-none" style={{ color: CYAN }}>
-          {winRate === null ? "—" : `${winRate}%`}
-        </span>
-        <span className="text-[11px] text-muted-foreground">this month</span>
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Win rate</p>
+        <span className="text-[10px] text-muted-foreground/70">this month</span>
       </div>
 
-      <div className="mt-4 flex h-2 w-full overflow-hidden rounded-full bg-border/60">
-        <div className="h-full" style={{ width: `${seg(wins)}%`, background: GREEN }} />
-        <div className="h-full" style={{ width: `${seg(be)}%`, background: AMBER }} />
-        <div className="h-full" style={{ width: `${seg(losses)}%`, background: RED }} />
-      </div>
-      <div className="mt-2 flex items-center gap-3 text-[11px] tabular-nums font-semibold">
-        <span style={{ color: GREEN }}>{wins}W</span>
-        <span style={{ color: RED }}>{losses}L</span>
-        <span style={{ color: AMBER }}>{be}BE</span>
-        <span className="text-muted-foreground/70 ml-auto font-normal">{total} trades</span>
+      {/* Donut */}
+      <div className="flex-1 flex items-center justify-center py-2 min-h-0">
+        <div className="relative shrink-0" style={{ width: 148, height: 148 }}>
+          <svg width={148} height={148} viewBox="0 0 132 132" className="block">
+            {/* Track */}
+            <circle cx={66} cy={66} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
+            {/* Segments */}
+            {total > 0 && segs.map((s, i) => {
+              if (s.v === 0) return null;
+              const frac = s.v / total;
+              const dash = frac * C;
+              const rot = acc * 360 - 90; // start at top, then walk clockwise
+              acc += frac;
+              return (
+                <circle key={i} cx={66} cy={66} r={R} fill="none" stroke={s.c} strokeWidth={SW}
+                  strokeDasharray={`${dash} ${C - dash}`}
+                  transform={`rotate(${rot} 66 66)`}
+                  style={{ filter: `drop-shadow(0 0 4px ${alpha(s.c, 40)})` }} />
+              );
+            })}
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <p className="text-[38px] font-black tabular-nums leading-none" style={{ color: CYAN }}>
+              {winRate === null ? "—" : `${display}%`}
+            </p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
+              {total > 0 ? `${total} trade${total !== 1 ? "s" : ""}` : "no trades"}
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Net R — secondary stat that fills the taller card */}
-      <div className="mt-4 flex items-center justify-between rounded-xl border border-border/60 bg-muted/25 px-3 py-2.5">
+      {/* W / L / BE legend */}
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: "Win", value: wins, color: GREEN },
+          { label: "Loss", value: losses, color: RED },
+          { label: "B/E", value: be, color: AMBER },
+        ].map((s) => (
+          <div key={s.label} className="rounded-lg border border-border/50 bg-muted/20 px-2 py-1.5 text-center">
+            <p className="text-base font-black tabular-nums leading-none" style={{ color: s.color }}>{s.value}</p>
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-1">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Net R */}
+      <div className="mt-3 flex items-center justify-between rounded-xl border border-border/60 bg-muted/25 px-3 py-2.5">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Net R · month</span>
         <span className="text-lg font-black tabular-nums leading-none" style={{ color: rColor }}>
           {netR > 0 ? "+" : ""}{netR.toFixed(1)}R
