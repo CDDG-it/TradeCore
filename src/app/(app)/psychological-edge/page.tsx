@@ -11,7 +11,6 @@ import { HabitsView } from "@/components/habits/habits-view";
 import { TradingRulesEditor } from "@/components/habits/trading-rules";
 import { ConfluencesEditor } from "@/components/habits/confluences-editor";
 import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
-import { QuestBoard } from "@/components/mind-score/quest-board";
 import type { TradeJournalEntry, PreTradeAnalysis, PsychEdgeSession, PsychEdgeResponseTag } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
@@ -186,23 +185,21 @@ function EdgeReflectionView() {
   );
 }
 
-// ── Hub: Reflection, Habits, My Strategy and Levels ────────────────────
-type EdgeTab = "reflection" | "habits" | "strategy" | "levels";
+// ── Hub: Reflection, Habits and My Strategy ────────────────────────────
+type EdgeTab = "reflection" | "habits" | "strategy";
 const EDGE_TABS: { key: EdgeTab; label: string }[] = [
   { key: "reflection", label: "Reflection" },
   { key: "habits", label: "Habits" },
   { key: "strategy", label: "My Strategy" },
-  { key: "levels", label: "Levels" },
 ];
 
 export default function PsychologicalEdgePage() {
   const [tab, setTab] = useState<EdgeTab>("reflection");
 
-  // Allow deep-linking to a tab (e.g. the dashboard's "Quests" link).
+  // Allow deep-linking to a specific tab.
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tab");
-    if (t === "quests") setTab("levels");
-    else if (EDGE_TABS.some((x) => x.key === t)) setTab(t as EdgeTab);
+    if (EDGE_TABS.some((x) => x.key === t)) setTab(t as EdgeTab);
   }, []);
 
   return (
@@ -237,23 +234,8 @@ export default function PsychologicalEdgePage() {
       <PageWrapper>
         {tab === "reflection" ? <EdgeReflectionView />
           : tab === "habits" ? <HabitsView />
-          : tab === "strategy" ? <MyStrategyView />
-          : <LevelsView />}
+          : <MyStrategyView />}
       </PageWrapper>
-    </div>
-  );
-}
-
-function LevelsView() {
-  return (
-    <div className="max-w-xl mx-auto space-y-4">
-      <div>
-        <h2 className="text-sm font-semibold">Levels &amp; quests</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Earn points each week for journaling, reflecting and logging your best trade. Points build your level.
-        </p>
-      </div>
-      <QuestBoard />
     </div>
   );
 }

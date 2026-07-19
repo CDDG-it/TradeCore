@@ -12,8 +12,7 @@ import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, getAnalyses, toggleHabitCompletion,
   getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews,
 } from "@/lib/supabase/queries";
-import { computeDiscipline, type DisciplineBreakdown } from "@/lib/discipline";
-import { computeQuestBoard, type QuestBoard } from "@/lib/mind-score/quests";
+import { computeMindScore, type MindScore } from "@/lib/mind-score/mind-score";
 import { tradeR } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
@@ -103,14 +102,12 @@ export default function DashboardPage() {
 
   const mcMind = useMemo(() => {
     if (!trades) return null;
-    return computeDiscipline(trades, habits, completions, startOfMonth(now), endOfMonth(now));
+    return computeMindScore(
+      { trades, habits, completions, psychSessions, bestTrades, weeklyReviews },
+      "month"
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trades, habits, completions]);
-
-  const questBoard = useMemo(
-    () => computeQuestBoard({ trades: trades ?? [], psychSessions, bestTrades, weeklyReviews }),
-    [trades, psychSessions, bestTrades, weeklyReviews]
-  );
+  }, [trades, habits, completions, psychSessions, bestTrades, weeklyReviews]);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(now, { weekStartsOn: 1 });
@@ -160,7 +157,7 @@ export default function DashboardPage() {
               <HabitsCard habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit} />
             </div>
             <WinRateCard winRate={winRate} wins={wins} losses={losses} be={be} total={monthTrades.length} netR={monthR} />
-            <MindScoreOrb mind={mcMind} board={questBoard} />
+            <MindScoreOrb score={mcMind} />
           </div>
 
           {/* Row 2 — journal fills to the bottom, analysis beside it */}
@@ -176,16 +173,16 @@ export default function DashboardPage() {
   );
 }
 
-/* ── MC mind score — discipline signal meter + progression ────────────────
-   The score reads as a rising "signal-strength" bar meter (trade-desk energy),
-   split into its rule-adherence and habit halves. Below it, the MC Mindset
-   progression: your level, this week's quest points, and how many quests you've
-   cleared — turning discipline into something you level up. */
+/* ── MC mind score — one readiness number, split into its inputs ──────────
+   A rising "signal-strength" bar meter for the blended score, the current band
+   as its state label, the three inputs (rules, habits, objectives) as inline
+   sub-scores, and a compact objectives strip. Clicking through opens the full
+   breakdown page with the calculation and week / month / all-time scores. */
 const METER_BARS = 22;
 
-function MindScoreOrb({ mind, board }: { mind: DisciplineBreakdown | null; board: QuestBoard }) {
-  const target = mind?.total ?? 0;
-  const hasData = mind?.total != null;
+function MindScoreOrb({ score }: { score: MindScore | null }) {
+  const target = score?.total ?? 0;
+  const hasData = score?.total != null;
   const [display, setDisplay] = useState(0);
   const [prog, setProg] = useState(0); // 0..1 animated fill
   const raf = useRef(0);
@@ -208,11 +205,11 @@ function MindScoreOrb({ mind, board }: { mind: DisciplineBreakdown | null; board
   const color = hasData ? scoreColor(target) : "var(--muted-foreground)";
   const filled = Math.round(prog * METER_BARS);
 
-  const { level, weeklyPoints, weeklyMax, quests } = board;
-  const ringPct = level.span > 0 ? (level.intoLevel / level.span) * 100 : 0;
+  const comp = (key: "rules" | "habits" | "objectives") => score?.components.find((c) => c.key === key)?.value ?? null;
+  const objectives = score?.objectives ?? [];
 
   return (
-    <div className={cn(CARD_BASE, "flex flex-col")}>
+    <Link href="/psychological-edge/mindscore" className={cn(CARD_BASE, "flex flex-col group")}>
       <CardFx accent={color} />
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
@@ -225,7 +222,9 @@ function MindScoreOrb({ mind, board }: { mind: DisciplineBreakdown | null; board
           <p className="text-[40px] font-black tabular-nums leading-none" style={{ color }}>
             {hasData ? display : "—"}
           </p>
-          <p className="text-[11px] font-medium mt-1 text-muted-foreground">{hasData ? "of 100" : "No data yet"}</p>
+          <p className="text-[11px] font-medium mt-1" style={{ color: hasData ? color : "var(--muted-foreground)" }}>
+            {hasData ? score!.band.label : "No data yet"}
+          </p>
         </div>
         <div className="flex-1 flex items-end gap-[3px] h-16 pb-0.5" aria-hidden>
           {Array.from({ length: METER_BARS }).map((_, i) => {
@@ -247,51 +246,33 @@ function MindScoreOrb({ mind, board }: { mind: DisciplineBreakdown | null; board
         </div>
       </div>
 
-      {/* The two halves */}
-      <div className="flex items-center gap-4 mt-2.5">
-        <MiniStat label="Rules" weight="70%" value={mind?.tradeRules ?? null} accent={color} />
-        <MiniStat label="Habits" weight="30%" value={mind?.habits ?? null} accent={CYAN} />
+      {/* The three inputs */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5">
+        <MiniStat label="Rules" value={comp("rules")} accent={color} />
+        <MiniStat label="Habits" value={comp("habits")} accent={CYAN} />
+        <MiniStat label="Objectives" value={comp("objectives")} accent={TURQUOISE} />
       </div>
 
-      {/* Progression — level + weekly quest points */}
-      <Link href="/psychological-edge?tab=levels" className="group mt-auto pt-3">
+      {/* Objectives strip — process work that lifts the score */}
+      <div className="mt-auto pt-3">
         <div className="h-px bg-border/60 mb-3" />
-        <div className="flex items-center gap-2.5">
-          <LevelRing level={level.level} pct={ringPct} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <p className="text-[13px] font-bold leading-none">Level {level.level}</p>
-              <span className="text-[9px] font-semibold uppercase tracking-wider px-1 py-0.5 rounded"
-                style={{ background: alpha(TURQUOISE, 14), color: TURQUOISE }}>{level.title}</span>
-            </div>
-            <div className="mt-1.5 h-1 w-full rounded-full bg-muted-foreground/15 overflow-hidden">
-              <div className="h-full rounded-full" style={{ width: `${weeklyMax ? (weeklyPoints / weeklyMax) * 100 : 0}%`, background: TURQUOISE }} />
-            </div>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-sm font-black tabular-nums leading-none" style={{ color: TURQUOISE }}>
-              {weeklyPoints}<span className="text-muted-foreground/50 text-[10px]">/{weeklyMax}</span>
-            </p>
-            <p className="text-[9px] text-muted-foreground">wk pts</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 mt-2">
-          {quests.map((q) => (
-            <span key={q.key} className="h-1.5 flex-1 rounded-full"
-              style={{ background: q.done ? GREEN : alpha("var(--muted-foreground)", 18) }} />
+        <div className="flex items-center gap-1.5">
+          {objectives.map((o) => (
+            <span key={o.key} className="h-1.5 flex-1 rounded-full"
+              style={{ background: o.rate >= 1 ? GREEN : o.rate > 0 ? alpha(TURQUOISE, 55) : alpha("var(--muted-foreground)", 18) }} />
           ))}
           <span className="text-[10px] font-medium text-muted-foreground/70 group-hover:text-primary transition-colors ml-1 shrink-0">
-            Quests
+            Breakdown →
           </span>
         </div>
-      </Link>
-    </div>
+      </div>
+    </Link>
   );
 }
 
-/** Compact inline half-score for the mind score card. */
-function MiniStat({ label, weight, value, accent }: {
-  label: string; weight: string; value: number | null; accent: string;
+/** Compact inline sub-score for the mind score card. */
+function MiniStat({ label, value, accent }: {
+  label: string; value: number | null; accent: string;
 }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -300,25 +281,6 @@ function MiniStat({ label, weight, value, accent }: {
       <span className="text-[11px] font-bold tabular-nums" style={{ color: value == null ? "var(--muted-foreground)" : accent }}>
         {value == null ? "—" : `${value}%`}
       </span>
-      <span className="text-[9px] text-muted-foreground/50">{weight}</span>
-    </div>
-  );
-}
-
-/** Small level ring with the level number in the centre. */
-function LevelRing({ level, pct }: { level: number; pct: number }) {
-  const R = 16;
-  const C = 2 * Math.PI * R;
-  return (
-    <div className="relative w-10 h-10 shrink-0">
-      <svg width={40} height={40} viewBox="0 0 40 40" className="block -rotate-90">
-        <circle cx={20} cy={20} r={R} fill="none" stroke={alpha(TURQUOISE, 16)} strokeWidth={3} />
-        <circle cx={20} cy={20} r={R} fill="none" stroke={TURQUOISE} strokeWidth={3} strokeLinecap="round"
-          strokeDasharray={`${(pct / 100) * C} ${C}`} style={{ transition: "stroke-dasharray 0.7s ease" }} />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[13px] font-black tabular-nums" style={{ color: TURQUOISE }}>{level}</span>
-      </div>
     </div>
   );
 }
