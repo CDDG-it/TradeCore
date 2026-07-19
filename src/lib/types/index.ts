@@ -399,8 +399,14 @@ export interface PsychEdgeSession {
   success_metric: string | null;
   /** Respond — one-tap emotional read of the trade, set by the trader. */
   response_tag: PsychEdgeResponseTag | null;
-  /** Reason, trader's side — their own written answer to `reason`. */
+  /** Reason, trader's side — their own written answer to `reason` (why it happened). */
   reasoning_answer: string | null;
+  /** Reason, deeper — the trader spelling out why this was a mistake and what it
+   *  actually cost them (the R, the rule, the trust in their own process). */
+  mistake_cost: string | null;
+  /** Reconstruct — the trader's own, explicit commitment not to repeat this,
+   *  in their own words. Required before a reflection can be committed. */
+  commitment_statement: string | null;
   /** Reconstruct — optional trader override/addition to `primary_objective`. */
   reconstruction_note: string | null;
   /** Whether the trader has explicitly committed to today's objective. */

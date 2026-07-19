@@ -72,7 +72,7 @@ function EdgeReflectionView() {
 
   /** Persist a change to the selected trade's reflection, seeding the computed
    *  5R content the first time the trader touches it. */
-  async function patch(fields: Partial<Pick<PsychEdgeSession, "response_tag" | "reasoning_answer" | "reconstruction_note" | "reconstruction_confirmed">>) {
+  async function patch(fields: Partial<Pick<PsychEdgeSession, "response_tag" | "reasoning_answer" | "mistake_cost" | "commitment_statement" | "reconstruction_note" | "reconstruction_confirmed">>) {
     if (!selectedTrade || !reflection) return;
     setSaveError(false);
     const base = selectedSession;
@@ -89,6 +89,8 @@ function EdgeReflectionView() {
       success_metric: base?.success_metric ?? reflection.successMetric,
       response_tag: base?.response_tag ?? null,
       reasoning_answer: base?.reasoning_answer ?? null,
+      mistake_cost: base?.mistake_cost ?? null,
+      commitment_statement: base?.commitment_statement ?? null,
       reconstruction_note: base?.reconstruction_note ?? null,
       reconstruction_confirmed: base?.reconstruction_confirmed ?? false,
       ...fields,
@@ -132,6 +134,8 @@ function EdgeReflectionView() {
             saveError={saveError}
             onSetTag={(tag) => patch({ response_tag: tag })}
             onSaveAnswer={(v) => patch({ reasoning_answer: v.trim() || null })}
+            onSaveCost={(v) => patch({ mistake_cost: v.trim() || null })}
+            onSaveCommitment={(v) => patch({ commitment_statement: v.trim() || null })}
             onSaveNote={(v) => patch({ reconstruction_note: v.trim() || null })}
             onToggleCommit={() => patch({ reconstruction_confirmed: !selectedSession?.reconstruction_confirmed })}
           />
@@ -211,7 +215,7 @@ function TradeList({
 /* ── The 5R walkthrough — one explained box per R ─────────────────────── */
 function FiveRWalkthrough({
   trade, session, reflection, saveError,
-  onSetTag, onSaveAnswer, onSaveNote, onToggleCommit,
+  onSetTag, onSaveAnswer, onSaveCost, onSaveCommitment, onSaveNote, onToggleCommit,
 }: {
   trade: TradeJournalEntry;
   session: PsychEdgeSession | null;
@@ -219,24 +223,40 @@ function FiveRWalkthrough({
   saveError: boolean;
   onSetTag: (tag: PsychEdgeResponseTag) => void;
   onSaveAnswer: (v: string) => void;
+  onSaveCost: (v: string) => void;
+  onSaveCommitment: (v: string) => void;
   onSaveNote: (v: string) => void;
   onToggleCommit: () => void;
 }) {
   const [answer, setAnswer] = useState(session?.reasoning_answer ?? "");
+  const [cost, setCost] = useState(session?.mistake_cost ?? "");
+  const [commitment, setCommitment] = useState(session?.commitment_statement ?? "");
   const [note, setNote] = useState(session?.reconstruction_note ?? "");
 
   useEffect(() => {
     setAnswer(session?.reasoning_answer ?? "");
+    setCost(session?.mistake_cost ?? "");
+    setCommitment(session?.commitment_statement ?? "");
     setNote(session?.reconstruction_note ?? "");
-  }, [session?.id, session?.reasoning_answer, session?.reconstruction_note]);
+  }, [session?.id, session?.reasoning_answer, session?.mistake_cost, session?.commitment_statement, session?.reconstruction_note]);
 
   const answerDirty = answer.trim() !== (session?.reasoning_answer ?? "").trim();
+  const costDirty = cost.trim() !== (session?.mistake_cost ?? "").trim();
+  const commitmentDirty = commitment.trim() !== (session?.commitment_statement ?? "").trim();
   const noteDirty = note.trim() !== (session?.reconstruction_note ?? "").trim();
 
   const respondDone = !!session?.response_tag;
   const reasonDone = !!(session?.reasoning_answer && session.reasoning_answer.trim());
+  const costDone = !!(session?.mistake_cost && session.mistake_cost.trim());
+  const commitmentDone = !!(session?.commitment_statement && session.commitment_statement.trim());
   const commitDone = !!session?.reconstruction_confirmed;
-  const doneCount = [respondDone, reasonDone, commitDone].filter(Boolean).length;
+
+  // Every written step must be done before the trader can seal the commitment —
+  // no one-click "commit" without actually working through the reflection.
+  const writtenSteps = [respondDone, reasonDone, costDone, commitmentDone];
+  const writtenCount = writtenSteps.filter(Boolean).length;
+  const canCommit = writtenSteps.every(Boolean);
+  const doneCount = writtenCount + (commitDone ? 1 : 0);
 
   const r = tradeR(trade);
 
@@ -250,7 +270,7 @@ function FiveRWalkthrough({
             <span className="text-[11px] text-muted-foreground capitalize">{trade.direction} · {trade.session} · {dayLabel(trade.date_time)}</span>
             <span className="text-xs font-bold tabular-nums" style={{ color: r < 0 ? RED : "var(--muted-foreground)" }}>{fmtR(r)}</span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Deep reflection — work through all five steps.</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Deep reflection — every step is on you. Own the mistake, then commit.</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {commitDone && (
@@ -258,7 +278,7 @@ function FiveRWalkthrough({
               <Check className="h-3 w-3" strokeWidth={3} /> Reflected
             </span>
           )}
-          <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">{doneCount}/3 complete</span>
+          <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">{doneCount}/5 complete</span>
         </div>
       </div>
 
@@ -309,13 +329,13 @@ function FiveRWalkthrough({
       </StepBox>
 
       {/* 4 — Reason */}
-      <StepBox n={4} title="Reason" subtitle="Why it happened" done={reasonDone}
-        purpose="The hard question. Answer it honestly — this is what your next reflection checks you against.">
+      <StepBox n={4} title="Reason" subtitle="Why it happened & why it's a mistake" done={reasonDone && costDone}
+        purpose="The hard part. First name the real reason it happened — then be honest with yourself about why it was a mistake and what it cost. This is what your next reflection checks you against.">
         <p className="text-sm font-semibold text-foreground leading-snug mb-2">{reflection.reason}</p>
         <textarea
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
-          placeholder="Answer honestly — the specific decision, not the outcome."
+          placeholder="Why it happened — the specific decision, not the outcome."
           rows={2}
           className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
         />
@@ -328,11 +348,31 @@ function FiveRWalkthrough({
             Save answer
           </button>
         )}
+
+        <p className="text-sm font-semibold text-foreground leading-snug mt-4 mb-2">
+          Why was this a mistake — and what did it cost you?
+        </p>
+        <textarea
+          value={cost}
+          onChange={(e) => setCost(e.target.value)}
+          placeholder="Spell it out: the R lost, the rule broken, the trust in your own process. Make it concrete enough to sting."
+          rows={2}
+          className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
+        />
+        {costDirty && (
+          <button
+            onClick={() => onSaveCost(cost)}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all"
+            style={{ background: ACCENT }}
+          >
+            Save
+          </button>
+        )}
       </StepBox>
 
       {/* 5 — Reconstruct */}
-      <StepBox n={5} title="Reconstruct" subtitle="What changes" done={commitDone}
-        purpose="Turn the reflection into one concrete change for next time — then commit to it.">
+      <StepBox n={5} title="Reconstruct" subtitle="What changes & your commitment" done={commitmentDone && commitDone}
+        purpose="Turn the reflection into one concrete change — then state, in your own words, that you won't do this again, and commit to it.">
         {reflection.primaryObjective && (
           <p className="text-sm font-semibold text-foreground">{reflection.primaryObjective}</p>
         )}
@@ -342,12 +382,33 @@ function FiveRWalkthrough({
             <span className="font-medium text-foreground/70">Success metric — </span>{reflection.successMetric}
           </p>
         )}
+
+        <p className="text-sm font-semibold text-foreground leading-snug mt-4 mb-2">
+          Your commitment — in your own words
+        </p>
+        <textarea
+          value={commitment}
+          onChange={(e) => setCommitment(e.target.value)}
+          placeholder="Finish it plainly: “Next time [situation], I will [action] instead — and I will not [the mistake] again, because …”"
+          rows={3}
+          className="w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
+        />
+        {commitmentDirty && (
+          <button
+            onClick={() => onSaveCommitment(commitment)}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all"
+            style={{ background: ACCENT }}
+          >
+            Save commitment
+          </button>
+        )}
+
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="Optional — phrase this change in your own words, or add a condition."
+          placeholder="Optional — anything else you want to remember, or a condition to watch for."
           rows={2}
-          className="mt-2.5 w-full rounded-lg border border-border bg-input px-3 py-2 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
+          className="mt-3 w-full rounded-lg border border-border bg-input px-3 py-2 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 resize-none"
         />
         <div className="flex flex-wrap items-center gap-2 mt-2.5">
           {noteDirty && (
@@ -361,14 +422,21 @@ function FiveRWalkthrough({
           )}
           <button
             onClick={onToggleCommit}
+            disabled={!commitDone && !canCommit}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
-              commitDone ? "text-white" : "border text-muted-foreground hover:text-foreground"
+              commitDone ? "text-white" : "border text-muted-foreground hover:text-foreground",
+              !commitDone && !canCommit && "cursor-not-allowed opacity-40 hover:text-muted-foreground"
             )}
             style={commitDone ? { background: GREEN } : { borderColor: "var(--border)" }}
           >
             {commitDone ? "Committed" : "Commit to this"}
           </button>
+          {!commitDone && !canCommit && (
+            <span className="text-[11px] text-muted-foreground">
+              Complete every step above — own it before you commit.
+            </span>
+          )}
         </div>
       </StepBox>
     </div>

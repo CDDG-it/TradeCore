@@ -10,7 +10,7 @@ import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
 type StrategyTab = "rules" | "simulator";
 const STRATEGY_TABS: { key: StrategyTab; label: string }[] = [
   { key: "rules", label: "Trading Rules & Confluences" },
-  { key: "simulator", label: "Monte Carlo — Eval" },
+  { key: "simulator", label: "MC Pass Simulation" },
 ];
 
 export default function StrategyPage() {

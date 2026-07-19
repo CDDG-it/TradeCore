@@ -305,7 +305,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR }: {
   }, [targetWr]);
 
   // Donut geometry — a full ring split into W / BE / L arcs by share of trades.
-  const R = 52, SW = 13, C = 2 * Math.PI * R;
+  const R = 46, SW = 11, C = 2 * Math.PI * R;
   const segs = [
     { v: wins, c: GREEN },
     { v: be, c: AMBER },
@@ -323,10 +323,10 @@ function WinRateCard({ winRate, wins, losses, be, total, netR }: {
 
       {/* Donut */}
       <div className="flex-1 flex items-center justify-center py-1 min-h-0">
-        <div className="relative shrink-0" style={{ width: 132, height: 132 }}>
-          <svg width={132} height={132} viewBox="0 0 132 132" className="block">
+        <div className="relative shrink-0" style={{ width: 116, height: 116 }}>
+          <svg width={116} height={116} viewBox="0 0 116 116" className="block">
             {/* Track */}
-            <circle cx={66} cy={66} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
+            <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
             {/* Segments */}
             {total > 0 && segs.map((s, i) => {
               if (s.v === 0) return null;
@@ -335,18 +335,18 @@ function WinRateCard({ winRate, wins, losses, be, total, netR }: {
               const rot = acc * 360 - 90; // start at top, then walk clockwise
               acc += frac;
               return (
-                <circle key={i} cx={66} cy={66} r={R} fill="none" stroke={s.c} strokeWidth={SW}
+                <circle key={i} cx={58} cy={58} r={R} fill="none" stroke={s.c} strokeWidth={SW}
                   strokeDasharray={`${dash} ${C - dash}`}
-                  transform={`rotate(${rot} 66 66)`}
+                  transform={`rotate(${rot} 58 58)`}
                   style={{ filter: `drop-shadow(0 0 4px ${alpha(s.c, 40)})` }} />
               );
             })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-[38px] font-black tabular-nums leading-none" style={{ color: CYAN }}>
+            <p className="text-[30px] font-black tabular-nums leading-none" style={{ color: CYAN }}>
               {winRate === null ? "—" : `${display}%`}
             </p>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
               {total > 0 ? `${total} trade${total !== 1 ? "s" : ""}` : "no trades"}
             </p>
           </div>

@@ -103,7 +103,7 @@ export function MonteCarloSimulator() {
     <div className="space-y-5">
       {/* Intro */}
       <div className="min-w-0">
-        <h2 className="text-sm font-semibold">Monte Carlo — Eval Simulator</h2>
+        <h2 className="text-sm font-semibold">MC Pass Simulation</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
           Runs your inputs across thousands of randomised trade sequences to estimate how often you pass, fail or time out on a prop-firm evaluation.
         </p>
