@@ -3,6 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
+import { useTheme } from "@/lib/theme-context";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { OverlayHud } from "@/components/news-city/OverlayHud";
@@ -26,6 +27,7 @@ const IntelligenceHub3D = dynamic(
 
 export default function NewsCityPage() {
   const [selection, setSelection] = useState<CitySelection | null>(null);
+  const { theme } = useTheme();
 
   return (
     <div className="space-y-4">
@@ -48,7 +50,7 @@ export default function NewsCityPage() {
           {/* Full-screen stage — fills the viewport down to the bottom edge. */}
           <div
             className="relative w-full overflow-hidden rounded-2xl min-h-[420px] h-[calc(100dvh-13rem)]"
-            style={{ background: "#0b1120" }}
+            style={{ background: theme === "light" ? "#EEF3F8" : "#0b1120" }}
           >
             <IntelligenceHub3D data={NEWS_CITY_DATA} selected={selection} onSelect={setSelection} />
 

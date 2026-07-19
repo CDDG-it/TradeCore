@@ -12,8 +12,12 @@ import { NEWS_CATEGORY_META, SENTIMENT_META } from "@/lib/news-city/ui";
 import type { NewsCategory, NewsCityData } from "@/lib/news-city/types";
 import type { CitySelection } from "./selection";
 import { selectionKey } from "./selection";
+import { useTheme } from "@/lib/theme-context";
 
-const SKY_BG = "#0b1120"; // matches the app's --background token
+// Sky/fog per theme — navy in dark, a soft slate in light so the hub sits on a
+// light background that matches the rest of the UI.
+const SKY_DARK = "#0b1120";
+const SKY_LIGHT = "#EEF3F8";
 
 /** The five signal sources the hub visualises, arranged as a pentagon around
  *  the Market Intelligence Core — matches the reading order Macro → Central
@@ -168,6 +172,9 @@ export function IntelligenceHub3D({
   onSelect: (sel: CitySelection) => void;
 }) {
   const sentiment = SENTIMENT_META[data.marketHQ.sentiment];
+  const { theme } = useTheme();
+  const light = theme === "light";
+  const skyBg = light ? SKY_LIGHT : SKY_DARK;
 
   const macroIntensity = useMemo(
     () => data.macroForces.reduce((sum, f) => sum + f.intensity, 0) / Math.max(data.macroForces.length, 1),
@@ -210,15 +217,16 @@ export function IntelligenceHub3D({
       className="!touch-none"
       camera={{ position: [2, 30, 40], fov: 42, near: 0.1, far: 120 }}
     >
-      <color attach="background" args={[SKY_BG]} />
-      <fog attach="fog" args={[SKY_BG, 18, 40]} />
+      <color attach="background" args={[skyBg]} />
+      <fog attach="fog" args={[skyBg, 18, 40]} />
 
-      <ambientLight intensity={0.32} color="#7fa8c9" />
-      <hemisphereLight args={["#1c2c42", "#05070c", 0.4]} />
-      <directionalLight position={[10, 18, 8]} intensity={0.55} color="#bcd7ea" castShadow />
+      <ambientLight intensity={light ? 0.75 : 0.32} color={light ? "#ffffff" : "#7fa8c9"} />
+      <hemisphereLight args={light ? ["#ffffff", "#cbd5e1", 0.9] : ["#1c2c42", "#05070c", 0.4]} />
+      <directionalLight position={[10, 18, 8]} intensity={light ? 0.7 : 0.55} color={light ? "#ffffff" : "#bcd7ea"} castShadow />
       <pointLight position={[0, 6, 0]} intensity={0.7} color={sentiment.hex} distance={26} decay={2} />
 
-      <Stars radius={90} depth={40} count={2200} factor={2.4} saturation={0} fade speed={0.35} />
+      {/* Stars only read on a dark sky — skip them in light mode. */}
+      {!light && <Stars radius={90} depth={40} count={2200} factor={2.4} saturation={0} fade speed={0.35} />}
 
       <Suspense fallback={null}>
         <IntelligenceGrid />

@@ -19,7 +19,7 @@ import {
 } from "date-fns";
 import { computeTradeRulesScore, computeHabitCounts } from "@/lib/discipline";
 import type {
-  TradeJournalEntry, Habit, HabitCompletion, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview,
+  TradeJournalEntry, Habit, HabitCompletion, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, PreTradeAnalysis,
 } from "@/lib/types";
 
 export type MindPeriod = "week" | "month" | "all";
@@ -133,6 +133,7 @@ export interface MindInputs {
   psychSessions: PsychEdgeSession[];
   bestTrades: BestTradeOfDay[];
   weeklyReviews: WeeklyTradeReview[];
+  analyses: PreTradeAnalysis[];
 }
 
 /** Earliest day any tracked activity exists — the anchor for the all-time window. */
@@ -174,11 +175,33 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   const bestDays = new Set(input.bestTrades.filter((b) => inRange(b.date)).map((b) => dayKey(b.date)));
   const reviewsDone = mondaysInRange.filter((k) => reviewSet.has(k)).length;
 
+  // ── Pre-trade analysis: every day you traded needs an analysis prepared
+  // beforehand. A trade only earns its day if it links to an analysis dated
+  // on or before the trade's day — an analysis written after the fact, or none
+  // at all, earns nothing. Days without trades are not required.
+  const analysisById = new Map(input.analyses.map((a) => [a.id, a]));
+  const tradedDays = new Set<string>();
+  const analysedDays = new Set<string>();
+  for (const t of input.trades) {
+    const day = dayKey(t.date_time);
+    if (!inRange(t.date_time)) continue;
+    tradedDays.add(day);
+    const linked = t.linked_analysis_id ? analysisById.get(t.linked_analysis_id) : undefined;
+    if (linked && dayKey(linked.date) <= day) analysedDays.add(day);
+  }
+  const analysisTarget = tradedDays.size; // nothing required on non-trading days
+  const analysisRate = analysisTarget === 0 ? 1 : Math.min(1, analysedDays.size / analysisTarget);
+
   const rawObjectives: Omit<Objective, "contribution">[] = [
     {
       key: "weekly-review", label: "Weekly review", description: "Complete your weekly trade review",
       href: "/journal", progress: reviewsDone, target: weekCount,
       rate: Math.min(1, reviewsDone / weekCount),
+    },
+    {
+      key: "pre-trade-analysis", label: "Pre-trade analysis", description: "Prepare an analysis before you trade — every day you take a trade",
+      href: "/analysis", progress: analysedDays.size, target: analysisTarget,
+      rate: analysisRate,
     },
     {
       key: "psych-reflections", label: "Psychology reflections", description: "Reflect on your trading days",

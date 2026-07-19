@@ -99,11 +99,11 @@ export default function DashboardPage() {
   const mcMind = useMemo(() => {
     if (!trades) return null;
     return computeMindScore(
-      { trades, habits, completions, psychSessions, bestTrades, weeklyReviews },
+      { trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses },
       "month"
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trades, habits, completions, psychSessions, bestTrades, weeklyReviews]);
+  }, [trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses]);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(now, { weekStartsOn: 1 });

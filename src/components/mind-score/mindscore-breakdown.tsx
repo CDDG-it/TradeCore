@@ -5,10 +5,10 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  getTrades, getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews,
+  getTrades, getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getAnalyses,
 } from "@/lib/supabase/queries";
 import {
-  computeMindScoreAll, MIND_BANDS, bandFor, BAND_COLORS, bandColorFor,
+  computeMindScoreAll, MIND_BANDS, BAND_COLORS, bandColorFor,
   type MindPeriod, type MindScore, type MindInputs,
 } from "@/lib/mind-score/mind-score";
 
@@ -25,10 +25,10 @@ export function MindScoreBreakdown() {
   useEffect(() => {
     Promise.all([
       getTrades(), getHabits(), getHabitCompletions(),
-      getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews(),
-    ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews]) => {
-      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews });
-    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [] }));
+      getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews(), getAnalyses(),
+    ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses]) => {
+      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses });
+    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [] }));
   }, []);
 
   const scores = useMemo(() => (data ? computeMindScoreAll(data) : null), [data]);
@@ -80,9 +80,6 @@ export function MindScoreBreakdown() {
         <ComponentBreakdown score={score} />
         <ObjectivesBreakdown score={score} />
       </div>
-
-      {/* What the percentages mean */}
-      <BandLegend total={score.total} />
     </div>
   );
 }
@@ -115,6 +112,21 @@ function BandPanel({ score }: { score: MindScore }) {
             <div className="w-3.5 h-3.5 rounded-full border-2 border-card" style={{ background: c, boxShadow: `0 0 0 1px ${c}, 0 0 8px ${alpha(c, 60)}` }} />
           </div>
         )}
+      </div>
+
+      {/* What each zone means — aligned under its slice of the scale */}
+      <div className="mt-2 flex w-full gap-1">
+        {MIND_BANDS.map((b, i) => {
+          const active = score.total != null && score.total >= b.min && (score.total < b.max || b.max === 100);
+          return (
+            <div key={b.min} className="flex-1 min-w-0 text-center">
+              <p className="text-[10px] font-bold leading-tight" style={{ color: active ? BAND_COLORS[i] : alpha(BAND_COLORS[i], 65) }}>
+                {b.label}
+              </p>
+              <p className="text-[9px] tabular-nums text-muted-foreground/70">{b.min}–{b.max}</p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -195,26 +207,3 @@ function ObjectivesBreakdown({ score }: { score: MindScore }) {
 }
 
 /* ── What the percentages mean (condensed inline rows) ────────────────── */
-function BandLegend({ total }: { total: number | null }) {
-  const current = bandFor(total);
-  return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-      <p className="text-sm font-semibold">What the score means</p>
-      <div className="space-y-1">
-        {MIND_BANDS.map((b, i) => {
-          const active = total != null && b.label === current.label;
-          return (
-            <div key={b.min}
-              className={cn("flex items-center gap-3 rounded-lg px-2.5 py-1.5 transition-colors",
-                active ? "bg-primary/5 ring-1 ring-primary/40" : "")}>
-              <span className="shrink-0 w-14 text-xs font-bold tabular-nums" style={{ color: BAND_COLORS[i] }}>{b.min}–{b.max}%</span>
-              <span className="shrink-0 w-28 text-xs font-semibold" style={{ color: BAND_COLORS[i] }}>{b.label}</span>
-              <span className="min-w-0 flex-1 text-[11px] text-muted-foreground truncate">{b.description}</span>
-              {active && <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-primary">Here</span>}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}

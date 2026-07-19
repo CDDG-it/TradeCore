@@ -197,9 +197,9 @@ html.light {
   --sidebar-text-active: #030712;
   --sidebar-meta: oklch(0 0 0 / 40%);
 
-  /* Solid light-blue top-nav in light mode — opaque so no content bleeds
-     through (which previously tinted the bar orange). */
-  --nav-bg: #E0F2FE;
+  /* Top-nav in light mode — solid white to match the cards and the rest of the
+     UI (opaque so no content bleeds through and tints the bar). */
+  --nav-bg: #FFFFFF;
 }
 
 /* Light mode — liquid glass overrides */
