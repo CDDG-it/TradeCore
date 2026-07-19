@@ -82,23 +82,23 @@ export interface MindScore {
 export const MIND_BANDS: MindBand[] = [
   {
     min: 0, max: 20, label: "Not trade-ready",
-    description: "Your process and state aren't where they need to be. Step back, rebuild the routine, and protect your capital before taking any risk.",
+    description: "Process and state are off — step back and protect your capital before taking risk.",
   },
   {
     min: 20, max: 40, label: "Fragile",
-    description: "Discipline is thin and easily broken. Expect impulsive decisions — size down hard and treat every rule as non-negotiable.",
+    description: "Discipline breaks easily. Size down hard and treat every rule as non-negotiable.",
   },
   {
     min: 40, max: 60, label: "Inconsistent",
-    description: "The process holds some days and slips on others. Close the gaps in your habits and objectives before pushing size.",
+    description: "Holds some days, slips on others. Close the gaps before pushing size.",
   },
   {
     min: 60, max: 80, label: "Solid",
-    description: "You're disciplined and mostly consistent. A few objectives short of your best state — keep the routine tight.",
+    description: "Disciplined and mostly consistent. Keep the routine tight.",
   },
   {
     min: 80, max: 100, label: "Peak state",
-    description: "Rules, routine and reflection are all locked in. This is the state to trade your edge from.",
+    description: "Rules, routine and reflection all locked in. Trade your edge from here.",
   },
 ];
 

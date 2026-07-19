@@ -24,7 +24,6 @@ const PRESETS: Preset[] = [
   { key: "eval-50", label: "50K Eval", accountSize: 50000, profitTarget: 3000, maxDrawdown: 2000, drawdownMode: "trailing", dailyLossLimit: 1000, riskPerTrade: 300, maxDays: 20 },
   { key: "eval-100", label: "100K Eval", accountSize: 100000, profitTarget: 6000, maxDrawdown: 3000, drawdownMode: "trailing", dailyLossLimit: 2000, riskPerTrade: 500, maxDays: 20 },
   { key: "eval-150", label: "150K Eval", accountSize: 150000, profitTarget: 9000, maxDrawdown: 4500, drawdownMode: "trailing", dailyLossLimit: 3000, riskPerTrade: 750, maxDays: 20 },
-  { key: "funded-50", label: "50K Funded", accountSize: 50000, profitTarget: 2500, maxDrawdown: 2000, drawdownMode: "trailing", dailyLossLimit: 1000, riskPerTrade: 250, maxDays: 0 },
 ];
 
 const DEFAULTS: MonteCarloInputs = {
@@ -104,9 +103,9 @@ export function MonteCarloSimulator() {
     <div className="space-y-5">
       {/* Intro */}
       <div className="min-w-0">
-        <h2 className="text-sm font-semibold">Monte Carlo — Eval &amp; Funded Simulator</h2>
+        <h2 className="text-sm font-semibold">Monte Carlo — Eval Simulator</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Runs your inputs across thousands of randomised trade sequences to estimate pass, fail and timeout rates.
+          Runs your inputs across thousands of randomised trade sequences to estimate how often you pass, fail or time out on a prop-firm evaluation.
         </p>
       </div>
 

@@ -485,6 +485,73 @@ export function computeReflection(
   };
 }
 
+/**
+ * Reflection for one specific trade — used by the per-trade reflection flow,
+ * where every bad-execution trade gets its own deep 5R walkthrough.
+ *
+ * The trade is treated as the "latest" in its own history (all trades up to and
+ * including it), so Relate and the recurring-pattern findings still have the
+ * surrounding context to reason over. Cross-session commitment checks are left
+ * out here — those belong to the day-level flow, not a single trade's review.
+ */
+export function computeReflectionForTrade(
+  tradeId: string,
+  trades: TradeJournalEntry[],
+  analyses: PreTradeAnalysis[]
+): PsychEdgeReflection | null {
+  const sorted = [...trades].sort((a, b) => a.date_time.localeCompare(b.date_time));
+  const idx = sorted.findIndex((t) => t.id === tradeId);
+  if (idx === -1) return null;
+
+  const analysisById = new Map(analyses.map((a) => [a.id, a]));
+  const signals = sorted.slice(0, idx + 1).map((t) => buildSignal(t, analysisById));
+  const latest = signals[signals.length - 1];
+
+  const findings: Finding[] = [
+    outcomeContradiction(latest),
+    biasMismatchFinding(latest),
+    perfectProcessFinding(latest),
+    selfContradiction(latest),
+    blankMistakeFinding(latest),
+    recurringRuleFinding(signals),
+    setupPatternFinding(signals),
+    scoreDivergenceFinding(signals),
+  ].filter((f): f is Finding => f !== null);
+
+  if (findings.length === 0) {
+    const fallback = steadyStateFinding(signals);
+    if (fallback) findings.push(fallback);
+  }
+  findings.sort((a, b) => b.priority - a.priority);
+
+  const seen = new Set<string>();
+  const chosen: Finding[] = [];
+  for (const f of findings) {
+    const family = f.patternKey?.split(":")[0] ?? f.kind;
+    if (seen.has(family)) continue;
+    seen.add(family);
+    chosen.push(f);
+    if (chosen.length >= 2) break;
+  }
+
+  const driver = chosen.find((f) => f.kind !== "strength") ?? chosen[0] ?? null;
+  const secondary = chosen.find((f) => f !== driver) ?? null;
+  const plan = driver ? actionPlanFor(driver) : null;
+
+  return {
+    report: buildReport(latest),
+    relate: secondary?.text ?? null,
+    reason: driver?.text ?? "What made this execution slip? Name the specific decision, not the outcome.",
+    patternKey: driver?.patternKey ?? null,
+    recurringPatternLabel: driver?.recurringLabel ?? null,
+    primaryObjective: plan?.primaryObjective ?? null,
+    reminder: plan?.reminder ?? null,
+    successMetric: plan?.successMetric ?? null,
+    tradeId: latest.trade.id,
+    tradesAnalyzed: signals.length,
+  };
+}
+
 // ── Pre-market briefing ───────────────────────────────────────────────
 // Shown before the trader takes a trade: what's carrying over from the last
 // session, whether that pattern held or recurred, and a quick reminder of

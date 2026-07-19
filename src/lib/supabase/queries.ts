@@ -970,11 +970,12 @@ export async function savePsychEdgeSession(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const { data: existing } = await supabase
-    .from("psych_edge_sessions")
-    .select("id")
-    .eq("date", input.date)
-    .maybeSingle();
+  // Reflections are keyed per trade — one deep 5R walkthrough per bad-execution
+  // trade. Fall back to the day key only for any legacy row without a trade_id.
+  const lookup = supabase.from("psych_edge_sessions").select("id");
+  const { data: existing } = await (
+    input.trade_id ? lookup.eq("trade_id", input.trade_id) : lookup.eq("date", input.date)
+  ).maybeSingle();
 
   if (existing) {
     const { data, error } = await supabase
