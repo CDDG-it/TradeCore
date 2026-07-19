@@ -15,7 +15,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { format, subDays, subMonths, startOfDay, endOfDay, isAfter, isBefore, getDay } from "date-fns";
+import { format, subDays, startOfDay, endOfDay, startOfMonth, endOfMonth, isAfter, isBefore, isWithinInterval, getDay } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTrades } from "@/lib/supabase/queries";
 import type { TradeJournalEntry } from "@/lib/types";
@@ -73,8 +73,15 @@ export default function AnalyticsPage() {
           const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
           return !isBefore(d, dayStart) && !isAfter(d, dayEnd);
         });
+      } else if (period === "month") {
+        // The current calendar month, not a rolling 30-day window.
+        const monthStart = startOfMonth(new Date());
+        const monthEnd = endOfMonth(new Date());
+        result = result.filter((t) =>
+          isWithinInterval(new Date(t.date_time.slice(0, 10) + "T12:00:00"), { start: monthStart, end: monthEnd })
+        );
       } else {
-        const cutoff = period === "week" ? subDays(new Date(), 7) : subMonths(new Date(), 1);
+        const cutoff = subDays(new Date(), 7); // rolling last 7 days
         result = result.filter((t) =>
           isAfter(new Date(t.date_time.slice(0, 10) + "T12:00:00"), cutoff)
         );
@@ -304,7 +311,7 @@ export default function AnalyticsPage() {
                     : period === "week"
                     ? "Last 7 days"
                     : period === "month"
-                    ? "Last 30 days"
+                    ? "This month"
                     : "All time",
                 color: "text-foreground",
               },

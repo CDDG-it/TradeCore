@@ -8,9 +8,7 @@ import { cn } from "@/lib/utils";
 import { getTrades, getAnalyses, getPsychEdgeSessions, savePsychEdgeSession } from "@/lib/supabase/queries";
 import { computeReflection, buildPreMarketBriefing, RESPONSE_TAGS, type PsychEdgeReflection, type PreMarketBriefing } from "@/lib/psych-edge/engine";
 import { HabitsView } from "@/components/habits/habits-view";
-import { TradingRulesEditor } from "@/components/habits/trading-rules";
-import { ConfluencesEditor } from "@/components/habits/confluences-editor";
-import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
+import { MindScoreBreakdown } from "@/components/mind-score/mindscore-breakdown";
 import type { TradeJournalEntry, PreTradeAnalysis, PsychEdgeSession, PsychEdgeResponseTag } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
@@ -185,12 +183,12 @@ function EdgeReflectionView() {
   );
 }
 
-// ── Hub: Reflection, Habits and My Strategy ────────────────────────────
-type EdgeTab = "reflection" | "habits" | "strategy";
+// ── Hub: Reflection, Habits and MC Mindscore ───────────────────────────
+type EdgeTab = "reflection" | "habits" | "mindscore";
 const EDGE_TABS: { key: EdgeTab; label: string }[] = [
   { key: "reflection", label: "Reflection" },
   { key: "habits", label: "Habits" },
-  { key: "strategy", label: "My Strategy" },
+  { key: "mindscore", label: "MC Mindscore" },
 ];
 
 export default function PsychologicalEdgePage() {
@@ -234,22 +232,8 @@ export default function PsychologicalEdgePage() {
       <PageWrapper>
         {tab === "reflection" ? <EdgeReflectionView />
           : tab === "habits" ? <HabitsView />
-          : <MyStrategyView />}
+          : <MindScoreBreakdown />}
       </PageWrapper>
-    </div>
-  );
-}
-
-function MyStrategyView() {
-  return (
-    <div className="space-y-6">
-      <div className="grid lg:grid-cols-2 gap-6 items-start">
-        <TradingRulesEditor />
-        <ConfluencesEditor />
-      </div>
-      <div className="border-t border-border/60 pt-6">
-        <MonteCarloSimulator />
-      </div>
     </div>
   );
 }

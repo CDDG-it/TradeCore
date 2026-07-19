@@ -8,21 +8,17 @@ import {
   getTrades, getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews,
 } from "@/lib/supabase/queries";
 import {
-  computeMindScoreAll, MIND_BANDS, bandFor, type MindPeriod, type MindScore, type MindInputs,
+  computeMindScoreAll, MIND_BANDS, bandFor, BAND_COLORS, bandColorFor,
+  type MindPeriod, type MindScore, type MindInputs,
 } from "@/lib/mind-score/mind-score";
 
-// Red → amber → yellow → turquoise → green. No orange, per the brand palette.
-const BAND_COLORS = ["#ef4444", "#f59e0b", "#eab308", "#14B8A6", "#22c55e"];
-const bandColor = (total: number | null) => {
-  if (total == null) return "var(--muted-foreground)";
-  const i = MIND_BANDS.findIndex((b) => total >= b.min && (total < b.max || b.max === 100));
-  return BAND_COLORS[Math.max(0, i)];
-};
 const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
 
 const PERIOD_LABEL: Record<MindPeriod, string> = { week: "This week", month: "This month", all: "All time" };
 
-export default function MindScorePage() {
+/** The full MC Mindscore breakdown — period stats, band scale, calculation and legend.
+ *  Self-loading so it can drop into a route or a tab without wiring. */
+export function MindScoreBreakdown() {
   const [data, setData] = useState<MindInputs | null>(null);
   const [period, setPeriod] = useState<MindPeriod>("month");
 
@@ -39,25 +35,11 @@ export default function MindScorePage() {
   const score = scores?.[period] ?? null;
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto">
-      {/* Header */}
-      <div>
-        <Link href="/psychological-edge" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-          ← Psychological Edge
-        </Link>
-        <div className="mt-2">
-          <p className="font-body text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
-            MC Mindset Formula
-          </p>
-          <h1 className="font-heading font-black text-2xl md:text-3xl text-foreground tracking-tight leading-[0.95]">
-            MC Mindscore
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-            One number for how ready you are to trade your edge — built from your rule adherence, habit consistency
-            and the process objectives you complete. Completing objectives raises the score.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <p className="text-sm text-muted-foreground max-w-2xl">
+        One number for how ready you are to trade your edge — built from your rule adherence, habit consistency
+        and the process objectives you complete. Completing objectives raises the score.
+      </p>
 
       {!scores || !score ? (
         <div className="flex items-center justify-center h-64">
@@ -65,11 +47,11 @@ export default function MindScorePage() {
         </div>
       ) : (
         <>
-          {/* Period quick-stats */}
+          {/* Period quick-stats — week / month / all-time at a glance */}
           <div className="grid grid-cols-3 gap-3">
             {(["week", "month", "all"] as MindPeriod[]).map((p) => {
               const s = scores[p];
-              const c = bandColor(s.total);
+              const c = bandColorFor(s.total);
               const active = period === p;
               return (
                 <button
@@ -91,16 +73,13 @@ export default function MindScorePage() {
             })}
           </div>
 
-          {/* Selected period: band scale + explanation */}
           <BandPanel score={score} />
 
-          {/* Calculation */}
           <div className="grid gap-4 md:grid-cols-2 items-start">
             <ComponentBreakdown score={score} />
             <ObjectivesBreakdown score={score} />
           </div>
 
-          {/* Band legend */}
           <BandLegend total={score.total} />
         </>
       )}
@@ -110,7 +89,7 @@ export default function MindScorePage() {
 
 /* ── Band scale + current-state explanation ───────────────────────────── */
 function BandPanel({ score }: { score: MindScore }) {
-  const c = bandColor(score.total);
+  const c = bandColorFor(score.total);
   const marker = score.total ?? 0;
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
@@ -156,6 +135,7 @@ function BandPanel({ score }: { score: MindScore }) {
 
 /* ── How the score is calculated ──────────────────────────────────────── */
 function ComponentBreakdown({ score }: { score: MindScore }) {
+  const c = bandColorFor(score.total);
   return (
     <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
       <p className="text-sm font-semibold">How your score is built</p>
@@ -164,25 +144,25 @@ function ComponentBreakdown({ score }: { score: MindScore }) {
       </p>
 
       <div className="space-y-2.5 pt-1">
-        {score.components.map((c) => {
-          const applicable = c.applicable;
+        {score.components.map((comp) => {
+          const applicable = comp.applicable;
           return (
-            <div key={c.key} className={cn("rounded-xl border p-3", applicable ? "border-border/70" : "border-dashed border-border/50 opacity-60")}>
+            <div key={comp.key} className={cn("rounded-xl border p-3", applicable ? "border-border/70" : "border-dashed border-border/50 opacity-60")}>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold">{c.label}</span>
-                <span className="text-sm font-bold tabular-nums" style={{ color: c.key === "objectives" ? "#14B8A6" : undefined }}>
-                  {c.value == null ? "—" : `${c.value}%`}
+                <span className="text-sm font-semibold">{comp.label}</span>
+                <span className="text-sm font-bold tabular-nums" style={{ color: applicable ? c : undefined }}>
+                  {comp.value == null ? "—" : `${comp.value}%`}
                 </span>
               </div>
               <div className="mt-2 h-1.5 w-full rounded-full bg-muted-foreground/12 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${c.value ?? 0}%`, background: "#14B8A6" }} />
+                <div className="h-full rounded-full" style={{ width: `${comp.value ?? 0}%`, background: c }} />
               </div>
               <div className="flex items-center justify-between mt-1.5 text-[11px] text-muted-foreground tabular-nums">
                 <span>
-                  {applicable ? `weight ${Math.round(c.effectiveWeight)}%` : "no data this period"}
+                  {applicable ? `weight ${Math.round(comp.effectiveWeight)}%` : "no data this period"}
                 </span>
                 <span className="font-semibold text-foreground/70">
-                  {applicable ? `+${c.contribution.toFixed(1)} pts` : "—"}
+                  {applicable ? `+${comp.contribution.toFixed(1)} pts` : "—"}
                 </span>
               </div>
             </div>
@@ -192,7 +172,7 @@ function ComponentBreakdown({ score }: { score: MindScore }) {
 
       <div className="flex items-center justify-between border-t border-border/60 pt-3">
         <span className="text-sm font-semibold">MC Mindscore</span>
-        <span className="text-xl font-black tabular-nums" style={{ color: bandColor(score.total) }}>
+        <span className="text-xl font-black tabular-nums" style={{ color: c }}>
           {score.total == null ? "—" : score.total}
         </span>
       </div>
@@ -202,11 +182,12 @@ function ComponentBreakdown({ score }: { score: MindScore }) {
 
 /* ── Objectives — the process points that lift the score ──────────────── */
 function ObjectivesBreakdown({ score }: { score: MindScore }) {
+  const c = bandColorFor(score.total);
   return (
     <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-sm font-semibold">Objectives</p>
-        <span className="text-sm font-bold tabular-nums" style={{ color: "#14B8A6" }}>{Math.round(score.objectivesScore)}%</span>
+        <span className="text-sm font-bold tabular-nums" style={{ color: c }}>{Math.round(score.objectivesScore)}%</span>
       </div>
       <p className="text-xs text-muted-foreground -mt-1">
         Process work that compounds your edge. Each one you keep up lifts the objectives score above — and with it, your MC Mindscore.
@@ -227,7 +208,7 @@ function ObjectivesBreakdown({ score }: { score: MindScore }) {
               </div>
               <p className="text-[11px] text-muted-foreground mt-0.5">{o.description}</p>
               <div className="mt-2 h-1.5 w-full rounded-full bg-muted-foreground/12 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: full ? "#22c55e" : "#14B8A6" }} />
+                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: full ? "#22c55e" : c }} />
               </div>
             </Link>
           );

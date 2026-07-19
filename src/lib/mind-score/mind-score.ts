@@ -107,6 +107,16 @@ export function bandFor(total: number | null): MindBand {
   return MIND_BANDS.find((b) => total >= b.min && (total < b.max || b.max === 100)) ?? MIND_BANDS[MIND_BANDS.length - 1];
 }
 
+/** Band colours, one per band: red → amber → yellow → turquoise → green. No orange, per the brand palette. */
+export const BAND_COLORS = ["#ef4444", "#f59e0b", "#eab308", "#14B8A6", "#22c55e"];
+
+/** The colour for a score, matched to its band. Drives every MC Mindscore visual so they stay in sync. */
+export function bandColorFor(total: number | null): string {
+  if (total == null) return "var(--muted-foreground)";
+  const i = MIND_BANDS.findIndex((b) => total >= b.min && (total < b.max || b.max === 100));
+  return BAND_COLORS[Math.max(0, i)];
+}
+
 const dayKey = (iso: string) => iso.slice(0, 10);
 const isWeekday = (d: Date) => d.getDay() >= 1 && d.getDay() <= 5;
 
@@ -167,7 +177,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   const rawObjectives: Omit<Objective, "contribution">[] = [
     {
       key: "weekly-review", label: "Weekly review", description: "Complete your weekly trade review",
-      href: "/journal/review", progress: reviewsDone, target: weekCount,
+      href: "/journal", progress: reviewsDone, target: weekCount,
       rate: Math.min(1, reviewsDone / weekCount),
     },
     {

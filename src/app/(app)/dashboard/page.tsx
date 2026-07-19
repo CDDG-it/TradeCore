@@ -12,7 +12,7 @@ import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, getAnalyses, toggleHabitCompletion,
   getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews,
 } from "@/lib/supabase/queries";
-import { computeMindScore, type MindScore } from "@/lib/mind-score/mind-score";
+import { computeMindScore, bandColorFor, type MindScore } from "@/lib/mind-score/mind-score";
 import { tradeR } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
@@ -24,10 +24,6 @@ const GREEN = "oklch(0.58 0.17 145)";
 const RED = "oklch(0.58 0.22 25)";
 const AMBER = "oklch(0.70 0.16 72)";
 const TODAY = format(new Date(), "yyyy-MM-dd");
-
-function scoreColor(pct: number) {
-  return pct >= 80 ? TURQUOISE : pct >= 60 ? AMBER : RED;
-}
 
 /** Alpha-blend a colour toward transparent — works for oklch() strings. `pct` 0–100. */
 const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
@@ -202,14 +198,14 @@ function MindScoreOrb({ score }: { score: MindScore | null }) {
     return () => cancelAnimationFrame(raf.current);
   }, [target]);
 
-  const color = hasData ? scoreColor(target) : "var(--muted-foreground)";
+  const color = hasData ? bandColorFor(target) : "var(--muted-foreground)";
   const filled = Math.round(prog * METER_BARS);
 
   const comp = (key: "rules" | "habits" | "objectives") => score?.components.find((c) => c.key === key)?.value ?? null;
   const objectives = score?.objectives ?? [];
 
   return (
-    <Link href="/psychological-edge/mindscore" className={cn(CARD_BASE, "flex flex-col group")}>
+    <Link href="/psychological-edge?tab=mindscore" className={cn(CARD_BASE, "flex flex-col group")}>
       <CardFx accent={color} />
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
