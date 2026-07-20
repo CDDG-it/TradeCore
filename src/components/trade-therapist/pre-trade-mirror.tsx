@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { format, parse } from "date-fns";
-import { Loader2, Check, X, Pencil, ShieldCheck } from "lucide-react";
+import { Loader2, Check, X, Pencil, ShieldCheck, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -134,15 +134,24 @@ function MatchCard({
       </div>
 
       <div className="p-5 space-y-4">
-        <div className="space-y-2.5">
-          <p className="text-base font-semibold leading-snug">
-            On {dayLabel(match.occurrence.date)}, under conditions like today&apos;s, {lower(match.occurrence.detail)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            That pattern has cost you{" "}
-            <span className="font-bold tabular-nums" style={{ color: match.cumulativeR < 0 ? RED : "var(--foreground)" }}>{fmtR(match.cumulativeR)}</span>{" "}
-            across {match.occurrenceCount} trade{match.occurrenceCount === 1 ? "" : "s"}.
-          </p>
+        {/* The therapist speaks — grounded in a real past trade */}
+        <div className="flex gap-2.5">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ background: "color-mix(in oklch, " + ACCENT + " 15%, transparent)" }}>
+            <Brain className="h-3.5 w-3.5" style={{ color: ACCENT }} strokeWidth={2} />
+          </span>
+          <div className="min-w-0 flex-1 space-y-2.5">
+            <p className="text-sm text-foreground/85">Before you take anything on, I want to hold today up against something.</p>
+            <div className="rounded-xl border px-3.5 py-3" style={{ borderColor: "color-mix(in oklch, " + CYAN + " 40%, transparent)", background: "color-mix(in oklch, " + CYAN + " 7%, transparent)" }}>
+              <p className="text-base font-semibold leading-snug">
+                On {dayLabel(match.occurrence.date)}, under conditions like today&apos;s, {lower(match.occurrence.detail)}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1.5">
+                That pattern has cost you{" "}
+                <span className="font-bold tabular-nums" style={{ color: match.cumulativeR < 0 ? RED : "var(--foreground)" }}>{fmtR(match.cumulativeR)}</span>{" "}
+                across {match.occurrenceCount} trade{match.occurrenceCount === 1 ? "" : "s"}.
+              </p>
+            </div>
+          </div>
         </div>
 
         {c ? (

@@ -52,6 +52,9 @@ export interface FiveRContext {
   prior: DetectedPattern | null;
   /** Reasoning — cumulative cost of the driver pattern across all history. */
   stat: PatternStat | null;
+  /** Every past occurrence of the driver pattern, oldest first — the evidence
+   *  list the therapist puts in front of the trader (dates + R). */
+  driverHistory: DetectedPattern[];
   /** Reconstructing — a seed if-then commitment for the driver pattern. */
   scaffold: { trigger: string; action: string } | null;
 }
@@ -99,6 +102,7 @@ export function buildFiveR(
   const driver = onTrade[0] ?? null;
   const prior = driver ? priorOccurrence(driver, all) : null;
   const stat = driver ? summarizePatterns(all)[driver.type] : null;
+  const driverHistory = driver ? all.filter((e) => e.type === driver.type) : [];
   const scaffold = driver ? scaffoldFor(driver.type) : null;
 
   return {
@@ -109,6 +113,7 @@ export function buildFiveR(
     driver,
     prior,
     stat,
+    driverHistory,
     scaffold,
   };
 }
