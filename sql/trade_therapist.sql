@@ -15,6 +15,10 @@
 -- The 5R session itself is stored in psych_edge_sessions (already migrated).
 -- Safe to re-run.
 
+-- The Post-Trade 5R "Responding" step records an emotion intensity (1–5)
+-- alongside the existing one-tap emotion tag.
+alter table psych_edge_sessions add column if not exists emotion_intensity int;
+
 -- ── Commitments ─────────────────────────────────────────────────────────
 create table if not exists commitments (
   id            uuid primary key default uuid_generate_v4(),

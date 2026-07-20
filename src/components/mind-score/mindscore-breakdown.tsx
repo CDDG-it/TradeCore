@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getTrades, getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getAnalyses,
+  getCommitments, getCommitmentAdherenceLogs,
 } from "@/lib/supabase/queries";
 import {
   computeMindScoreAll, MIND_BANDS, BAND_COLORS, bandColorFor,
@@ -26,9 +27,10 @@ export function MindScoreBreakdown() {
     Promise.all([
       getTrades(), getHabits(), getHabitCompletions(),
       getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews(), getAnalyses(),
-    ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses]) => {
-      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses });
-    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [] }));
+      getCommitments(), getCommitmentAdherenceLogs(),
+    ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, commitments, adherenceLogs]) => {
+      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, commitments, adherenceLogs });
+    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [], commitments: [], adherenceLogs: [] }));
   }, []);
 
   const scores = useMemo(() => (data ? computeMindScoreAll(data) : null), [data]);

@@ -399,6 +399,8 @@ export interface PsychEdgeSession {
   success_metric: string | null;
   /** Respond — one-tap emotional read of the trade, set by the trader. */
   response_tag: PsychEdgeResponseTag | null;
+  /** Respond — how strongly that emotion ran, 1 (barely) – 5 (overwhelming). */
+  emotion_intensity: number | null;
   /** Reason, trader's side — their own written answer to `reason` (why it happened). */
   reasoning_answer: string | null;
   /** Reason, deeper — the trader spelling out why this was a mistake and what it
