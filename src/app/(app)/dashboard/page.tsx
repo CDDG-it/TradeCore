@@ -41,6 +41,38 @@ function CardFx({ accent }: { accent: string }) {
   );
 }
 
+/** The window a card reports on. Win rate and the mind score each keep their own. */
+type Period = "week" | "month";
+const PERIOD_LABEL: Record<Period, string> = { week: "week", month: "month" };
+
+/** Compact week / month switch, sized to sit in a card header. */
+function PeriodToggle({ value, onChange, accent }: {
+  value: Period; onChange: (p: Period) => void; accent: string;
+}) {
+  return (
+    <div className="flex items-center gap-0.5 rounded-lg border border-border/60 bg-muted/25 p-0.5 shrink-0">
+      {(["week", "month"] as Period[]).map((p) => {
+        const active = value === p;
+        return (
+          <button
+            key={p}
+            type="button"
+            aria-pressed={active}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(p); }}
+            className={cn(
+              "rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors",
+              active ? "text-white" : "text-muted-foreground hover:text-foreground"
+            )}
+            style={active ? { background: accent } : undefined}
+          >
+            {p}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { hidden, toggle } = usePrivacy();
   const [greeting, setGreeting] = useState("");
@@ -82,28 +114,34 @@ export default function DashboardPage() {
   const activeAccounts = accounts.filter((a) => a.status === "active");
   const activeCapital = activeAccounts.reduce((s, a) => s + a.current_balance, 0);
 
-  const monthTrades = useMemo(() => {
+  // Win rate and the mind score each report on their own window.
+  const [wrPeriod, setWrPeriod] = useState<Period>("month");
+  const [mindPeriod, setMindPeriod] = useState<Period>("month");
+
+  const periodTrades = useMemo(() => {
     if (!trades) return [];
+    const start = wrPeriod === "week" ? startOfWeek(now, { weekStartsOn: 1 }) : startOfMonth(now);
+    const end = wrPeriod === "week" ? endOfWeek(now, { weekStartsOn: 1 }) : endOfMonth(now);
     return trades.filter((t) =>
-      isWithinInterval(new Date(t.date_time.slice(0, 10) + "T12:00:00"), { start: startOfMonth(now), end: endOfMonth(now) })
+      isWithinInterval(new Date(t.date_time.slice(0, 10) + "T12:00:00"), { start, end })
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trades]);
+  }, [trades, wrPeriod]);
 
-  const wins = monthTrades.filter((t) => t.result === "win").length;
-  const losses = monthTrades.filter((t) => t.result === "loss").length;
-  const be = monthTrades.length - wins - losses;
-  const winRate = monthTrades.length ? Math.round((wins / monthTrades.length) * 100) : null;
-  const monthR = monthTrades.reduce((s, t) => s + tradeR(t), 0);
+  const wins = periodTrades.filter((t) => t.result === "win").length;
+  const losses = periodTrades.filter((t) => t.result === "loss").length;
+  const be = periodTrades.length - wins - losses;
+  const winRate = periodTrades.length ? Math.round((wins / periodTrades.length) * 100) : null;
+  const periodR = periodTrades.reduce((s, t) => s + tradeR(t), 0);
 
   const mcMind = useMemo(() => {
     if (!trades) return null;
     return computeMindScore(
       { trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses },
-      "month"
+      mindPeriod
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses]);
+  }, [trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, mindPeriod]);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(now, { weekStartsOn: 1 });
@@ -152,8 +190,12 @@ export default function DashboardPage() {
               <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
               <HabitsCard habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit} />
             </div>
-            <WinRateCard winRate={winRate} wins={wins} losses={losses} be={be} total={monthTrades.length} netR={monthR} />
-            <MindScoreOrb score={mcMind} />
+            <WinRateCard
+              winRate={winRate} wins={wins} losses={losses} be={be}
+              total={periodTrades.length} netR={periodR}
+              period={wrPeriod} onPeriodChange={setWrPeriod}
+            />
+            <MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} />
           </div>
 
           {/* Row 2 — journal fills to the bottom, analysis beside it */}
@@ -176,7 +218,9 @@ export default function DashboardPage() {
    breakdown page with the calculation and week / month / all-time scores. */
 const METER_BARS = 22;
 
-function MindScoreOrb({ score }: { score: MindScore | null }) {
+function MindScoreOrb({ score, period, onPeriodChange }: {
+  score: MindScore | null; period: Period; onPeriodChange: (p: Period) => void;
+}) {
   const target = score?.total ?? 0;
   const hasData = score?.total != null;
   const [display, setDisplay] = useState(0);
@@ -205,11 +249,11 @@ function MindScoreOrb({ score }: { score: MindScore | null }) {
   const objectives = score?.objectives ?? [];
 
   return (
-    <Link href="/psychological-edge?tab=mindscore" className={cn(CARD_BASE, "flex flex-col group")}>
+    <div className={cn(CARD_BASE, "flex flex-col group")}>
       <CardFx accent={color} />
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
-        <span className="text-[10px] text-muted-foreground/70">this month</span>
+        <PeriodToggle value={period} onChange={onPeriodChange} accent={TURQUOISE} />
       </div>
 
       {/* Score + signal meter */}
@@ -257,12 +301,15 @@ function MindScoreOrb({ score }: { score: MindScore | null }) {
             <span key={o.key} className="h-1.5 flex-1 rounded-full"
               style={{ background: o.rate >= 1 ? GREEN : o.rate > 0 ? alpha(TURQUOISE, 55) : alpha("var(--muted-foreground)", 18) }} />
           ))}
-          <span className="text-[10px] font-medium text-muted-foreground/70 group-hover:text-primary transition-colors ml-1 shrink-0">
+          <Link
+            href="/psychological-edge?tab=mindscore"
+            className="text-[10px] font-medium text-muted-foreground/70 hover:text-primary transition-colors ml-1 shrink-0"
+          >
             Breakdown →
-          </span>
+          </Link>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -282,8 +329,9 @@ function MiniStat({ label, value, accent }: {
 }
 
 /* ── Win rate — hero donut of the month's W/L/BE split + net R ─────────── */
-function WinRateCard({ winRate, wins, losses, be, total, netR }: {
+function WinRateCard({ winRate, wins, losses, be, total, netR, period, onPeriodChange }: {
   winRate: number | null; wins: number; losses: number; be: number; total: number; netR: number;
+  period: Period; onPeriodChange: (p: Period) => void;
 }) {
   const rColor = netR > 0 ? GREEN : netR < 0 ? RED : "var(--muted-foreground)";
   const [display, setDisplay] = useState(0);
@@ -318,7 +366,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR }: {
       <CardFx accent={CYAN} />
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Win rate</p>
-        <span className="text-[10px] text-muted-foreground/70">this month</span>
+        <PeriodToggle value={period} onChange={onPeriodChange} accent={CYAN} />
       </div>
 
       {/* Donut */}
@@ -369,7 +417,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR }: {
 
       {/* Net R */}
       <div className="mt-3 flex items-center justify-between rounded-xl border border-border/60 bg-muted/25 px-3 py-2.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Net R · month</span>
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Net R · {PERIOD_LABEL[period]}</span>
         <span className="text-lg font-black tabular-nums leading-none" style={{ color: rColor }}>
           {netR > 0 ? "+" : ""}{netR.toFixed(1)}R
         </span>
