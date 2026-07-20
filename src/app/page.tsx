@@ -4,7 +4,8 @@ import { useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowDown } from "lucide-react";
 import { motion, useScroll, useTransform } from "motion/react";
-import { Showcase } from "@/components/landing/showcase";
+import { AboutSection } from "@/components/landing/about-section";
+import { FeaturesSection } from "@/components/landing/features-section";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
 import { LandingFooter } from "@/components/landing/footer";
 import { LandingNav } from "@/components/landing/landing-nav";
@@ -125,7 +126,7 @@ export default function HomePage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a
-              href="#product"
+              href="#features"
               className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold text-[rgba(248,250,252,0.65)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[rgba(248,250,252,0.92)] active:translate-y-0"
               style={{
                 fontFamily: NUNITO,
@@ -143,7 +144,8 @@ export default function HomePage() {
 
       </section>
 
-      <Showcase />
+      <AboutSection />
+      <FeaturesSection />
 
       {/* ── Closing CTA band ── */}
       <section className="relative overflow-hidden" style={{ background: "#0B1120" }}>
