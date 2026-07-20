@@ -32,10 +32,10 @@ const dayLabel = (iso: string) => format(parse(iso.slice(0, 10), "yyyy-MM-dd", n
 const mix = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
 
 /**
- * Post-Trade 5R — a guided session that reads like talking to someone. The
+ * Post-Trade 5R, a guided session that reads like talking to someone. The
  * therapist speaks (grounded entirely in the trade and the pattern stats it
  * shows inline), asks one reflective question, and waits; the trader answers
- * back. The whole thread is deterministic — driven by conversation.ts — and
+ * back. The whole thread is deterministic, driven by conversation.ts, and
  * persists so a half-finished session resumes exactly where it left off.
  */
 export function PostTrade5R() {
@@ -77,7 +77,7 @@ export function PostTrade5R() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] items-start">
-      {/* Rail — trades worth working through */}
+      {/* Rail, trades worth working through */}
       <div className="rounded-xl border border-border bg-card p-3 lg:sticky lg:top-4">
         <div className="flex items-center justify-between px-1 pb-2">
           <p className="text-sm font-semibold">Sessions</p>
@@ -171,7 +171,7 @@ function Conversation({
 
   const exchanges = useMemo(() => buildConversation(ctx, answers, trades), [ctx, answers, trades]);
 
-  // Find the first exchange whose reply is still outstanding — the live turn.
+  // Find the first exchange whose reply is still outstanding, the live turn.
   const activeIndex = exchanges.findIndex((e) => e.input && !isAnswered(e, answers));
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [activeIndex, exchanges.length]);
@@ -232,7 +232,7 @@ function Conversation({
 
   return (
     <div className="space-y-3">
-      {/* Header — who you're sitting with */}
+      {/* Header, who you're sitting with */}
       <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: mix(ACCENT, 15) }}>
           <Brain className="h-4 w-4" style={{ color: ACCENT }} strokeWidth={2} />
@@ -248,7 +248,7 @@ function Conversation({
         )}
       </div>
 
-      {saveError && <p className="text-xs text-destructive">Couldn&apos;t save — run the trade_therapist.sql migration in Supabase.</p>}
+      {saveError && <p className="text-xs text-destructive">Couldn&apos;t save, run the trade_therapist.sql migration in Supabase.</p>}
 
       {/* Thread */}
       <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -320,7 +320,7 @@ function BlockView({ block }: { block: Block }) {
   if (block.kind === "prior") {
     return (
       <div className="rounded-lg border border-border/70 px-3 py-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">The nearest time before — {dayLabel(block.prior.date)}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-0.5">The nearest time before, {dayLabel(block.prior.date)}</p>
         <p className="text-xs text-foreground/80 leading-relaxed">{block.prior.detail}</p>
       </div>
     );
@@ -336,7 +336,7 @@ function BlockView({ block }: { block: Block }) {
         </div>
         <div className="h-8 w-px bg-border" />
         <p className="text-xs text-muted-foreground leading-snug">
-          Across <span className="font-semibold text-foreground/80 tabular-nums">{stat.count}</span> {PATTERN_LABELS[stat.type].toLowerCase()} trade{stat.count === 1 ? "" : "s"} — the whole run:
+          Across <span className="font-semibold text-foreground/80 tabular-nums">{stat.count}</span> {PATTERN_LABELS[stat.type].toLowerCase()} trade{stat.count === 1 ? "" : "s"}, the whole run:
         </p>
       </div>
       <div className="divide-y divide-border/50 max-h-52 overflow-y-auto">
@@ -371,7 +371,7 @@ function TradeCard({ trade, netR }: { trade: TradeJournalEntry; netR: number }) 
         {checks.length > 0 && <span>· rules <span className="tabular-nums text-foreground/70">{followed}/{checks.length}</span></span>}
       </div>
       {trade.mistakes?.trim() && (
-        <p className="text-[11px] text-muted-foreground border-t border-border/50 pt-1.5"><span className="font-medium text-foreground/70">Your note — </span>{trade.mistakes.trim()}</p>
+        <p className="text-[11px] text-muted-foreground border-t border-border/50 pt-1.5"><span className="font-medium text-foreground/70">Your note, </span>{trade.mistakes.trim()}</p>
       )}
     </div>
   );
@@ -433,7 +433,7 @@ function ActiveInput({ ex, answers, scaffold, onAnswer }: {
       <div className="flex gap-2 pl-9">
         <button onClick={() => onAnswer({ confirmed: true })}
           className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ background: ACCENT }}>
-          Yes — that&apos;s it
+          Yes, that&apos;s it
         </button>
         <button onClick={() => onAnswer({ confirmed: false })}
           className="rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-muted/50 transition-colors">
@@ -493,7 +493,7 @@ function EmptyState({ hasTrades }: { hasTrades: boolean }) {
       <p className="text-xs text-muted-foreground/70">
         {hasTrades
           ? "Losing trades, bad-execution trades, and any the engine flags as a pattern open a session here."
-          : "Log a trade in the Journal — the ones worth talking through will appear here."}
+          : "Log a trade in the Journal, the ones worth talking through will appear here."}
       </p>
     </div>
   );
