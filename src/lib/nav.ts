@@ -19,6 +19,7 @@ export const APP_TABS: AppTab[] = [
   { label: "Analytics", href: "/analytics", group: "Trading" },
   { label: "Accounts", href: "/accounts", group: "Trading" },
   { label: "MC Mind Edge", href: "/psychological-edge", group: "MC Mindset formula" },
+  { label: "MC Trade Therapist", href: "/trade-therapist", group: "MC Mindset formula" },
   { label: "My Strategy", href: "/strategy", group: "MC Mindset formula" },
   { label: "Option Flow", href: "/option-flow", group: "MC Option Flow" },
   { label: "MC News Dashboard", href: "/news-city", group: "MC News Dashboard" },

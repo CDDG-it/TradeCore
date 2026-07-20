@@ -13,6 +13,7 @@ const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 // its tagline; the rest link straight into the app with a short description.
 const FEATURE_BY_HREF = new Map(FEATURES.map((f) => [`/${f.slug}`, f]));
 const TAB_FALLBACK_TAGLINE: Record<string, string> = {
+  "/trade-therapist": "A pre-trade mirror and post-trade 5R sessions, built on your own trade data.",
   "/habits": "Track daily habits and discipline, in one streak.",
   "/trading-behaviour": "Your trading rules and confluence library, in one place.",
   "/option-flow": "Dealer positioning and session structure for NQ and GC.",
