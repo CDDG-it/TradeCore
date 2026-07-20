@@ -18,7 +18,7 @@ export const APP_TABS: AppTab[] = [
   { label: "Analysis", href: "/analysis", group: "Trading" },
   { label: "Analytics", href: "/analytics", group: "Trading" },
   { label: "Accounts", href: "/accounts", group: "Trading" },
-  { label: "Psychological Edge", href: "/psychological-edge", group: "MC Mindset formula" },
+  { label: "MC Mind Edge", href: "/psychological-edge", group: "MC Mindset formula" },
   { label: "My Strategy", href: "/strategy", group: "MC Mindset formula" },
   { label: "Option Flow", href: "/option-flow", group: "MC Option Flow" },
   { label: "MC News Dashboard", href: "/news-city", group: "MC News Dashboard" },
@@ -31,7 +31,7 @@ export const APP_TABS: AppTab[] = [
  */
 export const PRIMARY_NAV: AppTab[] = [
   { label: "Dashboard", href: "/dashboard", group: null },
-  { label: "Psychological Edge", href: "/psychological-edge", group: null },
+  { label: "MC Mind Edge", href: "/psychological-edge", group: null },
   { label: "MC Trade Therapist", href: "/trade-therapist", group: null },
   { label: "My Strategy", href: "/strategy", group: null },
   { label: "Option Flow", href: "/option-flow", group: null },

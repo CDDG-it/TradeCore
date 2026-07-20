@@ -419,3 +419,82 @@ export type PsychEdgeSessionInput = Omit<
   PsychEdgeSession,
   "id" | "user_id" | "created_at" | "updated_at"
 >;
+
+// ── MC Trade Therapist ────────────────────────────────────────────────────────
+// A deterministic, data-driven behavioural coach. Everything below is derived
+// from — and traceable to — the trader's own trade history. No LLM, no generic
+// motivation: the pattern engine (src/lib/psych-edge/patterns.ts) fires on fixed,
+// explainable thresholds, and each finding carries the concrete numbers behind it.
+
+/** The four behavioural patterns the engine detects. Each is rule-based with a
+ *  fixed threshold and an explainable confidence score. */
+export type PatternType = "revenge" | "size-escalation" | "overtrading" | "plan-deviation";
+
+/** A single occurrence of a pattern the engine detected on one trade. Persisted
+ *  so the Pre-Trade Mirror can point back to concrete past situations, and so a
+ *  cumulative P&L impact per pattern can be tracked over time. The row is a log
+ *  of a deterministic detection — recomputable from trades — plus the trader's
+ *  own confirm/refute from the 5R "Relating" step. */
+export interface PatternEvent {
+  id: string;
+  user_id: string;
+  /** The trade the pattern fired on. */
+  trade_id: string;
+  /** ISO day of that trade. */
+  date: string;
+  pattern_type: PatternType;
+  /** 0–1, built deterministically from the threshold overshoot. */
+  confidence: number;
+  /** R contribution of the focus trade — the cost (or gain) attributed to this event. */
+  r_impact: number;
+  /** Deterministic, human-readable explanation with the numbers behind it. */
+  detail: string;
+  /** Trader's response in the 5R "Relating" step: true = recognised, false =
+   *  refuted, null = not yet reviewed. */
+  trader_confirmed: boolean | null;
+  created_at: string;
+}
+
+export type PatternEventInput = Omit<PatternEvent, "id" | "user_id" | "created_at">;
+
+/** An if-then commitment the trader wrote in the 5R "Reconstructing" step
+ *  ("als [trigger], dan [actie]"). Stored and linked to the pattern it addresses
+ *  so the next Pre-Trade Mirror can resurface it, and so adherence can be tracked. */
+export interface Commitment {
+  id: string;
+  user_id: string;
+  /** The trade whose 5R session produced this commitment, if any. */
+  trade_id: string | null;
+  /** Which behavioural pattern this commitment is meant to counter. */
+  pattern_type: PatternType | null;
+  /** The "if" — the trigger condition, in the trader's own words. */
+  trigger_text: string;
+  /** The "then" — the committed action. */
+  action_text: string;
+  /** Still in force. Superseded commitments are kept for history but deactivated. */
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CommitmentInput = Omit<Commitment, "id" | "user_id" | "created_at" | "updated_at">;
+
+/** One check of whether a commitment was honoured. Written whenever a
+ *  commitment's trigger re-matches a later situation (in the Pre-Trade Mirror or
+ *  a later 5R session): did the trader follow the commitment this time? This is
+ *  the signal that measures behaviour change, not just journaling. */
+export interface CommitmentAdherenceLog {
+  id: string;
+  user_id: string;
+  commitment_id: string;
+  /** The trade the re-match was checked against, if the check is trade-anchored. */
+  trade_id: string | null;
+  date: string;
+  /** The trigger matched this situation (i.e. the commitment was relevant). */
+  matched: boolean;
+  /** Whether the trader followed the commitment. null until resolved. */
+  followed: boolean | null;
+  created_at: string;
+}
+
+export type CommitmentAdherenceLogInput = Omit<CommitmentAdherenceLog, "id" | "user_id" | "created_at">;

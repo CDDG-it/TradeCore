@@ -26,6 +26,12 @@ import type {
   PsychEdgeSessionInput,
   BestTradeOfDay,
   DashboardStats,
+  Commitment,
+  CommitmentInput,
+  PatternEvent,
+  PatternEventInput,
+  CommitmentAdherenceLog,
+  CommitmentAdherenceLogInput,
 } from "@/lib/types";
 
 function now() {
@@ -995,6 +1001,111 @@ export async function savePsychEdgeSession(
     .single();
   if (error) throw error;
   return data as PsychEdgeSession;
+}
+
+// ── MC Trade Therapist — commitments, pattern events, adherence ──────
+// All fail-soft: until trade_therapist.sql is run, reads return empty and
+// writes throw a caught error, so the pages still render the computed content.
+
+export async function getCommitments(): Promise<Commitment[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("commitments")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return (data ?? []) as Commitment[];
+}
+
+export async function createCommitment(input: CommitmentInput): Promise<Commitment> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { data, error } = await supabase
+    .from("commitments")
+    .insert({ ...input, user_id: user.id, created_at: now(), updated_at: now() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Commitment;
+}
+
+export async function updateCommitment(id: string, input: Partial<CommitmentInput>): Promise<Commitment> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("commitments")
+    .update({ ...input, updated_at: now() })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Commitment;
+}
+
+export async function getPatternEvents(): Promise<PatternEvent[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("pattern_events")
+    .select("*")
+    .order("date", { ascending: true });
+  if (error) return [];
+  return (data ?? []) as PatternEvent[];
+}
+
+/** Upsert one detected pattern occurrence (keyed on trade + pattern type). Used
+ *  when the trader engages with a pattern in the 5R "Relating" step, so the log
+ *  reflects reality without duplicating on re-detection. */
+export async function upsertPatternEvent(input: PatternEventInput): Promise<PatternEvent> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { data, error } = await supabase
+    .from("pattern_events")
+    .upsert(
+      { ...input, user_id: user.id, created_at: now() },
+      { onConflict: "user_id,trade_id,pattern_type" }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data as PatternEvent;
+}
+
+export async function getCommitmentAdherenceLogs(): Promise<CommitmentAdherenceLog[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("commitment_adherence_log")
+    .select("*")
+    .order("date", { ascending: true });
+  if (error) return [];
+  return (data ?? []) as CommitmentAdherenceLog[];
+}
+
+export async function createAdherenceLog(
+  input: CommitmentAdherenceLogInput
+): Promise<CommitmentAdherenceLog> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { data, error } = await supabase
+    .from("commitment_adherence_log")
+    .insert({ ...input, user_id: user.id, created_at: now() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as CommitmentAdherenceLog;
+}
+
+export async function resolveAdherenceLog(id: string, followed: boolean): Promise<CommitmentAdherenceLog> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("commitment_adherence_log")
+    .update({ followed })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as CommitmentAdherenceLog;
 }
 
 // ── Best Trade of the Day ────────────────────────────────────────────
