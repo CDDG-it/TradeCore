@@ -490,24 +490,13 @@ function EmptyState({ hasTrades }: { hasTrades: boolean }) {
   );
 }
 
-// ── Hub: Reflection, Habits, MC Mindscore and the Trade Therapist ──────
-type EdgeTab = "reflection" | "habits" | "mindscore" | "therapist";
+// ── Hub: Reflection, Habits and MC Mindscore ───────────────────────────
+type EdgeTab = "reflection" | "habits" | "mindscore";
 const EDGE_TABS: { key: EdgeTab; label: string }[] = [
   { key: "reflection", label: "Reflection" },
   { key: "habits", label: "Habits" },
   { key: "mindscore", label: "MC Mindscore" },
-  { key: "therapist", label: "MC Trade Therapist" },
 ];
-
-/** MC Trade Therapist — intentionally empty for now; the shell is here so the
- *  tab exists and can be built out. */
-function TradeTherapistView() {
-  return (
-    <div className="rounded-xl border border-dashed border-border p-10 text-center">
-      <p className="text-sm text-muted-foreground">MC Trade Therapist</p>
-    </div>
-  );
-}
 
 export default function PsychologicalEdgePage() {
   const [tab, setTab] = useState<EdgeTab>("reflection");
@@ -550,8 +539,7 @@ export default function PsychologicalEdgePage() {
       <PageWrapper>
         {tab === "reflection" ? <EdgeReflectionView />
           : tab === "habits" ? <HabitsView />
-          : tab === "mindscore" ? <MindScoreBreakdown />
-          : <TradeTherapistView />}
+          : <MindScoreBreakdown />}
       </PageWrapper>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay,
@@ -44,6 +44,32 @@ function CardFx({ accent }: { accent: string }) {
 /** The window a card reports on. Win rate and the mind score each keep their own. */
 type Period = "week" | "month";
 const PERIOD_LABEL: Record<Period, string> = { week: "week", month: "month" };
+
+/** Remembers a card's week / month choice across reloads and navigation, so a
+ *  switch to "week" stays put. Read after mount to keep SSR output stable. */
+function usePersistedPeriod(key: string): [Period, (p: Period) => void] {
+  const [period, setPeriod] = useState<Period>("month");
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored === "week" || stored === "month") setPeriod(stored);
+    } catch {
+      /* ignore */
+    }
+  }, [key]);
+
+  const update = useCallback((p: Period) => {
+    setPeriod(p);
+    try {
+      localStorage.setItem(key, p);
+    } catch {
+      /* ignore */
+    }
+  }, [key]);
+
+  return [period, update];
+}
 
 /** Compact week / month switch, sized to sit in a card header. */
 function PeriodToggle({ value, onChange, accent }: {
@@ -114,9 +140,10 @@ export default function DashboardPage() {
   const activeAccounts = accounts.filter((a) => a.status === "active");
   const activeCapital = activeAccounts.reduce((s, a) => s + a.current_balance, 0);
 
-  // Win rate and the mind score each report on their own window.
-  const [wrPeriod, setWrPeriod] = useState<Period>("month");
-  const [mindPeriod, setMindPeriod] = useState<Period>("month");
+  // Win rate and the mind score each report on their own window, remembered
+  // per card so the choice survives a reload.
+  const [wrPeriod, setWrPeriod] = usePersistedPeriod("tradecore:dash-winrate-period");
+  const [mindPeriod, setMindPeriod] = usePersistedPeriod("tradecore:dash-mindscore-period");
 
   const periodTrades = useMemo(() => {
     if (!trades) return [];
