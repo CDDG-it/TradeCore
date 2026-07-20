@@ -30,10 +30,12 @@ function nodePosition(index: number): [number, number, number] {
   return [Math.cos(angle) * NODE_RADIUS, 0, Math.sin(angle) * NODE_RADIUS];
 }
 
-/** Default "sit above the whole hub" establishing view. */
+/** Default "sit above the whole hub" establishing view. Pulled back far enough
+ *  that the entire hub — core, node ring and outer grid — frames on load rather
+ *  than opening zoomed into the core. */
 const OVERVIEW = {
-  position: new THREE.Vector3(0, 13.5, 21),
-  target: new THREE.Vector3(0, 1.2, 0),
+  position: new THREE.Vector3(0, 17, 29),
+  target: new THREE.Vector3(0, 0.6, 0),
 };
 
 function easeInOutCubic(x: number) {
@@ -155,7 +157,7 @@ function CameraRig({
       rotateSpeed={0.5}
       zoomSpeed={0.7}
       minDistance={5}
-      maxDistance={30}
+      maxDistance={42}
       minPolarAngle={0.3}
       maxPolarAngle={1.4}
     />
@@ -218,7 +220,7 @@ export function IntelligenceHub3D({
       camera={{ position: [2, 30, 40], fov: 42, near: 0.1, far: 120 }}
     >
       <color attach="background" args={[skyBg]} />
-      <fog attach="fog" args={[skyBg, 18, 40]} />
+      <fog attach="fog" args={[skyBg, 22, 54]} />
 
       <ambientLight intensity={light ? 0.75 : 0.32} color={light ? "#ffffff" : "#7fa8c9"} />
       <hemisphereLight args={light ? ["#ffffff", "#cbd5e1", 0.9] : ["#1c2c42", "#05070c", 0.4]} />

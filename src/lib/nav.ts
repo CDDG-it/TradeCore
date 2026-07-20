@@ -35,6 +35,6 @@ export const PRIMARY_NAV: AppTab[] = [
   { label: "MC Mind Edge", href: "/psychological-edge", group: null },
   { label: "MC Trade Therapist", href: "/trade-therapist", group: null },
   { label: "My Strategy", href: "/strategy", group: null },
-  { label: "Option Flow", href: "/option-flow", group: null },
   { label: "MC News Dashboard", href: "/news-city", group: null },
+  { label: "Option Flow", href: "/option-flow", group: null },
 ];

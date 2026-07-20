@@ -4,7 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowDown } from "lucide-react";
 import { motion, useScroll, useTransform } from "motion/react";
-import { ProductPreview } from "@/components/landing/product-preview";
+import { Showcase } from "@/components/landing/showcase";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
 import { LandingFooter } from "@/components/landing/footer";
 import { LandingNav } from "@/components/landing/landing-nav";
@@ -143,7 +143,53 @@ export default function HomePage() {
 
       </section>
 
-      <ProductPreview />
+      <Showcase />
+
+      {/* ── Closing CTA band ── */}
+      <section className="relative overflow-hidden" style={{ background: "#0B1120" }}>
+        <div className="h-px w-full" style={{ background: "rgba(248,250,252,0.08)" }} />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[620px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(20,184,166,0.14) 0%, transparent 68%)" }}
+        />
+        <div className="relative mx-auto max-w-3xl px-6 py-24 sm:py-32 text-center">
+          <motion.h2
+            initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="font-black tracking-tight leading-[0.95]"
+            style={{ fontFamily: NUNITO, fontSize: "clamp(2rem,6vw,3.6rem)", color: "rgba(248,250,252,0.95)" }}
+          >
+            Build the trader{" "}
+            <span style={{ background: "linear-gradient(135deg,#14B8A6 0%,#06B6D4 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              behind the results.
+            </span>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            className="mt-5 mx-auto max-w-lg leading-relaxed"
+            style={{ fontFamily: NUNITO, fontSize: "clamp(1rem,2.4vw,1.15rem)", color: "rgba(248,250,252,0.6)" }}
+          >
+            Preparation, execution, review and mindset in one place. Start with your next session.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+            className="mt-9 flex flex-wrap items-center justify-center gap-3"
+          >
+            <Link href="/signup" className="inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+              style={{ fontFamily: NUNITO, background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)", boxShadow: "0 4px 28px rgba(20,184,166,0.40)" }}>
+              Create your account <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5"
+              style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.7)", borderColor: "rgba(248,250,252,0.16)", background: "rgba(248,250,252,0.05)" }}>
+              Open the dashboard
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       <LandingFooter />
     </div>
   );

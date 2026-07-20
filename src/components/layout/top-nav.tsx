@@ -26,10 +26,25 @@ function DesktopItem({ href, label, active }: { href: string; label: string; act
       {active && (
         <motion.span
           layoutId="nav-active-pill"
-          className="absolute inset-0 rounded-lg"
-          style={{ background: "rgba(20,184,166,0.16)" }}
-          transition={{ type: "spring", stiffness: 500, damping: 34 }}
-        />
+          className="absolute inset-0 rounded-lg overflow-hidden"
+          style={{
+            background: "linear-gradient(160deg, rgba(20,184,166,0.28), rgba(6,182,212,0.12) 60%, rgba(20,184,166,0.06))",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            border: "1px solid rgba(20,184,166,0.38)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -8px 14px rgba(6,182,212,0.10), 0 4px 14px rgba(20,184,166,0.20)",
+          }}
+          transition={{ type: "spring", stiffness: 480, damping: 36 }}
+        >
+          {/* Moving glass sheen — a soft highlight that catches the light as the pill slides */}
+          <motion.span
+            aria-hidden
+            className="absolute inset-y-0 -left-1/3 w-1/2"
+            style={{ background: "linear-gradient(105deg, transparent, rgba(255,255,255,0.28), transparent)" }}
+            animate={{ x: ["-40%", "260%"] }}
+            transition={{ duration: 2.6, ease: "easeInOut", repeat: Infinity, repeatDelay: 1.4 }}
+          />
+        </motion.span>
       )}
       <span className="relative z-10">{label}</span>
     </Link>
