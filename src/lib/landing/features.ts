@@ -11,7 +11,7 @@ export type FeatureBlock = {
 export type Feature = {
   slug: string;
   name: string;
-  section: "Daily" | "Trading";
+  section: "Daily" | "Trading" | "Mindset" | "Markets";
   // One line shown in the nav dropdown and as the page subtitle.
   tagline: string;
   // Short blurb reused on the homepage product preview.
@@ -249,6 +249,134 @@ export const FEATURES: Feature[] = [
       {
         heading: "Why every trader needs this",
         body: "The difference between a clean read and a blindside is usually knowing the regime you are trading in. A single view of risk and sentiment keeps you on the right side of the days that break the range.",
+      },
+    ],
+  },
+  {
+    slug: "psychological-edge",
+    name: "MC Mind Edge",
+    section: "Mindset",
+    tagline: "One number for how ready you are to trade.",
+    blurb:
+      "MC Mind Edge blends rule adherence, habits and commitment follow through into a single Mindscore, read straight from the process you already produce.",
+    cta: "Open Mind Edge",
+    screenshot: "/screenshots/psychological-edge.png",
+    aspect: "1670 / 848",
+    intro:
+      "Discipline is hard to see until it is already gone. MC Mind Edge turns the process behind your trading into one honest number, so the state you are walking into a session with is never a guess.",
+    blocks: [
+      {
+        heading: "How it works",
+        body: "Your Mindscore is built from the work you already do, not a questionnaire you talk yourself through.",
+        points: [
+          "One score blends three inputs: how well you followed your rules, how consistent your habits were and how many of your commitments you actually kept.",
+          "Every input traces back to real entries in your journal, habits and reflections, so the number moves only when your behavior does.",
+          "Track the score by week, month and all time, and open a full breakdown that shows exactly which input lifted it or dragged it down.",
+        ],
+      },
+      {
+        heading: "Why it works",
+        body: "Feelings about your own discipline are unreliable, especially after a good run or a hard loss. By scoring the process instead of the profit and loss, Mind Edge gives you a stable read on your state that does not flatter you when you are drifting and does not punish you when variance goes against a clean process.",
+      },
+      {
+        heading: "Why every trader needs this",
+        body: "The account is a lagging indicator. The way you prepare, follow rules and keep commitments is the leading one. A single readiness number in front of you every day is what turns discipline from a word into something you can watch trend up.",
+      },
+    ],
+  },
+  {
+    slug: "trade-therapist",
+    name: "MC Trade Therapist",
+    section: "Mindset",
+    tagline: "A coach that talks back, built from your own trades.",
+    blurb:
+      "A deterministic coaching session that reads your real history. Every question traces to concrete numbers, never generic motivation, and every commitment comes back when it matters.",
+    cta: "Open Trade Therapist",
+    screenshot: "/screenshots/trade-therapist.png",
+    aspect: "1670 / 848",
+    intro:
+      "Most trading advice is a poster on the wall. The MC Trade Therapist runs a real session on your own trades, so the conversation is about what you actually did, not what a generic mindset video thinks you should feel.",
+    blocks: [
+      {
+        heading: "How it works",
+        body: "A guided session that pulls its material straight from your history.",
+        points: [
+          "The therapist reads your journal, results and discipline data, then works through a structured 5R flow built around the patterns it finds.",
+          "Every prompt is tied to concrete numbers from your trading, so you confront the trade you overheld or the rule you skipped, not a vague feeling.",
+          "Commitments you make in a session are saved and surfaced again later, so the work carries into your next trades instead of ending when you close the tab.",
+        ],
+      },
+      {
+        heading: "Why it works",
+        body: "Insight fades, patterns do not. Because the therapist is deterministic and data driven, it keeps pointing at the same expensive habit until you actually change it, which is exactly the accountability a motivational quote can never give you.",
+      },
+      {
+        heading: "Why every trader needs this",
+        body: "The gap between knowing a rule and keeping it is where accounts die. A session that ties every reflection to your real behavior, and holds you to what you committed to, is how that gap finally closes.",
+      },
+    ],
+  },
+  {
+    slug: "strategy",
+    name: "Strategy",
+    section: "Trading",
+    tagline: "Your playbook and rules, written down and always in reach.",
+    blurb:
+      "Define the setups you actually trade, the rules that qualify them and the risk that governs them, so the plan you trade is the plan you decided on.",
+    cta: "Build your strategy",
+    screenshot: "/screenshots/strategy.png",
+    aspect: "1670 / 848",
+    intro:
+      "A strategy in your head changes shape under pressure. My Strategy puts your playbook on paper, so the setups you take at nine thirty are the same ones you chose in the cold light of the weekend.",
+    blocks: [
+      {
+        heading: "How it works",
+        body: "Your entire approach, defined once and kept in front of you.",
+        points: [
+          "Write out each setup you trade with the exact conditions that qualify it, so a valid trade is a checklist and not a gut call.",
+          "Set the risk and management rules that govern every position, from size to where you are wrong.",
+          "Keep it one click away while you trade and review, so your plan is a living reference instead of a note you wrote once and forgot.",
+        ],
+      },
+      {
+        heading: "Why it works",
+        body: "A written strategy removes the two most expensive words in trading: just this once. When the rules are explicit and visible, the trades outside them stop looking like opportunities and start looking like what they are, which is a breach of your own plan.",
+      },
+      {
+        heading: "Why every trader needs this",
+        body: "Consistency is impossible without a fixed definition of what you do. A documented playbook is the reference every other tool measures you against, from the journal to your Mindscore, and the thing that makes your edge repeatable.",
+      },
+    ],
+  },
+  {
+    slug: "option-flow",
+    name: "Option Flow",
+    section: "Markets",
+    tagline: "Dealer positioning, strike by strike.",
+    blurb:
+      "See where the size is really positioned across strikes, so you can read the session structure behind the price instead of guessing at it.",
+    cta: "Open Option Flow",
+    screenshot: "/screenshots/option-flow.png",
+    aspect: "1670 / 848",
+    intro:
+      "Price is the last thing to move. Option Flow shows you where the size is positioned across strikes, so you can read the structure that shapes a session before it plays out on the chart.",
+    blocks: [
+      {
+        heading: "How it works",
+        body: "The positioning behind the index, laid out where you can actually use it.",
+        points: [
+          "See how dealer exposure is distributed across strikes, so the levels that matter are the ones the market is actually defending.",
+          "Read the structure around key strikes to understand where price is likely to stall, accelerate or pin.",
+          "Pair it with your pre market analysis so your levels are backed by positioning, not just lines on a chart.",
+        ],
+      },
+      {
+        heading: "Why it works",
+        body: "Most traders react to price and never see what is holding it. Positioning gives you the context underneath the move, so a level is not just where price bounced last time but where real size is committed right now.",
+      },
+      {
+        heading: "Why every trader needs this",
+        body: "Trading index futures without a read on positioning is trading half the picture. Knowing where the structure sits turns your levels from guesses into decisions the market itself is defending.",
       },
     ],
   },
