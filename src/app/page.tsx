@@ -6,6 +6,7 @@ import { ArrowRight, ArrowDown } from "lucide-react";
 import { motion, useScroll, useTransform } from "motion/react";
 import { AboutSection } from "@/components/landing/about-section";
 import { FeaturesSection } from "@/components/landing/features-section";
+import { AllFeaturesGrid } from "@/components/landing/all-features-grid";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
 import { LandingFooter } from "@/components/landing/footer";
 import { LandingNav } from "@/components/landing/landing-nav";
@@ -146,6 +147,7 @@ export default function HomePage() {
 
       <AboutSection />
       <FeaturesSection />
+      <AllFeaturesGrid />
 
       {/* ── Closing CTA band ── */}
       <section className="relative overflow-hidden" style={{ background: "#0B1120" }}>
