@@ -1,3 +1,5 @@
+import { existsSync } from "fs";
+import path from "path";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -5,20 +7,8 @@ import type { Metadata } from "next";
 import { ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { FEATURES, FEATURE_BY_SLUG } from "@/lib/landing/features";
 import { LandingFooter } from "@/components/landing/footer";
-import {
-  MindEdgeMock, TherapistMock, StrategyMock, OptionFlowMock,
-} from "@/components/landing/app-mocks";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
-
-// Features whose page media is a live on-brand mock (dummy data, no auth, no
-// real account details) rather than a static screenshot capture.
-const FEATURE_MOCKS: Record<string, React.ComponentType> = {
-  "psychological-edge": MindEdgeMock,
-  "trade-therapist": TherapistMock,
-  strategy: StrategyMock,
-  "option-flow": OptionFlowMock,
-};
 
 export function generateStaticParams() {
   return FEATURES.map((f) => ({ slug: f.slug }));
@@ -51,7 +41,12 @@ export default async function FeaturePage({
   const idx = FEATURES.findIndex((f) => f.slug === feature.slug);
   const next = FEATURES[(idx + 1) % FEATURES.length];
 
-  const Mock = FEATURE_MOCKS[feature.slug];
+  // Only render the media block when a real screenshot file is actually present
+  // in /public. Features without a capture (e.g. Trade Therapist, Option Flow)
+  // stay text-only — no mockups, no broken images. Drop a PNG in and it appears.
+  const hasShot = existsSync(
+    path.join(process.cwd(), "public", feature.screenshot.replace(/^\//, "")),
+  );
 
   return (
     <div style={{ background: "#0B1120", fontFamily: NUNITO }}>
@@ -120,20 +115,17 @@ export default async function FeaturePage({
         </p>
       </section>
 
-      {/* Screenshot — a static capture for shipped pages, or a live on-brand
-          mock (dummy data) for pages captured behind auth. */}
-      <section className="mx-auto max-w-5xl px-6">
-        <div
-          className="relative w-full overflow-hidden rounded-2xl"
-          style={{
-            aspectRatio: Mock ? "16 / 9" : feature.aspect,
-            boxShadow:
-              "0 0 0 1.5px rgba(20,184,166,0.25), 0 0 34px rgba(6,182,212,0.10), 0 12px 50px rgba(0,0,0,0.45)",
-          }}
-        >
-          {Mock ? (
-            <Mock />
-          ) : (
+      {/* Screenshot — only when a real capture exists in /public/screenshots. */}
+      {hasShot && (
+        <section className="mx-auto max-w-5xl px-6">
+          <div
+            className="relative w-full overflow-hidden rounded-2xl"
+            style={{
+              aspectRatio: feature.aspect,
+              boxShadow:
+                "0 0 0 1.5px rgba(20,184,166,0.25), 0 0 34px rgba(6,182,212,0.10), 0 12px 50px rgba(0,0,0,0.45)",
+            }}
+          >
             <Image
               src={feature.screenshot}
               alt={`${feature.name} page in TradingMC`}
@@ -143,9 +135,9 @@ export default async function FeaturePage({
               className="object-cover object-top"
               priority
             />
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {/* Explainer blocks */}
       <section className="mx-auto max-w-3xl px-6 py-20 sm:py-28">

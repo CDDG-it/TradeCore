@@ -261,7 +261,7 @@ export const FEATURES: Feature[] = [
       "MC Mind Edge blends rule adherence, habits and commitment follow through into a single Mindscore, read straight from the process you already produce.",
     cta: "Open Mind Edge",
     screenshot: "/screenshots/psychological-edge.png",
-    aspect: "1670 / 848",
+    aspect: "1639 / 651",
     intro:
       "Discipline is hard to see until it is already gone. MC Mind Edge turns the process behind your trading into one honest number, so the state you are walking into a session with is never a guess.",
     blocks: [
@@ -325,7 +325,7 @@ export const FEATURES: Feature[] = [
       "Define the setups you actually trade, the rules that qualify them and the risk that governs them, so the plan you trade is the plan you decided on.",
     cta: "Build your strategy",
     screenshot: "/screenshots/strategy.png",
-    aspect: "1670 / 848",
+    aspect: "1647 / 658",
     intro:
       "A strategy in your head changes shape under pressure. My Strategy puts your playbook on paper, so the setups you take at nine thirty are the same ones you chose in the cold light of the weekend.",
     blocks: [
