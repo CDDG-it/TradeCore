@@ -325,7 +325,7 @@ export const FEATURES: Feature[] = [
       "Define the setups you actually trade, the rules that qualify them and the risk that governs them, so the plan you trade is the plan you decided on.",
     cta: "Build your strategy",
     screenshot: "/screenshots/strategy.png",
-    aspect: "1647 / 658",
+    aspect: "1664 / 950",
     intro:
       "A strategy in your head changes shape under pressure. My Strategy puts your playbook on paper, so the setups you take at nine thirty are the same ones you chose in the cold light of the weekend.",
     blocks: [
