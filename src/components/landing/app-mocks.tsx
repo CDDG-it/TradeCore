@@ -6,7 +6,7 @@
  * TradingMC UI: navy surface, turquoise/cyan accents, Nunito. No real data, no
  * auth needed. Used as the feature-card media in the redesigned features section.
  */
-import { LayoutDashboard, BookOpen, Brain, MessageSquareHeart, Globe, Activity, TrendingUp } from "lucide-react";
+import { LayoutDashboard, BookOpen, Brain, MessageSquareHeart, Globe, Activity, TrendingUp, Target, Check } from "lucide-react";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 const TURQ = "#14B8A6";
@@ -211,6 +211,55 @@ function Bubble({ side, children }: { side: "left" | "right"; children: React.Re
         {children}
       </span>
     </div>
+  );
+}
+
+/* ── My Strategy ────────────────────────────────────────────────────────── */
+export function StrategyMock() {
+  const setups = [
+    {
+      name: "NY Reversal",
+      tf: "5m / 15m",
+      conds: ["HTF liquidity sweep", "Displacement + FVG", "Session: New York"],
+      risk: "0.5% · min 2R",
+    },
+    {
+      name: "London Continuation",
+      tf: "1m / 5m",
+      conds: ["Trend aligned on 15m", "Pullback into order block"],
+      risk: "0.5% · min 2.5R",
+    },
+  ];
+  return (
+    <Chrome title="My Strategy" icon={Target}>
+      <div className="h-full p-3 flex flex-col gap-2.5">
+        {setups.map((s) => (
+          <div key={s.name} style={card} className="p-2.5">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-[11px] font-black" style={{ color: T1 }}>{s.name}</span>
+              <span className="text-[8px] font-bold font-mono px-1.5 py-0.5 rounded" style={{ color: CYAN, background: "rgba(6,182,212,0.12)" }}>{s.tf}</span>
+              <span className="ml-auto text-[9px] font-bold tabular-nums" style={{ color: TURQ }}>{s.risk}</span>
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {s.conds.map((c) => (
+                <span key={c} className="flex items-center gap-1 text-[9px]" style={{ color: T2 }}>
+                  <span className="flex h-3 w-3 items-center justify-center rounded-full shrink-0" style={{ background: "rgba(20,184,166,0.16)" }}>
+                    <Check className="h-2 w-2" style={{ color: TURQ }} strokeWidth={3} />
+                  </span>
+                  {c}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+        <div style={card} className="px-2.5 py-2 mt-auto flex items-center gap-x-3 gap-y-1 flex-wrap">
+          <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: T3 }}>Risk rules</span>
+          {["Max 2 trades / day", "Stop after −2R", "No trades pre-news"].map((r) => (
+            <span key={r} className="text-[9px]" style={{ color: T2 }}>{r}</span>
+          ))}
+        </div>
+      </div>
+    </Chrome>
   );
 }
 
