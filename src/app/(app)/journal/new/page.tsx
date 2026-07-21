@@ -58,6 +58,7 @@ const EMPTY_DISCIPLINE: TradeDiscipline = {
 export default function NewTradePage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [confluenceInput, setConfluenceInput] = useState("");
   const [showDiscipline, setShowDiscipline] = useState(true);
   const [newCustomLabel, setNewCustomLabel] = useState("");
@@ -190,7 +191,11 @@ export default function NewTradePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.instrument) return;
+    if (!form.instrument) {
+      setError("Select an instrument before logging the trade.");
+      return;
+    }
+    setError(null);
     setSaving(true);
     try {
       const created = await createTrade(form, entityId);
@@ -198,6 +203,9 @@ export default function NewTradePage() {
       router.push(`/journal/${created.id}`);
     } catch (err) {
       console.error("Failed to save trade:", err);
+      setError(
+        err instanceof Error ? err.message : "Something went wrong saving the trade. Please try again."
+      );
       setSaving(false);
     }
   }
@@ -223,6 +231,12 @@ export default function NewTradePage() {
       </div>
 
       {restored && <DraftBanner onDismiss={dismiss} />}
+
+      {error && (
+        <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <form id="trade-form" onSubmit={handleSubmit}>
         <div className="grid lg:grid-cols-2 gap-4 items-start">
