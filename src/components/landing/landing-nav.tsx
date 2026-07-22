@@ -70,9 +70,9 @@ export function LandingNav() {
         borderBottom: "1px solid rgba(248,250,252,0.09)",
       }}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4">
         {/* Brand — logo + wordmark, same font family as the hero heading, much smaller */}
-        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+        <Link href="/" className="flex items-center gap-2.5 justify-self-start hover:opacity-80 transition-opacity">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/tradingmc-app-dark.svg" alt="" width={44} height={44} className="h-11 w-11 shrink-0" />
           <span
@@ -84,8 +84,8 @@ export function LandingNav() {
           </span>
         </Link>
 
-        {/* Center / right nav */}
-        <nav className="flex items-center gap-1 sm:gap-2" style={{ fontFamily: NUNITO }}>
+        {/* Center nav — Features + Coming soon, centered in the bar */}
+        <nav className="col-start-2 flex items-center justify-center gap-1 sm:gap-2" style={{ fontFamily: NUNITO }}>
           {/* Features dropdown */}
           <div
             ref={wrapRef}
@@ -155,10 +155,10 @@ export function LandingNav() {
           >
             Coming soon
           </Link>
+        </nav>
 
-          {/* Divider */}
-          <span className="mx-1 hidden h-4 w-px bg-[rgba(248,250,252,0.12)] sm:block" />
-
+        {/* Right nav — account actions, pushed to the far right */}
+        <nav className="col-start-3 flex items-center justify-end gap-1 sm:gap-2" style={{ fontFamily: NUNITO }}>
           {/* Sign in */}
           <Link
             href="/login"

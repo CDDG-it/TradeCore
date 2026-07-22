@@ -10,6 +10,7 @@ import { MarqueeSection } from "@/components/landing/marquee-section";
 import { FeaturesSection } from "@/components/landing/features-section";
 import { WhySection } from "@/components/landing/why-section";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
+import { LayoutShowcase } from "@/components/landing/layout-showcase";
 import { LandingFooter } from "@/components/landing/footer";
 import { LandingNav } from "@/components/landing/landing-nav";
 
@@ -61,15 +62,15 @@ export default function HomePage() {
 
     animate(headingChars, {
       y: [{ to: ["100%", "0%"] }],
-      duration: 750,
+      duration: 480,
       ease: "out(3)",
-      delay: stagger(45),
+      delay: stagger(28),
     });
     animate(paraChars, {
       y: [{ to: ["100%", "0%"] }],
-      duration: 650,
+      duration: 420,
       ease: "out(3)",
-      delay: stagger(10, { start: 350 }),
+      delay: stagger(6, { start: 220 }),
     });
   }, []);
 
@@ -118,7 +119,7 @@ export default function HomePage() {
 
           <h1
             ref={headingRef}
-            className="font-black tracking-tight leading-[0.88] mb-6"
+            className="font-black tracking-tight leading-[1.06] mb-6 pb-[0.08em]"
             style={{
               fontFamily: NUNITO,
               fontSize: "clamp(2.5rem,8vw,6rem)",
@@ -191,6 +192,7 @@ export default function HomePage() {
 
       </section>
 
+      <LayoutShowcase />
       <AboutSection />
       <MarqueeSection />
       <FeaturesSection />
