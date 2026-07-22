@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowDown } from "lucide-react";
 import { motion, useScroll, useTransform } from "motion/react";
+import { animate, splitText, stagger } from "animejs";
 import { AboutSection } from "@/components/landing/about-section";
 import { MarqueeSection } from "@/components/landing/marquee-section";
 import { FeaturesSection } from "@/components/landing/features-section";
@@ -25,6 +26,52 @@ export default function HomePage() {
   });
   const contentY = useTransform(scrollYProgress, [0, 1], [0, 110]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+
+  // Split-text reveal for the headline + subtext (anime.js). Each character
+  // rises into a clipped mask, staggered, so the copy "typesets" on load.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const paraRef = useRef<HTMLParagraphElement>(null);
+  const revealed = useRef(false);
+
+  useEffect(() => {
+    if (revealed.current || !headingRef.current || !paraRef.current) return;
+    revealed.current = true;
+
+    const { chars: headingChars } = splitText(headingRef.current, {
+      chars: { wrap: "clip" },
+    });
+    const { chars: paraChars } = splitText(paraRef.current, {
+      chars: { wrap: "clip" },
+    });
+
+    // splitText rewraps each glyph, which breaks the gradient's
+    // background-clip on the "MC" span — reapply it to those two chars so the
+    // turquoise→cyan fill survives. (MC are the last two characters.)
+    for (const el of headingChars.slice(-2) as HTMLElement[]) {
+      el.style.background = "linear-gradient(135deg,#14B8A6 0%,#06B6D4 100%)";
+      el.style.webkitBackgroundClip = "text";
+      el.style.backgroundClip = "text";
+      el.style.webkitTextFillColor = "transparent";
+    }
+
+    // Reveal the containers now that the text is split (avoids a flash of the
+    // un-split copy before the effect runs).
+    headingRef.current.style.opacity = "1";
+    paraRef.current.style.opacity = "1";
+
+    animate(headingChars, {
+      y: [{ to: ["100%", "0%"] }],
+      duration: 750,
+      ease: "out(3)",
+      delay: stagger(45),
+    });
+    animate(paraChars, {
+      y: [{ to: ["100%", "0%"] }],
+      duration: 650,
+      ease: "out(3)",
+      delay: stagger(10, { start: 350 }),
+    });
+  }, []);
 
   return (
     // No overflow class here: overflow-x-hidden disables the sticky header and
@@ -69,15 +116,14 @@ export default function HomePage() {
             style={{ filter: "drop-shadow(0 8px 30px rgba(20,184,166,0.22))" }}
           />
 
-          <motion.h1
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.10 }}
+          <h1
+            ref={headingRef}
             className="font-black tracking-tight leading-[0.88] mb-6"
             style={{
               fontFamily: NUNITO,
               fontSize: "clamp(2.5rem,8vw,6rem)",
               color: "rgba(248,250,252,0.94)",
+              opacity: 0,
             }}
           >
             Trading
@@ -89,12 +135,10 @@ export default function HomePage() {
             }}>
               MC
             </span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.22 }}
+          <p
+            ref={paraRef}
             className="mb-10 max-w-xl leading-relaxed"
             style={{
               fontFamily: NUNITO,
@@ -102,12 +146,13 @@ export default function HomePage() {
               fontWeight: 400,
               letterSpacing: "0.01em",
               color: "rgba(248,250,252,0.60)",
+              opacity: 0,
             }}
           >
             Great traders are built beyond the charts. Capture every trade,
             analyze your performance, and develop the habits that drive
             long-term consistency.
-          </motion.p>
+          </p>
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
