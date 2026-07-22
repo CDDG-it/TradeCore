@@ -76,7 +76,7 @@ export function LayoutShowcase() {
   }, []);
 
   return (
-    <section className="bg-background px-6 py-24 md:py-28">
+    <section id="features" className="bg-background px-6 py-24 md:py-28">
       <div className="mx-auto max-w-5xl">
         <p
           className="text-center font-mono text-xs font-medium uppercase tracking-[0.24em] text-primary"

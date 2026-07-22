@@ -19,7 +19,11 @@ const TAB_FALLBACK_TAGLINE: Record<string, string> = {
   "/option-flow": "Dealer positioning and session structure for NQ and GC.",
   "/news-city": "Scan the market news feed and explore the forces in a live city.",
 };
-const NAV_ITEMS = APP_TABS.map((tab) => {
+// The Features menu lists exactly the five products shown on the animated
+// landing cards, in the same order.
+const CARD_HREFS = ["/dashboard", "/psychological-edge", "/trade-therapist", "/strategy", "/news-city"];
+const NAV_ITEMS = CARD_HREFS.map((href) => {
+  const tab = APP_TABS.find((t) => t.href === href)!;
   const feature = FEATURE_BY_HREF.get(tab.href);
   return {
     label: tab.label,
@@ -28,8 +32,8 @@ const NAV_ITEMS = APP_TABS.map((tab) => {
   };
 });
 
-/* Top-of-hero navigation: brand, a Features dropdown listing every product page,
-   a Coming soon link, then Sign in and a Make account button. */
+/* Top-of-hero navigation: brand at the left, a centered Features dropdown
+   listing the five product pages, then Sign in and a Make account button. */
 export function LandingNav() {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -148,13 +152,6 @@ export function LandingNav() {
             )}
           </div>
 
-          {/* Coming soon */}
-          <Link
-            href="/coming-soon"
-            className="rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(248,250,252,0.60)] transition-colors duration-200 hover:text-[rgba(248,250,252,0.92)]"
-          >
-            Coming soon
-          </Link>
         </nav>
 
         {/* Right nav — account actions, pushed to the far right */}

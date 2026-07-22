@@ -5,10 +5,6 @@ import Link from "next/link";
 import { ArrowRight, ArrowDown } from "lucide-react";
 import { motion, useScroll, useTransform } from "motion/react";
 import { animate, splitText, stagger } from "animejs";
-import { AboutSection } from "@/components/landing/about-section";
-import { MarqueeSection } from "@/components/landing/marquee-section";
-import { FeaturesSection } from "@/components/landing/features-section";
-import { WhySection } from "@/components/landing/why-section";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
 import { LayoutShowcase } from "@/components/landing/layout-showcase";
 import { LandingFooter } from "@/components/landing/footer";
@@ -193,49 +189,6 @@ export default function HomePage() {
       </section>
 
       <LayoutShowcase />
-      <AboutSection />
-      <MarqueeSection />
-      <FeaturesSection />
-      <WhySection />
-
-      {/* ── Closing CTA band ── */}
-      <section className="relative overflow-hidden bg-background">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[620px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{ background: "radial-gradient(circle, var(--primary) 0%, transparent 68%)", opacity: 0.14 }}
-        />
-        <div className="relative mx-auto max-w-3xl px-6 py-24 text-center sm:py-32">
-          <motion.h2
-            initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="font-heading text-4xl font-black leading-[0.95] tracking-tight text-foreground md:text-6xl"
-          >
-            Build the trader <span className="text-primary">behind the results.</span>
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-            className="mx-auto mt-5 max-w-lg font-body text-base leading-relaxed text-muted-foreground md:text-lg"
-          >
-            Preparation, execution, review and mindset in one place. Start with your next session.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-            className="mt-9 flex flex-wrap items-center justify-center gap-3"
-          >
-            <Link href="/signup"
-              className="inline-flex items-center gap-2.5 rounded-full bg-primary px-8 py-3.5 font-body text-sm font-semibold text-primary-foreground shadow-[0_4px_28px_-6px_var(--primary)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
-              Create your account <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-7 py-3.5 font-body text-sm font-semibold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40">
-              Open the dashboard
-            </Link>
-          </motion.div>
-        </div>
-      </section>
 
       <LandingFooter />
     </div>
