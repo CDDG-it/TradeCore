@@ -1,105 +1,76 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import Link from "next/link";
-import { createLayout, stagger } from "animejs";
+import { CardFlip } from "@/components/landing/card-flip";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
-// The five primary destinations, shown as bare morphing tiles — no icons,
-// no screenshots, no AI copy. Just the names, rearranging on a loop.
-const CARDS = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "MC Mind Edge", href: "/psychological-edge" },
-  { label: "MC Trade Therapist", href: "/trade-therapist" },
-  { label: "My Strategy", href: "/strategy" },
-  { label: "MC News Dashboard", href: "/news-city" },
+// The five primary destinations, shown as liquid-glass cards that flip on hover
+// to reveal what each one does. No screenshots, no icons beyond the flip hint.
+const CARDS: React.ComponentProps<typeof CardFlip>[] = [
+  {
+    title: "Dashboard",
+    subtitle: "Your whole trading day on one screen.",
+    description: "Every account, trade and metric in a single command center.",
+    features: ["Live P&L", "Account overview", "Daily focus", "Quick journal"],
+    href: "/dashboard",
+  },
+  {
+    title: "MC Mind Edge",
+    subtitle: "One number for how ready you are to trade.",
+    description: "A daily readiness score built from your state, sleep and discipline.",
+    features: ["Readiness score", "Pre-trade mirror", "5R sessions", "Mindscore trend"],
+    href: "/psychological-edge",
+  },
+  {
+    title: "MC Trade Therapist",
+    subtitle: "A coach that talks back, built from your own trades.",
+    description: "Pattern detection and reflective prompts drawn from your history.",
+    features: ["Pattern engine", "Post-trade 5R", "Bias alerts", "Session recaps"],
+    href: "/trade-therapist",
+  },
+  {
+    title: "My Strategy",
+    subtitle: "Your playbook and rules, written down and in reach.",
+    description: "Codify setups, confluences and rules so execution stays consistent.",
+    features: ["Setup library", "Confluence rules", "Checklists", "Playbook"],
+    href: "/strategy",
+  },
+  {
+    title: "MC News Dashboard",
+    subtitle: "See what is actually moving the market.",
+    description: "A live read on the forces and headlines driving NQ and GC.",
+    features: ["Live news feed", "Market forces", "Session structure", "Impact scan"],
+    href: "/news-city",
+  },
 ];
 
 /**
- * Landing showcase — the five product tiles continuously re-flow between grid
- * arrangements using anime.js createLayout (FLIP). The container's data-grid
- * attribute drives the CSS column count; anime animates every tile between the
- * old and new positions/sizes each tick.
+ * Landing showcase — the five products as liquid-glass flip cards.
  */
 export function LayoutShowcase() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    if (started.current || !containerRef.current) return;
-    started.current = true;
-
-    const container = containerRef.current;
-    const layout = createLayout(container);
-    let i = 0;
-    let running = false;
-    let disposed = false;
-
-    // One morph, chaining into the next while the loop is "running". Gated by
-    // visibility so we don't thrash layout when the section is off-screen.
-    function tick() {
-      if (disposed || !running) return;
-      layout.update(
-        ({ root }) => {
-          (root as HTMLElement).dataset.grid = String((++i % 4) + 1);
-        },
-        {
-          duration: 1000,
-          delay: stagger(150),
-          onComplete: () => {
-            if (running && !disposed) tick();
-          },
-        },
-      );
-    }
-
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !running) {
-          running = true;
-          tick();
-        } else if (!entry.isIntersecting) {
-          running = false; // in-flight morph finishes, then the chain stops
-        }
-      },
-      { threshold: 0.2 },
-    );
-    io.observe(container);
-
-    return () => {
-      disposed = true;
-      running = false;
-      io.disconnect();
-      layout.revert();
-    };
-  }, []);
-
   return (
-    <section id="features" className="bg-background px-6 py-24 md:py-28">
-      <div className="mx-auto max-w-5xl">
+    <section id="features" className="relative overflow-hidden bg-background px-6 py-24 md:py-28">
+      {/* Ambient turquoise glow so the glass has something to catch */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/3 h-[440px] w-[760px] -translate-x-1/2 rounded-full"
+        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.12) 0%, transparent 70%)" }}
+      />
+
+      <div className="relative mx-auto max-w-6xl">
         <p
           className="text-center font-mono text-xs font-medium uppercase tracking-[0.24em] text-primary"
           style={{ fontFamily: NUNITO }}
         >
           One platform
         </p>
-        <h2
-          className="mx-auto mt-4 max-w-2xl text-center font-heading text-3xl font-black tracking-tight text-foreground md:text-4xl"
-        >
+        <h2 className="mx-auto mt-4 max-w-2xl text-center font-heading text-3xl font-black tracking-tight text-foreground md:text-4xl">
           Everything the trader needs, in one place.
         </h2>
 
-        <div ref={containerRef} className="layout-container mt-14" data-grid="4">
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
           {CARDS.map((c) => (
-            <Link
-              key={c.href}
-              href={c.href}
-              className="layout-card"
-              style={{ fontFamily: NUNITO }}
-            >
-              {c.label}
-            </Link>
+            <CardFlip key={c.href} {...c} />
           ))}
         </div>
       </div>
