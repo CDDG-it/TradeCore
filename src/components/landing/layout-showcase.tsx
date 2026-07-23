@@ -51,6 +51,10 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
 export function LayoutShowcase() {
   return (
     <section id="features" className="relative overflow-hidden bg-background px-6 py-24 md:py-28">
+      {/* Animated beams span the whole section — from the hero down to the
+          footer — as one continuous backdrop. Landing only. */}
+      <BeamsBackground className="inset-0" intensity="medium" />
+
       {/* Ambient turquoise glow so the glass has something to catch */}
       <div
         aria-hidden
@@ -69,15 +73,10 @@ export function LayoutShowcase() {
           Everything the trader needs, in one place.
         </h2>
 
-        <div className="relative mt-14">
-          {/* Animated beams sit directly behind the cards — landing only */}
-          <BeamsBackground className="-inset-x-6 -inset-y-10 rounded-[2rem]" intensity="medium" />
-
-          <div className="relative grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-            {CARDS.map((c) => (
-              <CardFlip key={c.href} {...c} />
-            ))}
-          </div>
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          {CARDS.map((c) => (
+            <CardFlip key={c.href} {...c} />
+          ))}
         </div>
       </div>
     </section>
