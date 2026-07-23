@@ -15,7 +15,6 @@ import {
 import { computeMindScore, bandColorFor, type MindScore } from "@/lib/mind-score/mind-score";
 import { tradeR } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
-import { WinRateRing } from "@/components/win-rate-ring";
 import { cn } from "@/lib/utils";
 import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview } from "@/lib/types";
 
@@ -380,6 +379,15 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, period, onPeriodC
     return () => cancelAnimationFrame(raf.current);
   }, [targetWr]);
 
+  // Donut geometry — a full ring split into W / BE / L arcs by share of trades.
+  const R = 46, SW = 11, C = 2 * Math.PI * R;
+  const segs = [
+    { v: wins, c: GREEN },
+    { v: be, c: AMBER },
+    { v: losses, c: RED },
+  ];
+  let acc = 0; // accumulated fraction, for each arc's rotation
+
   return (
     <div className={cn(CARD_BASE, "flex flex-col")}>
       <CardFx accent={CYAN} />
@@ -388,16 +396,36 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, period, onPeriodC
         <PeriodToggle value={period} onChange={onPeriodChange} accent={CYAN} />
       </div>
 
-      {/* Animated win-rate ring — the arc sweeps in on load / period change */}
+      {/* Donut */}
       <div className="flex-1 flex items-center justify-center py-1 min-h-0">
-        <WinRateRing percent={targetWr} size={116} strokeWidth={11}>
-          <p className="text-[30px] font-black tabular-nums leading-none" style={{ color: CYAN }}>
-            {winRate === null ? "—" : `${display}%`}
-          </p>
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
-            {total > 0 ? `${total} trade${total !== 1 ? "s" : ""}` : "no trades"}
-          </p>
-        </WinRateRing>
+        <div className="relative shrink-0" style={{ width: 116, height: 116 }}>
+          <svg width={116} height={116} viewBox="0 0 116 116" className="block">
+            {/* Track */}
+            <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
+            {/* Segments */}
+            {total > 0 && segs.map((s, i) => {
+              if (s.v === 0) return null;
+              const frac = s.v / total;
+              const dash = frac * C;
+              const rot = acc * 360 - 90; // start at top, then walk clockwise
+              acc += frac;
+              return (
+                <circle key={i} cx={58} cy={58} r={R} fill="none" stroke={s.c} strokeWidth={SW}
+                  strokeDasharray={`${dash} ${C - dash}`}
+                  transform={`rotate(${rot} 58 58)`}
+                  style={{ filter: `drop-shadow(0 0 4px ${alpha(s.c, 40)})` }} />
+              );
+            })}
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <p className="text-[30px] font-black tabular-nums leading-none" style={{ color: CYAN }}>
+              {winRate === null ? "—" : `${display}%`}
+            </p>
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
+              {total > 0 ? `${total} trade${total !== 1 ? "s" : ""}` : "no trades"}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* W / L / BE legend */}

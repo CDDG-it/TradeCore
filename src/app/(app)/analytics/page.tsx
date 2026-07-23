@@ -11,12 +11,14 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { format, subDays, startOfDay, endOfDay, startOfMonth, endOfMonth, isAfter, isBefore, isWithinInterval, getDay } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTrades } from "@/lib/supabase/queries";
 import type { TradeJournalEntry } from "@/lib/types";
-import { WinRateRing } from "@/components/win-rate-ring";
 import { cn } from "@/lib/utils";
 
 type Period = "all" | "day" | "week" | "month";
@@ -423,22 +425,45 @@ export default function AnalyticsPage() {
               </Card>
             </div>
 
-            {/* Win rate — animated ring that sweeps in on load */}
+            {/* Result pie */}
             <Card className="bg-card border-border/50">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold">Win Rate</CardTitle>
+                <CardTitle className="text-sm font-semibold">Result Breakdown</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex h-[180px] items-center justify-center">
-                  <WinRateRing percent={winRate} size={150} strokeWidth={14}>
-                    <p className="text-4xl font-black tabular-nums leading-none text-success">
-                      {winRate}%
-                    </p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {trades.length} trade{trades.length !== 1 ? "s" : ""}
-                    </p>
-                  </WinRateRing>
-                </div>
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie
+                      data={resultData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {resultData.map((entry, index) => (
+                        <Cell key={index} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const d = payload[0];
+                        return (
+                          <div className="bg-card border border-border rounded-lg px-3 py-2 text-xs">
+                            <p
+                              style={{ color: (d.payload as { color: string }).color }}
+                              className="font-semibold"
+                            >
+                              {d.name}: {d.value}
+                            </p>
+                          </div>
+                        );
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
                 <div className="flex justify-center gap-4 mt-2">
                   {resultData.map((d) => (
                     <div key={d.name} className="flex items-center gap-1.5 text-xs">
