@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { computeHabitScore } from "@/lib/discipline";
 import { frequencyApplies } from "@/lib/habits";
 import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
+import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
 import { HabitCalendar } from "@/components/habits/habit-calendar";
 import { CalendarDays, LayoutGrid } from "lucide-react";
 import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
@@ -368,7 +369,7 @@ export function HabitsView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header row: view toggle + New habit */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex w-fit rounded-lg border border-border/60 overflow-hidden">
@@ -440,7 +441,7 @@ export function HabitsView() {
       </div>
 
       {/* Summary stats - range-aware */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           {
             label: "Completion Rate",
@@ -479,31 +480,18 @@ export function HabitsView() {
             ring: null,
           },
         ].map(({ label, value, sub, icon: Icon, accent, accentBg, ring }, i) => (
-          <div
+          <LiquidGlassCard
             key={label}
-            className="animate-fade-up rounded-xl p-5 relative overflow-hidden"
-            style={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              animationDelay: `${i * 60}ms`,
-            }}
+            className="animate-fade-up p-4"
+            style={{ animationDelay: `${i * 60}ms` }}
           >
-            <div
-              className="absolute inset-x-0 top-0 h-px"
-              style={{
-                background: `linear-gradient(90deg, transparent, ${accent.replace(")", " / 0.40)")}, transparent)`,
-              }}
-            />
-            <div className="flex items-start justify-between mb-4">
-              <p
-                className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: "oklch(0.45 0.005 28)" }}
-              >
+            <div className="flex items-start justify-between mb-2.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {label}
               </p>
               {ring !== null ? (
                 <div className="relative">
-                  <ProgressRing percent={ring} size={36} stroke={3} color={accent} />
+                  <ProgressRing percent={ring} size={32} stroke={3} color={accent} />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span style={{ fontSize: "8px", fontWeight: 800, color: accent }}>
                       {ring}%
@@ -512,7 +500,7 @@ export function HabitsView() {
                 </div>
               ) : (
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center"
                   style={{ background: accentBg }}
                 >
                   <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
@@ -520,23 +508,20 @@ export function HabitsView() {
               )}
             </div>
             <p
-              className="text-3xl font-black tracking-tight mb-1 tabular-nums"
+              className="text-2xl font-black tracking-tight mb-0.5 tabular-nums"
               style={{ color: accent }}
             >
               {value}
             </p>
-            <p className="text-xs text-muted-foreground">{sub}</p>
-          </div>
+            <p className="text-[11px] text-muted-foreground">{sub}</p>
+          </LiquidGlassCard>
         ))}
       </div>
 
       {/* Activity history - see completion across earlier weeks / months */}
       {habits.length > 0 && (
-        <div
-          className="rounded-xl p-5"
-          style={{ background: "var(--card)", border: "1px solid var(--border)" }}
-        >
-          <div className="flex items-center justify-between gap-3 mb-4">
+        <LiquidGlassCard className="p-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
             <div>
               <p className="text-sm font-semibold">Activity</p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -552,12 +537,12 @@ export function HabitsView() {
             </div>
           </div>
           <ActivityHeatmap start={rangeStart} end={rangeEnd} intensityFor={overallIntensity} color="oklch(0.70 0.12 183)" />
-        </div>
+        </LiquidGlassCard>
       )}
 
-      <div className="grid gap-6">
+      <div className="grid gap-4">
         {/* Habits list */}
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           <div className="animate-fade-up space-y-2" style={{ animationDelay: "200ms" }}>
             <h2 className="text-sm font-semibold">Daily Habits</h2>
             {/* Category legend - little figures so each type is recognisable at a glance */}
@@ -577,14 +562,7 @@ export function HabitsView() {
           </div>
 
           {habits.length === 0 && (
-            <div
-              className="rounded-xl p-10 text-center animate-fade-up"
-              style={{
-                background: "var(--card)",
-                border: "1px solid var(--border)",
-                borderStyle: "dashed",
-              }}
-            >
+            <LiquidGlassCard className="p-8 text-center animate-fade-up border-dashed">
               <p className="text-sm text-muted-foreground mb-3">No habits yet.</p>
               <button
                 onClick={() => setShowNewHabit(true)}
@@ -593,7 +571,7 @@ export function HabitsView() {
               >
                 <Plus className="w-3.5 h-3.5" /> Create your first habit
               </button>
-            </div>
+            </LiquidGlassCard>
           )}
 
           {habits.map((habit, i) => {
@@ -606,13 +584,14 @@ export function HabitsView() {
             const catConfig = CATEGORY_COLORS[habit.category];
 
             return (
-              <div
+              <LiquidGlassCard
                 key={habit.id}
-                className="animate-fade-up rounded-xl p-4 transition-all relative group"
+                className="group animate-fade-up p-3.5"
                 style={{
-                  background: "var(--card)",
-                  border: `1px solid ${completedToday ? habit.color.replace(")", " / 0.25)") : "var(--border)"}`,
                   animationDelay: `${220 + i * 50}ms`,
+                  ...(completedToday
+                    ? { borderColor: habit.color.replace(")", " / 0.35)") }
+                    : {}),
                 }}
               >
                 {/* Delete button */}
@@ -642,12 +621,12 @@ export function HabitsView() {
                   </button>
                 )}
 
-                <div className="flex items-start gap-3 mb-4">
+                <div className="flex items-start gap-3 mb-3">
                   {/* Figure + completion ring */}
                   <div className="relative shrink-0">
                     <button
                       onClick={() => handleToggle(habit.id, today)}
-                      className="w-11 h-11 rounded-xl flex items-center justify-center text-xl transition-all hover:scale-105"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all hover:scale-105"
                       style={{
                         background: completedToday
                           ? habit.color.replace(")", " / 0.20)")
@@ -716,7 +695,7 @@ export function HabitsView() {
                     />
                   </div>
                 )}
-              </div>
+              </LiquidGlassCard>
             );
           })}
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { CardFlip } from "@/components/landing/card-flip";
+import { BeamsBackground } from "@/components/landing/beams-background";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
@@ -68,10 +69,15 @@ export function LayoutShowcase() {
           Everything the trader needs, in one place.
         </h2>
 
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-          {CARDS.map((c) => (
-            <CardFlip key={c.href} {...c} />
-          ))}
+        <div className="relative mt-14">
+          {/* Animated beams sit directly behind the cards — landing only */}
+          <BeamsBackground className="-inset-x-6 -inset-y-10 rounded-[2rem]" intensity="medium" />
+
+          <div className="relative grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+            {CARDS.map((c) => (
+              <CardFlip key={c.href} {...c} />
+            ))}
+          </div>
         </div>
       </div>
     </section>
