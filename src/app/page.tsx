@@ -7,6 +7,7 @@ import { motion, useScroll, useTransform } from "motion/react";
 import { animate, splitText, stagger } from "animejs";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
 import { LayoutShowcase } from "@/components/landing/layout-showcase";
+import { FeatureDetailSections } from "@/components/landing/feature-detail-sections";
 import { LandingFooter } from "@/components/landing/footer";
 import { LandingNav } from "@/components/landing/landing-nav";
 
@@ -189,6 +190,8 @@ export default function HomePage() {
       </section>
 
       <LayoutShowcase />
+
+      <FeatureDetailSections />
 
       <LandingFooter />
     </div>
