@@ -154,8 +154,28 @@ export function TopNav() {
   );
 }
 
-/** Lightweight click-to-open profile menu showing the name, linking to the
- *  existing Profile and Settings pages. */
+/** Avatar chip — initials on a turquoise→cyan gradient ring, over the nav bg. */
+function AvatarChip({ initials, size }: { initials: string; size: number }) {
+  return (
+    <span
+      className="flex shrink-0 items-center justify-center rounded-full p-[1.5px]"
+      style={{ width: size, height: size, background: "linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%)" }}
+    >
+      <span
+        className="flex h-full w-full items-center justify-center rounded-full"
+        style={{ background: "var(--sidebar)" }}
+      >
+        <span className="font-bold text-sidebar-foreground" style={{ fontSize: size * 0.36 }}>
+          {initials}
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/** Click-to-open profile dropdown — a polished glass panel listing Profile,
+ *  Settings and Sign out. Adapted from KokonutUI's Profile Dropdown (MIT,
+ *  https://kokonutui.com), reworked to the TradingMC palette. */
 function ProfileMenu({
   displayName, email, initials, onSignOut,
 }: {
@@ -177,6 +197,11 @@ function ProfileMenu({
     return () => { document.removeEventListener("mousedown", onDocClick); document.removeEventListener("keydown", onKey); };
   }, []);
 
+  const links = [
+    { label: "Profile", href: "/profile", icon: UserIcon },
+    { label: "Settings", href: "/settings", icon: Settings },
+  ];
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -184,34 +209,56 @@ function ProfileMenu({
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 rounded-lg h-9 pl-1.5 pr-2.5 border border-transparent hover:border-sidebar-border transition-colors"
       >
-        <span className="flex h-7 w-7 items-center justify-center rounded-full shrink-0" style={{ background: "rgba(20,184,166,0.15)" }}>
-          <span className="text-[11px] font-bold" style={{ color: TURQUOISE }}>{initials}</span>
-        </span>
+        <AvatarChip initials={initials} size={28} />
         <span className="text-[13px] font-semibold text-sidebar-foreground/80 max-w-[120px] truncate">{displayName}</span>
         <ChevronDown className={cn("w-3.5 h-3.5 text-sidebar-foreground/40 transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (
-        <div
-          className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border p-1.5 shadow-xl z-50"
-          style={{ background: "var(--popover, var(--card))" }}
+        <motion.div
+          initial={{ opacity: 0, y: -6, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute right-0 top-full mt-2 w-64 origin-top-right rounded-2xl border border-border p-2 shadow-xl z-50 backdrop-blur-sm"
+          style={{ background: "color-mix(in oklch, var(--popover, var(--card)) 94%, transparent)" }}
         >
-          <div className="px-2.5 py-2">
-            <p className="text-sm font-semibold truncate">{displayName}</p>
-            <p className="text-xs text-muted-foreground truncate">{email}</p>
+          {/* Header — avatar + identity */}
+          <div className="flex items-center gap-3 px-2 py-2">
+            <AvatarChip initials={initials} size={40} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold leading-tight truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground leading-tight truncate">{email}</p>
+            </div>
           </div>
-          <div className="h-px bg-border my-1" />
-          <Link href="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-foreground/85 hover:bg-muted transition-colors">
-            <UserIcon className="w-4 h-4" /> Profile
-          </Link>
-          <Link href="/settings" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-foreground/85 hover:bg-muted transition-colors">
-            <Settings className="w-4 h-4" /> Settings
-          </Link>
-          <div className="h-px bg-border my-1" />
-          <button onClick={() => { setOpen(false); onSignOut(); }} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors">
-            <LogOut className="w-4 h-4" /> Sign out
+
+          <div className="my-2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+          {/* Profile / Settings */}
+          <div className="space-y-1">
+            {links.map(({ label, href, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setOpen(false)}
+                className="group flex items-center gap-2.5 rounded-xl border border-transparent p-2.5 text-sm font-medium text-foreground/85 transition-all hover:border-border/60 hover:bg-muted/70"
+              >
+                <Icon className="w-4 h-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+                <span className="transition-colors group-hover:text-foreground">{label}</span>
+              </Link>
+            ))}
+          </div>
+
+          <div className="my-2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+          {/* Sign out */}
+          <button
+            onClick={() => { setOpen(false); onSignOut(); }}
+            className="group flex w-full items-center gap-2.5 rounded-xl border border-transparent bg-destructive/10 p-2.5 text-sm font-medium text-destructive transition-all hover:border-destructive/30 hover:bg-destructive/20"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sign out</span>
           </button>
-        </div>
+        </motion.div>
       )}
     </div>
   );

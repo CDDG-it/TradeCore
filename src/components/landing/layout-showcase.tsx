@@ -1,7 +1,7 @@
 "use client";
 
 import { CardFlip } from "@/components/landing/card-flip";
-import { BeamsBackground } from "@/components/landing/beams-background";
+import { FlowField } from "@/components/landing/flow-field";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
@@ -51,16 +51,9 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
 export function LayoutShowcase() {
   return (
     <section id="features" className="relative overflow-hidden bg-background px-6 py-24 md:py-28">
-      {/* Animated beams span the whole section — from the hero down to the
-          footer — as one continuous backdrop. Landing only. */}
-      <BeamsBackground className="inset-0" intensity="medium" />
-
-      {/* Ambient turquoise glow so the glass has something to catch */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/3 h-[440px] w-[760px] -translate-x-1/2 rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.12) 0%, transparent 70%)" }}
-      />
+      {/* Flow-field particle stream spans the whole section — from the hero
+          down to the footer — as one continuous backdrop. Landing only. */}
+      <FlowField className="inset-0" density="medium" />
 
       <div className="relative mx-auto max-w-6xl">
         <p
