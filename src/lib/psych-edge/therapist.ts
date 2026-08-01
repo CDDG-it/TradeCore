@@ -57,6 +57,147 @@ export interface FiveRContext {
   driverHistory: DetectedPattern[];
   /** Reconstructing — a seed if-then commitment for the driver pattern. */
   scaffold: { trigger: string; action: string } | null;
+  /** Connections — how this trade's setups & context have actually paid out
+   *  across the trader's own history. Null when there's nothing to connect. */
+  connections: TradeConnections | null;
+}
+
+// ── Connections between similar trades ──────────────────────────────────
+/** Performance of one confluence tag across the trader's whole history. */
+export interface ConfluenceStat {
+  label: string;
+  count: number;      // trades carrying this confluence (incl. the focus trade)
+  wins: number;
+  losses: number;
+  winRate: number;    // wins / (wins + losses); 0 when no decisive trades
+  totalR: number;
+  avgR: number;       // totalR / count
+}
+
+/** A concrete past trade that shares setup DNA with the focus trade. */
+export interface SimilarTrade {
+  id: string;
+  date: string;
+  instrument: string;
+  direction: string;
+  result: TradeJournalEntry["result"];
+  r: number;
+  shared: string[];   // confluences shared with the focus trade
+  mistake: string;    // trimmed mistake note, if any
+}
+
+export interface TradeConnections {
+  /** Per-confluence performance, most-traded first. */
+  confluences: ConfluenceStat[];
+  /** Cohort of *other* trades sharing ≥1 confluence with the focus trade. */
+  cohort: { count: number; wins: number; losses: number; winRate: number; totalR: number; avgR: number };
+  /** A handful of concrete similar trades, newest first. */
+  similar: SimilarTrade[];
+  /** The sharpest single read: the confluence whose record is most decisive. */
+  headline: { label: string; winRate: number; count: number; totalR: number; kind: "reliable" | "costly" } | null;
+  /** Other trades whose mistake note overlaps this one's — recurring errors. */
+  sharedMistakes: SimilarTrade[];
+}
+
+/** Minimum sample before a confluence's win-rate is treated as a real signal. */
+const CONNECTION_MIN_SAMPLE = 3;
+
+/** Split a free-text mistake note into comparable keyword tokens. */
+function mistakeTokens(text: string | undefined): Set<string> {
+  if (!text) return new Set();
+  const stop = new Set(["the", "and", "was", "but", "for", "with", "that", "this", "had", "too", "not", "into", "then", "when", "out", "got", "you", "your", "were", "did", "have"]);
+  return new Set(
+    text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stop.has(w))
+  );
+}
+
+/**
+ * Build the "connections" for one trade: how the setups it was tagged with, and
+ * the mistakes noted on it, have actually played out across the trader's history.
+ * Everything is derived from real trades — returns null when there's nothing to
+ * connect (no confluences and no comparable mistakes).
+ */
+export function buildConnections(trade: TradeJournalEntry, trades: TradeJournalEntry[]): TradeConnections | null {
+  const focusConf = (trade.confluences ?? []).filter((c) => c && c.trim());
+
+  // Per-confluence records across the full history.
+  const confluences: ConfluenceStat[] = focusConf.map((label) => {
+    const carrying = trades.filter((t) => (t.confluences ?? []).includes(label));
+    const wins = carrying.filter((t) => t.result === "win").length;
+    const losses = carrying.filter((t) => t.result === "loss").length;
+    const decisive = wins + losses;
+    const totalR = carrying.reduce((s, t) => s + tradeR(t), 0);
+    return {
+      label,
+      count: carrying.length,
+      wins,
+      losses,
+      winRate: decisive > 0 ? wins / decisive : 0,
+      totalR,
+      avgR: carrying.length > 0 ? totalR / carrying.length : 0,
+    };
+  }).sort((a, b) => b.count - a.count);
+
+  // Cohort: other trades sharing at least one confluence with this one.
+  const others = trades.filter((t) => t.id !== trade.id);
+  const shareConf = (t: TradeJournalEntry) => (t.confluences ?? []).filter((c) => focusConf.includes(c));
+  const cohortTrades = others.filter((t) => shareConf(t).length > 0);
+  const cWins = cohortTrades.filter((t) => t.result === "win").length;
+  const cLosses = cohortTrades.filter((t) => t.result === "loss").length;
+  const cDecisive = cWins + cLosses;
+  const cTotalR = cohortTrades.reduce((s, t) => s + tradeR(t), 0);
+  const cohort = {
+    count: cohortTrades.length,
+    wins: cWins,
+    losses: cLosses,
+    winRate: cDecisive > 0 ? cWins / cDecisive : 0,
+    totalR: cTotalR,
+    avgR: cohortTrades.length > 0 ? cTotalR / cohortTrades.length : 0,
+  };
+
+  const toSimilar = (t: TradeJournalEntry): SimilarTrade => ({
+    id: t.id,
+    date: t.date_time.slice(0, 10),
+    instrument: instrumentName(t.instrument),
+    direction: t.direction,
+    result: t.result,
+    r: tradeR(t),
+    shared: shareConf(t),
+    mistake: (t.mistakes ?? "").trim(),
+  });
+
+  const similar = cohortTrades
+    .slice()
+    .sort((a, b) => (a.date_time < b.date_time ? 1 : -1))
+    .slice(0, 6)
+    .map(toSimilar);
+
+  // Mistakes that recur: other trades whose note shares keywords with this one.
+  const focusTokens = mistakeTokens(trade.mistakes);
+  const sharedMistakes = focusTokens.size >= 1
+    ? others
+        .filter((t) => {
+          const tks = mistakeTokens(t.mistakes);
+          let overlap = 0;
+          for (const w of tks) if (focusTokens.has(w)) overlap++;
+          return overlap >= 2; // at least two shared meaningful words
+        })
+        .sort((a, b) => (a.date_time < b.date_time ? 1 : -1))
+        .slice(0, 4)
+        .map(toSimilar)
+    : [];
+
+  // Sharpest read: the best-sampled confluence furthest from a coin-flip.
+  const ranked = confluences
+    .filter((c) => c.count >= CONNECTION_MIN_SAMPLE && c.wins + c.losses > 0)
+    .sort((a, b) => Math.abs(b.winRate - 0.5) - Math.abs(a.winRate - 0.5));
+  const top = ranked[0];
+  const headline = top
+    ? { label: top.label, winRate: top.winRate, count: top.count, totalR: top.totalR, kind: (top.winRate >= 0.5 ? "reliable" : "costly") as "reliable" | "costly" }
+    : null;
+
+  if (confluences.length === 0 && similar.length === 0 && sharedMistakes.length === 0) return null;
+  return { confluences, cohort, similar, headline, sharedMistakes };
 }
 
 /** Non-judgemental, factual one-liner from the journal. */
@@ -104,6 +245,7 @@ export function buildFiveR(
   const stat = driver ? summarizePatterns(all)[driver.type] : null;
   const driverHistory = driver ? all.filter((e) => e.type === driver.type) : [];
   const scaffold = driver ? scaffoldFor(driver.type) : null;
+  const connections = buildConnections(trade, trades);
 
   return {
     trade,
@@ -115,6 +257,7 @@ export function buildFiveR(
     stat,
     driverHistory,
     scaffold,
+    connections,
   };
 }
 
@@ -138,12 +281,27 @@ export function tradesNeedingReflection(
     byTrade.set(e.tradeId, list);
   }
   return trades
-    .filter((t) => t.result === "loss" || t.execution_quality === "bad" || byTrade.has(t.id))
+    // Every decisive trade is worth a 5R now — wins to understand what worked,
+    // losses to understand what didn't. (Bad execution / detected patterns are
+    // already a subset of these but kept explicit for break-even edge cases.)
+    .filter((t) => t.result === "win" || t.result === "loss" || t.execution_quality === "bad" || byTrade.has(t.id))
     .sort((a, b) => b.date_time.localeCompare(a.date_time))
     .map((t) => {
       const list = (byTrade.get(t.id) ?? []).sort((a, b) => b.confidence - a.confidence);
       return { trade: t, netR: tradeR(t), topPattern: list[0] ?? null };
     });
+}
+
+/** The subset that specifically warrants attention — losses, bad execution, or a
+ *  detected behavioural pattern. Used as the Mindscore denominator so reflection
+ *  consistency measures the trades that most need working through, not every win. */
+export function priorityReflectionTrades(
+  trades: TradeJournalEntry[],
+  analyses: PreTradeAnalysis[]
+): TradeJournalEntry[] {
+  const events = detectPatterns(trades, analyses);
+  const flagged = new Set(events.map((e) => e.tradeId));
+  return trades.filter((t) => t.result === "loss" || t.execution_quality === "bad" || flagged.has(t.id));
 }
 
 // ── Pre-Trade Mirror ────────────────────────────────────────────────────
@@ -323,13 +481,13 @@ export function computeReflectionConsistency(
     const e = format(end, "yyyy-MM-dd");
     return d >= s && d <= e;
   };
-  const worth = tradesNeedingReflection(trades, analyses).filter((t) => inRange(t.trade.date_time));
+  const worth = priorityReflectionTrades(trades, analyses).filter((t) => inRange(t.date_time));
   if (worth.length === 0) return { rate: null, completed: 0, total: 0 };
 
   const doneByTrade = new Set(
     sessions.filter((s) => s.reconstruction_confirmed && s.trade_id).map((s) => s.trade_id as string)
   );
-  const completed = worth.filter((t) => doneByTrade.has(t.trade.id)).length;
+  const completed = worth.filter((t) => doneByTrade.has(t.id)).length;
   return { rate: completed / worth.length, completed, total: worth.length };
 }
 

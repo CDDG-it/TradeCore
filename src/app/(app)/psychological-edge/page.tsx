@@ -23,7 +23,8 @@ const EDGE_TABS: { key: EdgeTab; label: string }[] = [
 ];
 
 export default function MindEdgePage() {
-  const [tab, setTab] = useState<EdgeTab>("mindscore");
+  // Habits is the landing tab — it's the daily-touch surface of Mind Edge.
+  const [tab, setTab] = useState<EdgeTab>("habits");
 
   // Allow deep-linking to a specific tab.
   useEffect(() => {

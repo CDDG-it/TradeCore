@@ -10,7 +10,7 @@ import {
   getTrades, getAnalyses, getPsychEdgeSessions, getPatternEvents,
   savePsychEdgeSession, upsertPatternEvent, createCommitment,
 } from "@/lib/supabase/queries";
-import { buildFiveR, tradesNeedingReflection, type FiveRContext } from "@/lib/psych-edge/therapist";
+import { buildFiveR, tradesNeedingReflection, type FiveRContext, type TradeConnections } from "@/lib/psych-edge/therapist";
 import {
   buildConversation, TAG_LABEL, INTENSITY_LABEL,
   type Answers, type Block, type Exchange,
@@ -84,7 +84,7 @@ export function PostTrade5R() {
           <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">{doneCount}/{queue.length}</span>
         </div>
         <p className="px-1 pb-2.5 text-[11px] text-muted-foreground leading-snug">
-          Losses, bad execution, or a detected pattern. Newest first.
+          Every win and loss — understand what worked and what didn&apos;t. Newest first.
         </p>
         <div className="space-y-1 max-h-[calc(100dvh-16rem)] overflow-y-auto pr-0.5">
           {queue.map(({ trade, netR, topPattern }) => {
@@ -325,6 +325,7 @@ function BlockView({ block }: { block: Block }) {
       </div>
     );
   }
+  if (block.kind === "connections") return <ConnectionsCard connections={block.connections} />;
   // cost
   const { stat, occurrences } = block;
   return (
@@ -372,6 +373,96 @@ function TradeCard({ trade, netR }: { trade: TradeJournalEntry; netR: number }) 
       </div>
       {trade.mistakes?.trim() && (
         <p className="text-[11px] text-muted-foreground border-t border-border/50 pt-1.5"><span className="font-medium text-foreground/70">Your note, </span>{trade.mistakes.trim()}</p>
+      )}
+    </div>
+  );
+}
+
+/* ── Connections: how this trade's setups & mistakes have paid out ────── */
+function ConnectionsCard({ connections }: { connections: TradeConnections }) {
+  const { confluences, cohort, similar, headline, sharedMistakes } = connections;
+  const rColor = (r: number) => (r > 0 ? GREEN : r < 0 ? RED : "var(--muted-foreground)");
+  const wrColor = (wr: number) => (wr >= 0.5 ? GREEN : RED);
+
+  return (
+    <div className="rounded-xl border border-border overflow-hidden max-w-md">
+      {/* Cohort headline */}
+      {cohort.count > 0 && (
+        <div className="flex items-center gap-4 px-3.5 py-3 border-b border-border/60">
+          <div>
+            <p className="text-2xl font-black tabular-nums leading-none" style={{ color: rColor(cohort.totalR) }}>{fmtR(cohort.totalR)}</p>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mt-1">shared-setup R</p>
+          </div>
+          <div className="h-8 w-px bg-border" />
+          <p className="text-xs text-muted-foreground leading-snug">
+            Across <span className="font-semibold text-foreground/80 tabular-nums">{cohort.count}</span> other trade{cohort.count === 1 ? "" : "s"} with the same setups,
+            you&apos;re <span className="font-semibold tabular-nums" style={{ color: wrColor(cohort.winRate) }}>{Math.round(cohort.winRate * 100)}%</span>.
+          </p>
+        </div>
+      )}
+
+      {/* Per-confluence record */}
+      {confluences.length > 0 && (
+        <div className="divide-y divide-border/50">
+          <div className="flex items-center gap-2 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="flex-1">Setup / confluence</span>
+            <span className="w-10 text-right">Win</span>
+            <span className="w-12 text-right">R</span>
+            <span className="w-8 text-right">n</span>
+          </div>
+          {confluences.map((c) => {
+            const isHead = headline?.label === c.label;
+            return (
+              <div key={c.label} className={cn("flex items-center gap-2 px-3.5 py-1.5 text-xs", isHead && "bg-primary/5")}>
+                <span className="flex-1 truncate flex items-center gap-1.5">
+                  {c.label}
+                  {isHead && (
+                    <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color: headline!.kind === "reliable" ? GREEN : RED }}>
+                      {headline!.kind}
+                    </span>
+                  )}
+                </span>
+                <span className="w-10 text-right tabular-nums font-semibold" style={{ color: c.wins + c.losses > 0 ? wrColor(c.winRate) : "var(--muted-foreground)" }}>
+                  {c.wins + c.losses > 0 ? `${Math.round(c.winRate * 100)}%` : "—"}
+                </span>
+                <span className="w-12 text-right tabular-nums font-bold" style={{ color: rColor(c.totalR) }}>{fmtR(c.totalR)}</span>
+                <span className="w-8 text-right tabular-nums text-muted-foreground">{c.count}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Recurring mistake note */}
+      {sharedMistakes.length > 0 && (
+        <div className="border-t border-border/60 px-3.5 py-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">You&apos;ve noted the same thing before</p>
+          <div className="space-y-1">
+            {sharedMistakes.map((m) => (
+              <div key={m.id} className="flex items-start gap-2 text-[11px]">
+                <span className="tabular-nums text-muted-foreground w-12 shrink-0">{dayLabel(m.date)}</span>
+                <span className="font-mono font-semibold shrink-0">{m.instrument}</span>
+                <span className="text-muted-foreground truncate flex-1">{m.mistake}</span>
+                <span className="tabular-nums font-bold shrink-0" style={{ color: rColor(m.r) }}>{fmtR(m.r)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* A few concrete similar trades */}
+      {similar.length > 0 && (
+        <div className="border-t border-border/60 divide-y divide-border/40 max-h-44 overflow-y-auto">
+          <p className="px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Similar trades</p>
+          {similar.map((s) => (
+            <div key={s.id} className="flex items-center gap-2 px-3.5 py-1.5 text-xs">
+              <span className="tabular-nums text-muted-foreground w-12 shrink-0">{dayLabel(s.date)}</span>
+              <span className="font-mono font-semibold truncate">{s.instrument}</span>
+              <span className="text-[11px] text-muted-foreground capitalize">{s.direction}</span>
+              <span className="ml-auto tabular-nums font-bold" style={{ color: rColor(s.r) }}>{fmtR(s.r)}</span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -492,7 +583,7 @@ function EmptyState({ hasTrades }: { hasTrades: boolean }) {
       <p className="text-sm text-muted-foreground mb-1">Nothing to sit down with right now.</p>
       <p className="text-xs text-muted-foreground/70">
         {hasTrades
-          ? "Losing trades, bad-execution trades, and any the engine flags as a pattern open a session here."
+          ? "Every win and loss opens a session here — wins to learn what worked, losses to learn what didn't."
           : "Log a trade in the Journal, the ones worth talking through will appear here."}
       </p>
     </div>

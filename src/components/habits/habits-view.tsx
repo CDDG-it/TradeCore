@@ -273,7 +273,7 @@ export function HabitsView() {
   const [createError, setCreateError] = useState<string | null>(null);
 
   const [streaks, setStreaks] = useState<Record<string, number>>({});
-  const [range, setRange] = useState<RangeKey>("month");
+  const [range, setRange] = useState<RangeKey>("week");
   const [view, setView] = useState<"overview" | "calendar">("overview");
 
   const rangeDays = RANGES.find((r) => r.key === range)!.days;
@@ -350,43 +350,63 @@ export function HabitsView() {
     return d >= rangeStart && d <= rangeEnd;
   }).length;
 
-  // Fast lookup for the heatmaps + a per-day overall completion rate.
+  // Fast lookup for the per-habit range heatmaps (shown for 30d / 90d).
   const completedByKey = new Set(
     completions.filter((c) => c.completed).map((c) => `${c.habit_id}|${c.date}`)
   );
-  const overallIntensity = (key: string, d: Date): number | null => {
-    const wd = d.getDay();
-    const dayTime = startOfDay(d).getTime();
-    let exp = 0;
-    let done = 0;
-    for (const h of habits) {
-      if (!frequencyApplies(h.frequency, wd)) continue;
-      if (dayTime < startOfDay(new Date(h.created_at)).getTime()) continue;
-      exp += 1;
-      if (completedByKey.has(`${h.id}|${key}`)) done += 1;
-    }
-    return exp > 0 ? done / exp : null;
-  };
 
   return (
-    <div className="space-y-4">
-      {/* Header row: view toggle + New habit */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-3">
+      {/* Compact toolbar: view toggle · range · how it works · new habit */}
+      <div className="flex flex-wrap items-center gap-2">
         <div className="flex w-fit rounded-lg border border-border/60 overflow-hidden">
           <button onClick={() => setView("overview")}
-            className={cn("inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium transition-colors",
+            className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
               view === "overview" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
             <LayoutGrid className="w-3.5 h-3.5" /> Overview
           </button>
           <button onClick={() => setView("calendar")}
-            className={cn("inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium transition-colors",
+            className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
               view === "calendar" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
             <CalendarDays className="w-3.5 h-3.5" /> Calendar
           </button>
         </div>
+
+        {view === "overview" && (
+          <div className="flex rounded-lg border border-border/50 overflow-hidden">
+            {RANGES.map((r) => (
+              <button
+                key={r.key}
+                onClick={() => setRange(r.key)}
+                className={cn(
+                  "px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  range === r.key
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <Link
+          href="/discipline"
+          className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all hover:-translate-y-px"
+          style={{
+            background: "oklch(0.70 0.12 183 / 0.12)",
+            borderColor: "oklch(0.70 0.12 183 / 0.40)",
+            color: "oklch(0.70 0.12 183)",
+          }}
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+          How it works
+        </Link>
+
         <button
           onClick={() => setShowNewHabit(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
           style={{
             background: "oklch(0.70 0.12 183)",
             color: "oklch(0.07 0.003 28)",
@@ -402,164 +422,55 @@ export function HabitsView() {
         <HabitCalendar habits={habits} completions={completions} onToggle={handleToggle} />
       ) : (
       <>
-      {/* Insights header + range toggle - look beyond just today */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" style={{ color: "oklch(0.70 0.12 183)" }} />
-            <h2 className="text-sm font-semibold">Insights</h2>
-          </div>
-          <Link
-            href="/discipline"
-            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:-translate-y-px"
-            style={{
-              background: "oklch(0.70 0.12 183 / 0.12)",
-              borderColor: "oklch(0.70 0.12 183 / 0.40)",
-              color: "oklch(0.70 0.12 183)",
-            }}
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            How it works
-          </Link>
-        </div>
-        <div className="flex rounded-lg border border-border/50 overflow-hidden">
-          {RANGES.map((r) => (
-            <button
-              key={r.key}
-              onClick={() => setRange(r.key)}
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium transition-colors",
-                range === r.key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Summary stats - range-aware */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Compact stat strip — one line each, no tall cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {[
-          {
-            label: "Completion Rate",
-            value: `${rangeCompletion}%`,
-            sub: `last ${rangeDays} days`,
-            icon: CheckCircle2,
-            accent: "oklch(0.70 0.12 183)",
-            accentBg: "oklch(0.70 0.12 183 / 0.10)",
-            ring: rangeCompletion,
-          },
-          {
-            label: "Longest Streak",
-            value: `${longestStreak}d`,
-            sub: "consecutive days",
-            icon: Repeat,
-            accent: "oklch(0.58 0.22 25)",
-            accentBg: "oklch(0.58 0.22 25 / 0.10)",
-            ring: null,
-          },
-          {
-            label: "Completed",
-            value: rangeCompleted.toString(),
-            sub: `in last ${rangeDays} days`,
-            icon: TrendingUp,
-            accent: "oklch(0.58 0.17 145)",
-            accentBg: "oklch(0.58 0.17 145 / 0.10)",
-            ring: null,
-          },
-          {
-            label: "Active Habits",
-            value: totalHabits.toString(),
-            sub: "being tracked",
-            icon: Zap,
-            accent: "oklch(0.70 0.12 183)",
-            accentBg: "oklch(0.70 0.12 183 / 0.10)",
-            ring: null,
-          },
-        ].map(({ label, value, sub, icon: Icon, accent, accentBg, ring }, i) => (
-          <LiquidGlassCard
-            key={label}
-            className="animate-fade-up p-4"
-            style={{ animationDelay: `${i * 60}ms` }}
-          >
-            <div className="flex items-start justify-between mb-2.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {label}
-              </p>
-              {ring !== null ? (
-                <div className="relative">
-                  <ProgressRing percent={ring} size={32} stroke={3} color={accent} />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span style={{ fontSize: "8px", fontWeight: 800, color: accent }}>
-                      {ring}%
-                    </span>
-                  </div>
+          { label: "Completion", value: `${rangeCompletion}%`, sub: `last ${rangeDays}d`, icon: CheckCircle2, accent: "oklch(0.70 0.12 183)", ring: rangeCompletion },
+          { label: "Longest streak", value: `${longestStreak}d`, sub: "in a row", icon: Repeat, accent: "oklch(0.58 0.22 25)", ring: null },
+          { label: "Completed", value: rangeCompleted.toString(), sub: `last ${rangeDays}d`, icon: TrendingUp, accent: "oklch(0.58 0.17 145)", ring: null },
+          { label: "Active", value: totalHabits.toString(), sub: "tracked", icon: Zap, accent: "oklch(0.70 0.12 183)", ring: null },
+        ].map(({ label, value, sub, icon: Icon, accent, ring }) => (
+          <LiquidGlassCard key={label} className="flex items-center gap-2.5 px-3 py-2">
+            {ring !== null ? (
+              <div className="relative shrink-0">
+                <ProgressRing percent={ring} size={30} stroke={3} color={accent} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Icon className="w-3 h-3" style={{ color: accent }} />
                 </div>
-              ) : (
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: accentBg }}
-                >
-                  <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
-                </div>
-              )}
+              </div>
+            ) : (
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: accent.replace(")", " / 0.12)") }}>
+                <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-lg font-black leading-none tabular-nums" style={{ color: accent }}>{value}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{label} · {sub}</p>
             </div>
-            <p
-              className="text-2xl font-black tracking-tight mb-0.5 tabular-nums"
-              style={{ color: accent }}
-            >
-              {value}
-            </p>
-            <p className="text-[11px] text-muted-foreground">{sub}</p>
           </LiquidGlassCard>
         ))}
       </div>
 
-      {/* Activity history - see completion across earlier weeks / months */}
-      {habits.length > 0 && (
-        <LiquidGlassCard className="p-4">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <div>
-              <p className="text-sm font-semibold">Activity</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Daily completion over the last {rangeDays} days
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground shrink-0">
-              <span>Less</span>
-              {[0.19, 0.4, 0.65, 0.9].map((a) => (
-                <span key={a} style={{ width: 11, height: 11, borderRadius: 3, background: a === 0.19 ? "var(--secondary)" : `oklch(0.70 0.12 183 / ${a})` }} />
-              ))}
-              <span>More</span>
-            </div>
-          </div>
-          <ActivityHeatmap start={rangeStart} end={rangeEnd} intensityFor={overallIntensity} color="oklch(0.70 0.12 183)" />
-        </LiquidGlassCard>
-      )}
-
-      <div className="grid gap-4">
-        {/* Habits list */}
+      {/* Habits grid — two columns on wide screens keeps everything above the fold */}
+      <div className="grid gap-3">
         <div className="space-y-2.5">
-          <div className="animate-fade-up space-y-2" style={{ animationDelay: "200ms" }}>
-            <h2 className="text-sm font-semibold">Daily Habits</h2>
-            {/* Category legend - little figures so each type is recognisable at a glance */}
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+          {/* Category legend inline */}
+          {habits.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h2 className="text-sm font-semibold mr-1">Daily Habits</h2>
               {(Object.keys(CATEGORY_COLORS) as HabitCategory[]).map((cat) => {
                 const { accent, bg, label, Icon } = CATEGORY_COLORS[cat];
                 return (
-                  <span key={cat} className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <span className="flex h-4 w-4 items-center justify-center rounded" style={{ background: bg }}>
-                      <Icon className="w-2.5 h-2.5" style={{ color: accent }} />
+                  <span key={cat} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <span className="flex h-3.5 w-3.5 items-center justify-center rounded" style={{ background: bg }}>
+                      <Icon className="w-2 h-2" style={{ color: accent }} />
                     </span>
                     {label}
                   </span>
                 );
               })}
             </div>
-          </div>
+          )}
 
           {habits.length === 0 && (
             <LiquidGlassCard className="p-8 text-center animate-fade-up border-dashed">
@@ -574,6 +485,7 @@ export function HabitsView() {
             </LiquidGlassCard>
           )}
 
+          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
           {habits.map((habit, i) => {
             const streak = streaks[habit.id] ?? 0;
             const habitCompletions = completions.filter((c) => c.habit_id === habit.id);
@@ -698,6 +610,7 @@ export function HabitsView() {
               </LiquidGlassCard>
             );
           })}
+          </div>
         </div>
       </div>
       </>

@@ -101,12 +101,36 @@ export function MonteCarloSimulator() {
 
   return (
     <div className="space-y-5">
-      {/* Intro */}
-      <div className="min-w-0">
-        <h2 className="text-sm font-semibold">MC Pass Simulation</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Runs your inputs across thousands of randomised trade sequences to estimate how often you pass, fail or time out on a prop-firm evaluation.
-        </p>
+      {/* Intro — plain-language explanation of what the simulation does */}
+      <div className="min-w-0 space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold">MC Pass Simulation</h2>
+          <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl leading-relaxed">
+            A single evaluation is one roll of the dice — good luck can pass a weak edge and bad luck can
+            fail a strong one. A <span className="text-foreground font-medium">Monte&nbsp;Carlo</span> simulation
+            removes that luck by replaying your edge across <span className="text-foreground font-medium">thousands
+            of randomly-ordered trade sequences</span>, then counts what actually happens. The result isn&apos;t
+            a prediction of one attempt — it&apos;s the <span className="text-foreground font-medium">range of
+            outcomes</span> your rules produce, so you can see your realistic odds before risking a real eval.
+          </p>
+        </div>
+
+        {/* Three-step reading guide */}
+        <div className="grid gap-2 sm:grid-cols-3">
+          {[
+            { n: "1", title: "Set your edge", body: "Win rate, reward:risk, risk size and the firm's rules on the left." },
+            { n: "2", title: "We run it thousands of times", body: "Each run shuffles the order of your wins and losses — same edge, different luck." },
+            { n: "3", title: "Read the odds", body: "Pass / fail / timeout rates and where your balance is likely to land." },
+          ].map((s) => (
+            <div key={s.n} className="rounded-lg border border-border/70 bg-card/60 px-3 py-2.5">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-primary-foreground shrink-0" style={{ background: CYAN }}>{s.n}</span>
+                <p className="text-xs font-semibold">{s.title}</p>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-snug">{s.body}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Presets */}
@@ -191,14 +215,24 @@ export function MonteCarloSimulator() {
 
         {/* ── Results ──────────────────────────────────────────── */}
         <div className="space-y-4 min-w-0">
+          {/* Headline read on the odds */}
+          <div className="rounded-xl border border-primary/25 bg-primary/[0.06] px-4 py-3">
+            <p className="text-sm leading-relaxed">
+              Out of <span className="font-semibold tabular-nums">{input.simulations.toLocaleString()}</span> simulated attempts,
+              you passed <span className="font-bold" style={{ color: GREEN }}>{pct(result.passRate)}</span> of the time.
+              {result.medianDaysToPass !== null && <> Typical passing run took <span className="font-semibold tabular-nums">{result.medianDaysToPass} days</span>.</>}
+              {" "}Think of it as roughly <span className="font-semibold tabular-nums">{Math.round(result.passRate * 100)} out of 100</span> tries clearing this evaluation.
+            </p>
+          </div>
+
           {/* Outcome cards */}
           <div className="grid grid-cols-3 gap-3">
             <OutcomeCard label="Pass rate" value={pct(result.passRate)} color={GREEN}
-              hint="Hit the target" />
+              hint="Reached the profit target" />
             <OutcomeCard label="Fail rate" value={pct(result.failRate)} color={RED}
-              hint="Breached drawdown" />
+              hint="Hit the drawdown / loss limit first" />
             <OutcomeCard label="Timed out" value={pct(result.timeoutRate)} color={AMBER}
-              hint={input.maxDays > 0 ? `No result in ${input.maxDays}d` : "Still running"} />
+              hint={input.maxDays > 0 ? `No result within ${input.maxDays} days` : "Neither target nor floor hit"} />
           </div>
 
           {/* Outcome bar */}
@@ -228,9 +262,17 @@ export function MonteCarloSimulator() {
 
           {/* Equity curves */}
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Sample equity paths · {curveData.meta.length} runs
-            </p>
+            <div className="mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Sample equity paths · {curveData.meta.length} of {input.simulations.toLocaleString()} runs
+              </p>
+              <p className="text-[11px] text-muted-foreground/80 mt-1 leading-snug">
+                Each line is one simulated attempt — same edge, a different order of wins and losses.
+                <span style={{ color: GREEN }}> Green</span> hit the target,
+                <span style={{ color: RED }}> red</span> breached the floor,
+                <span style={{ color: AMBER }}> amber</span> ran out of time. The spread between them is your luck-of-the-draw risk.
+              </p>
+            </div>
             <div className="h-56 -ml-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={curveData.rows} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
@@ -287,8 +329,11 @@ export function MonteCarloSimulator() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Ending balances across {input.simulations.toLocaleString()} runs. Green = above target, red = below the drawdown floor.
+            <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
+              Where every run finished. Taller bars = more likely landing spots. The wider this spread, the more
+              variance in your results — a tall stack near the target is a consistent edge.
+              <span style={{ color: GREEN }}> Green</span> cleared the target,
+              <span style={{ color: RED }}> red</span> fell below the drawdown floor.
             </p>
           </div>
         </div>

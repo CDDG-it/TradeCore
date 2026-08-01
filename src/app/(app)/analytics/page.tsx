@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
@@ -15,10 +16,15 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { format, subDays, startOfDay, endOfDay, startOfMonth, endOfMonth, isAfter, isBefore, isWithinInterval, getDay } from "date-fns";
+import {
+  format, subDays, startOfDay, endOfDay, startOfMonth, endOfMonth,
+  isWithinInterval, getDay, subWeeks, subMonths, startOfISOWeek, endOfISOWeek,
+  getISOWeek, addDays,
+} from "date-fns";
+import { ChevronLeft, ChevronRight, AlertTriangle, Lightbulb, ListChecks, Brain, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getTrades } from "@/lib/supabase/queries";
-import type { TradeJournalEntry } from "@/lib/types";
+import { getTrades, getWeeklyTradeReviews, getWeeklyReflection } from "@/lib/supabase/queries";
+import type { TradeJournalEntry, WeeklyTradeReview, WeeklyReflection } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Period = "all" | "day" | "week" | "month";
@@ -52,40 +58,70 @@ const DAY_MAP: Record<number, DayFilter> = { 1: "Mon", 2: "Tue", 3: "Wed", 4: "T
 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState<Period>("all");
+  // How many periods back from now (0 = current). Only meaningful for day/week/month.
+  const [offset, setOffset] = useState(0);
   const [dayFilter, setDayFilter] = useState<DayFilter>("all");
   const [sessionFilter, setSessionFilter] = useState<SessionFilter>("all");
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
   const [allTrades, setAllTrades] = useState<TradeJournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [weekReviews, setWeekReviews] = useState<WeeklyTradeReview[]>([]);
+  const [weekReflection, setWeekReflection] = useState<WeeklyReflection | null>(null);
 
   useEffect(() => {
-    getTrades().then(setAllTrades).finally(() => setLoading(false));
+    Promise.all([getTrades(), getWeeklyTradeReviews()])
+      .then(([t, reviews]) => { setAllTrades(t); setWeekReviews(reviews); })
+      .finally(() => setLoading(false));
   }, []);
+
+  // Reset the "how far back" cursor whenever the period type changes.
+  useEffect(() => { setOffset(0); }, [period]);
+
+  // ── The concrete window the selected period + offset resolves to ──────
+  const periodWindow = useMemo(() => {
+    const now = new Date();
+    if (period === "day") {
+      const d = subDays(now, offset);
+      return { start: startOfDay(d), end: endOfDay(d), label: format(d, "EEE · MMM d, yyyy"), weekStart: null as string | null };
+    }
+    if (period === "week") {
+      const monday = subWeeks(startOfISOWeek(now), offset);
+      const friday = addDays(monday, 4);
+      return {
+        start: startOfDay(monday),
+        end: endOfISOWeek(monday),
+        label: `Week ${getISOWeek(monday)} · ${format(monday, "MMM d")} – ${format(friday, "MMM d, yyyy")}`,
+        weekStart: format(monday, "yyyy-MM-dd"),
+      };
+    }
+    if (period === "month") {
+      const m = subMonths(startOfMonth(now), offset);
+      return { start: startOfMonth(m), end: endOfMonth(m), label: format(m, "MMMM yyyy"), weekStart: null };
+    }
+    return { start: null, end: null, label: "All time", weekStart: null };
+  }, [period, offset]);
+
+  // Pull the week's reflection when a specific week is in view.
+  useEffect(() => {
+    if (!periodWindow.weekStart) { setWeekReflection(null); return; }
+    let active = true;
+    getWeeklyReflection(periodWindow.weekStart).then((r) => { if (active) setWeekReflection(r); });
+    return () => { active = false; };
+  }, [periodWindow.weekStart]);
+
+  const weekReview = useMemo(
+    () => (periodWindow.weekStart ? weekReviews.find((r) => r.week_start === periodWindow.weekStart) ?? null : null),
+    [weekReviews, periodWindow.weekStart]
+  );
 
   // ── Period filtering ─────────────────────────────────────────────────
   const trades = useMemo(() => {
     let result = allTrades;
-    if (period !== "all") {
-      if (period === "day") {
-        const dayStart = startOfDay(new Date());
-        const dayEnd = endOfDay(new Date());
-        result = result.filter((t) => {
-          const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
-          return !isBefore(d, dayStart) && !isAfter(d, dayEnd);
-        });
-      } else if (period === "month") {
-        // The current calendar month, not a rolling 30-day window.
-        const monthStart = startOfMonth(new Date());
-        const monthEnd = endOfMonth(new Date());
-        result = result.filter((t) =>
-          isWithinInterval(new Date(t.date_time.slice(0, 10) + "T12:00:00"), { start: monthStart, end: monthEnd })
-        );
-      } else {
-        const cutoff = subDays(new Date(), 7); // rolling last 7 days
-        result = result.filter((t) =>
-          isAfter(new Date(t.date_time.slice(0, 10) + "T12:00:00"), cutoff)
-        );
-      }
+    if (periodWindow.start && periodWindow.end) {
+      const { start, end } = periodWindow;
+      result = result.filter((t) =>
+        isWithinInterval(new Date(t.date_time.slice(0, 10) + "T12:00:00"), { start, end })
+      );
     }
     if (dayFilter !== "all") {
       result = result.filter((t) => DAY_MAP[getDay(new Date(t.date_time.slice(0, 10) + "T12:00:00"))] === dayFilter);
@@ -97,7 +133,7 @@ export default function AnalyticsPage() {
       result = result.filter((t) => t.direction === directionFilter);
     }
     return result;
-  }, [allTrades, period, dayFilter, sessionFilter, directionFilter]);
+  }, [allTrades, periodWindow, dayFilter, sessionFilter, directionFilter]);
 
   // ── Derived stats ─────────────────────────────────────────────────────
   const wins = trades.filter((t) => t.result === "win");
@@ -203,9 +239,9 @@ export default function AnalyticsPage() {
   // ── Tabs ──────────────────────────────────────────────────────────────
   const PERIODS: { id: Period; label: string }[] = [
     { id: "all", label: "All time" },
-    { id: "month", label: "This month" },
-    { id: "week", label: "This week" },
-    { id: "day", label: "Today" },
+    { id: "month", label: "Month" },
+    { id: "week", label: "Week" },
+    { id: "day", label: "Day" },
   ];
 
   if (loading) return (
@@ -240,6 +276,33 @@ export default function AnalyticsPage() {
         }
       />
       <PageWrapper>
+      {/* Period navigator — step back through past days / weeks / months */}
+      {period !== "all" && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-card px-3 py-2.5">
+          <button
+            onClick={() => setOffset((o) => o + 1)}
+            className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" /> Earlier
+          </button>
+          <div className="text-center min-w-0">
+            <p className="text-sm font-semibold truncate">{periodWindow.label}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {offset === 0
+                ? period === "day" ? "Today" : period === "week" ? "This week" : "This month"
+                : `${offset} ${period}${offset > 1 ? "s" : ""} ago`}
+            </p>
+          </div>
+          <button
+            onClick={() => setOffset((o) => Math.max(0, o - 1))}
+            disabled={offset === 0}
+            className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+          >
+            Later <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Extra filters */}
       <div className="flex flex-wrap gap-2">
         {/* Day of week */}
@@ -279,10 +342,20 @@ export default function AnalyticsPage() {
         <Card className="bg-card border-border/50">
           <CardContent className="py-16 text-center">
             <p className="text-muted-foreground text-sm">
-              No trades found for the selected period.
+              No trades found for {period === "all" ? "your account yet" : periodWindow.label}.
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Week journal & reflection — the qualitative record for the selected week */}
+      {period === "week" && periodWindow.weekStart && (
+        <WeekReflectionCard
+          weekStart={periodWindow.weekStart}
+          label={periodWindow.label}
+          review={weekReview}
+          reflection={weekReflection}
+        />
       )}
 
       {trades.length > 0 && (
@@ -305,14 +378,7 @@ export default function AnalyticsPage() {
               {
                 label: "Total Trades",
                 value: trades.length.toString(),
-                sub:
-                  period === "day"
-                    ? "Today"
-                    : period === "week"
-                    ? "Last 7 days"
-                    : period === "month"
-                    ? "This month"
-                    : "All time",
+                sub: period === "all" ? "All time" : periodWindow.label,
                 color: "text-foreground",
               },
             ].map(({ label, value, sub, color }) => (
@@ -601,5 +667,84 @@ export default function AnalyticsPage() {
       )}
       </PageWrapper>
     </div>
+  );
+}
+
+/* ── Week journal & reflection ─────────────────────────────────────────────
+ * Surfaces the qualitative record the trader wrote for the week being viewed:
+ * the Journal's Weekly Review (mistakes / lessons / prevention) and the deeper
+ * Weekly Reflection. Read-only here — editing stays on the review page. */
+function WeekReflectionCard({
+  weekStart, label, review, reflection,
+}: {
+  weekStart: string;
+  label: string;
+  review: WeeklyTradeReview | null;
+  reflection: WeeklyReflection | null;
+}) {
+  const reviewFields = [
+    { icon: AlertTriangle, iconClass: "text-destructive", label: "Mistakes made", value: review?.mistakes },
+    { icon: Lightbulb, iconClass: "text-warning", label: "Lessons learned", value: review?.lessons },
+    { icon: ListChecks, iconClass: "text-success", label: "Prevention plan", value: review?.prevention_plan },
+  ].filter((f) => f.value?.trim());
+
+  const reflectionFields = [
+    { label: "Best habits", value: reflection?.best_habits },
+    { label: "Biggest weakness", value: reflection?.biggest_weakness },
+    { label: "Emotional patterns", value: reflection?.emotional_patterns },
+    { label: "What improved", value: reflection?.what_improved },
+    { label: "What hurt performance", value: reflection?.what_hurt_performance },
+    { label: "Focus next week", value: reflection?.focus_next_week },
+  ].filter((f) => f.value?.trim());
+
+  const hasContent = reviewFields.length > 0 || reflectionFields.length > 0;
+
+  return (
+    <Card className="bg-card border-border/50">
+      <CardHeader className="pb-3 flex-row items-center justify-between gap-3 space-y-0">
+        <div className="flex items-center gap-2">
+          <Brain className="w-4 h-4 text-primary" />
+          <CardTitle className="text-sm font-semibold">Week journal &amp; reflection</CardTitle>
+        </div>
+        <Link
+          href={`/journal/review/${weekStart}`}
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline shrink-0"
+        >
+          {hasContent ? "Open review" : "Write review"} <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {!hasContent ? (
+          <p className="text-sm text-muted-foreground">
+            No written review for {label} yet — capture the mistakes, lessons and plan while it&apos;s fresh.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {reviewFields.length > 0 && (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {reviewFields.map(({ icon: Icon, iconClass, label: fl, value }) => (
+                  <div key={fl} className="rounded-lg border border-border/50 bg-muted/15 p-3">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground/85 mb-1.5">
+                      <Icon className={cn("w-3.5 h-3.5", iconClass)} /> {fl}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {reflectionFields.length > 0 && (
+              <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 pt-1">
+                {reflectionFields.map(({ label: fl, value }) => (
+                  <div key={fl}>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">{fl}</p>
+                    <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-line">{value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
