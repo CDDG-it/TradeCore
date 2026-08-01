@@ -724,6 +724,48 @@ export async function saveWeeklyTradeReview(
   return data as WeeklyTradeReview;
 }
 
+// ── Monte Carlo settings (Strategy page) ─────────────────────────────
+// One saved simulation setup per user, stored as a JSON blob so the input
+// shape can evolve without a schema change. Fail-soft: if the table hasn't
+// been created yet, reads return null and the simulator falls back to defaults.
+import type { MonteCarloInputs } from "@/lib/strategy/monte-carlo";
+
+export async function getMonteCarloSettings(): Promise<MonteCarloInputs | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("monte_carlo_settings")
+    .select("inputs")
+    .maybeSingle();
+  if (error || !data?.inputs) return null;
+  return data.inputs as MonteCarloInputs;
+}
+
+export async function saveMonteCarloSettings(inputs: MonteCarloInputs): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: existing } = await supabase
+    .from("monte_carlo_settings")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("monte_carlo_settings")
+      .update({ inputs, updated_at: now() })
+      .eq("id", existing.id);
+    if (error) throw error;
+    return;
+  }
+
+  const { error } = await supabase
+    .from("monte_carlo_settings")
+    .insert({ user_id: user.id, inputs, created_at: now(), updated_at: now() });
+  if (error) throw error;
+}
+
 // ── Dashboard Stats ──────────────────────────────────────────────────
 
 export async function getDashboardStats(): Promise<DashboardStats> {

@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, ReferenceLine,
   BarChart, Bar, Cell,
 } from "recharts";
+import { Check, Loader2, Save, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { runMonteCarlo, type MonteCarloInputs, type DrawdownMode } from "@/lib/strategy/monte-carlo";
+import { getTrades, getMonteCarloSettings, saveMonteCarloSettings } from "@/lib/supabase/queries";
 
 const GREEN = "#22c55e";
 const RED = "#ef4444";
@@ -53,18 +55,69 @@ function thin<T>(arr: T[], max: number): T[] {
   return out;
 }
 
+/** Win rate + reward:risk pulled from the trader's real journal — the same
+ *  figures the Analytics page reports, measured over decisive (win/loss) trades. */
+interface RealStats { winRate: number; avgRR: number; decisive: number; total: number }
+
 export function MonteCarloSimulator() {
   const [input, setInput] = useState<MonteCarloInputs>(DEFAULTS);
   const [activePreset, setActivePreset] = useState<string>(PRESETS[0].key);
+  const [realStats, setRealStats] = useState<RealStats | null>(null);
+  const [appliedStats, setAppliedStats] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  // Load any saved setup and compute the trader's real edge from their journal.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const [saved, trades] = await Promise.all([getMonteCarloSettings(), getTrades()]);
+      if (!active) return;
+      if (saved) setInput((prev) => ({ ...prev, ...saved }));
+      const wins = trades.filter((t) => t.result === "win");
+      const losses = trades.filter((t) => t.result === "loss");
+      const decisive = wins.length + losses.length;
+      if (decisive > 0) {
+        const avgRR = wins.length > 0 ? Math.round((wins.reduce((s, t) => s + t.rr, 0) / wins.length) * 100) / 100 : 0;
+        setRealStats({ winRate: wins.length / decisive, avgRR, decisive, total: trades.length });
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   const result = useMemo(() => runMonteCarlo(input), [input]);
 
   function set<K extends keyof MonteCarloInputs>(key: K, value: MonteCarloInputs[K]) {
     setInput((prev) => ({ ...prev, [key]: value }));
+    setSaveState("idle");
+    if (key === "winRate" || key === "rewardRisk") setAppliedStats(false);
+  }
+
+  /** Fill win rate + reward:risk from the real journal stats. */
+  function applyRealStats() {
+    if (!realStats) return;
+    setInput((prev) => ({
+      ...prev,
+      winRate: Math.min(0.9, Math.max(0.1, realStats.winRate)),
+      rewardRisk: realStats.avgRR > 0 ? realStats.avgRR : prev.rewardRisk,
+    }));
+    setAppliedStats(true);
+    setSaveState("idle");
+  }
+
+  async function save() {
+    setSaveState("saving");
+    try {
+      await saveMonteCarloSettings(input);
+      setSaveState("saved");
+      setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 2500);
+    } catch {
+      setSaveState("error");
+    }
   }
 
   function applyPreset(p: Preset) {
     setActivePreset(p.key);
+    setSaveState("idle");
     setInput((prev) => ({
       ...prev,
       accountSize: p.accountSize,
@@ -80,6 +133,8 @@ export function MonteCarloSimulator() {
   function reset() {
     setInput(DEFAULTS);
     setActivePreset(PRESETS[0].key);
+    setSaveState("idle");
+    setAppliedStats(false);
   }
 
   // Build aligned chart data for the sample equity curves.
@@ -101,37 +156,63 @@ export function MonteCarloSimulator() {
 
   return (
     <div className="space-y-5">
-      {/* Intro — plain-language explanation of what the simulation does */}
-      <div className="min-w-0 space-y-3">
-        <div>
-          <h2 className="text-sm font-semibold">MC Pass Simulation</h2>
-          <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl leading-relaxed">
-            A single evaluation is one roll of the dice — good luck can pass a weak edge and bad luck can
-            fail a strong one. A <span className="text-foreground font-medium">Monte&nbsp;Carlo</span> simulation
-            removes that luck by replaying your edge across <span className="text-foreground font-medium">thousands
-            of randomly-ordered trade sequences</span>, then counts what actually happens. The result isn&apos;t
-            a prediction of one attempt — it&apos;s the <span className="text-foreground font-medium">range of
-            outcomes</span> your rules produce, so you can see your realistic odds before risking a real eval.
-          </p>
-        </div>
+      {/* Header + data controls: pull your real edge, save your setup */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold">MC Pass Simulation</h2>
 
-        {/* Three-step reading guide */}
-        <div className="grid gap-2 sm:grid-cols-3">
-          {[
-            { n: "1", title: "Set your edge", body: "Win rate, reward:risk, risk size and the firm's rules on the left." },
-            { n: "2", title: "We run it thousands of times", body: "Each run shuffles the order of your wins and losses — same edge, different luck." },
-            { n: "3", title: "Read the odds", body: "Pass / fail / timeout rates and where your balance is likely to land." },
-          ].map((s) => (
-            <div key={s.n} className="rounded-lg border border-border/70 bg-card/60 px-3 py-2.5">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-primary-foreground shrink-0" style={{ background: CYAN }}>{s.n}</span>
-                <p className="text-xs font-semibold">{s.title}</p>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-snug">{s.body}</p>
-            </div>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Use your real win rate / R:R from Analytics */}
+          <button
+            type="button"
+            onClick={applyRealStats}
+            disabled={!realStats}
+            title={realStats ? "Fill win rate & reward:risk from your journal" : "No decisive trades logged yet"}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40",
+              appliedStats
+                ? "border-primary/50 bg-primary/10 text-primary"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+            )}
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            {realStats
+              ? <>Use my stats · <span className="tabular-nums text-foreground">{pct(realStats.winRate)}</span>{realStats.avgRR > 0 && <> · <span className="tabular-nums text-foreground">{realStats.avgRR}R</span></>}</>
+              : "Use my stats"}
+          </button>
+
+          {/* Save this setup */}
+          <button
+            type="button"
+            onClick={save}
+            disabled={saveState === "saving"}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60",
+              saveState === "saved" ? "border-success/50 bg-success/10 text-success"
+                : saveState === "error" ? "border-destructive/50 bg-destructive/10 text-destructive"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+            )}
+          >
+            {saveState === "saving" ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : saveState === "saved" ? <Check className="w-3.5 h-3.5" />
+              : <Save className="w-3.5 h-3.5" />}
+            {saveState === "saving" ? "Saving" : saveState === "saved" ? "Saved" : saveState === "error" ? "Run the SQL" : "Save setup"}
+          </button>
         </div>
       </div>
+
+      {realStats && (
+        <p className="-mt-2 text-[11px] text-muted-foreground">
+          {appliedStats
+            ? <>Using your real edge — <span className="tabular-nums">{pct(realStats.winRate)}</span> win rate and <span className="tabular-nums">{realStats.avgRR || "—"}R</span> avg reward:risk over {realStats.decisive} decisive trade{realStats.decisive === 1 ? "" : "s"}.</>
+            : <>Your journal shows <span className="tabular-nums text-foreground/80">{pct(realStats.winRate)}</span> win rate and <span className="tabular-nums text-foreground/80">{realStats.avgRR || "—"}R</span> avg reward:risk over {realStats.decisive} decisive trade{realStats.decisive === 1 ? "" : "s"}.</>}
+        </p>
+      )}
+
+      {saveState === "error" && (
+        <p className="-mt-2 text-[11px] text-destructive">
+          Couldn&apos;t save — run <span className="font-mono">monte_carlo_settings.sql</span> in the Supabase SQL editor, then try again.
+        </p>
+      )}
 
       {/* Presets */}
       <div className="flex flex-wrap items-center gap-2">
