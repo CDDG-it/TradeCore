@@ -2,19 +2,12 @@
  * MC Mindscore — one number for how ready a trader is to trade their edge.
  *
  * It blends the things a trader controls into a single 0–100 score:
- *   • Rule adherence        — the per-trade discipline checklist (at the screen)
- *   • Habit consistency     — daily/lifestyle habits (away from the charts)
- *   • Objectives            — the process work that compounds an edge: weekly review,
- *                             pre-trade analysis, logging the best trade of the day
- *   • Reflection consistency — running the MC Trade Therapist 5R on the trades that
- *                             warranted it
- *   • Commitment adherence  — whether the if-then commitments from those sessions
- *                             actually held (behaviour change, weighted highest of the two)
+ *   • Rule adherence   — the per-trade discipline checklist (at the screen)
+ *   • Habit consistency — daily/lifestyle habits (away from the charts)
+ *   • Objectives       — the process work that compounds an edge: weekly review,
+ *                        pre-trade analysis, logging the best trade of the day
  *
  * Every input is derived from data the trader already produces, so nothing is faked.
- * The two therapist components stay inapplicable until there's data, so they never
- * penalise a trader who hasn't used the therapist yet.
- *
  * The score is computed over any window, so week / month / all-time all use one engine.
  */
 
@@ -23,19 +16,14 @@ import {
   eachDayOfInterval, min as dfMin, subDays,
 } from "date-fns";
 import { computeTradeRulesScore, computeHabitCounts } from "@/lib/discipline";
-import { computeReflectionConsistency, computeCommitmentAdherence } from "@/lib/psych-edge/therapist";
 import type {
   TradeJournalEntry, Habit, HabitCompletion, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, PreTradeAnalysis,
-  Commitment, CommitmentAdherenceLog,
 } from "@/lib/types";
 
 export type MindPeriod = "week" | "month" | "all";
 
-/** Nominal weights (out of 100). Rescaled among the components that apply.
- *  Commitment adherence is deliberately weighted above reflection consistency:
- *  it measures behaviour change (did you hold the commitment?), not just whether
- *  you journaled. */
-export const MIND_WEIGHTS = { rules: 40, habits: 20, objectives: 18, reflection: 9, commitment: 13 } as const;
+/** Nominal weights (out of 100). Rescaled among the components that apply. */
+export const MIND_WEIGHTS = { rules: 50, habits: 25, objectives: 25 } as const;
 
 export interface Objective {
   key: string;
@@ -53,7 +41,7 @@ export interface Objective {
 }
 
 export interface MindComponent {
-  key: "rules" | "habits" | "objectives" | "reflection" | "commitment";
+  key: "rules" | "habits" | "objectives";
   label: string;
   /** 0..100 sub-score, or null when the component does not apply this window. */
   value: number | null;
@@ -108,7 +96,7 @@ export const MIND_BANDS: MindBand[] = [
   },
   {
     min: 80, max: 100, label: "Peak state",
-    description: "Rules, routine and reflection all locked in. Trade your edge from here.",
+    description: "Rules, routine and process all locked in. Trade your edge from here.",
   },
 ];
 
@@ -144,10 +132,6 @@ export interface MindInputs {
   bestTrades: BestTradeOfDay[];
   weeklyReviews: WeeklyTradeReview[];
   analyses: PreTradeAnalysis[];
-  /** MC Trade Therapist inputs — optional so callers that predate the therapist
-   *  still type-check; the two behavioural components stay inapplicable without them. */
-  commitments?: Commitment[];
-  adherenceLogs?: CommitmentAdherenceLog[];
 }
 
 /** Earliest day any tracked activity exists — the anchor for the all-time window. */
@@ -237,23 +221,11 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
     return d >= start && d <= clampEnd;
   }).length;
 
-  // ── MC Trade Therapist components ─────────────────────────────────────
-  // Reflection consistency (did you run the Post-Trade 5R on the trades that
-  // warranted it?) and commitment adherence (did your if-then commitments hold?).
-  // Both stay inapplicable (null) until there's something to measure, so a trader
-  // who hasn't used the therapist yet is never penalised for it.
-  const refl = computeReflectionConsistency(input.trades, input.analyses, input.psychSessions, start, clampEnd);
-  const reflection = refl.rate == null ? null : Math.round(refl.rate * 100);
-  const adh = computeCommitmentAdherence(input.adherenceLogs ?? [], input.commitments ?? [], input.trades, input.analyses);
-  const commitment = adh.rate == null ? null : Math.round(adh.rate * 100);
-
   // ── Blend (rescale weights among applicable components) ───────────────
   const raw: { key: MindComponent["key"]; label: string; value: number | null; weight: number }[] = [
     { key: "rules", label: "Rule adherence", value: rules, weight: MIND_WEIGHTS.rules },
     { key: "habits", label: "Habit consistency", value: habits, weight: MIND_WEIGHTS.habits },
     { key: "objectives", label: "Objectives", value: Math.round(objectivesScore), weight: MIND_WEIGHTS.objectives },
-    { key: "reflection", label: "Reflection consistency", value: reflection, weight: MIND_WEIGHTS.reflection },
-    { key: "commitment", label: "Commitment adherence", value: commitment, weight: MIND_WEIGHTS.commitment },
   ];
   const applicableWeight = raw.filter((c) => c.value != null).reduce((s, c) => s + c.weight, 0);
 

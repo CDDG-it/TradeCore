@@ -29,14 +29,40 @@ const TODAY = format(new Date(), "yyyy-MM-dd");
 const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
 
 const CARD_BASE =
-  "relative rounded-2xl border border-border/60 bg-card p-4 overflow-hidden " +
-  "shadow-[0_4px_20px_-10px_rgba(0,0,0,0.25)]";
+  "group/card relative rounded-2xl border border-border/60 bg-card p-4 overflow-hidden " +
+  "shadow-[0_4px_20px_-10px_rgba(0,0,0,0.25)] " +
+  "transition-[transform,box-shadow,border-color] duration-300 ease-out " +
+  "hover:-translate-y-0.5 hover:border-border/90 hover:shadow-[0_10px_36px_-14px_rgba(0,0,0,0.45)]";
 
+/** Ambient card decoration — a top hairline in the accent colour, a soft radial
+ *  glow anchored top-left, and a corner sheen + bottom underline that light up
+ *  on hover. Purely decorative; sits behind content and never intercepts input. */
 function CardFx({ accent }: { accent: string }) {
   return (
     <>
-      <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(115% 85% at 0% 0%, ${alpha(accent, 9)}, transparent 55%)` }} />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${alpha(accent, 55)}, transparent)` }} />
+      <div
+        className="pointer-events-none absolute inset-0 transition-opacity duration-500 group-hover/card:opacity-100"
+        style={{ background: `radial-gradient(115% 85% at 0% 0%, ${alpha(accent, 9)}, transparent 55%)`, opacity: 0.85 }}
+      />
+      {/* Top hairline — brightens on hover */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px transition-opacity duration-300"
+        style={{ background: `linear-gradient(90deg, transparent, ${alpha(accent, 55)}, transparent)` }}
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-300 group-hover/card:opacity-100"
+        style={{ background: `linear-gradient(90deg, transparent, ${alpha(accent, 95)}, transparent)` }}
+      />
+      {/* Corner sheen — only visible on hover */}
+      <div
+        className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full blur-2xl opacity-0 transition-opacity duration-500 group-hover/card:opacity-100"
+        style={{ background: `radial-gradient(circle, ${alpha(accent, 25)}, transparent 70%)` }}
+      />
+      {/* Bottom underline — draws in on hover */}
+      <div
+        className="pointer-events-none absolute inset-x-6 bottom-0 h-px scale-x-0 origin-left transition-transform duration-500 ease-out group-hover/card:scale-x-100"
+        style={{ background: `linear-gradient(90deg, ${alpha(accent, 65)}, transparent)` }}
+      />
     </>
   );
 }
@@ -167,7 +193,6 @@ export default function DashboardPage() {
       { trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses },
       mindPeriod
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, mindPeriod]);
 
   const weekDays = useMemo(() => {
@@ -293,19 +318,19 @@ function MindScoreOrb({ score, period, onPeriodChange }: {
             {hasData ? score!.band.label : "No data yet"}
           </p>
         </div>
-        <div className="flex-1 flex items-end gap-[3px] h-16 pb-0.5" aria-hidden>
+        <div className="group/meter flex-1 flex items-end gap-[3px] h-16 pb-0.5" aria-hidden>
           {Array.from({ length: METER_BARS }).map((_, i) => {
             const on = i < filled;
             const h = 30 + (i / (METER_BARS - 1)) * 70; // 30%..100% rising profile
             return (
               <div
                 key={i}
-                className="flex-1 rounded-[2px]"
+                className="flex-1 rounded-[2px] origin-bottom transition-[background,box-shadow,transform,filter] duration-300 group-hover/meter:scale-y-105"
                 style={{
                   height: `${h}%`,
                   background: on ? color : alpha("var(--muted-foreground)", 14),
                   boxShadow: on ? `0 0 6px ${alpha(color, 35)}` : "none",
-                  transition: "background 0.3s ease, box-shadow 0.3s ease",
+                  transitionDelay: `${i * 18}ms`,
                 }}
               />
             );
@@ -340,15 +365,22 @@ function MindScoreOrb({ score, period, onPeriodChange }: {
   );
 }
 
-/** Compact inline sub-score for the mind score card. */
+/** Compact inline sub-score for the mind score card. Chip lights up on hover. */
 function MiniStat({ label, value, accent }: {
   label: string; value: number | null; accent: string;
 }) {
+  const on = value != null;
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: value == null ? "var(--muted-foreground)" : accent }} />
+    <div
+      className="group/mini inline-flex items-center gap-1.5 rounded-full border border-transparent px-2 py-0.5 transition-colors hover:border-border/60"
+      style={{ background: on ? alpha(accent, 6) : "transparent" }}
+    >
+      <span
+        className="w-1.5 h-1.5 rounded-full shrink-0 transition-transform duration-300 group-hover/mini:scale-125"
+        style={{ background: on ? accent : "var(--muted-foreground)", boxShadow: on ? `0 0 6px ${alpha(accent, 55)}` : undefined }}
+      />
       <span className="text-[11px] text-muted-foreground">{label}</span>
-      <span className="text-[11px] font-bold tabular-nums" style={{ color: value == null ? "var(--muted-foreground)" : accent }}>
+      <span className="text-[11px] font-bold tabular-nums" style={{ color: on ? accent : "var(--muted-foreground)" }}>
         {value == null ? "—" : `${value}%`}
       </span>
     </div>
@@ -398,11 +430,11 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, period, onPeriodC
 
       {/* Donut */}
       <div className="flex-1 flex items-center justify-center py-1 min-h-0">
-        <div className="relative shrink-0" style={{ width: 116, height: 116 }}>
+        <div className="group/donut relative shrink-0 transition-transform duration-500 ease-out hover:scale-[1.03]" style={{ width: 116, height: 116 }}>
           <svg width={116} height={116} viewBox="0 0 116 116" className="block">
             {/* Track */}
             <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
-            {/* Segments */}
+            {/* Segments — arcs draw in on mount and brighten on hover */}
             {total > 0 && segs.map((s, i) => {
               if (s.v === 0) return null;
               const frac = s.v / total;
@@ -411,12 +443,19 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, period, onPeriodC
               acc += frac;
               return (
                 <circle key={i} cx={58} cy={58} r={R} fill="none" stroke={s.c} strokeWidth={SW}
+                  strokeLinecap="round"
                   strokeDasharray={`${dash} ${C - dash}`}
                   transform={`rotate(${rot} 58 58)`}
+                  className="transition-[filter,stroke-width] duration-300 group-hover/donut:[stroke-width:12]"
                   style={{ filter: `drop-shadow(0 0 4px ${alpha(s.c, 40)})` }} />
               );
             })}
           </svg>
+          {/* Subtle inner glow that intensifies on hover */}
+          <div
+            className="pointer-events-none absolute inset-4 rounded-full opacity-60 transition-opacity duration-500 group-hover/donut:opacity-100"
+            style={{ background: `radial-gradient(circle, ${alpha(CYAN, 12)}, transparent 65%)` }}
+          />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <p className="text-[30px] font-black tabular-nums leading-none" style={{ color: CYAN }}>
               {winRate === null ? "—" : `${display}%`}
@@ -428,16 +467,27 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, period, onPeriodC
         </div>
       </div>
 
-      {/* W / L / BE legend */}
+      {/* W / L / BE legend — chips light up on hover */}
       <div className="grid grid-cols-3 gap-2">
         {[
           { label: "Win", value: wins, color: GREEN },
           { label: "Loss", value: losses, color: RED },
           { label: "B/E", value: be, color: AMBER },
         ].map((s) => (
-          <div key={s.label} className="rounded-lg border border-border/50 bg-muted/20 px-2 py-1.5 text-center">
-            <p className="text-base font-black tabular-nums leading-none" style={{ color: s.color }}>{s.value}</p>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-1">{s.label}</p>
+          <div
+            key={s.label}
+            className="group/chip relative rounded-lg border border-border/50 bg-muted/20 px-2 py-1.5 text-center transition-transform duration-300 hover:-translate-y-px"
+          >
+            <p className="relative z-10 text-base font-black tabular-nums leading-none" style={{ color: s.color }}>{s.value}</p>
+            <p className="relative z-10 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-1">{s.label}</p>
+            {/* Hover glow ring */}
+            <div
+              className="pointer-events-none absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300 group-hover/chip:opacity-100"
+              style={{
+                boxShadow: `inset 0 0 0 1px ${alpha(s.color, 40)}, 0 6px 20px -12px ${alpha(s.color, 60)}`,
+                background: alpha(s.color, 8),
+              }}
+            />
           </div>
         ))}
       </div>
@@ -486,11 +536,22 @@ function AnalysisWidget({ analyses }: { analyses: PreTradeAnalysis[] }) {
           {(() => {
             const c = BIAS_COLOR[featured.bias] ?? "var(--muted-foreground)";
             return (
-              <Link href={`/analysis/${featured.id}`}
-                className="group relative overflow-hidden rounded-xl border border-border/60 p-3 pl-3.5 transition-all hover:border-border"
-                style={{ background: `linear-gradient(120deg, ${alpha(c, 10)}, transparent 70%)` }}>
-                <span className="absolute inset-y-0 left-0 w-[3px]" style={{ background: c }} />
-                <div className="flex items-center gap-2">
+              <Link
+                href={`/analysis/${featured.id}`}
+                className="group/feat relative overflow-hidden rounded-xl border border-border/60 p-3 pl-3.5 transition-all duration-300 hover:border-border hover:-translate-y-0.5"
+                style={{ background: `linear-gradient(120deg, ${alpha(c, 10)}, transparent 70%)` }}
+              >
+                {/* Accent bar — widens on hover */}
+                <span
+                  className="absolute inset-y-0 left-0 w-[3px] transition-[width,box-shadow] duration-300 group-hover/feat:w-[5px]"
+                  style={{ background: c, boxShadow: `0 0 12px ${alpha(c, 40)}` }}
+                />
+                {/* Sheen sweep on hover */}
+                <span
+                  className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-700 ease-out group-hover/feat:translate-x-full"
+                  style={{ background: `linear-gradient(100deg, transparent 20%, ${alpha(c, 12)} 50%, transparent 80%)` }}
+                />
+                <div className="relative flex items-center gap-2">
                   <span className="text-sm font-black font-mono tracking-tight">{featured.instrument}</span>
                   <span className="text-[11px] font-bold uppercase tracking-wide capitalize" style={{ color: c }}>{featured.bias}</span>
                   <span className="ml-auto text-[10px] text-muted-foreground/70 tabular-nums shrink-0">
@@ -498,7 +559,7 @@ function AnalysisWidget({ analyses }: { analyses: PreTradeAnalysis[] }) {
                   </span>
                 </div>
                 {(featured.title || featured.thesis) && (
-                  <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2 leading-snug">
+                  <p className="relative text-[11px] text-muted-foreground mt-1.5 line-clamp-2 leading-snug">
                     {featured.title || featured.thesis}
                   </p>
                 )}
@@ -510,9 +571,15 @@ function AnalysisWidget({ analyses }: { analyses: PreTradeAnalysis[] }) {
           {rest.map((a) => {
             const c = BIAS_COLOR[a.bias] ?? "var(--muted-foreground)";
             return (
-              <Link key={a.id} href={`/analysis/${a.id}`}
-                className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 -mx-1 transition-colors hover:bg-muted/50">
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: c }} />
+              <Link
+                key={a.id}
+                href={`/analysis/${a.id}`}
+                className="group/row flex items-center gap-2.5 rounded-lg px-2 py-1.5 -mx-1 transition-all duration-300 hover:bg-muted/50 hover:translate-x-0.5"
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300 group-hover/row:scale-150"
+                  style={{ background: c, boxShadow: `0 0 8px ${alpha(c, 45)}` }}
+                />
                 <span className="text-[12px] font-bold font-mono shrink-0">{a.instrument}</span>
                 <span className="text-[11px] font-medium capitalize shrink-0" style={{ color: c }}>{a.bias}</span>
                 <span className="text-[10px] text-muted-foreground/70 ml-auto tabular-nums shrink-0">
@@ -581,19 +648,45 @@ function HabitsCard({ habits, doneToday, pendingHabit, onToggle }: {
         <div className="space-y-0.5 flex-1 overflow-y-auto pr-0.5 min-h-0">
           {habits.map((habit) => {
             const done = doneToday.has(habit.id);
+            const pending = pendingHabit === habit.id;
             return (
-              <button key={habit.id} type="button" onClick={() => onToggle(habit.id)} disabled={pendingHabit === habit.id}
-                className={cn("w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors disabled:opacity-60",
-                  done ? "bg-success/8" : "hover:bg-muted/50")}>
-                <span className="h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors"
-                  style={done ? { background: habit.color, borderColor: habit.color } : { borderColor: "var(--border)" }}>
+              <button
+                key={habit.id}
+                type="button"
+                onClick={() => onToggle(habit.id)}
+                disabled={pending}
+                className={cn(
+                  "group/habit relative w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-all duration-300 disabled:opacity-60",
+                  done ? "bg-success/8" : "hover:bg-muted/50 hover:translate-x-0.5"
+                )}
+              >
+                {/* Left accent bar — draws in on hover, stays lit when done */}
+                <span
+                  className={cn(
+                    "absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full transition-all duration-300",
+                    done ? "opacity-90 scale-y-100" : "opacity-0 scale-y-50 group-hover/habit:opacity-70 group-hover/habit:scale-y-100"
+                  )}
+                  style={{ background: habit.color }}
+                />
+                <span
+                  className={cn(
+                    "h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-all duration-300",
+                    done ? "scale-105" : "group-hover/habit:scale-110"
+                  )}
+                  style={done
+                    ? { background: habit.color, borderColor: habit.color, boxShadow: `0 0 10px ${alpha(habit.color, 55)}` }
+                    : { borderColor: "var(--border)" }}
+                >
                   {done && (
-                    <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                    <svg viewBox="0 0 24 24" className="h-2.5 w-2.5 animate-in zoom-in-50 duration-200" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
                   )}
                 </span>
-                <span className={cn("text-[13px] truncate flex-1", done ? "text-foreground" : "text-muted-foreground")}>{habit.name}</span>
+                <span className={cn("text-[13px] truncate flex-1 transition-colors", done ? "text-foreground" : "text-muted-foreground group-hover/habit:text-foreground")}>
+                  {habit.name}
+                </span>
+                {pending && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground/60 shrink-0" />}
               </button>
             );
           })}
@@ -624,18 +717,38 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
           const color = r > 0 ? GREEN : r < 0 ? RED : AMBER;
           const today = isToday(date);
           return (
-            <Link key={date.toISOString()} href="/journal"
-              className={cn("group flex flex-col items-center rounded-xl border px-1 py-3 transition-all hover:-translate-y-0.5",
-                today ? "border-primary/50" : "border-border/60 hover:border-border")}
-              style={has ? { background: alpha(color, 9) } : undefined}>
-              <span className={cn("text-[10px] font-semibold uppercase tracking-wide", today ? "text-primary" : "text-muted-foreground/60")}>{format(date, "EEE")}</span>
-              <span className={cn("text-lg font-bold tabular-nums mt-0.5", today ? "text-primary" : "text-foreground/85")}>{format(date, "d")}</span>
-              {has ? (
-                <span className="mt-2 text-[12px] font-bold tabular-nums" style={{ color }}>{r > 0 ? "+" : ""}{r.toFixed(1)}R</span>
-              ) : (
-                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-border" />
+            <Link
+              key={date.toISOString()}
+              href="/journal"
+              className={cn(
+                "group/day relative flex flex-col items-center rounded-xl border px-1 py-3 overflow-hidden",
+                "transition-all duration-300 ease-out hover:-translate-y-1",
+                today ? "border-primary/50" : "border-border/60"
               )}
-              <span className="mt-auto text-[10px] text-muted-foreground/50">
+              style={has ? { background: alpha(color, 9) } : undefined}
+            >
+              {/* Hover accent — top hairline in the day's colour */}
+              <span
+                className="pointer-events-none absolute inset-x-2 top-0 h-px opacity-0 transition-opacity duration-300 group-hover/day:opacity-100"
+                style={{ background: has ? `linear-gradient(90deg, transparent, ${alpha(color, 85)}, transparent)` : `linear-gradient(90deg, transparent, ${alpha("var(--muted-foreground)", 40)}, transparent)` }}
+              />
+              {/* Hover glow — soft radial in the day's colour */}
+              <span
+                className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/day:opacity-100"
+                style={{ background: has ? `radial-gradient(120% 90% at 50% 100%, ${alpha(color, 22)}, transparent 65%)` : undefined }}
+              />
+              <span className={cn("relative text-[10px] font-semibold uppercase tracking-wide", today ? "text-primary" : "text-muted-foreground/60")}>{format(date, "EEE")}</span>
+              <span className={cn("relative text-lg font-bold tabular-nums mt-0.5 transition-transform duration-300 group-hover/day:scale-110", today ? "text-primary" : "text-foreground/85")}>
+                {format(date, "d")}
+              </span>
+              {has ? (
+                <span className="relative mt-2 text-[12px] font-bold tabular-nums transition-transform duration-300 group-hover/day:scale-105" style={{ color }}>
+                  {r > 0 ? "+" : ""}{r.toFixed(1)}R
+                </span>
+              ) : (
+                <span className="relative mt-2 h-1.5 w-1.5 rounded-full bg-border transition-all duration-300 group-hover/day:bg-muted-foreground/50 group-hover/day:scale-125" />
+              )}
+              <span className="relative mt-auto text-[10px] text-muted-foreground/50">
                 {has ? `${dt.length} trade${dt.length !== 1 ? "s" : ""}` : ""}
               </span>
             </Link>

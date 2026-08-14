@@ -26,8 +26,6 @@ import { computeHabitScore } from "@/lib/discipline";
 import { frequencyApplies } from "@/lib/habits";
 import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
-import { HabitCalendar } from "@/components/habits/habit-calendar";
-import { CalendarDays, LayoutGrid } from "lucide-react";
 import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
 import {
   Dialog,
@@ -274,7 +272,6 @@ export function HabitsView() {
 
   const [streaks, setStreaks] = useState<Record<string, number>>({});
   const [range, setRange] = useState<RangeKey>("week");
-  const [view, setView] = useState<"overview" | "calendar">("overview");
 
   const rangeDays = RANGES.find((r) => r.key === range)!.days;
 
@@ -357,39 +354,24 @@ export function HabitsView() {
 
   return (
     <div className="space-y-3">
-      {/* Compact toolbar: view toggle · range · how it works · new habit */}
+      {/* Compact toolbar: range · how it works · new habit */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex w-fit rounded-lg border border-border/60 overflow-hidden">
-          <button onClick={() => setView("overview")}
-            className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
-              view === "overview" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-            <LayoutGrid className="w-3.5 h-3.5" /> Overview
-          </button>
-          <button onClick={() => setView("calendar")}
-            className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
-              view === "calendar" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>
-            <CalendarDays className="w-3.5 h-3.5" /> Calendar
-          </button>
+        <div className="flex rounded-lg border border-border/50 overflow-hidden">
+          {RANGES.map((r) => (
+            <button
+              key={r.key}
+              onClick={() => setRange(r.key)}
+              className={cn(
+                "px-2.5 py-1.5 text-xs font-medium transition-colors",
+                range === r.key
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              {r.label}
+            </button>
+          ))}
         </div>
-
-        {view === "overview" && (
-          <div className="flex rounded-lg border border-border/50 overflow-hidden">
-            {RANGES.map((r) => (
-              <button
-                key={r.key}
-                onClick={() => setRange(r.key)}
-                className={cn(
-                  "px-2.5 py-1.5 text-xs font-medium transition-colors",
-                  range === r.key
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-        )}
 
         <Link
           href="/discipline"
@@ -418,10 +400,6 @@ export function HabitsView() {
         </button>
       </div>
 
-      {view === "calendar" ? (
-        <HabitCalendar habits={habits} completions={completions} onToggle={handleToggle} />
-      ) : (
-      <>
       {/* Compact stat strip — one line each, no tall cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {[
@@ -613,8 +591,6 @@ export function HabitsView() {
           </div>
         </div>
       </div>
-      </>
-      )}
 
       {/* New habit dialog */}
       <Dialog open={showNewHabit} onOpenChange={(o) => (o ? setShowNewHabit(true) : closeNewHabit())}>

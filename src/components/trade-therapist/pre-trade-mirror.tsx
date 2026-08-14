@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { format, parse } from "date-fns";
 import { Loader2, Check, X, Pencil, ShieldCheck, Brain } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
-  getTrades, getAnalyses, getCommitments, getCommitmentAdherenceLogs,
+  getTrades, getAnalyses, getCommitments,
   getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews,
   createAdherenceLog, updateCommitment,
 } from "@/lib/supabase/queries";
@@ -39,12 +38,12 @@ export function PreTradeMirror() {
 
   useEffect(() => {
     Promise.all([
-      getTrades(), getAnalyses(), getCommitments(), getCommitmentAdherenceLogs(),
+      getTrades(), getAnalyses(), getCommitments(),
       getHabits(), getHabitCompletions(), getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews(),
-    ]).then(([trades, analyses, commitments, adherenceLogs, habits, completions, psychSessions, bestTrades, weeklyReviews]) => {
+    ]).then(([trades, analyses, commitments, habits, completions, psychSessions, bestTrades, weeklyReviews]) => {
       setCommitments(commitments);
-      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, commitments, adherenceLogs });
-    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [], commitments: [], adherenceLogs: [] }));
+      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses });
+    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [] }));
   }, []);
 
   const mindscore = useMemo(() => (data ? computeMindScore(data, "month").total : null), [data]);
