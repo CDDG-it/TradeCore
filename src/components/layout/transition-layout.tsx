@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from "motion/react";
 import { usePathname } from "next/navigation";
 
 /**
- * Wraps the main content with a pathname-keyed AnimatePresence. The new page
- * fades in immediately (no mode="wait", so it doesn't sit and wait for the old
- * page to leave) with just a quick opacity fade — no blur filter, which was
- * GPU-heavy and made routes feel like they slowly "loaded in".
+ * Pathname-keyed page transition. The new page fades in immediately (no
+ * mode="wait", so it doesn't sit and wait for the old page to leave). Kept
+ * intentionally lean — a short opacity + tiny y offset only, no blur filter
+ * (GPU-heavy, made routes feel like they were "loading in"). Duration is
+ * short enough that navigation reads as instant, long enough that content
+ * doesn't visibly pop into place.
  */
 export function TransitionLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -16,10 +18,10 @@ export function TransitionLayout({ children }: { children: React.ReactNode }) {
     <AnimatePresence initial={false}>
       <motion.div
         key={pathname}
-        initial={{ opacity: 0, y: 10, filter: "blur(2px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        exit={{ opacity: 0, y: -6 }}
-        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
       >
         {children}
       </motion.div>

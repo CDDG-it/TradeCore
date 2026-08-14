@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Layers } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,14 @@ import type { FundedAccountInput } from "@/lib/types";
 import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
 
+const MAX_QUANTITY = 20;
+
 export default function NewAccountPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [customSize, setCustomSize] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [savedCount, setSavedCount] = useState(0);
 
   const [form, setForm] = useState<FundedAccountInput>({
     firm_name: "",
@@ -61,14 +65,31 @@ export default function NewAccountPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.firm_name) return;
+    const qty = Math.max(1, Math.min(MAX_QUANTITY, Math.round(quantity || 1)));
     setSaving(true);
+    setSavedCount(0);
     try {
-      const created = await createAccount(form);
-      router.push(`/accounts/${created.id}`);
+      // Create N accounts sequentially so a mid-batch failure leaves a clear
+      // partial count and doesn't hammer the API. When qty > 1 each record
+      // gets a suffix on account_name so the list stays scannable.
+      let first: string | null = null;
+      for (let i = 0; i < qty; i++) {
+        const record: FundedAccountInput = qty > 1
+          ? { ...form, account_name: `${form.account_name} #${i + 1}` }
+          : form;
+        const created = await createAccount(record);
+        if (i === 0) first = created.id;
+        setSavedCount(i + 1);
+      }
+      router.push(qty === 1 && first ? `/accounts/${first}` : "/accounts");
     } catch (err) {
       console.error("Failed to create account:", err);
       setSaving(false);
     }
+  }
+
+  function bumpQty(delta: number) {
+    setQuantity((q) => Math.max(1, Math.min(MAX_QUANTITY, q + delta)));
   }
 
   const isPresetSize = ACCOUNT_SIZE_PRESETS.some((p) => p.value === form.account_size) && !customSize;
@@ -80,7 +101,9 @@ export default function NewAccountPage() {
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Accounts
         </Link>
         <h1 className="text-2xl font-bold tracking-tight text-primary">Add Account</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Track a new prop firm account</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Track {quantity === 1 ? "a new prop firm account" : `${quantity} identical prop firm accounts in one go`}
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -172,13 +195,93 @@ export default function NewAccountPage() {
               <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)}
                 placeholder="Any notes about this account, rules, strategy…" className="text-sm min-h-20 resize-none" />
             </div>
+
+            {/* Quantity — bulk-add identical accounts (a fresh scale-up buys many at once) */}
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1.5">
+                <Layers className="w-3 h-3" />
+                Quantity
+                <span className="ml-1 text-muted-foreground/60 font-normal">— 1 to {MAX_QUANTITY} identical accounts in one go</span>
+              </Label>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 rounded-lg border border-border overflow-hidden bg-card">
+                  <button
+                    type="button"
+                    aria-label="Decrease quantity"
+                    onClick={() => bumpQty(-1)}
+                    disabled={quantity <= 1 || saving}
+                    className="h-9 w-9 flex items-center justify-center text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={MAX_QUANTITY}
+                    value={quantity}
+                    onChange={(e) => {
+                      const n = parseInt(e.target.value, 10);
+                      if (Number.isFinite(n)) setQuantity(Math.max(1, Math.min(MAX_QUANTITY, n)));
+                      else setQuantity(1);
+                    }}
+                    className="h-9 w-14 text-center font-mono border-0 focus-visible:ring-0 tabular-nums"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Increase quantity"
+                    onClick={() => bumpQty(1)}
+                    disabled={quantity >= MAX_QUANTITY || saving}
+                    className="h-9 w-9 flex items-center justify-center text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {/* Live cost + presets */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[1, 3, 5, 10, 20].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setQuantity(n)}
+                      disabled={saving}
+                      className={cn(
+                        "rounded-md border px-2 py-1 text-[11px] font-semibold font-mono transition-all",
+                        quantity === n
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                      )}
+                    >
+                      {n}×
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {quantity > 1 && (
+                <p className="text-[11px] text-muted-foreground/80 tabular-nums mt-1.5">
+                  {quantity} accounts · total cost{" "}
+                  <span className="font-semibold text-foreground/85 font-mono">
+                    ${((form.purchase_cost || 0) * quantity).toLocaleString()}
+                  </span>{" "}
+                  · total size{" "}
+                  <span className="font-semibold text-foreground/85 font-mono">
+                    ${((form.account_size || 0) * quantity).toLocaleString()}
+                  </span>
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
         <div className="flex items-center justify-end gap-3">
           <Link href="/accounts"><Button type="button" variant="outline">Cancel</Button></Link>
           <Button type="submit" disabled={saving || !form.firm_name}>
-            {saving ? "Saving…" : "Add account"}
+            {saving
+              ? quantity > 1
+                ? `Adding ${savedCount + 1}/${quantity}…`
+                : "Saving…"
+              : quantity > 1
+                ? `Add ${quantity} accounts`
+                : "Add account"}
           </Button>
         </div>
       </form>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays, ArrowUpDown, Eye, EyeOff } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays, ArrowUpDown, Eye, EyeOff, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -14,6 +14,7 @@ import { PROP_FIRMS } from "@/lib/accounts-constants";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import type { FundedAccount, PayoutEvent } from "@/lib/types";
+import { PerformanceOverview } from "@/components/accounts/performance-overview";
 
 type StatusFilter = "all" | "active" | "inactive";
 type PhaseFilter = "all" | "evaluation" | "funded";
@@ -44,6 +45,8 @@ export default function AccountsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [perfOpen, setPerfOpen] = useState(false);
+  const [, startNav] = useTransition();
 
   useEffect(() => {
     getAccounts().then(async (accts) => {
@@ -139,14 +142,32 @@ export default function AccountsPage() {
         title="Accounts"
         subtitle="Funded prop firm accounts"
         action={
-          <Link
-            href="/accounts/new"
-            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0 bg-primary text-primary-foreground"
-          >
-            <Plus className="w-4 h-4" />
-            Add account
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setPerfOpen(true)}
+              disabled={accounts.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3.5 py-2 text-sm font-semibold text-foreground/85 transition-all hover:-translate-y-px hover:border-primary/40 hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              title="Cost, payout and pass-rate breakdown per week / month"
+            >
+              <BarChart3 className="w-4 h-4 text-primary" />
+              Performance
+            </button>
+            <Link
+              href="/accounts/new"
+              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px bg-primary text-primary-foreground"
+            >
+              <Plus className="w-4 h-4" />
+              Add account
+            </Link>
+          </div>
         }
+      />
+      <PerformanceOverview
+        accounts={accounts}
+        payoutMap={payoutMap}
+        open={perfOpen}
+        onOpenChange={setPerfOpen}
       />
       <PageWrapper>
         {/* ── Filters — always visible when accounts exist ── */}
@@ -316,11 +337,13 @@ export default function AccountsPage() {
                   key={acct.id}
                   role="link"
                   tabIndex={0}
-                  onClick={() => router.push(`/accounts/${acct.id}`)}
+                  onMouseEnter={() => router.prefetch(`/accounts/${acct.id}`)}
+                  onFocus={() => router.prefetch(`/accounts/${acct.id}`)}
+                  onClick={() => startNav(() => router.push(`/accounts/${acct.id}`))}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      router.push(`/accounts/${acct.id}`);
+                      startNav(() => router.push(`/accounts/${acct.id}`));
                     }
                   }}
                   aria-label={`Open ${acct.firm_name} account`}
