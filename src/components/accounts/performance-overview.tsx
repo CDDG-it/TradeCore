@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   startOfWeek, startOfMonth, endOfWeek, endOfMonth,
   subWeeks, subMonths, addWeeks, addMonths,
   differenceInCalendarWeeks, differenceInCalendarMonths,
   format, isWithinInterval,
 } from "date-fns";
-import { TrendingUp, TrendingDown, Trophy, DollarSign, Receipt, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Trophy, DollarSign, Receipt, Activity, ChevronRight } from "lucide-react";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
@@ -90,6 +90,32 @@ function buildBuckets(
 
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
+interface BucketRow {
+  start: Date;
+  end: Date;
+  label: string;
+  bought: number;
+  passed: number;
+  costs: number;
+  payouts: number;
+  net: number;
+  rofa: number | null;
+}
+
+/** A calendar month grouping a set of week rows (week view only). */
+interface WeekGroup {
+  key: string;
+  monthLabel: string;
+  monthStart: Date;
+  weeks: BucketRow[];
+  costs: number;
+  payouts: number;
+  net: number;
+  rofa: number | null;
+  bought: number;
+  passed: number;
+}
+
 interface Props {
   accounts: FundedAccount[];
   payoutMap: Record<string, PayoutEvent[]>;
@@ -104,6 +130,9 @@ interface Props {
  */
 export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }: Props) {
   const [period, setPeriod] = useState<Period>("month");
+  // Which months (in week view) have their weeks revealed. Undefined = the
+  // default: only the latest month (index 0) is open, the rest are collapsed.
+  const [expandedOverride, setExpandedOverride] = useState<Record<string, boolean>>({});
 
   // Flatten all paid payouts once — the bucketing loop consults this list per period.
   const paidPayouts = useMemo(() => {
@@ -138,7 +167,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
     [period, earliestActivity],
   );
 
-  const rows = useMemo(() => {
+  const rows = useMemo<BucketRow[]>(() => {
     return buckets.map((b) => {
       const inBucket = { start: b.start, end: b.end };
       const bought = accounts.filter((a) =>
@@ -154,6 +183,39 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
       return { ...b, bought: bought.length, passed, costs, payouts, net, rofa };
     });
   }, [buckets, accounts, paidPayouts]);
+
+  // Week view groups its weeks by calendar month — latest month first, newest
+  // week first inside each. Month view uses the flat `rows` directly.
+  const weekGroups = useMemo<WeekGroup[]>(() => {
+    if (period !== "week") return [];
+    const map = new Map<string, WeekGroup>();
+    for (const r of rows) {
+      const monthStart = startOfMonth(r.start);
+      const key = format(monthStart, "yyyy-MM");
+      let g = map.get(key);
+      if (!g) {
+        g = { key, monthLabel: format(monthStart, "MMM yyyy"), monthStart, weeks: [], costs: 0, payouts: 0, net: 0, rofa: null, bought: 0, passed: 0 };
+        map.set(key, g);
+      }
+      g.weeks.push(r);
+      g.costs += r.costs;
+      g.payouts += r.payouts;
+      g.bought += r.bought;
+      g.passed += r.passed;
+    }
+    const groups = Array.from(map.values());
+    for (const g of groups) {
+      g.net = g.payouts - g.costs;
+      g.rofa = g.costs > 0 ? g.payouts / g.costs : null;
+      g.weeks.sort((a, b) => b.start.getTime() - a.start.getTime());
+    }
+    groups.sort((a, b) => b.monthStart.getTime() - a.monthStart.getTime());
+    return groups;
+  }, [period, rows]);
+
+  const isMonthExpanded = (key: string, idx: number) => expandedOverride[key] ?? idx === 0;
+  const toggleMonth = (key: string, idx: number) =>
+    setExpandedOverride((prev) => ({ ...prev, [key]: !(prev[key] ?? idx === 0) }));
 
   const totals = useMemo(() => {
     const costs = rows.reduce((s, r) => s + r.costs, 0);
@@ -171,8 +233,21 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
     return { costs, payouts, bought, passed, rofa, lifetimeCosts, lifetimePayouts, lifetimeBought, lifetimePassed, lifetimeRofa };
   }, [rows, accounts, paidPayouts]);
 
-  // Chart scale — largest absolute net (or costs/payouts) in the window
-  const maxAbs = Math.max(1, ...rows.map((r) => Math.max(Math.abs(r.costs), Math.abs(r.payouts))));
+  // The chart mirrors what the table reveals: in month view every month, in
+  // week view only the weeks of the currently-expanded months (chronological).
+  const chartRows = useMemo<BucketRow[]>(() => {
+    if (period === "month") return rows;
+    const visible: BucketRow[] = [];
+    weekGroups.forEach((g, idx) => {
+      if (isMonthExpanded(g.key, idx)) visible.push(...g.weeks);
+    });
+    visible.sort((a, b) => a.start.getTime() - b.start.getTime());
+    return visible;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period, rows, weekGroups, expandedOverride]);
+
+  // Chart scale — largest absolute costs/payouts among the visible bars.
+  const chartMax = Math.max(1, ...chartRows.map((r) => Math.max(Math.abs(r.costs), Math.abs(r.payouts))));
 
   // Summary label for the visible range — first→last bucket, or a plain count.
   const rangeLabel = useMemo(() => {
@@ -263,53 +338,13 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
             </div>
           </div>
 
-          {/* ── Bar chart — costs (turquoise) vs payouts (cyan) per bucket ── */}
-          <div className="rounded-xl border border-border/60 bg-card p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Costs vs. payouts
-            </p>
-            {/* Scrolls horizontally once there are more buckets than fit — each
-                bar group keeps a minimum width so labels stay readable. */}
-            <div className="overflow-x-auto pb-1">
-              <div className="flex items-end gap-2 h-40 min-w-full" style={{ minWidth: `${rows.length * 34}px` }}>
-                {rows.map((r) => {
-                  const cH = (r.costs / maxAbs) * 100;
-                  const pH = (r.payouts / maxAbs) * 100;
-                  return (
-                    <div key={r.label} className="flex-1 flex flex-col items-center gap-1 min-w-[28px]">
-                      <div className="flex-1 w-full flex items-end justify-center gap-0.5">
-                        <div
-                          className="w-1/2 rounded-t-sm transition-all"
-                          style={{ height: `${cH}%`, background: "#14B8A6", boxShadow: r.costs > 0 ? "0 0 8px rgba(20,184,166,0.35)" : undefined }}
-                          title={`${r.label} · Costs: ${money(r.costs)}`}
-                        />
-                        <div
-                          className="w-1/2 rounded-t-sm transition-all"
-                          style={{ height: `${pH}%`, background: "#06B6D4", boxShadow: r.payouts > 0 ? "0 0 8px rgba(6,182,212,0.35)" : undefined }}
-                          title={`${r.label} · Payouts: ${money(r.payouts)}`}
-                        />
-                      </div>
-                      <span className="text-[9px] text-muted-foreground/70 tabular-nums truncate w-full text-center">
-                        {r.label.split(" · ")[0]}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-muted-foreground/80">
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ background: "#14B8A6" }} /> Costs</span>
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ background: "#06B6D4" }} /> Payouts</span>
-            </div>
-          </div>
-
           {/* ── Table breakdown ──────────────────────────────────────── */}
           <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead className="bg-muted/30 text-muted-foreground uppercase tracking-wider">
                   <tr>
-                    <th className="text-left px-3 py-2 font-semibold">{period === "week" ? "Week" : "Month"}</th>
+                    <th className="text-left px-3 py-2 font-semibold">{period === "week" ? "Month / week" : "Month"}</th>
                     <th className="text-right px-3 py-2 font-semibold">Costs</th>
                     <th className="text-right px-3 py-2 font-semibold">Payouts</th>
                     <th className="text-right px-3 py-2 font-semibold">Net</th>
@@ -318,40 +353,49 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
                     <th className="text-right px-3 py-2 font-semibold">Passed</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/40">
-                  {rows.map((r) => (
-                    <tr key={r.label} className="transition-colors hover:bg-muted/20">
-                      <td className="px-3 py-2 font-medium">{r.label}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: r.costs > 0 ? "#14B8A6" : "var(--muted-foreground)" }}>
-                        {r.costs > 0 ? money(r.costs) : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: r.payouts > 0 ? "#06B6D4" : "var(--muted-foreground)" }}>
-                        {r.payouts > 0 ? money(r.payouts) : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
-                        <span className="inline-flex items-center justify-end gap-1" style={{ color: r.net === 0 ? "var(--muted-foreground)" : r.net > 0 ? "oklch(0.58 0.17 145)" : "oklch(0.58 0.22 25)" }}>
-                          {r.net > 0 && <TrendingUp className="w-3 h-3" />}
-                          {r.net < 0 && <TrendingDown className="w-3 h-3" />}
-                          {r.net === 0 ? "—" : `${r.net > 0 ? "+" : ""}${money(r.net)}`}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: rofaColor(r.rofa) }}>
-                        {r.rofa == null ? "—" : `${r.rofa.toFixed(2)}x`}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{r.bought || "—"}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">
-                        {r.bought === 0 ? "—" : (
-                          <span className="inline-flex items-center gap-1">
-                            <span className="font-semibold" style={{ color: r.passed > 0 ? "oklch(0.58 0.17 145)" : "var(--muted-foreground)" }}>
-                              {r.passed}
-                            </span>
-                            <span className="text-muted-foreground/60">/ {r.bought}</span>
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+
+                {period === "month" ? (
+                  <tbody className="divide-y divide-border/40">
+                    {rows.map((r) => (
+                      <tr key={r.label} className="transition-colors hover:bg-muted/20">
+                        <td className="px-3 py-2 font-medium">{r.label}</td>
+                        <MetricCells row={r} />
+                      </tr>
+                    ))}
+                  </tbody>
+                ) : (
+                  <tbody className="divide-y divide-border/40">
+                    {weekGroups.map((g, idx) => {
+                      const expanded = isMonthExpanded(g.key, idx);
+                      return (
+                        <Fragment key={g.key}>
+                          {/* Month header — click to reveal / hide its weeks */}
+                          <tr
+                            onClick={() => toggleMonth(g.key, idx)}
+                            className="cursor-pointer bg-muted/25 hover:bg-muted/40 transition-colors"
+                          >
+                            <td className="px-3 py-2 font-semibold">
+                              <span className="inline-flex items-center gap-1.5">
+                                <ChevronRight className={cn("w-3.5 h-3.5 shrink-0 transition-transform", expanded && "rotate-90")} />
+                                {g.monthLabel}
+                                <span className="text-[10px] font-normal text-muted-foreground/60">· {g.weeks.length} wk</span>
+                              </span>
+                            </td>
+                            <MetricCells row={g} />
+                          </tr>
+                          {/* Weeks in this month */}
+                          {expanded && g.weeks.map((r) => (
+                            <tr key={r.label} className="transition-colors hover:bg-muted/20">
+                              <td className="px-3 py-2 pl-9 text-muted-foreground">{r.label}</td>
+                              <MetricCells row={r} />
+                            </tr>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                )}
+
                 <tfoot className="border-t-2 border-border/60 bg-muted/20 font-semibold">
                   <tr>
                     <td className="px-3 py-2 uppercase tracking-wider text-[10px] text-muted-foreground">Total</td>
@@ -376,6 +420,59 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
             </div>
           </div>
 
+          {/* ── Bar chart — costs (turquoise) vs payouts (cyan) per bucket ── */}
+          <div className="rounded-xl border border-border/60 bg-card p-3">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Costs vs. payouts
+              </p>
+              {period === "week" && (
+                <span className="text-[10px] text-muted-foreground/60">expanded months</span>
+              )}
+            </div>
+            {chartRows.length === 0 ? (
+              <div className="h-40 flex items-center justify-center text-xs text-muted-foreground/60">
+                Expand a month to see its weeks.
+              </div>
+            ) : (
+              <>
+                {/* Scrolls horizontally once there are more buckets than fit — each
+                    bar group keeps a minimum width so labels stay readable. */}
+                <div className="overflow-x-auto pb-1">
+                  <div className="flex items-end gap-2 h-40 min-w-full" style={{ minWidth: `${chartRows.length * 34}px` }}>
+                    {chartRows.map((r) => {
+                      const cH = (r.costs / chartMax) * 100;
+                      const pH = (r.payouts / chartMax) * 100;
+                      return (
+                        <div key={r.label} className="flex-1 flex flex-col items-center gap-1 min-w-[28px]">
+                          <div className="flex-1 w-full flex items-end justify-center gap-0.5">
+                            <div
+                              className="w-1/2 rounded-t-sm transition-all"
+                              style={{ height: `${cH}%`, background: "#14B8A6", boxShadow: r.costs > 0 ? "0 0 8px rgba(20,184,166,0.35)" : undefined }}
+                              title={`${r.label} · Costs: ${money(r.costs)}`}
+                            />
+                            <div
+                              className="w-1/2 rounded-t-sm transition-all"
+                              style={{ height: `${pH}%`, background: "#06B6D4", boxShadow: r.payouts > 0 ? "0 0 8px rgba(6,182,212,0.35)" : undefined }}
+                              title={`${r.label} · Payouts: ${money(r.payouts)}`}
+                            />
+                          </div>
+                          <span className="text-[9px] text-muted-foreground/70 tabular-nums truncate w-full text-center">
+                            {r.label.split(" · ")[0]}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-muted-foreground/80">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ background: "#14B8A6" }} /> Costs</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ background: "#06B6D4" }} /> Payouts</span>
+                </div>
+              </>
+            )}
+          </div>
+
           <p className="text-[10px] text-muted-foreground/60 px-1">
             Costs are bucketed by purchase date, payouts by their payout date. &ldquo;Passed&rdquo; counts accounts bought in
             that {period} that have since left the evaluation phase.
@@ -383,6 +480,42 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** The six metric columns (costs · payouts · net · rofa · bought · passed),
+ *  shared by month rows, week rows and month-group header rows. */
+function MetricCells({ row }: { row: Pick<BucketRow, "costs" | "payouts" | "net" | "rofa" | "bought" | "passed"> }) {
+  return (
+    <>
+      <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: row.costs > 0 ? "#14B8A6" : "var(--muted-foreground)" }}>
+        {row.costs > 0 ? money(row.costs) : "—"}
+      </td>
+      <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: row.payouts > 0 ? "#06B6D4" : "var(--muted-foreground)" }}>
+        {row.payouts > 0 ? money(row.payouts) : "—"}
+      </td>
+      <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
+        <span className="inline-flex items-center justify-end gap-1" style={{ color: row.net === 0 ? "var(--muted-foreground)" : row.net > 0 ? "oklch(0.58 0.17 145)" : "oklch(0.58 0.22 25)" }}>
+          {row.net > 0 && <TrendingUp className="w-3 h-3" />}
+          {row.net < 0 && <TrendingDown className="w-3 h-3" />}
+          {row.net === 0 ? "—" : `${row.net > 0 ? "+" : ""}${money(row.net)}`}
+        </span>
+      </td>
+      <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: rofaColor(row.rofa) }}>
+        {row.rofa == null ? "—" : `${row.rofa.toFixed(2)}x`}
+      </td>
+      <td className="px-3 py-2 text-right tabular-nums">{row.bought || "—"}</td>
+      <td className="px-3 py-2 text-right tabular-nums">
+        {row.bought === 0 ? "—" : (
+          <span className="inline-flex items-center gap-1">
+            <span className="font-semibold" style={{ color: row.passed > 0 ? "oklch(0.58 0.17 145)" : "var(--muted-foreground)" }}>
+              {row.passed}
+            </span>
+            <span className="text-muted-foreground/60">/ {row.bought}</span>
+          </span>
+        )}
+      </td>
+    </>
   );
 }
 
