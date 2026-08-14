@@ -208,11 +208,13 @@ export default function DashboardPage() {
   const loading = trades === null;
 
   return (
-    <div className="flex flex-col gap-3 h-[calc(100dvh-8rem)] overflow-hidden">
+    // Fixed one-screen dashboard on desktop; on phones it flows and scrolls so
+    // the stacked cards aren't squeezed into a single viewport height.
+    <div className="flex flex-col gap-3 lg:h-[calc(100dvh-7rem)] lg:overflow-hidden">
       <motion.div
-        initial={{ opacity: 0, y: -12 }}
+        initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         className="flex flex-wrap items-end justify-between gap-3 shrink-0"
       >
         <div>

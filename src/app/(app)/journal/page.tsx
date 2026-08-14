@@ -447,7 +447,7 @@ export default function JournalPage() {
                   ))}
                 </div>
                 {/* Calendar grid — compact cells, same chip style as the week view */}
-                <div className="grid grid-cols-7 gap-1.5">
+                <div className="grid grid-cols-7 gap-1">
                   {Array.from({ length: startPad }).map((_, i) => (
                     <div key={`pad-${i}`} />
                   ))}
@@ -457,13 +457,13 @@ export default function JournalPage() {
                     const isCurrentMonth = isSameMonth(day, calendarMonth);
                     return (
                       <div key={key}
-                        className={cn("min-h-[92px] rounded-xl p-2 flex flex-col gap-1.5 border transition-colors",
+                        className={cn("min-h-[64px] sm:min-h-[72px] rounded-lg p-1.5 flex flex-col gap-1 border transition-colors",
                           isToday(day)
                             ? "border-primary/40 bg-primary/8"
                             : dayTrades.length > 0
                             ? "border-border/50 bg-muted/20 hover:border-primary/30"
                             : "border-border/25 bg-muted/5")}>
-                        <p className={cn("text-sm font-bold text-center shrink-0 leading-none",
+                        <p className={cn("text-xs font-bold text-center shrink-0 leading-none",
                           isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/75" : "text-muted-foreground/30")}>
                           {format(day, "d")}
                         </p>
@@ -478,7 +478,7 @@ export default function JournalPage() {
                                     : t.result === "loss" ? "bg-destructive/15 hover:bg-destructive/25"
                                     : "bg-warning/15 hover:bg-warning/25"
                                 )}>
-                                <span className={cn("text-xs font-extrabold text-center leading-tight tracking-tight",
+                                <span className={cn("text-[11px] font-extrabold text-center leading-tight tracking-tight",
                                   t.result === "win" ? "text-success"
                                     : t.result === "loss" ? "text-destructive"
                                     : "text-warning")}>
@@ -486,7 +486,7 @@ export default function JournalPage() {
                                 </span>
                                 {t.execution_quality && (
                                   <span className={cn(
-                                    "inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-none",
+                                    "hidden sm:inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-none",
                                     t.execution_quality === "good"
                                       ? "bg-success/20 text-success"
                                       : "bg-destructive/20 text-destructive"

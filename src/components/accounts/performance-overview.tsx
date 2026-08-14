@@ -90,6 +90,10 @@ function buildBuckets(
 
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
+/** Bar-chart plot height in px — bars are sized in px against this so their
+ *  heights resolve reliably (percentage heights collapse inside a flex column). */
+const CHART_PLOT_H = 140;
+
 interface BucketRow {
   start: Date;
   end: Date;
@@ -436,28 +440,32 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
               </div>
             ) : (
               <>
-                {/* Scrolls horizontally once there are more buckets than fit — each
-                    bar group keeps a minimum width so labels stay readable. */}
+                {/* Fixed-height plot in px (not %) so bars resolve reliably, with
+                    a baseline axis and a minimum visible height for small values.
+                    Scrolls horizontally once there are more buckets than fit. */}
                 <div className="overflow-x-auto pb-1">
-                  <div className="flex items-end gap-2 h-40 min-w-full" style={{ minWidth: `${chartRows.length * 34}px` }}>
+                  <div className="flex items-end gap-2 min-w-full" style={{ minWidth: `${chartRows.length * 34}px` }}>
                     {chartRows.map((r) => {
-                      const cH = (r.costs / chartMax) * 100;
-                      const pH = (r.payouts / chartMax) * 100;
+                      const cH = r.costs > 0 ? Math.max(3, (r.costs / chartMax) * CHART_PLOT_H) : 0;
+                      const pH = r.payouts > 0 ? Math.max(3, (r.payouts / chartMax) * CHART_PLOT_H) : 0;
                       return (
-                        <div key={r.label} className="flex-1 flex flex-col items-center gap-1 min-w-[28px]">
-                          <div className="flex-1 w-full flex items-end justify-center gap-0.5">
+                        <div key={r.label} className="flex-1 flex flex-col items-center min-w-[28px]">
+                          <div
+                            className="w-full flex items-end justify-center gap-0.5 border-b border-border/50"
+                            style={{ height: CHART_PLOT_H }}
+                          >
                             <div
-                              className="w-1/2 rounded-t-sm transition-all"
-                              style={{ height: `${cH}%`, background: "#14B8A6", boxShadow: r.costs > 0 ? "0 0 8px rgba(20,184,166,0.35)" : undefined }}
+                              className="w-1/2 max-w-[16px] rounded-t-sm transition-all"
+                              style={{ height: cH, background: "#14B8A6", boxShadow: r.costs > 0 ? "0 0 8px rgba(20,184,166,0.35)" : undefined }}
                               title={`${r.label} · Costs: ${money(r.costs)}`}
                             />
                             <div
-                              className="w-1/2 rounded-t-sm transition-all"
-                              style={{ height: `${pH}%`, background: "#06B6D4", boxShadow: r.payouts > 0 ? "0 0 8px rgba(6,182,212,0.35)" : undefined }}
+                              className="w-1/2 max-w-[16px] rounded-t-sm transition-all"
+                              style={{ height: pH, background: "#06B6D4", boxShadow: r.payouts > 0 ? "0 0 8px rgba(6,182,212,0.35)" : undefined }}
                               title={`${r.label} · Payouts: ${money(r.payouts)}`}
                             />
                           </div>
-                          <span className="text-[9px] text-muted-foreground/70 tabular-nums truncate w-full text-center">
+                          <span className="mt-1.5 text-[9px] text-muted-foreground/70 tabular-nums truncate w-full text-center">
                             {r.label.split(" · ")[0]}
                           </span>
                         </div>

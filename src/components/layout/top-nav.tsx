@@ -65,29 +65,32 @@ export function TopNav() {
         className="sticky top-0 z-40 border-b border-sidebar-border"
         style={{ background: "var(--nav-bg)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
       >
+        {/* Three balanced regions so the nav sits screen-centred: the left
+            (logo) and right (actions) slots share equal flex width, keeping the
+            centre nav horizontally centred regardless of their content. */}
         <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
-          {/* Logo */}
-          <Link href="/" aria-label="TradingMC — home" className="shrink-0 hover:opacity-80 transition-opacity">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={38} height={38} className="h-9 w-9" />
-          </Link>
+          {/* Left — logo */}
+          <div className="flex-1 flex items-center min-w-0">
+            <Link href="/" aria-label="TradingMC — home" className="shrink-0 hover:opacity-80 transition-opacity">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={38} height={38} className="h-9 w-9" />
+            </Link>
+          </div>
 
-          {/* Desktop nav — four primary destinations; everything else lives on the Dashboard hub */}
-          <nav className="hidden lg:flex items-center gap-1 flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Centre — desktop nav */}
+          <nav className="hidden lg:flex items-center justify-center gap-1 min-w-0 max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {PRIMARY_NAV.map((tab) => (
               <DesktopItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} />
             ))}
           </nav>
 
-          {/* Desktop right actions */}
-          <div className="hidden lg:flex items-center gap-2 shrink-0">
-            <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} onSignOut={signOut} />
-          </div>
-
-          {/* Mobile right actions */}
-          <div className="flex lg:hidden items-center gap-2 ml-auto">
+          {/* Right — actions */}
+          <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
+            <div className="hidden lg:flex items-center gap-2 shrink-0">
+              <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} onSignOut={signOut} />
+            </div>
             <button type="button" onClick={() => setOpen(true)} aria-label="Open menu"
-              className="inline-flex items-center justify-center rounded-lg h-9 w-9 border border-sidebar-border text-sidebar-foreground/70">
+              className="inline-flex lg:hidden items-center justify-center rounded-lg h-9 w-9 border border-sidebar-border text-sidebar-foreground/70">
               <Menu className="w-5 h-5" />
             </button>
           </div>
