@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import {
   startOfWeek, startOfMonth, endOfWeek, endOfMonth,
-  subWeeks, subMonths, format, isWithinInterval,
+  subWeeks, subMonths, addWeeks, addMonths,
+  differenceInCalendarWeeks, differenceInCalendarMonths,
+  format, isWithinInterval,
 } from "date-fns";
 import { TrendingUp, TrendingDown, Trophy, DollarSign, Receipt, Activity } from "lucide-react";
 import {
@@ -13,7 +15,11 @@ import { cn } from "@/lib/utils";
 import type { FundedAccount, PayoutEvent } from "@/lib/types";
 
 type Period = "week" | "month";
-const BUCKETS: Record<Period, number> = { week: 8, month: 6 };
+/** Always show at least this many buckets, even with little / no activity, so
+ *  the view never looks empty. Beyond that, the range grows to cover all history. */
+const MIN_BUCKETS: Record<Period, number> = { week: 8, month: 6 };
+/** Safety ceiling so a stray date can't blow the range up to thousands of rows. */
+const MAX_BUCKETS: Record<Period, number> = { week: 156, month: 60 };
 
 /** An account counts as "passed" once it has left the evaluation phase — the
  *  trader graduated the eval, whether the account is now funded, paying out,
@@ -40,15 +46,44 @@ function bucketLabel(d: Date, period: Period): string {
     : format(d, "MMM yyyy");
 }
 
-/* Build the last N period buckets ending with the one that contains today. */
-function buildBuckets(period: Period, now: Date): { start: Date; end: Date; label: string }[] {
-  const n = BUCKETS[period];
+/* Build one bucket per period from the earliest activity (or a minimum
+ * lookback floor, whichever is earlier) up to the bucket containing today —
+ * so every month / week you added an account or took a payout is visible. */
+function buildBuckets(
+  period: Period,
+  now: Date,
+  earliest: Date | null,
+): { start: Date; end: Date; label: string }[] {
+  const currentStart = bucketStart(now, period);
+  // Floor: never show fewer than MIN_BUCKETS periods.
+  const floorAnchor = period === "week"
+    ? subWeeks(now, MIN_BUCKETS.week - 1)
+    : subMonths(now, MIN_BUCKETS.month - 1);
+  const floorStart = bucketStart(floorAnchor, period);
+
+  let firstStart = earliest ? bucketStart(earliest, period) : floorStart;
+  if (firstStart > floorStart) firstStart = floorStart;
+
+  const span = period === "week"
+    ? differenceInCalendarWeeks(currentStart, firstStart, { weekStartsOn: 1 })
+    : differenceInCalendarMonths(currentStart, firstStart);
+  let count = span + 1;
+
+  // Clamp to the ceiling by dropping the oldest buckets, keeping recent history.
+  const cap = MAX_BUCKETS[period];
+  if (count > cap) {
+    count = cap;
+    firstStart = period === "week"
+      ? bucketStart(addWeeks(currentStart, -(cap - 1)), period)
+      : bucketStart(addMonths(currentStart, -(cap - 1)), period);
+  }
+
   const out: { start: Date; end: Date; label: string }[] = [];
-  for (let i = n - 1; i >= 0; i--) {
-    const anchor = period === "week" ? subWeeks(now, i) : subMonths(now, i);
-    const start = bucketStart(anchor, period);
-    const end = bucketEnd(anchor, period);
-    out.push({ start, end, label: bucketLabel(start, period) });
+  for (let i = 0; i < count; i++) {
+    const start = period === "week"
+      ? bucketStart(addWeeks(firstStart, i), period)
+      : bucketStart(addMonths(firstStart, i), period);
+    out.push({ start, end: bucketEnd(start, period), label: bucketLabel(start, period) });
   }
   return out;
 }
@@ -70,8 +105,6 @@ interface Props {
 export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }: Props) {
   const [period, setPeriod] = useState<Period>("month");
 
-  const buckets = useMemo(() => buildBuckets(period, new Date()), [period]);
-
   // Flatten all paid payouts once — the bucketing loop consults this list per period.
   const paidPayouts = useMemo(() => {
     const rows: { date: Date; amount: number }[] = [];
@@ -84,6 +117,26 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
     }
     return rows;
   }, [accounts, payoutMap]);
+
+  // Earliest dated activity — the first purchase or payout — anchors the range.
+  const earliestActivity = useMemo(() => {
+    let min: number | null = null;
+    for (const a of accounts) {
+      if (!a.purchase_date) continue;
+      const t = new Date(a.purchase_date + "T12:00:00").getTime();
+      if (Number.isFinite(t) && (min == null || t < min)) min = t;
+    }
+    for (const p of paidPayouts) {
+      const t = p.date.getTime();
+      if (Number.isFinite(t) && (min == null || t < min)) min = t;
+    }
+    return min == null ? null : new Date(min);
+  }, [accounts, paidPayouts]);
+
+  const buckets = useMemo(
+    () => buildBuckets(period, new Date(), earliestActivity),
+    [period, earliestActivity],
+  );
 
   const rows = useMemo(() => {
     return buckets.map((b) => {
@@ -120,6 +173,18 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
 
   // Chart scale — largest absolute net (or costs/payouts) in the window
   const maxAbs = Math.max(1, ...rows.map((r) => Math.max(Math.abs(r.costs), Math.abs(r.payouts))));
+
+  // Summary label for the visible range — first→last bucket, or a plain count.
+  const rangeLabel = useMemo(() => {
+    if (rows.length === 0) return "No activity";
+    const first = rows[0].start;
+    const last = rows[rows.length - 1].start;
+    const fmt = period === "week" ? "MMM d, yyyy" : "MMM yyyy";
+    const unit = period === "week" ? "weeks" : "months";
+    return rows.length === 1
+      ? format(first, fmt)
+      : `${format(first, fmt)} → ${format(last, fmt)} · ${rows.length} ${unit}`;
+  }, [rows, period]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -174,11 +239,11 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
             />
           </div>
 
-          {/* ── Window summary (matches the period toggle) ───────────── */}
+          {/* ── Window summary (spans the full activity range) ───────── */}
           <div className="rounded-xl border border-border/60 bg-card p-3">
             <div className="flex items-center justify-between gap-3 text-xs">
               <span className="font-semibold uppercase tracking-wider text-muted-foreground">
-                Last {BUCKETS[period]} {period}s
+                {rangeLabel}
               </span>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 <StatChip label="Costs" value={money(totals.costs)} color="#14B8A6" />
@@ -203,30 +268,34 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
               Costs vs. payouts
             </p>
-            <div className="flex items-end gap-2 h-40">
-              {rows.map((r) => {
-                const cH = (r.costs / maxAbs) * 100;
-                const pH = (r.payouts / maxAbs) * 100;
-                return (
-                  <div key={r.label} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                    <div className="flex-1 w-full flex items-end justify-center gap-0.5">
-                      <div
-                        className="w-1/2 rounded-t-sm transition-all"
-                        style={{ height: `${cH}%`, background: "#14B8A6", boxShadow: r.costs > 0 ? "0 0 8px rgba(20,184,166,0.35)" : undefined }}
-                        title={`Costs: ${money(r.costs)}`}
-                      />
-                      <div
-                        className="w-1/2 rounded-t-sm transition-all"
-                        style={{ height: `${pH}%`, background: "#06B6D4", boxShadow: r.payouts > 0 ? "0 0 8px rgba(6,182,212,0.35)" : undefined }}
-                        title={`Payouts: ${money(r.payouts)}`}
-                      />
+            {/* Scrolls horizontally once there are more buckets than fit — each
+                bar group keeps a minimum width so labels stay readable. */}
+            <div className="overflow-x-auto pb-1">
+              <div className="flex items-end gap-2 h-40 min-w-full" style={{ minWidth: `${rows.length * 34}px` }}>
+                {rows.map((r) => {
+                  const cH = (r.costs / maxAbs) * 100;
+                  const pH = (r.payouts / maxAbs) * 100;
+                  return (
+                    <div key={r.label} className="flex-1 flex flex-col items-center gap-1 min-w-[28px]">
+                      <div className="flex-1 w-full flex items-end justify-center gap-0.5">
+                        <div
+                          className="w-1/2 rounded-t-sm transition-all"
+                          style={{ height: `${cH}%`, background: "#14B8A6", boxShadow: r.costs > 0 ? "0 0 8px rgba(20,184,166,0.35)" : undefined }}
+                          title={`${r.label} · Costs: ${money(r.costs)}`}
+                        />
+                        <div
+                          className="w-1/2 rounded-t-sm transition-all"
+                          style={{ height: `${pH}%`, background: "#06B6D4", boxShadow: r.payouts > 0 ? "0 0 8px rgba(6,182,212,0.35)" : undefined }}
+                          title={`${r.label} · Payouts: ${money(r.payouts)}`}
+                        />
+                      </div>
+                      <span className="text-[9px] text-muted-foreground/70 tabular-nums truncate w-full text-center">
+                        {r.label.split(" · ")[0]}
+                      </span>
                     </div>
-                    <span className="text-[9px] text-muted-foreground/70 tabular-nums truncate w-full text-center">
-                      {r.label.split(" · ")[0]}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
             <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-muted-foreground/80">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ background: "#14B8A6" }} /> Costs</span>
