@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowDown } from "lucide-react";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "motion/react";
 import { animate, splitText, stagger } from "animejs";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
 import { LayoutShowcase } from "@/components/landing/layout-showcase";
@@ -24,6 +24,26 @@ export default function HomePage() {
   });
   const contentY = useTransform(scrollYProgress, [0, 1], [0, 110]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+
+  // Pointer-driven 3D tilt: the hero content leans toward the cursor. Values are
+  // normalized to [-0.5, 0.5] across the hero and spring-smoothed so it glides.
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
+  const springTilt = { stiffness: 70, damping: 18, mass: 0.4 };
+  const smoothX = useSpring(pointerX, springTilt);
+  const smoothY = useSpring(pointerY, springTilt);
+  const tiltY = useTransform(smoothX, [-0.5, 0.5], [-6, 6]);
+  const tiltX = useTransform(smoothY, [-0.5, 0.5], [6, -6]);
+
+  const handleHeroPointer = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    pointerX.set((e.clientX - rect.left) / rect.width - 0.5);
+    pointerY.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+  const resetHeroPointer = () => {
+    pointerX.set(0);
+    pointerY.set(0);
+  };
 
   // Split-text reveal for the headline + subtext (anime.js). Each character
   // rises into a clipped mask, staggered, so the copy "typesets" on load.
@@ -82,7 +102,13 @@ export default function HomePage() {
 
       {/* ── Hero — dark navy background, turquoise + neutral candle visuals ── */}
       {/* 53px = header height (py-4 + text-base logo + 1px border) */}
-      <section ref={heroRef} className="relative flex flex-col" style={{ minHeight: "calc(100svh - 53px)" }}>
+      <section
+        ref={heroRef}
+        onMouseMove={handleHeroPointer}
+        onMouseLeave={resetHeroPointer}
+        className="relative flex flex-col"
+        style={{ minHeight: "calc(100svh - 53px)" }}
+      >
 
         {/* Candlestick background */}
         <CandlesCanvas />
@@ -98,7 +124,13 @@ export default function HomePage() {
 
         {/* Content — parallax + fade on scroll */}
         <motion.div
-          style={{ y: contentY, opacity: contentOpacity }}
+          style={{
+            y: contentY,
+            opacity: contentOpacity,
+            rotateX: tiltX,
+            rotateY: tiltY,
+            transformPerspective: 1200,
+          }}
           className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-20">
 
           {/* eslint-disable-next-line @next/next/no-img-element */}

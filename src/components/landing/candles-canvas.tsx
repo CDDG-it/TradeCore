@@ -40,6 +40,14 @@ export function CandlesCanvas() {
   const offsetRef = useRef(0);
   const lastTsRef = useRef<number | null>(null);
   const rafRef = useRef<number>(0);
+  // Cursor position in canvas space. `tx/ty` are the raw targets set on mouse
+  // move; `x/y` chase them each frame so the spotlight glides rather than snaps.
+  const pointerRef = useRef<{ x: number; y: number; tx: number | null; ty: number | null }>({
+    x: 0,
+    y: 0,
+    tx: null,
+    ty: null,
+  });
   // Smoothed y-scale: without this the chart visibly "jumps" every time a
   // candle scrolls out of the visible window and min/max recompute.
   const scaleRef = useRef<{ min: number; max: number } | null>(null);
@@ -76,6 +84,19 @@ export function CandlesCanvas() {
       const ch = canvas.offsetHeight;
       ctx.clearRect(0, 0, cw, ch);
 
+      // Ease the cursor position; idle at the content center until first move.
+      const ptr = pointerRef.current;
+      if (ptr.tx === null || ptr.ty === null) {
+        ptr.x = cw / 2;
+        ptr.y = ch * 0.42;
+      } else {
+        ptr.x += (ptr.tx - ptr.x) * 0.08;
+        ptr.y += (ptr.ty - ptr.y) * 0.08;
+      }
+      // Gentle parallax: the whole chart drifts a few px toward the cursor.
+      const parX = ((ptr.x - cw / 2) / cw) * 22;
+      const parY = ((ptr.y - ch / 2) / ch) * 14;
+
       const off = offsetRef.current % TOTAL;
       const startIdx = Math.floor(off / STEP) % N;
       const pixOff = off % STEP;
@@ -102,7 +123,10 @@ export function CandlesCanvas() {
       const cH = cBot - cTop;
       const py = (p: number) => cTop + ((sc.max - p) / pRange) * cH;
 
-      // Turquoise bulls, neutral gray bears on dark navy bg
+      // Turquoise bulls, neutral gray bears on dark navy bg. The layer is
+      // translated by the parallax offset so it reacts to the cursor.
+      ctx.save();
+      ctx.translate(parX, parY);
       for (let i = 0; i < count; i++) {
         const ci = (startIdx + i) % N;
         const c = CANDLES[ci];
@@ -127,6 +151,18 @@ export function CandlesCanvas() {
         ctx.lineWidth = 0.75;
         ctx.strokeRect(x, bTop, W, bH);
       }
+      ctx.restore();
+
+      // Cursor spotlight — an additive turquoise glow that lifts the candles it
+      // passes over. Drawn before the readability mask so the text area stays calm.
+      ctx.globalCompositeOperation = "lighter";
+      const spot = ctx.createRadialGradient(ptr.x, ptr.y, 0, ptr.x, ptr.y, 260);
+      spot.addColorStop(0, "rgba(20,184,166,0.16)");
+      spot.addColorStop(0.5, "rgba(6,182,212,0.05)");
+      spot.addColorStop(1, "rgba(20,184,166,0)");
+      ctx.fillStyle = spot;
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.globalCompositeOperation = "source-over";
 
       // Center radial mask — softens candles in the content area on dark bg
       const radialCx = cw / 2;
@@ -174,10 +210,27 @@ export function CandlesCanvas() {
     };
     window.addEventListener("resize", onResize);
 
+    // Track the cursor relative to the canvas; the draw loop eases toward it.
+    const onMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      pointerRef.current.tx = e.clientX - rect.left;
+      pointerRef.current.ty = e.clientY - rect.top;
+    };
+    const onLeave = () => {
+      pointerRef.current.tx = null;
+      pointerRef.current.ty = null;
+    };
+    if (!reducedMotion) {
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseout", onLeave);
+    }
+
     rafRef.current = requestAnimationFrame(draw);
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseout", onLeave);
     };
   }, []);
 
