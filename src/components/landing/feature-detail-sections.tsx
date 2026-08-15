@@ -131,7 +131,7 @@ export function FeatureDetailSections() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-15%" }}
             transition={{ duration: 0.7, ease: EASE, delay: 0.08 }}
-            className="mt-4 font-heading text-3xl font-black tracking-tight text-foreground md:text-[2.75rem] md:leading-[1.08]"
+            className="mt-5 font-heading text-4xl font-black tracking-tight text-foreground md:text-[3.5rem] md:leading-[1.04]"
           >
             Four instruments for the operator behind the trades.
           </motion.h2>
@@ -226,39 +226,40 @@ function Entry({
       transition={{ duration: 0.7, ease: EASE }}
       className={
         "relative scroll-mt-28 " +
-        (first ? "pb-16 md:pb-20" : "border-t border-border/60 py-16 md:py-20")
+        (first ? "pb-20 md:pb-28" : "border-t border-border/60 py-20 md:py-28")
       }
     >
-      {/* Oversized ghost numeral as a quiet typographic mark */}
-      <span
+      {/* Soft turquoise gradient accent behind the heading */}
+      <div
         aria-hidden
-        className="pointer-events-none absolute right-0 top-6 select-none font-heading font-black leading-none tracking-tighter text-foreground/[0.04]"
-        style={{ fontSize: "clamp(5rem, 12vw, 9rem)" }}
-      >
-        0{index + 1}
-      </span>
+        className="pointer-events-none absolute -left-16 -top-10 h-64 w-96 rounded-full blur-2xl"
+        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.10) 0%, transparent 70%)" }}
+      />
 
-      <p className="font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+      <p className="relative font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
         {f.label}
       </p>
 
-      <h3 className="relative mt-4 max-w-xl font-heading text-3xl font-black tracking-tight text-foreground md:text-[2.5rem] md:leading-[1.06]">
+      <h3 className="relative mt-5 max-w-2xl font-heading text-4xl font-black tracking-tight text-foreground md:text-[3rem] md:leading-[1.04]">
         {f.name}
       </h3>
 
-      <p className="relative mt-5 max-w-2xl font-body text-xl font-medium leading-snug text-foreground/90 md:text-2xl">
+      <p className="relative mt-6 max-w-2xl font-body text-xl font-medium leading-snug text-foreground/90 md:text-[1.6rem] md:leading-[1.25]">
         {f.tagline}
       </p>
 
-      <p className="relative mt-5 max-w-2xl font-body text-base leading-relaxed text-muted-foreground">
+      <p className="relative mt-6 max-w-xl font-body text-base leading-relaxed text-muted-foreground">
         {f.intro}
       </p>
 
-      {/* Capability ledger — definition rows, no bullets, no cards */}
-      <dl className="relative mt-10 grid gap-x-10 gap-y-8 border-t border-border/60 pt-8 sm:grid-cols-3">
-        {f.capabilities.map((c) => (
+      {/* Numbered capability ledger — no bullets, no cards */}
+      <dl className="relative mt-12 grid gap-x-10 gap-y-9 border-t border-border/60 pt-10 sm:grid-cols-3">
+        {f.capabilities.map((c, ci) => (
           <div key={c.term}>
-            <dt className="font-body text-sm font-semibold text-foreground">{c.term}</dt>
+            <span className="font-mono text-xs tabular-nums text-primary">
+              0{ci + 1}
+            </span>
+            <dt className="mt-3 font-body text-[0.95rem] font-semibold text-foreground">{c.term}</dt>
             <dd className="mt-2 font-body text-sm leading-relaxed text-muted-foreground">
               {c.detail}
             </dd>
@@ -268,11 +269,11 @@ function Entry({
 
       <Link
         href={f.href}
-        className="group relative mt-10 inline-flex items-center gap-2 font-body text-sm font-semibold text-foreground transition-colors hover:text-primary"
+        className="group relative mt-12 inline-flex items-center gap-2.5 font-body text-sm font-semibold text-foreground transition-colors hover:text-primary"
       >
         <span
           aria-hidden
-          className="h-px w-6 bg-primary transition-all duration-300 group-hover:w-9"
+          className="h-px w-7 bg-primary transition-all duration-300 group-hover:w-11"
         />
         Explore {f.name}
       </Link>
