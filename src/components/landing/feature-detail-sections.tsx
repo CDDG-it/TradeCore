@@ -2,23 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "motion/react";
 import { ArrowRight, Sparkles, Gauge, ScrollText, Newspaper, type LucideIcon } from "lucide-react";
 
 /**
  * Deep-dive feature sections for the landing page — the four flagship MC tools,
  * presented as an editorial index. A sticky numbered rail on the left tracks
- * scroll position; each tool reads as a full-width block with its own visual.
- * Copy lives in the FEATURES array. Two tools ship with real captures; the two
- * without get a clean branded glass panel rather than invented imagery.
+ * scroll position; each tool reads as a full-width block with a clean branded
+ * glass panel. Copy lives in the FEATURES array.
  */
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-
-type Visual =
-  | { kind: "shot"; src: string; aspect: string }
-  | { kind: "emblem" };
 
 interface DetailFeature {
   label: string;
@@ -28,7 +22,6 @@ interface DetailFeature {
   intro: string;
   points: string[];
   href: string;
-  visual: Visual;
 }
 
 const FEATURES: DetailFeature[] = [
@@ -45,7 +38,6 @@ const FEATURES: DetailFeature[] = [
       "Commitments you make are saved and surfaced again later, so the work carries into your next trades.",
     ],
     href: "/features/trade-therapist",
-    visual: { kind: "emblem" },
   },
   {
     label: "Mindset",
@@ -60,7 +52,6 @@ const FEATURES: DetailFeature[] = [
       "Track by week, month and all time, with an activity heatmap and a breakdown of what lifted or dragged the score.",
     ],
     href: "/features/psychological-edge",
-    visual: { kind: "shot", src: "/screenshots/habits.png", aspect: "1144 / 626" },
   },
   {
     label: "Trading",
@@ -75,7 +66,6 @@ const FEATURES: DetailFeature[] = [
       "Keep it one click away while you trade and review, so your plan stays a living reference.",
     ],
     href: "/features/strategy",
-    visual: { kind: "emblem" },
   },
   {
     label: "Markets",
@@ -90,7 +80,6 @@ const FEATURES: DetailFeature[] = [
       "Filter to the categories and impact levels you care about, so you see the events that matter for your instrument.",
     ],
     href: "/features/news-city",
-    visual: { kind: "shot", src: "/screenshots/market-intelligence.png", aspect: "1670 / 848" },
   },
 ];
 
@@ -263,28 +252,7 @@ function DetailBlock({
 
       {/* Visual */}
       <div className="mt-8">
-        {f.visual.kind === "shot" ? (
-          <div
-            className="relative w-full overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_30px_70px_-34px_rgba(0,0,0,0.85)]"
-            style={{ aspectRatio: f.visual.aspect }}
-          >
-            <Image
-              src={f.visual.src}
-              alt={`${f.name} in TradingMC`}
-              fill
-              sizes="(max-width: 1024px) 100vw, 760px"
-              quality={90}
-              className="object-cover object-top"
-            />
-            {/* Soft inner top edge for a glass feel */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
-            />
-          </div>
-        ) : (
-          <EmblemPanel Icon={Icon} name={f.name} tagline={f.tagline} />
-        )}
+        <EmblemPanel Icon={Icon} name={f.name} tagline={f.tagline} />
       </div>
 
       {/* Intro + capability list, side by side */}
