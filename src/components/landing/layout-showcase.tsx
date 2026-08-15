@@ -50,7 +50,7 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
  */
 export function LayoutShowcase() {
   return (
-    <section id="features" className="relative overflow-hidden bg-background px-6 py-24 md:px-10 md:py-32">
+    <section className="relative overflow-hidden bg-background px-6 py-24 md:px-10 md:py-32">
       {/* Slowed flow-field particle stream — calm, blooming motion behind the
           full-width cards. Landing only. */}
       <FlowField className="inset-0" density="medium" speed={0.3} />

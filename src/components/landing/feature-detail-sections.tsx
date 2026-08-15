@@ -86,7 +86,7 @@ const FEATURES: DetailFeature[] = [
 
 export function FeatureDetailSections() {
   return (
-    <section className="relative overflow-hidden bg-background px-6 py-28 md:py-40">
+    <section id="features" className="relative overflow-hidden bg-background px-6 py-28 md:py-40">
       {/* Hairline that anchors the section to the cards above it */}
       <div
         aria-hidden
