@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { ChevronRight } from "lucide-react";
 
 /**
  * Deep-dive feature sections for the landing page — the four flagship MC tools,
- * presented as an editorial ledger. A sticky numbered rail on the left tracks
- * scroll position; each tool is a typographic entry with a compact capability
- * grid rather than a marketing card. Copy lives in the FEATURES array.
+ * presented Apple-style: centered, large type, generous whitespace, minimal
+ * copy. Each tool is a self-contained block with a headline, one supporting
+ * line, a compact capability row and a quiet link. Copy lives in FEATURES.
  */
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -22,7 +22,6 @@ interface DetailFeature {
   label: string;
   name: string;
   tagline: string;
-  intro: string;
   capabilities: Capability[];
   href: string;
 }
@@ -32,8 +31,6 @@ const FEATURES: DetailFeature[] = [
     label: "Mindset",
     name: "MC Trade Therapist",
     tagline: "A coach that talks back, built from your own trades.",
-    intro:
-      "Most trading advice is a poster on the wall. The Trade Therapist runs a real session on the trades you actually took, so the conversation is about what you did, not what a generic mindset clip thinks you should feel.",
     capabilities: [
       { term: "Runs on your data", detail: "Journal, results and discipline feed a structured 5R session." },
       { term: "Anchored in numbers", detail: "Each prompt names the trade you overheld or the rule you skipped." },
@@ -45,8 +42,6 @@ const FEATURES: DetailFeature[] = [
     label: "Mindset",
     name: "MC Mindscore",
     tagline: "One number for how ready you are to trade.",
-    intro:
-      "Discipline is hard to see until it is already gone. Mind Edge turns the process behind your trading into one honest Mindscore, read straight from the habits and commitments you already produce.",
     capabilities: [
       { term: "One honest score", detail: "Rule-following, habit streaks and kept commitments, blended." },
       { term: "Habits, your way", detail: "Daily, weekday or weekend, checked from an overview or calendar." },
@@ -58,8 +53,6 @@ const FEATURES: DetailFeature[] = [
     label: "Trading",
     name: "My Strategy",
     tagline: "Your playbook and rules, written down and always in reach.",
-    intro:
-      "A strategy in your head changes shape under pressure. My Strategy puts your playbook on paper, so the setups you take at nine thirty are the same ones you chose in the cold light of the weekend.",
     capabilities: [
       { term: "Setups on paper", detail: "The exact conditions that qualify a trade, so it is a checklist." },
       { term: "Rules that govern", detail: "Risk and management fixed before the session, from size to stop." },
@@ -71,8 +64,6 @@ const FEATURES: DetailFeature[] = [
     label: "Markets",
     name: "MC News Dashboard",
     tagline: "See what is actually moving the market.",
-    intro:
-      "Price does not move in a vacuum. The News Dashboard turns the day's noise into a clear read on what is driving risk right now, so you walk into the session knowing the context instead of reacting to it.",
     capabilities: [
       { term: "Live market core", detail: "Central banks, macro, commodities and earnings feed one hub." },
       { term: "Drill any node", detail: "Signals scored by impact, direction and confidence." },
@@ -83,40 +74,17 @@ const FEATURES: DetailFeature[] = [
 ];
 
 export function FeatureDetailSections() {
-  const [active, setActive] = useState(0);
-  const blockRefs = useRef<(HTMLElement | null)[]>([]);
-
-  // Scroll-spy: whichever entry sits in the middle band of the viewport is the
-  // "active" one, so the sticky rail always points at what you are reading.
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActive(Number((entry.target as HTMLElement).dataset.index));
-          }
-        }
-      },
-      { rootMargin: "-45% 0px -45% 0px", threshold: 0 },
-    );
-    for (const el of blockRefs.current) if (el) observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const goTo = (i: number) =>
-    blockRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "center" });
-
   return (
-    <section className="relative overflow-hidden bg-background px-6 py-24 md:py-32">
+    <section className="relative overflow-hidden bg-background px-6 py-28 md:py-40">
       {/* Hairline that anchors the section to the cards above it */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent"
       />
 
-      <div className="mx-auto max-w-6xl">
-        {/* Section header */}
-        <div className="max-w-2xl">
+      <div className="mx-auto max-w-5xl">
+        {/* Section header — centered */}
+        <div className="mx-auto max-w-3xl text-center">
           <motion.p
             initial={{ opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -131,152 +99,78 @@ export function FeatureDetailSections() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-15%" }}
             transition={{ duration: 0.7, ease: EASE, delay: 0.08 }}
-            className="mt-5 font-heading text-4xl font-black tracking-tight text-foreground md:text-[3.5rem] md:leading-[1.04]"
+            className="mx-auto mt-5 max-w-3xl font-heading font-black tracking-tight text-foreground"
+            style={{ fontSize: "clamp(2.25rem, 5.5vw, 4rem)", lineHeight: 1.03 }}
           >
             Four instruments for the operator behind the trades.
           </motion.h2>
         </div>
 
-        <div className="mt-16 grid gap-y-20 lg:mt-24 lg:grid-cols-[200px_1fr] lg:gap-x-24">
-          {/* Sticky numbered index rail (desktop) */}
-          <aside className="hidden lg:block">
-            <div className="sticky top-28">
-              <p className="font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">
-                The toolkit
-              </p>
-              <ol className="mt-6">
-                {FEATURES.map((f, i) => {
-                  const on = active === i;
-                  return (
-                    <li key={f.name}>
-                      <button
-                        type="button"
-                        onClick={() => goTo(i)}
-                        className="group flex w-full items-center gap-3 py-2.5 text-left"
-                      >
-                        <span
-                          className="h-6 w-px shrink-0 origin-center transition-all duration-300"
-                          style={{
-                            background: on ? "var(--primary)" : "var(--border)",
-                            transform: on ? "scaleY(1)" : "scaleY(0.5)",
-                          }}
-                        />
-                        <span
-                          className="font-mono text-[11px] tabular-nums transition-colors duration-300"
-                          style={{ color: on ? "var(--primary)" : "var(--muted-foreground)" }}
-                        >
-                          0{i + 1}
-                        </span>
-                        <span
-                          className="font-body text-sm font-semibold leading-tight transition-colors duration-300"
-                          style={{
-                            color: on
-                              ? "var(--foreground)"
-                              : "color-mix(in oklch, var(--foreground) 42%, transparent)",
-                          }}
-                        >
-                          {f.name}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          </aside>
-
-          {/* Ledger of entries */}
-          <div className="flex flex-col">
-            {FEATURES.map((f, i) => (
-              <Entry
-                key={f.name}
-                ref={(el) => {
-                  blockRefs.current[i] = el;
-                }}
-                feature={f}
-                index={i}
-                first={i === 0}
-              />
-            ))}
-          </div>
+        {/* Tool blocks — centered, generous air */}
+        <div className="mt-28 flex flex-col gap-32 md:mt-40 md:gap-48">
+          {FEATURES.map((f, i) => (
+            <ToolBlock key={f.name} feature={f} index={i} />
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-function Entry({
-  feature: f,
-  index,
-  first,
-  ref,
-}: {
-  feature: DetailFeature;
-  index: number;
-  first: boolean;
-  ref: (el: HTMLElement | null) => void;
-}) {
+function ToolBlock({ feature: f, index }: { feature: DetailFeature; index: number }) {
   return (
     <motion.article
-      ref={ref}
-      data-index={index}
-      initial={{ opacity: 0, y: 36 }}
+      initial={{ opacity: 0, y: 44 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-12%" }}
-      transition={{ duration: 0.7, ease: EASE }}
-      className={
-        "relative scroll-mt-28 " +
-        (first ? "pb-20 md:pb-28" : "border-t border-border/60 py-20 md:py-28")
-      }
+      viewport={{ once: true, margin: "-15%" }}
+      transition={{ duration: 0.8, ease: EASE }}
+      className="relative text-center"
     >
-      {/* Soft turquoise gradient accent behind the heading */}
+      {/* Soft turquoise gradient bloom behind the headline */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-16 -top-10 h-64 w-96 rounded-full blur-2xl"
-        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.10) 0%, transparent 70%)" }}
+        className="pointer-events-none absolute left-1/2 top-[-15%] h-72 w-[36rem] max-w-full -translate-x-1/2 rounded-full blur-3xl"
+        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.12) 0%, transparent 70%)" }}
       />
 
-      <p className="relative font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+      <p className="relative font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+        <span className="text-primary">0{index + 1}</span>
+        <span className="mx-2.5 text-border">/</span>
         {f.label}
       </p>
 
-      <h3 className="relative mt-5 max-w-2xl font-heading text-4xl font-black tracking-tight text-foreground md:text-[3rem] md:leading-[1.04]">
+      <h3
+        className="relative mx-auto mt-6 max-w-3xl font-heading font-black tracking-tight text-foreground"
+        style={{ fontSize: "clamp(2.25rem, 5vw, 3.5rem)", lineHeight: 1.04 }}
+      >
         {f.name}
       </h3>
 
-      <p className="relative mt-6 max-w-2xl font-body text-xl font-medium leading-snug text-foreground/90 md:text-[1.6rem] md:leading-[1.25]">
+      <p
+        className="relative mx-auto mt-6 max-w-2xl font-body font-medium leading-snug text-foreground/80"
+        style={{ fontSize: "clamp(1.2rem, 2.4vw, 1.6rem)" }}
+      >
         {f.tagline}
       </p>
 
-      <p className="relative mt-6 max-w-xl font-body text-base leading-relaxed text-muted-foreground">
-        {f.intro}
-      </p>
-
-      {/* Numbered capability ledger — no bullets, no cards */}
-      <dl className="relative mt-12 grid gap-x-10 gap-y-9 border-t border-border/60 pt-10 sm:grid-cols-3">
-        {f.capabilities.map((c, ci) => (
-          <div key={c.term}>
-            <span className="font-mono text-xs tabular-nums text-primary">
-              0{ci + 1}
-            </span>
-            <dt className="mt-3 font-body text-[0.95rem] font-semibold text-foreground">{c.term}</dt>
-            <dd className="mt-2 font-body text-sm leading-relaxed text-muted-foreground">
-              {c.detail}
-            </dd>
-          </div>
-        ))}
-      </dl>
-
       <Link
         href={f.href}
-        className="group relative mt-12 inline-flex items-center gap-2.5 font-body text-sm font-semibold text-foreground transition-colors hover:text-primary"
+        className="group relative mt-8 inline-flex items-center gap-1 font-body text-base font-semibold text-primary transition-colors hover:text-foreground"
       >
-        <span
-          aria-hidden
-          className="h-px w-7 bg-primary transition-all duration-300 group-hover:w-11"
-        />
         Explore {f.name}
+        <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
       </Link>
+
+      {/* Minimal capability row — centered, no cards, no borders */}
+      <div className="relative mx-auto mt-16 grid max-w-3xl gap-x-10 gap-y-10 sm:grid-cols-3">
+        {f.capabilities.map((c, ci) => (
+          <div key={c.term} className="text-center">
+            <span className="font-mono text-xs tabular-nums text-primary/80">0{ci + 1}</span>
+            <p className="mt-3 font-body text-[0.95rem] font-semibold text-foreground">{c.term}</p>
+            <p className="mt-2 font-body text-sm leading-relaxed text-muted-foreground">{c.detail}</p>
+          </div>
+        ))}
+      </div>
     </motion.article>
   );
 }
