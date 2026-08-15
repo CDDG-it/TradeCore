@@ -50,12 +50,12 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
  */
 export function LayoutShowcase() {
   return (
-    <section id="features" className="relative overflow-hidden bg-background px-6 py-24 md:py-28">
-      {/* Flow-field particle stream spans the whole section — from the hero
-          down to the footer — as one continuous backdrop. Landing only. */}
-      <FlowField className="inset-0" density="medium" />
+    <section id="features" className="relative overflow-hidden bg-background px-6 py-24 md:px-10 md:py-32">
+      {/* Slowed flow-field particle stream — calm, blooming motion behind the
+          full-width cards. Landing only. */}
+      <FlowField className="inset-0" density="medium" speed={0.3} />
 
-      <div className="relative mx-auto max-w-6xl">
+      <div className="relative mx-auto max-w-[1700px]">
         <p
           className="text-center font-mono text-xs font-medium uppercase tracking-[0.24em] text-primary"
           style={{ fontFamily: NUNITO }}
@@ -66,7 +66,7 @@ export function LayoutShowcase() {
           Everything the trader needs, in one place.
         </h2>
 
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
           {CARDS.map((c) => (
             <CardFlip key={c.href} {...c} />
           ))}

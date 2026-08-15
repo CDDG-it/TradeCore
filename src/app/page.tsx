@@ -189,9 +189,9 @@ export default function HomePage() {
 
       </section>
 
-      <LayoutShowcase />
-
       <FeatureDetailSections />
+
+      <LayoutShowcase />
 
       <LandingFooter />
     </div>

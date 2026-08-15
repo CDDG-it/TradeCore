@@ -45,9 +45,11 @@ function fieldAngle(x: number, y: number, t: number): number {
 interface FlowFieldProps {
   className?: string;
   density?: Density;
+  /** Motion multiplier. 1 = original pace; lower = slower, calmer blooming. */
+  speed?: number;
 }
 
-export function FlowField({ className, density = "medium" }: FlowFieldProps) {
+export function FlowField({ className, density = "medium", speed = 1 }: FlowFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -99,7 +101,7 @@ export function FlowField({ className, density = "medium" }: FlowFieldProps) {
     };
 
     const render = () => {
-      time++;
+      time += speed;
 
       // Fade the previous frame — dots persist a few frames, forming soft trails.
       ctx.fillStyle = `rgba(${BG}, ${TRAIL_ALPHA})`;
@@ -108,8 +110,8 @@ export function FlowField({ className, density = "medium" }: FlowFieldProps) {
       for (const p of particles) {
         const angle = fieldAngle(p.x, p.y, time);
 
-        p.x += Math.cos(angle) * p.speed;
-        p.y += Math.sin(angle) * p.speed;
+        p.x += Math.cos(angle) * p.speed * speed;
+        p.y += Math.sin(angle) * p.speed * speed;
         p.life++;
 
         if (p.life > p.maxLife) {
@@ -155,7 +157,7 @@ export function FlowField({ className, density = "medium" }: FlowFieldProps) {
       observer.disconnect();
       window.removeEventListener("resize", resize);
     };
-  }, [density]);
+  }, [density, speed]);
 
   return (
     <div

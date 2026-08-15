@@ -28,6 +28,28 @@ interface DetailFeature {
 
 const FEATURES: DetailFeature[] = [
   {
+    label: "Overview",
+    name: "Dashboard",
+    tagline: "Your whole trading day on one screen.",
+    capabilities: [
+      { term: "One command center", detail: "Every account, trade and metric gathered in a single view." },
+      { term: "Live P&L", detail: "Running profit and loss as the session unfolds." },
+      { term: "Daily focus", detail: "The one thing to work on today, kept front and center." },
+    ],
+    href: "/features/dashboard",
+  },
+  {
+    label: "Mindset",
+    name: "MC Mind Edge",
+    tagline: "One number for how ready you are to trade.",
+    capabilities: [
+      { term: "One readiness score", detail: "Rules, habits and kept commitments blended into a Mindscore." },
+      { term: "Pre-trade mirror", detail: "A quick read on your state before the first trade." },
+      { term: "Read over time", detail: "Week, month and all-time, with a heatmap and a clear breakdown." },
+    ],
+    href: "/features/psychological-edge",
+  },
+  {
     label: "Mindset",
     name: "MC Trade Therapist",
     tagline: "A coach that talks back, built from your own trades.",
@@ -37,17 +59,6 @@ const FEATURES: DetailFeature[] = [
       { term: "Commitments carry", detail: "What you promise is saved and resurfaced on later trades." },
     ],
     href: "/features/trade-therapist",
-  },
-  {
-    label: "Mindset",
-    name: "MC Mindscore",
-    tagline: "One number for how ready you are to trade.",
-    capabilities: [
-      { term: "One honest score", detail: "Rule-following, habit streaks and kept commitments, blended." },
-      { term: "Habits, your way", detail: "Daily, weekday or weekend, checked from an overview or calendar." },
-      { term: "Read over time", detail: "Week, month and all-time, with a heatmap and a clear breakdown." },
-    ],
-    href: "/features/psychological-edge",
   },
   {
     label: "Trading",
@@ -102,7 +113,7 @@ export function FeatureDetailSections() {
             className="mx-auto mt-5 max-w-3xl font-heading font-black tracking-tight text-foreground"
             style={{ fontSize: "clamp(2.25rem, 5.5vw, 4rem)", lineHeight: 1.03 }}
           >
-            Four instruments for the operator behind the trades.
+            Five instruments for the operator behind the trades.
           </motion.h2>
         </div>
 
