@@ -71,11 +71,16 @@ export interface GlobeTextures {
   roughness: HTMLCanvasElement;
 }
 
-/** Land palette — temperate green through to polar ice. */
-const OCEAN_DEEP = "#04182f";
-const OCEAN_SHALLOW = "#0a3558";
-const LAND_WARM = "#2f6b4a";
-const LAND_COLD = "#dfeaf2";
+/**
+ * Palette — the TradingMC brand, not photographic Earth: navy oceans, turquoise
+ * land, cyan ice. Only the *shapes* are real; the colours stay on-brand.
+ */
+const OCEAN_DEEP = "#070d18";     // navy, near the app background
+const OCEAN_SHALLOW = "#0c2033";  // navy lifted toward teal
+const OCEAN_EQUATOR = "#123047";  // deepest teal at the equator
+const LAND_BASE = "#0f7d72";      // muted turquoise landmass
+const LAND_EDGE = "#14B8A6";      // brand turquoise coastline
+const LAND_POLAR = "#8fe3dd";     // cyan-tinted ice
 
 export function buildGlobeTextures(dark: boolean): GlobeTextures {
   const color = document.createElement("canvas");
@@ -90,7 +95,7 @@ export function buildGlobeTextures(dark: boolean): GlobeTextures {
   const g = cc.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, OCEAN_DEEP);
   g.addColorStop(0.35, OCEAN_SHALLOW);
-  g.addColorStop(0.5, dark ? "#0c4068" : "#12547f");
+  g.addColorStop(0.5, dark ? OCEAN_EQUATOR : "#17415e");
   g.addColorStop(0.65, OCEAN_SHALLOW);
   g.addColorStop(1, OCEAN_DEEP);
   cc.fillStyle = g;
@@ -108,14 +113,14 @@ export function buildGlobeTextures(dark: boolean): GlobeTextures {
     const lat = meanAbsLat(poly[0]);
     // Blend toward ice above ~58° so Greenland and Antarctica read as polar.
     const icy = Math.min(1, Math.max(0, (lat - 58) / 22));
-    const fill = mix(LAND_WARM, LAND_COLD, icy);
+    const fill = mix(LAND_BASE, LAND_POLAR, icy);
 
     tracePolygon(cc, poly);
     cc.fillStyle = fill;
     cc.fill("evenodd");
-    // Coast line — a touch lighter than the fill for definition.
-    cc.strokeStyle = mix(LAND_WARM, "#ffffff", 0.3 + icy * 0.4);
-    cc.lineWidth = 1.1;
+    // Coastline in brand turquoise — this is what makes the borders legible.
+    cc.strokeStyle = mix(LAND_EDGE, LAND_POLAR, icy);
+    cc.lineWidth = 1.2;
     cc.stroke();
 
     // Land is matte in the roughness map.
