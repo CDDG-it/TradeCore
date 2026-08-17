@@ -24,7 +24,12 @@ function EarthSurface({ dark }: { dark: boolean }) {
     const r = new THREE.CanvasTexture(roughness);
     for (const t of [m, r]) {
       t.colorSpace = t === m ? THREE.SRGBColorSpace : THREE.NoColorSpace;
-      t.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
+      // Max anisotropy keeps the coastlines sharp where the sphere turns away
+      // from the camera — the other half of fixing the pixelated look.
+      t.anisotropy = gl.capabilities.getMaxAnisotropy();
+      t.minFilter = THREE.LinearMipmapLinearFilter;
+      t.magFilter = THREE.LinearFilter;
+      t.generateMipmaps = true;
       t.needsUpdate = true;
     }
     return { map: m, roughnessMap: r };
@@ -42,7 +47,7 @@ function EarthSurface({ dark }: { dark: boolean }) {
         roughnessMap={roughnessMap}
         metalness={0.04}
         roughness={1}
-        emissive={new THREE.Color(dark ? "#04231f" : "#0a3050")}
+        emissive={new THREE.Color(dark ? "#062338" : "#0a3050")}
         emissiveIntensity={dark ? 0.2 : 0.08}
       />
     </mesh>

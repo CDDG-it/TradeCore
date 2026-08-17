@@ -15,8 +15,10 @@ import LAND from "./world-land.json";
 type Ring = [number, number][];
 type Polygon = Ring[]; // [outer, ...holes]
 
-const W = 2048;
-const H = 1024;
+// 4K equirectangular: at this size the coastlines stay crisp even zoomed in,
+// which is what removes the "pixelated" look on a 5-unit sphere.
+const W = 4096;
+const H = 2048;
 
 /** Equirectangular projection — lng/lat degrees to canvas pixels. */
 const px = (lng: number) => ((lng + 180) / 360) * W;
@@ -72,15 +74,16 @@ export interface GlobeTextures {
 }
 
 /**
- * Palette — the TradingMC brand, not photographic Earth: navy oceans, turquoise
- * land, cyan ice. Only the *shapes* are real; the colours stay on-brand.
+ * Palette — the TradingMC brand in its blue register, not photographic Earth:
+ * navy oceans, steel-blue land, cyan coastlines and pale-blue ice. Only the
+ * *shapes* are real; the colours stay on-brand.
  */
-const OCEAN_DEEP = "#070d18";     // navy, near the app background
-const OCEAN_SHALLOW = "#0c2033";  // navy lifted toward teal
-const OCEAN_EQUATOR = "#123047";  // deepest teal at the equator
-const LAND_BASE = "#0f7d72";      // muted turquoise landmass
-const LAND_EDGE = "#14B8A6";      // brand turquoise coastline
-const LAND_POLAR = "#8fe3dd";     // cyan-tinted ice
+const OCEAN_DEEP = "#060c1a";     // navy, near the app background
+const OCEAN_SHALLOW = "#0a1c33";  // navy lifted toward blue
+const OCEAN_EQUATOR = "#0f2f4d";  // brightest blue at the equator
+const LAND_BASE = "#1c6b8f";      // steel-blue landmass
+const LAND_EDGE = "#06B6D4";      // brand cyan coastline
+const LAND_POLAR = "#cfeefb";     // pale blue ice
 
 export function buildGlobeTextures(dark: boolean): GlobeTextures {
   const color = document.createElement("canvas");
@@ -118,9 +121,11 @@ export function buildGlobeTextures(dark: boolean): GlobeTextures {
     tracePolygon(cc, poly);
     cc.fillStyle = fill;
     cc.fill("evenodd");
-    // Coastline in brand turquoise — this is what makes the borders legible.
+    // Coastline in brand cyan — this is what makes the borders legible.
+    // Scaled with the canvas so it stays a hairline at any texture size.
     cc.strokeStyle = mix(LAND_EDGE, LAND_POLAR, icy);
-    cc.lineWidth = 1.2;
+    cc.lineWidth = Math.max(1, W / 1700);
+    cc.lineJoin = "round";
     cc.stroke();
 
     // Land is matte in the roughness map.
