@@ -64,6 +64,13 @@ export interface MindBand {
 export interface MindScore {
   period: MindPeriod;
   total: number | null;
+  /**
+   * The window is the current, still-unfolding period and nothing has been
+   * logged in it yet — so a computed 0 would be misleading and demotivating.
+   * When true, surfaces should show a friendly "score builds as you go" state
+   * instead of a red zero.
+   */
+  pending: boolean;
   components: MindComponent[];
   objectives: Objective[];
   objectivesScore: number; // 0..100
@@ -238,8 +245,23 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
 
   const total = applicableWeight === 0 ? null : Math.round(components.reduce((s, c) => s + c.contribution, 0));
 
+  // "Fresh period" detection: the window runs up to today and nothing has been
+  // logged in it yet. Every real activity signal is checked, so a single trade,
+  // habit tick or review flips it off. Past windows always have their earliest
+  // activity inside them (all-time is anchored to it), so this only fires for a
+  // just-started week or month — never for a completed one.
+  const tradesInWindow = input.trades.filter((t) => {
+    const d = new Date(dayKey(t.date_time) + "T12:00:00");
+    return d >= start && d <= clampEnd;
+  }).length;
+  const anyActivity =
+    tradesInWindow > 0 || habitCompleted > 0 || reviewsDone > 0 ||
+    bestDays.size > 0 || analysedDays.size > 0;
+  const windowIncludesToday = start <= endOfDay(now) && clampEnd >= startOfDay(now);
+  const pending = !anyActivity && windowIncludesToday;
+
   return {
-    period, total, components, objectives, objectivesScore,
+    period, total, pending, components, objectives, objectivesScore,
     band: bandFor(total), tradeCount, habitCompleted, habitExpected,
     rangeStart: start, rangeEnd: clampEnd,
   };

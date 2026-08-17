@@ -2,22 +2,31 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Target, Flame, ClipboardCheck, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getTrades, getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getAnalyses,
 } from "@/lib/supabase/queries";
 import {
-  computeMindScoreAll, MIND_BANDS, BAND_COLORS, bandColorFor,
-  type MindPeriod, type MindScore, type MindInputs,
+  bandColorFor, computeMindScoreAll,
+  type MindPeriod, type MindScore, type MindInputs, type MindComponent,
 } from "@/lib/mind-score/mind-score";
 
+const TURQUOISE = "#14B8A6";
 const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
 
-const PERIOD_LABEL: Record<MindPeriod, string> = { week: "Week", month: "Month", all: "All time" };
+const PERIOD_LABEL: Record<MindPeriod, string> = { week: "This week", month: "This month", all: "All time" };
 
-/** The MC Mindscore breakdown — period scores, band scale, calculation and legend,
- *  laid out compactly to fit one screen. Self-loading so it drops into a route or tab. */
+/** Plain-language identity for each of the three parts of the score.
+ *  No weights, no "points" — just what it means and how it feels. */
+const PART_META: Record<MindComponent["key"], { icon: typeof Target; title: string; sub: string; accent: string }> = {
+  rules:      { icon: Target,         title: "Following your rules", sub: "Sticking to your plan on every trade",     accent: "#14B8A6" },
+  habits:     { icon: Flame,          title: "Daily habits",         sub: "The routines you keep away from the charts", accent: "#06B6D4" },
+  objectives: { icon: ClipboardCheck, title: "Doing the work",       sub: "Reviews, prep and logging your best trade",  accent: "#14B8A6" },
+};
+
+/** The MC Mindscore — deliberately simple: one big number, one bar, and three
+ *  plain-language parts that show what lifts it. Self-loading, drops into a tab. */
 export function MindScoreBreakdown() {
   const [data, setData] = useState<MindInputs | null>(null);
   const [period, setPeriod] = useState<MindPeriod>("month");
@@ -43,13 +52,13 @@ export function MindScoreBreakdown() {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Period switch — week / month / all-time at a glance, doubles as the selector */}
+    <div className="space-y-4">
+      {/* Pick a period — each shows its own score */}
       <div className="grid grid-cols-3 gap-2.5">
         {(["week", "month", "all"] as MindPeriod[]).map((p) => {
           const s = scores[p];
-          const c = bandColorFor(s.total);
           const active = period === p;
+          const c = s.pending ? TURQUOISE : bandColorFor(s.total);
           return (
             <button
               key={p}
@@ -61,143 +70,154 @@ export function MindScoreBreakdown() {
               )}
             >
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{PERIOD_LABEL[p]}</p>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black tabular-nums leading-none" style={{ color: c }}>
-                  {s.total == null ? "—" : s.total}
-                </span>
-                <span className="text-[11px] font-medium truncate" style={{ color: c }}>{s.total == null ? "" : s.band.label}</span>
-              </div>
+              <span className="text-2xl font-black tabular-nums leading-none" style={{ color: c }}>
+                {s.pending ? "·" : s.total == null ? "—" : s.total}
+              </span>
             </button>
           );
         })}
       </div>
 
-      {/* Selected period — band + scale, condensed */}
-      <BandPanel score={score} />
+      {/* Hero — the one number, or a friendly "just getting started" note */}
+      {score.pending ? <PendingHero period={period} /> : <ScoreHero score={score} />}
 
-      {/* Calculation + objectives side by side */}
-      <div className="grid gap-3 md:grid-cols-2 items-start">
-        <ComponentBreakdown score={score} />
-        <ObjectivesBreakdown score={score} />
-      </div>
+      {/* What makes up the score — three plain-language parts */}
+      <ScoreParts score={score} muted={score.pending} />
+
+      {/* The work that lifts it */}
+      <ObjectivesList score={score} />
     </div>
   );
 }
 
-/* ── Band scale + current-state explanation (condensed) ───────────────── */
-function BandPanel({ score }: { score: MindScore }) {
+/* ── Hero: the score, big and clear ───────────────────────────────────── */
+function ScoreHero({ score }: { score: MindScore }) {
   const c = bandColorFor(score.total);
-  const marker = score.total ?? 0;
+  const pct = score.total ?? 0;
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-2xl border border-border bg-card p-5">
       <div className="flex items-center gap-4">
-        <span className="text-4xl font-black tabular-nums leading-none shrink-0" style={{ color: c }}>
-          {score.total == null ? "—" : score.total}
-        </span>
+        <div
+          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border"
+          style={{ borderColor: alpha(c, 40), background: alpha(c, 10) }}
+        >
+          <span className="text-3xl font-black tabular-nums leading-none" style={{ color: c }}>
+            {score.total == null ? "—" : score.total}
+          </span>
+        </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold" style={{ color: c }}>{score.total == null ? "No data yet" : score.band.label}</p>
-          <p className="text-xs text-muted-foreground leading-snug">{score.band.description}</p>
+          <p className="text-base font-bold" style={{ color: c }}>{score.total == null ? "No data yet" : score.band.label}</p>
+          <p className="text-xs text-muted-foreground leading-snug mt-0.5">{score.band.description}</p>
         </div>
       </div>
 
-      {/* Band scale */}
-      <div className="mt-3 relative">
-        <div className="flex h-2.5 w-full overflow-hidden rounded-full">
-          {MIND_BANDS.map((b, i) => (
-            <div key={b.min} className="h-full flex-1" style={{ background: alpha(BAND_COLORS[i], 55) }} />
-          ))}
+      {/* One simple bar, 0 → 100 */}
+      <div className="mt-4">
+        <div className="h-3 w-full overflow-hidden rounded-full bg-muted-foreground/12">
+          <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%`, background: c }} />
         </div>
-        {score.total != null && (
-          <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2" style={{ left: `${marker}%` }}>
-            <div className="w-3.5 h-3.5 rounded-full border-2 border-card" style={{ background: c, boxShadow: `0 0 0 1px ${c}, 0 0 8px ${alpha(c, 60)}` }} />
+        <div className="mt-1.5 flex justify-between text-[10px] font-medium text-muted-foreground/70">
+          <span>0</span>
+          <span>Higher is better</span>
+          <span>100</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Hero: fresh period, nothing logged yet ───────────────────────────── */
+function PendingHero({ period }: { period: MindPeriod }) {
+  const label = period === "week" ? "week" : period === "month" ? "month" : "period";
+  return (
+    <div className="rounded-2xl border border-primary/25 bg-primary/5 p-5">
+      <div className="flex items-center gap-4">
+        <div
+          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border"
+          style={{ borderColor: alpha(TURQUOISE, 40), background: alpha(TURQUOISE, 12) }}
+        >
+          <Sparkles className="h-7 w-7" style={{ color: TURQUOISE }} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-bold" style={{ color: TURQUOISE }}>A fresh {label}</p>
+          <p className="text-xs text-muted-foreground leading-snug mt-0.5">
+            Your score is still being calculated — it builds up as you log trades,
+            tick your habits and do the work. Nothing to worry about yet.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── The three parts, in plain language ───────────────────────────────── */
+function ScoreParts({ score, muted }: { score: MindScore; muted: boolean }) {
+  return (
+    <div className="space-y-2.5">
+      {score.components.map((comp) => {
+        const meta = PART_META[comp.key];
+        const Icon = meta.icon;
+        const has = comp.applicable && comp.value != null;
+        const value = comp.value ?? 0;
+        const accent = muted || !has ? "var(--muted-foreground)" : meta.accent;
+        return (
+          <div key={comp.key} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+              style={{ background: has && !muted ? alpha(meta.accent, 12) : "var(--muted)" }}
+            >
+              <Icon className="h-5 w-5" style={{ color: accent }} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold truncate">{meta.title}</p>
+                <span className="text-sm font-black tabular-nums shrink-0" style={{ color: accent }}>
+                  {has ? `${value}%` : "—"}
+                </span>
+              </div>
+              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-muted-foreground/12">
+                <div
+                  className="h-full rounded-full transition-[width] duration-700"
+                  style={{ width: `${has ? value : 0}%`, background: accent }}
+                />
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground leading-snug">{meta.sub}</p>
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* What each zone means — aligned under its slice of the scale */}
-      <div className="mt-2 flex w-full gap-1">
-        {MIND_BANDS.map((b, i) => {
-          const active = score.total != null && score.total >= b.min && (score.total < b.max || b.max === 100);
-          return (
-            <div key={b.min} className="flex-1 min-w-0 text-center">
-              <p className="text-[10px] font-bold leading-tight" style={{ color: active ? BAND_COLORS[i] : alpha(BAND_COLORS[i], 65) }}>
-                {b.label}
-              </p>
-              <p className="text-[9px] tabular-nums text-muted-foreground/70">{b.min}–{b.max}</p>
-            </div>
-          );
-        })}
-      </div>
+        );
+      })}
     </div>
   );
 }
 
-/* ── How the score is calculated (condensed) ──────────────────────────── */
-function ComponentBreakdown({ score }: { score: MindScore }) {
-  const c = bandColorFor(score.total);
+/* ── Objectives — a simple checklist of the work that lifts the score ──── */
+function ObjectivesList({ score }: { score: MindScore }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
-      <p className="text-sm font-semibold">How your score is built</p>
-      <div className="space-y-2">
-        {score.components.map((comp) => {
-          const applicable = comp.applicable;
-          return (
-            <div key={comp.key}>
-              <div className="flex items-center justify-between gap-2 text-xs">
-                <span className="font-medium">{comp.label}</span>
-                <span className="tabular-nums text-muted-foreground">
-                  {applicable ? (
-                    <>weight {Math.round(comp.effectiveWeight)}% · <span className="font-semibold text-foreground/70">+{comp.contribution.toFixed(1)} pts</span></>
-                  ) : "no data this period"}
-                </span>
-              </div>
-              <div className="mt-1 flex items-center gap-2">
-                <div className="h-1.5 flex-1 rounded-full bg-muted-foreground/12 overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${comp.value ?? 0}%`, background: applicable ? c : "var(--muted-foreground)" }} />
-                </div>
-                <span className="text-xs font-bold tabular-nums w-9 text-right" style={{ color: applicable ? c : "var(--muted-foreground)" }}>
-                  {comp.value == null ? "—" : `${comp.value}%`}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="flex items-center justify-between border-t border-border/60 pt-2">
-        <span className="text-xs font-semibold">MC Mindscore</span>
-        <span className="text-lg font-black tabular-nums" style={{ color: c }}>
-          {score.total == null ? "—" : score.total}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ── Objectives — the process points that lift the score (condensed) ───── */
-function ObjectivesBreakdown({ score }: { score: MindScore }) {
-  const c = bandColorFor(score.total);
-  return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-sm font-semibold">Objectives</p>
-        <span className="text-xs font-bold tabular-nums" style={{ color: c }}>{Math.round(score.objectivesScore)}%</span>
-      </div>
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <p className="text-sm font-semibold mb-2.5">What lifts your score</p>
       <div className="space-y-2">
         {score.objectives.map((o) => {
-          const pct = Math.round(o.rate * 100);
-          const full = o.rate >= 1;
+          const done = o.rate >= 1;
+          const capped = Math.min(o.progress, o.target);
           return (
-            <Link key={o.key} href={o.href}
-              className="block rounded-lg border border-border/70 px-3 py-2 transition-colors hover:border-primary/30 hover:bg-muted/30">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold">{o.label}</span>
-                <span className={cn("text-[11px] font-bold tabular-nums", full ? "text-success" : "text-muted-foreground")}>
-                  {Math.min(o.progress, o.target)}/{o.target}
-                </span>
-              </div>
-              <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted-foreground/12 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: full ? "#22c55e" : c }} />
-              </div>
+            <Link
+              key={o.key}
+              href={o.href}
+              className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2.5 transition-colors hover:border-primary/30 hover:bg-muted/30"
+            >
+              <span
+                className={cn(
+                  "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold",
+                  done ? "border-transparent text-white" : "border-border text-muted-foreground"
+                )}
+                style={done ? { background: "#22c55e" } : undefined}
+              >
+                {done ? "✓" : capped}
+              </span>
+              <span className="text-sm font-medium flex-1 truncate">{o.label}</span>
+              <span className={cn("text-xs font-bold tabular-nums shrink-0", done ? "text-success" : "text-muted-foreground")}>
+                {capped}/{o.target}
+              </span>
             </Link>
           );
         })}
@@ -205,5 +225,3 @@ function ObjectivesBreakdown({ score }: { score: MindScore }) {
     </div>
   );
 }
-
-/* ── What the percentages mean (condensed inline rows) ────────────────── */

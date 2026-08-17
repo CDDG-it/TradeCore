@@ -437,16 +437,19 @@ export default function JournalPage() {
             </div>
 
             <CardContent className="p-4">
-              {/* ── MONTH VIEW ── */}
+              {/* ── MONTH VIEW — Tradezella-style day summaries ──
+                   Each day is one tile tinted by its net R, so the whole month
+                   reads at a glance and fits on screen without scrolling. The
+                   day's R is the headline; execution is a small footnote. */}
               {calendarPeriod === "month" && (
                 <>
                 {/* Day headers */}
-                <div className="grid grid-cols-7 mb-2">
+                <div className="grid grid-cols-7 gap-1 mb-1.5">
                   {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                    <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 py-1">{d}</div>
+                    <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 py-0.5">{d}</div>
                   ))}
                 </div>
-                {/* Calendar grid — compact cells, same chip style as the week view */}
+                {/* Calendar grid — compact, uniform day tiles */}
                 <div className="grid grid-cols-7 gap-1">
                   {Array.from({ length: startPad }).map((_, i) => (
                     <div key={`pad-${i}`} />
@@ -455,47 +458,48 @@ export default function JournalPage() {
                     const key = format(day, "yyyy-MM-dd");
                     const dayTrades = tradesByDay[key] || [];
                     const isCurrentMonth = isSameMonth(day, calendarMonth);
+                    const has = dayTrades.length > 0;
+                    const dayR = dayTrades.reduce((s, t) => s + tradeR(t), 0);
+                    const goodCount = dayTrades.filter((t) => t.execution_quality === "good").length;
+                    const badCount = dayTrades.filter((t) => t.execution_quality === "bad").length;
+                    // Tile tint + R colour follow the day's net R: green up, red down, amber flat.
+                    const tone = !has
+                      ? { text: "", bg: "", ring: "" }
+                      : dayR > 0
+                      ? { text: "text-success", bg: "bg-success/10", ring: "border-success/25 hover:border-success/45" }
+                      : dayR < 0
+                      ? { text: "text-destructive", bg: "bg-destructive/10", ring: "border-destructive/25 hover:border-destructive/45" }
+                      : { text: "text-warning", bg: "bg-warning/10", ring: "border-warning/25 hover:border-warning/45" };
                     return (
                       <div key={key}
-                        className={cn("min-h-[64px] sm:min-h-[72px] rounded-lg p-1.5 flex flex-col gap-1 border transition-colors",
+                        className={cn("min-h-[54px] sm:min-h-[66px] rounded-lg p-1.5 flex flex-col border transition-colors",
                           isToday(day)
-                            ? "border-primary/40 bg-primary/8"
-                            : dayTrades.length > 0
-                            ? "border-border/50 bg-muted/20 hover:border-primary/30"
+                            ? "border-primary/50 bg-primary/8"
+                            : has
+                            ? cn(tone.bg, tone.ring)
                             : "border-border/25 bg-muted/5")}>
-                        <p className={cn("text-xs font-bold text-center shrink-0 leading-none",
-                          isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/75" : "text-muted-foreground/30")}>
-                          {format(day, "d")}
-                        </p>
-                        {dayTrades.length > 0 && (
-                          <div className="flex flex-col gap-1 flex-1 min-h-0">
-                            {dayTrades.map((t) => (
-                              <Link key={t.id} href={`/journal/${t.id}`}
-                                title={t.execution_quality ? `${instrumentName(t.instrument)} · ${t.execution_quality} execution` : instrumentName(t.instrument)}
-                                className={cn(
-                                  "flex-1 flex flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1 leading-none transition-colors min-h-0",
-                                  t.result === "win" ? "bg-success/15 hover:bg-success/25"
-                                    : t.result === "loss" ? "bg-destructive/15 hover:bg-destructive/25"
-                                    : "bg-warning/15 hover:bg-warning/25"
-                                )}>
-                                <span className={cn("text-[11px] font-extrabold text-center leading-tight tracking-tight",
-                                  t.result === "win" ? "text-success"
-                                    : t.result === "loss" ? "text-destructive"
-                                    : "text-warning")}>
-                                  {instrumentName(t.instrument)}
-                                </span>
-                                {t.execution_quality && (
-                                  <span className={cn(
-                                    "hidden sm:inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-none",
-                                    t.execution_quality === "good"
-                                      ? "bg-success/20 text-success"
-                                      : "bg-destructive/20 text-destructive"
-                                  )}>
-                                    {t.execution_quality === "good" ? "✓ Good" : "✗ Bad"}
-                                  </span>
-                                )}
-                              </Link>
-                            ))}
+                        {/* Top row — day number + tiny execution footnote */}
+                        <div className="flex items-start justify-between leading-none">
+                          <span className={cn("text-[11px] font-bold",
+                            isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/75" : "text-muted-foreground/30")}>
+                            {format(day, "d")}
+                          </span>
+                          {has && (goodCount > 0 || badCount > 0) && (
+                            <span className="flex items-center gap-1 text-[9px] font-bold tabular-nums">
+                              {goodCount > 0 && <span className="text-success/80">✓{goodCount}</span>}
+                              {badCount > 0 && <span className="text-destructive/80">✗{badCount}</span>}
+                            </span>
+                          )}
+                        </div>
+                        {/* Headline — net R for the day */}
+                        {has && (
+                          <div className="flex-1 flex flex-col items-center justify-center gap-0.5 min-h-0">
+                            <span className={cn("text-sm sm:text-base font-black tabular-nums leading-none", tone.text)}>
+                              {formatTotalR(dayR)}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground/60 leading-none">
+                              {dayTrades.length} trade{dayTrades.length !== 1 ? "s" : ""}
+                            </span>
                           </div>
                         )}
                       </div>

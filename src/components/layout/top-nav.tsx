@@ -14,7 +14,28 @@ const TURQUOISE = "#14B8A6";
 const isActive = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(href + "/");
 
-function DesktopItem({ href, label, active }: { href: string; label: string; active: boolean }) {
+/** A "Soon" pill for features that are announced but not yet live. */
+function SoonBadge() {
+  return (
+    <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary/80">
+      Soon
+    </span>
+  );
+}
+
+function DesktopItem({ href, label, active, soon }: { href: string; label: string; active: boolean; soon?: boolean }) {
+  if (soon) {
+    return (
+      <span
+        aria-disabled
+        title="Coming soon"
+        className="relative flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-[13px] font-semibold whitespace-nowrap text-sidebar-foreground/35 cursor-default"
+      >
+        {label}
+        <SoonBadge />
+      </span>
+    );
+  }
   return (
     <Link
       href={href}
@@ -80,7 +101,7 @@ export function TopNav() {
           {/* Centre — desktop nav */}
           <nav className="hidden lg:flex items-center justify-center gap-1 min-w-0 max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {PRIMARY_NAV.map((tab) => (
-              <DesktopItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} />
+              <DesktopItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} soon={tab.soon} />
             ))}
           </nav>
 
@@ -112,6 +133,18 @@ export function TopNav() {
           <div className="flex-1 overflow-y-auto px-4 py-5 space-y-1">
             {PRIMARY_NAV.map((tab) => {
               const active = isActive(pathname, tab.href);
+              if (tab.soon) {
+                return (
+                  <div
+                    key={tab.href}
+                    aria-disabled
+                    className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-sidebar-foreground/40"
+                  >
+                    {tab.label}
+                    <SoonBadge />
+                  </div>
+                );
+              }
               return (
                 <Link
                   key={tab.href}

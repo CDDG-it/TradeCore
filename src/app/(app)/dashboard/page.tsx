@@ -275,8 +275,9 @@ const METER_BARS = 22;
 function MindScoreOrb({ score, period, onPeriodChange }: {
   score: MindScore | null; period: Period; onPeriodChange: (p: Period) => void;
 }) {
+  const pending = score?.pending ?? false;
   const target = score?.total ?? 0;
-  const hasData = score?.total != null;
+  const hasData = !pending && score?.total != null;
   const [display, setDisplay] = useState(0);
   const [prog, setProg] = useState(0); // 0..1 animated fill
   const raf = useRef(0);
@@ -296,7 +297,7 @@ function MindScoreOrb({ score, period, onPeriodChange }: {
     return () => cancelAnimationFrame(raf.current);
   }, [target]);
 
-  const color = hasData ? bandColorFor(target) : "var(--muted-foreground)";
+  const color = pending ? TURQUOISE : hasData ? bandColorFor(target) : "var(--muted-foreground)";
   const filled = Math.round(prog * METER_BARS);
 
   const comp = (key: "rules" | "habits" | "objectives") => score?.components.find((c) => c.key === key)?.value ?? null;
@@ -314,10 +315,10 @@ function MindScoreOrb({ score, period, onPeriodChange }: {
       <div className="flex items-end gap-3 mt-2.5">
         <div className="shrink-0">
           <p className="text-[40px] font-black tabular-nums leading-none" style={{ color }}>
-            {hasData ? display : "—"}
+            {pending ? "·" : hasData ? display : "—"}
           </p>
-          <p className="text-[11px] font-medium mt-1" style={{ color: hasData ? color : "var(--muted-foreground)" }}>
-            {hasData ? score!.band.label : "No data yet"}
+          <p className="text-[11px] font-medium mt-1" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
+            {pending ? (period === "week" ? "New week" : "New month") : hasData ? score!.band.label : "No data yet"}
           </p>
         </div>
         <div className="group/meter flex-1 flex items-end gap-[3px] h-16 pb-0.5" aria-hidden>
@@ -340,12 +341,19 @@ function MindScoreOrb({ score, period, onPeriodChange }: {
         </div>
       </div>
 
-      {/* The three inputs */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5">
-        <MiniStat label="Rules" value={comp("rules")} accent={color} />
-        <MiniStat label="Habits" value={comp("habits")} accent={CYAN} />
-        <MiniStat label="Objectives" value={comp("objectives")} accent={TURQUOISE} />
-      </div>
+      {/* The three inputs — or, at the very start of a fresh period, a reassuring note */}
+      {pending ? (
+        <p className="mt-2.5 text-[11px] leading-snug text-muted-foreground">
+          Your score for this {period} is still being calculated — it builds as you
+          log trades, tick habits and do the work.
+        </p>
+      ) : (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5">
+          <MiniStat label="Rules" value={comp("rules")} accent={color} />
+          <MiniStat label="Habits" value={comp("habits")} accent={CYAN} />
+          <MiniStat label="Objectives" value={comp("objectives")} accent={TURQUOISE} />
+        </div>
+      )}
 
       {/* Objectives strip — process work that lifts the score */}
       <div className="mt-auto pt-3">
