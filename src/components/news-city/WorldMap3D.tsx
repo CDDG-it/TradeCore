@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Line, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { useTheme } from "@/lib/theme-context";
@@ -9,6 +9,9 @@ import {
   FINANCIAL_CENTERS, HUB_CENTER_ID, latLngToVec3, groupNewsByCenter, type CenterNews,
 } from "@/lib/news-city/geo";
 import type { NewsItem } from "@/lib/news-city/types";
+// Real-world country outlines (coastlines + borders), decoded from the
+// world-atlas 110m TopoJSON into flat [lng,lat] polylines.
+import WORLD_ARCS from "@/lib/news-city/world-arcs.json";
 
 const R = 5; // globe radius
 
@@ -20,29 +23,33 @@ const TONE_HEX: Record<CenterNews["tone"], string> = {
 const TURQUOISE = "#14B8A6";
 const CYAN = "#06B6D4";
 
-/* ── Fibonacci point cloud on the sphere — the "digital earth" surface ──── */
-function SurfaceDots({ color }: { color: string }) {
-  const positions = useMemo(() => {
-    const N = 1400;
-    const arr = new Float32Array(N * 3);
-    const golden = Math.PI * (3 - Math.sqrt(5));
-    for (let i = 0; i < N; i++) {
-      const y = 1 - (i / (N - 1)) * 2;
-      const r = Math.sqrt(1 - y * y);
-      const t = golden * i;
-      arr[i * 3] = Math.cos(t) * r * R * 1.002;
-      arr[i * 3 + 1] = y * R * 1.002;
-      arr[i * 3 + 2] = Math.sin(t) * r * R * 1.002;
+// Reusable scratch vectors for per-frame facing checks (avoid allocations).
+const _wp = new THREE.Vector3();
+const _nrm = new THREE.Vector3();
+const _cam = new THREE.Vector3();
+
+/* ── Real country outlines — coastlines + borders drawn on the globe ────── */
+function CountryBorders({ color }: { color: string }) {
+  const geometry = useMemo(() => {
+    const pts: number[] = [];
+    const RR = R * 1.004; // sit just above the ocean sphere
+    for (const arc of WORLD_ARCS as [number, number][][]) {
+      for (let i = 1; i < arc.length; i++) {
+        const [lng0, lat0] = arc[i - 1];
+        const [lng1, lat1] = arc[i];
+        const a = latLngToVec3(lat0, lng0, RR);
+        const b = latLngToVec3(lat1, lng1, RR);
+        pts.push(a[0], a[1], a[2], b[0], b[1], b[2]);
+      }
     }
-    return arr;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    return g;
   }, []);
   return (
-    <points>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-      </bufferGeometry>
-      <pointsMaterial color={color} size={0.045} sizeAttenuation transparent opacity={0.5} />
-    </points>
+    <lineSegments geometry={geometry}>
+      <lineBasicMaterial color={color} transparent opacity={0.85} />
+    </lineSegments>
   );
 }
 
@@ -80,7 +87,7 @@ function Graticule({ color }: { color: string }) {
   }, []);
   return (
     <lineSegments geometry={geometry}>
-      <lineBasicMaterial color={color} transparent opacity={0.18} />
+      <lineBasicMaterial color={color} transparent opacity={0.1} />
     </lineSegments>
   );
 }
@@ -92,7 +99,12 @@ function Marker({
   data: CenterNews; selected: boolean; onSelect: (id: string) => void;
 }) {
   const glow = useRef<THREE.Mesh>(null);
+  const posGroup = useRef<THREE.Group>(null);
+  const { camera } = useThree();
   const [hovered, setHovered] = useState(false);
+  // Whether the city currently faces the camera — drives label visibility so
+  // far-side labels don't bleed through the globe.
+  const [front, setFront] = useState(true);
   const hex = TONE_HEX[data.tone];
   const surface = useMemo<[number, number, number]>(
     () => latLngToVec3(data.center.lat, data.center.lng, R),
@@ -105,11 +117,20 @@ function Marker({
   );
 
   useFrame(({ clock }) => {
-    if (!glow.current) return;
-    const t = clock.getElapsedTime();
-    const base = selected ? 1.5 : hovered ? 1.3 : 1;
-    const pulse = 1 + Math.sin(t * 2.4 + surface[0]) * 0.18;
-    glow.current.scale.setScalar(base * pulse);
+    if (glow.current) {
+      const t = clock.getElapsedTime();
+      const base = selected ? 1.5 : hovered ? 1.3 : 1;
+      const pulse = 1 + Math.sin(t * 2.4 + surface[0]) * 0.18;
+      glow.current.scale.setScalar(base * pulse);
+    }
+    // Facing test: outward normal at the marker vs. the direction to the camera.
+    if (posGroup.current) {
+      posGroup.current.getWorldPosition(_wp);
+      _nrm.copy(_wp).normalize();
+      _cam.copy(camera.position).sub(_wp).normalize();
+      const f = _nrm.dot(_cam) > 0.02;
+      setFront((prev) => (prev === f ? prev : f));
+    }
   });
 
   const active = selected || hovered;
@@ -120,7 +141,7 @@ function Marker({
       <Line points={[surface, beamEnd]} color={hex} lineWidth={active ? 2.2 : 1.2} transparent opacity={active ? 0.9 : 0.5} />
 
       {/* Core dot + soft glow */}
-      <group position={surface}>
+      <group ref={posGroup} position={surface}>
         <mesh
           onClick={(e) => { e.stopPropagation(); onSelect(data.center.id); }}
           onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = "pointer"; }}
@@ -134,21 +155,22 @@ function Marker({
           <meshBasicMaterial color={hex} transparent opacity={0.28} />
         </mesh>
 
-        {/* Label */}
-        <Html center distanceFactor={11} position={[0, 0.42, 0]} pointerEvents="none" zIndexRange={[20, 0]}>
-          <div
-            className="select-none whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-semibold transition-opacity"
-            style={{
-              color: active ? "#fff" : "rgba(255,255,255,0.82)",
-              background: active ? `${hex}` : "rgba(11,17,32,0.55)",
-              border: `1px solid ${active ? hex : "rgba(255,255,255,0.12)"}`,
-              opacity: active ? 1 : 0.9,
-            }}
-          >
-            {data.center.name}
-            <span className="ml-1 opacity-70">· {data.items.length}</span>
-          </div>
-        </Html>
+        {/* Label — only while the city faces the camera */}
+        {(front || active) && (
+          <Html center distanceFactor={11} position={[0, 0.42, 0]} pointerEvents="none" zIndexRange={[20, 0]}>
+            <div
+              className="select-none whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-semibold"
+              style={{
+                color: active ? "#fff" : "rgba(255,255,255,0.82)",
+                background: active ? `${hex}` : "rgba(11,17,32,0.55)",
+                border: `1px solid ${active ? hex : "rgba(255,255,255,0.12)"}`,
+              }}
+            >
+              {data.center.name}
+              <span className="ml-1 opacity-70">· {data.items.length}</span>
+            </div>
+          </Html>
+        )}
       </group>
     </group>
   );
@@ -203,7 +225,7 @@ function Globe({
 
   return (
     <group ref={group}>
-      {/* Base sphere */}
+      {/* Base sphere (ocean) */}
       <mesh>
         <sphereGeometry args={[R, 48, 48]} />
         <meshPhongMaterial
@@ -220,8 +242,10 @@ function Globe({
         <meshBasicMaterial color={TURQUOISE} transparent opacity={0.05} side={THREE.BackSide} />
       </mesh>
 
-      <SurfaceDots color={dark ? TURQUOISE : "#2b7d8f"} />
-      <Graticule color={dark ? CYAN : "#5b6b82"} />
+      {/* Faint lat/long grid behind the land for a globe feel */}
+      <Graticule color={dark ? CYAN : "#7d8ba1"} />
+      {/* The real world map — country borders + coastlines */}
+      <CountryBorders color={dark ? "#4fe6cf" : "#1f6f7d"} />
 
       {/* Arcs from the New York hub */}
       {centers
