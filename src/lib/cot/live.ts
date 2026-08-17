@@ -7,7 +7,7 @@
  * Runs server-side only.
  */
 
-import type { CotGroup, CotInstrument, CotSnapshot, CotWeek } from "./types";
+import type { CotGroup, CotInstrument, CotSignal, CotSnapshot, CotWeek } from "./types";
 
 const CFTC_RESOURCE = "https://publicreporting.cftc.gov/resource/6dca-aqww.json";
 const LOOKBACK_WEEKS = 52;
@@ -73,6 +73,74 @@ async function fetchMarket(like: string): Promise<CotWeek[]> {
   return rows.map(toWeek).reverse(); // ascending by date
 }
 
+const kFmt = (n: number) => `${Math.abs(n) >= 1000 ? `${(Math.abs(n) / 1000).toFixed(1)}k` : Math.abs(n)}`;
+
+/**
+ * Turn the raw numbers into one explainable read. Pure function of the data —
+ * every branch is a stated rule, so the UI can show *why* it says what it says.
+ */
+function deriveSignal(
+  label: string, cotIndex: number, netSpec: number, prevNet: number, chg: number
+): CotSignal {
+  const flipped = (netSpec > 0 && prevNet < 0) || (netSpec < 0 && prevNet > 0);
+  const shrinking = Math.abs(netSpec) < Math.abs(prevNet);
+  const meaningful = Math.abs(chg) > Math.abs(prevNet) * 0.1;
+
+  if (flipped) {
+    return {
+      kind: "flipped", label: netSpec > 0 ? "Flipped net long" : "Flipped net short", weight: 2,
+      detail: `Large specs crossed from ${netSpec > 0 ? "net short to net long" : "net long to net short"} in ${label} this week — a change of stance, not just of size.`,
+    };
+  }
+  // Crowding is judged on the 1-year range, but the wording must respect which
+  // side specs are actually on — "most bullish in a year" while still net short
+  // is a washed-out short base, not a crowded long.
+  if (cotIndex >= 90) {
+    return netSpec > 0
+      ? {
+          kind: "crowded-long", label: "Crowded long", weight: 2,
+          detail: `Specs are their most net-long in a year. A crowded long has few buyers left to add, so ${label} carries unwind risk if the story cracks.`,
+        }
+      : {
+          kind: "crowded-long", label: "Shorts nearly gone", weight: 2,
+          detail: `Specs are still net short, but the least short in a year — the bearish bet has largely been covered, so ${label} has lost that tailwind.`,
+        };
+  }
+  if (cotIndex <= 10) {
+    return netSpec < 0
+      ? {
+          kind: "crowded-short", label: "Crowded short", weight: 2,
+          detail: `Specs are their most net-short in a year. Heavy shorts are fuel for a squeeze if ${label} catches a bid.`,
+        }
+      : {
+          kind: "crowded-short", label: "Longs washed out", weight: 2,
+          detail: `Specs are still net long, but the least long in a year — the bullish crowd has capitulated, which historically marks a low-expectation base in ${label}.`,
+        };
+  }
+  if (meaningful && shrinking) {
+    return {
+      kind: "unwinding", label: "Unwinding", weight: 1,
+      detail: `Specs cut ${kFmt(chg)} contracts of exposure — conviction is draining rather than reversing.`,
+    };
+  }
+  if (meaningful && chg > 0) {
+    return {
+      kind: "building-long", label: "Adding longs", weight: 1,
+      detail: `Specs added ${kFmt(chg)} contracts net long — money is moving with the trend, not against it.`,
+    };
+  }
+  if (meaningful && chg < 0) {
+    return {
+      kind: "building-short", label: "Adding shorts", weight: 1,
+      detail: `Specs added ${kFmt(chg)} contracts net short — pressure is building on the downside.`,
+    };
+  }
+  return {
+    kind: "balanced", label: "Balanced", weight: 0,
+    detail: `No crowding and little change this week — positioning is not the story in ${label} right now.`,
+  };
+}
+
 function buildInstrument(
   meta: { symbol: string; label: string; group: CotGroup },
   weeks: CotWeek[]
@@ -93,16 +161,21 @@ function buildInstrument(
   const netThresh = latest.openInterest * 0.02; // 2% of OI ≈ "meaningful"
   const bias = latest.netSpec > netThresh ? "long" : latest.netSpec < -netThresh ? "short" : "neutral";
 
+  const netSpecChg = latest.netSpec - prev.netSpec;
+
   return {
     symbol: meta.symbol,
     label: meta.label,
     group: meta.group,
     latest,
     prev,
-    netSpecChg: latest.netSpec - prev.netSpec,
+    netSpecChg,
     cotIndex,
     specLongShare,
     bias,
+    oiChg: latest.openInterest - prev.openInterest,
+    netShareOfOi: latest.openInterest > 0 ? Math.abs(latest.netSpec) / latest.openInterest : 0,
+    signal: deriveSignal(meta.symbol, cotIndex, latest.netSpec, prev.netSpec, netSpecChg),
     history: weeks.map((w) => ({ date: w.date, netSpec: w.netSpec })),
   };
 }
