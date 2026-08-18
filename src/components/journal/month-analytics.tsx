@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
 import type { TradeJournalEntry } from "@/lib/types";
@@ -91,17 +90,15 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
   const ratedExec = goodExec + trades.filter((t) => t.execution_quality === "bad").length;
   const execRate = ratedExec ? Math.round((goodExec / ratedExec) * 100) : null;
 
-  // Best and worst trading day by R.
-  const byDay = useMemo(() => {
-    const map = new Map<string, number>();
-    trades.forEach((t) => {
-      const k = t.date_time.slice(0, 10);
-      map.set(k, (map.get(k) ?? 0) + tradeR(t));
-    });
-    return [...map.entries()].sort((a, b) => b[1] - a[1]);
-  }, [trades]);
-  const best = byDay[0];
-  const worst = byDay.length > 1 ? byDay[byDay.length - 1] : null;
+  // Long vs short — count, win rate and R for each side.
+  const longs = trades.filter((t) => t.direction === "long");
+  const shorts = trades.filter((t) => t.direction === "short");
+  const sideWinRate = (list: TradeJournalEntry[]) =>
+    list.length ? Math.round((list.filter((t) => t.result === "win").length / list.length) * 100) : 0;
+  const longWinRate = sideWinRate(longs);
+  const shortWinRate = sideWinRate(shorts);
+  const longR = longs.reduce((s, t) => s + tradeR(t), 0);
+  const shortR = shorts.reduce((s, t) => s + tradeR(t), 0);
 
   // Top instruments by trade count.
   const byInstrument = useMemo(() => {
@@ -183,25 +180,28 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
         </div>
       )}
 
-      {/* Best / worst day */}
-      <div className="mt-auto grid grid-cols-2 gap-2 border-t border-border/40 pt-2.5">
-        <div>
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">Best day</p>
-          <p className="mt-1 text-xs font-bold tabular-nums text-success leading-none">
-            {best ? formatTotalR(best[1]) : "—"}
-          </p>
-          <p className="mt-0.5 text-[9px] text-muted-foreground/70">
-            {best ? format(new Date(best[0] + "T12:00:00"), "MMM d") : ""}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">Worst day</p>
-          <p className="mt-1 text-xs font-bold tabular-nums text-destructive leading-none">
-            {worst ? formatTotalR(worst[1]) : "—"}
-          </p>
-          <p className="mt-0.5 text-[9px] text-muted-foreground/70">
-            {worst ? format(new Date(worst[0] + "T12:00:00"), "MMM d") : ""}
-          </p>
+      {/* Long vs short — how the month was actually traded */}
+      <div className="mt-auto border-t border-border/40 pt-2.5">
+        <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Direction</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-border/50 bg-muted/20 px-2 py-1.5">
+            <div className="flex items-baseline justify-between gap-1">
+              <span className="text-[10px] font-semibold text-muted-foreground">Long</span>
+              <span className="text-base font-black tabular-nums leading-none text-success">{longs.length}</span>
+            </div>
+            <p className="mt-0.5 text-[9px] tabular-nums text-muted-foreground/70">
+              {longs.length ? `${longWinRate}% win · ${formatTotalR(longR)}` : "—"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/50 bg-muted/20 px-2 py-1.5">
+            <div className="flex items-baseline justify-between gap-1">
+              <span className="text-[10px] font-semibold text-muted-foreground">Short</span>
+              <span className="text-base font-black tabular-nums leading-none text-destructive">{shorts.length}</span>
+            </div>
+            <p className="mt-0.5 text-[9px] tabular-nums text-muted-foreground/70">
+              {shorts.length ? `${shortWinRate}% win · ${formatTotalR(shortR)}` : "—"}
+            </p>
+          </div>
         </div>
       </div>
     </div>

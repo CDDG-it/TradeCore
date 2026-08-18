@@ -707,7 +707,7 @@ function WeekReflectionCard({
           <CardTitle className="text-sm font-semibold">Week journal &amp; reflection</CardTitle>
         </div>
         <Link
-          href={`/journal/review/${weekStart}`}
+          href={`/trade-therapist/review/${weekStart}`}
           className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline shrink-0"
         >
           {hasContent ? "Open review" : "Write review"} <ArrowRight className="w-3.5 h-3.5" />

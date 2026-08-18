@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import {
@@ -9,7 +10,7 @@ import {
   eachDayOfInterval, isSameMonth, addMonths, subMonths, addWeeks, subWeeks,
   getDay, isToday,
 } from "date-fns";
-import { Plus, CalendarCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getTrades, getProfile, getBestTradesOfDay } from "@/lib/supabase/queries";
 import { BestTradeDayDialog } from "@/components/journal/best-trade-day";
@@ -46,6 +47,7 @@ function BestTradeCellButton({ best, onClick }: { best?: BestTradeOfDay; onClick
 }
 
 export default function JournalPage() {
+  const router = useRouter();
   const [allTrades, setAllTrades] = useState<TradeJournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,6 +67,21 @@ export default function JournalPage() {
       setBestTrades(Object.fromEntries(rows.map((r) => [r.date, r])));
     });
   }, []);
+
+  // Deep link from the dashboard: /journal?day=YYYY-MM-DD jumps straight to that
+  // day's log — through to the entry when the day holds one trade, to the day
+  // picker when it holds several.
+  useEffect(() => {
+    if (!allTrades.length) return;
+    const day = new URLSearchParams(window.location.search).get("day");
+    if (!day) return;
+    const dayTrades = allTrades.filter((t) => t.date_time.slice(0, 10) === day);
+    if (dayTrades.length === 1) router.replace(`/journal/${dayTrades[0].id}`);
+    else if (dayTrades.length > 1) {
+      setCalendarMonth(new Date(day + "T12:00:00"));
+      setDayTradesDate(day);
+    }
+  }, [allTrades, router]);
 
   // Reflect a saved/cleared best-trade entry without a full refetch.
   function applyBestTrade(date: string, entry: BestTradeOfDay | null) {
@@ -134,13 +151,6 @@ export default function JournalPage() {
     ? format(calendarMonth, "MMMM yyyy")
     : `${format(calWeekStart, "MMM d")} – ${format(calWeekEnd, "MMM d, yyyy")}`;
 
-  // Review is contextual to the calendar: week view → this week's review,
-  // month view → the monthly review. Navigate prev/next first to review a past period.
-  const reviewHref = calendarPeriod === "month"
-    ? `/journal/review/month/${format(calendarMonth, "yyyy-MM")}`
-    : `/journal/review/${format(calWeekStart, "yyyy-MM-dd")}`;
-  const reviewLabel = calendarPeriod === "month" ? "Monthly review" : "Weekly review";
-
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -170,38 +180,33 @@ export default function JournalPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Contextual review — weekly in week view, monthly in month view */}
-          <Link href={reviewHref} title={reviewLabel}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/15">
-            <CalendarCheck className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline">{reviewLabel}</span>
-          </Link>
-          {/* Period R summary */}
-          <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border/50 bg-muted/20 px-2 py-1">
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-              {calendarPeriod === "month" ? "Month R" : "Week R"}
-            </span>
-            <span className={cn("text-xs font-bold tabular-nums",
-              calendarR > 0 ? "text-success" : calendarR < 0 ? "text-destructive" : "text-muted-foreground")}>
-              {formatTotalR(calendarR)}
-            </span>
-          </div>
+          {/* Period R — week view only; in month view the analytics panel
+              beside the grid already carries the month's net R. */}
+          {calendarPeriod === "week" && (
+            <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border/50 bg-muted/20 px-2 py-1">
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">Week R</span>
+              <span className={cn("text-xs font-bold tabular-nums",
+                calendarR > 0 ? "text-success" : calendarR < 0 ? "text-destructive" : "text-muted-foreground")}>
+                {formatTotalR(calendarR)}
+              </span>
+            </div>
+          )}
           <button onClick={nextCalendar} aria-label="Next"
             className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary">
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
-      {/* Compact R summary for narrow screens */}
-      <div className="flex sm:hidden items-center justify-end gap-2 px-4 pt-1.5">
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-          {calendarPeriod === "month" ? "Month R" : "Week R"}
-        </span>
-        <span className={cn("text-xs font-bold tabular-nums",
-          calendarR > 0 ? "text-success" : calendarR < 0 ? "text-destructive" : "text-muted-foreground")}>
-          {formatTotalR(calendarR)}
-        </span>
-      </div>
+      {/* Compact R summary for narrow screens — week view only */}
+      {calendarPeriod === "week" && (
+        <div className="flex sm:hidden items-center justify-end gap-2 px-4 pt-1.5">
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">Week R</span>
+          <span className={cn("text-xs font-bold tabular-nums",
+            calendarR > 0 ? "text-success" : calendarR < 0 ? "text-destructive" : "text-muted-foreground")}>
+            {formatTotalR(calendarR)}
+          </span>
+        </div>
+      )}
     </>
   );
 

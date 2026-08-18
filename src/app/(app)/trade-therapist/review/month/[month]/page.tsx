@@ -51,7 +51,7 @@ export default function MonthlyReviewPage({ params }: { params: Promise<{ month:
     return (
       <div className="text-center py-20">
         <p className="text-muted-foreground text-sm">Invalid month.</p>
-        <Link href="/journal" className="text-primary text-sm hover:underline mt-2 inline-block">← Back to journal</Link>
+        <Link href="/trade-therapist" className="text-primary text-sm hover:underline mt-2 inline-block">← Back to MC Trade Therapist</Link>
       </div>
     );
   }
@@ -70,22 +70,22 @@ export default function MonthlyReviewPage({ params }: { params: Promise<{ month:
     <div className="space-y-6">
       {/* Back + header */}
       <div>
-        <Link href="/journal" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
+        <Link href="/trade-therapist" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Journal
+          Back to Trade Therapist
         </Link>
 
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <Link href={`/journal/review/month/${prevMonth}`} aria-label="Previous month"
+              <Link href={`/trade-therapist/review/month/${prevMonth}`} aria-label="Previous month"
                 className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
                 <ChevronLeft className="w-3.5 h-3.5" />
               </Link>
               <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-primary/10 text-primary">
                 {format(monthDate, "MMMM yyyy")}
               </span>
-              <Link href={`/journal/review/month/${nextMonth}`} aria-label="Next month"
+              <Link href={`/trade-therapist/review/month/${nextMonth}`} aria-label="Next month"
                 className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
@@ -126,7 +126,7 @@ export default function MonthlyReviewPage({ params }: { params: Promise<{ month:
             {weeks.map((week) => {
               const wColor = week.totalR > 0 ? "text-success" : week.totalR < 0 ? "text-destructive" : "text-warning";
               return (
-                <Link key={week.weekStart} href={`/journal/review/${week.weekStart}`} className="block">
+                <Link key={week.weekStart} href={`/trade-therapist/review/${week.weekStart}`} className="block">
                   <Card className={cn(
                     "h-full border-2 card-hover",
                     week.totalR > 0 ? "border-success/30" : week.totalR < 0 ? "border-destructive/30" : "border-border/60"

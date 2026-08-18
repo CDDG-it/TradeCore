@@ -1,54 +1,71 @@
-import Link from "next/link";
-import { Lock } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+import { PageWrapper } from "@/components/ui/page-wrapper";
+import { TherapistDashboard } from "@/components/trade-therapist/therapist-dashboard";
+import { PreTradeMirror } from "@/components/trade-therapist/pre-trade-mirror";
+import { PostTrade5R } from "@/components/trade-therapist/post-trade-5r";
 
 /**
- * MC Trade Therapist — temporarily locked. The deterministic pattern engine,
- * Pre-Trade Mirror and Post-Trade 5R are built (see src/components/trade-therapist/*)
- * but held back behind a "Soon" state until the surface is ready to ship.
- * Flip nav.ts `soon` off and restore the tabbed page to re-enable.
+ * MC Trade Therapist — the surface for getting better at trading, rather than
+ * for recording it. Insights is the home view: what behaviour is costing R,
+ * which trades still need working through, the best trade of the day, and the
+ * weekly / monthly reviews. The Mirror runs before a session, the 5R after a
+ * trade. Every read is deterministic and traces back to the trader's own
+ * history (src/lib/psych-edge/patterns.ts) — never an LLM.
  */
+type TherapistTab = "insights" | "mirror" | "post-trade";
+const TABS: { key: TherapistTab; label: string; hint: string }[] = [
+  { key: "insights", label: "Insights", hint: "Your improvement dashboard" },
+  { key: "mirror", label: "Pre-Trade Mirror", hint: "Before you trade" },
+  { key: "post-trade", label: "Post-Trade 5R", hint: "After each trade" },
+];
+
 export default function TradeTherapistPage() {
+  const [tab, setTab] = useState<TherapistTab>("insights");
+
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (TABS.some((x) => x.key === t)) setTab(t as TherapistTab);
+  }, []);
+
+  const active = TABS.find((t) => t.key === tab)!;
+
   return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-border/60 bg-card p-10 text-center">
-        {/* Soft turquoise glow, purely decorative */}
-        <div
-          className="pointer-events-none absolute inset-x-0 -top-24 h-48"
-          style={{ background: "radial-gradient(60% 100% at 50% 100%, rgba(20,184,166,0.16), transparent 70%)" }}
-        />
-
-        <div className="relative flex flex-col items-center">
-          <div
-            className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/25"
-            style={{ background: "rgba(20,184,166,0.10)" }}
-          >
-            <Lock className="h-6 w-6 text-primary" />
-          </div>
-
-          <p className="mt-6 font-body text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="font-body text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
             MC Mindset Formula
           </p>
-          <h1 className="mt-2 font-heading text-3xl font-black tracking-tight text-foreground">
+          <h1 className="font-heading font-black text-2xl md:text-3xl text-foreground tracking-tight leading-[0.95]">
             MC Trade Therapist
           </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">{active.hint}</p>
+        </div>
 
-          <p className="mt-3 text-2xl font-black tracking-tight text-primary">Soon…</p>
-
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Your data-driven behavioural coach is on its way — the Pre-Trade Mirror
-            and Post-Trade 5R reflections that turn your own history into an edge.
-            We&apos;re putting the finishing touches on it.
-          </p>
-
-          <Link
-            href="/psychological-edge"
-            className="mt-8 inline-flex items-center gap-1.5 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all hover:-translate-y-px"
-            style={{ background: "#14B8A6", boxShadow: "0 4px 14px rgba(20,184,166,0.30)" }}
-          >
-            Back to MC Mind Edge
-          </Link>
+        <div className="flex w-full sm:w-fit rounded-lg border border-border/60 overflow-hidden">
+          {TABS.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={cn(
+                "flex-1 sm:flex-none px-4 sm:px-5 py-2 text-sm font-semibold transition-colors",
+                tab === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
+
+      <PageWrapper>
+        {tab === "insights" && <TherapistDashboard onOpenFiveR={() => setTab("post-trade")} />}
+        {tab === "mirror" && <PreTradeMirror />}
+        {tab === "post-trade" && <PostTrade5R />}
+      </PageWrapper>
     </div>
   );
 }

@@ -225,11 +225,6 @@ export default function DashboardPage() {
             {greeting ? `${greeting}${firstName ? `, ${firstName}` : ""}` : "Dashboard"}
           </h1>
         </div>
-        <Link href="/journal/new"
-          className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px"
-          style={{ background: "#14B8A6", boxShadow: "0 2px 14px rgba(20,184,166,0.30)" }}>
-          Log Trade
-        </Link>
       </motion.div>
 
       {loading ? (
@@ -729,7 +724,9 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
           return (
             <Link
               key={date.toISOString()}
-              href="/journal"
+              // Straight to that day's log — the journal resolves a single trade
+              // to its entry and offers a picker when the day holds several.
+              href={has ? `/journal?day=${format(date, "yyyy-MM-dd")}` : "/journal"}
               className={cn(
                 "group/day relative flex flex-col items-center rounded-xl border px-1 py-3 overflow-hidden",
                 "transition-all duration-300 ease-out hover:-translate-y-1",

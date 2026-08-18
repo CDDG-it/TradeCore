@@ -44,7 +44,7 @@ export default function WeeklyReviewDetailPage({ params }: { params: Promise<{ w
     return (
       <div className="text-center py-20">
         <p className="text-muted-foreground text-sm">Invalid week.</p>
-        <Link href="/journal" className="text-primary text-sm hover:underline mt-2 inline-block">← Back to journal</Link>
+        <Link href="/trade-therapist" className="text-primary text-sm hover:underline mt-2 inline-block">← Back to MC Trade Therapist</Link>
       </div>
     );
   }
@@ -94,9 +94,9 @@ export default function WeeklyReviewDetailPage({ params }: { params: Promise<{ w
     <div className="space-y-6">
       {/* Back + header */}
       <div>
-        <Link href="/journal" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
+        <Link href="/trade-therapist" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Journal
+          Back to Trade Therapist
         </Link>
 
         <div className="flex flex-wrap items-end justify-between gap-4">
