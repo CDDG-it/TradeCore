@@ -1163,6 +1163,7 @@ export async function getBestTradesOfDay(): Promise<BestTradeOfDay[]> {
   if (error) return [];
   return (data ?? []).map((r) => ({
     ...r,
+    post_market_analysis: r.post_market_analysis ?? "",
     screenshot_groups: (r.screenshot_groups ?? []) as BestTradeOfDay["screenshot_groups"],
   })) as BestTradeOfDay[];
 }
@@ -1175,11 +1176,11 @@ export async function getBestTradeOfDay(date: string): Promise<BestTradeOfDay | 
     .eq("date", date)
     .maybeSingle();
   if (error || !data) return null;
-  return { ...data, screenshot_groups: (data.screenshot_groups ?? []) } as BestTradeOfDay;
+  return { ...data, post_market_analysis: data.post_market_analysis ?? "", screenshot_groups: (data.screenshot_groups ?? []) } as BestTradeOfDay;
 }
 
 export async function saveBestTradeOfDay(
-  input: Pick<BestTradeOfDay, "date" | "taken_was_best" | "notes" | "screenshot_groups">
+  input: Pick<BestTradeOfDay, "date" | "taken_was_best" | "notes" | "post_market_analysis" | "screenshot_groups">
 ): Promise<BestTradeOfDay> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();

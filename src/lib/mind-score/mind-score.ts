@@ -168,7 +168,6 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   const days = clampEnd >= start ? eachDayOfInterval({ start, end: clampEnd }) : [];
   const weekdayCount = Math.max(1, days.filter(isWeekday).length);
   const mondaysInRange = days.filter((d) => d.getDay() === 1).map(mondayKey);
-  const weekCount = Math.max(1, mondaysInRange.length);
 
   // ── Objectives (rate-based, so any window works) ──────────────────────
   const reviewSet = new Set(input.weeklyReviews.map((r) => r.week_start));
@@ -177,7 +176,14 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
     return d >= start && d <= clampEnd;
   };
   const bestDays = new Set(input.bestTrades.filter((b) => inRange(b.date)).map((b) => dayKey(b.date)));
-  const reviewsDone = mondaysInRange.filter((k) => reviewSet.has(k)).length;
+  // A weekly review only becomes "due" once its week has fully ended. The
+  // current week's review is never counted for or against you until Sunday
+  // passes — so the objective can't drag the score down mid-week.
+  const todayStart = startOfDay(now);
+  const completedMondays = mondaysInRange.filter((k) => endOfWeek(new Date(k + "T12:00:00"), { weekStartsOn: 1 }) < todayStart);
+  const reviewTarget = completedMondays.length;
+  const reviewsDone = completedMondays.filter((k) => reviewSet.has(k)).length;
+  const reviewRate = reviewTarget === 0 ? 1 : Math.min(1, reviewsDone / reviewTarget);
 
   // ── Pre-trade analysis: every day you traded needs an analysis prepared
   // beforehand. A trade only earns its day if it links to an analysis dated
@@ -198,9 +204,9 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
 
   const rawObjectives: Omit<Objective, "contribution">[] = [
     {
-      key: "weekly-review", label: "Weekly review", description: "Complete your weekly trade review",
-      href: "/journal", progress: reviewsDone, target: weekCount,
-      rate: Math.min(1, reviewsDone / weekCount),
+      key: "weekly-review", label: "Weekly review", description: "Complete each week's review once the week has ended",
+      href: "/trade-therapist?tab=reviews", progress: reviewsDone, target: reviewTarget,
+      rate: reviewRate,
     },
     {
       key: "pre-trade-analysis", label: "Pre-trade analysis", description: "Prepare an analysis before you trade — every day you take a trade",
@@ -209,7 +215,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
     },
     {
       key: "best-trade", label: "Best trade of the day", description: "Log the best trade available each day",
-      href: "/journal", progress: bestDays.size, target: weekdayCount,
+      href: "/trade-therapist?tab=daily", progress: bestDays.size, target: weekdayCount,
       rate: Math.min(1, bestDays.size / weekdayCount),
     },
   ];

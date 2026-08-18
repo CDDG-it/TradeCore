@@ -1,36 +1,51 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PageWrapper } from "@/components/ui/page-wrapper";
-import { TherapistDashboard } from "@/components/trade-therapist/therapist-dashboard";
-import { PreTradeMirror } from "@/components/trade-therapist/pre-trade-mirror";
-import { PostTrade5R } from "@/components/trade-therapist/post-trade-5r";
+import { getProfile } from "@/lib/supabase/queries";
+import { TherapistOverview } from "@/components/trade-therapist/therapist-overview";
+import { DailyAnalysis } from "@/components/trade-therapist/daily-analysis";
+import { ReviewsList } from "@/components/trade-therapist/reviews-list";
+import { getTrades } from "@/lib/supabase/queries";
+import type { TradeJournalEntry } from "@/lib/types";
 
 /**
- * MC Trade Therapist — the surface for getting better at trading, rather than
- * for recording it. Insights is the home view: what behaviour is costing R,
- * which trades still need working through, the best trade of the day, and the
- * weekly / monthly reviews. The Mirror runs before a session, the 5R after a
- * trade. Every read is deterministic and traces back to the trader's own
- * history (src/lib/psych-edge/patterns.ts) — never an LLM.
+ * MC Trade Therapist — the surface for getting better at trading. Three views:
+ *   • Overview   — a calendar of taken trades + outcomes and what behaviour is
+ *                  costing R.
+ *   • Daily      — the post-market analysis and best trade of the day for one date.
+ *   • Reviews    — the weekly and monthly write-ups, auto-synced and only counted
+ *                  in the MC Mindscore once a week has closed.
+ * Every read is deterministic and traces back to the trader's own history.
  */
-type TherapistTab = "insights" | "mirror" | "post-trade";
+type TherapistTab = "overview" | "daily" | "reviews";
 const TABS: { key: TherapistTab; label: string; hint: string }[] = [
-  { key: "insights", label: "Insights", hint: "Your improvement dashboard" },
-  { key: "mirror", label: "Pre-Trade Mirror", hint: "Before you trade" },
-  { key: "post-trade", label: "Post-Trade 5R", hint: "After each trade" },
+  { key: "overview", label: "Overview", hint: "Your trades, outcomes and what to fix" },
+  { key: "daily", label: "Daily", hint: "Post-market analysis and best trade of the day" },
+  { key: "reviews", label: "Reviews", hint: "Weekly and monthly, synced at week's end" },
 ];
 
 export default function TradeTherapistPage() {
-  const [tab, setTab] = useState<TherapistTab>("insights");
+  const [tab, setTab] = useState<TherapistTab>("overview");
+  const [dailyDate, setDailyDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [userId, setUserId] = useState<string | null>(null);
+  const [trades, setTrades] = useState<TradeJournalEntry[]>([]);
 
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tab");
     if (TABS.some((x) => x.key === t)) setTab(t as TherapistTab);
+    getProfile().then((p) => { if (p?.id) setUserId(p.id); });
+    getTrades().then(setTrades).catch(() => {});
   }, []);
 
   const active = TABS.find((t) => t.key === tab)!;
+
+  function openDay(date: string) {
+    setDailyDate(date);
+    setTab("daily");
+  }
 
   return (
     <div className="space-y-5">
@@ -62,9 +77,16 @@ export default function TradeTherapistPage() {
       </div>
 
       <PageWrapper>
-        {tab === "insights" && <TherapistDashboard onOpenFiveR={() => setTab("post-trade")} />}
-        {tab === "mirror" && <PreTradeMirror />}
-        {tab === "post-trade" && <PostTrade5R />}
+        {tab === "overview" && <TherapistOverview onOpenDay={openDay} />}
+        {tab === "daily" && (
+          <DailyAnalysis
+            date={dailyDate}
+            trades={trades}
+            onDateChange={setDailyDate}
+            userId={userId}
+          />
+        )}
+        {tab === "reviews" && <ReviewsList />}
       </PageWrapper>
     </div>
   );

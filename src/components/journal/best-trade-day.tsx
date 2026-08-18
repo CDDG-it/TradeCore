@@ -40,6 +40,7 @@ export function BestTradeDayDialog({
   const [takenWasBest, setTakenWasBest] = useState(false);
   const [notes, setNotes] = useState("");
   const [groups, setGroups] = useState<ScreenshotGroup[]>([]);
+  const [postMarket, setPostMarket] = useState(""); // carried through unchanged
 
   // Load the day's entry each time the dialog opens for a date.
   useEffect(() => {
@@ -52,6 +53,7 @@ export function BestTradeDayDialog({
         setTakenWasBest(entry?.taken_was_best ?? false);
         setNotes(entry?.notes ?? "");
         setGroups(entry?.screenshot_groups ?? []);
+        setPostMarket(entry?.post_market_analysis ?? "");
       })
       .finally(() => setLoading(false));
   }, [open, date]);
@@ -66,6 +68,7 @@ export function BestTradeDayDialog({
         date,
         taken_was_best: takenWasBest,
         notes: notes.trim(),
+        post_market_analysis: postMarket,
         screenshot_groups: groups,
       });
       onSaved?.(saved);

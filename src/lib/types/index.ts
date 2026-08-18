@@ -35,6 +35,9 @@ export interface BestTradeOfDay {
   date: string; // ISO date (day)
   taken_was_best: boolean;
   notes: string;
+  /** Free-form post-market recap of the whole session — what the market did,
+   *  which setups appeared, how the day should have been traded. */
+  post_market_analysis: string;
   screenshot_groups: ScreenshotGroup[];
   created_at: string;
   updated_at: string;
