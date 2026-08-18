@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getTrades, getProfile, getBestTradesOfDay } from "@/lib/supabase/queries";
 import { BestTradeDayDialog } from "@/components/journal/best-trade-day";
 import { MonthAnalytics } from "@/components/journal/month-analytics";
+import { DayTradesDialog } from "@/components/journal/day-trades-dialog";
 import type { TradeJournalEntry, BestTradeOfDay } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
@@ -51,6 +52,7 @@ export default function JournalPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [bestTrades, setBestTrades] = useState<Record<string, BestTradeOfDay>>({});
   const [btdDate, setBtdDate] = useState<string | null>(null); // open dialog for this date
+  const [dayTradesDate, setDayTradesDate] = useState<string | null>(null); // month view: inspect a day's trades
 
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [calendarPeriod, setCalendarPeriod] = useState<CalendarPeriod>("month");
@@ -231,14 +233,17 @@ export default function JournalPage() {
             : dayR < 0
             ? { text: "text-destructive", bg: "bg-destructive/10", ring: "border-destructive/25 hover:border-destructive/45" }
             : { text: "text-warning", bg: "bg-warning/10", ring: "border-warning/25 hover:border-warning/45" };
-          return (
-            <div key={key}
-              className={cn("h-[46px] rounded-md px-1 py-0.5 flex flex-col border transition-colors",
-                isToday(day)
-                  ? "border-primary/50 bg-primary/8"
-                  : has
-                  ? cn(tone.bg, tone.ring)
-                  : "border-border/25 bg-muted/5")}>
+          const tileClass = cn(
+            "h-[46px] rounded-md px-1 py-0.5 flex flex-col border text-left transition-all",
+            isToday(day)
+              ? "border-primary/50 bg-primary/8"
+              : has
+              ? cn(tone.bg, tone.ring)
+              : "border-border/25 bg-muted/5",
+            has && "cursor-pointer hover:-translate-y-px"
+          );
+          const tileInner = (
+            <>
               <div className="flex items-start justify-between leading-none">
                 <span className={cn("text-[10px] font-bold",
                   isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/75" : "text-muted-foreground/30")}>
@@ -261,8 +266,38 @@ export default function JournalPage() {
                   </span>
                 </div>
               )}
-            </div>
+            </>
           );
+
+          // A day with trades opens its log: straight through when there is only
+          // one, via a picker when the day holds several.
+          if (dayTrades.length === 1) {
+            const only = dayTrades[0];
+            return (
+              <Link
+                key={key}
+                href={`/journal/${only.id}`}
+                title={`Open ${instrumentName(only.instrument)} log`}
+                className={tileClass}
+              >
+                {tileInner}
+              </Link>
+            );
+          }
+          if (dayTrades.length > 1) {
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setDayTradesDate(key)}
+                title={`${dayTrades.length} trades — open the day`}
+                className={tileClass}
+              >
+                {tileInner}
+              </button>
+            );
+          }
+          return <div key={key} className={tileClass}>{tileInner}</div>;
         })}
       </div>
     </CardContent>
@@ -385,6 +420,15 @@ export default function JournalPage() {
           </div>
         )}
       </PageWrapper>
+
+      {dayTradesDate && (
+        <DayTradesDialog
+          date={dayTradesDate}
+          trades={tradesByDay[dayTradesDate] ?? []}
+          open={dayTradesDate !== null}
+          onOpenChange={(v) => { if (!v) setDayTradesDate(null); }}
+        />
+      )}
 
       {btdDate && (
         <BestTradeDayDialog
