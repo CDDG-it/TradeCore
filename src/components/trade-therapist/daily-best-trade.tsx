@@ -7,7 +7,7 @@ import {
 } from "date-fns";
 import {
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Loader2, Check,
-  Trophy, LineChart, ExternalLink, PenLine,
+  Trophy, LineChart, ExternalLink,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
@@ -162,6 +162,11 @@ export function DailyBestTrade({
             const future = isFuture(day) && !isToday(day);
             const tone = !has ? "text-muted-foreground/40"
               : r > 0 ? "text-success" : r < 0 ? "text-destructive" : "text-warning";
+            const good = dt.filter((t) => t.execution_quality === "good").length;
+            const bad = dt.filter((t) => t.execution_quality === "bad").length;
+            const best = bestByDay[key];
+            const bestTaken = best?.taken_was_best;
+            const bestLogged = hasEntry(best) && !bestTaken;
             return (
               <button
                 key={key}
@@ -169,22 +174,52 @@ export function DailyBestTrade({
                 onClick={() => onDateChange(key)}
                 disabled={future}
                 className={cn(
-                  "min-h-[76px] rounded-lg px-1 py-1.5 flex flex-col items-center justify-between border transition-all",
-                  selected ? "border-primary bg-primary/10"
+                  "min-h-[112px] rounded-xl px-1.5 py-2 flex flex-col items-center gap-1.5 border transition-all",
+                  selected ? "border-primary bg-primary/10 ring-1 ring-primary/30"
                     : isToday(day) ? "border-primary/40 bg-primary/5"
                     : has ? "border-border/50 bg-muted/15 hover:border-primary/30"
                     : "border-border/25 bg-muted/5 hover:border-border/50",
                   future ? "opacity-30 cursor-default" : "cursor-pointer"
                 )}
               >
+                {/* Day */}
                 <div className="text-center leading-none">
                   <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">{format(day, "EEE")}</p>
                   <p className={cn("text-sm font-bold mt-0.5", isToday(day) ? "text-primary" : "text-foreground/80")}>{format(day, "d")}</p>
                 </div>
+
+                {/* Your result */}
                 <div className="flex flex-col items-center leading-none">
-                  <span className={cn("text-sm font-black tabular-nums", tone)}>{has ? formatTotalR(r) : "—"}</span>
-                  {hasEntry(bestByDay[key]) && <PenLine className="mt-1 w-3 h-3 text-primary/70" />}
+                  <span className={cn("text-base font-black tabular-nums", tone)}>{has ? formatTotalR(r) : "—"}</span>
+                  <span className="mt-0.5 text-[8px] text-muted-foreground/60">{has ? `${dt.length} trade${dt.length !== 1 ? "s" : ""}` : "no trades"}</span>
                 </div>
+
+                {/* Your execution */}
+                {has && (good > 0 || bad > 0) ? (
+                  <div className="flex items-center gap-1 leading-none">
+                    {good > 0 && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-success/15 px-1.5 py-0.5 text-[8px] font-bold text-success">
+                        <span className="h-1.5 w-1.5 rounded-full bg-success" />{good}
+                      </span>
+                    )}
+                    {bad > 0 && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[8px] font-bold text-destructive">
+                        <span className="h-1.5 w-1.5 rounded-full bg-destructive" />{bad}
+                      </span>
+                    )}
+                  </div>
+                ) : <div className="h-[15px]" />}
+
+                {/* Best trade of the day */}
+                <span className={cn(
+                  "mt-auto inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold leading-none",
+                  bestTaken ? "bg-success/15 text-success"
+                    : bestLogged ? "bg-primary/12 text-primary"
+                    : "bg-muted/40 text-muted-foreground/50"
+                )}>
+                  <Trophy className="w-2.5 h-2.5" />
+                  {bestTaken ? "Best taken" : bestLogged ? "Best logged" : "Best?"}
+                </span>
               </button>
             );
           })}

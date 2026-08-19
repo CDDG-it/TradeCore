@@ -9,7 +9,6 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ArrowRight, CheckCircle2
 import { cn } from "@/lib/utils";
 import { getTrades, getWeeklyTradeReviews } from "@/lib/supabase/queries";
 import { getWeekGroup, tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
-import { detectPatterns, PATTERN_LABELS } from "@/lib/psych-edge/patterns";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
 
 const TURQUOISE = "#14B8A6";
@@ -57,12 +56,8 @@ export function MonthlyReviewView({ month }: { month: string }) {
     inMonth.forEach((t) => instruments.set(instrumentName(t.instrument), (instruments.get(instrumentName(t.instrument)) ?? 0) + 1));
     const topInstruments = [...instruments.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-    const patterns = detectPatterns(trades, []).filter((e) => isWithinInterval(new Date(e.date + "T12:00:00"), { start, end }));
-    const patternCounts = new Map<string, number>();
-    patterns.forEach((e) => patternCounts.set(e.type, (patternCounts.get(e.type) ?? 0) + 1));
-
     return {
-      inMonth, weeks, winRate, avgRR, totalR, topInstruments, patternCounts,
+      inMonth, weeks, winRate, avgRR, totalR, topInstruments,
       wins: wins.length,
       losses: inMonth.filter((t) => t.result === "loss").length,
       bestWeek: weeks.length ? [...weeks].sort((a, b) => b.totalR - a.totalR)[0] : null,
@@ -160,8 +155,8 @@ export function MonthlyReviewView({ month }: { month: string }) {
           )}
         </div>
 
-        {/* Instruments + patterns */}
-        <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-3">
+        {/* Most traded — factual, no behavioural assumptions */}
+        <div className="rounded-2xl border border-border/60 bg-card p-4">
           <div>
             <p className="text-sm font-semibold mb-2">Most traded</p>
             {data.topInstruments.length === 0 ? (
@@ -176,20 +171,6 @@ export function MonthlyReviewView({ month }: { month: string }) {
                     </div>
                     <span className="w-6 shrink-0 text-right text-[11px] font-bold tabular-nums text-foreground/70">{count}</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <p className="text-sm font-semibold mb-2">Behaviour flagged</p>
-            {data.patternCounts.size === 0 ? (
-              <p className="text-xs text-muted-foreground/70">No behavioural patterns detected this month.</p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {[...data.patternCounts.entries()].map(([type, count]) => (
-                  <span key={type} className="inline-flex items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
-                    {PATTERN_LABELS[type as keyof typeof PATTERN_LABELS]} · {count}
-                  </span>
                 ))}
               </div>
             )}

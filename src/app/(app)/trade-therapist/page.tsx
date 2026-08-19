@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { getProfile, getTrades } from "@/lib/supabase/queries";
@@ -11,17 +12,60 @@ import type { TradeJournalEntry } from "@/lib/types";
 
 /**
  * MC Trade Therapist — the surface for getting better at trading. Two views:
- *   • Daily    — a week calendar of results, and the best trade of the day plus
- *                the post-market recap for the selected day.
- *   • Reviews  — the weekly and monthly write-ups, auto-synced and only counted
- *                in the MC Mindscore once a week has closed.
+ *   • Best trades — a week calendar of your results and executions, and the best
+ *                   trade of the day for the selected date.
+ *   • Reviews     — the weekly and monthly write-ups, auto-synced and only
+ *                   counted in the MC Mindscore once a week has closed.
  * Every read is deterministic and traces back to the trader's own history.
  */
 type TherapistTab = "daily" | "reviews";
 const TABS: { key: TherapistTab; label: string }[] = [
-  { key: "daily", label: "Daily" },
+  { key: "daily", label: "Best trades" },
   { key: "reviews", label: "Reviews" },
 ];
+
+/** Glassy, animated segmented toggle — the active pill slides between tabs. */
+function GlassToggle({ tab, onChange }: { tab: TherapistTab; onChange: (t: TherapistTab) => void }) {
+  return (
+    <div
+      className="relative flex w-full sm:w-fit items-center gap-1 rounded-xl border border-border/50 p-1"
+      style={{
+        background: "color-mix(in oklch, var(--card) 70%, transparent)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+      }}
+    >
+      {TABS.map(({ key, label }) => {
+        const active = tab === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(key)}
+            className={cn(
+              "relative flex-1 sm:flex-none rounded-lg px-4 sm:px-6 py-2 text-sm font-semibold transition-colors duration-200",
+              active ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {active && (
+              <motion.span
+                layoutId="therapist-tab-pill"
+                className="absolute inset-0 rounded-lg"
+                style={{
+                  background: "linear-gradient(160deg, #14B8A6, #0d9488 60%, #0f766e)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 18px rgba(20,184,166,0.30)",
+                }}
+                transition={{ type: "spring", stiffness: 460, damping: 34 }}
+              />
+            )}
+            <span className="relative z-10">{label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function TradeTherapistPage() {
   const [tab, setTab] = useState<TherapistTab>("daily");
@@ -42,21 +86,7 @@ export default function TradeTherapistPage() {
         <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
           MC Trade Therapist
         </h1>
-
-        <div className="flex w-full sm:w-fit rounded-lg border border-border/60 overflow-hidden">
-          {TABS.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={cn(
-                "flex-1 sm:flex-none px-4 sm:px-5 py-2 text-sm font-semibold transition-colors",
-                tab === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <GlassToggle tab={tab} onChange={setTab} />
       </div>
 
       <PageWrapper>
