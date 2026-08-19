@@ -13,7 +13,7 @@ import {
   getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews,
 } from "@/lib/supabase/queries";
 import { computeMindScore, bandColorFor, type MindScore } from "@/lib/mind-score/mind-score";
-import { tradeR } from "@/lib/journal/weeks";
+import { tradeR, instrumentName } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview } from "@/lib/types";
@@ -242,8 +242,8 @@ export default function DashboardPage() {
             <MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} />
           </div>
 
-          {/* Row 2 — journal fills to the bottom, analysis beside it */}
-          <div className="grid gap-3 lg:grid-cols-3 flex-1 min-h-0">
+          {/* Row 2 — journal fills to the bottom, analysis beside it (a touch taller) */}
+          <div className="grid gap-3 lg:grid-cols-3 flex-[1.35] min-h-0">
             <div className="lg:col-span-2 min-h-0">
               <WeekStrip days={weekDays} />
             </div>
@@ -744,15 +744,35 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
                 {format(date, "d")}
               </span>
               {has ? (
-                <span className="relative mt-2 text-[12px] font-bold tabular-nums transition-transform duration-300 group-hover/day:scale-105" style={{ color }}>
+                <span className="relative mt-1.5 text-[13px] font-black tabular-nums transition-transform duration-300 group-hover/day:scale-105" style={{ color }}>
                   {r > 0 ? "+" : ""}{r.toFixed(1)}R
                 </span>
               ) : (
                 <span className="relative mt-2 h-1.5 w-1.5 rounded-full bg-border transition-all duration-300 group-hover/day:bg-muted-foreground/50 group-hover/day:scale-125" />
               )}
-              <span className="relative mt-auto text-[10px] text-muted-foreground/50">
-                {has ? `${dt.length} trade${dt.length !== 1 ? "s" : ""}` : ""}
-              </span>
+
+              {/* Per-trade: the pair and its execution, so the week reads at a glance */}
+              {has && (
+                <div className="relative mt-2 w-full space-y-1 overflow-hidden">
+                  {dt.slice(0, 4).map((t) => {
+                    const tR = t.result === "win" ? GREEN : t.result === "loss" ? RED : AMBER;
+                    const exec = t.execution_quality === "good" ? GREEN : t.execution_quality === "bad" ? RED : "var(--muted-foreground)";
+                    return (
+                      <div key={t.id} className="flex items-center gap-1 leading-none">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: exec }}
+                          title={t.execution_quality ? `${t.execution_quality} execution` : "execution not rated"} />
+                        <span className="truncate text-[10px] font-bold text-foreground/80">{instrumentName(t.instrument)}</span>
+                        <span className="ml-auto shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: tR }}>
+                          {t.result === "win" ? `+${t.rr}` : t.result === "loss" ? "-1" : "0"}R
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {dt.length > 4 && (
+                    <span className="block text-[9px] text-muted-foreground/60">+{dt.length - 4} more</span>
+                  )}
+                </div>
+              )}
             </Link>
           );
         })}
