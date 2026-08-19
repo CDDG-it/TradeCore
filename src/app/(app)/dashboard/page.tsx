@@ -186,6 +186,8 @@ export default function DashboardPage() {
   const be = periodTrades.length - wins - losses;
   const winRate = periodTrades.length ? Math.round((wins / periodTrades.length) * 100) : null;
   const periodR = periodTrades.reduce((s, t) => s + tradeR(t), 0);
+  const goodExec = periodTrades.filter((t) => t.execution_quality === "good").length;
+  const badExec = periodTrades.filter((t) => t.execution_quality === "bad").length;
 
   const mcMind = useMemo(() => {
     if (!trades) return null;
@@ -237,6 +239,7 @@ export default function DashboardPage() {
             <WinRateCard
               winRate={winRate} wins={wins} losses={losses} be={be}
               total={periodTrades.length} netR={periodR}
+              goodExec={goodExec} badExec={badExec}
               period={wrPeriod} onPeriodChange={setWrPeriod}
             />
             <MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} />
@@ -388,11 +391,14 @@ function MiniStat({ label, value, accent }: {
 }
 
 /* ── Win rate — hero donut of the month's W/L/BE split + net R ─────────── */
-function WinRateCard({ winRate, wins, losses, be, total, netR, period, onPeriodChange }: {
+function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec, period, onPeriodChange }: {
   winRate: number | null; wins: number; losses: number; be: number; total: number; netR: number;
+  goodExec: number; badExec: number;
   period: Period; onPeriodChange: (p: Period) => void;
 }) {
   const rColor = netR > 0 ? GREEN : netR < 0 ? RED : "var(--muted-foreground)";
+  const ratedExec = goodExec + badExec;
+  const goodPct = ratedExec ? Math.round((goodExec / ratedExec) * 100) : null;
   const [display, setDisplay] = useState(0);
   const raf = useRef(0);
   const targetWr = winRate ?? 0;
@@ -498,6 +504,23 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, period, onPeriodC
         <span className="text-lg font-black tabular-nums leading-none" style={{ color: rColor }}>
           {netR > 0 ? "+" : ""}{netR.toFixed(1)}R
         </span>
+      </div>
+
+      {/* Execution quality — good vs bad of the rated trades */}
+      <div className="mt-2 flex items-center gap-2.5">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Exec</span>
+        <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-muted/40">
+          {goodPct !== null && (
+            <>
+              <div className="h-full" style={{ width: `${goodPct}%`, background: GREEN }} />
+              <div className="h-full" style={{ width: `${100 - goodPct}%`, background: RED }} />
+            </>
+          )}
+        </div>
+        <span className="shrink-0 text-sm font-black tabular-nums" style={{ color: goodPct === null ? "var(--muted-foreground)" : GREEN }}>
+          {goodPct === null ? "—" : `${goodPct}%`}
+        </span>
+        <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">{goodExec}G · {badExec}B</span>
       </div>
 
       <Link href="/analytics" className="mt-auto pt-3 text-[11px] font-semibold text-primary hover:underline">
@@ -763,7 +786,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
                           {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
                         </p>
                         {t.execution_quality && (
-                          <p className="text-[9px] font-medium" style={{ color: t.execution_quality === "good" ? GREEN : RED }}>
+                          <p className="text-[11px] font-semibold" style={{ color: t.execution_quality === "good" ? GREEN : RED }}>
                             {t.execution_quality === "good" ? "good execution" : "bad execution"}
                           </p>
                         )}
