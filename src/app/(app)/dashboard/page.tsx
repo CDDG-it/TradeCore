@@ -751,25 +751,27 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
                 <span className="relative mt-2 h-1.5 w-1.5 rounded-full bg-border transition-all duration-300 group-hover/day:bg-muted-foreground/50 group-hover/day:scale-125" />
               )}
 
-              {/* Per-trade: the pair and its execution, so the week reads at a glance */}
+              {/* Per-trade: pair (bold), its RR, and the execution spelled out */}
               {has && (
-                <div className="relative mt-2 w-full space-y-1 overflow-hidden">
+                <div className="relative mt-2 w-full space-y-2 overflow-hidden">
                   {dt.slice(0, 4).map((t) => {
                     const tR = t.result === "win" ? GREEN : t.result === "loss" ? RED : AMBER;
-                    const exec = t.execution_quality === "good" ? GREEN : t.execution_quality === "bad" ? RED : "var(--muted-foreground)";
                     return (
-                      <div key={t.id} className="flex items-center gap-1 leading-none">
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: exec }}
-                          title={t.execution_quality ? `${t.execution_quality} execution` : "execution not rated"} />
-                        <span className="truncate text-[10px] font-bold text-foreground/80">{instrumentName(t.instrument)}</span>
-                        <span className="ml-auto shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: tR }}>
-                          {t.result === "win" ? `+${t.rr}` : t.result === "loss" ? "-1" : "0"}R
-                        </span>
+                      <div key={t.id} className="text-center leading-tight">
+                        <p className="truncate text-[11px] font-bold text-foreground">{instrumentName(t.instrument)}</p>
+                        <p className="text-[10px] font-semibold tabular-nums" style={{ color: tR }}>
+                          {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+                        </p>
+                        {t.execution_quality && (
+                          <p className="text-[9px] font-medium" style={{ color: t.execution_quality === "good" ? GREEN : RED }}>
+                            {t.execution_quality === "good" ? "good execution" : "bad execution"}
+                          </p>
+                        )}
                       </div>
                     );
                   })}
                   {dt.length > 4 && (
-                    <span className="block text-[9px] text-muted-foreground/60">+{dt.length - 4} more</span>
+                    <span className="block text-center text-[9px] text-muted-foreground/60">+{dt.length - 4} more</span>
                   )}
                 </div>
               )}
