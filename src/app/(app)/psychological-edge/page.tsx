@@ -36,14 +36,9 @@ export default function MindEdgePage() {
     <div className="space-y-5">
       {/* Compact header — title and tabs share one row to save vertical space */}
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="font-body text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1.5">
-            MC Mindset Formula
-          </p>
-          <h1 className="font-heading font-black text-2xl md:text-3xl text-foreground tracking-tight leading-[0.95]">
-            MC Mind Edge
-          </h1>
-        </div>
+        <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
+          MC Mind Edge
+        </h1>
 
         <div className="flex w-full sm:w-fit rounded-lg border border-border/60 overflow-hidden">
           {EDGE_TABS.map(({ key, label }) => (

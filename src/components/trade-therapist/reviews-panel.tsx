@@ -1,0 +1,225 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  format, startOfWeek, subWeeks, endOfWeek, startOfDay, subMonths, startOfMonth, endOfMonth, isWithinInterval,
+} from "date-fns";
+import {
+  Loader2, ArrowRight, CheckCircle2, Circle, Lock, ChevronDown, ChevronUp, AlertTriangle,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { getTrades, getWeeklyTradeReviews } from "@/lib/supabase/queries";
+import { getWeekGroup, formatTotalR } from "@/lib/journal/weeks";
+import { detectPatterns, summarizePatterns, PATTERN_DESCRIPTIONS } from "@/lib/psych-edge/patterns";
+import type { TradeJournalEntry, WeeklyTradeReview, PatternType } from "@/lib/types";
+
+type Mode = "weekly" | "monthly";
+
+/**
+ * Reviews — a two-pane surface. On the left a weekly/monthly toggle and the list
+ * of periods (collapsible), on the right a running summary of what you have
+ * actually written in your reviews and an analysis of the biggest recurring
+ * problems drawn from the pattern engine.
+ */
+export function ReviewsPanel() {
+  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
+  const [reviews, setReviews] = useState<WeeklyTradeReview[]>([]);
+  const [mode, setMode] = useState<Mode>("weekly");
+  const [listOpen, setListOpen] = useState(true);
+
+  useEffect(() => {
+    Promise.all([getTrades(), getWeeklyTradeReviews()]).then(([t, r]) => { setTrades(t); setReviews(r); });
+  }, []);
+
+  const reviewByWeek = useMemo(() => new Map(reviews.map((r) => [r.week_start, r])), [reviews]);
+  const written = (r?: WeeklyTradeReview) => Boolean(r && (r.lessons || r.mistakes || r.prevention_plan));
+
+  const weeks = useMemo(() => {
+    if (!trades) return [];
+    const now = new Date();
+    return Array.from({ length: 12 }).map((_, i) => {
+      const monday = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
+      const ws = format(monday, "yyyy-MM-dd");
+      return {
+        ws, group: getWeekGroup(trades, ws),
+        ended: endOfWeek(monday, { weekStartsOn: 1 }) < startOfDay(now),
+        current: i === 0, review: reviewByWeek.get(ws),
+      };
+    });
+  }, [trades, reviewByWeek]);
+
+  const months = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 6 }).map((_, i) => {
+      const m = startOfMonth(subMonths(now, i));
+      return { key: format(m, "yyyy-MM"), label: format(m, "MMMM yyyy"), date: m };
+    });
+  }, []);
+
+  // Biggest recurring problems — ranked by the R the behaviour has cost.
+  const problems = useMemo(() => {
+    if (!trades) return [];
+    const summary = summarizePatterns(detectPatterns(trades, []));
+    return (Object.values(summary) as { type: PatternType; label: string; count: number; cumulativeR: number; lastDate: string | null }[])
+      .filter((p) => p.count > 0)
+      .sort((a, b) => a.cumulativeR - b.cumulativeR);
+  }, [trades]);
+
+  // The most recent things actually written, newest first.
+  const writtenNotes = useMemo(() => {
+    return reviews
+      .filter((r) => written(r))
+      .sort((a, b) => b.week_start.localeCompare(a.week_start))
+      .slice(0, 6);
+  }, [reviews]);
+
+  if (!trades) {
+    return <div className="flex items-center justify-center h-64"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+  }
+
+  const closedWeeks = weeks.filter((w) => w.ended);
+  const doneCount = closedWeeks.filter((w) => written(w.review)).length;
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start">
+      {/* LEFT — toggle + list */}
+      <div className="rounded-2xl border border-border/60 bg-card">
+        <div className="flex items-center justify-between gap-3 p-3 border-b border-border/40">
+          <div className="flex rounded-lg border border-border/60 overflow-hidden">
+            {(["weekly", "monthly"] as Mode[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={cn("px-4 py-1.5 text-xs font-semibold capitalize transition-colors",
+                  mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setListOpen((v) => !v)}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {listOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {listOpen ? "Collapse" : "Expand"}
+          </button>
+        </div>
+
+        {listOpen && (
+          <div className="p-3">
+            {mode === "weekly" ? (
+              <>
+                <p className="mb-2 text-[11px] text-muted-foreground tabular-nums">{doneCount}/{closedWeeks.length} closed weeks reviewed</p>
+                <div className="space-y-1.5">
+                  {weeks.map(({ ws, group, ended, current, review }) => {
+                    const done = written(review);
+                    return (
+                      <Link key={ws} href={`/trade-therapist/review/${ws}`}
+                        className="group flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30">
+                        {!ended ? <Lock className="w-4 h-4 shrink-0 text-primary/70" />
+                          : done ? <CheckCircle2 className="w-4 h-4 shrink-0 text-success" />
+                          : <Circle className="w-4 h-4 shrink-0 text-muted-foreground/40" />}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold leading-none transition-colors group-hover:text-primary">
+                            Week {group.weekNum}{current && <span className="ml-1.5 font-normal text-primary">· current</span>}
+                          </p>
+                          <p className="mt-1 text-[10px] text-muted-foreground leading-none">{group.rangeLabel}</p>
+                        </div>
+                        <span className="text-[11px] font-semibold text-muted-foreground tabular-nums">{group.wins}W {group.losses}L</span>
+                        <span className={cn("w-12 shrink-0 text-right text-xs font-bold tabular-nums",
+                          group.totalR > 0 ? "text-success" : group.totalR < 0 ? "text-destructive" : "text-warning")}>
+                          {formatTotalR(group.totalR)}
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="space-y-1.5">
+                {months.map(({ key, label, date }) => {
+                  const r = (trades ?? []).filter((t) => isWithinInterval(new Date(t.date_time.slice(0, 10) + "T12:00:00"),
+                    { start: startOfMonth(date), end: endOfMonth(date) })).reduce((s, t) => s + (t.result === "win" ? t.rr : t.result === "loss" ? -1 : 0), 0);
+                  return (
+                    <Link key={key} href={`/trade-therapist/review/month/${key}`}
+                      className="group flex items-center gap-2 rounded-lg border border-border/60 px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30">
+                      <span className="flex-1 text-xs font-semibold transition-colors group-hover:text-primary">{label}</span>
+                      <span className={cn("text-xs font-bold tabular-nums", r > 0 ? "text-success" : r < 0 ? "text-destructive" : "text-muted-foreground")}>{formatTotalR(r)}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT — summary + biggest problems */}
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-border/60 bg-card p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-warning" />
+            <p className="text-sm font-semibold">Your biggest problems</p>
+          </div>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Recurring behaviour across all your trades, ranked by the R it has cost — detected by a rule-based engine.
+          </p>
+          <div className="mt-3 space-y-2">
+            {problems.length === 0 ? (
+              <p className="py-4 text-center text-xs text-muted-foreground/70">No recurring behavioural problems detected yet.</p>
+            ) : (
+              problems.map((p) => (
+                <div key={p.type} className="rounded-lg border border-border/60 px-3 py-2">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs font-semibold">{p.label}</span>
+                    <span className="text-xs font-black tabular-nums text-destructive">{formatTotalR(p.cumulativeR)}</span>
+                  </div>
+                  <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">{PATTERN_DESCRIPTIONS[p.type]}</p>
+                  <p className="mt-1 text-[10px] tabular-nums text-muted-foreground/70">
+                    {p.count}x · last {p.lastDate ? format(new Date(p.lastDate + "T12:00:00"), "MMM d") : "—"}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border/60 bg-card p-4">
+          <p className="text-sm font-semibold">What you have written</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">A running summary of your recent weekly reflections.</p>
+          <div className="mt-3 space-y-2.5">
+            {writtenNotes.length === 0 ? (
+              <p className="py-4 text-center text-xs text-muted-foreground/70">No reflections written yet — close a week to add one.</p>
+            ) : (
+              writtenNotes.map((r) => {
+                const group = getWeekGroup(trades, r.week_start);
+                return (
+                  <Link key={r.week_start} href={`/trade-therapist/review/${r.week_start}`}
+                    className="block rounded-lg border border-border/60 px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-[11px] font-bold">Week {group.weekNum}</span>
+                      <span className="text-[10px] text-muted-foreground">{group.rangeLabel}</span>
+                    </div>
+                    {r.mistakes && (
+                      <p className="mt-1.5 text-[11px] leading-snug"><span className="font-semibold text-destructive">Improve: </span><span className="text-muted-foreground">{r.mistakes}</span></p>
+                    )}
+                    {r.lessons && (
+                      <p className="mt-1 text-[11px] leading-snug"><span className="font-semibold text-success">Well: </span><span className="text-muted-foreground">{r.lessons}</span></p>
+                    )}
+                    {r.prevention_plan && (
+                      <p className="mt-1 text-[11px] leading-snug"><span className="font-semibold text-primary">Focus: </span><span className="text-muted-foreground">{r.prevention_plan}</span></p>
+                    )}
+                  </Link>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

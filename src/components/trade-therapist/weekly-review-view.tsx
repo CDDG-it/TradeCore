@@ -3,39 +3,32 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  format, endOfWeek, startOfDay, isWithinInterval, startOfWeek, addWeeks, subWeeks,
+  format, endOfWeek, startOfDay, startOfWeek, addWeeks, subWeeks,
 } from "date-fns";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Loader2, Check, Lock, CheckCircle2,
+  ChevronDown, ChevronUp, Trophy, History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getTrades, getWeeklyTradeReviews, saveWeeklyTradeReview } from "@/lib/supabase/queries";
-import { getWeekGroup, tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
-import { detectPatterns } from "@/lib/psych-edge/patterns";
-import { PATTERN_LABELS } from "@/lib/psych-edge/patterns";
-import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
+import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, saveWeeklyTradeReview } from "@/lib/supabase/queries";
+import { getWeekGroup, tradeR, formatTotalR } from "@/lib/journal/weeks";
+import type { TradeJournalEntry, WeeklyTradeReview, BestTradeOfDay } from "@/lib/types";
 
 const TURQUOISE = "#14B8A6";
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
-function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="rounded-xl border border-border/50 bg-muted/15 px-3 py-2.5 text-center">
-      <p className={cn("text-xl font-black tabular-nums leading-none", tone)} style={!tone ? { color: TURQUOISE } : undefined}>{value}</p>
-      <p className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-    </div>
-  );
-}
-
 /**
- * Weekly review — an auto-synced summary of the week plus a short reflection.
- * The numbers compute live from the week's trades; once the week ends they are
- * final. The reflection is the only thing to fill in, and completing it is what
- * the MC Mindscore counts — and only after the week has closed.
+ * Weekly review — a day-by-day result strip (win / loss / break-even, and
+ * whether the best trade was taken) plus the week's reflection. The numbers are
+ * live until the week closes; the reflection is the only thing to fill in, and
+ * completing it is what the MC Mindscore counts once the week has ended. A
+ * toggle brings up the previous week's notes so you can check you held to them.
  */
 export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
   const [review, setReview] = useState<WeeklyTradeReview | null>(null);
+  const [prevReview, setPrevReview] = useState<WeeklyTradeReview | null>(null);
+  const [bestByDay, setBestByDay] = useState<Record<string, BestTradeOfDay>>({});
 
   const [wentWell, setWentWell] = useState("");
   const [toImprove, setToImprove] = useState("");
@@ -43,71 +36,46 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(false);
-
-  useEffect(() => {
-    Promise.all([getTrades(), getWeeklyTradeReviews()]).then(([t, reviews]) => {
-      setTrades(t);
-      const r = reviews.find((rev) => rev.week_start === weekStart) ?? null;
-      setReview(r);
-      setWentWell(r?.lessons ?? "");
-      setToImprove(r?.mistakes ?? "");
-      setFocus(r?.prevention_plan ?? "");
-    });
-  }, [weekStart]);
+  const [showPrev, setShowPrev] = useState(false);
 
   const valid = /^\d{4}-\d{2}-\d{2}$/.test(weekStart);
   const monday = useMemo(() => (valid ? new Date(weekStart + "T12:00:00") : new Date()), [weekStart, valid]);
+  const prevWeekKey = useMemo(() => format(subWeeks(monday, 1), "yyyy-MM-dd"), [monday]);
+
+  useEffect(() => {
+    Promise.all([getTrades(), getWeeklyTradeReviews(), getBestTradesOfDay()]).then(([t, reviews, best]) => {
+      setTrades(t);
+      const r = reviews.find((rev) => rev.week_start === weekStart) ?? null;
+      setReview(r);
+      setPrevReview(reviews.find((rev) => rev.week_start === prevWeekKey) ?? null);
+      setWentWell(r?.lessons ?? "");
+      setToImprove(r?.mistakes ?? "");
+      setFocus(r?.prevention_plan ?? "");
+      setBestByDay(Object.fromEntries(best.map((b) => [b.date.slice(0, 10), b])));
+    });
+  }, [weekStart, prevWeekKey]);
+
   const weekEnd = useMemo(() => endOfWeek(monday, { weekStartsOn: 1 }), [monday]);
   const ended = weekEnd < startOfDay(new Date());
 
-  const stats = useMemo(() => {
-    if (!trades) return null;
-    const group = getWeekGroup(trades, weekStart);
-    const weekTrades = group.trades;
-    const wins = weekTrades.filter((t) => t.result === "win");
-    const avgRR = wins.length ? (wins.reduce((s, t) => s + t.rr, 0) / wins.length).toFixed(1) : "—";
-    const good = weekTrades.filter((t) => t.execution_quality === "good").length;
-    const rated = good + weekTrades.filter((t) => t.execution_quality === "bad").length;
-    const execRate = rated ? Math.round((good / rated) * 100) : null;
-    const winRate = weekTrades.length ? Math.round((wins.length / weekTrades.length) * 100) : null;
-
-    const best = [...weekTrades].sort((a, b) => tradeR(b) - tradeR(a))[0] ?? null;
-    const worst = weekTrades.length > 1 ? [...weekTrades].sort((a, b) => tradeR(a) - tradeR(b))[0] : null;
-
-    // Patterns that fired inside this week.
-    const patterns = detectPatterns(trades, [])
-      .filter((e) => isWithinInterval(new Date(e.date + "T12:00:00"), { start: monday, end: weekEnd }));
-    const patternCounts = new Map<string, number>();
-    patterns.forEach((e) => patternCounts.set(e.type, (patternCounts.get(e.type) ?? 0) + 1));
-
-    return { group, avgRR, execRate, winRate, best, worst, patternCounts };
-  }, [trades, weekStart, monday, weekEnd]);
+  const group = useMemo(() => (trades ? getWeekGroup(trades, weekStart) : null), [trades, weekStart]);
 
   const dirty =
     wentWell !== (review?.lessons ?? "") ||
     toImprove !== (review?.mistakes ?? "") ||
     focus !== (review?.prevention_plan ?? "");
-
   const complete = Boolean(review && (review.lessons || review.mistakes || review.prevention_plan));
+  const prevWritten = Boolean(prevReview && (prevReview.lessons || prevReview.mistakes || prevReview.prevention_plan));
 
   async function save() {
     setSaving(true); setError(false);
     try {
       const rev = await saveWeeklyTradeReview({
-        week_start: weekStart,
-        lessons: wentWell,
-        mistakes: toImprove,
-        prevention_plan: focus,
-        best_trade_days: review?.best_trade_days ?? {},
+        week_start: weekStart, lessons: wentWell, mistakes: toImprove,
+        prevention_plan: focus, best_trade_days: review?.best_trade_days ?? {},
       });
-      setReview(rev);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } catch {
-      setError(true);
-    } finally {
-      setSaving(false);
-    }
+      setReview(rev); setSaved(true); setTimeout(() => setSaved(false), 2500);
+    } catch { setError(true); } finally { setSaving(false); }
   }
 
   if (!valid) {
@@ -118,13 +86,11 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
       </div>
     );
   }
-  if (!trades || !stats) {
+  if (!trades || !group) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
   }
 
-  const { group } = stats;
   const rTone = group.totalR > 0 ? "text-success" : group.totalR < 0 ? "text-destructive" : "text-warning";
-  const prevWeek = format(subWeeks(monday, 1), "yyyy-MM-dd");
   const nextWeek = format(addWeeks(monday, 1), "yyyy-MM-dd");
   const nextDisabled = startOfWeek(addWeeks(monday, 1), { weekStartsOn: 1 }) > new Date();
 
@@ -137,7 +103,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         </Link>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Link href={`/trade-therapist/review/${prevWeek}`} aria-label="Previous week"
+            <Link href={`/trade-therapist/review/${prevWeekKey}`} aria-label="Previous week"
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
               <ChevronLeft className="w-4 h-4" />
             </Link>
@@ -145,7 +111,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
               <span className="text-[11px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-primary/10 text-primary">
                 Week {group.weekNum} · {group.year}
               </span>
-              <h1 className="text-2xl font-black tracking-tight mt-1.5">Weekly review</h1>
+              <h1 className="text-xl font-black tracking-tight mt-1.5">Weekly review</h1>
               <p className="text-sm text-muted-foreground">{group.rangeLabel}</p>
             </div>
             {!nextDisabled && (
@@ -168,98 +134,100 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         {ended ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" /> : <Lock className="w-4 h-4 text-primary shrink-0" />}
         <p className="text-muted-foreground">
           {ended
-            ? <>This week is closed and its numbers are final. {complete ? "Reflection complete — it counts toward your MC Mindscore." : "Add your reflection below to complete it and count it toward your MC Mindscore."}</>
-            : <>This week is still running. The numbers update live and finalise on Sunday — only then does the review count toward your MC Mindscore.</>}
+            ? <>This week is closed. {complete ? "Reflection complete — it counts toward your MC Mindscore." : "Add your reflection below to complete it and count it toward your MC Mindscore."}</>
+            : <>This week is still running. It finalises on Sunday — only then does the review count toward your MC Mindscore.</>}
         </p>
       </div>
 
-      {/* Auto stats */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-        <Metric label="Trades" value={String(group.trades.length)} tone="text-foreground" />
-        <Metric label="Win rate" value={stats.winRate == null ? "—" : `${stats.winRate}%`} />
-        <Metric label="Avg R:R" value={stats.avgRR === "—" ? "—" : `${stats.avgRR}R`} tone="text-primary" />
-        <Metric label="Good exec" value={stats.execRate == null ? "—" : `${stats.execRate}%`} tone="text-success" />
-        <Metric label="Wins" value={String(group.wins)} tone="text-success" />
-        <Metric label="Losses" value={String(group.losses)} tone="text-destructive" />
+      {/* Day by day — result + whether the best trade was taken */}
+      <div className="rounded-2xl border border-border/60 bg-card p-4">
+        <p className="text-sm font-semibold mb-3">Day by day</p>
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+          {group.days.map((d, i) => {
+            const has = d.trades.length > 0;
+            const r = d.trades.reduce((s, t) => s + tradeR(t), 0);
+            const outcome = !has ? null : r > 0 ? "win" : r < 0 ? "loss" : "be";
+            const best = bestByDay[d.date];
+            const bestTaken = best?.taken_was_best;
+            const bestLogged = best && !bestTaken && (
+              (best.post_market_analysis ?? "").trim() || (best.notes ?? "").trim() || (best.screenshot_groups ?? []).some((g) => g.urls.length > 0)
+            );
+            return (
+              <div key={d.date} className={cn("rounded-xl border p-3 flex flex-col items-center gap-2",
+                outcome === "win" ? "border-success/25 bg-success/5"
+                  : outcome === "loss" ? "border-destructive/25 bg-destructive/5"
+                  : outcome === "be" ? "border-warning/25 bg-warning/5"
+                  : "border-border/40 bg-muted/10")}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{DAY_ABBR[i]}</p>
+                {outcome ? (
+                  <span className={cn("text-lg font-black leading-none",
+                    outcome === "win" ? "text-success" : outcome === "loss" ? "text-destructive" : "text-warning")}>
+                    {outcome === "win" ? "W" : outcome === "loss" ? "L" : "BE"}
+                  </span>
+                ) : (
+                  <span className="text-lg font-black leading-none text-muted-foreground/30">—</span>
+                )}
+                <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold leading-none",
+                  bestTaken ? "bg-success/15 text-success"
+                    : bestLogged ? "bg-primary/12 text-primary"
+                    : "bg-muted/40 text-muted-foreground/60")}>
+                  <Trophy className="w-2.5 h-2.5" />
+                  {bestTaken ? "Best taken" : bestLogged ? "Best logged" : "No best"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2 items-start">
-        {/* Per-day breakdown */}
-        <div className="rounded-2xl border border-border/60 bg-card p-4">
-          <p className="text-sm font-semibold mb-2.5">Day by day</p>
-          <div className="space-y-1.5">
-            {group.days.map((d, i) => {
-              const r = d.trades.reduce((s, t) => s + tradeR(t), 0);
-              const has = d.trades.length > 0;
-              return (
-                <div key={d.date} className="flex items-center gap-3">
-                  <span className="w-9 shrink-0 text-[11px] font-semibold text-muted-foreground">{DAY_ABBR[i]}</span>
-                  <div className="flex-1 h-2 rounded-full bg-muted/40 overflow-hidden relative">
-                    {has && (
-                      <div className={cn("h-full rounded-full", r >= 0 ? "bg-success" : "bg-destructive")}
-                        style={{ width: `${Math.min(100, Math.abs(r) / Math.max(1, Math.max(...group.days.map((x) => Math.abs(x.trades.reduce((s, t) => s + tradeR(t), 0))))) * 100)}%` }} />
-                    )}
-                  </div>
-                  <span className={cn("w-12 shrink-0 text-right text-[11px] font-bold tabular-nums",
-                    !has ? "text-muted-foreground/40" : r > 0 ? "text-success" : r < 0 ? "text-destructive" : "text-warning")}>
-                    {has ? formatTotalR(r) : "—"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Highlights + patterns */}
-        <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-3">
-          <div>
-            <p className="text-sm font-semibold mb-2">Highlights</p>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg border border-success/25 bg-success/5 px-3 py-2">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Best trade</p>
-                <p className="mt-1 text-xs font-bold text-success">{stats.best ? `${instrumentName(stats.best.instrument)} ${formatTotalR(tradeR(stats.best))}` : "—"}</p>
-              </div>
-              <div className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Worst trade</p>
-                <p className="mt-1 text-xs font-bold text-destructive">{stats.worst ? `${instrumentName(stats.worst.instrument)} ${formatTotalR(tradeR(stats.worst))}` : "—"}</p>
-              </div>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm font-semibold mb-2">Behaviour flagged</p>
-            {stats.patternCounts.size === 0 ? (
-              <p className="text-xs text-muted-foreground/70">No behavioural patterns detected this week.</p>
+      {/* Previous week reference — did I hold to it? */}
+      <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+        <button onClick={() => setShowPrev((v) => !v)}
+          className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/30">
+          <History className="w-4 h-4 text-primary shrink-0" />
+          <span className="text-sm font-semibold flex-1">Last week&apos;s notes — did you hold to them?</span>
+          {showPrev ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {showPrev && (
+          <div className="border-t border-border/50 px-4 py-3.5 text-xs">
+            {!prevWritten ? (
+              <p className="text-muted-foreground/70">No reflection was written for last week.</p>
             ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {[...stats.patternCounts.entries()].map(([type, count]) => (
-                  <span key={type} className="inline-flex items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
-                    {PATTERN_LABELS[type as keyof typeof PATTERN_LABELS]} · {count}
-                  </span>
-                ))}
+              <div className="space-y-2">
+                {prevReview?.mistakes && (
+                  <p className="leading-snug"><span className="font-semibold text-destructive">To improve: </span><span className="text-muted-foreground">{prevReview.mistakes}</span></p>
+                )}
+                {prevReview?.prevention_plan && (
+                  <p className="leading-snug"><span className="font-semibold text-primary">Focus set: </span><span className="text-muted-foreground">{prevReview.prevention_plan}</span></p>
+                )}
+                {prevReview?.lessons && (
+                  <p className="leading-snug"><span className="font-semibold text-success">Went well: </span><span className="text-muted-foreground">{prevReview.lessons}</span></p>
+                )}
+                <p className="pt-1 text-[11px] text-muted-foreground/70">Use &quot;What went well&quot; and &quot;What to improve&quot; below to note whether you held to this.</p>
               </div>
             )}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Reflection */}
+      {/* Reflection — larger fields */}
       <div className="rounded-2xl border border-border/60 bg-card p-4">
         <p className="text-sm font-semibold">Your reflection</p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">The only part to fill in — three short notes to close the week.</p>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
+        <p className="mt-0.5 text-[11px] text-muted-foreground">Close the week: what worked, what to fix, and the focus for next week.</p>
+        <div className="mt-3 space-y-3">
           {[
-            { label: "What went well", value: wentWell, set: setWentWell, ph: "Held the plan on Tuesday, sat out the chop…" },
-            { label: "What to improve", value: toImprove, set: setToImprove, ph: "Sized up after the Monday loss…" },
-            { label: "Focus next week", value: focus, set: setFocus, ph: "One setup, no trades before the open…" },
+            { label: "What went well", value: wentWell, set: setWentWell, ph: "Held the plan on Tuesday, sat out the chop, stuck to one setup…" },
+            { label: "What to improve", value: toImprove, set: setToImprove, ph: "Sized up after the Monday loss, took a trade before the open, chased a breakout…" },
+            { label: "Focus next week", value: focus, set: setFocus, ph: "One setup only, no trades in the first 15 minutes, size down after any loss…" },
           ].map((f) => (
             <div key={f.label}>
-              <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">{f.label}</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1.5">{f.label}</p>
               <textarea
                 value={f.value}
                 onChange={(e) => { f.set(e.target.value); setSaved(false); }}
-                rows={4}
+                rows={5}
                 placeholder={f.ph}
-                className="w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
+                className="w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
               />
             </div>
           ))}

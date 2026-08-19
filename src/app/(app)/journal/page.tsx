@@ -213,12 +213,12 @@ export default function JournalPage() {
   /** Month grid — compact day tiles, each summarising its net R. */
   const monthGrid = (
     <CardContent className="p-3">
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <div key={d} className="text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">{d}</div>
+          <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{d}</div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1.5">
         {Array.from({ length: startPad }).map((_, i) => (
           <div key={`pad-${i}`} />
         ))}
@@ -239,7 +239,7 @@ export default function JournalPage() {
             ? { text: "text-destructive", bg: "bg-destructive/10", ring: "border-destructive/25 hover:border-destructive/45" }
             : { text: "text-warning", bg: "bg-warning/10", ring: "border-warning/25 hover:border-warning/45" };
           const tileClass = cn(
-            "h-[46px] rounded-md px-1 py-0.5 flex flex-col border text-left transition-all",
+            "min-h-[68px] xl:min-h-[92px] rounded-lg px-1.5 py-1 flex flex-col border text-left transition-all",
             isToday(day)
               ? "border-primary/50 bg-primary/8"
               : has
@@ -250,7 +250,7 @@ export default function JournalPage() {
           const tileInner = (
             <>
               <div className="flex items-start justify-between leading-none">
-                <span className={cn("text-[10px] font-bold",
+                <span className={cn("text-xs font-bold",
                   isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/75" : "text-muted-foreground/30")}>
                   {format(day, "d")}
                 </span>
@@ -263,11 +263,11 @@ export default function JournalPage() {
               </div>
               {has && (
                 <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-                  <span className={cn("text-[13px] font-black tabular-nums leading-none", tone.text)}>
+                  <span className={cn("text-base xl:text-lg font-black tabular-nums leading-none", tone.text)}>
                     {formatTotalR(dayR)}
                   </span>
-                  <span className="text-[8px] text-muted-foreground/60 leading-none mt-0.5">
-                    {dayTrades.length}t
+                  <span className="text-[9px] text-muted-foreground/60 leading-none mt-1">
+                    {dayTrades.length} trade{dayTrades.length !== 1 ? "s" : ""}
                   </span>
                 </div>
               )}
@@ -365,7 +365,7 @@ export default function JournalPage() {
                     const best = bestTrades[key];
                     return (
                       <div key={key}
-                        className={cn("min-h-[160px] rounded-xl p-1.5 flex flex-col gap-1 transition-colors",
+                        className={cn("min-h-[200px] lg:min-h-[300px] rounded-xl p-1.5 flex flex-col gap-1 transition-colors",
                           isToday(day) ? "bg-primary/4 ring-1 ring-primary/20" : "bg-muted/20"
                         )}>
                         <div className={cn("flex-1 flex flex-col gap-1 min-h-0",

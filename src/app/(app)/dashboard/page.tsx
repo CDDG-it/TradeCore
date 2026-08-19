@@ -217,14 +217,9 @@ export default function DashboardPage() {
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         className="flex flex-wrap items-end justify-between gap-3 shrink-0"
       >
-        <div>
-          <p className="font-body text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">
-            {format(now, "EEEE, MMMM d")}
-          </p>
-          <h1 className="font-heading font-black text-2xl md:text-3xl text-foreground tracking-tight leading-[0.95]">
-            {greeting ? `${greeting}${firstName ? `, ${firstName}` : ""}` : "Dashboard"}
-          </h1>
-        </div>
+        <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
+          {greeting ? `${greeting}${firstName ? `, ${firstName}` : ""}` : "Dashboard"}
+        </h1>
       </motion.div>
 
       {loading ? (
