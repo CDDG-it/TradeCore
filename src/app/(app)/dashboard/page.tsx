@@ -434,10 +434,11 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
         <PeriodToggle value={period} onChange={onPeriodChange} accent={CYAN} />
       </div>
 
-      {/* Donut */}
+      {/* Donut — scales to the available height so short (laptop) viewports
+          never clip the ring against the card's overflow-hidden. */}
       <div className="flex-1 flex items-center justify-center py-1 min-h-0">
-        <div className="group/donut relative shrink-0 transition-transform duration-500 ease-out hover:scale-[1.03]" style={{ width: 116, height: 116 }}>
-          <svg width={116} height={116} viewBox="0 0 116 116" className="block">
+        <div className="group/donut relative aspect-square h-full max-h-[116px] w-auto transition-transform duration-500 ease-out hover:scale-[1.03]">
+          <svg viewBox="0 0 116 116" className="block h-full w-full">
             {/* Track */}
             <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
             {/* Segments — arcs draw in on mount and brighten on hover */}
