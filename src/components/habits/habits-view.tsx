@@ -7,6 +7,7 @@ import {
   Plus,
   Repeat,
   Check,
+  Pencil,
   Trash2,
   CheckCircle2,
   Zap,
@@ -39,6 +40,7 @@ import {
   getHabitCompletions,
   toggleHabitCompletion,
   createHabit,
+  updateHabit,
   deleteHabit,
   getHabitStreak,
 } from "@/lib/supabase/queries";
@@ -265,6 +267,7 @@ export function HabitsView() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
   const [showNewHabit, setShowNewHabit] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingHabit, setDeletingHabit] = useState<string | null>(null);
   const [newHabit, setNewHabit] = useState<NewHabitForm>(EMPTY_NEW_HABIT);
   const [creating, setCreating] = useState(false);
@@ -294,13 +297,26 @@ export function HabitsView() {
     setCompletions(c);
   }
 
-  async function handleCreateHabit() {
+  function openEdit(habit: Habit) {
+    setEditingId(habit.id);
+    setCreateError(null);
+    setNewHabit({
+      name: habit.name,
+      description: habit.description ?? "",
+      category: habit.category,
+      frequency: habit.frequency === "weekdays" || habit.frequency === "weekends" ? habit.frequency : "daily",
+      icon: habit.icon,
+    });
+    setShowNewHabit(true);
+  }
+
+  async function handleSaveHabit() {
     if (!newHabit.name.trim() || creating) return;
     setCreating(true);
     setCreateError(null);
     try {
       const cat = CATEGORY_COLORS[newHabit.category];
-      await createHabit({
+      const payload = {
         name: newHabit.name.trim(),
         description: newHabit.description.trim(),
         category: newHabit.category,
@@ -308,13 +324,19 @@ export function HabitsView() {
         target_days: newHabit.frequency === "daily" ? 7 : newHabit.frequency === "weekdays" ? 5 : 2,
         color: cat.accent,
         icon: newHabit.icon,
-      });
+      };
+      if (editingId) {
+        await updateHabit(editingId, payload);
+      } else {
+        await createHabit(payload);
+      }
       await refresh();
       setNewHabit(EMPTY_NEW_HABIT);
+      setEditingId(null);
       setShowNewHabit(false);
     } catch (err) {
-      console.error("Failed to create habit:", err);
-      setCreateError("Could not create habit. Please try again.");
+      console.error("Failed to save habit:", err);
+      setCreateError(`Could not ${editingId ? "update" : "create"} habit. Please try again.`);
     } finally {
       setCreating(false);
     }
@@ -323,6 +345,7 @@ export function HabitsView() {
   function closeNewHabit() {
     if (creating) return;
     setShowNewHabit(false);
+    setEditingId(null);
     setCreateError(null);
     setNewHabit(EMPTY_NEW_HABIT);
   }
@@ -503,12 +526,22 @@ export function HabitsView() {
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => setDeletingHabit(habit.id)}
-                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => openEdit(habit)}
+                      aria-label="Edit habit"
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeletingHabit(habit.id)}
+                      aria-label="Delete habit"
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 )}
 
                 <div className="flex items-start gap-3 mb-3">
@@ -528,7 +561,7 @@ export function HabitsView() {
                     </button>
                   </div>
 
-                  <div className="flex-1 min-w-0 pr-8">
+                  <div className="flex-1 min-w-0 pr-12">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-sm font-semibold">{habit.name}</span>
                       {streak > 0 && (
@@ -596,7 +629,7 @@ export function HabitsView() {
       <Dialog open={showNewHabit} onOpenChange={(o) => (o ? setShowNewHabit(true) : closeNewHabit())}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>New Habit</DialogTitle>
+            <DialogTitle>{editingId ? "Edit Habit" : "New Habit"}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -607,7 +640,7 @@ export function HabitsView() {
                 type="text"
                 value={newHabit.name}
                 onChange={(e) => setNewHabit({ ...newHabit, name: e.target.value })}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCreateHabit(); } }}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSaveHabit(); } }}
                 placeholder="e.g. Morning journaling"
                 className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
                 style={{
@@ -740,7 +773,7 @@ export function HabitsView() {
             </button>
             <button
               type="button"
-              onClick={handleCreateHabit}
+              onClick={handleSaveHabit}
               disabled={!newHabit.name.trim() || creating}
               className="inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
               style={{
@@ -749,7 +782,9 @@ export function HabitsView() {
                 boxShadow: "0 4px 14px oklch(0.70 0.12 183 / 0.35)",
               }}
             >
-              {creating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating…</> : "Create habit"}
+              {creating
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {editingId ? "Saving…" : "Creating…"}</>
+                : editingId ? "Save changes" : "Create habit"}
             </button>
           </DialogFooter>
         </DialogContent>

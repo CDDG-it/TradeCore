@@ -210,24 +210,32 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         )}
       </div>
 
-      {/* Reflection — larger fields */}
+      {/* Reflection — compact, problem-first. One short line per field. */}
       <div className="rounded-2xl border border-border/60 bg-card p-4">
-        <p className="text-sm font-semibold">Your reflection</p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">Close the week: what worked, what to fix, and the focus for next week.</p>
-        <div className="mt-3 space-y-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-sm font-semibold">Your reflection</p>
+          <span className="text-[11px] text-muted-foreground/80">One line each</span>
+        </div>
+        <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
           {[
-            { label: "What went well", value: wentWell, set: setWentWell, ph: "Held the plan on Tuesday, sat out the chop, stuck to one setup…" },
-            { label: "What to improve", value: toImprove, set: setToImprove, ph: "Sized up after the Monday loss, took a trade before the open, chased a breakout…" },
-            { label: "Focus next week", value: focus, set: setFocus, ph: "One setup only, no trades in the first 15 minutes, size down after any loss…" },
+            { label: "The problem", value: toImprove, set: setToImprove, ph: "The one mistake to fix…", tone: "var(--destructive)" },
+            { label: "What worked", value: wentWell, set: setWentWell, ph: "One thing done well…", tone: "var(--success)" },
+            { label: "Focus next week", value: focus, set: setFocus, ph: "One rule to hold…", tone: "#14B8A6" },
           ].map((f) => (
-            <div key={f.label}>
-              <p className="text-xs font-semibold text-muted-foreground mb-1.5">{f.label}</p>
+            <div
+              key={f.label}
+              className="rounded-xl border border-border/50 bg-background/40 p-2.5 transition-colors focus-within:border-primary/40"
+            >
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: f.tone }} />
+                <p className="text-[11px] font-semibold text-muted-foreground">{f.label}</p>
+              </div>
               <textarea
                 value={f.value}
                 onChange={(e) => { f.set(e.target.value); setSaved(false); }}
-                rows={5}
+                rows={3}
                 placeholder={f.ph}
-                className="w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
+                className="w-full resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-muted-foreground/40"
               />
             </div>
           ))}

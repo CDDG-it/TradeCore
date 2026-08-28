@@ -434,10 +434,10 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
         <PeriodToggle value={period} onChange={onPeriodChange} accent={CYAN} />
       </div>
 
-      {/* Donut — scales to the available height so short (laptop) viewports
-          never clip the ring against the card's overflow-hidden. */}
-      <div className="flex-1 flex items-center justify-center py-1 min-h-0">
-        <div className="group/donut relative aspect-square h-full max-h-[116px] w-auto transition-transform duration-500 ease-out hover:scale-[1.03]">
+      {/* Donut — scales with the available height but keeps a solid floor so
+          short (laptop) viewports still show a proper ring, not a dot. */}
+      <div className="flex-1 flex items-center justify-center py-1 min-h-[clamp(60px,9vh,108px)]">
+        <div className="group/donut relative aspect-square h-full max-h-[132px] w-auto transition-transform duration-500 ease-out hover:scale-[1.03]">
           <svg viewBox="0 0 116 116" className="block h-full w-full">
             {/* Track */}
             <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
@@ -475,7 +475,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
       </div>
 
       {/* W / L / BE legend — chips light up on hover */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2 mt-0.5">
         {[
           { label: "Win", value: wins, color: GREEN },
           { label: "Loss", value: losses, color: RED },
@@ -483,10 +483,10 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
         ].map((s) => (
           <div
             key={s.label}
-            className="group/chip relative rounded-lg border border-border/50 bg-muted/20 px-2 py-1.5 text-center transition-transform duration-300 hover:-translate-y-px"
+            className="group/chip relative rounded-lg border border-border/50 bg-muted/20 px-2 py-1 text-center transition-transform duration-300 hover:-translate-y-px"
           >
             <p className="relative z-10 text-base font-black tabular-nums leading-none" style={{ color: s.color }}>{s.value}</p>
-            <p className="relative z-10 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-1">{s.label}</p>
+            <p className="relative z-10 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">{s.label}</p>
             {/* Hover glow ring */}
             <div
               className="pointer-events-none absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300 group-hover/chip:opacity-100"
@@ -499,32 +499,32 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
         ))}
       </div>
 
-      {/* Net R */}
-      <div className="mt-3 flex items-center justify-between rounded-xl border border-border/60 bg-muted/25 px-3 py-2.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Net R · {PERIOD_LABEL[period]}</span>
-        <span className="text-lg font-black tabular-nums leading-none" style={{ color: rColor }}>
-          {netR > 0 ? "+" : ""}{netR.toFixed(1)}R
-        </span>
-      </div>
-
-      {/* Execution quality — good vs bad of the rated trades */}
-      <div className="mt-2 flex items-center gap-2.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Exec</span>
-        <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-muted/40">
-          {goodPct !== null && (
-            <>
-              <div className="h-full" style={{ width: `${goodPct}%`, background: GREEN }} />
-              <div className="h-full" style={{ width: `${100 - goodPct}%`, background: RED }} />
-            </>
-          )}
+      {/* Net R + execution quality — one compact block keeps the ring roomy on laptops */}
+      <div className="mt-1.5 rounded-xl border border-border/60 bg-muted/25 px-3 py-1.5 space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Net R · {PERIOD_LABEL[period]}</span>
+          <span className="text-lg font-black tabular-nums leading-none" style={{ color: rColor }}>
+            {netR > 0 ? "+" : ""}{netR.toFixed(1)}R
+          </span>
         </div>
-        <span className="shrink-0 text-sm font-black tabular-nums" style={{ color: goodPct === null ? "var(--muted-foreground)" : GREEN }}>
-          {goodPct === null ? "—" : `${goodPct}%`}
-        </span>
-        <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">{goodExec}G · {badExec}B</span>
+        <div className="flex items-center gap-2.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0">Exec</span>
+          <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-muted/40">
+            {goodPct !== null && (
+              <>
+                <div className="h-full" style={{ width: `${goodPct}%`, background: GREEN }} />
+                <div className="h-full" style={{ width: `${100 - goodPct}%`, background: RED }} />
+              </>
+            )}
+          </div>
+          <span className="shrink-0 text-sm font-black tabular-nums" style={{ color: goodPct === null ? "var(--muted-foreground)" : GREEN }}>
+            {goodPct === null ? "—" : `${goodPct}%`}
+          </span>
+          <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">{goodExec}G · {badExec}B</span>
+        </div>
       </div>
 
-      <Link href="/analytics" className="mt-auto pt-3 text-[11px] font-semibold text-primary hover:underline">
+      <Link href="/analytics" className="mt-1.5 text-[11px] font-semibold text-primary hover:underline">
         View full analytics →
       </Link>
     </div>
