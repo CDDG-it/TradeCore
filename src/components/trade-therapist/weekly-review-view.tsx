@@ -195,15 +195,15 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
             ) : (
               <div className="space-y-2">
                 {prevReview?.mistakes && (
-                  <p className="leading-snug"><span className="font-semibold text-destructive">To improve: </span><span className="text-muted-foreground">{prevReview.mistakes}</span></p>
+                  <p className="leading-snug"><span className="font-semibold text-destructive">The problem: </span><span className="text-muted-foreground">{prevReview.mistakes}</span></p>
                 )}
                 {prevReview?.prevention_plan && (
                   <p className="leading-snug"><span className="font-semibold text-primary">Focus set: </span><span className="text-muted-foreground">{prevReview.prevention_plan}</span></p>
                 )}
                 {prevReview?.lessons && (
-                  <p className="leading-snug"><span className="font-semibold text-success">Went well: </span><span className="text-muted-foreground">{prevReview.lessons}</span></p>
+                  <p className="leading-snug"><span className="font-semibold text-success">What worked: </span><span className="text-muted-foreground">{prevReview.lessons}</span></p>
                 )}
-                <p className="pt-1 text-[11px] text-muted-foreground/70">Use &quot;What went well&quot; and &quot;What to improve&quot; below to note whether you held to this.</p>
+                <p className="pt-1 text-[11px] text-muted-foreground/70">Note below whether you held to this.</p>
               </div>
             )}
           </div>

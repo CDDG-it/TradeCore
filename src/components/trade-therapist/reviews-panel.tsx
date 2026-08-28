@@ -187,14 +187,14 @@ export function ReviewsPanel() {
                       <span className="text-[11px] font-bold">Week {group.weekNum}</span>
                       <span className="text-[10px] text-muted-foreground">{group.rangeLabel}</span>
                     </div>
-                    {r.lessons && (
-                      <p className="mt-1.5 text-[11px] leading-snug"><span className="font-semibold text-success">Went well: </span><span className="text-muted-foreground">{r.lessons}</span></p>
-                    )}
                     {r.mistakes && (
-                      <p className="mt-1 text-[11px] leading-snug"><span className="font-semibold text-destructive">To improve: </span><span className="text-muted-foreground">{r.mistakes}</span></p>
+                      <p className="mt-1.5 text-[11px] leading-snug"><span className="font-semibold text-destructive">The problem: </span><span className="text-muted-foreground">{r.mistakes}</span></p>
+                    )}
+                    {r.lessons && (
+                      <p className="mt-1 text-[11px] leading-snug"><span className="font-semibold text-success">What worked: </span><span className="text-muted-foreground">{r.lessons}</span></p>
                     )}
                     {r.prevention_plan && (
-                      <p className="mt-1 text-[11px] leading-snug"><span className="font-semibold text-primary">Focus: </span><span className="text-muted-foreground">{r.prevention_plan}</span></p>
+                      <p className="mt-1 text-[11px] leading-snug"><span className="font-semibold text-primary">Focus next week: </span><span className="text-muted-foreground">{r.prevention_plan}</span></p>
                     )}
                   </Link>
                 );
