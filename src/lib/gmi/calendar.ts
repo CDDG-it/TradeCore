@@ -39,6 +39,8 @@ export interface CalendarEntry {
   actual: number | null;
   previous: number | null;
   consensus: null; // never available on the free tier
+  /** Last ~12 observations (ascending) for a trend sparkline. */
+  history: { date: string; value: number }[];
   status: "ok" | "unavailable";
 }
 
@@ -49,17 +51,20 @@ interface FredObs {
 async function fetchRelease(def: ReleaseDef, apiKey: string): Promise<CalendarEntry> {
   const url =
     `https://api.stlouisfed.org/fred/series/observations?series_id=${def.id}` +
-    `&api_key=${apiKey}&file_type=json&sort_order=desc&limit=2`;
+    `&api_key=${apiKey}&file_type=json&sort_order=desc&limit=13`;
   try {
     const json = await fetchJson<FredObs>(url, { timeoutMs: 8000, retries: 1 });
-    const obs = (json.observations ?? []).filter((o) => o.value !== "." && o.value !== "");
-    if (obs.length === 0) return { ...base(def), referenceDate: null, actual: null, previous: null, consensus: null, status: "unavailable" };
-    const actual = Number(obs[0].value);
-    const previous = obs[1] ? Number(obs[1].value) : null;
-    // PAYEMS/claims come in thousands already in FRED (level in thousands of persons).
-    return { ...base(def), referenceDate: obs[0].date, actual, previous, consensus: null, status: "ok" };
+    const obs = (json.observations ?? [])
+      .filter((o) => o.value !== "." && o.value !== "")
+      .map((o) => ({ date: o.date, value: Number(o.value) }))
+      .filter((o) => Number.isFinite(o.value));
+    if (obs.length === 0) return { ...base(def), referenceDate: null, actual: null, previous: null, consensus: null, history: [], status: "unavailable" };
+    const actual = obs[0].value;
+    const previous = obs[1]?.value ?? null;
+    const history = [...obs].reverse(); // ascending
+    return { ...base(def), referenceDate: obs[0].date, actual, previous, consensus: null, history, status: "ok" };
   } catch {
-    return { ...base(def), referenceDate: null, actual: null, previous: null, consensus: null, status: "unavailable" };
+    return { ...base(def), referenceDate: null, actual: null, previous: null, consensus: null, history: [], status: "unavailable" };
   }
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useMemo, useRef, useState } from "react";
+import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { useTheme } from "@/lib/theme-context";
@@ -11,6 +11,25 @@ const R = 5; // globe radius
 
 const TURQUOISE = "#14B8A6";
 const CYAN = "#06B6D4";
+
+/** A clickable location on the globe. */
+export interface GlobeMarker {
+  id: string;
+  lat: number;
+  lon: number;
+  label: string;
+}
+
+/** Map geographic lat/lon to a point on the sphere surface (radius `r`). */
+function latLonToVec3(lat: number, lon: number, r: number): THREE.Vector3 {
+  const phi = ((90 - lat) * Math.PI) / 180;
+  const theta = ((lon + 180) * Math.PI) / 180;
+  return new THREE.Vector3(
+    -r * Math.sin(phi) * Math.cos(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.sin(theta)
+  );
+}
 
 // The sun direction — fixed, so the globe keeps a stable, gentle terminator.
 const SUN = new THREE.Vector3(1, 0.35, 0.7).normalize().multiplyScalar(30);
@@ -104,23 +123,82 @@ function Atmosphere({ intensity }: { intensity: number }) {
   );
 }
 
+/* ── A clickable pin at a lat/lon ────────────────────────────────────────── */
+function Pin({
+  marker, active, selected, onSelect, onHover,
+}: {
+  marker: GlobeMarker;
+  active: boolean;
+  selected: boolean;
+  onSelect: (id: string) => void;
+  onHover: (id: string | null) => void;
+}) {
+  const pos = useMemo(() => latLonToVec3(marker.lat, marker.lon, R * 1.012), [marker.lat, marker.lon]);
+  const color = selected ? "#facc15" : active ? CYAN : TURQUOISE;
+  const scale = selected ? 1.7 : active ? 1.35 : 1;
+  return (
+    <mesh
+      position={pos}
+      scale={scale}
+      onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); onSelect(marker.id); }}
+      onPointerOver={(e: ThreeEvent<PointerEvent>) => { e.stopPropagation(); onHover(marker.id); document.body.style.cursor = "pointer"; }}
+      onPointerOut={() => { onHover(null); document.body.style.cursor = "auto"; }}
+    >
+      <sphereGeometry args={[0.11, 16, 16]} />
+      <meshBasicMaterial color={color} toneMapped={false} />
+      {/* soft halo */}
+      <mesh scale={2.1}>
+        <sphereGeometry args={[0.11, 12, 12]} />
+        <meshBasicMaterial color={color} transparent opacity={0.22} toneMapped={false} depthWrite={false} />
+      </mesh>
+    </mesh>
+  );
+}
+
 /* ── The slowly rotating globe ──────────────────────────────────────────── */
-function Globe({ dark }: { dark: boolean }) {
+function Globe({
+  dark, markers, selected, onSelect,
+}: {
+  dark: boolean;
+  markers: GlobeMarker[];
+  selected: string | null;
+  onSelect: (id: string) => void;
+}) {
   const group = useRef<THREE.Group>(null);
+  const [hover, setHover] = useState<string | null>(null);
+  // Pause the drift while the user is hovering a pin, so it's easy to click.
   useFrame((_, delta) => {
-    if (group.current) group.current.rotation.y += delta * 0.035;
+    if (group.current && !hover) group.current.rotation.y += delta * 0.035;
   });
 
   return (
     <group ref={group}>
       <EarthSurface dark={dark} />
       <Atmosphere intensity={dark ? 0.9 : 0.6} />
+      {markers.map((m) => (
+        <Pin
+          key={m.id}
+          marker={m}
+          active={hover === m.id}
+          selected={selected === m.id}
+          onSelect={onSelect}
+          onHover={setHover}
+        />
+      ))}
     </group>
   );
 }
 
 /* ── Public component ───────────────────────────────────────────────────── */
-export function WorldMap3D() {
+export function WorldMap3D({
+  markers = [],
+  selected = null,
+  onSelect,
+}: {
+  markers?: GlobeMarker[];
+  selected?: string | null;
+  onSelect?: (id: string) => void;
+} = {}) {
   const { theme } = useTheme();
   const dark = theme !== "light";
 
@@ -139,7 +217,7 @@ export function WorldMap3D() {
 
       {dark && <Stars radius={120} depth={60} count={2600} factor={3.2} saturation={0} fade speed={0.4} />}
 
-      <Globe dark={dark} />
+      <Globe dark={dark} markers={markers} selected={selected} onSelect={onSelect ?? (() => {})} />
 
       <OrbitControls
         enablePan={false}
