@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { SlidersHorizontal, Dices } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { TradingRulesEditor } from "@/components/habits/trading-rules";
@@ -13,19 +12,16 @@ type StrategyTab = "rules" | "simulator";
 const STRATEGY_TABS: {
   key: StrategyTab;
   label: string;
-  icon: typeof SlidersHorizontal;
   blurb: string;
 }[] = [
   {
     key: "rules",
     label: "Rules & Confluences",
-    icon: SlidersHorizontal,
     blurb: "The non-negotiables and setups that define how you trade — surfaced when you log a trade.",
   },
   {
     key: "simulator",
     label: "Pass Simulation",
-    icon: Dices,
     blurb: "Pressure-test your edge against a funded account's rules across thousands of simulated runs.",
   },
 ];
@@ -42,7 +38,7 @@ function StrategyToggle({ tab, onChange }: { tab: StrategyTab; onChange: (t: Str
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
       }}
     >
-      {STRATEGY_TABS.map(({ key, label, icon: Icon }) => {
+      {STRATEGY_TABS.map(({ key, label }) => {
         const active = tab === key;
         return (
           <button
@@ -50,7 +46,7 @@ function StrategyToggle({ tab, onChange }: { tab: StrategyTab; onChange: (t: Str
             type="button"
             onClick={() => onChange(key)}
             className={cn(
-              "relative flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg px-4 sm:px-5 py-2 text-sm font-semibold transition-colors duration-200 whitespace-nowrap",
+              "relative flex-1 sm:flex-none inline-flex items-center justify-center rounded-lg px-4 sm:px-5 py-2 text-sm font-semibold transition-colors duration-200 whitespace-nowrap",
               active ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -65,7 +61,6 @@ function StrategyToggle({ tab, onChange }: { tab: StrategyTab; onChange: (t: Str
                 transition={{ type: "spring", stiffness: 460, damping: 34 }}
               />
             )}
-            <Icon className="relative z-10 h-3.5 w-3.5" />
             <span className="relative z-10">{label}</span>
           </button>
         );

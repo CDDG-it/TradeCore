@@ -5,7 +5,7 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, ReferenceLine,
   BarChart, Bar, Cell,
 } from "recharts";
-import { Check, Loader2, Save, Wand2 } from "lucide-react";
+import { Check, Loader2, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { runMonteCarlo, type MonteCarloInputs, type DrawdownMode } from "@/lib/strategy/monte-carlo";
 import { getTrades, getMonteCarloSettings, saveMonteCarloSettings } from "@/lib/supabase/queries";
@@ -174,7 +174,6 @@ export function MonteCarloSimulator() {
                 : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
             )}
           >
-            <Wand2 className="w-3.5 h-3.5" />
             {realStats
               ? <>Use my stats · <span className="tabular-nums text-foreground">{pct(realStats.winRate)}</span>{realStats.avgRR > 0 && <> · <span className="tabular-nums text-foreground">{realStats.avgRR}R</span></>}</>
               : "Use my stats"}
@@ -242,7 +241,7 @@ export function MonteCarloSimulator() {
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] items-start">
         {/* ── Controls ─────────────────────────────────────────── */}
-        <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+        <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-4">
           <FieldGroup title="Your edge">
             <SliderField label="Win rate" value={input.winRate * 100} min={10} max={90} step={1} unit="%"
               onChange={(v) => set("winRate", v / 100)} />
@@ -297,7 +296,7 @@ export function MonteCarloSimulator() {
         {/* ── Results ──────────────────────────────────────────── */}
         <div className="space-y-4 min-w-0">
           {/* Headline read on the odds */}
-          <div className="rounded-xl border border-primary/25 bg-primary/[0.06] px-4 py-3">
+          <div className="rounded-2xl border border-primary/25 bg-primary/[0.06] px-4 py-3">
             <p className="text-sm leading-relaxed">
               Out of <span className="font-semibold tabular-nums">{input.simulations.toLocaleString()}</span> simulated attempts,
               you passed <span className="font-bold" style={{ color: GREEN }}>{pct(result.passRate)}</span> of the time.
@@ -317,7 +316,7 @@ export function MonteCarloSimulator() {
           </div>
 
           {/* Outcome bar */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+          <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-2">
             <div className="flex h-3 w-full overflow-hidden rounded-full bg-border/60">
               <div className="h-full transition-all" style={{ width: pct(result.passRate), background: GREEN }} />
               <div className="h-full transition-all" style={{ width: pct(result.timeoutRate), background: AMBER }} />
@@ -336,13 +335,13 @@ export function MonteCarloSimulator() {
           </div>
 
           {!edgePositive && (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-xs text-destructive">
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-xs text-destructive">
               Negative expectancy — this edge loses money over a large sample.
             </div>
           )}
 
           {/* Equity curves */}
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="rounded-2xl border border-border/60 bg-card p-4">
             <div className="mb-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Sample equity paths · {curveData.meta.length} of {input.simulations.toLocaleString()} runs
@@ -382,7 +381,7 @@ export function MonteCarloSimulator() {
           </div>
 
           {/* Ending balance distribution */}
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="rounded-2xl border border-border/60 bg-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Ending balance distribution
@@ -499,7 +498,7 @@ function OutcomeCard({
   label: string; value: string; color: string; hint: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-3.5 relative overflow-hidden">
+    <div className="rounded-2xl border border-border/60 bg-card p-3.5 relative overflow-hidden">
       <div className="absolute -right-3 -top-3 w-14 h-14 rounded-full blur-2xl opacity-20" style={{ background: color }} />
       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
       <p className="text-2xl font-black tabular-nums leading-none mt-1.5" style={{ color }}>{value}</p>

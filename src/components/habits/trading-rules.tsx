@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Pencil, Check, X, CheckCircle2, AlertCircle, Loader2, ScrollText } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { getProfile, upsertProfile } from "@/lib/supabase/queries";
 
 /**
@@ -76,23 +76,19 @@ export function TradingRulesEditor() {
 
   return (
     <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-5">
-      <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10">
-          <ScrollText className="h-4 w-4 text-primary" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold">Trading Rules</h2>
-            {!loading && rules.length > 0 && (
-              <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">
-                {rules.length}
-              </span>
-            )}
-          </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+      <div className="flex items-start justify-between gap-3 border-b border-border/40 pb-4">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/80">Discipline</p>
+          <h2 className="mt-1 text-base font-semibold tracking-tight">Trading Rules</h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             Your pre-trade checklist. These appear when logging a trade.
           </p>
         </div>
+        {!loading && rules.length > 0 && (
+          <span className="shrink-0 rounded-full border border-border/60 px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
+            {rules.length}
+          </span>
+        )}
       </div>
 
       {loading ? (
@@ -103,8 +99,7 @@ export function TradingRulesEditor() {
         <>
           {rules.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 py-8 text-center">
-              <ScrollText className="mx-auto h-5 w-5 text-muted-foreground/40" />
-              <p className="mt-2 text-xs font-medium text-muted-foreground">No rules yet</p>
+              <p className="text-xs font-medium text-muted-foreground">No rules yet</p>
               <p className="mt-0.5 text-[11px] text-muted-foreground/70">Add your first non-negotiable below.</p>
             </div>
           ) : (
