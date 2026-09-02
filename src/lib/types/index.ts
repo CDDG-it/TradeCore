@@ -43,6 +43,24 @@ export interface BestTradeOfDay {
   updated_at: string;
 }
 
+// ── Pre-Market Exercise ─────────────────────────────────────────────────────
+// A pre-session drill: review the two most recent losses and two most recent
+// wins, then commit — in writing, before the open — to a plan for preventing
+// each mistake from repeating and reproducing each thing that worked today.
+export interface PreMarketExercise {
+  id: string;
+  user_id: string;
+  date: string; // ISO date (day)
+  /** Prevention plan for each reviewed losing trade, keyed by trade id. */
+  loss_plans: Record<string, string>;
+  /** Repeat plan for each reviewed winning trade, keyed by trade id. */
+  win_plans: Record<string, string>;
+  /** The single most important intention for today's session. */
+  focus: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Trader Playbook ─────────────────────────────────────────────────────────
 export interface TraderPlaybook {
   trader_type: TraderType;

@@ -26,6 +26,7 @@ import type {
   PsychEdgeSession,
   PsychEdgeSessionInput,
   BestTradeOfDay,
+  PreMarketExercise,
   DashboardStats,
   Commitment,
   CommitmentInput,
@@ -1254,6 +1255,60 @@ export async function deleteBestTradeOfDay(date: string): Promise<void> {
   invalidateReads();
   const { error } = await supabase.from("best_trade_of_day").delete().eq("date", date);
   if (error) throw error;
+}
+
+// ── Pre-Market Exercise ──────────────────────────────────────────────
+// Fail-soft: if the pre_market_exercise table hasn't been created yet, reads
+// return null so the Trade Therapist still renders.
+
+export async function getPreMarketExercise(date: string): Promise<PreMarketExercise | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("pre_market_exercise")
+    .select("*")
+    .eq("date", date)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    ...data,
+    loss_plans: (data.loss_plans ?? {}) as Record<string, string>,
+    win_plans: (data.win_plans ?? {}) as Record<string, string>,
+    focus: data.focus ?? "",
+  } as PreMarketExercise;
+}
+
+export async function savePreMarketExercise(
+  input: Pick<PreMarketExercise, "date" | "loss_plans" | "win_plans" | "focus">
+): Promise<PreMarketExercise> {
+  const supabase = createClient();
+  invalidateReads();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: existing } = await supabase
+    .from("pre_market_exercise")
+    .select("id")
+    .eq("date", input.date)
+    .maybeSingle();
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from("pre_market_exercise")
+      .update({ ...input, updated_at: now() })
+      .eq("id", existing.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as PreMarketExercise;
+  }
+
+  const { data, error } = await supabase
+    .from("pre_market_exercise")
+    .insert({ ...input, user_id: user.id, created_at: now(), updated_at: now() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as PreMarketExercise;
 }
 
 // ── Cached wrappers for the hot, cross-page reads ─────────────────────

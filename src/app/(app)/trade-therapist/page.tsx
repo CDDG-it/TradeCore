@@ -8,6 +8,7 @@ import { PageWrapper } from "@/components/ui/page-wrapper";
 import { getProfile, getTrades } from "@/lib/supabase/queries";
 import { DailyBestTrade } from "@/components/trade-therapist/daily-best-trade";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
+import { PreMarketExercises } from "@/components/trade-therapist/pre-market-exercises";
 import type { TradeJournalEntry } from "@/lib/types";
 
 /**
@@ -18,9 +19,10 @@ import type { TradeJournalEntry } from "@/lib/types";
  *                   counted in the MC Mindscore once a week has closed.
  * Every read is deterministic and traces back to the trader's own history.
  */
-type TherapistTab = "daily" | "reviews";
+type TherapistTab = "daily" | "premarket" | "reviews";
 const TABS: { key: TherapistTab; label: string }[] = [
   { key: "daily", label: "Best trades" },
+  { key: "premarket", label: "Pre-market exercises" },
   { key: "reviews", label: "Reviews" },
 ];
 
@@ -98,6 +100,7 @@ export default function TradeTherapistPage() {
             userId={userId}
           />
         )}
+        {tab === "premarket" && <PreMarketExercises trades={trades} date={dailyDate} />}
         {tab === "reviews" && <ReviewsPanel />}
       </PageWrapper>
     </div>

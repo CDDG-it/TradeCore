@@ -82,12 +82,21 @@ export function ConfluencesEditor() {
   }
 
   return (
-    <div className="rounded-xl p-5 space-y-4" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-      <div className="flex items-center gap-2">
-        <Layers className="w-4 h-4 text-primary" />
-        <div>
-          <h2 className="text-sm font-semibold">Confluences</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
+    <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-5">
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10">
+          <Layers className="h-4 w-4 text-primary" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold">Confluences</h2>
+            {!loading && items.length > 0 && (
+              <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">
+                {items.length}
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Your saved confluence library. These are the quick-select chips when logging a trade.
           </p>
         </div>
