@@ -101,77 +101,88 @@ export function TradingRulesEditor() {
         </div>
       ) : (
         <>
-          {rules.length === 0 && (
-            <p className="text-xs text-muted-foreground py-1">
-              No rules yet. Add your first trading rule below.
-            </p>
+          {rules.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 py-8 text-center">
+              <ScrollText className="mx-auto h-5 w-5 text-muted-foreground/40" />
+              <p className="mt-2 text-xs font-medium text-muted-foreground">No rules yet</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground/70">Add your first non-negotiable below.</p>
+            </div>
+          ) : (
+            <ol className="space-y-1.5">
+              {rules.map((rule, idx) => (
+                <li
+                  key={idx}
+                  className="group relative flex items-center gap-3 overflow-hidden rounded-xl border border-border/50 bg-gradient-to-b from-muted/20 to-transparent px-3 py-2.5 transition-all hover:border-primary/30"
+                >
+                  {/* Accent bar on hover */}
+                  <span className="absolute inset-y-0 left-0 w-0.5 bg-primary opacity-0 transition-opacity group-hover:opacity-100" />
+                  {editingIdx === idx ? (
+                    <>
+                      <input
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveEdit(idx);
+                          if (e.key === "Escape") setEditingIdx(null);
+                        }}
+                        autoFocus
+                        className="flex-1 rounded-md border border-primary/40 bg-background px-2 py-1 text-sm text-foreground outline-none"
+                      />
+                      <button type="button" onClick={() => saveEdit(idx)} className="shrink-0 text-success transition-opacity hover:opacity-80">
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button type="button" onClick={() => setEditingIdx(null)} className="shrink-0 text-muted-foreground transition-colors hover:text-foreground">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-[11px] font-bold tabular-nums text-primary">
+                        {idx + 1}
+                      </span>
+                      <span className="min-w-0 flex-1 text-sm leading-snug">{rule}</span>
+                      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(idx)}
+                          aria-label="Edit rule"
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeRule(idx)}
+                          aria-label="Delete rule"
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ol>
           )}
 
-          <div className="space-y-1.5">
-            {rules.map((rule, idx) => (
-              <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 group">
-                {editingIdx === idx ? (
-                  <>
-                    <input
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveEdit(idx);
-                        if (e.key === "Escape") setEditingIdx(null);
-                      }}
-                      autoFocus
-                      className="flex-1 rounded-md px-2 py-1 text-sm outline-none"
-                      style={{ background: "var(--background)", border: "1px solid var(--border)", color: "var(--foreground)" }}
-                    />
-                    <button type="button" onClick={() => saveEdit(idx)} className="text-success hover:opacity-80 shrink-0">
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
-                    <button type="button" onClick={() => setEditingIdx(null)} className="text-muted-foreground hover:text-foreground shrink-0">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-xs font-mono text-muted-foreground/60 shrink-0 w-5 text-right">{idx + 1}.</span>
-                    <span className="text-sm flex-1 min-w-0">{rule}</span>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(idx)}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all shrink-0"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeRule(idx)}
-                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all shrink-0"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Add rule */}
-          <div className="flex gap-2">
+          {/* Add rule — inline composer */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-secondary/40 p-1.5 transition-colors focus-within:border-primary/40">
             <input
               value={newRule}
               onChange={(e) => setNewRule(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addRule(); } }}
               placeholder="Add a trading rule…"
-              className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
-              style={{ background: "var(--secondary)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              className="flex-1 bg-transparent px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
             />
             <button
               type="button"
               onClick={addRule}
               disabled={!newRule.trim()}
-              className="inline-flex items-center justify-center rounded-lg px-3 shrink-0 transition-all disabled:opacity-40"
-              style={{ background: "var(--secondary)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all disabled:opacity-40"
+              style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="h-3.5 w-3.5" /> Add
             </button>
           </div>
 
