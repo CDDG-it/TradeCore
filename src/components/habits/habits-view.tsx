@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils";
 import { computeHabitScore } from "@/lib/discipline";
 import { frequencyApplies } from "@/lib/habits";
 import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
-import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
 import {
@@ -49,13 +48,47 @@ import type { Habit, HabitCompletion, HabitCategory } from "@/lib/types";
 
 type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 
+/**
+ * Fade any colour string to an alpha, whatever notation it arrives in.
+ *
+ * Habit colours are persisted on the row (`habits.color`), so the database
+ * still holds the legacy `oklch(...)` strings written by older builds while new
+ * habits are saved with the palette hex below. This handles both, plus CSS
+ * variables — the old `color.replace(")", " / 0.2)")` trick silently produced
+ * an opaque colour for anything that wasn't a bare `oklch()`.
+ */
+function fade(color: string, a: number): string {
+  const c = color.trim();
+  if (c.startsWith("#")) {
+    const h = c.slice(1);
+    const full = h.length === 3 ? h.split("").map((x) => x + x).join("") : h;
+    const n = parseInt(full, 16);
+    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+  }
+  // Modern space-separated oklch()/rgb()/hsl() carrying no alpha — the only
+  // shape that takes CSS relative-alpha syntax. Matched on the function name
+  // rather than a trailing ")", so `var(--x)` does not land here and become the
+  // invalid `var(--x / 0.2)`; comma forms are excluded too, since
+  // `rgb(1,2,3 / 0.5)` mixes the legacy and modern grammars and is invalid.
+  if (
+    /^(?:oklch|oklab|rgb|hsl|lab|lch)\(/.test(c) &&
+    !c.includes("/") &&
+    !c.includes(",")
+  ) {
+    return c.replace(/\)$/, ` / ${a})`);
+  }
+  // var(--x), color-mix(), or a value that already carries an alpha.
+  return `color-mix(in oklch, ${c} ${Math.round(a * 100)}%, transparent)`;
+}
+
+/** Category identity, drawn from the product palette (no orange anywhere). */
 const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label: string; Icon: IconComponent }> = {
-  mindset:  { accent: "oklch(0.70 0.12 183)",  bg: "oklch(0.70 0.12 183 / 0.12)",  label: "Mindset",  Icon: Brain },
-  routine:  { accent: "oklch(0.71 0.13 215)",  bg: "oklch(0.71 0.13 215 / 0.12)",  label: "Routine",  Icon: Coffee },
-  research: { accent: "oklch(0.58 0.17 145)", bg: "oklch(0.58 0.17 145 / 0.12)", label: "Research", Icon: Search },
-  health:   { accent: "oklch(0.58 0.22 25)",  bg: "oklch(0.58 0.22 25 / 0.12)",  label: "Health",   Icon: Dumbbell },
-  review:   { accent: "oklch(0.80 0.16 86)",  bg: "oklch(0.80 0.16 86 / 0.12)",  label: "Review",   Icon: BookOpen },
-  other:    { accent: "var(--muted-foreground)", bg: "oklch(0.62 0.012 40 / 0.12)", label: "Other",  Icon: Circle },
+  mindset:  { accent: "#14B8A6", bg: "rgba(20,184,166,0.12)", label: "Mindset",  Icon: Brain },
+  routine:  { accent: "#06B6D4", bg: "rgba(6,182,212,0.12)",  label: "Routine",  Icon: Coffee },
+  research: { accent: "#22c55e", bg: "rgba(34,197,94,0.12)",  label: "Research", Icon: Search },
+  health:   { accent: "#ef4444", bg: "rgba(239,68,68,0.12)",  label: "Health",   Icon: Dumbbell },
+  review:   { accent: "#f59e0b", bg: "rgba(245,158,11,0.12)", label: "Review",   Icon: BookOpen },
+  other:    { accent: "var(--muted-foreground)", bg: "rgba(100,116,139,0.12)", label: "Other", Icon: Circle },
 };
 
 
@@ -109,7 +142,7 @@ function ActivityHeatmap({
                 title = `${format(d, "EEE MMM d")} · missed`;
               } else {
                 const a = 0.3 + Math.min(1, intensity) * 0.6;
-                bg = color.replace(")", ` / ${a.toFixed(2)})`);
+                bg = fade(color, Number(a.toFixed(2)));
                 title = `${format(d, "EEE MMM d")} · ${Math.round(intensity * 100)}%`;
               }
             }
@@ -220,7 +253,7 @@ function WeekGrid({
             style={
               done
                 ? {
-                    background: `${habit.color.replace(")", " / 0.20)")}`,
+                    background: fade(habit.color, 0.2),
                     borderColor: habit.color,
                     color: habit.color,
                   }
@@ -229,7 +262,7 @@ function WeekGrid({
                     borderColor: isToday
                       ? habit.color
                       : "var(--border)",
-                    color: "oklch(0.38 0.005 28)",
+                    color: "var(--muted-foreground)",
                   }
             }
           >
@@ -401,9 +434,9 @@ export function HabitsView() {
           href="/discipline"
           className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all hover:-translate-y-px"
           style={{
-            background: "oklch(0.70 0.12 183 / 0.12)",
-            borderColor: "oklch(0.70 0.12 183 / 0.40)",
-            color: "oklch(0.70 0.12 183)",
+            background: "rgba(20,184,166,0.12)",
+            borderColor: "rgba(20,184,166,0.4)",
+            color: "#14B8A6",
           }}
         >
           <HelpCircle className="w-3.5 h-3.5" />
@@ -414,9 +447,9 @@ export function HabitsView() {
           onClick={() => setShowNewHabit(true)}
           className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
           style={{
-            background: "oklch(0.70 0.12 183)",
-            color: "oklch(0.07 0.003 28)",
-            boxShadow: "0 4px 14px oklch(0.70 0.12 183 / 0.30)",
+            background: "#14B8A6",
+            color: "#F8FAFC",
+            boxShadow: "0 4px 14px rgba(20,184,166,0.3)",
           }}
         >
           <Plus className="w-4 h-4" />
@@ -427,12 +460,16 @@ export function HabitsView() {
       {/* Compact stat strip — one line each, no tall cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {[
-          { label: "Completion", value: `${rangeCompletion}%`, sub: `last ${rangeDays}d`, icon: CheckCircle2, accent: "oklch(0.70 0.12 183)", ring: rangeCompletion },
-          { label: "Longest streak", value: `${longestStreak}d`, sub: "in a row", icon: Repeat, accent: "oklch(0.58 0.22 25)", ring: null },
-          { label: "Completed", value: rangeCompleted.toString(), sub: `last ${rangeDays}d`, icon: TrendingUp, accent: "oklch(0.58 0.17 145)", ring: null },
-          { label: "Active", value: totalHabits.toString(), sub: "tracked", icon: Zap, accent: "oklch(0.70 0.12 183)", ring: null },
+          { label: "Completion", value: `${rangeCompletion}%`, sub: `last ${rangeDays}d`, icon: CheckCircle2, accent: "#14B8A6", ring: rangeCompletion },
+          { label: "Longest streak", value: `${longestStreak}d`, sub: "in a row", icon: Repeat, accent: "#ef4444", ring: null },
+          { label: "Completed", value: rangeCompleted.toString(), sub: `last ${rangeDays}d`, icon: TrendingUp, accent: "#22c55e", ring: null },
+          { label: "Active", value: totalHabits.toString(), sub: "tracked", icon: Zap, accent: "#14B8A6", ring: null },
         ].map(({ label, value, sub, icon: Icon, accent, ring }) => (
-          <LiquidGlassCard key={label} className="flex items-center gap-2.5 px-3 py-2">
+          <div
+            key={label}
+            className="flex items-center gap-2.5 rounded-xl border border-border/50 px-3.5 py-2.5"
+            style={{ background: `linear-gradient(160deg, ${fade(accent, 0.06)}, rgba(11,17,32,0.3) 60%)` }}
+          >
             {ring !== null ? (
               <div className="relative shrink-0">
                 <ProgressRing percent={ring} size={30} stroke={3} color={accent} />
@@ -441,7 +478,7 @@ export function HabitsView() {
                 </div>
               </div>
             ) : (
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: accent.replace(")", " / 0.12)") }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: fade(accent, 0.12) }}>
                 <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
               </div>
             )}
@@ -449,7 +486,7 @@ export function HabitsView() {
               <p className="text-lg font-black leading-none tabular-nums" style={{ color: accent }}>{value}</p>
               <p className="text-[10px] text-muted-foreground truncate">{label} · {sub}</p>
             </div>
-          </LiquidGlassCard>
+          </div>
         ))}
       </div>
 
@@ -479,16 +516,16 @@ export function HabitsView() {
         <div className="mt-4 space-y-2.5">
 
           {habits.length === 0 && (
-            <LiquidGlassCard className="p-8 text-center animate-fade-up border-dashed">
-              <p className="text-sm text-muted-foreground mb-3">No habits yet.</p>
+            <div className="animate-fade-up rounded-xl border border-dashed border-border/60 bg-muted/10 p-10 text-center">
+              <p className="mb-3 text-sm text-muted-foreground">No habits yet.</p>
               <button
                 onClick={() => setShowNewHabit(true)}
                 className="text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
-                style={{ color: "oklch(0.70 0.12 183)" }}
+                style={{ color: "#14B8A6" }}
               >
                 <Plus className="w-3.5 h-3.5" /> Create your first habit
               </button>
-            </LiquidGlassCard>
+            </div>
           )}
 
           <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
@@ -502,16 +539,25 @@ export function HabitsView() {
             const catConfig = CATEGORY_COLORS[habit.category];
 
             return (
-              <LiquidGlassCard
+              <div
                 key={habit.id}
-                className="group animate-fade-up p-3.5"
+                className="group animate-fade-up relative overflow-hidden rounded-xl border border-border/50 p-4 transition-colors"
                 style={{
                   animationDelay: `${220 + i * 50}ms`,
-                  ...(completedToday
-                    ? { borderColor: habit.color.replace(")", " / 0.35)") }
-                    : {}),
+                  background: completedToday
+                    ? `linear-gradient(160deg, ${fade(habit.color, 0.07)}, rgba(11,17,32,0.3) 60%)`
+                    : "rgba(11,17,32,0.3)",
+                  ...(completedToday ? { borderColor: fade(habit.color, 0.35) } : {}),
                 }}
               >
+                {/* Completed today reads as a filled spine down the edge */}
+                {completedToday && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-y-0 left-0 w-0.5"
+                    style={{ background: habit.color }}
+                  />
+                )}
                 {/* Delete button */}
                 {deletingHabit === habit.id ? (
                   <div className="absolute top-3 right-3 flex items-center gap-1.5">
@@ -519,7 +565,7 @@ export function HabitsView() {
                     <button
                       onClick={() => handleDeleteHabit(habit.id)}
                       className="text-xs px-2 py-0.5 rounded-md font-medium transition-colors"
-                      style={{ background: "oklch(0.58 0.22 25 / 0.15)", color: "oklch(0.58 0.22 25)" }}
+                      style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}
                     >
                       Yes
                     </button>
@@ -557,7 +603,7 @@ export function HabitsView() {
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all hover:scale-105"
                       style={{
                         background: completedToday
-                          ? habit.color.replace(")", " / 0.20)")
+                          ? fade(habit.color, 0.2)
                           : "var(--popover)",
                         border: `2px solid ${completedToday ? habit.color : "var(--border)"}`,
                       }}
@@ -623,7 +669,7 @@ export function HabitsView() {
                     />
                   </div>
                 )}
-              </LiquidGlassCard>
+              </div>
             );
           })}
           </div>
@@ -688,11 +734,11 @@ export function HabitsView() {
                       onClick={() => setNewHabit({ ...newHabit, icon: key })}
                       className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
                       style={{
-                        background: active ? "oklch(0.70 0.12 183 / 0.20)" : "var(--secondary)",
-                        border: `1px solid ${active ? "oklch(0.70 0.12 183 / 0.50)" : "var(--border)"}`,
+                        background: active ? "rgba(20,184,166,0.2)" : "var(--secondary)",
+                        border: `1px solid ${active ? "rgba(20,184,166,0.5)" : "var(--border)"}`,
                       }}
                     >
-                      <Icon className="w-4 h-4" style={{ color: active ? "oklch(0.70 0.12 183)" : "var(--muted-foreground)" }} />
+                      <Icon className="w-4 h-4" style={{ color: active ? "#14B8A6" : "var(--muted-foreground)" }} />
                     </button>
                   );
                 })}
@@ -714,7 +760,7 @@ export function HabitsView() {
                       className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
                       style={
                         active
-                          ? { background: bg, color: accent, border: `1px solid ${accent.replace(")", " / 0.40)")}` }
+                          ? { background: bg, color: accent, border: `1px solid ${fade(accent, 0.4)}` }
                           : { background: "var(--secondary)", color: "var(--muted-foreground)", border: "1px solid var(--border)" }
                       }
                     >
@@ -738,9 +784,9 @@ export function HabitsView() {
                     style={
                       newHabit.frequency === freq
                         ? {
-                            background: "oklch(0.70 0.12 183 / 0.15)",
-                            color: "oklch(0.70 0.12 183)",
-                            border: "1px solid oklch(0.70 0.12 183 / 0.40)",
+                            background: "rgba(20,184,166,0.15)",
+                            color: "#14B8A6",
+                            border: "1px solid rgba(20,184,166,0.4)",
                           }
                         : {
                             background: "var(--secondary)",
@@ -782,9 +828,9 @@ export function HabitsView() {
               disabled={!newHabit.name.trim() || creating}
               className="inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
               style={{
-                background: "linear-gradient(135deg, oklch(0.70 0.12 183) 0%, oklch(0.71 0.13 215) 100%)",
-                color: "oklch(0.07 0.003 28)",
-                boxShadow: "0 4px 14px oklch(0.70 0.12 183 / 0.35)",
+                background: "linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%)",
+                color: "#F8FAFC",
+                boxShadow: "0 4px 14px rgba(20,184,166,0.35)",
               }}
             >
               {creating
