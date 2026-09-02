@@ -81,39 +81,60 @@ export function ConfluencesEditor() {
     }
   }
 
+
   return (
-    <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-5">
-      <div className="flex items-start justify-between gap-3 border-b border-border/40 pb-4">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/80">Setups</p>
-          <h2 className="mt-1 text-base font-semibold tracking-tight">Confluences</h2>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Your saved confluence library. These are the quick-select chips when logging a trade.
-          </p>
-        </div>
-        {!loading && items.length > 0 && (
-          <span className="shrink-0 rounded-full border border-border/60 px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
-            {items.length}
-          </span>
-        )}
+    <div
+      className="relative overflow-hidden rounded-2xl border border-border/60 p-6 pl-7"
+      style={{
+        background: "linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, #06B6D4 4%), var(--card) 55%)",
+        boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 32px -18px rgba(0,0,0,0.8)",
+      }}
+    >
+      {/* Accent spine */}
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-1"
+        style={{ background: "linear-gradient(180deg, #06B6D4, rgba(6,182,212,0.12))" }}
+      />
+      {/* Oversized ghost count */}
+      {!loading && items.length > 0 && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-5 right-3 select-none text-[92px] font-black leading-none tracking-tighter"
+          style={{ color: "rgba(6,182,212,0.07)" }}
+        >
+          {items.length}
+        </span>
+      )}
+
+      <div className="relative">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: "rgba(6,182,212,0.75)" }}>Setups</p>
+        <h2 className="mt-1.5 font-heading text-xl font-bold tracking-tight">Confluences</h2>
+        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted-foreground">
+          Your reusable setup library. These become the quick-select chips when logging a trade.
+        </p>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-6">
-          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <>
           {items.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 py-8 text-center">
-              <p className="text-xs font-medium text-muted-foreground">No confluences yet</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground/70">Add your own or tap a suggestion below.</p>
+            <div className="mt-5 rounded-xl border border-dashed border-border/60 px-4 py-10 text-center">
+              <p className="text-sm font-medium text-muted-foreground">No confluences yet</p>
+              <p className="mt-1 text-xs text-muted-foreground/70">Add your own or pick from the suggestions below.</p>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="mt-5 flex flex-wrap gap-2 border-y border-border/40 py-4">
               {items.map((c, idx) =>
                 editingIdx === idx ? (
-                  <div key={idx} className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-background py-1 pl-2 pr-1">
+                  <div
+                    key={idx}
+                    className="inline-flex items-center gap-1 rounded-lg border bg-background py-1.5 pl-2.5 pr-1.5"
+                    style={{ borderColor: "rgba(6,182,212,0.5)" }}
+                  >
                     <input
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
@@ -135,13 +156,14 @@ export function ConfluencesEditor() {
                 ) : (
                   <span
                     key={idx}
-                    className="group inline-flex items-center gap-1 rounded-lg border border-border/60 bg-gradient-to-b from-muted/30 to-muted/5 py-1.5 pl-3 pr-1.5 text-sm transition-colors hover:border-primary/30"
+                    className="group inline-flex items-center gap-1.5 rounded-lg border border-border/60 py-2 pl-3.5 pr-2 text-sm transition-all hover:-translate-y-px"
+                    style={{ background: "linear-gradient(180deg, rgba(6,182,212,0.10), rgba(6,182,212,0.03))" }}
                   >
                     <button
                       type="button"
                       onClick={() => startEdit(idx)}
-                      className="max-w-full truncate text-left transition-colors hover:text-primary"
                       title="Edit confluence"
+                      className="max-w-full truncate text-left font-medium transition-colors group-hover:text-foreground"
                     >
                       {c}
                     </button>
@@ -159,21 +181,24 @@ export function ConfluencesEditor() {
             </div>
           )}
 
-          {/* Add new — inline composer */}
-          <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-secondary/40 p-1.5 transition-colors focus-within:border-primary/40">
+          {/* Composer */}
+          <div
+            className="mt-4 flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-2 transition-all focus-within:ring-2"
+            style={{ ["--tw-ring-color" as string]: "rgba(6,182,212,0.12)" }}
+          >
             <input
               value={newItem}
               onChange={(e) => setNewItem(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNew(); } }}
               placeholder="Add a confluence…"
-              className="flex-1 bg-transparent px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
+              className="min-w-0 flex-1 bg-transparent px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
             />
             <button
               type="button"
               onClick={addNew}
               disabled={!newItem.trim()}
-              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all disabled:opacity-40"
-              style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-xs font-bold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
+              style={{ background: "#06B6D4" }}
             >
               <Plus className="h-3.5 w-3.5" /> Add
             </button>
@@ -181,15 +206,15 @@ export function ConfluencesEditor() {
 
           {/* Preset suggestions */}
           {suggestions.length > 0 && (
-            <div>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Suggestions</p>
+            <div className="mt-4">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">Suggestions</p>
               <div className="flex flex-wrap gap-1.5">
                 {suggestions.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => add(c)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border/60 bg-background/40 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                    className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border/60 bg-background/30 px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-border hover:text-foreground"
                   >
                     <Plus className="h-3 w-3" /> {c}
                   </button>
@@ -199,13 +224,13 @@ export function ConfluencesEditor() {
           )}
 
           {/* Save row */}
-          <div className="flex items-center justify-between gap-3 pt-1">
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/40 pt-4">
             <div className="text-xs">
               {saveState === "saved" && (
-                <span className="flex items-center gap-1.5 text-success"><CheckCircle2 className="w-3.5 h-3.5" /> Saved</span>
+                <span className="flex items-center gap-1.5 text-success"><CheckCircle2 className="h-3.5 w-3.5" /> Saved</span>
               )}
               {saveState === "error" && (
-                <span className="flex items-center gap-1.5 text-destructive"><AlertCircle className="w-3.5 h-3.5" /> Failed to save</span>
+                <span className="flex items-center gap-1.5 text-destructive"><AlertCircle className="h-3.5 w-3.5" /> Failed to save</span>
               )}
               {saveState !== "saved" && saveState !== "error" && dirty && (
                 <span className="text-muted-foreground">Unsaved changes</span>
@@ -215,10 +240,10 @@ export function ConfluencesEditor() {
               type="button"
               onClick={persist}
               disabled={!dirty || saveState === "saving"}
-              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all disabled:opacity-40"
-              style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
+              className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
+              style={{ background: "#06B6D4" }}
             >
-              {saveState === "saving" ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</> : "Save confluences"}
+              {saveState === "saving" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…</> : "Save confluences"}
             </button>
           </div>
         </>
