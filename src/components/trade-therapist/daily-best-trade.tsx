@@ -7,9 +7,10 @@ import {
 } from "date-fns";
 import {
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Loader2, Check,
-  Trophy, LineChart, ExternalLink,
+  Trophy, ExternalLink,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { AccentPanel } from "@/components/ui/accent-panel";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import { cn } from "@/lib/utils";
 import {
@@ -138,8 +139,8 @@ export function DailyBestTrade({
   return (
     <div className="space-y-4">
       {/* Week calendar of results */}
-      <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/40 bg-gradient-to-b from-muted/25 to-transparent">
+      <AccentPanel accent="primary" className="p-0 pl-1">
+        <div className="flex items-center justify-between gap-3 border-b border-border/40 px-4 py-2.5">
           <button onClick={() => onDateChange(format(subWeeks(d, 1), "yyyy-MM-dd"))} aria-label="Previous week"
             className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
             <ChevronLeft className="w-4 h-4" />
@@ -224,7 +225,7 @@ export function DailyBestTrade({
             );
           })}
         </div>
-      </div>
+      </AccentPanel>
 
       {loading ? (
         <div className="flex items-center justify-center h-40"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
@@ -240,9 +241,8 @@ export function DailyBestTrade({
           <div className="grid gap-4 lg:grid-cols-2 items-start">
             {/* Left: trades taken + post-market analysis */}
             <div className="space-y-4">
-              <div className="rounded-2xl border border-border/60 bg-card p-4">
-                <p className="text-sm font-semibold">Trades taken</p>
-                <div className="mt-2.5 space-y-1.5">
+              <AccentPanel accent="primary" eyebrow="Execution" title="Trades taken">
+                <div className="mt-4 space-y-1.5">
                   {dayTrades.length === 0 ? (
                     <p className="py-4 text-center text-xs text-muted-foreground/70">Nothing logged for this day.</p>
                   ) : (
@@ -274,65 +274,56 @@ export function DailyBestTrade({
                     ))
                   )}
                 </div>
-              </div>
+              </AccentPanel>
 
-              <div className="rounded-2xl border border-border/60 bg-card p-4">
-                <div className="flex items-center gap-2">
-                  <LineChart className="w-4 h-4 text-primary" />
-                  <p className="text-sm font-semibold">Post-market analysis</p>
-                </div>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  What did the market actually do? Key levels, the setups that appeared, how the day should have been traded.
-                </p>
+              <AccentPanel
+                accent="cyan"
+                eyebrow="Analysis"
+                title="Post-market analysis"
+                subtitle="What did the market actually do? Key levels, the setups that appeared, how the day should have been traded."
+              >
                 <textarea
                   value={postMarket}
                   onChange={(e) => { setPostMarket(e.target.value); setSaved(false); }}
                   rows={7}
                   placeholder="Range held the overnight low, first pullback into VWAP was the A+ long, chased the breakout instead…"
-                  className="mt-2.5 w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
+                  className="mt-4 w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                 />
-              </div>
+              </AccentPanel>
             </div>
 
             {/* Right: best trade of the day */}
-            <div className="rounded-2xl border border-border/60 bg-card p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10">
-                  <Trophy className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">Best trade of the day</p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-                    The single best trade the market offered — take it apart so you recognise it next time.
-                  </p>
-                </div>
-              </div>
-
-              <label className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5">
+            <AccentPanel
+              accent="primary"
+              eyebrow="Benchmark"
+              title="Best trade of the day"
+              subtitle="The single best trade the market offered — take it apart so you recognise it next time."
+            >
+              <label className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5">
                 <span className="text-xs font-medium">The trade I took was already the best available</span>
                 <Switch checked={takenWasBest} onCheckedChange={(v) => { setTakenWasBest(v); setSaved(false); }} />
               </label>
 
-              <div className="mt-3">
-                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Why this was the better play</p>
+              <div className="mt-4">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">Why this was the better play</p>
                 <textarea
                   value={notes}
                   onChange={(e) => { setNotes(e.target.value); setSaved(false); }}
                   rows={4}
                   placeholder="Cleaner level, more room to target, aligned with the daily bias…"
-                  className="w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
+                  className="w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                 />
               </div>
 
-              <div className="mt-3">
-                <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Screenshots</p>
+              <div className="mt-4">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">Screenshots</p>
                 <ScreenshotUpload
                   groups={groups}
                   onChange={(g) => { setGroups(g); setSaved(false); }}
                   storageConfig={userId ? { userId, entityType: "best-trade", entityId: date } : undefined}
                 />
               </div>
-            </div>
+            </AccentPanel>
           </div>
 
           {/* Save bar */}

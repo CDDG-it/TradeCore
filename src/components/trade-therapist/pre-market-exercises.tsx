@@ -3,11 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import {
-  TrendingUp, TrendingDown, Loader2, Check, ExternalLink,
-  ShieldCheck, Repeat, Target, ArrowRight,
-} from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Check, ExternalLink, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AccentPanel } from "@/components/ui/accent-panel";
 import { getPreMarketExercise, savePreMarketExercise } from "@/lib/supabase/queries";
 import { instrumentName } from "@/lib/journal/weeks";
 import type { TradeJournalEntry } from "@/lib/types";
@@ -108,22 +106,12 @@ export function PreMarketExercises({
   return (
     <div className="space-y-5">
       {/* Intro */}
-      <div className="rounded-2xl border border-border/60 bg-gradient-to-b from-muted/25 to-transparent p-5">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/25 bg-primary/10">
-            <Target className="h-4 w-4 text-primary" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold tracking-tight">Warm up before the open</h2>
-            <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
-              Your last two losses and two wins are below. Write down, in your own
-              words, how you will stop each mistake from repeating today — and how
-              you will reproduce what worked. Committing to the plan before you
-              trade is what keeps you from making the same error twice.
-            </p>
-          </div>
-        </div>
-      </div>
+      <AccentPanel
+        accent="primary"
+        eyebrow="Pre-market"
+        title="Warm up before the open"
+        subtitle="Your last two losses and two wins are below. Write down, in your own words, how you will stop each mistake from repeating today — and how you will reproduce what worked. Committing to the plan before you trade is what keeps you from making the same error twice."
+      />
 
       {loading ? (
         <div className="flex h-40 items-center justify-center">
@@ -146,29 +134,26 @@ export function PreMarketExercises({
       ) : (
         <>
           {/* Today's focus */}
-          <div className="rounded-2xl border border-border/60 bg-card p-5">
-            <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary" />
-              <p className="text-sm font-semibold">Today's one focus</p>
-            </div>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Distil the review into a single instruction you will hold all session.
-            </p>
+          <AccentPanel
+            accent="primary"
+            eyebrow="Intention"
+            title="Today's one focus"
+            subtitle="Distil the review into a single instruction you will hold all session."
+          >
             <input
               value={focus}
               onChange={(e) => { setFocus(e.target.value); setSaved(false); }}
               placeholder="No entry without a confirmed level. Wait for the retest."
-              className="mt-3 w-full rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
+              className="mt-4 w-full rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-[15px] outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
             />
-          </div>
+          </AccentPanel>
 
           <div className="grid gap-5 lg:grid-cols-2 items-start">
             {/* Losses to prevent */}
             <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-destructive" />
-                <h3 className="text-sm font-semibold">Prevent these losses</h3>
-              </div>
+              <h3 className="font-heading text-sm font-bold uppercase tracking-[0.14em] text-destructive/80">
+                Prevent these losses
+              </h3>
               {losses.length === 0 ? (
                 <p className="rounded-2xl border border-dashed border-border/60 bg-card px-4 py-8 text-center text-xs text-muted-foreground">
                   No losses on record. Keep protecting your downside.
@@ -190,10 +175,9 @@ export function PreMarketExercises({
 
             {/* Wins to repeat */}
             <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Repeat className="h-4 w-4 text-success" />
-                <h3 className="text-sm font-semibold">Repeat these wins</h3>
-              </div>
+              <h3 className="font-heading text-sm font-bold uppercase tracking-[0.14em] text-success/80">
+                Repeat these wins
+              </h3>
               {wins.length === 0 ? (
                 <p className="rounded-2xl border border-dashed border-border/60 bg-card px-4 py-8 text-center text-xs text-muted-foreground">
                   No wins on record yet. Your best trades will show here.
@@ -263,11 +247,11 @@ function ReviewCard({
   }
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card p-4">
+    <AccentPanel accent={isWin ? "success" : "destructive"}>
       {/* Trade header */}
       <Link
         href={`/journal/${t.id}`}
-        className="group flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2 transition-colors hover:border-primary/40 hover:bg-muted/30"
+        className="group relative flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2 transition-colors hover:border-primary/40 hover:bg-muted/30"
       >
         {t.direction === "long"
           ? <TrendingUp className="h-4 w-4 shrink-0 text-success" />
@@ -307,16 +291,16 @@ function ReviewCard({
       </div>
 
       {/* The plan */}
-      <div className="mt-3.5 border-t border-border/40 pt-3">
-        <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">{prompt}</p>
+      <div className="mt-4 border-t border-border/40 pt-3.5">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">{prompt}</p>
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={3}
           placeholder={placeholder}
-          className="w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
+          className="w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
         />
       </div>
-    </div>
+    </AccentPanel>
   );
 }

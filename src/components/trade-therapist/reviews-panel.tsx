@@ -6,9 +6,10 @@ import {
   format, startOfWeek, subWeeks, endOfWeek, startOfDay, subMonths, startOfMonth, endOfMonth, isWithinInterval,
 } from "date-fns";
 import {
-  Loader2, ArrowRight, CheckCircle2, Circle, Lock, ChevronDown, ChevronUp, PenLine,
+  Loader2, ArrowRight, CheckCircle2, Circle, Lock, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AccentPanel } from "@/components/ui/accent-panel";
 import { getTrades, getWeeklyTradeReviews } from "@/lib/supabase/queries";
 import { getWeekGroup, formatTotalR, tradeR } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
@@ -75,8 +76,8 @@ export function ReviewsPanel() {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
       {/* LEFT — toggle + list */}
-      <div className="rounded-2xl border border-border/60 bg-card">
-        <div className="flex items-center justify-between gap-3 p-3 border-b border-border/40">
+      <AccentPanel accent="primary" className="p-0 pl-1">
+        <div className="flex items-center justify-between gap-3 border-b border-border/40 p-3">
           <div className="flex rounded-lg border border-border/60 overflow-hidden">
             {(["weekly", "monthly"] as Mode[]).map((m) => (
               <button
@@ -144,16 +145,19 @@ export function ReviewsPanel() {
             )}
           </div>
         )}
-      </div>
+      </AccentPanel>
 
       {/* RIGHT — progress + what you wrote (facts only) */}
       <div className="space-y-4">
-        <div className="rounded-2xl border border-border/60 bg-card p-4">
-          <div className="flex items-baseline justify-between gap-2">
-            <p className="text-sm font-semibold">Review progress</p>
+        <AccentPanel
+          accent="primary"
+          eyebrow="Consistency"
+          title="Review progress"
+          headerRight={
             <span className="text-xs font-bold tabular-nums text-primary">{doneCount}/{closedWeeks.length}</span>
-          </div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted-foreground/12">
+          }
+        >
+          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted-foreground/12">
             <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, background: "#14B8A6" }} />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -166,15 +170,15 @@ export function ReviewsPanel() {
               <p className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Still to write</p>
             </div>
           </div>
-        </div>
+        </AccentPanel>
 
-        <div className="rounded-2xl border border-border/60 bg-card p-4">
-          <div className="flex items-center gap-2">
-            <PenLine className="w-4 h-4 text-primary" />
-            <p className="text-sm font-semibold">Your reflections</p>
-          </div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">Exactly what you wrote, newest first — your words only.</p>
-          <div className="mt-3 space-y-2.5">
+        <AccentPanel
+          accent="cyan"
+          eyebrow="In your words"
+          title="Your reflections"
+          subtitle="Exactly what you wrote, newest first — your words only."
+        >
+          <div className="mt-4 space-y-2.5">
             {writtenNotes.length === 0 ? (
               <p className="py-6 text-center text-xs text-muted-foreground/70">No reflections written yet — close a week to add one.</p>
             ) : (
@@ -201,7 +205,7 @@ export function ReviewsPanel() {
               })
             )}
           </div>
-        </div>
+        </AccentPanel>
       </div>
     </div>
   );
