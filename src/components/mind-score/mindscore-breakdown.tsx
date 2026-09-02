@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AccentPanel } from "@/components/ui/accent-panel";
 import {
   getTrades, getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getAnalyses,
 } from "@/lib/supabase/queries";
@@ -81,12 +82,22 @@ export function MindScoreBreakdown() {
         })}
       </div>
 
-      {/* Hero — the score, or a friendly "just getting started" note */}
+      {/* Hero — the score, or a friendly "just getting started" note.
+          The spine takes the band colour, so the panel reads at a glance. */}
       <div
-        className="rounded-xl border p-3.5"
-        style={{ borderColor: alpha(c, 30), background: alpha(c, 6) }}
+        className="relative overflow-hidden rounded-2xl border p-5 pl-6"
+        style={{
+          borderColor: alpha(c, 30),
+          background: alpha(c, 6),
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 32px -18px rgba(0,0,0,0.8)",
+        }}
       >
-        <div className="flex items-center gap-3.5">
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-1"
+          style={{ background: `linear-gradient(180deg, ${c}, ${alpha(c, 12)})` }}
+        />
+        <div className="relative flex items-center gap-3.5">
           <div
             className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border"
             style={{ borderColor: alpha(c, 40), background: alpha(c, 12) }}
@@ -125,7 +136,8 @@ export function MindScoreBreakdown() {
 
       {/* The three parts + the work that lifts the score, side by side */}
       <div className="grid gap-3 md:grid-cols-2 items-start">
-        <div className="space-y-2">
+        <AccentPanel accent="primary" eyebrow="Breakdown" title="What makes up the score">
+          <div className="mt-4 space-y-2">
           {score.components.map((comp) => {
             const meta = PART_META[comp.key];
             const has = comp.applicable && comp.value != null;
@@ -149,11 +161,16 @@ export function MindScoreBreakdown() {
               </div>
             );
           })}
-        </div>
+          </div>
+        </AccentPanel>
 
-        <div className="rounded-lg border border-border bg-card p-3">
-          <p className="text-xs font-semibold mb-2">What lifts your score</p>
-          <div className="space-y-1.5">
+        <AccentPanel
+          accent="cyan"
+          eyebrow="Next steps"
+          title="What lifts your score"
+          subtitle="The process work still outstanding — each one links straight to where you do it."
+        >
+          <div className="mt-4 space-y-1.5">
             {score.objectives.map((o) => {
               const done = o.rate >= 1;
               const capped = Math.min(o.progress, o.target);
@@ -180,7 +197,7 @@ export function MindScoreBreakdown() {
               );
             })}
           </div>
-        </div>
+        </AccentPanel>
       </div>
     </div>
   );

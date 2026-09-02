@@ -27,6 +27,7 @@ import { computeHabitScore } from "@/lib/discipline";
 import { frequencyApplies } from "@/lib/habits";
 import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
 import { LiquidGlassCard } from "@/components/ui/liquid-glass-card";
+import { AccentPanel } from "@/components/ui/accent-panel";
 import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
 import {
   Dialog,
@@ -453,12 +454,13 @@ export function HabitsView() {
       </div>
 
       {/* Habits grid — two columns on wide screens keeps everything above the fold */}
-      <div className="grid gap-3">
-        <div className="space-y-2.5">
-          {/* Category legend inline */}
-          {habits.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h2 className="text-sm font-semibold mr-1">Daily Habits</h2>
+      <AccentPanel
+        accent="primary"
+        eyebrow="Daily reps"
+        title="Daily Habits"
+        headerRight={
+          habits.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
               {(Object.keys(CATEGORY_COLORS) as HabitCategory[]).map((cat) => {
                 const { accent, bg, label, Icon } = CATEGORY_COLORS[cat];
                 return (
@@ -471,7 +473,10 @@ export function HabitsView() {
                 );
               })}
             </div>
-          )}
+          ) : undefined
+        }
+      >
+        <div className="mt-4 space-y-2.5">
 
           {habits.length === 0 && (
             <LiquidGlassCard className="p-8 text-center animate-fade-up border-dashed">
@@ -623,7 +628,7 @@ export function HabitsView() {
           })}
           </div>
         </div>
-      </div>
+      </AccentPanel>
 
       {/* New habit dialog */}
       <Dialog open={showNewHabit} onOpenChange={(o) => (o ? setShowNewHabit(true) : closeNewHabit())}>
