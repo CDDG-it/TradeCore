@@ -65,7 +65,7 @@ export function LandingNav() {
 
   return (
     <header
-      className="sticky top-0 z-30 px-6 py-4"
+      className="sticky top-0 z-30 px-4 py-4 sm:px-6"
       style={{
         background: "rgba(11,17,32,0.88)",
         backdropFilter: "blur(20px)",
@@ -73,11 +73,11 @@ export function LandingNav() {
         borderBottom: "1px solid rgba(248,250,252,0.09)",
       }}
     >
-      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4">
+      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4">
         {/* Brand — logo + wordmark, same font family as the hero heading, much smaller */}
         <Link href="/" className="flex items-center gap-2.5 justify-self-start hover:opacity-80 transition-opacity">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/tradingmc-app-dark.svg" alt="" width={44} height={44} className="h-11 w-11 shrink-0" />
+          <img src="/tradingmc-app-dark.svg" alt="" width={44} height={44} className="h-9 w-9 shrink-0 sm:h-11 sm:w-11" />
           <span
             className="font-black tracking-tight text-base leading-none"
             style={{ fontFamily: NUNITO }}
@@ -87,8 +87,12 @@ export function LandingNav() {
           </span>
         </Link>
 
-        {/* Center nav — Features + Coming soon, centered in the bar */}
-        <nav className="col-start-2 flex items-center justify-center gap-1 sm:gap-2" style={{ fontFamily: NUNITO }}>
+        {/* Center nav — Features, centered in the bar. Hidden on phones: it is a
+            hover dropdown (poor on touch) and the three columns together
+            overflow a 390px viewport, which scrolled the whole page sideways.
+            The same feature pages stay reachable from the product cards, the
+            explorer and the footer. */}
+        <nav className="col-start-2 hidden items-center justify-center gap-1 sm:flex sm:gap-2" style={{ fontFamily: NUNITO }}>
           {/* Features dropdown */}
           <div
             ref={wrapRef}
