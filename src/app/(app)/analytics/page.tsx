@@ -26,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTrades, getWeeklyTradeReviews, getWeeklyReflection } from "@/lib/supabase/queries";
 import type { TradeJournalEntry, WeeklyTradeReview, WeeklyReflection } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { computeConfluenceStats, CONFLUENCE_MIN_SAMPLE } from "@/lib/journal/confluence-stats";
 
 type Period = "all" | "day" | "week" | "month";
 type DayFilter = "all" | "Mon" | "Tue" | "Wed" | "Thu" | "Fri";
@@ -209,6 +210,11 @@ export default function AnalyticsPage() {
       trades: d.trades,
     }))
     .sort((a, b) => b.winRate - a.winRate);
+
+  // ── Confluence performance ────────────────────────────────────────────
+  // Which of the trader's own setups actually pay. Ranked by R per trade, so a
+  // high win rate at poor reward cannot outrank a selective, larger winner.
+  const confluenceData = computeConfluenceStats(trades);
 
   // ── Long vs short ─────────────────────────────────────────────────────
   const longTrades = trades.filter((t) => t.direction === "long");
@@ -657,6 +663,77 @@ export default function AnalyticsPage() {
                         <span className="text-muted-foreground mx-1">·</span>
                         <span className="text-primary font-medium">{d.avgRR}R</span>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {confluenceData.length > 0 && (
+            <Card className="bg-card border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">Confluence Breakdown</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  What each setup earns per trade. Ranked by R per trade, not win rate — a
+                  selective setup with bigger winners beats a frequent one that barely pays.
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-border/40">
+                  <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+                    <span>Confluence</span>
+                    <span className="w-12 text-center">Trades</span>
+                    <span className="w-12 text-right">Win %</span>
+                    <span className="w-20 text-right">R / trade</span>
+                  </div>
+                  {confluenceData.map((c) => (
+                    <div
+                      key={c.name}
+                      className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-5 py-3.5 text-sm"
+                    >
+                      <span className={cn("flex items-center gap-2 font-medium", c.thin && "text-muted-foreground")}>
+                        <span className="truncate">{c.name}</span>
+                        {/* Too few trades to be evidence — say so rather than let it read as a finding */}
+                        {c.thin && (
+                          <span
+                            className="shrink-0 rounded border border-border/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80"
+                            title={`Fewer than ${CONFLUENCE_MIN_SAMPLE} trades — not enough to draw a conclusion`}
+                          >
+                            Thin
+                          </span>
+                        )}
+                      </span>
+                      <span className="w-12 text-center tabular-nums text-muted-foreground">{c.trades}</span>
+                      <span
+                        className={cn(
+                          "w-12 text-right font-semibold tabular-nums",
+                          c.thin
+                            ? "text-muted-foreground"
+                            : c.winRate >= 60
+                            ? "text-success"
+                            : c.winRate >= 40
+                            ? "text-warning"
+                            : "text-destructive"
+                        )}
+                      >
+                        {c.winRate}%
+                      </span>
+                      <span
+                        className={cn(
+                          "w-20 text-right font-bold tabular-nums",
+                          c.thin
+                            ? "text-muted-foreground"
+                            : c.expectancy > 0
+                            ? "text-success"
+                            : c.expectancy < 0
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        {c.expectancy > 0 ? "+" : ""}
+                        {c.expectancy.toFixed(2)}R
+                      </span>
                     </div>
                   ))}
                 </div>
