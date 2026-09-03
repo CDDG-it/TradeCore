@@ -348,38 +348,6 @@ export const FEATURES: Feature[] = [
       },
     ],
   },
-  {
-    slug: "option-flow",
-    name: "Option Flow",
-    section: "Markets",
-    tagline: "Dealer positioning, strike by strike.",
-    blurb:
-      "See where the size is really positioned across strikes, so you can read the session structure behind the price instead of guessing at it.",
-    cta: "Open Option Flow",
-    screenshot: "/screenshots/option-flow.png",
-    aspect: "1670 / 848",
-    intro:
-      "Price is the last thing to move. Option Flow shows you where the size is positioned across strikes, so you can read the structure that shapes a session before it plays out on the chart.",
-    blocks: [
-      {
-        heading: "How it works",
-        body: "The positioning behind the index, laid out where you can actually use it.",
-        points: [
-          "See how dealer exposure is distributed across strikes, so the levels that matter are the ones the market is actually defending.",
-          "Read the structure around key strikes to understand where price is likely to stall, accelerate or pin.",
-          "Pair it with your pre market analysis so your levels are backed by positioning, not just lines on a chart.",
-        ],
-      },
-      {
-        heading: "Why it works",
-        body: "Most traders react to price and never see what is holding it. Positioning gives you the context underneath the move, so a level is not just where price bounced last time but where real size is committed right now.",
-      },
-      {
-        heading: "Why every trader needs this",
-        body: "Trading index futures without a read on positioning is trading half the picture. Knowing where the structure sits turns your levels from guesses into decisions the market itself is defending.",
-      },
-    ],
-  },
 ];
 
 export const FEATURE_BY_SLUG: Record<string, Feature> = Object.fromEntries(

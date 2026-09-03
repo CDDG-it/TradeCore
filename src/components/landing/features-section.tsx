@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { Brain, Sparkles, ScrollText, Activity, ArrowRight, type LucideIcon } from "lucide-react";
+import { Brain, Sparkles, ScrollText, ArrowRight, type LucideIcon } from "lucide-react";
 import { FEATURES } from "@/lib/landing/features";
 
 /**
@@ -22,7 +22,6 @@ const EDGE: { slug: string; icon: LucideIcon }[] = [
   { slug: "psychological-edge", icon: Brain },
   { slug: "trade-therapist", icon: Sparkles },
   { slug: "strategy", icon: ScrollText },
-  { slug: "option-flow", icon: Activity },
 ];
 
 const bySlug = Object.fromEntries(FEATURES.map((f) => [f.slug, f]));

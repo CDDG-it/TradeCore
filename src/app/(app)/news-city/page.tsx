@@ -23,11 +23,11 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "futures", label: "Futures" },
   { key: "news", label: "News" },
   { key: "calendar", label: "Calendar" },
-  { key: "flow", label: "Flow & Options" },
+  { key: "flow", label: "Positioning & Flow" },
 ];
 
-/** Old ?tab= values that should still land somewhere sensible. Option Flow was
- *  briefly its own subtab before being folded into Flow & Options. */
+/** Old ?tab= values that should still land somewhere sensible, from when Option
+ *  Flow was briefly its own subtab. */
 const TAB_ALIASES: Record<string, Tab> = { "option-flow": "flow", options: "flow" };
 
 const tabLoading = () => (
