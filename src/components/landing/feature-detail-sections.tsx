@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 /**
- * Deep-dive feature sections for the landing page — the four flagship MC tools,
- * presented Apple-style: centered, large type, generous whitespace, minimal
- * copy. Each tool is a self-contained block with a headline, one supporting
- * line, a compact capability row and a quiet link. Copy lives in FEATURES.
+ * The five flagship MC tools, presented as an editorial index rather than five
+ * identical centred hero blocks: each tool is one hairline-ruled row, with its
+ * identity on the left and what it actually does on the right.
+ *
+ * The tools are a parallel set, not a sequence, so they carry their category
+ * label instead of a running number — the numbering on the home page is
+ * reserved for the plan/log/review rhythm, which genuinely is ordered.
  */
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -86,41 +89,28 @@ const FEATURES: DetailFeature[] = [
 
 export function FeatureDetailSections() {
   return (
-    <section id="features" className="relative overflow-hidden bg-background px-6 py-28 md:py-40">
-      {/* Hairline that anchors the section to the cards above it */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent"
-      />
-
-      <div className="mx-auto max-w-5xl">
-        {/* Section header — centered */}
-        <div className="mx-auto max-w-3xl text-center">
-          <motion.p
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-15%" }}
-            transition={{ duration: 0.5, ease: EASE }}
-            className="font-mono text-xs font-medium uppercase tracking-[0.24em] text-primary"
-          >
-            Inside the platform
-          </motion.p>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-15%" }}
-            transition={{ duration: 0.7, ease: EASE, delay: 0.08 }}
-            className="mx-auto mt-5 max-w-3xl font-heading font-black tracking-tight text-foreground"
-            style={{ fontSize: "clamp(2.25rem, 5.5vw, 4rem)", lineHeight: 1.03 }}
+    <section id="features" className="relative bg-background px-6 py-24 md:px-10 md:py-32">
+      <div className="mx-auto max-w-6xl">
+        {/* Section header — left-aligned, no centred bloom */}
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-15%" }}
+          transition={{ duration: 0.6, ease: EASE }}
+          className="max-w-3xl"
+        >
+          <p className="font-body text-[13px] font-semibold text-primary">Inside the platform</p>
+          <h2
+            className="mt-5 font-heading font-black tracking-tight text-foreground"
+            style={{ fontSize: "clamp(2rem,4.6vw,3.25rem)", lineHeight: 1.05 }}
           >
             Five instruments for the operator behind the trades.
-          </motion.h2>
-        </div>
+          </h2>
+        </motion.div>
 
-        {/* Tool blocks — centered, generous air */}
-        <div className="mt-28 flex flex-col gap-32 md:mt-40 md:gap-48">
-          {FEATURES.map((f, i) => (
-            <ToolBlock key={f.name} feature={f} index={i} />
+        <div className="mt-16 md:mt-20">
+          {FEATURES.map((f) => (
+            <ToolRow key={f.name} feature={f} />
           ))}
         </div>
       </div>
@@ -128,60 +118,44 @@ export function FeatureDetailSections() {
   );
 }
 
-function ToolBlock({ feature: f, index }: { feature: DetailFeature; index: number }) {
+function ToolRow({ feature: f }: { feature: DetailFeature }) {
   return (
     <motion.article
-      initial={{ opacity: 0, y: 44 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-15%" }}
-      transition={{ duration: 0.8, ease: EASE }}
-      className="relative text-center"
+      viewport={{ once: true, margin: "-12%" }}
+      transition={{ duration: 0.6, ease: EASE }}
+      className="grid gap-8 border-t border-border/70 py-12 last:border-b md:grid-cols-[minmax(0,20rem)_1fr] md:gap-16 md:py-14"
     >
-      {/* Soft turquoise gradient bloom behind the headline */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[-15%] h-72 w-[36rem] max-w-full -translate-x-1/2 rounded-full blur-3xl"
-        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.12) 0%, transparent 70%)" }}
-      />
+      {/* Identity */}
+      <div>
+        <p className="font-body text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+          {f.label}
+        </p>
+        <h3 className="mt-3 font-heading text-2xl font-black tracking-tight text-foreground md:text-[1.75rem]">
+          {f.name}
+        </h3>
+        <p className="mt-3 font-body text-[0.95rem] leading-relaxed text-foreground/70">
+          {f.tagline}
+        </p>
+        <Link
+          href={f.href}
+          className="group mt-5 inline-flex items-center gap-1.5 font-body text-sm font-semibold text-primary transition-colors hover:text-foreground"
+        >
+          Explore {f.name}
+          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+        </Link>
+      </div>
 
-      <p className="relative font-mono text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
-        <span className="text-primary">0{index + 1}</span>
-        <span className="mx-2.5 text-border">/</span>
-        {f.label}
-      </p>
-
-      <h3
-        className="relative mx-auto mt-6 max-w-3xl font-heading font-black tracking-tight text-foreground"
-        style={{ fontSize: "clamp(2.25rem, 5vw, 3.5rem)", lineHeight: 1.04 }}
-      >
-        {f.name}
-      </h3>
-
-      <p
-        className="relative mx-auto mt-6 max-w-2xl font-body font-medium leading-snug text-foreground/80"
-        style={{ fontSize: "clamp(1.2rem, 2.4vw, 1.6rem)" }}
-      >
-        {f.tagline}
-      </p>
-
-      <Link
-        href={f.href}
-        className="group relative mt-8 inline-flex items-center gap-1 font-body text-base font-semibold text-primary transition-colors hover:text-foreground"
-      >
-        Explore {f.name}
-        <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-      </Link>
-
-      {/* Minimal capability row — centered, no cards, no borders */}
-      <div className="relative mx-auto mt-16 grid max-w-3xl gap-x-10 gap-y-10 sm:grid-cols-3">
-        {f.capabilities.map((c, ci) => (
-          <div key={c.term} className="text-center">
-            <span className="font-mono text-xs tabular-nums text-primary/80">0{ci + 1}</span>
-            <p className="mt-3 font-body text-[0.95rem] font-semibold text-foreground">{c.term}</p>
-            <p className="mt-2 font-body text-sm leading-relaxed text-muted-foreground">{c.detail}</p>
+      {/* What it does */}
+      <dl className="grid content-start gap-x-10 gap-y-7 sm:grid-cols-3">
+        {f.capabilities.map((c) => (
+          <div key={c.term}>
+            <dt className="font-body text-[0.9rem] font-semibold text-foreground">{c.term}</dt>
+            <dd className="mt-2 font-body text-sm leading-relaxed text-muted-foreground">{c.detail}</dd>
           </div>
         ))}
-      </div>
+      </dl>
     </motion.article>
   );
 }

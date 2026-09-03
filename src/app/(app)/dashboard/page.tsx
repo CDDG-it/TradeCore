@@ -434,10 +434,12 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
         <PeriodToggle value={period} onChange={onPeriodChange} accent={CYAN} />
       </div>
 
-      {/* Donut — scales with the available height but keeps a solid floor so
-          short (laptop) viewports still show a proper ring, not a dot. */}
-      <div className="flex-1 flex items-center justify-center py-1 min-h-[clamp(60px,9vh,108px)]">
-        <div className="group/donut relative aspect-square h-full max-h-[132px] w-auto transition-transform duration-500 ease-out hover:scale-[1.03]">
+      {/* Donut — sized from the viewport height rather than just the leftover
+          card space, so a short laptop viewport gets a proportionate ring
+          instead of one that crowds out the legend. The floor keeps it a proper
+          ring (not a dot) on phones, where the column is not height-capped. */}
+      <div className="flex-1 flex items-center justify-center py-1 min-h-[clamp(72px,8vh,96px)]">
+        <div className="group/donut relative aspect-square h-full max-h-[clamp(76px,10.5vh,112px)] w-auto transition-transform duration-500 ease-out hover:scale-[1.03]">
           <svg viewBox="0 0 116 116" className="block h-full w-full">
             {/* Track */}
             <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
@@ -464,10 +466,11 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
             style={{ background: `radial-gradient(circle, ${alpha(CYAN, 12)}, transparent 65%)` }}
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-[30px] font-black tabular-nums leading-none" style={{ color: CYAN }}>
+            {/* Tracks the ring's own scale, so the figure never crowds a small ring. */}
+            <p className="text-[clamp(18px,2.6vh,28px)] font-black tabular-nums leading-none" style={{ color: CYAN }}>
               {winRate === null ? "—" : `${display}%`}
             </p>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
+            <p className="text-[clamp(8px,1vh,9px)] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
               {total > 0 ? `${total} trade${total !== 1 ? "s" : ""}` : "no trades"}
             </p>
           </div>

@@ -20,26 +20,29 @@ export interface CardFlipProps {
   cta?: string;
 }
 
-// Shared liquid-glass surface for both faces: translucent fill, blur, hairline
-// border and a soft outer shadow.
+// Shared glass surface for both faces. The fill is a navy tint rather than a
+// white one: white-over-dark plus a heavy backdrop blur turned the cards into
+// grey fog against the flow field. Tinting with the page's own navy keeps the
+// glass reading as dark and clean, and lets the turquoise stay the only colour.
 const GLASS = cn(
   "overflow-hidden rounded-2xl",
-  "border border-white/10",
-  "bg-white/[0.045] backdrop-blur-xl",
-  "shadow-[0_8px_32px_rgba(0,0,0,0.38)]",
+  "border border-white/[0.09]",
+  "bg-[rgba(13,21,40,0.62)] backdrop-blur-md",
+  "shadow-[0_8px_32px_rgba(0,0,0,0.45)]",
 );
 
-// Specular highlights that sell the glass: a diagonal sheen and a bright top edge.
+// Specular highlights that sell the glass: a restrained diagonal sheen and a
+// bright top edge. Kept low so they read as an edge, not a wash.
 function Sheen() {
   return (
     <>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.12] via-transparent to-transparent"
+        className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.05] via-transparent to-transparent"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
       />
     </>
   );

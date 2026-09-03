@@ -50,23 +50,41 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
  */
 export function LayoutShowcase() {
   return (
-    <section className="relative overflow-hidden bg-background px-6 py-24 md:px-10 md:py-32">
-      {/* Slowed flow-field particle stream — calm, blooming motion behind the
-          full-width cards. Landing only. */}
-      <FlowField className="inset-0" density="medium" speed={0.3} />
+    <section className="relative overflow-hidden px-6 py-24 md:px-10 md:py-32" style={{ background: "#0B1120" }}>
+      {/* Slowed flow-field particle stream, held to the lower half so it reads as
+          depth behind the cards rather than a haze across the type. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-70"
+        style={{
+          maskImage: "linear-gradient(to bottom, transparent 0%, #000 28%)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, #000 28%)",
+        }}
+      >
+        <FlowField className="inset-0" density="medium" speed={0.3} />
+      </div>
 
       <div className="relative mx-auto max-w-[1700px]">
-        <p
-          className="text-center font-mono text-xs font-medium uppercase tracking-[0.24em] text-primary"
-          style={{ fontFamily: NUNITO }}
-        >
-          One platform
-        </p>
-        <h2 className="mx-auto mt-4 max-w-2xl text-center font-heading text-3xl font-black tracking-tight text-foreground md:text-4xl">
-          Everything the trader needs, in one place.
-        </h2>
+        {/* Header sits left and shares the baseline with a supporting line, so
+            the section opens like a spread rather than another centred stack. */}
+        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl">
+            <p className="font-body text-[13px] font-semibold text-primary" style={{ fontFamily: NUNITO }}>
+              One platform
+            </p>
+            <h2
+              className="mt-4 font-heading font-black tracking-tight text-foreground"
+              style={{ fontSize: "clamp(2rem,4.4vw,3rem)", lineHeight: 1.05 }}
+            >
+              Everything the trader needs, in one place.
+            </h2>
+          </div>
+          <p className="max-w-sm font-body text-sm leading-relaxed text-[rgba(248,250,252,0.55)]">
+            Five surfaces, one account. Hover any card to see what it holds.
+          </p>
+        </div>
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
           {CARDS.map((c) => (
             <CardFlip key={c.href} {...c} />
           ))}
