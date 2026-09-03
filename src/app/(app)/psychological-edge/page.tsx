@@ -6,36 +6,65 @@ import { PageWrapper } from "@/components/ui/page-wrapper";
 import { cn } from "@/lib/utils";
 import { HabitsView } from "@/components/habits/habits-view";
 import { MindScoreBreakdown } from "@/components/mind-score/mindscore-breakdown";
+import { TradingRulesEditor } from "@/components/habits/trading-rules";
+import { ConfluencesEditor } from "@/components/habits/confluences-editor";
+import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
 
 /**
- * MC Mind Edge — the "away from the charts" half of the MC Mindset Formula.
- * It holds the two things a trader controls off the screen: the habits that
- * build state, and the MC Mindscore that rolls discipline, habits and process
- * work into one number.
+ * My Edge — everything the trader controls away from the chart, in one place.
  *
- * The per-trade 5R reflection that used to live here has moved to MC Trade
- * Therapist, where it runs as a guided post-trade session against the trade
- * history — see /trade-therapist.
+ * Two halves, kept visibly separate rather than blended into one tab strip:
+ *   • Mind Edge — the habits that build state and the Mindscore that reads it.
+ *   • Strategy  — the rules and confluences you trade against, and the Monte
+ *                 Carlo pass simulation that pressure-tests them.
+ *
+ * (Route stays /psychological-edge so existing links keep working; /strategy
+ * redirects into the Strategy half.)
  */
-type EdgeTab = "habits" | "mindscore";
-const EDGE_TABS: { key: EdgeTab; label: string; blurb: string }[] = [
+type EdgeTab = "habits" | "mindscore" | "rules" | "simulator";
+type EdgeGroup = "mind" | "strategy";
+
+const GROUPS: { key: EdgeGroup; label: string; accent: string }[] = [
+  { key: "mind", label: "Mind Edge", accent: "#14B8A6" },
+  { key: "strategy", label: "Strategy", accent: "#06B6D4" },
+];
+
+const EDGE_TABS: { key: EdgeTab; group: EdgeGroup; label: string; blurb: string }[] = [
   {
     key: "habits",
+    group: "mind",
     label: "Habits",
     blurb: "The routines you keep away from the charts — the daily reps that build the state you trade from.",
   },
   {
     key: "mindscore",
+    group: "mind",
     label: "MC Mindscore",
     blurb: "One number rolling your rule-following, daily habits and process work into a single read.",
   },
+  {
+    key: "rules",
+    group: "strategy",
+    label: "Rules & Confluences",
+    blurb: "The non-negotiables and setups that define how you trade — surfaced when you log a trade.",
+  },
+  {
+    key: "simulator",
+    group: "strategy",
+    label: "Pass Simulation",
+    blurb: "Pressure-test your edge against a funded account's rules across thousands of simulated runs.",
+  },
 ];
 
-/** Segmented control with a sliding active pill — the app's shared tab language. */
+/**
+ * Segmented control split into its two halves. Each half carries its own label
+ * and accent, with a rule between them, so the Mind Edge and Strategy sides
+ * read as separate territory rather than one long row of tabs.
+ */
 function EdgeToggle({ tab, onChange }: { tab: EdgeTab; onChange: (t: EdgeTab) => void }) {
   return (
     <div
-      className="relative flex w-full sm:w-fit items-center gap-1 rounded-xl border border-border/50 p-1"
+      className="flex w-full flex-col gap-1 rounded-xl border border-border/50 p-1 sm:w-fit sm:flex-row sm:items-stretch sm:gap-0"
       style={{
         background: "color-mix(in oklch, var(--card) 70%, transparent)",
         backdropFilter: "blur(10px)",
@@ -43,58 +72,81 @@ function EdgeToggle({ tab, onChange }: { tab: EdgeTab; onChange: (t: EdgeTab) =>
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
       }}
     >
-      {EDGE_TABS.map(({ key, label }) => {
-        const active = tab === key;
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onChange(key)}
-            className={cn(
-              "relative flex-1 sm:flex-none inline-flex items-center justify-center rounded-lg px-4 sm:px-5 py-2 text-sm font-semibold transition-colors duration-200 whitespace-nowrap",
-              active ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
+      {GROUPS.map((g, gi) => (
+        <div
+          key={g.key}
+          className={cn(
+            "flex flex-col gap-1 px-1",
+            gi > 0 && "border-t border-border/50 pt-1 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0 sm:ml-2"
+          )}
+        >
+          <span
+            className="px-2 pt-0.5 text-[9px] font-bold uppercase tracking-[0.16em]"
+            style={{ color: `color-mix(in oklch, ${g.accent} 75%, transparent)` }}
           >
-            {active && (
-              <motion.span
-                layoutId="edge-tab-pill"
-                className="absolute inset-0 rounded-lg"
-                style={{
-                  background: "linear-gradient(160deg, #14B8A6, #0d9488 60%, #0f766e)",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 18px rgba(20,184,166,0.30)",
-                }}
-                transition={{ type: "spring", stiffness: 460, damping: 34 }}
-              />
-            )}
-            <span className="relative z-10">{label}</span>
-          </button>
-        );
-      })}
+            {g.label}
+          </span>
+          <div className="flex gap-1">
+            {EDGE_TABS.filter((t) => t.group === g.key).map(({ key, label }) => {
+              const active = tab === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => onChange(key)}
+                  className={cn(
+                    "relative flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors duration-200 sm:flex-none sm:px-4",
+                    active ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="edge-tab-pill"
+                      className="absolute inset-0 rounded-lg"
+                      style={{
+                        background: `linear-gradient(160deg, ${g.accent}, color-mix(in oklch, ${g.accent} 70%, black) 90%)`,
+                        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 18px color-mix(in oklch, ${g.accent} 30%, transparent)`,
+                      }}
+                      transition={{ type: "spring", stiffness: 460, damping: 34 }}
+                    />
+                  )}
+                  <span className="relative z-10">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-export default function MindEdgePage() {
-  // Habits is the landing tab — it's the daily-touch surface of Mind Edge.
+export default function MyEdgePage() {
+  // Habits is the landing tab — it's the daily-touch surface of My Edge.
   const [tab, setTab] = useState<EdgeTab>("habits");
 
-  // Allow deep-linking to a specific tab.
+  // Deep-linking, including /strategy redirecting into the Strategy half.
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tab");
     if (EDGE_TABS.some((x) => x.key === t)) setTab(t as EdgeTab);
   }, []);
 
   const active = EDGE_TABS.find((x) => x.key === tab)!;
+  const group = GROUPS.find((g) => g.key === active.group)!;
 
   return (
     <div className="space-y-5">
-      {/* Header — title, contextual blurb, and the tab control */}
+      {/* Header — title, which half you are in, and the split control */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">
-            MC Mind Edge
+            My Edge
           </h1>
           <p className="mt-2 max-w-xl text-[12px] leading-relaxed text-muted-foreground">
+            <span className="font-semibold" style={{ color: group.accent }}>
+              {group.label}
+            </span>
+            <span className="mx-1.5 text-border">/</span>
             {active.blurb}
           </p>
         </div>
@@ -102,7 +154,15 @@ export default function MindEdgePage() {
       </div>
 
       <PageWrapper>
-        {tab === "habits" ? <HabitsView /> : <MindScoreBreakdown />}
+        {tab === "habits" && <HabitsView />}
+        {tab === "mindscore" && <MindScoreBreakdown />}
+        {tab === "rules" && (
+          <div className="grid items-start gap-6 lg:grid-cols-2">
+            <TradingRulesEditor />
+            <ConfluencesEditor />
+          </div>
+        )}
+        {tab === "simulator" && <MonteCarloSimulator />}
       </PageWrapper>
     </div>
   );

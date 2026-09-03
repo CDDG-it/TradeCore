@@ -20,9 +20,10 @@ export const APP_TABS: AppTab[] = [
   { label: "Analysis", href: "/analysis", group: "Trading" },
   { label: "Analytics", href: "/analytics", group: "Trading" },
   { label: "Accounts", href: "/accounts", group: "Trading" },
-  { label: "MC Mind Edge", href: "/psychological-edge", group: "MC Mindset formula" },
+  // My Edge holds both halves: Mind Edge (habits, Mindscore) and Strategy
+  // (rules & confluences, pass simulation). /strategy redirects into it.
+  { label: "My Edge", href: "/psychological-edge", group: "MC Mindset formula" },
   { label: "MC Trade Therapist", href: "/trade-therapist", group: "MC Mindset formula" },
-  { label: "My Strategy", href: "/strategy", group: "MC Mindset formula" },
   // Option Flow is not listed here — it lives as a subtab of Global Markets.
   { label: "Global Markets", href: "/news-city", group: "MC News Dashboard" },
 ];
@@ -34,8 +35,7 @@ export const APP_TABS: AppTab[] = [
  */
 export const PRIMARY_NAV: AppTab[] = [
   { label: "Dashboard", href: "/dashboard", group: null },
-  { label: "MC Mind Edge", href: "/psychological-edge", group: null },
+  { label: "My Edge", href: "/psychological-edge", group: null },
   { label: "MC Trade Therapist", href: "/trade-therapist", group: null },
-  { label: "My Strategy", href: "/strategy", group: null },
   { label: "Global Markets", href: "/news-city", group: null },
 ];
