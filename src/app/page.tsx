@@ -101,12 +101,17 @@ export default function HomePage() {
       <LandingNav />
 
       {/* ── Hero — dark navy background, turquoise + neutral candle visuals ── */}
-      {/* 53px = header height (py-4 + text-base logo + 1px border) */}
+      {/* 53px = header height (py-4 + text-base logo + 1px border).
+          overflow-hidden clips the decorative 520px glow and the candle canvas
+          to the section — without it the glow sticks ~110px past the viewport on
+          a phone and the whole page scrolls sideways. Scoped to the section, so
+          it does not disable the sticky header or page scrolling the way an
+          overflow rule on the page wrapper would. */}
       <section
         ref={heroRef}
         onMouseMove={handleHeroPointer}
         onMouseLeave={resetHeroPointer}
-        className="relative flex flex-col"
+        className="relative flex flex-col overflow-hidden"
         style={{ minHeight: "calc(100svh - 53px)" }}
       >
 

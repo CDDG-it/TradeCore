@@ -1,191 +1,708 @@
 "use client";
 
 /**
- * Product explorer — the section between the hero and the flip cards.
+ * Product explorer — the stretch between the hero and the flip cards.
  *
- * Rather than describing the five tools in prose, each one ships a small
- * working model of what it actually does: move the win rate and watch
- * expectancy flip negative, tick habits and watch a Mindscore climb, clear a
- * rule checklist before the gate opens. The numbers are illustrative and the
- * panel says so — nothing here is presented as a real trader's results.
+ * Each instrument gets its own block that reveals as you scroll, with a mock of
+ * the real card it renders in the app: the same chrome (accent hairline, radial
+ * glow, corner sheen), the same labels and the same figures treatment, so the
+ * landing page shows the actual product rather than an abstract illustration.
+ * The mocks stay interactive — the controls are the real ones, wired to
+ * illustrative data, and every block says so.
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Check } from "lucide-react";
+import { motion, useScroll, useSpring, useReducedMotion } from "motion/react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TURQUOISE = "#14B8A6";
 const CYAN = "#06B6D4";
 const GREEN = "#22c55e";
 const RED = "#ef4444";
+const AMBER = "#f59e0b";
 
-type ToolKey = "dashboard" | "mind-edge" | "therapist" | "strategy" | "markets";
+/** Matches the app's own alpha helper so the mock chrome is identical. */
+const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
 
-interface Tool {
-  key: ToolKey;
-  name: string;
-  label: string;
-  tagline: string;
-  href: string;
-  /** What the reader should try in the panel. */
-  invite: string;
+/* ── Shared card chrome, lifted from the dashboard ───────────────────────── */
+
+function CardFx({ accent }: { accent: string }) {
+  return (
+    <>
+      <div
+        className="pointer-events-none absolute inset-0 transition-opacity duration-500 group-hover/card:opacity-100"
+        style={{ background: `radial-gradient(115% 85% at 0% 0%, ${alpha(accent, 9)}, transparent 55%)`, opacity: 0.85 }}
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{ background: `linear-gradient(90deg, transparent, ${alpha(accent, 55)}, transparent)` }}
+      />
+      <div
+        className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover/card:opacity-100"
+        style={{ background: `radial-gradient(circle, ${alpha(accent, 25)}, transparent 70%)` }}
+      />
+      <div
+        className="pointer-events-none absolute inset-x-6 bottom-0 h-px origin-left scale-x-0 transition-transform duration-500 ease-out group-hover/card:scale-x-100"
+        style={{ background: `linear-gradient(90deg, ${alpha(accent, 65)}, transparent)` }}
+      />
+    </>
+  );
 }
 
-const TOOLS: Tool[] = [
+function MockCard({
+  accent,
+  className,
+  children,
+}: {
+  accent: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "group/card relative overflow-hidden rounded-2xl border border-border/60 bg-card p-4",
+        "shadow-[0_4px_20px_-10px_rgba(0,0,0,0.25)] transition-[box-shadow,border-color] duration-300",
+        "hover:border-border/90 hover:shadow-[0_10px_36px_-14px_rgba(0,0,0,0.45)]",
+        className
+      )}
+    >
+      <CardFx accent={accent} />
+      <div className="relative">{children}</div>
+    </div>
+  );
+}
+
+/** The app's small uppercase card label. */
+function CardLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{children}</p>
+  );
+}
+
+/** The app's week / month segmented toggle. */
+function PeriodToggle<T extends string>({
+  options,
+  value,
+  onChange,
+  accent,
+}: {
+  options: T[];
+  value: T;
+  onChange: (v: T) => void;
+  accent: string;
+}) {
+  return (
+    <div className="flex overflow-hidden rounded-lg border border-border/60">
+      {options.map((o) => (
+        <button
+          key={o}
+          type="button"
+          onClick={() => onChange(o)}
+          className={cn(
+            "px-2 py-0.5 text-[10px] font-semibold capitalize transition-colors",
+            value === o ? "text-background" : "text-muted-foreground hover:text-foreground"
+          )}
+          style={value === o ? { background: accent } : undefined}
+        >
+          {o}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ── Instrument copy ─────────────────────────────────────────────────────── */
+
+interface Instrument {
+  key: string;
+  label: string;
+  name: string;
+  tagline: string;
+  points: string[];
+  href: string;
+  accent: string;
+  visual: React.ReactNode;
+}
+
+/* ── 1. Dashboard — the real win-rate card ───────────────────────────────── */
+
+const WR_DATA = {
+  week: { wins: 7, losses: 4, be: 1, netR: 6.4 },
+  month: { wins: 26, losses: 19, be: 3, netR: 18.2 },
+};
+
+function WinRateMock() {
+  const [period, setPeriod] = useState<"week" | "month">("month");
+  const d = WR_DATA[period];
+  const total = d.wins + d.losses + d.be;
+  const wr = Math.round((d.wins / total) * 100);
+
+  const R = 46;
+  const SW = 11;
+  const C = 2 * Math.PI * R;
+  const segs = [
+    { v: d.wins, c: GREEN },
+    { v: d.be, c: AMBER },
+    { v: d.losses, c: RED },
+  ];
+  let acc = 0;
+
+  return (
+    <MockCard accent={CYAN} className="flex flex-col">
+      <div className="flex items-center justify-between">
+        <CardLabel>Win rate</CardLabel>
+        <PeriodToggle options={["week", "month"]} value={period} onChange={setPeriod} accent={CYAN} />
+      </div>
+
+      <div className="flex flex-1 items-center justify-center py-3">
+        <div className="relative aspect-square w-[132px]">
+          <svg viewBox="0 0 116 116" className="block h-full w-full">
+            <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
+            {segs.map((s, i) => {
+              if (s.v === 0) return null;
+              const frac = s.v / total;
+              const dash = frac * C;
+              const rot = acc * 360 - 90;
+              acc += frac;
+              return (
+                <circle
+                  key={i}
+                  cx={58}
+                  cy={58}
+                  r={R}
+                  fill="none"
+                  stroke={s.c}
+                  strokeWidth={SW}
+                  strokeLinecap="round"
+                  strokeDasharray={`${dash} ${C - dash}`}
+                  transform={`rotate(${rot} 58 58)`}
+                  style={{ filter: `drop-shadow(0 0 4px ${alpha(s.c, 40)})`, transition: "stroke-dasharray 400ms cubic-bezier(0.16,1,0.3,1)" }}
+                />
+              );
+            })}
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <p className="text-[30px] font-black leading-none tabular-nums" style={{ color: CYAN }}>
+              {wr}%
+            </p>
+            <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {total} trades
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: "Win", value: d.wins, color: GREEN },
+          { label: "Loss", value: d.losses, color: RED },
+          { label: "B/E", value: d.be, color: AMBER },
+        ].map((s) => (
+          <div key={s.label} className="rounded-lg border border-border/50 bg-muted/20 px-2 py-1 text-center">
+            <p className="text-base font-black leading-none tabular-nums" style={{ color: s.color }}>
+              {s.value}
+            </p>
+            <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">{s.label}</p>
+          </div>
+        ))}
+      </div>
+    </MockCard>
+  );
+}
+
+/* ── 2. Mind Edge — the real Mindscore breakdown ─────────────────────────── */
+
+const MS_DATA = {
+  week: { total: 82, rules: 90, habits: 74, objectives: 80, band: "Locked in" },
+  month: { total: 71, rules: 78, habits: 66, objectives: 69, band: "Holding" },
+  all: { total: 64, rules: 70, habits: 58, objectives: 62, band: "Holding" },
+};
+const MS_PARTS = [
+  { key: "rules", title: "Following your rules", sub: "Sticking to your plan on every trade", accent: TURQUOISE },
+  { key: "habits", title: "Daily habits", sub: "The routines you keep away from the charts", accent: CYAN },
+  { key: "objectives", title: "Doing the work", sub: "Reviews, prep and logging your best trade", accent: TURQUOISE },
+] as const;
+
+function MindscoreMock() {
+  const [period, setPeriod] = useState<"week" | "month" | "all">("month");
+  const d = MS_DATA[period];
+  const c = d.total >= 80 ? GREEN : d.total >= 55 ? TURQUOISE : RED;
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        {(["week", "month", "all"] as const).map((p) => {
+          const on = period === p;
+          const pc = MS_DATA[p].total >= 80 ? GREEN : MS_DATA[p].total >= 55 ? TURQUOISE : RED;
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPeriod(p)}
+              className={cn(
+                "flex items-baseline justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-left transition-colors",
+                on ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/30"
+              )}
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {p === "all" ? "All time" : `This ${p}`}
+              </span>
+              <span className="text-lg font-black leading-none tabular-nums" style={{ color: pc }}>
+                {MS_DATA[p].total}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div
+        className="rounded-xl border p-3.5"
+        style={{ borderColor: alpha(c, 30), background: alpha(c, 6) }}
+      >
+        <div className="flex items-center gap-3.5">
+          <div
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border"
+            style={{ borderColor: alpha(c, 40), background: alpha(c, 12) }}
+          >
+            <span className="text-2xl font-black leading-none tabular-nums" style={{ color: c }}>
+              {d.total}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold" style={{ color: c }}>{d.band}</p>
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              Built from your rules, habits and process work — not how the session felt.
+            </p>
+            <div className="mt-2">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted-foreground/12">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${d.total}%`, background: c, transition: "width 500ms cubic-bezier(0.16,1,0.3,1)" }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {MS_PARTS.map((p) => {
+          const v = d[p.key];
+          return (
+            <div key={p.key} className="rounded-lg border border-border bg-card px-3 py-2">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="truncate text-xs font-semibold">{p.title}</p>
+                <span className="shrink-0 text-xs font-black tabular-nums" style={{ color: p.accent }}>
+                  {v}%
+                </span>
+              </div>
+              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted-foreground/12">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${v}%`, background: p.accent, transition: "width 500ms cubic-bezier(0.16,1,0.3,1)" }}
+                />
+              </div>
+              <p className="mt-1 text-[10px] leading-snug text-muted-foreground">{p.sub}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── 3. Trade Therapist — the real pre-market review card ────────────────── */
+
+const REVIEWS = [
+  {
+    id: "nq",
+    instrument: "Nasdaq 100",
+    session: "New York",
+    dir: "short" as const,
+    r: "-1R",
+    takeaways: [
+      { label: "Mistake", text: "Entered before the level was confirmed — chased the breakdown." },
+      { label: "Mindset", text: "Frustrated after missing the first move of the session." },
+    ],
+    plan: "No market order on the first break. Mark the level, wait for the retest to close, then enter.",
+  },
+  {
+    id: "es",
+    instrument: "S&P 500",
+    session: "London",
+    dir: "long" as const,
+    r: "-1R",
+    takeaways: [
+      { label: "Mistake", text: "Sized up to 2R after two winners in a row." },
+      { label: "Mindset", text: "Overconfident — felt the read was obvious." },
+    ],
+    plan: "Position size is set before the open and does not move, win or lose.",
+  },
+];
+
+function TherapistMock() {
+  const [id, setId] = useState(REVIEWS[0].id);
+  const r = REVIEWS.find((x) => x.id === id)!;
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border border-border/60 p-5 pl-6"
+      style={{
+        background: `linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, ${RED} 4%), var(--card) 55%)`,
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 32px -18px rgba(0,0,0,0.8)",
+      }}
+    >
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-1"
+        style={{ background: `linear-gradient(180deg, ${RED}, ${alpha(RED, 12)})` }}
+      />
+
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: alpha(RED, 75) }}>
+        Prevent these losses
+      </p>
+
+      <div className="mt-3 space-y-1.5">
+        {REVIEWS.map((x) => {
+          const on = x.id === id;
+          return (
+            <button
+              key={x.id}
+              type="button"
+              onClick={() => setId(x.id)}
+              className={cn(
+                "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-colors",
+                on ? "border-primary/50 bg-muted/30" : "border-border/60 hover:border-primary/30 hover:bg-muted/20"
+              )}
+            >
+              {x.dir === "long" ? (
+                <TrendingUp className="h-4 w-4 shrink-0" style={{ color: GREEN }} />
+              ) : (
+                <TrendingDown className="h-4 w-4 shrink-0" style={{ color: RED }} />
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-bold leading-none">{x.instrument}</span>
+                <span className="mt-1 block text-[10px] leading-none text-muted-foreground">{x.session} session</span>
+              </span>
+              <span className="shrink-0 text-xs font-bold tabular-nums" style={{ color: RED }}>{x.r}</span>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {r.takeaways.map((t) => (
+          <div key={t.label} className="flex gap-2">
+            <span
+              className="mt-px shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+              style={{ background: alpha(RED, 12), color: RED }}
+            >
+              {t.label}
+            </span>
+            <p className="text-[12px] leading-snug text-foreground/80">{t.text}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 border-t border-border/40 pt-3.5">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+          How I&apos;ll prevent this today
+        </p>
+        <p className="rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed text-foreground/90">
+          {r.plan}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ── 4. My Strategy — the real rulebook editor ───────────────────────────── */
+
+const RULES = [
+  "No trade without a completed pre-market analysis",
+  "Maximum 1R risk per trade — no exceptions",
+  "Stop trading for the day after two consecutive losses",
+  "Never move a stop away from price",
+];
+
+function StrategyMock() {
+  const [off, setOff] = useState<number[]>([]);
+  const active = RULES.filter((_, i) => !off.includes(i));
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border border-border/60 p-5 pl-6"
+      style={{
+        background: `linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, ${TURQUOISE} 4%), var(--card) 55%)`,
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 32px -18px rgba(0,0,0,0.8)",
+      }}
+    >
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-1"
+        style={{ background: `linear-gradient(180deg, ${TURQUOISE}, ${alpha(TURQUOISE, 12)})` }}
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-5 right-3 select-none text-[92px] font-black leading-none tracking-tighter"
+        style={{ color: alpha(TURQUOISE, 7) }}
+      >
+        {active.length}
+      </span>
+
+      <div className="relative">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: alpha(TURQUOISE, 70) }}>
+          Discipline
+        </p>
+        <h4 className="mt-1.5 font-heading text-xl font-bold tracking-tight">Trading Rules</h4>
+        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted-foreground">
+          Your non-negotiables. These surface as the pre-trade checklist every time you log a trade.
+        </p>
+      </div>
+
+      <ol className="mt-5 divide-y divide-border/40 border-y border-border/40">
+        {RULES.map((rule, idx) => {
+          const on = !off.includes(idx);
+          return (
+            <li key={rule}>
+              <button
+                type="button"
+                onClick={() => setOff((p) => (on ? [...p, idx] : p.filter((x) => x !== idx)))}
+                className="group -mx-2 flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left transition-colors hover:bg-primary/[0.05]"
+              >
+                <span
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-[11px] font-bold tabular-nums transition-colors"
+                  style={{
+                    borderColor: on ? alpha(TURQUOISE, 20) : "var(--border)",
+                    background: on ? alpha(TURQUOISE, 10) : "transparent",
+                    color: on ? TURQUOISE : "var(--muted-foreground)",
+                  }}
+                >
+                  {idx + 1}
+                </span>
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 text-sm leading-snug transition-colors",
+                    on ? "text-foreground" : "text-muted-foreground/50 line-through"
+                  )}
+                >
+                  {rule}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+
+      <p className="mt-4 text-[11px] text-muted-foreground">
+        {active.length === RULES.length
+          ? "Every rule active — this is the checklist you trade against."
+          : `${RULES.length - active.length} rule${RULES.length - active.length !== 1 ? "s" : ""} switched off. Tap to bring back.`}
+      </p>
+    </div>
+  );
+}
+
+/* ── 5. News Dashboard — the real Global Markets subtabs ─────────────────── */
+
+const GM_TABS = ["Overview", "Markets", "News"] as const;
+const GM_ROWS: Record<(typeof GM_TABS)[number], { a: string; b: string; v: string; dir: number }[]> = {
+  Overview: [
+    { a: "US 10Y", b: "Treasury", v: "4.28%", dir: 1 },
+    { a: "DXY", b: "Dollar index", v: "104.6", dir: -1 },
+    { a: "VIX", b: "Volatility", v: "14.2", dir: -1 },
+  ],
+  Markets: [
+    { a: "Nasdaq 100", b: "Index future", v: "+0.84%", dir: 1 },
+    { a: "Gold", b: "Metal", v: "-0.31%", dir: -1 },
+    { a: "Crude WTI", b: "Energy", v: "+1.12%", dir: 1 },
+  ],
+  News: [
+    { a: "FOMC minutes released", b: "Central banks", v: "High", dir: 1 },
+    { a: "Crude inventories build", b: "Commodities", v: "High", dir: -1 },
+    { a: "Jobless claims in line", b: "Macro", v: "Low", dir: 0 },
+  ],
+};
+
+function MarketsMock() {
+  const [tab, setTab] = useState<(typeof GM_TABS)[number]>("Overview");
+
+  return (
+    <MockCard accent={CYAN}>
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-heading text-sm font-bold uppercase tracking-tight">Global Markets</p>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">Objective research</span>
+      </div>
+
+      <nav className="mt-3 flex gap-1">
+        {GM_TABS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={cn(
+              "shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+              tab === t ? "text-background" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+            style={tab === t ? { background: TURQUOISE } : undefined}
+          >
+            {t}
+          </button>
+        ))}
+      </nav>
+
+      <ul className="mt-3 divide-y divide-border/40 border-y border-border/40">
+        {GM_ROWS[tab].map((r) => (
+          <li key={r.a} className="flex items-center gap-3 py-2.5">
+            <span
+              aria-hidden
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: r.dir > 0 ? GREEN : r.dir < 0 ? RED : "var(--muted-foreground)" }}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm text-foreground/90">{r.a}</span>
+              <span className="block text-[10px] text-muted-foreground">{r.b}</span>
+            </span>
+            <span
+              className="shrink-0 text-xs font-bold tabular-nums"
+              style={{ color: r.dir > 0 ? GREEN : r.dir < 0 ? RED : "var(--muted-foreground)" }}
+            >
+              {r.v}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <p className="mt-3 text-[10px] text-muted-foreground/70">Provider-labelled · nothing here predicts.</p>
+    </MockCard>
+  );
+}
+
+/* ── The section ─────────────────────────────────────────────────────────── */
+
+const INSTRUMENTS: Instrument[] = [
   {
     key: "dashboard",
-    name: "Dashboard",
     label: "Overview",
+    name: "Dashboard",
     tagline: "Your whole trading day on one screen.",
+    points: [
+      "Every account, trade and metric in a single command center.",
+      "Running profit and loss as the session unfolds.",
+      "The one thing to work on today, kept front and center.",
+    ],
     href: "/features/dashboard",
-    invite: "Drag the win rate — watch where the edge turns.",
+    accent: CYAN,
+    visual: <WinRateMock />,
   },
   {
     key: "mind-edge",
-    name: "MC Mind Edge",
     label: "Mindset",
+    name: "MC Mind Edge",
     tagline: "One number for how ready you are to trade.",
+    points: [
+      "Rules, habits and kept commitments blended into a Mindscore.",
+      "A quick read on your state before the first trade.",
+      "Week, month and all-time, with a clear breakdown.",
+    ],
     href: "/features/psychological-edge",
-    invite: "Tick the routines you actually kept.",
+    accent: TURQUOISE,
+    visual: <MindscoreMock />,
   },
   {
     key: "therapist",
-    name: "MC Trade Therapist",
     label: "Mindset",
+    name: "MC Trade Therapist",
     tagline: "A coach that talks back, built from your own trades.",
+    points: [
+      "Your journal and discipline feed a structured session.",
+      "Each prompt names the trade you overheld or the rule you skipped.",
+      "What you promise is saved and resurfaced on later trades.",
+    ],
     href: "/features/trade-therapist",
-    invite: "Pick the mistake and see what it asks you.",
+    accent: RED,
+    visual: <TherapistMock />,
   },
   {
     key: "strategy",
-    name: "My Strategy",
     label: "Trading",
+    name: "My Strategy",
     tagline: "Your playbook and rules, written down and in reach.",
+    points: [
+      "The exact conditions that qualify a trade, as a checklist.",
+      "Risk and management fixed before the session.",
+      "One click away while you trade, a living reference.",
+    ],
     href: "/features/strategy",
-    invite: "Clear the checklist to open the gate.",
+    accent: TURQUOISE,
+    visual: <StrategyMock />,
   },
   {
     key: "markets",
-    name: "MC News Dashboard",
     label: "Markets",
+    name: "MC News Dashboard",
     tagline: "See what is actually moving the market.",
+    points: [
+      "Central banks, macro, commodities and earnings in one hub.",
+      "Signals scored by impact, direction and confidence.",
+      "Narrow to what moves your instrument.",
+    ],
     href: "/features/news-city",
-    invite: "Filter down to what would move your instrument.",
+    accent: CYAN,
+    visual: <MarketsMock />,
   },
 ];
 
 export function ProductExplorer() {
-  const [active, setActive] = useState<ToolKey>("dashboard");
-  const tool = TOOLS.find((t) => t.key === active)!;
+  const trackRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: trackRef,
+    offset: ["start 0.85", "end 0.4"],
+  });
+  const fill = useSpring(scrollYProgress, { stiffness: 120, damping: 30, mass: 0.4 });
 
   return (
     <section id="features" className="relative bg-background px-6 py-24 md:px-10 md:py-32">
       <div className="mx-auto max-w-6xl">
-        {/* Header */}
         <div className="max-w-3xl">
           <p className="font-body text-[13px] font-semibold text-primary">Inside the platform</p>
           <h2
             className="mt-5 font-heading font-black tracking-tight text-foreground"
             style={{ fontSize: "clamp(2rem,4.6vw,3.25rem)", lineHeight: 1.05 }}
           >
-            Five instruments. Try them here.
+            Five instruments for the operator behind the trades.
           </h2>
           <p className="mt-5 max-w-xl font-body text-[0.95rem] leading-relaxed text-muted-foreground">
-            Each panel below is a working model of the real thing. Move the
-            controls and watch the numbers respond — the same logic runs inside
-            the product, against your own history.
+            Every panel below is the real card, running on illustrative numbers.
+            Try the controls — they behave exactly as they do inside the product.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-6 lg:grid-cols-[minmax(0,17rem)_1fr] lg:gap-10">
-          {/* Tool selector */}
-          <nav
-            aria-label="Choose a tool"
-            className="-mx-6 flex gap-2 overflow-x-auto px-6 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0"
+        {/* Scroll track: a rail that fills as you move through the instruments */}
+        <div ref={trackRef} className="relative mt-20 md:mt-28">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-0 top-0 hidden h-full w-px bg-border/60 lg:block"
           >
-            {TOOLS.map((t) => {
-              const on = t.key === active;
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setActive(t.key)}
-                  aria-pressed={on}
-                  className={cn(
-                    "group relative shrink-0 rounded-xl border px-4 py-3 text-left transition-colors lg:shrink",
-                    on
-                      ? "border-primary/50 bg-primary/[0.07]"
-                      : "border-border/60 hover:border-border hover:bg-muted/20"
-                  )}
-                >
-                  {on && (
-                    <motion.span
-                      layoutId="explorer-spine"
-                      aria-hidden
-                      className="absolute inset-y-2 left-0 w-0.5 rounded-full"
-                      style={{ background: TURQUOISE }}
-                      transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }}
-                    />
-                  )}
-                  <span className="block font-body text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                    {t.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "mt-1 block whitespace-nowrap font-heading text-[0.95rem] font-bold tracking-tight lg:whitespace-normal",
-                      on ? "text-foreground" : "text-foreground/75"
-                    )}
-                  >
-                    {t.name}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
+            <motion.div
+              className="absolute inset-x-0 top-0 origin-top"
+              style={{
+                height: "100%",
+                scaleY: reduce ? 1 : fill,
+                background: `linear-gradient(180deg, ${TURQUOISE}, ${CYAN})`,
+              }}
+            />
+          </div>
 
-          {/* Active panel.
-              Keyed on the tool so React remounts and the enter animation
-              replays. Deliberately no AnimatePresence: an exit animation buys
-              nothing here, and `mode="wait"` stalls the swap outright if an
-              exit never resolves — which left the panel frozen on the previous
-              tool while the nav already showed the new one selected. */}
-          <div className="rounded-2xl border border-border/60 bg-card p-5 sm:p-7">
-            <div>
-              <motion.div
-                key={active}
-                initial={reduce ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: reduce ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <h3 className="font-heading text-xl font-black tracking-tight text-foreground">{tool.name}</h3>
-                <p className="mt-2 font-body text-[0.95rem] leading-relaxed text-foreground/70">{tool.tagline}</p>
-                <p className="mt-4 font-body text-xs font-semibold text-primary">{tool.invite}</p>
-
-                <div className="mt-6">
-                  {active === "dashboard" && <EdgeDemo />}
-                  {active === "mind-edge" && <MindscoreDemo />}
-                  {active === "therapist" && <TherapistDemo />}
-                  {active === "strategy" && <ChecklistDemo />}
-                  {active === "markets" && <MarketsDemo />}
-                </div>
-
-                <div className="mt-7 flex items-center justify-between gap-4 border-t border-border/50 pt-5">
-                  <p className="font-body text-[11px] text-muted-foreground/70">
-                    Illustrative figures — the product runs this on your own trades.
-                  </p>
-                  <Link
-                    href={tool.href}
-                    className="group inline-flex shrink-0 items-center gap-1.5 font-body text-sm font-semibold text-primary transition-colors hover:text-foreground"
-                  >
-                    Explore
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-                  </Link>
-                </div>
-              </motion.div>
-            </div>
+          <div className="flex flex-col gap-28 md:gap-40 lg:pl-14">
+            {INSTRUMENTS.map((inst, i) => (
+              <InstrumentBlock key={inst.key} inst={inst} flip={i % 2 === 1} reduce={!!reduce} />
+            ))}
           </div>
         </div>
       </div>
@@ -193,377 +710,69 @@ export function ProductExplorer() {
   );
 }
 
-/* ── Shared bits ─────────────────────────────────────────────────────────── */
-
-function Readout({ label, value, tone }: { label: string; value: string; tone?: string }) {
+function InstrumentBlock({
+  inst,
+  flip,
+  reduce,
+}: {
+  inst: Instrument;
+  flip: boolean;
+  reduce: boolean;
+}) {
   return (
-    <div className="rounded-lg border border-border/50 bg-background/40 px-3 py-2.5">
-      <p className="font-body text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{label}</p>
-      <p
-        className="mt-1 font-heading text-lg font-black tabular-nums leading-none"
-        style={{ color: tone ?? "var(--foreground)" }}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-/* ── 1. Dashboard — where does the edge turn? ────────────────────────────── */
-
-function EdgeDemo() {
-  const [wr, setWr] = useState(45);
-  const rr = 2;
-  // Expectancy in R for a fixed 2R winner and a 1R loser.
-  const expectancy = (wr / 100) * rr - (1 - wr / 100);
-  const positive = expectancy > 0;
-  const R = 42;
-  const C = 2 * Math.PI * R;
-
-  return (
-    <div className="grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
-      <div className="relative mx-auto h-[132px] w-[132px] sm:mx-0">
-        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-          <circle cx="50" cy="50" r={R} fill="none" stroke="var(--border)" strokeWidth="9" />
-          <circle
-            cx="50"
-            cy="50"
-            r={R}
-            fill="none"
-            stroke={positive ? GREEN : RED}
-            strokeWidth="9"
-            strokeLinecap="round"
-            strokeDasharray={`${(wr / 100) * C} ${C}`}
-            style={{ transition: "stroke-dasharray 160ms linear, stroke 200ms ease" }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-heading text-2xl font-black tabular-nums leading-none" style={{ color: CYAN }}>
-            {wr}%
-          </span>
-          <span className="mt-1 font-body text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-            win rate
-          </span>
-        </div>
-      </div>
-
-      <div>
-        <label className="block">
-          <span className="font-body text-xs font-semibold text-muted-foreground">Win rate</span>
-          <input
-            type="range"
-            min={10}
-            max={90}
-            value={wr}
-            onChange={(e) => setWr(Number(e.target.value))}
-            aria-label="Win rate"
-            className="mc-range mt-2 w-full"
-          />
-        </label>
-
-        <div className="mt-4 grid grid-cols-2 gap-2.5">
-          <Readout label="Reward : risk" value={`${rr}R`} />
-          <Readout
-            label="Per-trade edge"
-            value={`${expectancy >= 0 ? "+" : ""}${expectancy.toFixed(2)}R`}
-            tone={positive ? GREEN : RED}
-          />
-        </div>
-        <p className="mt-3 font-body text-xs leading-relaxed text-muted-foreground">
-          {positive
-            ? `At ${wr}% with a ${rr}R target, every trade is worth +${expectancy.toFixed(2)}R on average.`
-            : `At ${wr}% a ${rr}R target still loses ${Math.abs(expectancy).toFixed(2)}R per trade. The dashboard shows you this before the account does.`}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* ── 2. Mind Edge — the score is built, not claimed ──────────────────────── */
-
-const ROUTINES = [
-  { id: "prep", label: "Pre-market prep", weight: 22 },
-  { id: "sleep", label: "7h+ sleep", weight: 18 },
-  { id: "journal", label: "Journalled every trade", weight: 24 },
-  { id: "rules", label: "No rule broken", weight: 26 },
-];
-
-function MindscoreDemo() {
-  const [on, setOn] = useState<string[]>(["prep", "journal"]);
-  const score = 10 + ROUTINES.filter((r) => on.includes(r.id)).reduce((s, r) => s + r.weight, 0);
-  const band = score >= 80 ? "Locked in" : score >= 55 ? "Holding" : "Slipping";
-  const tone = score >= 80 ? GREEN : score >= 55 ? TURQUOISE : RED;
-
-  return (
-    <div>
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="font-heading text-3xl font-black tabular-nums leading-none" style={{ color: tone }}>
-            {score}
-          </p>
-          <p className="mt-1.5 font-body text-xs font-semibold" style={{ color: tone }}>
-            {band}
-          </p>
-        </div>
-        <p className="max-w-[16rem] text-right font-body text-[11px] leading-relaxed text-muted-foreground">
-          Your Mindscore is the sum of what you actually did, not how you felt about it.
-        </p>
-      </div>
-
-      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted-foreground/12">
-        <div
-          className="h-full rounded-full"
-          style={{ width: `${score}%`, background: tone, transition: "width 320ms cubic-bezier(0.16,1,0.3,1), background 220ms ease" }}
-        />
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        {ROUTINES.map((r) => {
-          const isOn = on.includes(r.id);
-          return (
-            <button
-              key={r.id}
-              type="button"
-              aria-pressed={isOn}
-              onClick={() => setOn((p) => (isOn ? p.filter((x) => x !== r.id) : [...p, r.id]))}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-lg border px-3 py-2 font-body text-xs font-semibold transition-colors",
-                isOn
-                  ? "border-primary/50 bg-primary/10 text-foreground"
-                  : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
-              )}
-            >
-              <span
-                className={cn(
-                  "flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border transition-colors",
-                  isOn ? "border-primary bg-primary" : "border-border"
-                )}
-              >
-                {isOn && <Check className="h-2.5 w-2.5 text-primary-foreground" strokeWidth={3.5} />}
-              </span>
-              {r.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ── 3. Trade Therapist — the prompt is anchored to the mistake ──────────── */
-
-const PATTERNS = [
-  {
-    id: "size",
-    chip: "Sized up after two wins",
-    prompt: "You added size on trade three of a green run, then gave back both winners. What told you the third setup deserved more risk than the first two?",
-    commit: "Risk stays fixed for the whole session, win or lose.",
-  },
-  {
-    id: "chase",
-    chip: "Chased the breakout",
-    prompt: "You entered 14 points above your own level because it left without you. What does waiting for the retest actually cost you across a month?",
-    commit: "No entry until price comes back to the level.",
-  },
-  {
-    id: "revenge",
-    chip: "Re-entered within 90s of a loss",
-    prompt: "The next trade came 90 seconds after a full stop-out. Was that the setup arriving, or the loss still talking?",
-    commit: "Fifteen minutes away from the screen after any loss.",
-  },
-];
-
-function TherapistDemo() {
-  const [id, setId] = useState(PATTERNS[0].id);
-  const p = PATTERNS.find((x) => x.id === id)!;
-
-  return (
-    <div>
-      <div className="flex flex-wrap gap-2">
-        {PATTERNS.map((x) => (
-          <button
-            key={x.id}
-            type="button"
-            aria-pressed={x.id === id}
-            onClick={() => setId(x.id)}
-            className={cn(
-              "rounded-lg border px-3 py-2 font-body text-xs font-semibold transition-colors",
-              x.id === id
-                ? "border-destructive/50 bg-destructive/10 text-foreground"
-                : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
-            )}
-          >
-            {x.chip}
-          </button>
-        ))}
-      </div>
+    <article className="relative grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+      {/* Node on the rail */}
+      <span
+        aria-hidden
+        className="absolute -left-14 top-2 hidden h-2.5 w-2.5 -translate-x-1/2 rounded-full ring-4 ring-background lg:block"
+        style={{ background: inst.accent }}
+      />
 
       <motion.div
-        key={p.id}
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="mt-5 rounded-xl border border-border/50 bg-background/40 p-4"
+        initial={reduce ? false : { opacity: 0, y: 28 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-12%" }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className={cn(flip && "lg:order-2")}
       >
-        <p className="font-body text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-          It asks
+        <p className="font-body text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+          {inst.label}
         </p>
-        <p className="mt-2 font-body text-[0.95rem] leading-relaxed text-foreground/90">{p.prompt}</p>
+        <h3 className="mt-3 font-heading text-3xl font-black tracking-tight text-foreground md:text-4xl">
+          {inst.name}
+        </h3>
+        <p className="mt-4 font-body text-lg leading-snug text-foreground/80">{inst.tagline}</p>
 
-        <div className="mt-4 border-t border-border/40 pt-3">
-          <p className="font-body text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-            You commit to
-          </p>
-          <p className="mt-1.5 inline-flex items-center gap-2 font-body text-sm font-semibold text-primary">
-            <Check className="h-3.5 w-3.5" strokeWidth={3} />
-            {p.commit}
-          </p>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-/* ── 4. My Strategy — the gate only opens when the rules are met ─────────── */
-
-const RULES = [
-  "Pre-market analysis written",
-  "Level marked and confirmed",
-  "Risk set to 1R",
-  "Not inside a news window",
-];
-
-function ChecklistDemo() {
-  const [done, setDone] = useState<number[]>([0]);
-  const cleared = done.length === RULES.length;
-
-  return (
-    <div>
-      <ul className="divide-y divide-border/40 border-y border-border/40">
-        {RULES.map((r, i) => {
-          const on = done.includes(i);
-          return (
-            <li key={r}>
-              <button
-                type="button"
-                aria-pressed={on}
-                onClick={() => setDone((p) => (on ? p.filter((x) => x !== i) : [...p, i]))}
-                className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-muted/20"
-              >
-                <span
-                  className={cn(
-                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors",
-                    on ? "border-primary bg-primary" : "border-border"
-                  )}
-                >
-                  {on && <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3.5} />}
-                </span>
-                <span
-                  className={cn(
-                    "font-body text-sm transition-colors",
-                    on ? "text-foreground" : "text-muted-foreground"
-                  )}
-                >
-                  {r}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-
-      <div
-        className="mt-5 flex items-center justify-between gap-4 rounded-xl border px-4 py-3 transition-colors"
-        style={{
-          borderColor: cleared ? "rgba(34,197,94,0.4)" : "var(--border)",
-          background: cleared ? "rgba(34,197,94,0.08)" : "transparent",
-        }}
-      >
-        <span
-          className="font-heading text-sm font-bold"
-          style={{ color: cleared ? GREEN : "var(--muted-foreground)" }}
-        >
-          {cleared ? "Cleared to trade" : `${RULES.length - done.length} to go`}
-        </span>
-        <span className="font-body text-[11px] text-muted-foreground">
-          {cleared ? "Every rule met." : "The gate stays shut until the checklist is clean."}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ── 5. News Dashboard — filter to what moves your instrument ────────────── */
-
-const SIGNALS = [
-  { title: "FOMC minutes released", cat: "Central banks", impact: "High", dir: 1 },
-  { title: "Crude inventories build", cat: "Commodities", impact: "High", dir: -1 },
-  { title: "Regional PMI revision", cat: "Macro", impact: "Low", dir: 1 },
-  { title: "Semiconductor earnings beat", cat: "Earnings", impact: "Medium", dir: 1 },
-  { title: "Jobless claims in line", cat: "Macro", impact: "Low", dir: 0 },
-];
-
-function MarketsDemo() {
-  const [onlyHigh, setOnlyHigh] = useState(false);
-  const rows = onlyHigh ? SIGNALS.filter((s) => s.impact === "High") : SIGNALS;
-
-  return (
-    <div>
-      <div className="flex items-center gap-2">
-        {[
-          { label: "Everything", v: false },
-          { label: "High impact only", v: true },
-        ].map((o) => (
-          <button
-            key={o.label}
-            type="button"
-            aria-pressed={onlyHigh === o.v}
-            onClick={() => setOnlyHigh(o.v)}
-            className={cn(
-              "rounded-lg border px-3 py-1.5 font-body text-xs font-semibold transition-colors",
-              onlyHigh === o.v
-                ? "border-primary/50 bg-primary/10 text-foreground"
-                : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
-            )}
-          >
-            {o.label}
-          </button>
-        ))}
-        <span className="ml-auto font-body text-[11px] tabular-nums text-muted-foreground">
-          {rows.length} of {SIGNALS.length}
-        </span>
-      </div>
-
-      {/* Plain list: a nested AnimatePresence here could stall the panel swap
-          above it, and the filter reads clearly without row exit animations. */}
-      <ul className="mt-4 divide-y divide-border/40 border-y border-border/40">
-          {rows.map((s) => (
-            <li
-              key={s.title}
-              className="flex items-center gap-3 py-2.5"
-            >
-              <span
-                aria-hidden
-                className="h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{ background: s.dir > 0 ? GREEN : s.dir < 0 ? RED : "var(--muted-foreground)" }}
-              />
-              <span className="min-w-0 flex-1 font-body text-sm text-foreground/90">{s.title}</span>
-              <span className="hidden shrink-0 font-body text-[11px] text-muted-foreground sm:inline">{s.cat}</span>
-              <span
-                className={cn(
-                  "shrink-0 rounded px-1.5 py-0.5 font-body text-[10px] font-bold",
-                  s.impact === "High"
-                    ? "bg-destructive/12 text-destructive"
-                    : s.impact === "Medium"
-                    ? "bg-warning/12 text-warning"
-                    : "bg-muted/50 text-muted-foreground"
-                )}
-              >
-                {s.impact}
-              </span>
+        <ul className="mt-6 space-y-2.5">
+          {inst.points.map((p) => (
+            <li key={p} className="flex gap-2.5">
+              <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: inst.accent }} strokeWidth={3} />
+              <span className="font-body text-sm leading-relaxed text-muted-foreground">{p}</span>
             </li>
           ))}
-      </ul>
-    </div>
+        </ul>
+
+        <Link
+          href={inst.href}
+          className="group mt-7 inline-flex items-center gap-1.5 font-body text-sm font-semibold text-primary transition-colors hover:text-foreground"
+        >
+          Explore {inst.name}
+          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+        </Link>
+      </motion.div>
+
+      <motion.div
+        initial={reduce ? false : { opacity: 0, y: 34, scale: 0.985 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, margin: "-10%" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
+        className={cn("min-w-0", flip && "lg:order-1")}
+      >
+        {inst.visual}
+        <p className="mt-3 text-center font-body text-[11px] text-muted-foreground/60">
+          Illustrative figures — the product runs this on your own trades.
+        </p>
+      </motion.div>
+    </article>
   );
 }
