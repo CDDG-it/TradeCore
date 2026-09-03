@@ -18,11 +18,10 @@ const TAB_FALLBACK_TAGLINE: Record<string, string> = {
   "/trading-behaviour": "Your trading rules and confluence library, in one place.",
   "/news-city": "Scan the market news feed and explore the forces in a live city.",
 };
-// The Features menu lists exactly the five products shown on the animated
-// landing cards, in the same order. Not every one is its own sidebar tab any
-// more — Strategy is a half of My Edge — so the label falls back to the
-// marketing name rather than assuming a matching APP_TABS entry.
-const CARD_HREFS = ["/dashboard", "/psychological-edge", "/trade-therapist", "/strategy", "/news-city"];
+// The Features menu lists exactly the products shown on the animated landing
+// cards, in the same order. The label falls back to the marketing name rather
+// than assuming a matching APP_TABS entry.
+const CARD_HREFS = ["/dashboard", "/psychological-edge", "/trade-therapist", "/news-city"];
 const NAV_ITEMS = CARD_HREFS.map((href) => {
   const tab = APP_TABS.find((t) => t.href === href);
   const feature = FEATURE_BY_HREF.get(href);

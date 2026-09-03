@@ -16,10 +16,10 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
     href: "/dashboard",
   },
   {
-    title: "MC Mind Edge",
-    subtitle: "One number for how ready you are to trade.",
-    description: "A daily readiness score built from your state, sleep and discipline.",
-    features: ["Readiness score", "Pre-trade mirror", "5R sessions", "Mindscore trend"],
+    title: "My Edge",
+    subtitle: "Your rules, your habits, and one number for how ready you are.",
+    description: "The playbook you trade against, and the Mindscore that reads how well you follow it.",
+    features: ["Rules & confluences", "Daily habits", "Mindscore", "Pass simulation"],
     href: "/psychological-edge",
   },
   {
@@ -28,13 +28,6 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
     description: "Pattern detection and reflective prompts drawn from your history.",
     features: ["Pattern engine", "Post-trade 5R", "Bias alerts", "Session recaps"],
     href: "/trade-therapist",
-  },
-  {
-    title: "My Strategy",
-    subtitle: "Your playbook and rules, written down and in reach.",
-    description: "Codify setups, confluences and rules so execution stays consistent.",
-    features: ["Setup library", "Confluence rules", "Checklists", "Playbook"],
-    href: "/strategy",
   },
   {
     title: "MC News Dashboard",
@@ -46,7 +39,7 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
 ];
 
 /**
- * Landing showcase — the five products as liquid-glass flip cards.
+ * Landing showcase — the four products as liquid-glass flip cards.
  */
 export function LayoutShowcase() {
   return (
@@ -84,7 +77,7 @@ export function LayoutShowcase() {
           </p>
         </div>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {CARDS.map((c) => (
             <CardFlip key={c.href} {...c} />
           ))}

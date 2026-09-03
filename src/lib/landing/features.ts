@@ -254,33 +254,33 @@ export const FEATURES: Feature[] = [
   },
   {
     slug: "psychological-edge",
-    name: "MC Mind Edge",
+    name: "My Edge",
     section: "Mindset",
-    tagline: "One number for how ready you are to trade.",
+    tagline: "Your rules, your habits, and one number for how ready you are.",
     blurb:
-      "MC Mind Edge blends rule adherence, habits and commitment follow through into a single Mindscore, read straight from the process you already produce.",
-    cta: "Open Mind Edge",
+      "My Edge holds the two things you control away from the chart: the playbook you trade against, and the Mindscore that reads how well you are actually following it.",
+    cta: "Open My Edge",
     screenshot: "/screenshots/psychological-edge.png",
     aspect: "1639 / 651",
     intro:
-      "Discipline is hard to see until it is already gone. MC Mind Edge turns the process behind your trading into one honest number, so the state you are walking into a session with is never a guess.",
+      "Discipline is hard to see until it is already gone, and a strategy in your head changes shape under pressure. My Edge puts both in one place: the rules you decided on in the cold light of the weekend, and an honest read on whether you kept them.",
     blocks: [
       {
-        heading: "How it works",
-        body: "Your Mindscore is built from the work you already do, not a questionnaire you talk yourself through.",
+        heading: "Two halves, one page",
+        body: "The side that defines what you do, and the side that measures whether you did it.",
         points: [
-          "One score blends three inputs: how well you followed your rules, how consistent your habits were and how many of your commitments you actually kept.",
-          "Every input traces back to real entries in your journal, habits and reflections, so the number moves only when your behavior does.",
-          "Track the score by week, month and all time, and open a full breakdown that shows exactly which input lifted it or dragged it down.",
+          "Strategy: write out the setups you trade with the exact conditions that qualify them, plus the risk rules that govern every position, so a valid trade is a checklist and not a gut call.",
+          "Mind Edge: track the daily habits that build the state you trade from, and watch one Mindscore blend rule adherence, habits and kept commitments into a single read.",
+          "Pressure-test the whole thing against a funded account's rules across thousands of simulated runs before you risk a live evaluation on it.",
         ],
       },
       {
         heading: "Why it works",
-        body: "Feelings about your own discipline are unreliable, especially after a good run or a hard loss. By scoring the process instead of the profit and loss, Mind Edge gives you a stable read on your state that does not flatter you when you are drifting and does not punish you when variance goes against a clean process.",
+        body: "Rules and discipline are the same problem viewed from two ends. A written playbook removes the two most expensive words in trading, just this once. Scoring the process rather than the profit and loss then tells you, without flattery, whether you are still trading the plan you wrote. Neither half is much use alone.",
       },
       {
         heading: "Why every trader needs this",
-        body: "The account is a lagging indicator. The way you prepare, follow rules and keep commitments is the leading one. A single readiness number in front of you every day is what turns discipline from a word into something you can watch trend up.",
+        body: "The account is a lagging indicator. What you defined in advance and how faithfully you followed it are the leading ones. Keeping both on one page is what turns discipline from a word into something you can watch trend up.",
       },
     ],
   },
@@ -313,38 +313,6 @@ export const FEATURES: Feature[] = [
       {
         heading: "Why every trader needs this",
         body: "The gap between knowing a rule and keeping it is where accounts die. A session that ties every reflection to your real behavior, and holds you to what you committed to, is how that gap finally closes.",
-      },
-    ],
-  },
-  {
-    slug: "strategy",
-    name: "Strategy",
-    section: "Trading",
-    tagline: "Your playbook and rules, written down and always in reach.",
-    blurb:
-      "Define the setups you actually trade, the rules that qualify them and the risk that governs them, so the plan you trade is the plan you decided on.",
-    cta: "Build your strategy",
-    screenshot: "/screenshots/strategy.png",
-    aspect: "1664 / 950",
-    intro:
-      "A strategy in your head changes shape under pressure. My Strategy puts your playbook on paper, so the setups you take at nine thirty are the same ones you chose in the cold light of the weekend.",
-    blocks: [
-      {
-        heading: "How it works",
-        body: "Your entire approach, defined once and kept in front of you.",
-        points: [
-          "Write out each setup you trade with the exact conditions that qualify it, so a valid trade is a checklist and not a gut call.",
-          "Set the risk and management rules that govern every position, from size to where you are wrong.",
-          "Keep it one click away while you trade and review, so your plan is a living reference instead of a note you wrote once and forgot.",
-        ],
-      },
-      {
-        heading: "Why it works",
-        body: "A written strategy removes the two most expensive words in trading: just this once. When the rules are explicit and visible, the trades outside them stop looking like opportunities and start looking like what they are, which is a breach of your own plan.",
-      },
-      {
-        heading: "Why every trader needs this",
-        body: "Consistency is impossible without a fixed definition of what you do. A documented playbook is the reference every other tool measures you against, from the journal to your Mindscore, and the thing that makes your edge repeatable.",
       },
     ],
   },

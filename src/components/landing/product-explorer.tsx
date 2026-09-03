@@ -420,7 +420,7 @@ function TherapistMock() {
   );
 }
 
-/* ── 4. My Strategy — the real rulebook editor ───────────────────────────── */
+/* ── Strategy half — the real rulebook editor ───────────────────────────── */
 
 const RULES = [
   "No trade without a completed pre-market analysis",
@@ -503,6 +503,50 @@ function StrategyMock() {
           ? "Every rule active — this is the checklist you trade against."
           : `${RULES.length - active.length} rule${RULES.length - active.length !== 1 ? "s" : ""} switched off. Tap to bring back.`}
       </p>
+    </div>
+  );
+}
+
+/* ── My Edge — both halves behind the app's own split control ────────────── */
+
+function MyEdgeMock() {
+  const [half, setHalf] = useState<"mind" | "strategy">("mind");
+  const halves = [
+    { key: "mind" as const, label: "Mind Edge", accent: TURQUOISE },
+    { key: "strategy" as const, label: "Strategy", accent: CYAN },
+  ];
+
+  return (
+    <div className="space-y-3">
+      {/* The same divided control the page itself uses */}
+      <div
+        className="flex w-fit items-stretch rounded-xl border border-border/50 p-1"
+        style={{
+          background: "color-mix(in oklch, var(--card) 70%, transparent)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+        }}
+      >
+        {halves.map((h, i) => {
+          const on = half === h.key;
+          return (
+            <div key={h.key} className={cn("px-1", i > 0 && "ml-2 border-l border-border/50 pl-3")}>
+              <button
+                type="button"
+                onClick={() => setHalf(h.key)}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                  on ? "text-background" : "text-muted-foreground hover:text-foreground"
+                )}
+                style={on ? { background: h.accent } : undefined}
+              >
+                {h.label}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {half === "mind" ? <MindscoreMock /> : <StrategyMock />}
     </div>
   );
 }
@@ -600,18 +644,18 @@ const INSTRUMENTS: Instrument[] = [
     visual: <WinRateMock />,
   },
   {
-    key: "mind-edge",
-    label: "Mindset",
-    name: "MC Mind Edge",
-    tagline: "One number for how ready you are to trade.",
+    key: "my-edge",
+    label: "Mindset · Strategy",
+    name: "My Edge",
+    tagline: "Your rules, your habits, and one number for how ready you are.",
     points: [
-      "Rules, habits and kept commitments blended into a Mindscore.",
-      "A quick read on your state before the first trade.",
-      "Week, month and all-time, with a clear breakdown.",
+      "Strategy: the setups and rules that qualify a trade, written down.",
+      "Mind Edge: the habits you keep, and a Mindscore built from them.",
+      "Pressure-test the whole thing before risking a live evaluation.",
     ],
     href: "/features/psychological-edge",
     accent: TURQUOISE,
-    visual: <MindscoreMock />,
+    visual: <MyEdgeMock />,
   },
   {
     key: "therapist",
@@ -626,20 +670,6 @@ const INSTRUMENTS: Instrument[] = [
     href: "/features/trade-therapist",
     accent: RED,
     visual: <TherapistMock />,
-  },
-  {
-    key: "strategy",
-    label: "Trading",
-    name: "My Strategy",
-    tagline: "Your playbook and rules, written down and in reach.",
-    points: [
-      "The exact conditions that qualify a trade, as a checklist.",
-      "Risk and management fixed before the session.",
-      "One click away while you trade, a living reference.",
-    ],
-    href: "/features/strategy",
-    accent: TURQUOISE,
-    visual: <StrategyMock />,
   },
   {
     key: "markets",
@@ -675,7 +705,7 @@ export function ProductExplorer() {
             className="mt-5 font-heading font-black tracking-tight text-foreground"
             style={{ fontSize: "clamp(2rem,4.6vw,3.25rem)", lineHeight: 1.05 }}
           >
-            Five instruments for the operator behind the trades.
+            Four instruments for the operator behind the trades.
           </h2>
           <p className="mt-5 max-w-xl font-body text-[0.95rem] leading-relaxed text-muted-foreground">
             Every panel below is the real card, running on illustrative numbers.

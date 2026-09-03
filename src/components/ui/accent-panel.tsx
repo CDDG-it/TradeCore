@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * The panel treatment used across the discipline surfaces (My Strategy, MC
+ * The panel treatment used across the discipline surfaces (My Edge, MC
  * Trade Therapist): a coloured spine down the left edge, a faint wash of that
  * same accent through the card ground, and a deep, soft shadow.
  *
