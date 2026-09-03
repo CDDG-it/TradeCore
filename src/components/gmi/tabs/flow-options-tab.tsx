@@ -1,20 +1,28 @@
 "use client";
 
 /**
- * FLOW & OPTIONS — objective positioning and flow. Reuses the app's live CFTC
- * COT panel (commercial vs non-commercial net positioning, weekly). ETF creation
- * flow and a realtime options/GEX feed aren't available on the current free
- * sources, so those are marked unavailable rather than estimated. The dedicated
- * Option Flow page holds the delayed CBOE option analytics.
+ * FLOW & OPTIONS — objective positioning and flow, in one tab.
+ *
+ * Leads with the full Option Flow view (dealer positioning, session structure
+ * and COT-driven weekly bias for NQ & GC, delayed CBOE), then the broader CFTC
+ * COT browser covering every reported market. ETF creation flow isn't available
+ * on the current free sources, so it is marked unavailable rather than
+ * estimated.
+ *
+ * This tab used to be a stub that pointed at a separate Option Flow
+ * destination; the two were merged so positioning lives in one place.
  */
-import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { CotFlow } from "@/components/cot/cot-flow";
+import { OptionFlowView } from "@/components/option-flow/option-flow-view";
 import { Panel, Unavailable } from "../panel";
 
 export function FlowOptionsTab() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Dealer positioning / zones / greeks / weekly bias for NQ & GC */}
+      <OptionFlowView embedded />
+
+      {/* Broader positioning across every CFTC-reported market */}
       <Panel title="Positioning — CFTC COT (weekly)">
         <p className="mb-3 text-[11px] text-muted-foreground">
           Commercial vs. non-commercial net positioning and its weekly change, straight from the CFTC. Positioning is
@@ -23,29 +31,12 @@ export function FlowOptionsTab() {
         <CotFlow />
       </Panel>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Panel title="Options">
-          <Unavailable
-            label="Delayed options on the Option Flow tab"
-            hint="Live call/put volume, put-call ratio, OI and IV are served on the Option Flow tab (delayed CBOE). Gamma exposure needs a paid provider."
-          />
-          {/* Straight to the sibling subtab — going via /option-flow would just
-              redirect back into this same page. */}
-          <Link
-            href="/news-city?tab=option-flow"
-            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
-          >
-            Open Option Flow <ArrowUpRight className="h-3.5 w-3.5" />
-          </Link>
-        </Panel>
-
-        <Panel title="ETF flow">
-          <Unavailable
-            label="Data unavailable"
-            hint="Reliable QQQ / SPY / IWM creation & redemption flow isn't available on the current free sources. Add a flow provider to enable this."
-          />
-        </Panel>
-      </div>
+      <Panel title="ETF flow">
+        <Unavailable
+          label="Data unavailable"
+          hint="Reliable QQQ / SPY / IWM creation & redemption flow isn't available on the current free sources. Add a flow provider to enable this."
+        />
+      </Panel>
     </div>
   );
 }
