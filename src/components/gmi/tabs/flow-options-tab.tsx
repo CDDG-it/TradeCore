@@ -26,11 +26,13 @@ export function FlowOptionsTab() {
       <div className="grid gap-4 md:grid-cols-2">
         <Panel title="Options">
           <Unavailable
-            label="Delayed options on the Option Flow page"
-            hint="Live call/put volume, put-call ratio, OI and IV are served on the dedicated Option Flow page (delayed CBOE). Gamma exposure needs a paid provider."
+            label="Delayed options on the Option Flow tab"
+            hint="Live call/put volume, put-call ratio, OI and IV are served on the Option Flow tab (delayed CBOE). Gamma exposure needs a paid provider."
           />
+          {/* Straight to the sibling subtab — going via /option-flow would just
+              redirect back into this same page. */}
           <Link
-            href="/option-flow"
+            href="/news-city?tab=option-flow"
             className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
           >
             Open Option Flow <ArrowUpRight className="h-3.5 w-3.5" />

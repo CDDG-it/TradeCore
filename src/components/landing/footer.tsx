@@ -37,29 +37,6 @@ export function LandingFooter() {
     >
       <div className="mx-auto max-w-6xl px-6 sm:px-10">
 
-        {/* Closing line — the footer opens with the promise, then the wayfinding */}
-        <div className="border-b border-[rgba(248,250,252,0.08)] py-16">
-          <h2
-            className="max-w-2xl font-black tracking-tight"
-            style={{
-              fontFamily: NUNITO,
-              fontSize: "clamp(1.75rem,3.6vw,2.5rem)",
-              lineHeight: 1.08,
-              color: "rgba(248,250,252,0.94)",
-            }}
-          >
-            Plan the session. Log the trade. Review the week.
-          </h2>
-          <Link
-            href="/dashboard"
-            className="group mt-7 inline-flex items-center gap-2 rounded-lg bg-[#14B8A6] px-6 py-3 text-sm font-bold text-[#04121a] transition-transform duration-200 hover:-translate-y-0.5"
-            style={{ fontFamily: NUNITO }}
-          >
-            Start your journal
-            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Link>
-        </div>
-
         {/* Top: brand + link columns */}
         <div className="grid grid-cols-1 gap-12 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
 
@@ -71,7 +48,12 @@ export function LandingFooter() {
               style={{ fontFamily: NUNITO }}
             >
               <span style={{ color: "rgba(248,250,252,0.92)" }}>Trading</span>
-              <span style={{ color: "#14B8A6" }}>MC</span>
+              <span style={{
+                background: "linear-gradient(90deg,#14B8A6,#0D9488)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}>MC</span>
             </Link>
             <p
               className="mt-3 text-sm leading-relaxed"
@@ -80,13 +62,21 @@ export function LandingFooter() {
               Where self-improvement meets trading. Built for futures traders
               who take their preparation as seriously as their entries.
             </p>
+            <Link
+              href="/dashboard"
+              className="group mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#14B8A6] transition-colors hover:text-[#0D9488]"
+              style={{ fontFamily: NUNITO }}
+            >
+              Start your journal
+              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+            </Link>
           </div>
 
           {/* Link columns */}
           {COLUMNS.map((col) => (
             <nav key={col.heading} aria-label={col.heading}>
               <p
-                className="text-[11px] font-bold uppercase tracking-[0.12em]"
+                className="text-[0.625rem] font-bold uppercase tracking-[0.18em]"
                 style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.45)" }}
               >
                 {col.heading}

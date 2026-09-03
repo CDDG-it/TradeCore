@@ -23,7 +23,7 @@ export const APP_TABS: AppTab[] = [
   { label: "MC Mind Edge", href: "/psychological-edge", group: "MC Mindset formula" },
   { label: "MC Trade Therapist", href: "/trade-therapist", group: "MC Mindset formula" },
   { label: "My Strategy", href: "/strategy", group: "MC Mindset formula" },
-  { label: "Option Flow", href: "/option-flow", group: "MC Option Flow" },
+  // Option Flow is not listed here — it lives as a subtab of Global Markets.
   { label: "Global Markets", href: "/news-city", group: "MC News Dashboard" },
 ];
 
@@ -38,5 +38,4 @@ export const PRIMARY_NAV: AppTab[] = [
   { label: "MC Trade Therapist", href: "/trade-therapist", group: null },
   { label: "My Strategy", href: "/strategy", group: null },
   { label: "Global Markets", href: "/news-city", group: null },
-  { label: "Option Flow", href: "/option-flow", group: null },
 ];

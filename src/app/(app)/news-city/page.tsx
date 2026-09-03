@@ -8,14 +8,14 @@
  *
  * (Route kept as /news-city to preserve existing links; the page is retitled.)
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGmi } from "@/lib/gmi/client";
 import type { Quote } from "@/lib/gmi/types";
 
-type Tab = "overview" | "markets" | "futures" | "news" | "calendar" | "flow";
+type Tab = "overview" | "markets" | "futures" | "news" | "calendar" | "flow" | "option-flow";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "overview", label: "Overview" },
@@ -24,6 +24,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "news", label: "News" },
   { key: "calendar", label: "Calendar" },
   { key: "flow", label: "Flow & Options" },
+  { key: "option-flow", label: "Option Flow" },
 ];
 
 const tabLoading = () => (
@@ -40,11 +41,18 @@ const FuturesTab = dynamic(() => import("@/components/gmi/tabs/futures-tab").the
 const NewsTab = dynamic(() => import("@/components/gmi/tabs/news-tab").then((m) => m.NewsTab), { loading: tabLoading });
 const CalendarTab = dynamic(() => import("@/components/gmi/tabs/calendar-tab").then((m) => m.CalendarTab), { loading: tabLoading });
 const FlowOptionsTab = dynamic(() => import("@/components/gmi/tabs/flow-options-tab").then((m) => m.FlowOptionsTab), { loading: tabLoading });
+const OptionFlowView = dynamic(() => import("@/components/option-flow/option-flow-view").then((m) => m.OptionFlowView), { loading: tabLoading });
 
 export default function GlobalMarketsPage() {
   const [tab, setTab] = useState<Tab>("overview");
   // Shared quotes feed — one poll powers Overview, Markets and Futures.
   const { env: quotesEnv } = useGmi<Quote[]>("/api/gmi/quotes", 30_000);
+
+  // Deep-linking, e.g. the /option-flow route redirects to ?tab=option-flow.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (TABS.some((x) => x.key === t)) setTab(t as Tab);
+  }, []);
 
   const content = useMemo(() => {
     switch (tab) {
@@ -54,6 +62,7 @@ export default function GlobalMarketsPage() {
       case "news": return <NewsTab />;
       case "calendar": return <CalendarTab />;
       case "flow": return <FlowOptionsTab />;
+      case "option-flow": return <OptionFlowView embedded />;
     }
   }, [tab, quotesEnv]);
 
