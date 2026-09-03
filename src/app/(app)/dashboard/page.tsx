@@ -10,13 +10,13 @@ import { motion } from "motion/react";
 import { Loader2 } from "lucide-react";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, getAnalyses, toggleHabitCompletion,
-  getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews,
+  getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getCommitmentAdherenceLogs,
 } from "@/lib/supabase/queries";
 import { computeMindScore, bandColorFor, type MindScore } from "@/lib/mind-score/mind-score";
 import { tradeR, instrumentName } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
-import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview } from "@/lib/types";
+import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, CommitmentAdherenceLog } from "@/lib/types";
 
 const TURQUOISE = "oklch(0.70 0.13 183)";
 const CYAN = "oklch(0.72 0.14 220)";
@@ -139,6 +139,7 @@ export default function DashboardPage() {
   const [psychSessions, setPsychSessions] = useState<PsychEdgeSession[]>([]);
   const [bestTrades, setBestTrades] = useState<BestTradeOfDay[]>([]);
   const [weeklyReviews, setWeeklyReviews] = useState<WeeklyTradeReview[]>([]);
+  const [adherenceLogs, setAdherenceLogs] = useState<CommitmentAdherenceLog[]>([]);
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -149,8 +150,8 @@ export default function DashboardPage() {
         if (p?.full_name) setFirstName(p.full_name.split(" ")[0]);
       });
     // Progression data (quests + level) loads independently so it never blocks the hero widgets.
-    Promise.all([getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews()])
-      .then(([ps, bt, wr]) => { setPsychSessions(ps); setBestTrades(bt); setWeeklyReviews(wr); })
+    Promise.all([getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews(), getCommitmentAdherenceLogs()])
+      .then(([ps, bt, wr, al]) => { setPsychSessions(ps); setBestTrades(bt); setWeeklyReviews(wr); setAdherenceLogs(al); })
       .catch(() => {});
   }, []);
 
@@ -192,10 +193,10 @@ export default function DashboardPage() {
   const mcMind = useMemo(() => {
     if (!trades) return null;
     return computeMindScore(
-      { trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses },
+      { trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs },
       mindPeriod
     );
-  }, [trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, mindPeriod]);
+  }, [trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs, mindPeriod]);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(now, { weekStartsOn: 1 });

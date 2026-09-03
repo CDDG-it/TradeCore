@@ -9,20 +9,26 @@ import { getProfile, getTrades } from "@/lib/supabase/queries";
 import { DailyBestTrade } from "@/components/trade-therapist/daily-best-trade";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
 import { PreMarketExercises } from "@/components/trade-therapist/pre-market-exercises";
+import { CommitmentsPanel } from "@/components/trade-therapist/commitments-panel";
 import type { TradeJournalEntry } from "@/lib/types";
 
 /**
- * MC Trade Therapist — the surface for getting better at trading. Two views:
- *   • Best trades — a week calendar of your results and executions, and the best
- *                   trade of the day for the selected date.
- *   • Reviews     — the weekly and monthly write-ups, auto-synced and only
- *                   counted in the MC Mindscore once a week has closed.
+ * MC Trade Therapist — the surface for getting better at trading. Four views:
+ *   • Best trades  — a week calendar of your results and executions, and the
+ *                    best trade of the day for the selected date.
+ *   • Pre-market   — the last two losses and two wins, with a written plan for
+ *                    preventing and repeating them today.
+ *   • Commitments  — your standing if/then rules, and whether you held them
+ *                    when the behaviour they guard against recurred.
+ *   • Reviews      — the weekly and monthly write-ups, auto-synced and only
+ *                    counted in the MC Mindscore once a week has closed.
  * Every read is deterministic and traces back to the trader's own history.
  */
-type TherapistTab = "daily" | "premarket" | "reviews";
+type TherapistTab = "daily" | "premarket" | "commitments" | "reviews";
 const TABS: { key: TherapistTab; label: string }[] = [
   { key: "daily", label: "Best trades" },
   { key: "premarket", label: "Pre-market exercises" },
+  { key: "commitments", label: "Commitments" },
   { key: "reviews", label: "Reviews" },
 ];
 
@@ -101,6 +107,7 @@ export default function TradeTherapistPage() {
           />
         )}
         {tab === "premarket" && <PreMarketExercises trades={trades} date={dailyDate} />}
+        {tab === "commitments" && <CommitmentsPanel />}
         {tab === "reviews" && <ReviewsPanel />}
       </PageWrapper>
     </div>

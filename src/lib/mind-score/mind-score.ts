@@ -18,6 +18,7 @@ import {
 import { computeTradeRulesScore, computeHabitCounts } from "@/lib/discipline";
 import type {
   TradeJournalEntry, Habit, HabitCompletion, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, PreTradeAnalysis,
+  CommitmentAdherenceLog,
 } from "@/lib/types";
 
 export type MindPeriod = "week" | "month" | "all";
@@ -139,6 +140,9 @@ export interface MindInputs {
   bestTrades: BestTradeOfDay[];
   weeklyReviews: WeeklyTradeReview[];
   analyses: PreTradeAnalysis[];
+  /** Commitment re-checks. Optional: callers that predate the commitment loop
+   *  simply contribute no commitment objective. */
+  adherenceLogs?: CommitmentAdherenceLog[];
 }
 
 /** Earliest day any tracked activity exists — the anchor for the all-time window. */
@@ -202,6 +206,14 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   const analysisTarget = tradedDays.size; // nothing required on non-trading days
   const analysisRate = analysisTarget === 0 ? 1 : Math.min(1, analysedDays.size / analysisTarget);
 
+  // ── Commitments: did the reflection carry into the next trade? ────────
+  // Counts every check raised in the window, not only the answered ones —
+  // confirming the check is part of the work, so ignoring them cannot score.
+  // Never kept is never guessed: an unanswered check simply is not a kept one.
+  const windowLogs = (input.adherenceLogs ?? []).filter((l) => inRange(l.date));
+  const checksRaised = windowLogs.length;
+  const checksKept = windowLogs.filter((l) => l.followed === true).length;
+
   const rawObjectives: Omit<Objective, "contribution">[] = [
     {
       key: "weekly-review", label: "Weekly review", description: "Complete each week's review once the week has ended",
@@ -219,6 +231,20 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
       rate: Math.min(1, bestDays.size / weekdayCount),
     },
   ];
+
+  // Only an objective once a commitment has actually been tested — otherwise it
+  // would contribute a free full score and dilute the others.
+  if (checksRaised > 0) {
+    rawObjectives.push({
+      key: "commitments-kept",
+      label: "Commitments kept",
+      description: "Hold the if/then commitments you wrote, and confirm each check",
+      href: "/trade-therapist?tab=commitments",
+      progress: checksKept,
+      target: checksRaised,
+      rate: Math.min(1, checksKept / checksRaised),
+    });
+  }
 
   const share = 100 / rawObjectives.length;
   const objectives: Objective[] = rawObjectives.map((o) => ({ ...o, contribution: o.rate * share }));

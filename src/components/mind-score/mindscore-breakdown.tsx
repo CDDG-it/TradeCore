@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import {
   getTrades, getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getAnalyses,
+  getCommitmentAdherenceLogs,
 } from "@/lib/supabase/queries";
 import {
   bandColorFor, computeMindScoreAll,
@@ -37,9 +38,10 @@ export function MindScoreBreakdown() {
     Promise.all([
       getTrades(), getHabits(), getHabitCompletions(),
       getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews(), getAnalyses(),
-    ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses]) => {
-      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses });
-    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [] }));
+      getCommitmentAdherenceLogs(),
+    ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs]) => {
+      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs });
+    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [], adherenceLogs: [] }));
   }, []);
 
   const scores = useMemo(() => (data ? computeMindScoreAll(data) : null), [data]);
