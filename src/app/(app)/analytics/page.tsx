@@ -27,6 +27,7 @@ import { getTrades, getWeeklyTradeReviews, getWeeklyReflection } from "@/lib/sup
 import type { TradeJournalEntry, WeeklyTradeReview, WeeklyReflection } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { computeConfluenceStats, CONFLUENCE_MIN_SAMPLE } from "@/lib/journal/confluence-stats";
+import { computeRuleStats, RULE_MIN_SAMPLE } from "@/lib/journal/rule-stats";
 
 type Period = "all" | "day" | "week" | "month";
 type DayFilter = "all" | "Mon" | "Tue" | "Wed" | "Thu" | "Fri";
@@ -215,6 +216,10 @@ export default function AnalyticsPage() {
   // Which of the trader's own setups actually pay. Ranked by R per trade, so a
   // high win rate at poor reward cannot outrank a selective, larger winner.
   const confluenceData = computeConfluenceStats(trades);
+
+  // ── Per-rule breakdown ────────────────────────────────────────────────
+  // Which of the trader's own rules get broken, and what each breach costs in R.
+  const ruleData = computeRuleStats(trades);
 
   // ── Long vs short ─────────────────────────────────────────────────────
   const longTrades = trades.filter((t) => t.direction === "long");
@@ -733,6 +738,84 @@ export default function AnalyticsPage() {
                       >
                         {c.expectancy > 0 ? "+" : ""}
                         {c.expectancy.toFixed(2)}R
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {ruleData.length > 0 && (
+            <Card className="bg-card border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">Rule Breakdown</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Which of your rules get broken, and what each breach costs — the gap between
+                  your average R when you keep the rule and when you don&apos;t.
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-border/40">
+                  <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-2 text-xs uppercase tracking-wider text-muted-foreground">
+                    <span>Rule</span>
+                    <span className="w-14 text-center">Broken</span>
+                    <span className="w-12 text-right">Rate</span>
+                    <span className="w-24 text-right">Cost / breach</span>
+                  </div>
+                  {ruleData.map((r) => (
+                    <div
+                      key={r.label}
+                      className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-5 py-3.5 text-sm"
+                    >
+                      <span className={cn("flex items-center gap-2 font-medium", r.thin && "text-muted-foreground")}>
+                        <span className="truncate">{r.label}</span>
+                        {r.thin && (
+                          <span
+                            className="shrink-0 rounded border border-border/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80"
+                            title={`Checked on fewer than ${RULE_MIN_SAMPLE} trades — not enough to draw a conclusion`}
+                          >
+                            Thin
+                          </span>
+                        )}
+                      </span>
+                      <span className="w-14 text-center tabular-nums text-muted-foreground">
+                        {r.broken}/{r.evaluated}
+                      </span>
+                      <span
+                        className={cn(
+                          "w-12 text-right font-semibold tabular-nums",
+                          r.thin
+                            ? "text-muted-foreground"
+                            : r.breakRate >= 40
+                            ? "text-destructive"
+                            : r.breakRate >= 20
+                            ? "text-warning"
+                            : "text-success"
+                        )}
+                      >
+                        {r.breakRate}%
+                      </span>
+                      {/* Cost needs trades on both sides of the rule; without them there is
+                          nothing to compare and a number would be invented. */}
+                      <span
+                        className={cn(
+                          "w-24 text-right font-bold tabular-nums",
+                          r.thin || r.cost === null
+                            ? "text-muted-foreground"
+                            : r.cost > 0
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                        )}
+                        title={
+                          r.cost === null
+                            ? r.broken === 0
+                              ? "Never broken — nothing to compare against"
+                              : "Never kept — nothing to compare against"
+                            : `Avg ${r.rKept}R when kept vs ${r.rBroken}R when broken`
+                        }
+                      >
+                        {r.cost === null ? "—" : `${r.cost > 0 ? "−" : "+"}${Math.abs(r.cost).toFixed(2)}R`}
                       </span>
                     </div>
                   ))}
