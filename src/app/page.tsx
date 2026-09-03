@@ -7,7 +7,7 @@ import { motion, useScroll, useTransform, useMotionValue, useSpring } from "moti
 import { animate, splitText, stagger } from "animejs";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
 import { LayoutShowcase } from "@/components/landing/layout-showcase";
-import { FeatureDetailSections } from "@/components/landing/feature-detail-sections";
+import { ProductExplorer } from "@/components/landing/product-explorer";
 import { LandingFooter } from "@/components/landing/footer";
 import { LandingNav } from "@/components/landing/landing-nav";
 
@@ -221,7 +221,7 @@ export default function HomePage() {
 
       </section>
 
-      <FeatureDetailSections />
+      <ProductExplorer />
 
       <LayoutShowcase />
 
