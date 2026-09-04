@@ -28,6 +28,7 @@ import type { TradeJournalEntry, WeeklyTradeReview, WeeklyReflection } from "@/l
 import { cn } from "@/lib/utils";
 import { computeConfluenceStats, CONFLUENCE_MIN_SAMPLE } from "@/lib/journal/confluence-stats";
 import { computeRuleStats, RULE_MIN_SAMPLE } from "@/lib/journal/rule-stats";
+import { winRateOf, tradesWinRate } from "@/lib/journal/weeks";
 
 type Period = "all" | "day" | "week" | "month";
 type DayFilter = "all" | "Mon" | "Tue" | "Wed" | "Thu" | "Fri";
@@ -141,7 +142,9 @@ export default function AnalyticsPage() {
   const wins = trades.filter((t) => t.result === "win");
   const losses = trades.filter((t) => t.result === "loss");
   const bes = trades.filter((t) => t.result === "break-even");
-  const winRate = trades.length > 0 ? Math.round((wins.length / trades.length) * 100) : 0;
+  // Break-even trades are counted and charted, but never sit in the win-rate
+  // denominator — a scratch is neither a win nor a loss.
+  const winRate = winRateOf(wins.length, losses.length) ?? 0;
 
   // ── Execution quality breakdown ──────────────────────────────────────
   const goodExec = trades.filter((t) => t.execution_quality === "good");
@@ -178,36 +181,39 @@ export default function AnalyticsPage() {
   ].filter((d) => d.value > 0);
 
   // ── Win rate by instrument (for breakdown table) ─────────────────────
-  const byInstrument: Record<string, { trades: number; wins: number; winTotalRR: number }> = {};
+  const byInstrument: Record<string, { trades: number; wins: number; losses: number; winTotalRR: number }> = {};
   trades.forEach((t) => {
     if (!byInstrument[t.instrument])
-      byInstrument[t.instrument] = { trades: 0, wins: 0, winTotalRR: 0 };
+      byInstrument[t.instrument] = { trades: 0, wins: 0, losses: 0, winTotalRR: 0 };
     byInstrument[t.instrument].trades += 1;
     if (t.result === "win") {
       byInstrument[t.instrument].wins += 1;
       byInstrument[t.instrument].winTotalRR += t.rr;
+    } else if (t.result === "loss") {
+      byInstrument[t.instrument].losses += 1;
     }
   });
   const instrumentData = Object.entries(byInstrument)
     .map(([name, d]) => ({
       name,
-      winRate: Math.round((d.wins / d.trades) * 100),
+      winRate: winRateOf(d.wins, d.losses) ?? 0,
       avgRR: d.wins > 0 ? Math.round((d.winTotalRR / d.wins) * 100) / 100 : 0,
       trades: d.trades,
     }))
     .sort((a, b) => b.winRate - a.winRate);
 
   // ── Win rate by session ───────────────────────────────────────────────
-  const bySession: Record<string, { trades: number; wins: number }> = {};
+  const bySession: Record<string, { trades: number; wins: number; losses: number }> = {};
   trades.forEach((t) => {
-    if (!bySession[t.session]) bySession[t.session] = { trades: 0, wins: 0 };
+    if (!bySession[t.session]) bySession[t.session] = { trades: 0, wins: 0, losses: 0 };
     bySession[t.session].trades += 1;
     if (t.result === "win") bySession[t.session].wins += 1;
+    else if (t.result === "loss") bySession[t.session].losses += 1;
   });
   const sessionData = Object.entries(bySession)
     .map(([session, d]) => ({
       session,
-      winRate: Math.round((d.wins / d.trades) * 100),
+      winRate: winRateOf(d.wins, d.losses) ?? 0,
       trades: d.trades,
     }))
     .sort((a, b) => b.winRate - a.winRate);
@@ -224,18 +230,8 @@ export default function AnalyticsPage() {
   // ── Long vs short ─────────────────────────────────────────────────────
   const longTrades = trades.filter((t) => t.direction === "long");
   const shortTrades = trades.filter((t) => t.direction === "short");
-  const longWinRate =
-    longTrades.length > 0
-      ? Math.round(
-          (longTrades.filter((t) => t.result === "win").length / longTrades.length) * 100
-        )
-      : 0;
-  const shortWinRate =
-    shortTrades.length > 0
-      ? Math.round(
-          (shortTrades.filter((t) => t.result === "win").length / shortTrades.length) * 100
-        )
-      : 0;
+  const longWinRate = tradesWinRate(longTrades) ?? 0;
+  const shortWinRate = tradesWinRate(shortTrades) ?? 0;
   const longWins = longTrades.filter((t) => t.result === "win");
   const shortWins = shortTrades.filter((t) => t.result === "win");
   const longAvgRR =

@@ -138,7 +138,8 @@ function WinRateMock() {
   const [period, setPeriod] = useState<"week" | "month">("month");
   const d = WR_DATA[period];
   const total = d.wins + d.losses + d.be;
-  const wr = Math.round((d.wins / total) * 100);
+  // Same formula as the real card: break-even is charted but not rated.
+  const wr = Math.round((d.wins / (d.wins + d.losses)) * 100);
 
   const R = 46;
   const SW = 11;

@@ -268,13 +268,16 @@ export function getFeaturedNews(): NewsItem[] {
 export function getDashboardStats(): DashboardStats {
   const allTrades = getTrades();
   const wins = allTrades.filter((t) => t.result === "win");
+  const losses = allTrades.filter((t) => t.result === "loss");
   const breakEvens = allTrades.filter((t) => t.result === "break-even");
   const activeAccts = getAccounts().filter((a) => a.status === "active");
 
   return {
     total_trades: allTrades.length,
     win_rate:
-      allTrades.length > 0 ? Math.round((wins.length / allTrades.length) * 100) : 0,
+      wins.length + losses.length > 0
+        ? Math.round((wins.length / (wins.length + losses.length)) * 100)
+        : 0,
     break_even_rate:
       allTrades.length > 0 ? Math.round((breakEvens.length / allTrades.length) * 100) : 0,
     average_rr:
@@ -566,14 +569,17 @@ export function generateCoachingInsights(
   }
 
   // ── 1. Session performance ───────────────────────────────────────────
-  const sessionMap: Record<string, { wins: number; total: number }> = {};
+  // Rates below are wins / decisive trades — break-even never dilutes them.
+  const sessionMap: Record<string, { wins: number; decisive: number; total: number }> = {};
   trades.forEach((t) => {
-    if (!sessionMap[t.session]) sessionMap[t.session] = { wins: 0, total: 0 };
+    if (!sessionMap[t.session]) sessionMap[t.session] = { wins: 0, decisive: 0, total: 0 };
     sessionMap[t.session].total++;
-    if (t.result === "win") sessionMap[t.session].wins++;
+    if (t.result === "win") { sessionMap[t.session].wins++; sessionMap[t.session].decisive++; }
+    else if (t.result === "loss") sessionMap[t.session].decisive++;
   });
   const sessionRates = Object.entries(sessionMap)
-    .map(([s, d]) => ({ session: s, rate: d.wins / d.total, total: d.total }))
+    .filter(([, d]) => d.decisive > 0)
+    .map(([s, d]) => ({ session: s, rate: d.wins / d.decisive, total: d.total }))
     .sort((a, b) => b.rate - a.rate);
 
   if (sessionRates.length >= 2) {
@@ -653,16 +659,17 @@ export function generateCoachingInsights(
   // ── 3. Market regime performance ────────────────────────────────────
   const withCtx = trades.filter((t) => t.market_context?.regime);
   if (withCtx.length >= 3) {
-    const regimeMap: Record<string, { wins: number; total: number }> = {};
+    const regimeMap: Record<string, { wins: number; decisive: number; total: number }> = {};
     withCtx.forEach((t) => {
       const r = t.market_context!.regime!;
-      if (!regimeMap[r]) regimeMap[r] = { wins: 0, total: 0 };
+      if (!regimeMap[r]) regimeMap[r] = { wins: 0, decisive: 0, total: 0 };
       regimeMap[r].total++;
-      if (t.result === "win") regimeMap[r].wins++;
+      if (t.result === "win") { regimeMap[r].wins++; regimeMap[r].decisive++; }
+      else if (t.result === "loss") regimeMap[r].decisive++;
     });
     const regimes = Object.entries(regimeMap)
-      .filter(([, d]) => d.total >= 2)
-      .map(([regime, d]) => ({ regime, rate: d.wins / d.total, total: d.total }))
+      .filter(([, d]) => d.total >= 2 && d.decisive > 0)
+      .map(([regime, d]) => ({ regime, rate: d.wins / d.decisive, total: d.total }))
       .sort((a, b) => b.rate - a.rate);
 
     if (regimes.length >= 2) {
@@ -692,8 +699,13 @@ export function generateCoachingInsights(
       new Date(a.date_time.slice(0, 10) + "T12:00:00").getTime()
   );
   const recent10 = sorted.slice(0, 10);
-  const allWR = trades.length > 0 ? trades.filter((t) => t.result === "win").length / trades.length : 0;
-  const recWR = recent10.length > 0 ? recent10.filter((t) => t.result === "win").length / recent10.length : 0;
+  const decisiveRate = (list: TradeJournalEntry[]) => {
+    const wins = list.filter((t) => t.result === "win").length;
+    const decisive = wins + list.filter((t) => t.result === "loss").length;
+    return decisive > 0 ? wins / decisive : 0;
+  };
+  const allWR = decisiveRate(trades);
+  const recWR = decisiveRate(recent10);
 
   if (recent10.length >= 5 && recWR > allWR + 0.1) {
     insights.push({
@@ -734,7 +746,7 @@ export function generateCoachingInsights(
         const dayCompletions = completions.filter((c) => c.date === date && c.completed);
         return {
           habitRate: dayCompletions.length / habits.length,
-          winRate: dayTrades.length > 0 ? dayTrades.filter((t) => t.result === "win").length / dayTrades.length : 0,
+          winRate: decisiveRate(dayTrades),
           tradeCount: dayTrades.length,
         };
       })

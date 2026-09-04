@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
+import { tradeR, formatTotalR, instrumentName, winRateOf, tradesWinRate } from "@/lib/journal/weeks";
 import type { TradeJournalEntry } from "@/lib/types";
 
 const TURQUOISE = "#14B8A6";
@@ -84,7 +84,7 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
   const losses = trades.filter((t) => t.result === "loss");
   const bes = trades.filter((t) => t.result === "break-even");
   const totalR = trades.reduce((s, t) => s + tradeR(t), 0);
-  const winRate = trades.length ? Math.round((wins.length / trades.length) * 100) : null;
+  const winRate = winRateOf(wins.length, losses.length);
   const avgRR = wins.length ? (wins.reduce((s, t) => s + t.rr, 0) / wins.length).toFixed(1) : "—";
   const goodExec = trades.filter((t) => t.execution_quality === "good").length;
   const ratedExec = goodExec + trades.filter((t) => t.execution_quality === "bad").length;
@@ -93,8 +93,7 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
   // Long vs short — count, win rate and R for each side.
   const longs = trades.filter((t) => t.direction === "long");
   const shorts = trades.filter((t) => t.direction === "short");
-  const sideWinRate = (list: TradeJournalEntry[]) =>
-    list.length ? Math.round((list.filter((t) => t.result === "win").length / list.length) * 100) : 0;
+  const sideWinRate = (list: TradeJournalEntry[]) => tradesWinRate(list) ?? 0;
   const longWinRate = sideWinRate(longs);
   const shortWinRate = sideWinRate(shorts);
   const longR = longs.reduce((s, t) => s + tradeR(t), 0);

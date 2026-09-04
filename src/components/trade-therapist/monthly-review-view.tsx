@@ -8,7 +8,7 @@ import {
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ArrowRight, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTrades, getWeeklyTradeReviews } from "@/lib/supabase/queries";
-import { getWeekGroup, tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
+import { getWeekGroup, tradeR, formatTotalR, instrumentName, tradesWinRate } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
 
 const TURQUOISE = "#14B8A6";
@@ -48,7 +48,7 @@ export function MonthlyReviewView({ month }: { month: string }) {
     const weeks = weekStarts.map((ws) => getWeekGroup(trades, ws));
 
     const wins = inMonth.filter((t) => t.result === "win");
-    const winRate = inMonth.length ? Math.round((wins.length / inMonth.length) * 100) : null;
+    const winRate = tradesWinRate(inMonth);
     const avgRR = wins.length ? (wins.reduce((s, t) => s + t.rr, 0) / wins.length).toFixed(1) : "—";
     const totalR = inMonth.reduce((s, t) => s + tradeR(t), 0);
 

@@ -13,7 +13,7 @@ import {
   getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getCommitmentAdherenceLogs,
 } from "@/lib/supabase/queries";
 import { computeMindScore, bandColorFor, type MindScore } from "@/lib/mind-score/mind-score";
-import { tradeR, instrumentName } from "@/lib/journal/weeks";
+import { tradeR, instrumentName, winRateOf } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, CommitmentAdherenceLog } from "@/lib/types";
@@ -185,7 +185,8 @@ export default function DashboardPage() {
   const wins = periodTrades.filter((t) => t.result === "win").length;
   const losses = periodTrades.filter((t) => t.result === "loss").length;
   const be = periodTrades.length - wins - losses;
-  const winRate = periodTrades.length ? Math.round((wins / periodTrades.length) * 100) : null;
+  // Break-even trades are shown in the legend but excluded from the rate.
+  const winRate = winRateOf(wins, losses);
   const periodR = periodTrades.reduce((s, t) => s + tradeR(t), 0);
   const goodExec = periodTrades.filter((t) => t.execution_quality === "good").length;
   const badExec = periodTrades.filter((t) => t.execution_quality === "bad").length;

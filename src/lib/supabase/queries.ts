@@ -5,6 +5,7 @@
  */
 import { createClient } from "@/lib/supabase/client";
 import { cachedRead, invalidateReads } from "@/lib/supabase/cache";
+import { winRateOf } from "@/lib/journal/weeks";
 import type {
   PreTradeAnalysis,
   PreTradeAnalysisInput,
@@ -579,7 +580,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   return {
     total_trades: trades.length,
-    win_rate: trades.length > 0 ? Math.round((wins.length / trades.length) * 100) : 0,
+    // Win rate counts decisive trades only — break-even has its own rate below.
+    win_rate: winRateOf(wins.length, trades.filter((t) => t.result === "loss").length) ?? 0,
     break_even_rate: trades.length > 0 ? Math.round((breakEvens.length / trades.length) * 100) : 0,
     average_rr:
       trades.length > 0

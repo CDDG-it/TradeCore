@@ -18,7 +18,7 @@ import {
 import { NEWS_CITY_DATA } from "@/lib/news-city/data";
 import { SENTIMENT_META, RISK_META } from "@/lib/news-city/ui";
 import { computeDiscipline } from "@/lib/discipline";
-import { tradeR } from "@/lib/journal/weeks";
+import { tradeR, winRateOf } from "@/lib/journal/weeks";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import {
@@ -318,7 +318,7 @@ function WinRateWidget({ options }: { options: WidgetOptions }) {
   const inScope = scopeTrades(trades, options);
   const wins = inScope.filter((t) => t.result === "win").length;
   const losses = inScope.filter((t) => t.result === "loss").length;
-  const pct = inScope.length ? Math.round((wins / inScope.length) * 100) : 0;
+  const pct = winRateOf(wins, losses) ?? 0;
   return (
     <div>
       <p className="text-3xl font-black tabular-nums" style={{ color: "oklch(0.72 0.14 220)" }}>{pct}%</p>

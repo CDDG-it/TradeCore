@@ -22,6 +22,25 @@ export function tradeR(t: TradeJournalEntry): number {
   return 0;
 }
 
+/**
+ * Win rate over decisive trades only. Break-even trades are still reported in
+ * the counts everywhere, but they never sit in the denominator — a scratch is
+ * neither a win nor a loss, so counting it as one understates the edge.
+ * Returns null when there is nothing decisive to rate.
+ */
+export function winRateOf(wins: number, losses: number): number | null {
+  const decisive = wins + losses;
+  return decisive > 0 ? Math.round((wins / decisive) * 100) : null;
+}
+
+/** Win rate of a set of trades — wins / (wins + losses), break-even excluded. */
+export function tradesWinRate(trades: TradeJournalEntry[]): number | null {
+  return winRateOf(
+    trades.filter((t) => t.result === "win").length,
+    trades.filter((t) => t.result === "loss").length,
+  );
+}
+
 export type WeekGroup = {
   weekStart: string;        // yyyy-MM-dd (Monday)
   weekNum: number;
