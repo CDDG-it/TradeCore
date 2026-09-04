@@ -7,7 +7,7 @@ import {
   startOfMonth, endOfMonth, isWithinInterval,
 } from "date-fns";
 import { motion } from "motion/react";
-import { Loader2, TrendingUp, TrendingDown, MoveRight, Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, getAnalyses, toggleHabitCompletion,
   getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getCommitmentAdherenceLogs,
@@ -548,16 +548,15 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
   );
 }
 
-/* ── Analysis — did the plan become a trade? ──────────────────────────────
-   A plan is only worth writing if it survives contact with the session, so
-   this widget is a follow-through ledger rather than a list of documents:
-   every recent plan carries what happened to it — traded and at what R, or
-   left on the shelf — and the header states the ratio outright. */
+/* ── Analysis — the plans you wrote, and what became of them ──────────────
+   Written to be read at a glance and without a legend: a plan states its
+   instrument, which way you leaned, and in plain words whether you traded it
+   and at what R. No meters, no abbreviations to decode. */
 
-const BIAS: Record<string, { color: string; icon: typeof TrendingUp; label: string }> = {
-  bullish: { color: GREEN, icon: TrendingUp, label: "Long bias" },
-  bearish: { color: RED, icon: TrendingDown, label: "Short bias" },
-  choppy: { color: AMBER, icon: MoveRight, label: "No edge" },
+const BIAS_WORD: Record<string, { word: string; color: string }> = {
+  bullish: { word: "Long", color: GREEN },
+  bearish: { word: "Short", color: RED },
+  choppy: { word: "Neutral", color: AMBER },
 };
 
 function AnalysisWidget({ analyses, trades }: { analyses: PreTradeAnalysis[]; trades: TradeJournalEntry[] }) {
@@ -575,47 +574,30 @@ function AnalysisWidget({ analyses, trades }: { analyses: PreTradeAnalysis[]; tr
         const its = linked.get(a.id) ?? [];
         return {
           analysis: a,
-          trades: its,
-          // A plan counts as executed when a trade points at it, or when the
-          // trader ticked it off themselves on the analysis.
+          // A plan counts as traded when a trade points at it, or when the
+          // trader ticked it off on the analysis itself.
           traded: its.length > 0 || a.used_for_trade,
+          hasR: its.length > 0,
           r: its.reduce((s, t) => s + tradeR(t), 0),
         };
       });
   }, [analyses, trades]);
 
   const recent = rows.slice(0, 8);
-  const executed = recent.filter((r) => r.traded).length;
+  const tradedCount = recent.filter((r) => r.traded).length;
   const shown = rows.slice(0, 4);
 
   return (
     <div className={cn(CARD_BASE, "flex flex-col")}>
       <CardFx accent={CYAN} />
 
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Analysis</p>
-        <Link href="/analysis" className="text-[11px] font-semibold text-primary hover:underline">All plans</Link>
-      </div>
-
-      {/* Follow-through — the one number that says whether prep is working */}
-      {recent.length > 0 && (
-        <div className="mt-2.5 flex items-center gap-2.5">
-          <span className="text-[13px] font-black tabular-nums" style={{ color: CYAN }}>
-            {executed}<span className="text-muted-foreground/50">/{recent.length}</span>
-          </span>
-          <span className="flex flex-1 gap-1">
-            {recent.map((r, i) => (
-              <span
-                key={i}
-                className="h-1.5 flex-1 rounded-full transition-colors"
-                style={{ background: r.traded ? alpha(CYAN, 85) : alpha("var(--muted-foreground)", 25) }}
-                title={r.traded ? "Traded" : "Not traded"}
-              />
-            ))}
-          </span>
-          <span className="text-[10px] text-muted-foreground/70">traded</span>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Analysis</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground/60">Plans written before the session</p>
         </div>
-      )}
+        <Link href="/analysis" className="shrink-0 text-[11px] font-semibold text-primary hover:underline">All plans</Link>
+      </div>
 
       {shown.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-1 py-4 text-center">
@@ -623,51 +605,35 @@ function AnalysisWidget({ analyses, trades }: { analyses: PreTradeAnalysis[]; tr
           <p className="text-[11px] text-muted-foreground/60">Prep a session and it shows up here.</p>
         </div>
       ) : (
-        <ul className="mt-2.5 mb-2 flex-1 space-y-1 min-h-0 overflow-hidden">
-          {shown.map(({ analysis: a, traded, r, trades: its }) => {
-            const bias = BIAS[a.bias] ?? { color: "var(--muted-foreground)", icon: MoveRight, label: a.bias };
-            const Icon = bias.icon;
-            const outcomeColor = its.length === 0 ? "var(--muted-foreground)" : r > 0 ? GREEN : r < 0 ? RED : AMBER;
+        <ul className="mt-3 mb-2 min-h-0 flex-1 space-y-1.5 overflow-hidden">
+          {shown.map(({ analysis: a, traded, hasR, r }) => {
+            const bias = BIAS_WORD[a.bias] ?? { word: a.bias, color: "var(--muted-foreground)" };
+            const rColor = r > 0 ? GREEN : r < 0 ? RED : AMBER;
             return (
               <li key={a.id}>
                 <Link
                   href={`/analysis/${a.id}`}
-                  className="group/plan flex items-center gap-2.5 rounded-lg border border-transparent px-1.5 py-1.5 transition-colors hover:border-border/60 hover:bg-muted/25"
+                  className="block rounded-lg border-l-2 py-1 pl-2.5 pr-1 transition-colors hover:bg-muted/25"
+                  style={{ borderColor: alpha(bias.color, 70) }}
                 >
-                  {/* Bias, as a mark you can read without a legend */}
-                  <span
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
-                    style={{ background: alpha(bias.color, 14), color: bias.color }}
-                    title={bias.label}
-                  >
-                    <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
-                  </span>
-
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-baseline gap-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="flex min-w-0 items-baseline gap-1.5">
                       <span className="font-mono text-[12px] font-black text-foreground">{a.instrument}</span>
-                      <span className="truncate text-[11px] text-muted-foreground/80">{a.title || a.thesis || a.session}</span>
-                    </span>
-                    <span className="mt-0.5 block text-[10px] tabular-nums text-muted-foreground/55">
-                      {format(new Date(a.date + "T12:00:00"), "EEE d MMM")}
-                    </span>
-                  </span>
-
-                  {/* What became of it */}
-                  {traded ? (
-                    <span className="shrink-0 text-right">
-                      <span className="block text-[12px] font-black tabular-nums" style={{ color: outcomeColor }}>
-                        {its.length === 0 ? "traded" : `${r > 0 ? "+" : ""}${r.toFixed(1)}R`}
+                      <span className="text-[11px] font-semibold" style={{ color: bias.color }}>{bias.word}</span>
+                    </div>
+                    {/* Spelled out, so no chip needs explaining */}
+                    {traded ? (
+                      <span className="shrink-0 text-[11px] font-bold tabular-nums" style={{ color: hasR ? rColor : "var(--muted-foreground)" }}>
+                        {hasR ? `Traded ${r > 0 ? "+" : ""}${r.toFixed(1)}R` : "Traded"}
                       </span>
-                      {its.length > 1 && (
-                        <span className="block text-[9px] text-muted-foreground/50">{its.length} trades</span>
-                      )}
-                    </span>
-                  ) : (
-                    <span className="shrink-0 rounded-md border border-dashed border-border/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                      No trade
-                    </span>
-                  )}
+                    ) : (
+                      <span className="shrink-0 text-[11px] font-medium text-muted-foreground/60">Not traded</span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">
+                    <span className="tabular-nums text-muted-foreground/50">{format(new Date(a.date + "T12:00:00"), "EEE d MMM")}</span>
+                    {(a.title || a.thesis) && <> · {a.title || a.thesis}</>}
+                  </p>
                 </Link>
               </li>
             );
@@ -675,9 +641,16 @@ function AnalysisWidget({ analyses, trades }: { analyses: PreTradeAnalysis[]; tr
         </ul>
       )}
 
+      {recent.length > 0 && (
+        <p className="mb-2 border-t border-border/40 pt-2 text-[11px] text-muted-foreground/70">
+          <span className="font-bold text-foreground/85">{tradedCount} of {recent.length}</span> recent plans became trades
+        </p>
+      )}
+
       <Link
         href="/analysis/new"
-        className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg border border-primary/40 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+        className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
+        style={{ background: TURQUOISE, boxShadow: `0 2px 12px ${alpha(TURQUOISE, 26)}` }}
       >
         <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> New analysis
       </Link>
@@ -914,11 +887,20 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
         })}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-border/40 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-muted-foreground/70">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/40 pt-3 text-[10px] text-muted-foreground/70">
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: GREEN }} /> Win</span>
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} /> Loss</span>
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: AMBER }} /> B/E</span>
-        <span className="ml-auto hidden sm:inline text-muted-foreground/50">A split card = several trades that day</span>
+        <span className="hidden text-muted-foreground/50 lg:inline">A split card = several trades that day</span>
+        {/* The week is where you notice a trade is missing, so the way to add
+            one sits right under it. */}
+        <Link
+          href="/journal/new"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
+          style={{ background: TURQUOISE, boxShadow: `0 2px 12px ${alpha(TURQUOISE, 26)}` }}
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> Log trade
+        </Link>
       </div>
     </div>
   );

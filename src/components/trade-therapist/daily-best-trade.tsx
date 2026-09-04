@@ -94,7 +94,7 @@ export function DailyBestTrade({
   }, [date]);
 
   const dayTrades = useMemo(
-    () => (tradesByDay[date] ?? []).slice().sort((a, b) => (a.date_time > b.date_time ? 1 : -1)),
+    () => inOrder(tradesByDay[date] ?? []),
     [tradesByDay, date]
   );
   const dayR = dayTrades.reduce((s, t) => s + tradeR(t), 0);

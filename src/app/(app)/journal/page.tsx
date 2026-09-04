@@ -19,6 +19,7 @@ import { DayTradesDialog } from "@/components/journal/day-trades-dialog";
 import type { TradeJournalEntry, BestTradeOfDay } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
+import { inOrder } from "@/lib/journal/colors";
 
 type CalendarPeriod = "month" | "week";
 
@@ -111,6 +112,8 @@ export default function JournalPage() {
       if (!map[key]) map[key] = [];
       map[key].push(t);
     });
+    // Earliest trade first, so a day always reads in the order it happened.
+    for (const key of Object.keys(map)) map[key] = inOrder(map[key]);
     return map;
   }, [allTrades]);
 

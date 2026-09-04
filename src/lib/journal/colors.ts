@@ -24,9 +24,21 @@ export function netRColor(r: number): string {
   return r > 0 ? WIN_COLOR : r < 0 ? LOSS_COLOR : BE_COLOR;
 }
 
-/** Trades in the order they were taken — what the bands below run through. */
+/**
+ * Trades in the order they were taken — earliest first, so the leftmost band
+ * is the day's first trade.
+ *
+ * `date_time` carries the date only; the clock time lives in `execution_time`,
+ * so sorting on the date alone left same-day trades in whatever order the
+ * database returned them. Trades without a logged time sort after the timed
+ * ones, oldest row first, since that is the only ordering we actually know.
+ */
+function orderKey(t: TradeJournalEntry): string {
+  return `${t.date_time.slice(0, 10)}T${t.execution_time || "99:99"}|${t.created_at ?? ""}`;
+}
+
 export function inOrder(trades: TradeJournalEntry[]): TradeJournalEntry[] {
-  return [...trades].sort((a, b) => (a.date_time > b.date_time ? 1 : -1));
+  return [...trades].sort((a, b) => orderKey(a).localeCompare(orderKey(b)));
 }
 
 /**
