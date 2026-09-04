@@ -12,7 +12,7 @@ import {
   AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { fmtPrice, fmtPct, toneFor, useGmi } from "@/lib/gmi/client";
-import type { DataEnvelope, Quote } from "@/lib/gmi/types";
+import type { Quote } from "@/lib/gmi/types";
 import type { HistoryPayload } from "@/lib/gmi/history";
 import { Panel, Unavailable, Segmented, ChangeChip, a } from "../panel";
 import { DataStatus } from "../data-status";
@@ -60,7 +60,8 @@ function DayRange({ q }: { q: Quote | undefined }) {
 }
 
 /* ── Instrument chart ─────────────────────────────────────────────────────── */
-function InstrumentChart({ quotesEnv }: { quotesEnv: DataEnvelope<Quote[]> | null }) {
+function InstrumentChart() {
+  const { env: quotesEnv } = useGmi<Quote[]>("/api/gmi/quotes", 60_000);
   const [sym, setSym] = useState("NQ");
   const [tfKey, setTfKey] = useState("1D");
   const tf = TIMEFRAMES.find((t) => t.key === tfKey) ?? TIMEFRAMES[3];
@@ -315,10 +316,10 @@ function CrossAsset() {
   );
 }
 
-export function FuturesTab({ quotesEnv }: { quotesEnv: DataEnvelope<Quote[]> | null }) {
+export function FuturesTab() {
   return (
     <div className="space-y-4">
-      <InstrumentChart quotesEnv={quotesEnv} />
+      <InstrumentChart />
       <CrossAsset />
     </div>
   );

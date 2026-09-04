@@ -2,9 +2,10 @@
 
 /**
  * Global Markets Intelligence — one page, focused subtabs, for objective market
- * research. The title block, the live tape and the sub-nav stay pinned while
- * the active subtab swaps beneath them. Every dataset is provider-labelled with
- * its freshness; nothing here interprets, recommends or predicts.
+ * research. The title block and the sub-nav stay pinned while the active subtab
+ * swaps beneath them. Every dataset is provider-labelled with its freshness;
+ * nothing here interprets, recommends or predicts, and no panel claims a price
+ * is live when the provider only offers delayed data.
  *
  * (Route kept as /news-city to preserve existing links; the page is retitled.)
  */
@@ -12,12 +13,9 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import {
-  Loader2, Activity, Globe2, CandlestickChart, Newspaper, CalendarDays, Layers, RefreshCw,
+  Loader2, Activity, Globe2, CandlestickChart, Newspaper, CalendarDays, Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useGmi, timeAgo } from "@/lib/gmi/client";
-import type { Quote } from "@/lib/gmi/types";
-import { MarketRibbon } from "@/components/gmi/ribbon";
 
 type Tab = "overview" | "markets" | "futures" | "news" | "calendar" | "flow";
 
@@ -51,33 +49,28 @@ const FlowOptionsTab = dynamic(() => import("@/components/gmi/tabs/flow-options-
 
 export default function GlobalMarketsPage() {
   const [tab, setTab] = useState<Tab>("overview");
-  // Shared quotes feed — one poll powers the tape, Overview, Markets and Futures.
-  const { env: quotesEnv, refresh } = useGmi<Quote[]>("/api/gmi/quotes", 30_000);
-  const [refreshing, setRefreshing] = useState(false);
 
-  // Deep-linking, e.g. the /option-flow route redirects in here.
+  // Deep-linking, e.g. the /option-flow route redirects in here. Read after
+  // mount rather than during render: the page is prerendered, so seeding state
+  // from the URL up front would make the server and client markup disagree.
   useEffect(() => {
     const raw = new URLSearchParams(window.location.search).get("tab");
     if (!raw) return;
     const t = TAB_ALIASES[raw] ?? raw;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
     if (TABS.some((x) => x.key === t)) setTab(t as Tab);
   }, []);
 
-  async function manualRefresh() {
-    setRefreshing(true);
-    try { await refresh(); } finally { setTimeout(() => setRefreshing(false), 450); }
-  }
-
   const content = useMemo(() => {
     switch (tab) {
-      case "overview": return <OverviewTab quotesEnv={quotesEnv} />;
-      case "markets": return <MarketsTab quotesEnv={quotesEnv} />;
-      case "futures": return <FuturesTab quotesEnv={quotesEnv} />;
+      case "overview": return <OverviewTab />;
+      case "markets": return <MarketsTab />;
+      case "futures": return <FuturesTab />;
       case "news": return <NewsTab />;
       case "calendar": return <CalendarTab />;
       case "flow": return <FlowOptionsTab />;
     }
-  }, [tab, quotesEnv]);
+  }, [tab]);
 
   return (
     <div className="space-y-5">
@@ -92,22 +85,10 @@ export default function GlobalMarketsPage() {
               Global Markets
             </h1>
           </div>
-
-          <div className="flex items-center gap-2.5">
-            <span className="hidden text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
-              Tape {quotesEnv ? timeAgo(quotesEnv.fetchedAt) : "loading…"}
-            </span>
-            <button
-              onClick={manualRefresh}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-            >
-              <RefreshCw className={cn("h-3 w-3", refreshing && "animate-spin")} />
-              Refresh
-            </button>
-          </div>
+          <p className="max-w-sm text-[10px] leading-relaxed text-muted-foreground/60">
+            Every dataset carries its provider and capture time. Nothing here is realtime, and nothing is a signal.
+          </p>
         </div>
-
-        <MarketRibbon env={quotesEnv} />
 
         <nav className="scrollbar-none flex gap-1 overflow-x-auto">
           {TABS.map(({ key, label, icon: Icon }) => {

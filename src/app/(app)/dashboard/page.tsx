@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay,
   startOfMonth, endOfMonth, isWithinInterval,
 } from "date-fns";
 import { motion } from "motion/react";
-import { Loader2 } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, MoveRight, Plus } from "lucide-react";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, getAnalyses, toggleHabitCompletion,
   getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getCommitmentAdherenceLogs,
@@ -73,26 +73,37 @@ type Period = "week" | "month";
 const PERIOD_LABEL: Record<Period, string> = { week: "week", month: "month" };
 
 /** Remembers a card's week / month choice across reloads and navigation, so a
- *  switch to "week" stays put. Read after mount to keep SSR output stable. */
-function usePersistedPeriod(key: string): [Period, (p: Period) => void] {
-  const [period, setPeriod] = useState<Period>("month");
+ *  switch to "week" stays put. Read through a store subscription rather than an
+ *  effect: the server has no localStorage, so it renders the default and the
+ *  client swaps in the stored value on its first paint — no extra render pass,
+ *  no hydration mismatch. */
+const periodListeners = new Set<() => void>();
+function readPeriod(key: string): Period {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored === "week" || stored === "month" ? stored : "month";
+  } catch {
+    return "month";
+  }
+}
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored === "week" || stored === "month") setPeriod(stored);
-    } catch {
-      /* ignore */
-    }
-  }, [key]);
+function usePersistedPeriod(key: string): [Period, (p: Period) => void] {
+  const period = useSyncExternalStore(
+    useCallback((onChange: () => void) => {
+      periodListeners.add(onChange);
+      return () => periodListeners.delete(onChange);
+    }, []),
+    useCallback(() => readPeriod(key), [key]),
+    useCallback(() => "month" as Period, [])
+  );
 
   const update = useCallback((p: Period) => {
-    setPeriod(p);
     try {
       localStorage.setItem(key, p);
     } catch {
       /* ignore */
     }
+    periodListeners.forEach((l) => l());
   }, [key]);
 
   return [period, update];
@@ -253,7 +264,7 @@ export default function DashboardPage() {
             <div className="lg:col-span-2 min-h-0">
               <WeekStrip days={weekDays} />
             </div>
-            <AnalysisWidget analyses={analyses} />
+            <AnalysisWidget analyses={analyses} trades={trades ?? []} />
           </div>
         </div>
       )}
@@ -537,94 +548,138 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
   );
 }
 
-/* ── Analysis — recent pre-trade prep + add ───────────────────────────── */
-const BIAS_COLOR: Record<string, string> = { bullish: GREEN, bearish: RED, choppy: AMBER };
+/* ── Analysis — did the plan become a trade? ──────────────────────────────
+   A plan is only worth writing if it survives contact with the session, so
+   this widget is a follow-through ledger rather than a list of documents:
+   every recent plan carries what happened to it — traded and at what R, or
+   left on the shelf — and the header states the ratio outright. */
 
-function AnalysisWidget({ analyses }: { analyses: PreTradeAnalysis[] }) {
-  const sorted = useMemo(
-    () => [...analyses].sort((a, b) => b.date.localeCompare(a.date)),
-    [analyses]
-  );
-  const featured = sorted[0];
-  const rest = sorted.slice(1, 4);
+const BIAS: Record<string, { color: string; icon: typeof TrendingUp; label: string }> = {
+  bullish: { color: GREEN, icon: TrendingUp, label: "Long bias" },
+  bearish: { color: RED, icon: TrendingDown, label: "Short bias" },
+  choppy: { color: AMBER, icon: MoveRight, label: "No edge" },
+};
+
+function AnalysisWidget({ analyses, trades }: { analyses: PreTradeAnalysis[]; trades: TradeJournalEntry[] }) {
+  const rows = useMemo(() => {
+    const linked = new Map<string, TradeJournalEntry[]>();
+    for (const t of trades) {
+      if (!t.linked_analysis_id) continue;
+      const list = linked.get(t.linked_analysis_id) ?? [];
+      list.push(t);
+      linked.set(t.linked_analysis_id, list);
+    }
+    return [...analyses]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .map((a) => {
+        const its = linked.get(a.id) ?? [];
+        return {
+          analysis: a,
+          trades: its,
+          // A plan counts as executed when a trade points at it, or when the
+          // trader ticked it off themselves on the analysis.
+          traded: its.length > 0 || a.used_for_trade,
+          r: its.reduce((s, t) => s + tradeR(t), 0),
+        };
+      });
+  }, [analyses, trades]);
+
+  const recent = rows.slice(0, 8);
+  const executed = recent.filter((r) => r.traded).length;
+  const shown = rows.slice(0, 4);
 
   return (
     <div className={cn(CARD_BASE, "flex flex-col")}>
       <CardFx accent={CYAN} />
+
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Analysis</p>
-        <Link href="/analysis" className="text-[11px] font-semibold text-primary hover:underline">All →</Link>
+        <Link href="/analysis" className="text-[11px] font-semibold text-primary hover:underline">All plans</Link>
       </div>
 
-      {!featured ? (
-        <div className="flex-1 flex items-center justify-center text-center py-4">
-          <p className="text-xs text-muted-foreground">No pre-trade analysis yet.</p>
-        </div>
-      ) : (
-        <div className="mt-2.5 flex-1 flex flex-col gap-2 min-h-0">
-          {/* Featured — the latest plan, given room to breathe */}
-          {(() => {
-            const c = BIAS_COLOR[featured.bias] ?? "var(--muted-foreground)";
-            return (
-              <Link
-                href={`/analysis/${featured.id}`}
-                className="group/feat relative overflow-hidden rounded-xl border border-border/60 p-3 pl-3.5 transition-all duration-300 hover:border-border hover:-translate-y-0.5"
-                style={{ background: `linear-gradient(120deg, ${alpha(c, 10)}, transparent 70%)` }}
-              >
-                {/* Accent bar — widens on hover */}
-                <span
-                  className="absolute inset-y-0 left-0 w-[3px] transition-[width,box-shadow] duration-300 group-hover/feat:w-[5px]"
-                  style={{ background: c, boxShadow: `0 0 12px ${alpha(c, 40)}` }}
-                />
-                {/* Sheen sweep on hover */}
-                <span
-                  className="pointer-events-none absolute inset-0 -translate-x-full transition-transform duration-700 ease-out group-hover/feat:translate-x-full"
-                  style={{ background: `linear-gradient(100deg, transparent 20%, ${alpha(c, 12)} 50%, transparent 80%)` }}
-                />
-                <div className="relative flex items-center gap-2">
-                  <span className="text-sm font-black font-mono tracking-tight">{featured.instrument}</span>
-                  <span className="text-[11px] font-bold uppercase tracking-wide capitalize" style={{ color: c }}>{featured.bias}</span>
-                  <span className="ml-auto text-[10px] text-muted-foreground/70 tabular-nums shrink-0">
-                    {format(new Date(featured.date + "T12:00:00"), "MMM d")}
-                  </span>
-                </div>
-                {(featured.title || featured.thesis) && (
-                  <p className="relative text-[11px] text-muted-foreground mt-1.5 line-clamp-2 leading-snug">
-                    {featured.title || featured.thesis}
-                  </p>
-                )}
-              </Link>
-            );
-          })()}
-
-          {/* Recent — compact rows with a bias accent */}
-          {rest.map((a) => {
-            const c = BIAS_COLOR[a.bias] ?? "var(--muted-foreground)";
-            return (
-              <Link
-                key={a.id}
-                href={`/analysis/${a.id}`}
-                className="group/row flex items-center gap-2.5 rounded-lg px-2 py-1.5 -mx-1 transition-all duration-300 hover:bg-muted/50 hover:translate-x-0.5"
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300 group-hover/row:scale-150"
-                  style={{ background: c, boxShadow: `0 0 8px ${alpha(c, 45)}` }}
-                />
-                <span className="text-[12px] font-bold font-mono shrink-0">{a.instrument}</span>
-                <span className="text-[11px] font-medium capitalize shrink-0" style={{ color: c }}>{a.bias}</span>
-                <span className="text-[10px] text-muted-foreground/70 ml-auto tabular-nums shrink-0">
-                  {format(new Date(a.date + "T12:00:00"), "MMM d")}
-                </span>
-              </Link>
-            );
-          })}
+      {/* Follow-through — the one number that says whether prep is working */}
+      {recent.length > 0 && (
+        <div className="mt-2.5 flex items-center gap-2.5">
+          <span className="text-[13px] font-black tabular-nums" style={{ color: CYAN }}>
+            {executed}<span className="text-muted-foreground/50">/{recent.length}</span>
+          </span>
+          <span className="flex flex-1 gap-1">
+            {recent.map((r, i) => (
+              <span
+                key={i}
+                className="h-1.5 flex-1 rounded-full transition-colors"
+                style={{ background: r.traded ? alpha(CYAN, 85) : alpha("var(--muted-foreground)", 25) }}
+                title={r.traded ? "Traded" : "Not traded"}
+              />
+            ))}
+          </span>
+          <span className="text-[10px] text-muted-foreground/70">traded</span>
         </div>
       )}
 
-      <Link href="/analysis/new"
-        className="mt-auto pt-2.5 inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-semibold text-white transition-all hover:-translate-y-px"
-        style={{ background: "#14B8A6", boxShadow: "0 2px 12px rgba(20,184,166,0.26)" }}>
-        Add analysis →
+      {shown.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-1 py-4 text-center">
+          <p className="text-xs text-muted-foreground">No plans written yet.</p>
+          <p className="text-[11px] text-muted-foreground/60">Prep a session and it shows up here.</p>
+        </div>
+      ) : (
+        <ul className="mt-2.5 mb-2 flex-1 space-y-1 min-h-0 overflow-hidden">
+          {shown.map(({ analysis: a, traded, r, trades: its }) => {
+            const bias = BIAS[a.bias] ?? { color: "var(--muted-foreground)", icon: MoveRight, label: a.bias };
+            const Icon = bias.icon;
+            const outcomeColor = its.length === 0 ? "var(--muted-foreground)" : r > 0 ? GREEN : r < 0 ? RED : AMBER;
+            return (
+              <li key={a.id}>
+                <Link
+                  href={`/analysis/${a.id}`}
+                  className="group/plan flex items-center gap-2.5 rounded-lg border border-transparent px-1.5 py-1.5 transition-colors hover:border-border/60 hover:bg-muted/25"
+                >
+                  {/* Bias, as a mark you can read without a legend */}
+                  <span
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md"
+                    style={{ background: alpha(bias.color, 14), color: bias.color }}
+                    title={bias.label}
+                  >
+                    <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="font-mono text-[12px] font-black text-foreground">{a.instrument}</span>
+                      <span className="truncate text-[11px] text-muted-foreground/80">{a.title || a.thesis || a.session}</span>
+                    </span>
+                    <span className="mt-0.5 block text-[10px] tabular-nums text-muted-foreground/55">
+                      {format(new Date(a.date + "T12:00:00"), "EEE d MMM")}
+                    </span>
+                  </span>
+
+                  {/* What became of it */}
+                  {traded ? (
+                    <span className="shrink-0 text-right">
+                      <span className="block text-[12px] font-black tabular-nums" style={{ color: outcomeColor }}>
+                        {its.length === 0 ? "traded" : `${r > 0 ? "+" : ""}${r.toFixed(1)}R`}
+                      </span>
+                      {its.length > 1 && (
+                        <span className="block text-[9px] text-muted-foreground/50">{its.length} trades</span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="shrink-0 rounded-md border border-dashed border-border/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                      No trade
+                    </span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <Link
+        href="/analysis/new"
+        className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg border border-primary/40 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+      >
+        <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> New analysis
       </Link>
     </div>
   );

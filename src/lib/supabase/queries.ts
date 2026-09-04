@@ -871,7 +871,7 @@ export async function upsertPatternEvent(input: PatternEventInput): Promise<Patt
   return data as PatternEvent;
 }
 
-export async function getCommitmentAdherenceLogs(): Promise<CommitmentAdherenceLog[]> {
+async function _getCommitmentAdherenceLogs(): Promise<CommitmentAdherenceLog[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("commitment_adherence_log")
@@ -928,7 +928,7 @@ async function _getBestTradesOfDay(): Promise<BestTradeOfDay[]> {
   })) as BestTradeOfDay[];
 }
 
-export async function getBestTradeOfDay(date: string): Promise<BestTradeOfDay | null> {
+async function _getBestTradeOfDay(date: string): Promise<BestTradeOfDay | null> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("best_trade_of_day")
@@ -1081,4 +1081,17 @@ export function getPatternEvents(): Promise<PatternEvent[]> {
 
 export function getHabitCompletions(habitId?: string, date?: string): Promise<HabitCompletion[]> {
   return cachedRead(`habitCompletions:${habitId ?? ""}:${date ?? ""}`, () => _getHabitCompletions(habitId, date));
+}
+
+// Both of these are read by several components on the same screen (the mind
+// score, the dashboard and the commitments panel all want the adherence log;
+// the therapist calendar and the journal both want a day's best trade), so
+// without the cache one navigation fired the identical query three or four
+// times in parallel.
+export function getCommitmentAdherenceLogs(): Promise<CommitmentAdherenceLog[]> {
+  return cachedRead("adherenceLogs", _getCommitmentAdherenceLogs);
+}
+
+export function getBestTradeOfDay(date: string): Promise<BestTradeOfDay | null> {
+  return cachedRead(`bestTrade:${date}`, () => _getBestTradeOfDay(date));
 }

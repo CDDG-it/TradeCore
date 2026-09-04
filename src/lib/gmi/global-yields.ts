@@ -11,7 +11,6 @@ import { fetchJson } from "./cache";
 export interface GlobalYield {
   id: string;
   country: string;
-  flag: string;
   fredId: string;
   lat: number;
   lon: number;
@@ -26,20 +25,20 @@ export interface GlobalYield {
 }
 
 interface Def {
-  id: string; country: string; flag: string; fredId: string;
+  id: string; country: string; fredId: string;
   lat: number; lon: number; fxSymbol: string | null; centralBank: string;
 }
 
 export const ECONOMIES: Def[] = [
-  { id: "us", country: "United States", flag: "🇺🇸", fredId: "IRLTLT01USM156N", lat: 38, lon: -97, fxSymbol: "DXY", centralBank: "Federal Reserve" },
-  { id: "de", country: "Germany", flag: "🇩🇪", fredId: "IRLTLT01DEM156N", lat: 51, lon: 10, fxSymbol: "EURUSD", centralBank: "European Central Bank" },
-  { id: "gb", country: "United Kingdom", flag: "🇬🇧", fredId: "IRLTLT01GBM156N", lat: 54, lon: -2, fxSymbol: "GBPUSD", centralBank: "Bank of England" },
-  { id: "jp", country: "Japan", flag: "🇯🇵", fredId: "IRLTLT01JPM156N", lat: 36, lon: 138, fxSymbol: "USDJPY", centralBank: "Bank of Japan" },
-  { id: "fr", country: "France", flag: "🇫🇷", fredId: "IRLTLT01FRM156N", lat: 47, lon: 2, fxSymbol: "EURUSD", centralBank: "European Central Bank" },
-  { id: "it", country: "Italy", flag: "🇮🇹", fredId: "IRLTLT01ITM156N", lat: 42, lon: 12, fxSymbol: "EURUSD", centralBank: "European Central Bank" },
-  { id: "ca", country: "Canada", flag: "🇨🇦", fredId: "IRLTLT01CAM156N", lat: 56, lon: -106, fxSymbol: "USDCAD", centralBank: "Bank of Canada" },
-  { id: "au", country: "Australia", flag: "🇦🇺", fredId: "IRLTLT01AUM156N", lat: -25, lon: 133, fxSymbol: "AUDUSD", centralBank: "Reserve Bank of Australia" },
-  { id: "ch", country: "Switzerland", flag: "🇨🇭", fredId: "IRLTLT01CHM156N", lat: 47, lon: 8, fxSymbol: "USDCHF", centralBank: "Swiss National Bank" },
+  { id: "us", country: "United States", fredId: "IRLTLT01USM156N", lat: 38, lon: -97, fxSymbol: "DXY", centralBank: "Federal Reserve" },
+  { id: "de", country: "Germany", fredId: "IRLTLT01DEM156N", lat: 51, lon: 10, fxSymbol: "EURUSD", centralBank: "European Central Bank" },
+  { id: "gb", country: "United Kingdom", fredId: "IRLTLT01GBM156N", lat: 54, lon: -2, fxSymbol: "GBPUSD", centralBank: "Bank of England" },
+  { id: "jp", country: "Japan", fredId: "IRLTLT01JPM156N", lat: 36, lon: 138, fxSymbol: "USDJPY", centralBank: "Bank of Japan" },
+  { id: "fr", country: "France", fredId: "IRLTLT01FRM156N", lat: 47, lon: 2, fxSymbol: "EURUSD", centralBank: "European Central Bank" },
+  { id: "it", country: "Italy", fredId: "IRLTLT01ITM156N", lat: 42, lon: 12, fxSymbol: "EURUSD", centralBank: "European Central Bank" },
+  { id: "ca", country: "Canada", fredId: "IRLTLT01CAM156N", lat: 56, lon: -106, fxSymbol: "USDCAD", centralBank: "Bank of Canada" },
+  { id: "au", country: "Australia", fredId: "IRLTLT01AUM156N", lat: -25, lon: 133, fxSymbol: "AUDUSD", centralBank: "Reserve Bank of Australia" },
+  { id: "ch", country: "Switzerland", fredId: "IRLTLT01CHM156N", lat: 47, lon: 8, fxSymbol: "USDCHF", centralBank: "Swiss National Bank" },
 ];
 
 interface FredObs { observations?: { date: string; value: string }[] }

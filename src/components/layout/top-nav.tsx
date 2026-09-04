@@ -57,13 +57,13 @@ function DesktopItem({ href, label, active, soon }: { href: string; label: strin
           }}
           transition={{ type: "spring", stiffness: 480, damping: 36 }}
         >
-          {/* Moving glass sheen — a soft highlight that catches the light as the pill slides */}
-          <motion.span
+          {/* A single static highlight rather than a looping sheen: an infinite
+              animation over a backdrop-blurred layer repaints the whole nav
+              forever and made every page feel heavy. */}
+          <span
             aria-hidden
-            className="absolute inset-y-0 -left-1/3 w-1/2"
-            style={{ background: "linear-gradient(105deg, transparent, rgba(255,255,255,0.28), transparent)" }}
-            animate={{ x: ["-40%", "260%"] }}
-            transition={{ duration: 2.6, ease: "easeInOut", repeat: Infinity, repeatDelay: 1.4 }}
+            className="absolute inset-y-0 left-0 w-2/3"
+            style={{ background: "linear-gradient(105deg, rgba(255,255,255,0.16), transparent 70%)" }}
           />
         </motion.span>
       )}

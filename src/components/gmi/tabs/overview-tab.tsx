@@ -1,26 +1,23 @@
 "use client";
 
 /**
- * OVERVIEW — the global tape in seconds: which sessions are live, what moved,
- * what was reported and what the latest high-impact releases printed. Objective
- * only — it shows what happened, never an interpretation or a call.
+ * OVERVIEW — what is open, what is coming, and what was reported.
+ *
+ * Deliberately price-free: the quote providers on this tier are delayed, so a
+ * grid of big numbers here would imply a liveness they cannot deliver. Prices
+ * live on the tabs that frame them properly (Futures charts, FX on Markets);
+ * this page answers the questions that are answerable exactly — which session
+ * is trading, which releases are scheduled, what landed, what is on the wire.
  */
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
-import { ArrowUpRight, Clock } from "lucide-react";
-import { fmtPrice, toneFor, timeAgo, useGmi, FRESHNESS_LABEL } from "@/lib/gmi/client";
+import { format, parseISO, addMonths, differenceInCalendarDays } from "date-fns";
+import { ArrowUpRight, ArrowUp, ArrowDown, Minus, Clock } from "lucide-react";
+import { toneFor, timeAgo, useGmi, FRESHNESS_LABEL } from "@/lib/gmi/client";
 import { SESSIONS, sessionState, fmtDuration } from "@/lib/gmi/sessions";
-import type { DataEnvelope, Quote, NewsArticle } from "@/lib/gmi/types";
-import type { CalendarEntry } from "@/lib/gmi/calendar";
-import { Panel, Unavailable, ChangeChip, a } from "../panel";
-import { Sparkline } from "../sparkline";
-
-const PULSE: { s: string; name: string }[] = [
-  { s: "ES", name: "S&P 500" }, { s: "NQ", name: "Nasdaq 100" }, { s: "YM", name: "Dow" },
-  { s: "RTY", name: "Russell 2000" }, { s: "VIX", name: "Volatility" }, { s: "DXY", name: "Dollar" },
-  { s: "US10Y", name: "US 10-Year" }, { s: "GC", name: "Gold" }, { s: "CL", name: "Crude Oil" },
-];
+import type { NewsArticle } from "@/lib/gmi/types";
+import type { CalendarEntry, CalendarMonth, CalendarEvent } from "@/lib/gmi/calendar";
+import { Panel, Unavailable, a } from "../panel";
 
 /* ── Session clock ─────────────────────────────────────────────────────────
    Exchange cash hours in each venue's own local time, resolved through the
@@ -100,32 +97,7 @@ function SessionClock() {
   );
 }
 
-/* ── Pulse card ───────────────────────────────────────────────────────────── */
-function PulseCard({ q, name, symbol }: { q: Quote | undefined; name: string; symbol: string }) {
-  const tone = toneFor(q?.changePct);
-  return (
-    <div className="group/pulse relative overflow-hidden rounded-xl border border-border/50 bg-muted/[0.06] p-3 transition-colors hover:border-border">
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-10 opacity-60 transition-opacity duration-300 group-hover/pulse:opacity-100"
-        style={{ background: `linear-gradient(0deg, ${a(tone, 10)}, transparent)` }}
-      />
-      <div className="relative flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="font-mono text-xs font-bold text-foreground">{symbol}</div>
-          <div className="truncate text-[10px] text-muted-foreground/70">{name}</div>
-        </div>
-        <ChangeChip pct={q?.changePct} />
-      </div>
-      <div className="relative mt-2 font-mono text-xl font-bold leading-none tabular-nums text-foreground">
-        {q ? fmtPrice(q.price, q.unit) : <span className="inline-block h-5 w-16 animate-pulse rounded bg-muted/50" />}
-      </div>
-      <div className="relative mt-2 h-6">
-        {q?.spark?.length ? <Sparkline data={q.spark} width={180} height={24} /> : null}
-      </div>
-    </div>
-  );
-}
+/* ── Formatting ───────────────────────────────────────────────────────────── */
 
 function fmtRel(v: number | null, unit: string): string {
   if (v == null) return "—";
@@ -144,24 +116,38 @@ function sentimentTone(score: number | null): string {
   return "var(--muted-foreground)";
 }
 
-export function OverviewTab({ quotesEnv }: { quotesEnv: DataEnvelope<Quote[]> | null }) {
-  const bySymbol = new Map((quotesEnv?.data ?? []).map((q) => [q.symbol, q]));
+/** Days-from-today, in words a trader reads without doing arithmetic. */
+function whenLabel(date: string): string {
+  const d = differenceInCalendarDays(parseISO(date), new Date());
+  if (d === 0) return "today";
+  if (d === 1) return "tomorrow";
+  if (d < 7) return format(parseISO(date), "EEEE");
+  return format(parseISO(date), "EEE d MMM");
+}
+
+export function OverviewTab() {
   const { env: newsEnv } = useGmi<NewsArticle[]>("/api/gmi/news", 15 * 60_000);
-  const { env: calEnv } = useGmi<CalendarEntry[]>("/api/gmi/calendar", 30 * 60_000);
-  const articles = (newsEnv?.data ?? []).slice(0, 7);
-  const releases = (calEnv?.data ?? []).filter((e) => e.importance === "high").slice(0, 6);
+  const { env: latestEnv } = useGmi<CalendarEntry[]>("/api/gmi/calendar", 30 * 60_000);
+
+  // The schedule spans a month boundary, so look at this month and the next.
+  const thisMonth = format(new Date(), "yyyy-MM");
+  const nextMonth = format(addMonths(new Date(), 1), "yyyy-MM");
+  const { env: monthEnv } = useGmi<CalendarMonth>(`/api/gmi/calendar?month=${thisMonth}`, 60 * 60_000);
+  const { env: nextEnv } = useGmi<CalendarMonth>(`/api/gmi/calendar?month=${nextMonth}`, 60 * 60_000);
+
+  const articles = (newsEnv?.data ?? []).slice(0, 8);
+  const prints = (latestEnv?.data ?? []).filter((e) => e.importance === "high").slice(0, 5);
+
+  const upcoming: CalendarEvent[] = [...(monthEnv?.data?.events ?? []), ...(nextEnv?.data?.events ?? [])]
+    .filter((e) => !e.released)
+    .sort((x, y) => x.date.localeCompare(y.date))
+    .slice(0, 6);
 
   return (
     <div className="space-y-4">
       <SessionClock />
 
-      <Panel eyebrow="Cross-asset" title="Market pulse" env={quotesEnv}>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9">
-          {PULSE.map(({ s, name }) => <PulseCard key={s} symbol={s} name={name} q={bySymbol.get(s)} />)}
-        </div>
-      </Panel>
-
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
         <Panel eyebrow="Wire" title="Latest market news" env={newsEnv}>
           {newsEnv?.status === "unavailable" ? (
             <Unavailable hint="News provider temporarily unavailable. Other data is unaffected." />
@@ -189,43 +175,65 @@ export function OverviewTab({ quotesEnv }: { quotesEnv: DataEnvelope<Quote[]> | 
           )}
         </Panel>
 
-        <Panel eyebrow="Macro" title="Recent high-impact releases" env={calEnv}>
-          {releases.length === 0 ? (
-            <Unavailable label="Loading releases…" />
-          ) : (
-            <ul className="space-y-1.5">
-              {releases.map((e) => {
-                const delta = e.actual != null && e.previous != null ? e.actual - e.previous : null;
-                return (
+        <div className="space-y-4">
+          {/* What is coming — real appointments from FRED's release calendar. */}
+          <Panel eyebrow="Schedule" title="Next releases" env={monthEnv}>
+            {upcoming.length === 0 ? (
+              <Unavailable label="Nothing scheduled" hint="No further US releases on the calendar in this window." />
+            ) : (
+              <ul className="space-y-1.5">
+                {upcoming.map((e) => (
                   <li key={e.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/[0.06] px-3 py-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-medium text-foreground">{e.label}</p>
-                      <p className="mt-0.5 text-[10px] text-muted-foreground">
-                        {e.referenceDate ? format(new Date(e.referenceDate + "T12:00:00"), "MMM yyyy") : "—"}
-                        <span className="ml-1.5 uppercase tracking-wider text-muted-foreground/50">{FRESHNESS_LABEL[e.freshness]}</span>
-                      </p>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span
+                        className="h-6 w-[3px] shrink-0 rounded-full"
+                        style={{ background: e.importance === "high" ? "var(--destructive)" : "var(--warning)" }}
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-medium text-foreground">{e.label}</p>
+                        <p className="text-[10px] text-muted-foreground/70">{e.releaseName}</p>
+                      </div>
                     </div>
-                    <div className="shrink-0 text-right">
-                      <div className="font-mono text-sm font-bold tabular-nums text-foreground">{fmtRel(e.actual, e.unit)}</div>
-                      {delta != null && (
-                        <div className="font-mono text-[10px] font-semibold tabular-nums" style={{ color: toneFor(delta) }}>
-                          {delta > 0 ? "▲" : delta < 0 ? "▼" : "▬"} vs prev
-                        </div>
-                      )}
-                    </div>
+                    <span className="shrink-0 text-right">
+                      <span className="block text-[11px] font-semibold capitalize text-foreground/85">{whenLabel(e.date)}</span>
+                      <span className="block font-mono text-[10px] tabular-nums text-muted-foreground/60">{format(parseISO(e.date), "d MMM")}</span>
+                    </span>
                   </li>
-                );
-              })}
-            </ul>
-          )}
-        </Panel>
-      </div>
+                ))}
+              </ul>
+            )}
+          </Panel>
 
-      {/* One honest line about the tape itself */}
-      <p className="px-1 text-[10px] text-muted-foreground/60">
-        Quotes are delayed exchange data via Yahoo{quotesEnv?.asOf ? ` · captured ${timeAgo(quotesEnv.asOf)}` : ""}. Percentage
-        moves are versus the prior close. Nothing on this page is a recommendation.
-      </p>
+          {/* What already landed. */}
+          <Panel eyebrow="Macro" title="Latest prints" env={latestEnv}>
+            {prints.length === 0 ? (
+              <Unavailable label="Loading releases…" />
+            ) : (
+              <ul className="space-y-1.5">
+                {prints.map((e) => {
+                  const delta = e.actual != null && e.previous != null ? e.actual - e.previous : null;
+                  const Icon = delta == null ? Minus : delta > 0 ? ArrowUp : delta < 0 ? ArrowDown : Minus;
+                  return (
+                    <li key={e.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/[0.06] px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-medium text-foreground">{e.label}</p>
+                        <p className="mt-0.5 text-[10px] text-muted-foreground">
+                          {e.referenceDate ? format(parseISO(e.referenceDate), "MMM yyyy") : "—"}
+                          <span className="ml-1.5 uppercase tracking-wider text-muted-foreground/50">{FRESHNESS_LABEL[e.freshness]}</span>
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="font-mono text-sm font-bold tabular-nums text-foreground">{fmtRel(e.actual, e.unit)}</span>
+                        {delta != null && <Icon className="h-3.5 w-3.5" strokeWidth={2.5} style={{ color: toneFor(delta) }} />}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Panel>
+        </div>
+      </div>
     </div>
   );
 }

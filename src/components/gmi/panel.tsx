@@ -8,6 +8,7 @@
  * own provenance badge. Nothing here interprets data — the primitives only
  * frame it.
  */
+import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DataStatus } from "./data-status";
 import type { DataEnvelope } from "@/lib/gmi/types";
@@ -186,16 +187,18 @@ export function DataRow({
 export function ChangeChip({ pct, className }: { pct: number | null | undefined; className?: string }) {
   const up = (pct ?? 0) > 0;
   const down = (pct ?? 0) < 0;
+  const known = pct != null && Number.isFinite(pct);
   const color = up ? "var(--success)" : down ? "var(--destructive)" : "var(--muted-foreground)";
+  const Icon = up ? ArrowUp : down ? ArrowDown : Minus;
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold tabular-nums",
+        "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold tabular-nums",
         className
       )}
       style={{ color, background: a(color, 12) }}
     >
-      {pct == null || !Number.isFinite(pct) ? "—" : `${up ? "▲" : down ? "▼" : "▬"} ${Math.abs(pct).toFixed(2)}%`}
+      {!known ? "—" : <><Icon className="h-2.5 w-2.5" strokeWidth={3} />{Math.abs(pct).toFixed(2)}%</>}
     </span>
   );
 }
