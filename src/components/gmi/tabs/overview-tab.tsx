@@ -84,7 +84,7 @@ export function OverviewTab() {
                     rel="noopener noreferrer"
                     className="group flex items-baseline gap-3 px-3 py-[7px] transition-colors hover:bg-muted/20"
                   >
-                    <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/40">
+                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/40">
                       {format(parseISO(art.publishedAt), "HH:mm")}
                     </span>
                     <span
@@ -99,7 +99,7 @@ export function OverviewTab() {
                     {art.assets[0] && (
                       <span className="hidden shrink-0 font-mono text-[9px] tracking-wider text-primary/70 md:inline">{art.assets[0]}</span>
                     )}
-                    <span className="hidden w-24 shrink-0 truncate text-right font-mono text-[9px] uppercase tracking-wider text-muted-foreground/35 xl:inline">
+                    <span className="hidden w-24 shrink-0 truncate text-right text-[10px] uppercase tracking-wider text-muted-foreground/35 xl:inline">
                       {art.source}
                     </span>
                   </Link>
@@ -131,7 +131,7 @@ export function OverviewTab() {
                     value={fmtRel(e.actual, e.unit)}
                     trailing={
                       delta != null ? (
-                        <span className="mr-2 font-mono text-[10px] tabular-nums" style={{ color: toneFor(delta) }}>
+                        <span className="mr-2 text-[11px] tabular-nums" style={{ color: toneFor(delta) }}>
                           {fmtDelta(delta, e.unit)}
                         </span>
                       ) : undefined
@@ -175,16 +175,16 @@ export function OverviewTab() {
                 }
               >
                 <div className="flex items-baseline gap-1.5">
-                  <span className={`font-mono text-[9px] uppercase tracking-[0.18em] ${isToday ? "text-primary" : "text-muted-foreground/45"}`}>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${isToday ? "text-primary" : "text-muted-foreground/45"}`}>
                     {isToday ? "Today" : format(day, "EEE")}
                   </span>
-                  <span className={`font-mono text-[11px] font-bold tabular-nums ${isToday ? "text-primary" : "text-foreground/70"}`}>
+                  <span className={`text-[12px] font-bold tabular-nums ${isToday ? "text-primary" : "text-foreground/70"}`}>
                     {format(day, "d")}
                   </span>
                 </div>
                 <div className="min-h-0 flex-1 space-y-[3px] overflow-hidden">
                   {events.length === 0 ? (
-                    <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/25">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/25">
                       {weekend ? "market closed" : "no releases"}
                     </span>
                   ) : (
@@ -200,7 +200,7 @@ export function OverviewTab() {
                     ))
                   )}
                   {events.length > 3 && (
-                    <p className="pl-1.5 font-mono text-[9px] text-muted-foreground/35">+{events.length - 3}</p>
+                    <p className="pl-1.5 text-[10px] tabular-nums text-muted-foreground/35">+{events.length - 3}</p>
                   )}
                 </div>
               </div>

@@ -139,7 +139,7 @@ export function FuturesTab() {
             delta={
               <span className="ml-1 flex items-baseline gap-2">
                 <Delta value={live?.changePct} className="text-[12px]" />
-                <span className="font-mono text-[10px] tabular-nums text-muted-foreground/50">
+                <span className="text-[11px] tabular-nums text-muted-foreground/50">
                   {live?.change == null ? "" : `${live.change > 0 ? "+" : ""}${fmtPrice(live.change)}`}
                 </span>
               </span>
@@ -150,7 +150,7 @@ export function FuturesTab() {
               <div className="relative h-[3px] bg-border/60">
                 <span className="absolute -top-[3px] h-[9px] w-[2px] bg-primary" style={{ left: `calc(${(pos * 100).toFixed(1)}% - 1px)` }} />
               </div>
-              <div className="mt-1 flex justify-between font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground/40">
+              <div className="mt-1 flex justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
                 <span>L {fmtPrice(lo)}</span>
                 <span>day range</span>
                 <span>H {fmtPrice(hi)}</span>
@@ -190,7 +190,7 @@ export function FuturesTab() {
           ].map(({ k, v }) => (
             <div key={k} className="px-3 py-1.5">
               <Label className="block">{k}</Label>
-              <span className="mt-0.5 block font-mono text-[13px] font-semibold tabular-nums text-foreground">{v}</span>
+              <span className="mt-0.5 block text-[14px] font-bold tabular-nums text-foreground">{v}</span>
             </div>
           ))}
         </div>
@@ -228,7 +228,7 @@ export function FuturesTab() {
                         }}
                       />
                     </span>
-                    <span className="w-12 shrink-0 text-right font-mono text-[10px] tabular-nums" style={{ color: toneFor(v) }}>
+                    <span className="w-12 shrink-0 text-right text-[11px] tabular-nums" style={{ color: toneFor(v) }}>
                       {fmtPct(v)}
                     </span>
                   </div>
@@ -268,7 +268,7 @@ export function FuturesTab() {
                   </tbody>
                 </table>
               </div>
-              <div className="mt-1.5 flex items-center gap-3 font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground/40">
+              <div className="mt-1.5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
                 <span className="flex items-center gap-1"><span className="h-2 w-3" style={{ background: corrShade(1) }} /> together</span>
                 <span className="flex items-center gap-1"><span className="h-2 w-3" style={{ background: corrShade(-1) }} /> opposite</span>
               </div>

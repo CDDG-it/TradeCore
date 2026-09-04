@@ -45,7 +45,7 @@ export function Ticks({ inset = "0.25rem" }: { inset?: string }) {
 /** A pane's label: the smallest type on the page, and the loudest signal of structure. */
 export function Label({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={cn("text-[9px] font-semibold uppercase tracking-[0.26em] text-muted-foreground/70", className)}>
+    <span className={cn("text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70", className)}>
       {children}
     </span>
   );
@@ -58,27 +58,27 @@ export function Label({ children, className }: { children: React.ReactNode; clas
 export function Meta({ env, className }: { env?: DataEnvelope<unknown> | null; className?: string }) {
   if (env === undefined) return null;
   if (!env) {
-    return <span className={cn("font-mono text-[9px] tracking-wider text-muted-foreground/40", className)}>LOADING</span>;
+    return <span className={cn("text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40", className)}>Loading</span>;
   }
   if (env.status === "unavailable") {
     return (
-      <span className={cn("inline-flex items-center gap-1 font-mono text-[9px] tracking-wider text-destructive", className)}>
-        <AlertTriangle className="h-2.5 w-2.5" /> UNAVAILABLE
+      <span className={cn("inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-destructive", className)}>
+        <AlertTriangle className="h-2.5 w-2.5" /> Unavailable
       </span>
     );
   }
   const stale = env.status === "stale";
   return (
-    <span className={cn("inline-flex items-center gap-1.5 font-mono text-[9px] tracking-wider", className)}>
+    <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider", className)}>
       <span
         className="h-1 w-1 rounded-full"
         style={{ background: stale ? "var(--warning)" : "var(--success)" }}
       />
       <span className={stale ? "text-warning" : "text-muted-foreground/55"}>
-        {stale ? "STALE" : FRESHNESS_LABEL[env.freshness]}
+        {stale ? "Stale" : FRESHNESS_LABEL[env.freshness].toLowerCase()}
       </span>
-      <span className="text-muted-foreground/35">
-        {env.source.split(" ")[0].toUpperCase()} {env.asOf ? timeAgo(env.asOf).replace(" ago", "") : timeAgo(env.fetchedAt).replace(" ago", "")}
+      <span className="normal-case tracking-normal text-muted-foreground/35">
+        {env.source.split(" ")[0]} · {env.asOf ? timeAgo(env.asOf) : timeAgo(env.fetchedAt)}
       </span>
     </span>
   );
@@ -111,7 +111,7 @@ export function Pane({
       {(label || right) && (
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/40 px-3 py-[7px]">
           <span className="flex min-w-0 items-baseline gap-2">
-            {index && <span className="font-mono text-[9px] text-primary/60">{index}</span>}
+            {index && <span className="text-[10px] font-bold tabular-nums text-primary/60">{index}</span>}
             {label && <Label className="truncate">{label}</Label>}
           </span>
           {right}
@@ -140,11 +140,11 @@ export function Field({
 }) {
   return (
     <div className="flex items-baseline gap-2 py-[5px]">
-      <span className="shrink-0 text-[11px] text-foreground/80">{label}</span>
-      {sub && <span className="shrink-0 font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground/40">{sub}</span>}
+      <span className="shrink-0 text-[12px] text-foreground/85">{label}</span>
+      {sub && <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/40">{sub}</span>}
       <span aria-hidden className="min-w-4 flex-1 translate-y-[-3px] border-b border-dotted border-border/70" />
       {trailing}
-      <span className="shrink-0 font-mono text-[12px] font-semibold tabular-nums" style={{ color: tone ?? "var(--foreground)" }}>
+      <span className="shrink-0 text-[13px] font-bold tabular-nums" style={{ color: tone ?? "var(--foreground)" }}>
         {value}
       </span>
     </div>
@@ -165,13 +165,13 @@ export function Figure({
   size?: "sm" | "md" | "lg";
   tone?: string;
 }) {
-  const cls = size === "lg" ? "text-[30px]" : size === "md" ? "text-[20px]" : "text-[15px]";
+  const cls = size === "lg" ? "text-[32px]" : size === "md" ? "text-[22px]" : "text-[16px]";
   return (
     <div className="flex items-baseline gap-1.5">
-      <span className={cn("font-mono font-bold leading-none tabular-nums", cls)} style={{ color: tone ?? "var(--foreground)" }}>
+      <span className={cn("font-black leading-none tabular-nums", cls)} style={{ color: tone ?? "var(--foreground)" }}>
         {value}
       </span>
-      {unit && <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground/50">{unit}</span>}
+      {unit && <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">{unit}</span>}
       {delta}
     </div>
   );
@@ -209,7 +209,7 @@ export function Switch<T extends string>({
             type="button"
             onClick={() => onChange(o.key)}
             className={cn(
-              "border-b pb-px font-mono text-[10px] uppercase tracking-[0.14em] transition-colors",
+              "border-b pb-px text-[11px] font-semibold uppercase tracking-wider transition-colors",
               active
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground/50 hover:text-foreground"
@@ -226,12 +226,12 @@ export function Switch<T extends string>({
 /** Direction, without an icon: the sign carries it, colour confirms it. */
 export function Delta({ value, format, className }: { value: number | null | undefined; format?: (v: number) => string; className?: string }) {
   if (value == null || !Number.isFinite(value)) {
-    return <span className={cn("font-mono text-[10px] text-muted-foreground/40", className)}>—</span>;
+    return <span className={cn("text-[11px] text-muted-foreground/40", className)}>—</span>;
   }
   const color = value > 0 ? "var(--success)" : value < 0 ? "var(--destructive)" : "var(--muted-foreground)";
   const text = format ? format(value) : `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
   return (
-    <span className={cn("font-mono text-[10px] font-semibold tabular-nums", className)} style={{ color }}>
+    <span className={cn("text-[11px] font-bold tabular-nums", className)} style={{ color }}>
       {text}
     </span>
   );

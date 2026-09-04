@@ -107,7 +107,7 @@ export function FlowOptionsTab() {
         right={
           <span className="flex items-center gap-4">
             <Switch options={GROUPS} value={group} onChange={setGroup} />
-            <span className="hidden font-mono text-[9px] uppercase tracking-[0.16em] md:inline">
+            <span className="hidden text-[10px] font-semibold uppercase tracking-wider md:inline">
               <span className="text-success">{longs} net long</span>
               <span className="mx-1.5 text-muted-foreground/30">/</span>
               <span className="text-destructive">{shorts} net short</span>
@@ -123,7 +123,7 @@ export function FlowOptionsTab() {
           <Empty label="CFTC feed unreachable" hint="The report updates weekly; the desk will pick it up on the next load." />
         ) : (
           <>
-            <div className="grid shrink-0 grid-cols-[2.6rem_1fr_4.4rem_3.8rem_7rem_5rem_1fr] items-center gap-x-2 border-b border-border/30 px-3 py-1.5 font-mono text-[8px] uppercase tracking-[0.16em] text-muted-foreground/40">
+            <div className="grid shrink-0 grid-cols-[2.6rem_1fr_4.4rem_3.8rem_7rem_5rem_1fr] items-center gap-x-2 border-b border-border/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
               <span>Sym</span>
               <span>Market</span>
               <span className="text-right">Net specs</span>
@@ -150,24 +150,24 @@ export function FlowOptionsTab() {
                     </span>
                     <span className="min-w-0 truncate text-[11px] text-muted-foreground/75">{inst.label}</span>
                     <span
-                      className="text-right font-mono text-[12px] font-semibold tabular-nums"
+                      className="text-right text-[13px] font-bold tabular-nums"
                       style={{ color: inst.latest.netSpec >= 0 ? "var(--success)" : "var(--destructive)" }}
                     >
                       {signed(inst.latest.netSpec)}
                     </span>
                     <span
-                      className="text-right font-mono text-[10px] tabular-nums"
+                      className="text-right text-[11px] tabular-nums"
                       style={{ color: inst.netSpecChg > 0 ? "var(--success)" : inst.netSpecChg < 0 ? "var(--destructive)" : "var(--muted-foreground)" }}
                     >
                       {signed(inst.netSpecChg)}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <RangeRail value={inst.cotIndex} />
-                      <span className="w-6 shrink-0 text-right font-mono text-[9px] tabular-nums text-muted-foreground/50">
+                      <span className="w-6 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground/50">
                         {Math.round(inst.cotIndex)}
                       </span>
                     </span>
-                    <span className="text-right font-mono text-[10px] tabular-nums text-muted-foreground/70">
+                    <span className="text-right text-[11px] tabular-nums text-muted-foreground/70">
                       {(inst.netShareOfOi * 100).toFixed(0)}%
                     </span>
                     <span className="min-w-0 truncate pl-2 text-[10px] font-semibold" style={{ color: tone }}>
@@ -178,7 +178,7 @@ export function FlowOptionsTab() {
               })}
             </div>
 
-            <p className="shrink-0 border-t border-border/30 px-3 py-1.5 font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground/35">
+            <p className="shrink-0 border-t border-border/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/35">
               {snapshot ? `Positions as of Tuesday ${format(new Date(snapshot.reportDate + "T12:00:00"), "d MMM yyyy")}` : ""}
               {stale && " · served from cache"} · 1-yr range: 0 = most short in a year, 100 = most long
             </p>
@@ -202,12 +202,12 @@ export function FlowOptionsTab() {
                 <Label className="block">Large speculators, net</Label>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span
-                    className="font-mono text-[30px] font-bold leading-none tabular-nums"
+                    className="text-[32px] font-black leading-none tabular-nums"
                     style={{ color: selected.latest.netSpec >= 0 ? "var(--success)" : "var(--destructive)" }}
                   >
                     {signed(selected.latest.netSpec)}
                   </span>
-                  <span className="font-mono text-[11px] tabular-nums text-muted-foreground/60">
+                  <span className="text-[12px] tabular-nums text-muted-foreground/60">
                     {signed(selected.netSpecChg)} on the week
                   </span>
                 </div>
@@ -229,7 +229,7 @@ export function FlowOptionsTab() {
                       <span className="relative h-[7px] flex-1 overflow-hidden bg-destructive/45">
                         <span className="absolute inset-y-0 left-0 bg-success/70" style={{ width: `${pct}%` }} />
                       </span>
-                      <span className="w-8 shrink-0 text-right font-mono text-[10px] tabular-nums text-foreground/75">
+                      <span className="w-8 shrink-0 text-right text-[11px] tabular-nums text-foreground/75">
                         {pct.toFixed(0)}%
                       </span>
                     </div>
@@ -244,7 +244,7 @@ export function FlowOptionsTab() {
                   <div className="mt-1.5 border border-border/30 bg-muted/[0.05] p-2">
                     <Sparkline data={selected.history.map((h) => h.netSpec)} width={280} height={44} strokeWidth={1.3} className="w-full" />
                   </div>
-                  <div className="mt-1 flex justify-between font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground/35">
+                  <div className="mt-1 flex justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/35">
                     <span>{format(new Date(selected.history[0].date + "T12:00:00"), "MMM yy")}</span>
                     <span>open interest {compact(selected.latest.openInterest)} · {signed(selected.oiChg)} wk</span>
                   </div>
