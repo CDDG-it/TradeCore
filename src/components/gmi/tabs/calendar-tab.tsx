@@ -1,29 +1,29 @@
 "use client";
 
 /**
- * CALENDAR — a real month calendar of US macro releases.
+ * 05 CALENDAR — a real month of US macro releases.
  *
  * Every scheduled release sits on its own date, taken from FRED's published
  * release calendar, so the forward half is a genuine schedule rather than an
- * estimate. A past date carries the print that actually landed on it (actual
- * and prior); a future one carries nothing but the appointment — what a number
- * will be is never guessed, and market consensus (a paid dataset) is absent
- * rather than invented. FRED publishes no clock times, so none are shown.
+ * estimate. A past date carries the print that actually landed on it — matched
+ * through FRED's vintage data, not inferred. A future one carries the
+ * appointment and nothing else: what a number will be is never guessed, and
+ * market consensus (a paid dataset) is absent rather than invented. FRED
+ * publishes no clock times, so none are shown.
  */
 import { useMemo, useState } from "react";
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval,
   addMonths, isSameMonth, isToday, isBefore, startOfDay, parseISO,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { useGmi, toneFor } from "@/lib/gmi/client";
 import type { CalendarMonth, CalendarEvent } from "@/lib/gmi/calendar";
-import { Panel, Unavailable, a } from "../panel";
+import { Pane, Empty, Label, Meta, Figure, a } from "../pane";
 
-const IMPORTANCE: Record<string, { label: string; color: string }> = {
-  high: { label: "High", color: "var(--destructive)" },
-  medium: { label: "Medium", color: "var(--warning)" },
-  low: { label: "Low", color: "var(--muted-foreground)" },
+const IMPORTANCE: Record<string, string> = {
+  high: "var(--destructive)",
+  medium: "var(--warning)",
+  low: "var(--muted-foreground)",
 };
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -41,27 +41,16 @@ function fmtVal(v: number | null, unit: string): string {
 function fmtDelta(v: number, unit: string): string {
   const s = v > 0 ? "+" : "";
   if (unit === "%") return `${s}${(v * 100).toFixed(0)}bp`;
-  if (unit === "kpersons") return `${s}${v.toFixed(0)}k`; // FRED already in thousands
+  if (unit === "kpersons") return `${s}${v.toFixed(0)}k`;
   if (unit === "count") return `${s}${Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(v)}`;
   return `${s}${fmtVal(v, unit)}`;
-}
-
-/** Direction mark for a change — an icon, never a glyph. */
-function Delta({ value, unit }: { value: number; unit: string }) {
-  const Icon = value > 0 ? ArrowUp : value < 0 ? ArrowDown : Minus;
-  return (
-    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold tabular-nums" style={{ color: toneFor(value) }}>
-      <Icon className="h-3 w-3" strokeWidth={2.5} />
-      {fmtDelta(value, unit)} vs prior
-    </span>
-  );
 }
 
 export function CalendarTab() {
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()));
   const monthKey = format(cursor, "yyyy-MM");
   const { env } = useGmi<CalendarMonth>(`/api/gmi/calendar?month=${monthKey}`, 30 * 60_000);
-  const [selected, setSelected] = useState<string>(() => format(new Date(), "yyyy-MM-dd"));
+  const [selected, setSelected] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
   const byDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
@@ -79,192 +68,166 @@ export function CalendarTab() {
     return eachDayOfInterval({ start, end });
   }, [cursor]);
 
+  const events = env?.data?.events ?? [];
+  const scheduled = events.filter((e) => !e.released).length;
   const selectedEvents = byDate.get(selected) ?? [];
   const today = startOfDay(new Date());
-  const monthEvents = env?.data?.events ?? [];
-  const upcoming = monthEvents.filter((e) => !e.released).length;
+  const weeks = Math.ceil(grid.length / 7);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1.75fr_1fr]">
-      <Panel
-        eyebrow="Macro"
-        title={format(cursor, "MMMM yyyy")}
-        subtitle={
-          env?.status === "unavailable"
-            ? undefined
-            : `${monthEvents.length} release${monthEvents.length !== 1 ? "s" : ""} · ${upcoming} still scheduled`
-        }
-        env={env}
-        action={
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setCursor((c) => addMonths(c, -1))}
-              aria-label="Previous month"
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setCursor((c) => addMonths(c, 1))}
-              aria-label="Next month"
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-            {!isSameMonth(cursor, new Date()) && (
+    <div className="grid h-full min-h-0 grid-cols-1 gap-2 lg:grid-cols-12">
+      {/* ── Month ─────────────────────────────────────────────────────── */}
+      <Pane
+        index="01"
+        label={format(cursor, "MMMM yyyy")}
+        right={
+          <span className="flex items-center gap-3">
+            <Label className="hidden tracking-[0.18em] md:inline">
+              {events.length} releases · {scheduled} scheduled
+            </Label>
+            <span className="flex items-center gap-1.5">
               <button
-                onClick={() => { setCursor(startOfMonth(new Date())); setSelected(format(new Date(), "yyyy-MM-dd")); }}
-                className="rounded-lg border border-primary/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
+                onClick={() => setCursor((c) => addMonths(c, -1))}
+                aria-label="Previous month"
+                className="border border-border/50 px-1.5 font-mono text-[11px] leading-5 text-muted-foreground/70 transition-colors hover:border-primary/50 hover:text-primary"
               >
-                Today
+                &lt;
               </button>
-            )}
-          </div>
+              <button
+                onClick={() => setCursor((c) => addMonths(c, 1))}
+                aria-label="Next month"
+                className="border border-border/50 px-1.5 font-mono text-[11px] leading-5 text-muted-foreground/70 transition-colors hover:border-primary/50 hover:text-primary"
+              >
+                &gt;
+              </button>
+              {!isSameMonth(cursor, new Date()) && (
+                <button
+                  onClick={() => { setCursor(startOfMonth(new Date())); setSelected(format(new Date(), "yyyy-MM-dd")); }}
+                  className="border-b border-primary pb-px font-mono text-[10px] uppercase tracking-[0.14em] text-primary"
+                >
+                  Today
+                </button>
+              )}
+            </span>
+            <Meta env={env} />
+          </span>
         }
+        bodyClassName="flex flex-col p-0"
+        className="min-h-[420px] lg:col-span-8 xl:col-span-9"
       >
         {env?.status === "unavailable" ? (
-          <Unavailable hint="FRED is temporarily unavailable." />
+          <Empty label="FRED unavailable" />
         ) : (
           <>
-            <div className="grid grid-cols-7 gap-1 pb-1.5">
+            <div className="grid shrink-0 grid-cols-7 border-b border-border/30">
               {WEEKDAYS.map((d) => (
-                <div key={d} className="text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/60">
+                <div key={d} className="px-2 py-1 text-center font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground/40">
                   {d}
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
+            {/* Rows share the height evenly, so the month always fills the pane */}
+            <div className="grid min-h-0 flex-1 grid-cols-7" style={{ gridTemplateRows: `repeat(${weeks}, minmax(0, 1fr))` }}>
               {grid.map((day) => {
                 const key = format(day, "yyyy-MM-dd");
-                const events = byDate.get(key) ?? [];
+                const dayEvents = byDate.get(key) ?? [];
                 const outside = !isSameMonth(day, cursor);
                 const past = isBefore(day, today);
-                const isSelected = key === selected;
+                const on = key === selected;
                 return (
                   <button
                     key={key}
                     onClick={() => setSelected(key)}
-                    className={`group relative flex min-h-[76px] flex-col gap-1 rounded-lg border p-1.5 text-left transition-colors ${
-                      isSelected
-                        ? "border-primary/70 bg-primary/[0.07]"
-                        : isToday(day)
-                        ? "border-primary/40 hover:border-primary/60"
-                        : "border-border/40 hover:border-border hover:bg-muted/15"
-                    } ${outside ? "opacity-35" : past ? "opacity-80" : ""}`}
+                    className={`relative flex min-h-0 flex-col gap-0.5 overflow-hidden border-b border-r border-border/20 p-1.5 text-left transition-colors ${
+                      on ? "bg-primary/[0.1]" : "hover:bg-muted/15"
+                    } ${outside ? "opacity-25" : past ? "opacity-75" : ""}`}
                   >
-                    <span
-                      className={`text-[11px] font-bold tabular-nums leading-none ${
-                        isToday(day) ? "text-primary" : "text-foreground/70"
-                      }`}
-                    >
+                    {isToday(day) && <span aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-primary" />}
+                    <span className={`font-mono text-[10px] font-semibold tabular-nums ${isToday(day) ? "text-primary" : "text-foreground/60"}`}>
                       {format(day, "d")}
                     </span>
-
-                    <span className="flex flex-col gap-0.5">
-                      {events.slice(0, 3).map((e) => {
-                        const c = IMPORTANCE[e.importance].color;
-                        return (
-                          <span
-                            key={e.id}
-                            // Filled = the print has landed. Outlined = an
-                            // appointment, nothing published yet.
-                            // Phone widths can't hold a legible label, so a day
-                            // reads as its coloured marks there and the detail
-                            // panel below spells the releases out.
-                            className={`flex h-1.5 items-center gap-1 truncate rounded text-[9px] font-medium leading-tight sm:h-auto sm:px-1 sm:py-0.5 ${
-                              e.released ? "text-foreground/85" : "border border-dashed text-foreground/70"
-                            }`}
-                            style={
-                              e.released
-                                ? { background: a(c, 14), boxShadow: `inset 2px 0 0 ${c}` }
-                                : { borderColor: a(c, 45) }
-                            }
-                          >
-                            <span className="hidden truncate sm:inline">{e.label}</span>
-                          </span>
-                        );
-                      })}
-                      {events.length > 3 && (
-                        <span className="hidden pl-1 text-[9px] text-muted-foreground/60 sm:block">+{events.length - 3} more</span>
-                      )}
+                    <span className="flex min-h-0 flex-1 flex-col gap-[2px] overflow-hidden">
+                      {dayEvents.map((e) => (
+                        <span
+                          key={e.id}
+                          // Filled = the print landed. Hollow = an appointment.
+                          className={`truncate border-l-2 pl-1 text-[9px] leading-[13px] ${
+                            e.released ? "text-foreground/85" : "text-muted-foreground/60"
+                          }`}
+                          style={{
+                            borderColor: IMPORTANCE[e.importance],
+                            background: e.released ? a(IMPORTANCE[e.importance], 12) : "transparent",
+                          }}
+                          title={`${e.label} · ${e.releaseName}`}
+                        >
+                          <span className="hidden sm:inline">{e.label}</span>
+                        </span>
+                      ))}
                     </span>
                   </button>
                 );
               })}
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/40 pt-2.5 text-[10px] text-muted-foreground/70">
-              {Object.entries(IMPORTANCE).slice(0, 2).map(([k, v]) => (
-                <span key={k} className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-sm" style={{ background: v.color }} /> {v.label} impact
-                </span>
-              ))}
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-3 rounded-sm border border-dashed border-muted-foreground/60" /> Scheduled
-              </span>
-              <span className="ml-auto">Schedule from FRED · no clock times published</span>
+            <div className="flex shrink-0 items-center gap-4 border-t border-border/30 px-3 py-1.5 font-mono text-[8px] uppercase tracking-[0.14em] text-muted-foreground/40">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2" style={{ background: IMPORTANCE.high }} /> high impact</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2" style={{ background: IMPORTANCE.medium }} /> medium</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-3 border-l-2" style={{ borderColor: IMPORTANCE.high }} /> scheduled, no print yet</span>
+              <span className="ml-auto hidden xl:inline">FRED publishes dates, not clock times</span>
             </div>
           </>
         )}
-      </Panel>
+      </Pane>
 
-      {/* The selected day */}
-      <Panel
-        eyebrow={isToday(parseISO(selected)) ? "Today" : "Selected day"}
-        title={format(parseISO(selected), "EEEE, d MMMM")}
-        accent="cyan"
+      {/* ── The selected day ──────────────────────────────────────────── */}
+      <Pane
+        index="02"
+        label={isToday(parseISO(selected)) ? "Today" : format(parseISO(selected), "EEE d MMM")}
+        right={<Label className="tracking-[0.18em]">{selectedEvents.length || "no"} releases</Label>}
+        scroll
+        className="lg:col-span-4 xl:col-span-3"
       >
         {selectedEvents.length === 0 ? (
-          <Unavailable label="No releases" hint="Nothing on the US macro schedule for this day." />
+          <Empty label="Nothing scheduled" hint="No US macro release on this date." />
         ) : (
-          <ul className="space-y-2">
+          <div className="space-y-3">
             {selectedEvents.map((e) => {
-              const cfg = IMPORTANCE[e.importance];
               const delta = e.actual != null && e.previous != null ? e.actual - e.previous : null;
               return (
-                <li key={e.id} className="relative overflow-hidden rounded-xl border border-border/50 bg-muted/[0.06] p-3 pl-4">
-                  <span aria-hidden className="absolute inset-y-0 left-0 w-[3px]" style={{ background: cfg.color }} />
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-foreground">{e.label}</p>
-                      <p className="mt-0.5 truncate text-[10px] text-muted-foreground/70">{e.releaseName}</p>
-                    </div>
-                    <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>
-                      {cfg.label}
-                    </span>
-                  </div>
+                <div key={e.id} className="border-l-2 pl-2.5" style={{ borderColor: IMPORTANCE[e.importance] }}>
+                  <p className="text-[12px] font-semibold leading-tight text-foreground">{e.label}</p>
+                  <p className="mt-0.5 truncate font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground/40">
+                    {e.releaseName}
+                  </p>
 
                   {e.released && e.actual != null ? (
-                    <div className="mt-2.5">
-                      <div className="flex items-baseline gap-2">
-                        <span className="font-mono text-xl font-bold leading-none tabular-nums text-foreground">
-                          {fmtVal(e.actual, e.unit)}
-                        </span>
-                        {e.referenceDate && (
-                          <span className="text-[10px] text-muted-foreground/70">
-                            {format(parseISO(e.referenceDate), "MMM yyyy")}
-                          </span>
+                    <>
+                      <div className="mt-2">
+                        <Figure
+                          size="md"
+                          value={fmtVal(e.actual, e.unit)}
+                          unit={e.referenceDate ? format(parseISO(e.referenceDate), "MMM yy") : undefined}
+                        />
+                      </div>
+                      <div className="mt-1.5 flex items-baseline gap-3 font-mono text-[10px] tabular-nums">
+                        {delta != null && (
+                          <span style={{ color: toneFor(delta) }}>{fmtDelta(delta, e.unit)} vs prior</span>
                         )}
+                        <span className="text-muted-foreground/45">prior {fmtVal(e.previous, e.unit)}</span>
                       </div>
-                      <div className="mt-1.5 flex items-center gap-3">
-                        {delta != null && <Delta value={delta} unit={e.unit} />}
-                        <span className="text-[10px] text-muted-foreground/60">
-                          Prior <span className="font-mono tabular-nums">{fmtVal(e.previous, e.unit)}</span>
-                        </span>
-                      </div>
-                    </div>
+                    </>
                   ) : (
-                    <p className="mt-2.5 text-[11px] text-muted-foreground/70">
-                      {e.released ? "Released — print not yet in the FRED vintage." : "Scheduled. No consensus on the free tier."}
+                    <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/45">
+                      {e.released ? "released · print not yet in the vintage" : "scheduled · no consensus on this tier"}
                     </p>
                   )}
-                </li>
+                </div>
               );
             })}
-          </ul>
+          </div>
         )}
-      </Panel>
+      </Pane>
     </div>
   );
 }

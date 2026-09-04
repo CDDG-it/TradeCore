@@ -1,103 +1,19 @@
 "use client";
 
 /**
- * OVERVIEW — what is open, what is coming, and what was reported.
+ * 01 OVERVIEW — the day so far, in three readings: what came over the wire,
+ * what the last macro prints said, and what the week still has scheduled.
  *
- * Deliberately price-free: the quote providers on this tier are delayed, so a
- * grid of big numbers here would imply a liveness they cannot deliver. Prices
- * live on the tabs that frame them properly (Futures charts, FX on Markets);
- * this page answers the questions that are answerable exactly — which session
- * is trading, which releases are scheduled, what landed, what is on the wire.
+ * Deliberately price-free. The quote providers on this tier are delayed, so a
+ * wall of big numbers here would imply a liveness they cannot deliver; prices
+ * live in the sections that frame them properly (03 Futures, 02 Markets).
  */
-import { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { format, parseISO, addMonths, differenceInCalendarDays } from "date-fns";
-import { ArrowUpRight, ArrowUp, ArrowDown, Minus, Clock } from "lucide-react";
-import { toneFor, timeAgo, useGmi, FRESHNESS_LABEL } from "@/lib/gmi/client";
-import { SESSIONS, sessionState, fmtDuration } from "@/lib/gmi/sessions";
+import { format, parseISO, addDays, addMonths, isSameDay } from "date-fns";
+import { toneFor, useGmi } from "@/lib/gmi/client";
 import type { NewsArticle } from "@/lib/gmi/types";
 import type { CalendarEntry, CalendarMonth, CalendarEvent } from "@/lib/gmi/calendar";
-import { Panel, Unavailable, a } from "../panel";
-
-/* ── Session clock ─────────────────────────────────────────────────────────
-   Exchange cash hours in each venue's own local time, resolved through the
-   IANA database so daylight saving is never guessed. */
-
-/** Ticks every 30s, and stays null on the server so hydration can't disagree
- *  with the client about what time it is. */
-function subscribeClock(onChange: () => void) {
-  const id = setInterval(onChange, 30_000);
-  return () => clearInterval(id);
-}
-function useClock(): Date | null {
-  const bucket = useSyncExternalStore(
-    subscribeClock,
-    () => Math.floor(Date.now() / 30_000),
-    () => null
-  );
-  return bucket == null ? null : new Date(bucket * 30_000);
-}
-
-function SessionClock() {
-  const now = useClock();
-
-  return (
-    <Panel
-      eyebrow="Session clock"
-      title="Exchange hours"
-      accent="cyan"
-      action={<span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70"><Clock className="h-3 w-3" /> venue local time</span>}
-    >
-      <div className="grid gap-2.5 sm:grid-cols-3">
-        {SESSIONS.map((w) => {
-          const st = now ? sessionState(w, now) : null;
-          const live = st?.open ?? false;
-          const tone = live ? "var(--success)" : "var(--muted-foreground)";
-          return (
-            <div
-              key={w.key}
-              className="relative overflow-hidden rounded-xl border border-border/50 bg-muted/[0.06] p-3"
-              style={live ? { background: `linear-gradient(150deg, ${a("var(--success)", 8)}, transparent 60%)` } : undefined}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                  <span
-                    className={live ? "h-1.5 w-1.5 rounded-full animate-pulse" : "h-1.5 w-1.5 rounded-full"}
-                    style={{ background: tone, boxShadow: live ? `0 0 8px ${a("var(--success)", 70)}` : undefined }}
-                  />
-                  {w.label}
-                </span>
-                <span className="font-mono text-xs font-bold tabular-nums text-foreground/80">{st?.localTime ?? "—:—"}</span>
-              </div>
-
-              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-border/60">
-                <div
-                  className="h-full rounded-full transition-[width] duration-700 ease-out"
-                  style={{ width: `${(st?.progress ?? 0) * 100}%`, background: live ? "var(--success)" : "var(--muted-foreground)" }}
-                />
-              </div>
-
-              <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted-foreground/70">
-                <span className="uppercase tracking-wider">{w.hours}</span>
-                <span className="tabular-nums">
-                  {!st
-                    ? "—"
-                    : live
-                    ? `closes in ${fmtDuration(st.minutesToEdge)}`
-                    : st.nextOpenDay
-                    ? `opens ${st.nextOpenDay} ${String(Math.floor(w.openMin / 60)).padStart(2, "0")}:${String(w.openMin % 60).padStart(2, "0")}`
-                    : `opens in ${fmtDuration(st.minutesToEdge)}`}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </Panel>
-  );
-}
-
-/* ── Formatting ───────────────────────────────────────────────────────────── */
+import { Pane, Empty, Field, Label, a } from "../pane";
 
 function fmtRel(v: number | null, unit: string): string {
   if (v == null) return "—";
@@ -109,131 +25,189 @@ function fmtRel(v: number | null, unit: string): string {
   return v.toLocaleString(undefined, { maximumFractionDigits: 1 });
 }
 
-function sentimentTone(score: number | null): string {
+function fmtDelta(v: number, unit: string): string {
+  const s = v > 0 ? "+" : "";
+  if (unit === "%") return `${s}${(v * 100).toFixed(0)}bp`;
+  if (unit === "kpersons") return `${s}${v.toFixed(0)}k`;
+  if (unit === "count") return `${s}${Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(v)}`;
+  return `${s}${fmtRel(v, unit)}`;
+}
+
+/** Provider sentiment, shown as a hairline in the margin — never a label. */
+function sentimentColor(score: number | null): string {
   if (score == null) return "var(--muted-foreground)";
   if (score > 0.15) return "var(--success)";
   if (score < -0.15) return "var(--destructive)";
   return "var(--muted-foreground)";
 }
 
-/** Days-from-today, in words a trader reads without doing arithmetic. */
-function whenLabel(date: string): string {
-  const d = differenceInCalendarDays(parseISO(date), new Date());
-  if (d === 0) return "today";
-  if (d === 1) return "tomorrow";
-  if (d < 7) return format(parseISO(date), "EEEE");
-  return format(parseISO(date), "EEE d MMM");
-}
-
 export function OverviewTab() {
   const { env: newsEnv } = useGmi<NewsArticle[]>("/api/gmi/news", 15 * 60_000);
-  const { env: latestEnv } = useGmi<CalendarEntry[]>("/api/gmi/calendar", 30 * 60_000);
+  const { env: printsEnv } = useGmi<CalendarEntry[]>("/api/gmi/calendar", 30 * 60_000);
 
-  // The schedule spans a month boundary, so look at this month and the next.
   const thisMonth = format(new Date(), "yyyy-MM");
   const nextMonth = format(addMonths(new Date(), 1), "yyyy-MM");
   const { env: monthEnv } = useGmi<CalendarMonth>(`/api/gmi/calendar?month=${thisMonth}`, 60 * 60_000);
   const { env: nextEnv } = useGmi<CalendarMonth>(`/api/gmi/calendar?month=${nextMonth}`, 60 * 60_000);
 
-  const articles = (newsEnv?.data ?? []).slice(0, 8);
-  const prints = (latestEnv?.data ?? []).filter((e) => e.importance === "high").slice(0, 5);
+  const articles = newsEnv?.data ?? [];
+  const prints = (printsEnv?.data ?? []).slice(0, 9);
 
-  const upcoming: CalendarEvent[] = [...(monthEnv?.data?.events ?? []), ...(nextEnv?.data?.events ?? [])]
-    .filter((e) => !e.released)
-    .sort((x, y) => x.date.localeCompare(y.date))
-    .slice(0, 6);
+  // The seven days from today — the horizon a desk actually plans against.
+  const today = new Date();
+  const week = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+  const scheduled: CalendarEvent[] = [...(monthEnv?.data?.events ?? []), ...(nextEnv?.data?.events ?? [])];
 
   return (
-    <div className="space-y-4">
-      <SessionClock />
-
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-        <Panel eyebrow="Wire" title="Latest market news" env={newsEnv}>
+    <div className="flex h-full min-h-0 flex-col gap-2">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-12">
+        {/* ── The wire ─────────────────────────────────────────────────── */}
+        <Pane
+          index="01"
+          label="The wire"
+          right={<Label className="tracking-[0.18em]">{articles.length} items</Label>}
+          scroll
+          bodyClassName="px-0 py-0"
+          className="lg:col-span-7"
+        >
           {newsEnv?.status === "unavailable" ? (
-            <Unavailable hint="News provider temporarily unavailable. Other data is unaffected." />
+            <Empty label="Wire down" hint="The news provider is unavailable. Every other section is unaffected." />
           ) : articles.length === 0 ? (
-            <Unavailable label="No headlines" />
+            <Empty label="No headlines" />
           ) : (
-            <ol className="divide-y divide-border/40">
+            <ol>
               {articles.map((art) => (
-                <li key={art.id}>
-                  <Link href={art.url} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-3 py-2.5">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: sentimentTone(art.sentimentScore) }} />
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-xs font-medium leading-snug text-foreground transition-colors group-hover:text-primary">{art.title}</p>
-                      <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
-                        <span className="font-medium text-foreground/70">{art.source}</span>
-                        <span>· {timeAgo(art.publishedAt)}</span>
-                        {art.assets[0] && <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] text-primary">{art.assets[0]}</span>}
-                      </div>
-                    </div>
-                    <ArrowUpRight className="mt-1 h-3.5 w-3.5 shrink-0 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-70" />
+                <li key={art.id} className="border-b border-border/25 last:border-0">
+                  <Link
+                    href={art.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-baseline gap-3 px-3 py-[7px] transition-colors hover:bg-muted/20"
+                  >
+                    <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/40">
+                      {format(parseISO(art.publishedAt), "HH:mm")}
+                    </span>
+                    <span
+                      aria-hidden
+                      className="mt-[5px] h-[3px] w-[3px] shrink-0 rounded-full"
+                      style={{ background: sentimentColor(art.sentimentScore) }}
+                      title={art.sentimentScore == null ? "No sentiment score" : `Sentiment ${art.sentimentScore.toFixed(2)}`}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-[12px] leading-snug text-foreground/90 transition-colors group-hover:text-primary">
+                      {art.title}
+                    </span>
+                    {art.assets[0] && (
+                      <span className="hidden shrink-0 font-mono text-[9px] tracking-wider text-primary/70 md:inline">{art.assets[0]}</span>
+                    )}
+                    <span className="hidden w-24 shrink-0 truncate text-right font-mono text-[9px] uppercase tracking-wider text-muted-foreground/35 xl:inline">
+                      {art.source}
+                    </span>
                   </Link>
                 </li>
               ))}
             </ol>
           )}
-        </Panel>
+        </Pane>
 
-        <div className="space-y-4">
-          {/* What is coming — real appointments from FRED's release calendar. */}
-          <Panel eyebrow="Schedule" title="Next releases" env={monthEnv}>
-            {upcoming.length === 0 ? (
-              <Unavailable label="Nothing scheduled" hint="No further US releases on the calendar in this window." />
-            ) : (
-              <ul className="space-y-1.5">
-                {upcoming.map((e) => (
-                  <li key={e.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/[0.06] px-3 py-2">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <span
-                        className="h-6 w-[3px] shrink-0 rounded-full"
-                        style={{ background: e.importance === "high" ? "var(--destructive)" : "var(--warning)" }}
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-medium text-foreground">{e.label}</p>
-                        <p className="text-[10px] text-muted-foreground/70">{e.releaseName}</p>
-                      </div>
-                    </div>
-                    <span className="shrink-0 text-right">
-                      <span className="block text-[11px] font-semibold capitalize text-foreground/85">{whenLabel(e.date)}</span>
-                      <span className="block font-mono text-[10px] tabular-nums text-muted-foreground/60">{format(parseISO(e.date), "d MMM")}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-
-          {/* What already landed. */}
-          <Panel eyebrow="Macro" title="Latest prints" env={latestEnv}>
-            {prints.length === 0 ? (
-              <Unavailable label="Loading releases…" />
-            ) : (
-              <ul className="space-y-1.5">
-                {prints.map((e) => {
-                  const delta = e.actual != null && e.previous != null ? e.actual - e.previous : null;
-                  const Icon = delta == null ? Minus : delta > 0 ? ArrowUp : delta < 0 ? ArrowDown : Minus;
-                  return (
-                    <li key={e.id} className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/[0.06] px-3 py-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-medium text-foreground">{e.label}</p>
-                        <p className="mt-0.5 text-[10px] text-muted-foreground">
-                          {e.referenceDate ? format(parseISO(e.referenceDate), "MMM yyyy") : "—"}
-                          <span className="ml-1.5 uppercase tracking-wider text-muted-foreground/50">{FRESHNESS_LABEL[e.freshness]}</span>
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="font-mono text-sm font-bold tabular-nums text-foreground">{fmtRel(e.actual, e.unit)}</span>
-                        {delta != null && <Icon className="h-3.5 w-3.5" strokeWidth={2.5} style={{ color: toneFor(delta) }} />}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </Panel>
-        </div>
+        {/* ── Latest prints ────────────────────────────────────────────── */}
+        <Pane
+          index="02"
+          label="Latest prints"
+          right={<Label className="tracking-[0.18em]">actual · vs prior</Label>}
+          scroll
+          className="lg:col-span-5"
+        >
+          {prints.length === 0 ? (
+            <Empty label="Loading" />
+          ) : (
+            <div className="divide-y divide-border/25">
+              {prints.map((e) => {
+                const delta = e.actual != null && e.previous != null ? e.actual - e.previous : null;
+                return (
+                  <Field
+                    key={e.id}
+                    label={e.label}
+                    sub={e.referenceDate ? format(parseISO(e.referenceDate), "MMM yy") : undefined}
+                    value={fmtRel(e.actual, e.unit)}
+                    trailing={
+                      delta != null ? (
+                        <span className="mr-2 font-mono text-[10px] tabular-nums" style={{ color: toneFor(delta) }}>
+                          {fmtDelta(delta, e.unit)}
+                        </span>
+                      ) : undefined
+                    }
+                  />
+                );
+              })}
+            </div>
+          )}
+        </Pane>
       </div>
+
+      {/* ── Week ahead ───────────────────────────────────────────────────
+          Seven columns from today. A day either has appointments or it is
+          quiet, and quiet is worth seeing too. */}
+      <Pane
+        index="03"
+        label="Week ahead"
+        right={<Label className="tracking-[0.18em]">US macro · schedule from FRED</Label>}
+        bodyClassName="p-0"
+        className="h-[132px] shrink-0"
+      >
+        <div className="grid h-full grid-cols-7 divide-x divide-border/30">
+          {week.map((day) => {
+            const key = format(day, "yyyy-MM-dd");
+            const events = scheduled.filter((e) => e.date === key);
+            const isToday = isSameDay(day, today);
+            const weekend = day.getDay() === 0 || day.getDay() === 6;
+            return (
+              <div
+                key={key}
+                className="flex min-w-0 flex-col gap-1 p-2"
+                style={
+                  isToday
+                    ? { background: a("var(--primary)", 6) }
+                    // Weekends are empty for a reason; say so rather than
+                    // leaving a blank column that looks like missing data.
+                    : weekend
+                    ? { background: a("var(--muted-foreground)", 4) }
+                    : undefined
+                }
+              >
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`font-mono text-[9px] uppercase tracking-[0.18em] ${isToday ? "text-primary" : "text-muted-foreground/45"}`}>
+                    {isToday ? "Today" : format(day, "EEE")}
+                  </span>
+                  <span className={`font-mono text-[11px] font-bold tabular-nums ${isToday ? "text-primary" : "text-foreground/70"}`}>
+                    {format(day, "d")}
+                  </span>
+                </div>
+                <div className="min-h-0 flex-1 space-y-[3px] overflow-hidden">
+                  {events.length === 0 ? (
+                    <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground/25">
+                      {weekend ? "market closed" : "no releases"}
+                    </span>
+                  ) : (
+                    events.slice(0, 3).map((e) => (
+                      <p
+                        key={e.id}
+                        className="truncate border-l pl-1.5 text-[10px] leading-tight text-foreground/75"
+                        style={{ borderColor: e.importance === "high" ? "var(--destructive)" : "var(--warning)" }}
+                        title={`${e.label} · ${e.releaseName}`}
+                      >
+                        {e.label}
+                      </p>
+                    ))
+                  )}
+                  {events.length > 3 && (
+                    <p className="pl-1.5 font-mono text-[9px] text-muted-foreground/35">+{events.length - 3}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Pane>
     </div>
   );
 }
