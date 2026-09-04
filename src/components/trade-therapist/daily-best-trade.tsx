@@ -155,13 +155,15 @@ export function DailyBestTrade({
   }
 
   return (
-    <div className="space-y-4">
+    // The whole tab is meant to sit on one screen: the rail and the save bar
+    // are fixed, and the two working columns take the height that is left.
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {/* ── Week rail ────────────────────────────────────────────────────────
           Deliberately not the Journal's calendar: this one answers "which day
           still needs working through". It carries review state as the primary
           signal, with the day's result bands underneath — one band per trade,
           in the order taken — so a mixed day reads as mixed at a glance. */}
-      <AccentPanel accent="primary" className="p-0">
+      <AccentPanel accent="primary" className="shrink-0 p-0">
         <div className="flex items-center justify-between gap-3 border-b border-border/40 px-3 py-2.5 sm:px-4">
           <div className="flex items-center gap-1.5">
             <button onClick={() => onDateChange(format(subWeeks(d, 1), "yyyy-MM-dd"))} aria-label="Previous week"
@@ -324,21 +326,21 @@ export function DailyBestTrade({
       </AccentPanel>
 
       {loading ? (
-        <div className="flex items-center justify-center h-40"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+        <div className="flex min-h-0 flex-1 items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
       ) : (
         <>
-          <div className="flex items-baseline justify-between gap-3">
+          <div className="flex shrink-0 items-baseline justify-between gap-3">
             <p className="text-sm font-semibold">{format(d, "EEEE, MMMM d")}</p>
             <p className="text-[11px] text-muted-foreground">
               {dayTrades.length === 0 ? "No trades taken" : `${dayTrades.length} trade${dayTrades.length !== 1 ? "s" : ""} · ${formatTotalR(dayR)}`}
             </p>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2 items-start">
+          <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2">
             {/* Left: trades taken + post-market analysis */}
-            <div className="space-y-4">
-              <AccentPanel accent="primary" eyebrow="Execution" title="Trades taken">
-                <div className="mt-4 space-y-1.5">
+            <div className="flex min-h-0 flex-col gap-3">
+              <AccentPanel accent="primary" eyebrow="Execution" title="Trades taken" className="flex max-h-[38%] min-h-0 shrink-0 flex-col">
+                <div className="mt-3 min-h-0 flex-1 space-y-1.5 overflow-y-auto">
                   {dayTrades.length === 0 ? (
                     <p className="py-4 text-center text-xs text-muted-foreground/70">Nothing logged for this day.</p>
                   ) : (
@@ -377,13 +379,13 @@ export function DailyBestTrade({
                 eyebrow="Analysis"
                 title="Post-market analysis"
                 subtitle="What did the market actually do? Key levels, the setups that appeared, how the day should have been traded."
+                className="flex min-h-0 flex-1 flex-col"
               >
                 <textarea
                   value={postMarket}
                   onChange={(e) => { setPostMarket(e.target.value); setSaved(false); }}
-                  rows={7}
                   placeholder="Range held the overnight low, first pullback into VWAP was the A+ long, chased the breakout instead…"
-                  className="mt-4 w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+                  className="mt-3 min-h-[90px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                 />
               </AccentPanel>
             </div>
@@ -394,13 +396,17 @@ export function DailyBestTrade({
               eyebrow="Benchmark"
               title="Best trade of the day"
               subtitle="The single best trade the market offered — take it apart so you recognise it next time."
+              className="flex min-h-0 flex-col"
             >
-              <label className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5">
+              {/* One scrolling column: on a short laptop screen the parts give
+                  way to a scrollbar rather than crowding into each other. */}
+              <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5">
                 <span className="text-xs font-medium">The trade I took was already the best available</span>
                 <Switch checked={takenWasBest} onCheckedChange={(v) => { setTakenWasBest(v); setSaved(false); }} />
               </label>
 
-              <div className="mt-4">
+              <div>
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">Why this was the better play</p>
                 <textarea
                   value={notes}
@@ -411,7 +417,7 @@ export function DailyBestTrade({
                 />
               </div>
 
-              <div className="mt-4">
+              <div>
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">Screenshots</p>
                 <ScreenshotUpload
                   groups={groups}
@@ -419,11 +425,12 @@ export function DailyBestTrade({
                   storageConfig={userId ? { userId, entityType: "best-trade", entityId: date } : undefined}
                 />
               </div>
+              </div>
             </AccentPanel>
           </div>
 
           {/* Save bar */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex shrink-0 items-center justify-between gap-3">
             <div className="text-xs">
               {error ? <span className="text-destructive">{error}</span>
                 : saved ? <span className="inline-flex items-center gap-1.5 text-success"><Check className="w-3.5 h-3.5" /> Saved</span>

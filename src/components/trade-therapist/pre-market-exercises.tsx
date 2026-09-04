@@ -104,21 +104,13 @@ export function PreMarketExercises({
   const noHistory = losses.length === 0 && wins.length === 0;
 
   return (
-    <div className="space-y-5">
-      {/* Intro */}
-      <AccentPanel
-        accent="primary"
-        eyebrow="Pre-market"
-        title="Warm up before the open"
-        subtitle="Your last two losses and two wins are below. Write down, in your own words, how you will stop each mistake from repeating today — and how you will reproduce what worked. Committing to the plan before you trade is what keeps you from making the same error twice."
-      />
-
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {loading ? (
-        <div className="flex h-40 items-center justify-center">
+        <div className="flex min-h-0 flex-1 items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       ) : noHistory ? (
-        <div className="rounded-2xl border border-dashed border-border/60 bg-card px-6 py-12 text-center">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 bg-card px-6 py-12 text-center">
           <p className="text-sm font-medium">No trades to review yet</p>
           <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
             Once you have logged some wins and losses in the Journal, they will
@@ -133,25 +125,26 @@ export function PreMarketExercises({
         </div>
       ) : (
         <>
-          {/* Today's focus */}
-          <AccentPanel
-            accent="primary"
-            eyebrow="Intention"
-            title="Today's one focus"
-            subtitle="Distil the review into a single instruction you will hold all session."
-          >
-            <input
-              value={focus}
-              onChange={(e) => { setFocus(e.target.value); setSaved(false); }}
-              placeholder="No entry without a confirmed level. Wait for the retest."
-              className="mt-4 w-full rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-[15px] outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
-            />
+          {/* Today's focus — the single instruction the rest of this page feeds */}
+          <AccentPanel accent="primary" className="shrink-0 py-3.5">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <div className="shrink-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary/75">Intention</p>
+                <h2 className="mt-0.5 font-heading text-sm font-bold tracking-tight">Today&apos;s one focus</h2>
+              </div>
+              <input
+                value={focus}
+                onChange={(e) => { setFocus(e.target.value); setSaved(false); }}
+                placeholder="No entry without a confirmed level. Wait for the retest."
+                className="min-w-0 flex-1 rounded-lg border border-border/60 bg-background/40 px-3.5 py-2.5 text-sm outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+              />
+            </div>
           </AccentPanel>
 
-          <div className="grid gap-5 lg:grid-cols-2 items-start">
+          <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2">
             {/* Losses to prevent */}
-            <section className="space-y-3">
-              <h3 className="font-heading text-sm font-bold uppercase tracking-[0.14em] text-destructive/80">
+            <section className="flex min-h-0 flex-col gap-2.5 overflow-y-auto pr-1">
+              <h3 className="shrink-0 font-heading text-sm font-bold uppercase tracking-[0.14em] text-destructive/80">
                 Prevent these losses
               </h3>
               {losses.length === 0 ? (
@@ -174,8 +167,8 @@ export function PreMarketExercises({
             </section>
 
             {/* Wins to repeat */}
-            <section className="space-y-3">
-              <h3 className="font-heading text-sm font-bold uppercase tracking-[0.14em] text-success/80">
+            <section className="flex min-h-0 flex-col gap-2.5 overflow-y-auto pr-1">
+              <h3 className="shrink-0 font-heading text-sm font-bold uppercase tracking-[0.14em] text-success/80">
                 Repeat these wins
               </h3>
               {wins.length === 0 ? (
@@ -199,7 +192,7 @@ export function PreMarketExercises({
           </div>
 
           {/* Save bar */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex shrink-0 items-center justify-between gap-3">
             <div className="text-xs">
               {error ? <span className="text-destructive">{error}</span>
                 : saved ? <span className="inline-flex items-center gap-1.5 text-success"><Check className="h-3.5 w-3.5" /> Plan saved for {format(new Date(date + "T12:00:00"), "MMM d")}</span>

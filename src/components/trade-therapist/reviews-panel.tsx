@@ -74,10 +74,10 @@ export function ReviewsPanel() {
   for (const w of closedWeeks) { if (written(w.review)) streak++; else break; }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
+    <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
       {/* LEFT — toggle + list */}
-      <AccentPanel accent="primary" className="p-0 pl-1">
-        <div className="flex items-center justify-between gap-3 border-b border-border/40 p-3">
+      <AccentPanel accent="primary" className="flex min-h-0 flex-col p-0 pl-1">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border/40 p-3">
           <div className="flex rounded-lg border border-border/60 overflow-hidden">
             {(["weekly", "monthly"] as Mode[]).map((m) => (
               <button
@@ -100,7 +100,7 @@ export function ReviewsPanel() {
         </div>
 
         {listOpen && (
-          <div className="p-3">
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
             {mode === "weekly" ? (
               <div className="space-y-1.5">
                 {weeks.map(({ ws, group, ended, current, review }) => {
@@ -148,7 +148,7 @@ export function ReviewsPanel() {
       </AccentPanel>
 
       {/* RIGHT — progress + what you wrote (facts only) */}
-      <div className="space-y-4">
+      <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
         <AccentPanel
           accent="primary"
           eyebrow="Consistency"

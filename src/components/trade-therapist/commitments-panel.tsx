@@ -18,7 +18,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Check, X, Loader2, Plus, ExternalLink, Archive } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import {
   getCommitments, createCommitment, updateCommitment,
@@ -185,12 +184,13 @@ export function CommitmentsPanel() {
   const retired = commitments.filter((c) => !c.active);
 
   return (
-    <div className="space-y-5">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <AccentPanel
         accent="primary"
+        className="shrink-0 py-3.5"
         eyebrow="Commitments"
         title="Does the reflection actually carry?"
-        subtitle="A commitment is an if/then in your own words. When the behaviour it guards against shows up on a later trade, you get asked whether you held it. The kept rate is the only honest read on whether your sessions change anything."
+        subtitle="An if/then in your own words. When the behaviour it guards against shows up again, you get asked whether you held it — the kept rate is the honest read on whether your sessions change anything."
         headerRight={
           keptRate !== null ? (
             <div className="text-right">
@@ -209,11 +209,15 @@ export function CommitmentsPanel() {
       />
 
       {error && (
-        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        <p className="shrink-0 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           {error}
         </p>
       )}
 
+      {/* The working area: what needs answering and what already stands, beside
+          the form for writing the next one. Columns scroll, the page does not. */}
+      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[1.5fr_1fr]">
+      <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
       {/* Open checks — the ask */}
       <section className="space-y-3">
         <h3 className="font-heading text-sm font-bold uppercase tracking-[0.14em] text-destructive/80">
@@ -354,8 +358,10 @@ export function CommitmentsPanel() {
         )}
       </section>
 
+      </div>
+
       {/* Write one */}
-      <AccentPanel accent="cyan" eyebrow="New" title="Write a commitment">
+      <AccentPanel accent="cyan" eyebrow="New" title="Write a commitment" className="min-h-0 overflow-y-auto">
         <div className="mt-4 space-y-2.5">
           <label className="block">
             <span className="text-[11px] font-semibold text-muted-foreground">When… (the trigger)</span>
@@ -406,8 +412,10 @@ export function CommitmentsPanel() {
         </div>
       </AccentPanel>
 
+      </div>
+
       {retired.length > 0 && (
-        <p className="text-center text-[11px] text-muted-foreground/70">
+        <p className="shrink-0 text-center text-[11px] text-muted-foreground/70">
           {retired.length} retired commitment{retired.length !== 1 ? "s" : ""} kept for history.
         </p>
       )}

@@ -5,14 +5,9 @@ import Link from "next/link";
 import { format, subDays } from "date-fns";
 import {
   Plus,
-  Repeat,
   Check,
   Pencil,
   Trash2,
-  CheckCircle2,
-  Zap,
-  HelpCircle,
-  TrendingUp,
   Search,
   Dumbbell,
   Brain,
@@ -234,7 +229,7 @@ function WeekGrid({
   );
 
   return (
-    <div className="flex gap-1.5 items-center">
+    <div className="flex items-center gap-1">
       {days.map((date) => {
         const isToday = date === today;
         const done = completedSet.has(date);
@@ -244,7 +239,7 @@ function WeekGrid({
             onClick={() => onToggle(date)}
             title={format(new Date(date + "T12:00:00"), "EEE MMM d")}
             className={cn(
-              "w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-150 text-xs font-bold border",
+              "flex h-[22px] w-[22px] items-center justify-center rounded-md border text-[9px] font-bold transition-all duration-150",
               isToday && "ring-1",
               done
                 ? "border-transparent"
@@ -267,11 +262,9 @@ function WeekGrid({
             }
           >
             {done ? (
-              <Check className="w-3.5 h-3.5" />
+              <Check className="h-3 w-3" strokeWidth={3} />
             ) : (
-              <span style={{ fontSize: "9px" }}>
-                {format(new Date(date + "T12:00:00"), "d")}
-              </span>
+              <span className="tabular-nums">{format(new Date(date + "T12:00:00"), "d")}</span>
             )}
           </button>
         );
@@ -409,256 +402,280 @@ export function HabitsView() {
     completions.filter((c) => c.completed).map((c) => `${c.habit_id}|${c.date}`)
   );
 
+  // Today is the part that asks for an action, so it is measured on its own:
+  // only the habits whose frequency actually applies today count here.
+  const todayHabits = habits.filter((h) => frequencyApplies(h.frequency, new Date().getDay()));
+  const doneTodaySet = new Set(completions.filter((c) => c.date === today && c.completed).map((c) => c.habit_id));
+  const doneToday = todayHabits.filter((h) => doneTodaySet.has(h.id)).length;
+  const todayPct = todayHabits.length ? Math.round((doneToday / todayHabits.length) * 100) : 0;
+
   return (
     <div className="space-y-3">
-      {/* Compact toolbar: range · how it works · new habit */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex rounded-lg border border-border/50 overflow-hidden">
-          {RANGES.map((r) => (
-            <button
-              key={r.key}
-              onClick={() => setRange(r.key)}
-              className={cn(
-                "px-2.5 py-1.5 text-xs font-medium transition-colors",
-                range === r.key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-
-        <Link
-          href="/discipline"
-          className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-all hover:-translate-y-px"
-          style={{
-            background: "rgba(20,184,166,0.12)",
-            borderColor: "rgba(20,184,166,0.4)",
-            color: "#14B8A6",
-          }}
-        >
-          <HelpCircle className="w-3.5 h-3.5" />
-          How it works
-        </Link>
-
-        <button
-          onClick={() => setShowNewHabit(true)}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
-          style={{
-            background: "#14B8A6",
-            color: "#F8FAFC",
-            boxShadow: "0 4px 14px rgba(20,184,166,0.3)",
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          New habit
-        </button>
-      </div>
-
-      {/* Compact stat strip — one line each, no tall cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        {[
-          { label: "Completion", value: `${rangeCompletion}%`, sub: `last ${rangeDays}d`, icon: CheckCircle2, accent: "#14B8A6", ring: rangeCompletion },
-          { label: "Longest streak", value: `${longestStreak}d`, sub: "in a row", icon: Repeat, accent: "#ef4444", ring: null },
-          { label: "Completed", value: rangeCompleted.toString(), sub: `last ${rangeDays}d`, icon: TrendingUp, accent: "#22c55e", ring: null },
-          { label: "Active", value: totalHabits.toString(), sub: "tracked", icon: Zap, accent: "#14B8A6", ring: null },
-        ].map(({ label, value, sub, icon: Icon, accent, ring }) => (
-          <div
-            key={label}
-            className="flex items-center gap-2.5 rounded-xl border border-border/50 px-3.5 py-2.5"
-            style={{ background: `linear-gradient(160deg, ${fade(accent, 0.06)}, rgba(11,17,32,0.3) 60%)` }}
-          >
-            {ring !== null ? (
-              <div className="relative shrink-0">
-                <ProgressRing percent={ring} size={30} stroke={3} color={accent} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Icon className="w-3 h-3" style={{ color: accent }} />
-                </div>
-              </div>
-            ) : (
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: fade(accent, 0.12) }}>
-                <Icon className="w-3.5 h-3.5" style={{ color: accent }} />
-              </div>
-            )}
-            <div className="min-w-0">
-              <p className="text-lg font-black leading-none tabular-nums" style={{ color: accent }}>{value}</p>
-              <p className="text-[10px] text-muted-foreground truncate">{label} · {sub}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Habits grid — two columns on wide screens keeps everything above the fold */}
+      {/* ── Today ──────────────────────────────────────────────────────────
+          One question, answered at a glance and answerable in one click:
+          what is still open today. Everything historical sits below. */}
       <AccentPanel
         accent="primary"
-        eyebrow="Daily reps"
-        title="Daily Habits"
+        eyebrow={format(new Date(), "EEEE d MMMM")}
+        title="Today"
         headerRight={
-          habits.length > 0 ? (
-            <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-              {(Object.keys(CATEGORY_COLORS) as HabitCategory[]).map((cat) => {
-                const { accent, bg, label, Icon } = CATEGORY_COLORS[cat];
-                return (
-                  <span key={cat} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <span className="flex h-3.5 w-3.5 items-center justify-center rounded" style={{ background: bg }}>
-                      <Icon className="w-2 h-2" style={{ color: accent }} />
-                    </span>
-                    {label}
-                  </span>
-                );
-              })}
-            </div>
-          ) : undefined
+          <div className="flex items-center gap-3">
+            <Link
+              href="/discipline"
+              className="hidden text-[11px] font-semibold text-muted-foreground transition-colors hover:text-primary sm:inline"
+            >
+              How habits score
+            </Link>
+            <button
+              onClick={() => setShowNewHabit(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
+              style={{ background: "#14B8A6", boxShadow: "0 2px 12px rgba(20,184,166,0.26)" }}
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> New habit
+            </button>
+          </div>
         }
       >
-        <div className="mt-4 space-y-2.5">
-
-          {habits.length === 0 && (
-            <div className="animate-fade-up rounded-xl border border-dashed border-border/60 bg-muted/10 p-10 text-center">
-              <p className="mb-3 text-sm text-muted-foreground">No habits yet.</p>
-              <button
-                onClick={() => setShowNewHabit(true)}
-                className="text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
-                style={{ color: "#14B8A6" }}
-              >
-                <Plus className="w-3.5 h-3.5" /> Create your first habit
-              </button>
+        {habits.length === 0 ? (
+          <div className="mt-4 flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/60 py-8 text-center">
+            <p className="text-sm text-muted-foreground">No habits yet.</p>
+            <p className="max-w-sm text-xs text-muted-foreground/70">
+              Habits are the reps you do away from the chart. Add the ones you want to hold yourself to and they show up
+              here every day.
+            </p>
+            <button
+              onClick={() => setShowNewHabit(true)}
+              className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold"
+              style={{ color: "#14B8A6" }}
+            >
+              <Plus className="h-3.5 w-3.5" /> Create your first habit
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+            {/* The count, and the same count as a ring */}
+            <div className="flex shrink-0 items-center gap-3">
+              <div className="relative">
+                <ProgressRing percent={todayPct} size={44} stroke={3.5} color="#14B8A6" />
+                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black tabular-nums text-primary">
+                  {todayPct}
+                </span>
+              </div>
+              <div>
+                <p className="text-xl font-black leading-none tabular-nums text-foreground">
+                  {doneToday}
+                  <span className="text-muted-foreground/50"> / {todayHabits.length}</span>
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground/70">
+                  {todayHabits.length === 0
+                    ? "nothing scheduled today"
+                    : doneToday === todayHabits.length
+                    ? "all done — that is the day won"
+                    : `${todayHabits.length - doneToday} still open`}
+                </p>
+              </div>
             </div>
-          )}
 
-          <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-          {habits.map((habit, i) => {
-            const streak = streaks[habit.id] ?? 0;
-            const habitCompletions = completions.filter((c) => c.habit_id === habit.id);
-            const completedToday = habitCompletions.some(
-              (c) => c.date === today && c.completed
-            );
-            const rangeStat = habitRangeStat(habit, habitCompletions, rangeDays);
-            const catConfig = CATEGORY_COLORS[habit.category];
-
-            return (
-              <div
-                key={habit.id}
-                className="group animate-fade-up relative overflow-hidden rounded-xl border border-border/50 p-4 transition-colors"
-                style={{
-                  animationDelay: `${220 + i * 50}ms`,
-                  background: completedToday
-                    ? `linear-gradient(160deg, ${fade(habit.color, 0.07)}, rgba(11,17,32,0.3) 60%)`
-                    : "rgba(11,17,32,0.3)",
-                  ...(completedToday ? { borderColor: fade(habit.color, 0.35) } : {}),
-                }}
-              >
-                {/* Completed today reads as a filled spine down the edge */}
-                {completedToday && (
-                  <span
-                    aria-hidden
-                    className="absolute inset-y-0 left-0 w-0.5"
-                    style={{ background: habit.color }}
-                  />
-                )}
-                {/* Delete button */}
-                {deletingHabit === habit.id ? (
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                    <span className="text-xs text-destructive font-medium">Delete?</span>
+            {/* Tap a habit to tick it off */}
+            <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+              {todayHabits.length === 0 ? (
+                <p className="text-xs text-muted-foreground/60">
+                  None of your habits run on a {format(new Date(), "EEEE")}.
+                </p>
+              ) : (
+                todayHabits.map((habit) => {
+                  const done = doneTodaySet.has(habit.id);
+                  return (
                     <button
-                      onClick={() => handleDeleteHabit(habit.id)}
-                      className="text-xs px-2 py-0.5 rounded-md font-medium transition-colors"
-                      style={{ background: "rgba(239,68,68,0.15)", color: "#ef4444" }}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      onClick={() => setDeletingHabit(null)}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      No
-                    </button>
-                  </div>
-                ) : (
-                  <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => openEdit(habit)}
-                      aria-label="Edit habit"
-                      className="text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setDeletingHabit(habit.id)}
-                      aria-label="Delete habit"
-                      className="text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-
-                <div className="flex items-start gap-3 mb-3">
-                  {/* Figure + completion ring */}
-                  <div className="relative shrink-0">
-                    <button
+                      key={habit.id}
                       onClick={() => handleToggle(habit.id, today)}
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all hover:scale-105"
-                      style={{
-                        background: completedToday
-                          ? fade(habit.color, 0.2)
-                          : "var(--popover)",
-                        border: `2px solid ${completedToday ? habit.color : "var(--border)"}`,
-                      }}
-                    >
-                      {completedToday ? <Check className="w-5 h-5" style={{ color: habit.color }} /> : <HabitGlyph icon={habit.icon} className="w-5 h-5" style={{ color: habit.color }} />}
-                    </button>
-                  </div>
-
-                  <div className="flex-1 min-w-0 pr-12">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold">{habit.name}</span>
-                      {streak > 0 && (
-                        <span className="text-xs font-medium text-muted-foreground tabular-nums">
-                          {streak}d streak
-                        </span>
+                      className={cn(
+                        "group/chip inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-all duration-200 hover:-translate-y-px",
+                        done ? "border-transparent" : "border-dashed border-border/70 hover:border-solid"
                       )}
+                      style={done ? { background: fade(habit.color, 0.16), borderColor: fade(habit.color, 0.5) } : undefined}
+                    >
                       <span
-                        className="text-xs px-1.5 py-0.5 rounded-md font-medium"
-                        style={{ background: catConfig.bg, color: catConfig.accent }}
+                        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px]"
+                        style={{ background: done ? habit.color : "transparent", border: done ? "none" : "1px solid var(--border)" }}
                       >
-                        {catConfig.label}
+                        {done ? (
+                          <Check className="h-3 w-3 text-background" strokeWidth={3.5} />
+                        ) : (
+                          <HabitGlyph icon={habit.icon} className="h-2.5 w-2.5" style={{ color: habit.color }} />
+                        )}
                       </span>
-                    </div>
+                      <span className={cn("text-xs font-medium", done ? "text-foreground" : "text-muted-foreground")}>
+                        {habit.name}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+      </AccentPanel>
+
+      {/* ── The record ─────────────────────────────────────────────────────
+          One line per habit rather than a grid of cards: the whole practice
+          fits on a screen, and every habit is compared on the same axis. */}
+      {habits.length > 0 && (
+        <AccentPanel
+          accent="cyan"
+          eyebrow="The record"
+          title="Consistency"
+          headerRight={
+            <div className="flex items-center gap-2.5">
+              {RANGES.map((r) => (
+                <button
+                  key={r.key}
+                  onClick={() => setRange(r.key)}
+                  className={cn(
+                    "border-b pb-px text-[11px] font-semibold uppercase tracking-wider transition-colors",
+                    range === r.key ? "border-primary text-primary" : "border-transparent text-muted-foreground/50 hover:text-foreground"
+                  )}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          }
+        >
+          {/* The three numbers worth stating outright, in a sentence rather than four cards */}
+          <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[12px] text-muted-foreground/80">
+            <span>
+              <span className="text-base font-black tabular-nums text-primary">{rangeCompletion}%</span> of scheduled
+              reps kept over the last {rangeDays} days
+            </span>
+            <span className="text-border">·</span>
+            <span>
+              longest streak <span className="font-bold tabular-nums text-foreground/85">{longestStreak}d</span>
+            </span>
+            <span className="text-border">·</span>
+            <span>
+              <span className="font-bold tabular-nums text-foreground/85">{rangeCompleted}</span> completions
+            </span>
+            <span className="text-border">·</span>
+            <span>
+              <span className="font-bold tabular-nums text-foreground/85">{totalHabits}</span> habits tracked
+            </span>
+          </p>
+
+          <div className="mt-3 border-t border-border/40">
+            {/* Column key, stated once */}
+            <div className="grid grid-cols-[1.6rem_1fr_4.5rem_auto] items-center gap-x-3 border-b border-border/30 py-1.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/45 sm:grid-cols-[1.6rem_1fr_4.5rem_auto_5.5rem]">
+              <span />
+              <span>Habit</span>
+              <span className="text-right">Streak</span>
+              <span className="hidden text-center sm:block">Last 7 days</span>
+              <span className="hidden text-right sm:block">Last {rangeDays}d</span>
+            </div>
+
+            {habits.map((habit) => {
+              const streak = streaks[habit.id] ?? 0;
+              const habitCompletions = completions.filter((c) => c.habit_id === habit.id);
+              const completedToday = doneTodaySet.has(habit.id);
+              const appliesToday = frequencyApplies(habit.frequency, new Date().getDay());
+              const stat = habitRangeStat(habit, habitCompletions, rangeDays);
+              const cat = CATEGORY_COLORS[habit.category];
+
+              return (
+                <div
+                  key={habit.id}
+                  className="group grid grid-cols-[1.6rem_1fr_4.5rem_auto] items-center gap-x-3 border-b border-border/20 py-2 transition-colors last:border-0 hover:bg-muted/15 sm:grid-cols-[1.6rem_1fr_4.5rem_auto_5.5rem]"
+                >
+                  {/* Tick today off, straight from the row */}
+                  <button
+                    onClick={() => handleToggle(habit.id, today)}
+                    title={appliesToday ? (completedToday ? "Done today" : "Mark done today") : "Not scheduled today"}
+                    className={cn(
+                      "flex h-6 w-6 items-center justify-center rounded-md border transition-all",
+                      !appliesToday && "opacity-35"
+                    )}
+                    style={{
+                      background: completedToday ? fade(habit.color, 0.2) : "transparent",
+                      borderColor: completedToday ? habit.color : "var(--border)",
+                    }}
+                  >
+                    {completedToday
+                      ? <Check className="h-3.5 w-3.5" strokeWidth={3} style={{ color: habit.color }} />
+                      : <HabitGlyph icon={habit.icon} className="h-3 w-3" style={{ color: habit.color }} />}
+                  </button>
+
+                  {/* Name, category and — on hover — the edit controls */}
+                  <div className="flex min-w-0 items-baseline gap-2">
+                    <span className="truncate text-[13px] font-semibold text-foreground">{habit.name}</span>
+                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider" style={{ color: cat.accent }}>
+                      {cat.label}
+                    </span>
                     {habit.description && (
-                      <p className="text-xs text-muted-foreground">{habit.description}</p>
+                      <span className="hidden min-w-0 truncate text-[11px] text-muted-foreground/55 xl:inline">
+                        {habit.description}
+                      </span>
+                    )}
+                    {deletingHabit === habit.id ? (
+                      <span className="ml-auto flex shrink-0 items-center gap-1.5 text-[11px]">
+                        <span className="text-destructive">Delete?</span>
+                        <button onClick={() => handleDeleteHabit(habit.id)} className="font-semibold text-destructive hover:underline">Yes</button>
+                        <button onClick={() => setDeletingHabit(null)} className="text-muted-foreground hover:text-foreground">No</button>
+                      </span>
+                    ) : (
+                      <span className="ml-auto flex shrink-0 items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button onClick={() => openEdit(habit)} aria-label="Edit habit" className="text-muted-foreground hover:text-primary">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => setDeletingHabit(habit.id)} aria-label="Delete habit" className="text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
                     )}
                   </div>
-                </div>
 
-                {/* Week grid */}
-                <div className="flex items-center justify-between">
-                  <WeekGrid
-                    habit={habit}
-                    completions={habitCompletions}
-                    onToggle={(date) => handleToggle(habit.id, date)}
-                    today={today}
-                  />
-                  <div className="text-right ml-3">
-                    <p
-                      className="text-xs font-bold tabular-nums"
-                      style={{ color: habit.color }}
-                    >
-                      {rangeStat.completed}/{rangeStat.expected}
-                    </p>
-                    <p className="text-xs text-muted-foreground">last {rangeDays}d · {rangeStat.pct}%</p>
+                  {/* Streak */}
+                  <span className="text-right text-[12px] font-bold tabular-nums" style={{ color: streak > 0 ? habit.color : "var(--muted-foreground)" }}>
+                    {streak > 0 ? `${streak}d` : "—"}
+                  </span>
+
+                  {/* The week, still clickable — a missed day can be fixed here */}
+                  <div className="hidden justify-center sm:flex">
+                    <WeekGrid
+                      habit={habit}
+                      completions={habitCompletions}
+                      onToggle={(date) => handleToggle(habit.id, date)}
+                      today={today}
+                    />
+                  </div>
+
+                  {/* Where the habit stands over the chosen window */}
+                  <div className="hidden sm:block">
+                    <div className="flex items-baseline justify-end gap-1.5">
+                      <span className="text-[12px] font-bold tabular-nums" style={{ color: habit.color }}>{stat.pct}%</span>
+                      <span className="text-[10px] tabular-nums text-muted-foreground/50">{stat.completed}/{stat.expected}</span>
+                    </div>
+                    <span className="mt-1 block h-[3px] w-full overflow-hidden rounded-full bg-border/60">
+                      <span className="block h-full rounded-full" style={{ width: `${stat.pct}%`, background: habit.color }} />
+                    </span>
                   </div>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Range history - visible for 30d / 90d so earlier data shows */}
-                {rangeDays > 7 && (
-                  <div className="mt-3 pt-3 border-t border-border/30">
+          {/* The long view — only worth the space once the window is longer than the week strip above */}
+          {rangeDays > 7 && (
+            <div className="mt-4 space-y-2 border-t border-border/40 pt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Last {rangeDays} days, day by day
+              </p>
+              <div className="space-y-1.5 overflow-x-auto">
+                {habits.map((habit) => (
+                  <div key={habit.id} className="flex items-center gap-3">
+                    <span className="w-28 shrink-0 truncate text-[11px] text-muted-foreground/70">{habit.name}</span>
                     <ActivityHeatmap
                       start={rangeStart}
                       end={rangeEnd}
-                      cell={10}
+                      cell={9}
                       color={habit.color}
                       intensityFor={(key, d) =>
                         frequencyApplies(habit.frequency, d.getDay()) &&
@@ -668,13 +685,12 @@ export function HabitsView() {
                       }
                     />
                   </div>
-                )}
+                ))}
               </div>
-            );
-          })}
-          </div>
-        </div>
-      </AccentPanel>
+            </div>
+          )}
+        </AccentPanel>
+      )}
 
       {/* New habit dialog */}
       <Dialog open={showNewHabit} onOpenChange={(o) => (o ? setShowNewHabit(true) : closeNewHabit())}>

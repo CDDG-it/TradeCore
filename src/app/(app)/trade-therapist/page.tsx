@@ -81,23 +81,30 @@ export default function TradeTherapistPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [trades, setTrades] = useState<TradeJournalEntry[]>([]);
 
+  // Read the deep-linked tab after mount rather than during render: the page is
+  // prerendered, so seeding state from the URL up front would make the server
+  // and client markup disagree.
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tab");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
     if (TABS.some((x) => x.key === t)) setTab(t as TherapistTab);
     getProfile().then((p) => { if (p?.id) setUserId(p.id); });
     getTrades().then(setTrades).catch(() => {});
   }, []);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    // One screen, no page scroll: the title row is fixed and the active view
+    // takes the height that is left, scrolling inside itself where it must.
+    // 7.5rem is the top nav plus the page gutter above and below it.
+    <div className="flex flex-col gap-4 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
         <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
           MC Trade Therapist
         </h1>
         <GlassToggle tab={tab} onChange={setTab} />
       </div>
 
-      <PageWrapper>
+      <PageWrapper className="min-h-0 flex-1 space-y-0">
         {tab === "daily" && (
           <DailyBestTrade
             date={dailyDate}
