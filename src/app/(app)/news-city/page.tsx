@@ -2,28 +2,32 @@
 
 /**
  * Global Markets Intelligence — one page, focused subtabs, for objective market
- * research. A persistent header + sub-nav stay fixed while the active subtab
- * swaps beneath them. Every dataset is provider-labelled with its freshness;
- * nothing here interprets, recommends or predicts.
+ * research. The title block, the live tape and the sub-nav stay pinned while
+ * the active subtab swaps beneath them. Every dataset is provider-labelled with
+ * its freshness; nothing here interprets, recommends or predicts.
  *
  * (Route kept as /news-city to preserve existing links; the page is retitled.)
  */
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Loader2 } from "lucide-react";
+import { motion } from "motion/react";
+import {
+  Loader2, Activity, Globe2, CandlestickChart, Newspaper, CalendarDays, Layers, RefreshCw,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useGmi } from "@/lib/gmi/client";
+import { useGmi, timeAgo } from "@/lib/gmi/client";
 import type { Quote } from "@/lib/gmi/types";
+import { MarketRibbon } from "@/components/gmi/ribbon";
 
 type Tab = "overview" | "markets" | "futures" | "news" | "calendar" | "flow";
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: "overview", label: "Overview" },
-  { key: "markets", label: "Markets" },
-  { key: "futures", label: "Futures" },
-  { key: "news", label: "News" },
-  { key: "calendar", label: "Calendar" },
-  { key: "flow", label: "Positioning & Flow" },
+const TABS: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: "overview", label: "Overview", icon: Activity },
+  { key: "markets", label: "Markets", icon: Globe2 },
+  { key: "futures", label: "Futures", icon: CandlestickChart },
+  { key: "news", label: "News", icon: Newspaper },
+  { key: "calendar", label: "Calendar", icon: CalendarDays },
+  { key: "flow", label: "Positioning", icon: Layers },
 ];
 
 /** Old ?tab= values that should still land somewhere sensible, from when Option
@@ -47,8 +51,9 @@ const FlowOptionsTab = dynamic(() => import("@/components/gmi/tabs/flow-options-
 
 export default function GlobalMarketsPage() {
   const [tab, setTab] = useState<Tab>("overview");
-  // Shared quotes feed — one poll powers Overview, Markets and Futures.
-  const { env: quotesEnv } = useGmi<Quote[]>("/api/gmi/quotes", 30_000);
+  // Shared quotes feed — one poll powers the tape, Overview, Markets and Futures.
+  const { env: quotesEnv, refresh } = useGmi<Quote[]>("/api/gmi/quotes", 30_000);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Deep-linking, e.g. the /option-flow route redirects in here.
   useEffect(() => {
@@ -57,6 +62,11 @@ export default function GlobalMarketsPage() {
     const t = TAB_ALIASES[raw] ?? raw;
     if (TABS.some((x) => x.key === t)) setTab(t as Tab);
   }, []);
+
+  async function manualRefresh() {
+    setRefreshing(true);
+    try { await refresh(); } finally { setTimeout(() => setRefreshing(false), 450); }
+  }
 
   const content = useMemo(() => {
     switch (tab) {
@@ -70,35 +80,73 @@ export default function GlobalMarketsPage() {
   }, [tab, quotesEnv]);
 
   return (
-    <div className="space-y-4">
-      {/* Persistent header: title + sub-nav stay put while tabs swap. */}
-      <div className="sticky top-0 z-20 -mx-4 space-y-3 bg-background/80 px-4 pb-2 pt-1 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:-mx-6 sm:px-6">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="font-heading text-lg font-bold uppercase tracking-tight text-foreground md:text-xl">
-            Global Markets
-          </h1>
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">Objective research · no signals</span>
+    <div className="space-y-5">
+      {/* Pinned desk header: title, live tape and sub-nav stay put while tabs swap. */}
+      <div className="sticky top-0 z-20 -mx-4 space-y-3 border-b border-border/40 bg-background/85 px-4 pb-2.5 pt-1 backdrop-blur-xl supports-[backdrop-filter]:bg-background/65 sm:-mx-6 sm:px-6">
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-primary/70">
+              Objective research · no signals
+            </p>
+            <h1 className="font-heading text-lg font-bold uppercase tracking-tight text-foreground md:text-xl">
+              Global Markets
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <span className="hidden text-[10px] tabular-nums text-muted-foreground/70 sm:inline">
+              Tape {quotesEnv ? timeAgo(quotesEnv.fetchedAt) : "loading…"}
+            </span>
+            <button
+              onClick={manualRefresh}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <RefreshCw className={cn("h-3 w-3", refreshing && "animate-spin")} />
+              Refresh
+            </button>
+          </div>
         </div>
 
-        <nav className="flex gap-1 overflow-x-auto scrollbar-none">
-          {TABS.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={cn(
-                "shrink-0 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-colors",
-                tab === key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              )}
-            >
-              {label}
-            </button>
-          ))}
+        <MarketRibbon env={quotesEnv} />
+
+        <nav className="scrollbar-none flex gap-1 overflow-x-auto">
+          {TABS.map(({ key, label, icon: Icon }) => {
+            const active = tab === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={cn(
+                  "relative shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                  active ? "text-primary-foreground" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="gmi-tab"
+                    className="absolute inset-0 rounded-lg bg-primary"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <span className="relative inline-flex items-center gap-1.5">
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </nav>
       </div>
 
-      <div className="min-h-[50vh]">{content}</div>
+      <motion.div
+        key={tab}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+        className="min-h-[50vh]"
+      >
+        {content}
+      </motion.div>
     </div>
   );
 }

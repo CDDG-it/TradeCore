@@ -15,15 +15,16 @@ import { Panel, Unavailable } from "../panel";
 export function FlowOptionsTab() {
   return (
     <div className="space-y-4">
-      <Panel title="Positioning — CFTC COT (weekly)">
-        <p className="mb-3 text-[11px] text-muted-foreground">
-          Commercial vs. non-commercial net positioning and its weekly change, straight from the CFTC. Positioning is
-          weekly (Tuesday data, Friday release) — never realtime.
-        </p>
+      <Panel
+        eyebrow="Positioning"
+        title="CFTC Commitments of Traders"
+        subtitle="Commercial vs. non-commercial net positioning and its weekly change, straight from the CFTC — Tuesday data, Friday release. Never realtime."
+        accent="cyan"
+      >
         <CotFlow />
       </Panel>
 
-      <Panel title="ETF flow">
+      <Panel eyebrow="Flow" title="ETF creations & redemptions">
         <Unavailable
           label="Data unavailable"
           hint="Reliable QQQ / SPY / IWM creation & redemption flow isn't available on the current free sources. Add a flow provider to enable this."

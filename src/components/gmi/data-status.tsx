@@ -33,16 +33,21 @@ export function DataStatus({
   const freshnessLabel = FRESHNESS_LABEL[env.freshness];
 
   return (
-    <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-medium tabular-nums", className)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background/40 px-2 py-0.5 text-[10px] font-medium tabular-nums",
+        className
+      )}
+    >
       {unavailable ? (
-        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold uppercase tracking-wider bg-destructive/12 text-destructive">
-          <AlertTriangle className="w-2.5 h-2.5" /> Unavailable
+        <span className="inline-flex items-center gap-1 font-semibold uppercase tracking-[0.14em] text-destructive">
+          <AlertTriangle className="h-2.5 w-2.5" /> Unavailable
         </span>
       ) : (
         <span
           className={cn(
-            "inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold uppercase tracking-wider",
-            stale ? "bg-warning/12 text-warning" : "bg-muted/50 text-muted-foreground"
+            "inline-flex items-center gap-1 font-semibold uppercase tracking-[0.14em]",
+            stale ? "text-warning" : "text-muted-foreground"
           )}
         >
           <Circle className={cn("w-1.5 h-1.5", stale ? "fill-warning text-warning" : "fill-success text-success")} />
@@ -50,7 +55,7 @@ export function DataStatus({
         </span>
       )}
       {showSource && !unavailable && (
-        <span className="text-muted-foreground/60">
+        <span className="text-muted-foreground/50">
           {env.source}
           {env.asOf ? ` · ${timeAgo(env.asOf)}` : ""}
         </span>

@@ -17,6 +17,10 @@ import {
   getBestTradeOfDay, getBestTradesOfDay, saveBestTradeOfDay, deleteBestTradeOfDay,
 } from "@/lib/supabase/queries";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
+import {
+  resultColor, resultBands, netRColor, inOrder, alpha,
+  WIN_COLOR, LOSS_COLOR, BE_COLOR,
+} from "@/lib/journal/colors";
 import type { TradeJournalEntry, BestTradeOfDay, ScreenshotGroup } from "@/lib/types";
 
 const TURQUOISE = "#14B8A6";
@@ -95,6 +99,20 @@ export function DailyBestTrade({
   );
   const dayR = dayTrades.reduce((s, t) => s + tradeR(t), 0);
 
+  // Week-level review progress — only days that were actually traded can be
+  // "still to review", so the ratio never punishes a quiet week.
+  const isThisWeek = weekDays.some((day) => isToday(day));
+  const { tradedDays, reviewedDays } = useMemo(() => {
+    let traded = 0, reviewed = 0;
+    for (const day of weekDays) {
+      const k = format(day, "yyyy-MM-dd");
+      if ((tradesByDay[k] ?? []).length === 0) continue;
+      traded++;
+      if (hasEntry(bestByDay[k])) reviewed++;
+    }
+    return { tradedDays: traded, reviewedDays: reviewed };
+  }, [weekDays, tradesByDay, bestByDay]);
+
   const dirty =
     takenWasBest !== (loaded?.taken_was_best ?? false) ||
     postMarket !== (loaded?.post_market_analysis ?? "") ||
@@ -138,30 +156,65 @@ export function DailyBestTrade({
 
   return (
     <div className="space-y-4">
-      {/* Week calendar of results */}
-      <AccentPanel accent="primary" className="p-0 pl-1">
-        <div className="flex items-center justify-between gap-3 border-b border-border/40 px-4 py-2.5">
-          <button onClick={() => onDateChange(format(subWeeks(d, 1), "yyyy-MM-dd"))} aria-label="Previous week"
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <p className="text-sm font-semibold tracking-tight">
-            {format(weekStart, "MMM d")} – {format(weekEnd, "MMM d, yyyy")}
-          </p>
-          <button onClick={() => onDateChange(format(addWeeks(d, 1), "yyyy-MM-dd"))} aria-label="Next week"
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
-            <ChevronRight className="w-4 h-4" />
-          </button>
+      {/* ── Week rail ────────────────────────────────────────────────────────
+          Deliberately not the Journal's calendar: this one answers "which day
+          still needs working through". It carries review state as the primary
+          signal, with the day's result bands underneath — one band per trade,
+          in the order taken — so a mixed day reads as mixed at a glance. */}
+      <AccentPanel accent="primary" className="p-0">
+        <div className="flex items-center justify-between gap-3 border-b border-border/40 px-3 py-2.5 sm:px-4">
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => onDateChange(format(subWeeks(d, 1), "yyyy-MM-dd"))} aria-label="Previous week"
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button onClick={() => onDateChange(format(addWeeks(d, 1), "yyyy-MM-dd"))} aria-label="Next week"
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            {!isThisWeek && (
+              <button onClick={() => onDateChange(format(new Date(), "yyyy-MM-dd"))}
+                className="ml-1 rounded-lg border border-primary/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10">
+                Today
+              </button>
+            )}
+          </div>
+
+          <div className="min-w-0 text-center">
+            <p className="truncate text-sm font-semibold tracking-tight">
+              {format(weekStart, "MMM d")} – {format(weekEnd, "MMM d, yyyy")}
+            </p>
+            <p className="mt-0.5 text-[10px] tabular-nums text-muted-foreground/70">
+              {tradedDays === 0
+                ? "No trades logged this week"
+                : `${reviewedDays} of ${tradedDays} traded day${tradedDays !== 1 ? "s" : ""} reviewed`}
+            </p>
+          </div>
+
+          {/* Review progress — only meaningful once something was traded */}
+          <div className="flex w-16 shrink-0 items-center justify-end gap-2">
+            {tradedDays > 0 && (
+              <>
+                <span className="hidden text-[11px] font-bold tabular-nums text-primary sm:inline">
+                  {Math.round((reviewedDays / tradedDays) * 100)}%
+                </span>
+                <span className="h-1.5 w-8 overflow-hidden rounded-full bg-muted/40">
+                  <span
+                    className="block h-full rounded-full transition-[width] duration-500 ease-out"
+                    style={{ width: `${(reviewedDays / tradedDays) * 100}%`, background: TURQUOISE }}
+                  />
+                </span>
+              </>
+            )}
+          </div>
         </div>
-        {/* Day picker. Deliberately not the Journal's calendar: this one answers
-            "which day still needs working through", so it carries review state
-            rather than repeating R, trade counts and execution grades. The link
-            to the journal is still live — a day only offers itself for review
-            because trades were logged against it. */}
-        <div className="grid grid-cols-7 gap-1.5 p-3">
+
+        <div className="grid grid-cols-7 gap-1.5 p-2.5 sm:gap-2 sm:p-3">
           {weekDays.map((day) => {
             const key = format(day, "yyyy-MM-dd");
-            const traded = (tradesByDay[key] ?? []).length > 0;
+            const dayTradesFor = inOrder(tradesByDay[key] ?? []);
+            const traded = dayTradesFor.length > 0;
+            const netR = dayTradesFor.reduce((s, t) => s + tradeR(t), 0);
             const selected = key === date;
             const future = isFuture(day) && !isToday(day);
             const best = bestByDay[key];
@@ -172,57 +225,100 @@ export function DailyBestTrade({
                 type="button"
                 onClick={() => onDateChange(key)}
                 disabled={future}
-                title={
-                  future ? "" : done ? "Reviewed" : traded ? "Traded — not reviewed yet" : "No trades"
-                }
+                title={future ? "" : done ? "Reviewed" : traded ? "Traded — not reviewed yet" : "No trades"}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-xl border py-2.5 transition-all",
+                  "group relative flex flex-col items-center overflow-hidden rounded-xl border px-1 pb-2 pt-2.5 transition-all duration-300",
                   selected
-                    ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                    ? "border-primary ring-1 ring-primary/30"
                     : isToday(day)
-                    ? "border-primary/40 bg-primary/5 hover:border-primary/60"
-                    : "border-border/40 hover:border-primary/30 hover:bg-muted/20",
-                  future ? "cursor-default opacity-30" : "cursor-pointer"
+                    ? "border-primary/40 hover:border-primary/60"
+                    : "border-border/40 hover:border-primary/30",
+                  future ? "cursor-default opacity-30" : "cursor-pointer hover:-translate-y-0.5"
                 )}
+                style={traded ? { background: resultBands(dayTradesFor, selected ? 18 : 12) } : undefined}
               >
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                  {format(day, "EEEEE")}
+                {/* Result bar — one full-strength segment per trade */}
+                {traded && (
+                  <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-[3px] gap-px">
+                    {dayTradesFor.map((t) => (
+                      <span
+                        key={t.id}
+                        className="flex-1 transition-[filter] duration-300 group-hover:brightness-125"
+                        style={{ background: resultColor(t), boxShadow: `0 0 8px ${alpha(resultColor(t), 45)}` }}
+                      />
+                    ))}
+                  </span>
+                )}
+                {/* Selected day gets a soft turquoise floor */}
+                {selected && (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    style={{ background: `radial-gradient(120% 90% at 50% 100%, ${alpha(TURQUOISE, 16)}, transparent 68%)` }}
+                  />
+                )}
+
+                <span className="relative text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                  <span className="sm:hidden">{format(day, "EEEEE")}</span>
+                  <span className="hidden sm:inline">{format(day, "EEE")}</span>
                 </span>
                 <span
                   className={cn(
-                    "text-sm font-bold tabular-nums leading-none",
-                    selected || isToday(day) ? "text-primary" : "text-foreground/80"
+                    "relative mt-0.5 text-base font-bold leading-none tabular-nums",
+                    selected || isToday(day) ? "text-primary" : "text-foreground/85"
                   )}
                 >
                   {format(day, "d")}
                 </span>
-                {/* Review state: solid = done, ring = traded and waiting, faint = nothing to review */}
+
+                {/* Net R — the day's outcome, or a placeholder dot when nothing was taken */}
+                {traded ? (
+                  <span className="relative mt-1.5 flex items-center gap-1">
+                    <span className="text-[11px] font-black leading-none tabular-nums" style={{ color: netRColor(netR) }}>
+                      {formatTotalR(netR)}
+                    </span>
+                    {dayTradesFor.length > 1 && (
+                      <span className="rounded-full border border-border/70 bg-background/50 px-1 text-[8px] font-bold leading-[13px] text-muted-foreground/80">
+                        {dayTradesFor.length}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="relative mt-2 h-1 w-1 rounded-full bg-muted-foreground/25" />
+                )}
+
+                {/* Review state — a filled check once the day has been worked
+                    through, an open ring while it is still waiting. */}
                 <span
                   aria-hidden
                   className={cn(
-                    "h-1.5 w-1.5 rounded-full",
+                    "relative mt-2 flex h-4 w-4 items-center justify-center rounded-full border transition-colors",
                     done
-                      ? "bg-primary"
+                      ? "border-transparent bg-primary text-primary-foreground"
                       : traded
-                      ? "border border-primary/60 bg-transparent"
-                      : "bg-muted-foreground/20"
+                      ? "border-primary/60 text-transparent"
+                      : "border-border/50 text-transparent"
                   )}
-                />
+                >
+                  <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
+                </span>
               </button>
             );
           })}
         </div>
 
-        {/* Legend — three states, spelled out once */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/40 px-4 py-2 text-[10px] text-muted-foreground">
+        {/* Legend — review state first, outcome colours second */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/40 px-3 py-2 text-[10px] text-muted-foreground sm:px-4">
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Reviewed
+            <span className="flex h-3 w-3 items-center justify-center rounded-full bg-primary" /> Reviewed
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full border border-primary/60" /> Traded, not reviewed
+            <span className="h-3 w-3 rounded-full border border-primary/60" /> To review
           </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/20" /> No trades
+          <span className="ml-auto inline-flex items-center gap-2.5">
+            <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: WIN_COLOR }} /> Win</span>
+            <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: LOSS_COLOR }} /> Loss</span>
+            <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: BE_COLOR }} /> B/E</span>
           </span>
         </div>
       </AccentPanel>

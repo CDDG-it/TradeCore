@@ -14,6 +14,7 @@ import {
 } from "@/lib/supabase/queries";
 import { computeMindScore, bandColorFor, type MindScore } from "@/lib/mind-score/mind-score";
 import { tradeR, instrumentName, winRateOf } from "@/lib/journal/weeks";
+import { resultColor, resultBands, netRColor, inOrder } from "@/lib/journal/colors";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, CommitmentAdherenceLog } from "@/lib/types";
@@ -725,7 +726,12 @@ function HabitsCard({ habits, doneToday, pendingHabit, onToggle }: {
   );
 }
 
-/* ── Journal — this week (compact) ────────────────────────────────────── */
+/* ── Journal — this week ───────────────────────────────────────────────────
+   A day is not one outcome. When several trades were taken, the card is split
+   into one band per trade in the order they were logged — a break-even next to
+   a loss reads as half amber, half red — so a mixed day can never be mistaken
+   for a single result. The net R keeps its own colour. */
+
 function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; r: number }[] }) {
   return (
     <div className={cn(CARD_BASE, "h-full flex flex-col")}>
@@ -743,8 +749,12 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
       <div className="grid grid-cols-7 gap-2 flex-1 min-h-0">
         {days.map(({ date, trades: dt, r }) => {
           const has = dt.length > 0;
-          const color = r > 0 ? GREEN : r < 0 ? RED : AMBER;
+          // Chronological, so the bands run in the order the day actually went.
+          const ordered = inOrder(dt);
+          const colors = ordered.map(resultColor);
+          const netColor = netRColor(r);
           const today = isToday(date);
+          const shown = ordered.slice(0, 3);
           return (
             <Link
               key={date.toISOString()}
@@ -752,55 +762,95 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
               // to its entry and offers a picker when the day holds several.
               href={has ? `/journal?day=${format(date, "yyyy-MM-dd")}` : "/journal"}
               className={cn(
-                "group/day relative flex flex-col items-center rounded-xl border px-1 py-3 overflow-hidden",
+                "group/day relative flex flex-col items-center rounded-xl border px-1 pb-2.5 pt-3 overflow-hidden",
                 "transition-all duration-300 ease-out hover:-translate-y-1",
                 today ? "border-primary/50" : "border-border/60"
               )}
-              style={has ? { background: alpha(color, 9) } : undefined}
+              style={has ? { background: resultBands(ordered, 14) } : undefined}
             >
-              {/* Hover accent — top hairline in the day's colour */}
-              <span
-                className="pointer-events-none absolute inset-x-2 top-0 h-px opacity-0 transition-opacity duration-300 group-hover/day:opacity-100"
-                style={{ background: has ? `linear-gradient(90deg, transparent, ${alpha(color, 85)}, transparent)` : `linear-gradient(90deg, transparent, ${alpha("var(--muted-foreground)", 40)}, transparent)` }}
-              />
-              {/* Hover glow — soft radial in the day's colour */}
+              {/* Result bar — one full-strength segment per trade, the day's
+                  outcome at a glance even before the numbers are read. */}
+              {has && (
+                <span className="pointer-events-none absolute inset-x-0 top-0 flex h-[3px] gap-px">
+                  {colors.map((c, i) => (
+                    <span
+                      key={i}
+                      className="flex-1 transition-[filter] duration-300 group-hover/day:brightness-125"
+                      style={{ background: c, boxShadow: `0 0 8px ${alpha(c, 45)}` }}
+                    />
+                  ))}
+                </span>
+              )}
+              {/* Hairlines between the bands, so two trades read as two halves
+                  rather than one blended wash. */}
+              {colors.length > 1 && (
+                <span aria-hidden className="pointer-events-none absolute inset-0">
+                  {colors.slice(1).map((_, i) => (
+                    <span
+                      key={i}
+                      className="absolute inset-y-0 w-px"
+                      style={{
+                        left: `${(((i + 1) / colors.length) * 100).toFixed(3)}%`,
+                        background: `linear-gradient(180deg, transparent, ${alpha("var(--foreground)", 12)} 30%, transparent)`,
+                      }}
+                    />
+                  ))}
+                </span>
+              )}
+              {/* Hover glow — soft radial in the day's net colour */}
               <span
                 className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/day:opacity-100"
-                style={{ background: has ? `radial-gradient(120% 90% at 50% 100%, ${alpha(color, 22)}, transparent 65%)` : undefined }}
+                style={{ background: has ? `radial-gradient(120% 90% at 50% 100%, ${alpha(netColor, 18)}, transparent 65%)` : undefined }}
               />
+
               <span className={cn("relative text-[10px] font-semibold uppercase tracking-wide", today ? "text-primary" : "text-muted-foreground/60")}>{format(date, "EEE")}</span>
               <span className={cn("relative text-lg font-bold tabular-nums mt-0.5 transition-transform duration-300 group-hover/day:scale-110", today ? "text-primary" : "text-foreground/85")}>
                 {format(date, "d")}
               </span>
+
               {has ? (
-                <span className="relative mt-1.5 text-[13px] font-black tabular-nums transition-transform duration-300 group-hover/day:scale-105" style={{ color }}>
-                  {r > 0 ? "+" : ""}{r.toFixed(1)}R
+                <span className="relative mt-1 flex items-center gap-1">
+                  <span className="text-[13px] font-black tabular-nums transition-transform duration-300 group-hover/day:scale-105" style={{ color: netColor }}>
+                    {r > 0 ? "+" : ""}{r.toFixed(1)}R
+                  </span>
+                  {dt.length > 1 && (
+                    <span className="rounded-full border border-border/70 bg-background/50 px-1 text-[9px] font-bold leading-[14px] text-muted-foreground/80">
+                      {dt.length}
+                    </span>
+                  )}
                 </span>
               ) : (
                 <span className="relative mt-2 h-1.5 w-1.5 rounded-full bg-border transition-all duration-300 group-hover/day:bg-muted-foreground/50 group-hover/day:scale-125" />
               )}
 
-              {/* Per-trade: pair (bold), its RR, and the execution spelled out */}
+              {/* Per trade: pair, its R, and how cleanly it was run — each on the
+                  rail of its own result colour. */}
               {has && (
-                <div className="relative mt-2 w-full space-y-2 overflow-hidden">
-                  {dt.slice(0, 4).map((t) => {
-                    const tR = t.result === "win" ? GREEN : t.result === "loss" ? RED : AMBER;
+                <div className="relative mt-2 w-full space-y-1.5 overflow-hidden px-0.5">
+                  {shown.map((t) => {
+                    const c = resultColor(t);
                     return (
-                      <div key={t.id} className="text-center leading-tight">
-                        <p className="truncate text-[11px] font-bold text-foreground">{instrumentName(t.instrument)}</p>
-                        <p className="text-[10px] font-semibold tabular-nums" style={{ color: tR }}>
-                          {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
-                        </p>
+                      <div
+                        key={t.id}
+                        className="rounded-md border-l-2 bg-background/25 py-1 pl-1.5 pr-1 text-left leading-tight"
+                        style={{ borderColor: c }}
+                      >
+                        <div className="flex items-baseline justify-between gap-1">
+                          <p className="truncate text-[10px] font-bold text-foreground">{instrumentName(t.instrument)}</p>
+                          <p className="shrink-0 text-[10px] font-black tabular-nums" style={{ color: c }}>
+                            {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+                          </p>
+                        </div>
                         {t.execution_quality && (
-                          <p className="text-[11px] font-semibold" style={{ color: t.execution_quality === "good" ? GREEN : RED }}>
-                            {t.execution_quality === "good" ? "good execution" : "bad execution"}
+                          <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ color: t.execution_quality === "good" ? GREEN : RED }}>
+                            {t.execution_quality === "good" ? "good exec" : "bad exec"}
                           </p>
                         )}
                       </div>
                     );
                   })}
-                  {dt.length > 4 && (
-                    <span className="block text-center text-[9px] text-muted-foreground/60">+{dt.length - 4} more</span>
+                  {ordered.length > shown.length && (
+                    <span className="block text-center text-[9px] text-muted-foreground/60">+{ordered.length - shown.length} more</span>
                   )}
                 </div>
               )}
@@ -809,10 +859,11 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
         })}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-border/40 flex items-center gap-4 text-[10px] text-muted-foreground/70">
+      <div className="mt-3 pt-3 border-t border-border/40 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-muted-foreground/70">
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: GREEN }} /> Win</span>
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} /> Loss</span>
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: AMBER }} /> B/E</span>
+        <span className="ml-auto hidden sm:inline text-muted-foreground/50">A split card = several trades that day</span>
       </div>
     </div>
   );
