@@ -19,6 +19,7 @@ import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { SESSIONS, sessionState } from "@/lib/gmi/sessions";
 import { Ticks, Label, gridBackground } from "@/components/gmi/pane";
+import { MobileSubnav } from "@/components/layout/mobile-nav";
 
 type Tab = "overview" | "markets" | "futures" | "news" | "calendar" | "flow";
 
@@ -125,10 +126,10 @@ export default function GlobalMarketsPage() {
   }, [tab]);
 
   return (
-    // The desk fills the viewport on anything laptop-sized and up; below that it
-    // falls back to ordinary flow so a phone can still scroll through it.
-    // 7.5rem = the top nav (3.5rem) plus the page gutter above and below it.
-    <div className="relative flex flex-col gap-0 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
+    // The desk fills the viewport at every size: `fill-phone` (globals.css)
+    // measures out what the phone chrome leaves, and 7.5rem — the top nav plus
+    // the page gutter above and below it — does the same on laptops and up.
+    <div className="fill-phone relative flex flex-col gap-0 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
       <div
         className="relative flex min-h-0 flex-1 flex-col border border-border/60"
         style={{ ...gridBackground, backgroundColor: a_bg }}
@@ -151,7 +152,7 @@ export default function GlobalMarketsPage() {
         {/* ── Index ────────────────────────────────────────────────────────
             Words and numbers, no icons: the section you are in is the one
             whose number is lit and whose name is underscored. */}
-        <nav className="scrollbar-none flex shrink-0 items-stretch overflow-x-auto border-b border-border/50">
+        <nav className="scrollbar-none hidden shrink-0 items-stretch overflow-x-auto border-b border-border/50 lg:flex">
           {TABS.map((t) => {
             const on = t.key === tab;
             return (
@@ -184,8 +185,14 @@ export default function GlobalMarketsPage() {
           </span>
         </nav>
 
+        {/* Phone: the same index, docked above the bottom tab bar. */}
+        <MobileSubnav items={TABS} value={tab} onChange={setTab} label="Global Markets sections" />
+
         {/* ── Working area ─────────────────────────────────────────────── */}
-        <div className="min-h-0 flex-1 p-2 lg:p-2.5">{content}</div>
+        {/* On a laptop the working area holds still and each pane scrolls
+            itself. A phone has no room for that: the area scrolls as one and
+            the panes take their natural height. */}
+        <div className="min-h-0 flex-1 overflow-y-auto p-1.5 sm:p-2 lg:overflow-hidden lg:p-2.5">{content}</div>
       </div>
     </div>
   );

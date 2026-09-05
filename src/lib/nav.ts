@@ -12,6 +12,8 @@ export interface AppTab {
   group: string | null;
   /** Feature is announced but not yet live — shown with a "Soon" badge and not navigable. */
   soon?: boolean;
+  /** Short label for the phone tab bar, where a full name would wrap. */
+  short?: string;
 }
 
 export const APP_TABS: AppTab[] = [
@@ -32,10 +34,14 @@ export const APP_TABS: AppTab[] = [
  * The trimmed top-bar navigation. The Trading pages (Journal, Analysis,
  * Analytics, Accounts) are reached from the Dashboard hub instead, keeping the
  * bar itself down to the four primary destinations.
+ *
+ * On phones this same list becomes the fixed bottom tab bar, which is why every
+ * entry carries a `short` label — "MC Trade Therapist" cannot survive a quarter
+ * of a 375px screen.
  */
 export const PRIMARY_NAV: AppTab[] = [
-  { label: "Dashboard", href: "/dashboard", group: null },
-  { label: "My Edge", href: "/psychological-edge", group: null },
-  { label: "MC Trade Therapist", href: "/trade-therapist", group: null },
-  { label: "Global Markets", href: "/news-city", group: null },
+  { label: "Dashboard", href: "/dashboard", group: null, short: "Home" },
+  { label: "My Edge", href: "/psychological-edge", group: null, short: "My Edge" },
+  { label: "MC Trade Therapist", href: "/trade-therapist", group: null, short: "Therapist" },
+  { label: "Global Markets", href: "/news-city", group: null, short: "Markets" },
 ];

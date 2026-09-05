@@ -4,12 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { Menu, X, Settings, User as UserIcon, LogOut, ChevronDown } from "lucide-react";
+import { X, Settings, User as UserIcon, LogOut, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { PRIMARY_NAV } from "@/lib/nav";
-
-const TURQUOISE = "#14B8A6";
 
 const isActive = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(href + "/");
@@ -110,77 +108,52 @@ export function TopNav() {
             <div className="hidden lg:flex items-center gap-2 shrink-0">
               <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} onSignOut={signOut} />
             </div>
-            <button type="button" onClick={() => setOpen(true)} aria-label="Open menu"
-              className="inline-flex lg:hidden items-center justify-center rounded-lg h-9 w-9 border border-sidebar-border text-sidebar-foreground/70">
-              <Menu className="w-5 h-5" />
+            {/* Phone: the profile lives top-right, the way every app does it —
+                navigation itself has moved to the bottom tab bar. */}
+            <button type="button" onClick={() => setOpen(true)} aria-label="Open profile menu"
+              className="inline-flex lg:hidden items-center justify-center rounded-full">
+              <AvatarChip initials={initials} size={34} />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile full-screen overlay — sibling of the backdrop-filtered header */}
+      {/* Phone profile sheet — identity and account actions only; the primary
+          destinations are in the bottom tab bar. */}
       {open && (
-        <div className="lg:hidden fixed inset-0 z-50 flex flex-col" style={{ background: "var(--sidebar)" }}>
-          <div className="flex h-14 items-center justify-between px-4 border-b border-sidebar-border">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={38} height={38} className="h-9 w-9" />
-            <button type="button" onClick={() => setOpen(false)} aria-label="Close menu"
-              className="inline-flex items-center justify-center rounded-lg h-9 w-9 border border-sidebar-border text-sidebar-foreground/70">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-4 py-5 space-y-1">
-            {PRIMARY_NAV.map((tab) => {
-              const active = isActive(pathname, tab.href);
-              if (tab.soon) {
-                return (
-                  <div
-                    key={tab.href}
-                    aria-disabled
-                    className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-sidebar-foreground/40"
-                  >
-                    {tab.label}
-                    <SoonBadge />
-                  </div>
-                );
-              }
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    "flex items-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors",
-                    active ? "text-foreground" : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
-                  )}
-                  style={active ? { background: "rgba(20,184,166,0.14)" } : undefined}
-                >
-                  {tab.label}
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="border-t border-sidebar-border p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(20,184,166,0.15)" }}>
-                <span className="text-xs font-bold" style={{ color: TURQUOISE }}>{initials}</span>
-              </div>
+        <div className="lg:hidden fixed inset-0 z-50" onClick={() => setOpen(false)}>
+          <div className="absolute inset-0" style={{ background: "rgba(2,6,17,0.6)" }} />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute right-3 top-3 w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-border p-3 shadow-2xl"
+            style={{ background: "color-mix(in oklch, var(--card) 96%, transparent)" }}
+          >
+            <div className="flex items-center gap-3 px-1 pb-3">
+              <AvatarChip initials={initials} size={42} />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-sidebar-foreground/85 truncate">{displayName}</p>
-                <p className="text-xs text-sidebar-foreground/40 truncate">{user?.email}</p>
+                <p className="truncate text-sm font-semibold leading-tight">{displayName}</p>
+                <p className="truncate text-xs leading-tight text-muted-foreground">{user?.email}</p>
               </div>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground">
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Link href="/profile" onClick={() => setOpen(false)} className="flex items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-2 text-xs font-medium text-sidebar-foreground/70">
-                <UserIcon className="w-3.5 h-3.5" /> Profile
+
+            <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+            <div className="space-y-1 pt-2">
+              <Link href="/profile" onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 rounded-xl p-3 text-sm font-medium text-foreground/85">
+                <UserIcon className="h-4 w-4 text-muted-foreground" /> Profile
               </Link>
-              <Link href="/settings" onClick={() => setOpen(false)} className="flex items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-2 text-xs font-medium text-sidebar-foreground/70">
-                <Settings className="w-3.5 h-3.5" /> Settings
+              <Link href="/settings" onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 rounded-xl p-3 text-sm font-medium text-foreground/85">
+                <Settings className="h-4 w-4 text-muted-foreground" /> Settings
               </Link>
-              <button onClick={signOut} className="flex items-center justify-center gap-1.5 rounded-lg border border-sidebar-border py-2 text-xs font-medium text-destructive">
-                <LogOut className="w-3.5 h-3.5" /> Sign out
+              <button onClick={signOut}
+                className="flex w-full items-center gap-2.5 rounded-xl bg-destructive/10 p-3 text-sm font-medium text-destructive">
+                <LogOut className="h-4 w-4" /> Sign out
               </button>
             </div>
           </div>

@@ -75,7 +75,7 @@ export function CalendarTab() {
   const weeks = Math.ceil(grid.length / 7);
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 gap-2 lg:grid-cols-12">
+    <div className="grid grid-cols-1 gap-2 lg:h-full lg:min-h-0 lg:grid-cols-12">
       {/* ── Month ─────────────────────────────────────────────────────── */}
       <Pane
         index="01"
@@ -152,7 +152,10 @@ export function CalendarTab() {
                         <span
                           key={e.id}
                           // Filled = the print landed. Hollow = an appointment.
-                          className={`truncate border-l-2 pl-1 text-[11px] leading-[13px] ${
+                          // A phone cell is too narrow for the name: the entry
+                          // becomes a coloured bar, and the day panel below
+                          // spells out what it is.
+                          className={`h-[5px] truncate border-l-2 pl-1 text-[11px] leading-[13px] sm:h-auto ${
                             e.released ? "text-foreground/85" : "text-foreground/80"
                           }`}
                           style={{
@@ -170,7 +173,7 @@ export function CalendarTab() {
               })}
             </div>
 
-            <div className="flex shrink-0 items-center gap-4 border-t border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
+            <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2" style={{ background: IMPORTANCE.high }} /> high impact</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2" style={{ background: IMPORTANCE.medium }} /> medium</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-3 border-l-2" style={{ borderColor: IMPORTANCE.high }} /> scheduled, no print yet</span>
@@ -186,7 +189,7 @@ export function CalendarTab() {
         label={isToday(parseISO(selected)) ? "Today" : format(parseISO(selected), "EEE d MMM")}
         right={<Label className="tracking-[0.18em]">{selectedEvents.length || "no"} releases</Label>}
         scroll
-        className="lg:col-span-4 xl:col-span-3"
+        className="min-h-[220px] lg:col-span-4 xl:col-span-3"
       >
         {selectedEvents.length === 0 ? (
           <Empty label="Nothing scheduled" hint="No US macro release on this date." />

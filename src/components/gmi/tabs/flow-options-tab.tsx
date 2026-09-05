@@ -99,7 +99,7 @@ export function FlowOptionsTab() {
   const shorts = (snapshot?.instruments ?? []).filter((i) => i.bias === "short").length;
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 gap-2 lg:grid-cols-12">
+    <div className="grid grid-cols-1 gap-2 lg:h-full lg:min-h-0 lg:grid-cols-12">
       {/* ── The board ─────────────────────────────────────────────────── */}
       <Pane
         index="01"
@@ -115,7 +115,7 @@ export function FlowOptionsTab() {
           </span>
         }
         bodyClassName="flex flex-col p-0"
-        className="lg:col-span-8"
+        className="min-h-[400px] lg:col-span-8"
       >
         {status === "loading" ? (
           <Empty label="Loading CFTC positioning" />
@@ -123,14 +123,16 @@ export function FlowOptionsTab() {
           <Empty label="CFTC feed unreachable" hint="The report updates weekly; the desk will pick it up on the next load." />
         ) : (
           <>
-            <div className="grid shrink-0 grid-cols-[2.6rem_1fr_4.4rem_3.8rem_7rem_5rem_1fr] items-center gap-x-2 border-b border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
+            <div className="grid shrink-0 grid-cols-[2.4rem_1fr_4.2rem_3.6rem] items-center gap-x-2 border-b border-border/30 px-3 py-1.5 lg:grid-cols-[2.6rem_1fr_4.4rem_3.8rem_7rem_5rem_1fr] text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
               <span>Sym</span>
               <span>Market</span>
               <span className="text-right">Net specs</span>
               <span className="text-right">Δ week</span>
-              <span>1-yr range</span>
-              <span className="text-right">Net/OI</span>
-              <span className="pl-2">Read</span>
+              {/* Below a laptop the board keeps the four columns that decide
+                  what you look at; the rest is in the market panel. */}
+              <span className="hidden lg:block">1-yr range</span>
+              <span className="hidden text-right lg:block">Net/OI</span>
+              <span className="hidden pl-2 lg:block">Read</span>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
@@ -141,7 +143,7 @@ export function FlowOptionsTab() {
                   <button
                     key={inst.symbol}
                     onClick={() => setPicked(inst.symbol)}
-                    className={`grid w-full grid-cols-[2.6rem_1fr_4.4rem_3.8rem_7rem_5rem_1fr] items-center gap-x-2 border-b border-border/20 px-3 py-[9px] text-left transition-colors ${
+                    className={`grid w-full grid-cols-[2.4rem_1fr_4.2rem_3.6rem] items-center gap-x-2 border-b border-border/20 px-3 py-[9px] text-left transition-colors lg:grid-cols-[2.6rem_1fr_4.4rem_3.8rem_7rem_5rem_1fr] ${
                       on ? "bg-primary/[0.09]" : "hover:bg-muted/20"
                     }`}
                   >
@@ -161,16 +163,16 @@ export function FlowOptionsTab() {
                     >
                       {signed(inst.netSpecChg)}
                     </span>
-                    <span className="flex items-center gap-1.5">
+                    <span className="hidden items-center gap-1.5 lg:flex">
                       <RangeRail value={inst.cotIndex} />
                       <span className="w-6 shrink-0 text-right text-[11px] tabular-nums text-foreground/75">
                         {Math.round(inst.cotIndex)}
                       </span>
                     </span>
-                    <span className="text-right text-[12px] tabular-nums text-foreground/80">
+                    <span className="hidden text-right text-[12px] tabular-nums text-foreground/80 lg:block">
                       {(inst.netShareOfOi * 100).toFixed(0)}%
                     </span>
-                    <span className="min-w-0 truncate pl-2 text-[11px] font-semibold" style={{ color: tone }}>
+                    <span className="hidden min-w-0 truncate pl-2 text-[11px] font-semibold lg:block" style={{ color: tone }}>
                       {inst.signal.label}
                     </span>
                   </button>
@@ -187,12 +189,12 @@ export function FlowOptionsTab() {
       </Pane>
 
       {/* ── The selected market ───────────────────────────────────────── */}
-      <div className="flex min-h-0 flex-col gap-2 lg:col-span-4">
+      <div className="flex flex-col gap-2 lg:min-h-0 lg:col-span-4">
         <Pane
           index="02"
           label={selected ? `${selected.symbol} · ${selected.label}` : "Market"}
           scroll
-          className="min-h-0 flex-1"
+          className="min-h-[300px] lg:min-h-0 lg:flex-1"
         >
           {!selected ? (
             <Empty label="No market selected" />
@@ -262,7 +264,7 @@ export function FlowOptionsTab() {
           )}
         </Pane>
 
-        <Pane index="03" label="ETF creations & redemptions" className="h-[120px] shrink-0">
+        <Pane index="03" label="ETF creations & redemptions" className="shrink-0 lg:h-[120px]">
           <Empty
             label="Not available"
             hint="Reliable QQQ / SPY / IWM flow isn't on the free sources this desk uses. Wire up a provider and this pane fills itself."

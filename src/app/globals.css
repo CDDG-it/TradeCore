@@ -734,3 +734,30 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     box-shadow: 0 10px 20px rgba(20, 184, 166, 0);
   }
 }
+
+/* ── Phone shell — fixed bottom tab bar ──
+   Below `lg` the primary navigation is a bar pinned to the bottom of the
+   viewport, and a page's own tabs dock just above it. Both are `position:
+   fixed`, so the content column has to reserve their height itself. Desktop
+   (>=1024px) is untouched: no bars, no padding. */
+@media (max-width: 1023px) {
+  .app-shell {
+    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom));
+  }
+  html[data-subnav="1"] .app-shell {
+    padding-bottom: calc(7.25rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* A page that is built as a fixed desk (Global Markets) keeps that shape on a
+   phone: it takes exactly what the top nav, the gutter and the bottom bars
+   leave, and scrolls inside its own panes. */
+@media (max-width: 1023px) {
+  .fill-phone {
+    height: calc(100dvh - 4.5rem - 4.25rem - env(safe-area-inset-bottom));
+    overflow: hidden;
+  }
+  html[data-subnav="1"] .fill-phone {
+    height: calc(100dvh - 4.5rem - 7.25rem - env(safe-area-inset-bottom));
+  }
+}

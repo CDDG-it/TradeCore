@@ -10,7 +10,7 @@
  * volatility delayed quotes. A country is its ISO code — no flags, no ornament.
  */
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fmtPrice, toneFor, useGmi, timeAgo } from "@/lib/gmi/client";
 import type { Quote, MacroSeries } from "@/lib/gmi/types";
@@ -51,12 +51,31 @@ function macroVal(s: MacroSeries): string {
 
 const bp = (v: number | null) => (v == null ? "—" : `${v > 0 ? "+" : ""}${(v * 100).toFixed(0)}bp`);
 
+/**
+ * True once the viewport is at least `px` wide. Used to keep the globe — and
+ * three.js with it — off phones entirely rather than merely hidden: at 375px a
+ * spinning world under a readout card is decoration you pay megabytes for.
+ */
+function useWide(px = 640) {
+  const query = `(min-width:${px}px)`;
+  return useSyncExternalStore(
+    (cb) => {
+      const m = window.matchMedia(query);
+      m.addEventListener("change", cb);
+      return () => m.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(query).matches,
+    () => false
+  );
+}
+
 export function MarketsTab() {
   const { env: quotesEnv } = useGmi<Quote[]>("/api/gmi/quotes", 60_000);
   const { env: macroEnv } = useGmi<MacroSeries[]>("/api/gmi/macro", 10 * 60_000);
   const { env: gyEnv } = useGmi<GlobalYield[]>("/api/gmi/global-yields", 6 * 60 * 60_000);
   const [selected, setSelected] = useState<string | null>("us");
   const [sort, setSort] = useState("yield");
+  const wide = useWide();
 
   const q = new Map((quotesEnv?.data ?? []).map((x) => [x.symbol, x]));
   const byId = new Map((macroEnv?.data ?? []).map((s) => [s.id, s]));
@@ -93,21 +112,23 @@ export function MarketsTab() {
   const liquidity = ["EFFR", "WALCL", "WRESBAL", "RRPONTSYD", "WTREGEN", "M2SL"].map((id) => byId.get(id)).filter(Boolean) as MacroSeries[];
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2">
+    <div className="flex min-h-full flex-col gap-2 lg:h-full lg:min-h-0">
       {/* ── World ─────────────────────────────────────────────────────── */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-2 lg:min-h-0 lg:flex-1 lg:grid-cols-12">
         <Pane
           index="01"
           label="Sovereign yields, mapped"
-          right={<Label className="tracking-[0.18em]">select an economy</Label>}
+          right={<Label className="hidden tracking-[0.18em] sm:inline">select an economy</Label>}
           bodyClassName="p-0"
-          className="min-h-[280px] lg:col-span-7"
+          className="sm:min-h-[260px] lg:col-span-7"
         >
+          {/* On a phone the pane is the readout itself — the economy is picked
+              from the table below, not from a 375px-wide globe. */}
           <div className="relative h-full w-full overflow-hidden" style={{ background: "#0a1019" }}>
-            <WorldMap3D markers={markers} selected={selected} onSelect={setSelected} />
+            {wide && <WorldMap3D markers={markers} selected={selected} onSelect={setSelected} />}
 
             {sel && (
-              <div className="pointer-events-none absolute left-3 top-3 w-[188px] border border-border/50 bg-background/80 p-3 backdrop-blur-md">
+              <div className="border-border/50 bg-background/80 m-3 border p-3 backdrop-blur-md sm:pointer-events-none sm:absolute sm:left-3 sm:top-3 sm:m-0 sm:w-[188px]">
                 <div className="flex items-baseline gap-2">
                   <span className="font-mono text-[11px] font-bold tracking-[0.18em] text-primary">{sel.id.toUpperCase()}</span>
                   <span className="truncate text-[12px] text-foreground/90">{sel.country}</span>
@@ -154,7 +175,7 @@ export function MarketsTab() {
           label="Sovereign 10Y"
           right={<Switch options={SORTS} value={sort} onChange={setSort} />}
           bodyClassName="p-0"
-          className="lg:col-span-5"
+          className="min-h-[340px] lg:col-span-5"
         >
           {yields.length === 0 ? (
             <Empty label="Loading yields" />
@@ -212,9 +233,11 @@ export function MarketsTab() {
       {/* ── United States ─────────────────────────────────────────────── */}
       <div className="grid shrink-0 grid-cols-1 gap-2 lg:h-[236px] lg:grid-cols-12">
         <Pane index="03" label="US Treasury curve" right={<Meta env={macroEnv} />} className="lg:col-span-5" bodyClassName="p-2">
+          {/* Chart beside the numbers on a laptop; stacked on a phone, where
+              375px cannot carry both. */}
           {curve.length > 1 ? (
-            <div className="flex h-full min-h-0 gap-2">
-              <div className="min-w-0 flex-1">
+            <div className="flex flex-col gap-2 sm:h-full sm:min-h-0 sm:flex-row">
+              <div className="h-[150px] w-full sm:h-auto sm:min-w-0 sm:flex-1">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={curve} margin={{ top: 8, right: 6, left: -18, bottom: 0 }}>
                     <defs>
@@ -231,7 +254,7 @@ export function MarketsTab() {
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-              <div className="w-[136px] shrink-0 overflow-y-auto border-l border-border/30 pl-2">
+              <div className="w-full border-t border-border/30 pt-1 sm:w-[136px] sm:shrink-0 sm:overflow-y-auto sm:border-l sm:border-t-0 sm:pl-2 sm:pt-0">
                 {rates.map((s) => (
                   <Field
                     key={s.id}

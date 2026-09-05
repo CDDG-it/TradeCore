@@ -10,6 +10,7 @@ import { DailyBestTrade } from "@/components/trade-therapist/daily-best-trade";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
 import { PreMarketExercises } from "@/components/trade-therapist/pre-market-exercises";
 import { CommitmentsPanel } from "@/components/trade-therapist/commitments-panel";
+import { MobileSubnav } from "@/components/layout/mobile-nav";
 import type { TradeJournalEntry } from "@/lib/types";
 
 /**
@@ -25,9 +26,9 @@ import type { TradeJournalEntry } from "@/lib/types";
  * Every read is deterministic and traces back to the trader's own history.
  */
 type TherapistTab = "daily" | "premarket" | "commitments" | "reviews";
-const TABS: { key: TherapistTab; label: string }[] = [
-  { key: "daily", label: "Best trades" },
-  { key: "premarket", label: "Pre-market exercises" },
+const TABS: { key: TherapistTab; label: string; short?: string }[] = [
+  { key: "daily", label: "Best trades", short: "Best trades" },
+  { key: "premarket", label: "Pre-market exercises", short: "Pre-market" },
   { key: "commitments", label: "Commitments" },
   { key: "reviews", label: "Reviews" },
 ];
@@ -36,7 +37,7 @@ const TABS: { key: TherapistTab; label: string }[] = [
 function GlassToggle({ tab, onChange }: { tab: TherapistTab; onChange: (t: TherapistTab) => void }) {
   return (
     <div
-      className="relative flex w-full sm:w-fit items-center gap-1 rounded-xl border border-border/50 p-1"
+      className="relative hidden w-full sm:w-fit items-center gap-1 rounded-xl border border-border/50 p-1 lg:flex"
       style={{
         background: "color-mix(in oklch, var(--card) 70%, transparent)",
         backdropFilter: "blur(10px)",
@@ -103,6 +104,9 @@ export default function TradeTherapistPage() {
         </h1>
         <GlassToggle tab={tab} onChange={setTab} />
       </div>
+
+      {/* Phone: the same tabs, docked above the bottom bar. */}
+      <MobileSubnav items={TABS} value={tab} onChange={setTab} label="Therapist sections" />
 
       <PageWrapper className="min-h-0 flex-1 space-y-0">
         {tab === "daily" && (

@@ -59,8 +59,8 @@ export function OverviewTab() {
   const scheduled: CalendarEvent[] = [...(monthEnv?.data?.events ?? []), ...(nextEnv?.data?.events ?? [])];
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2">
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-12">
+    <div className="flex min-h-full flex-col gap-2 lg:h-full lg:min-h-0">
+      <div className="grid grid-cols-1 gap-2 lg:min-h-0 lg:flex-1 lg:grid-cols-12">
         {/* ── The wire ─────────────────────────────────────────────────── */}
         <Pane
           index="01"
@@ -68,7 +68,7 @@ export function OverviewTab() {
           right={<Label className="tracking-[0.18em]">{articles.length} items</Label>}
           scroll
           bodyClassName="px-0 py-0"
-          className="lg:col-span-7"
+          className="min-h-[280px] lg:col-span-7"
         >
           {newsEnv?.status === "unavailable" ? (
             <Empty label="Wire down" hint="The news provider is unavailable. Every other section is unaffected." />
@@ -115,7 +115,7 @@ export function OverviewTab() {
           label="Latest prints"
           right={<Label className="tracking-[0.18em]">actual · vs prior</Label>}
           scroll
-          className="lg:col-span-5"
+          className="min-h-[260px] lg:col-span-5"
         >
           {prints.length === 0 ? (
             <Empty label="Loading" />
@@ -150,11 +150,13 @@ export function OverviewTab() {
       <Pane
         index="03"
         label="Week ahead"
-        right={<Label className="tracking-[0.18em]">US macro · schedule from FRED</Label>}
+        right={<Label className="hidden tracking-[0.18em] sm:inline">US macro · schedule from FRED</Label>}
         bodyClassName="p-0"
-        className="h-[132px] shrink-0"
+        className="shrink-0 lg:h-[132px]"
       >
-        <div className="grid h-full grid-cols-7 divide-x divide-border/30">
+        {/* Seven narrow columns need a laptop; on a phone the same week reads
+            as seven rows, day on the left and what it holds on the right. */}
+        <div className="grid grid-cols-1 divide-y divide-border/30 lg:h-full lg:grid-cols-7 lg:divide-x lg:divide-y-0">
           {week.map((day) => {
             const key = format(day, "yyyy-MM-dd");
             const events = scheduled.filter((e) => e.date === key);
@@ -163,7 +165,7 @@ export function OverviewTab() {
             return (
               <div
                 key={key}
-                className="flex min-w-0 flex-col gap-1 p-2"
+                className="flex min-w-0 items-baseline gap-3 p-2 lg:flex-col lg:items-stretch lg:gap-1"
                 style={
                   isToday
                     ? { background: a("var(--primary)", 6) }
@@ -174,7 +176,7 @@ export function OverviewTab() {
                     : undefined
                 }
               >
-                <div className="flex items-baseline gap-1.5">
+                <div className="flex w-[4.5rem] shrink-0 items-baseline gap-1.5 lg:w-auto">
                   <span className={`text-[11px] font-semibold uppercase tracking-wider ${isToday ? "text-primary" : "text-foreground/75"}`}>
                     {isToday ? "Today" : format(day, "EEE")}
                   </span>
@@ -182,7 +184,7 @@ export function OverviewTab() {
                     {format(day, "d")}
                   </span>
                 </div>
-                <div className="min-h-0 flex-1 space-y-[3px] overflow-hidden">
+                <div className="min-w-0 flex-1 space-y-[3px] lg:min-h-0 lg:overflow-hidden">
                   {events.length === 0 ? (
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
                       {weekend ? "market closed" : "no releases"}

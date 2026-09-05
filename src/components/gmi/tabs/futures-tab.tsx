@@ -93,9 +93,11 @@ export function FuturesTab() {
   const pos = lo != null && hi != null && px != null && hi > lo ? Math.min(1, Math.max(0, (px - lo) / (hi - lo))) : null;
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 gap-2 lg:grid-cols-12">
+    <div className="grid grid-cols-1 gap-2 lg:h-full lg:min-h-0 lg:grid-cols-12">
       {/* ── Board ─────────────────────────────────────────────────────── */}
-      <Pane index="01" label="Board" bodyClassName="p-0" scroll className="lg:col-span-2">
+      {/* The board is one column on a laptop; on a phone the same contracts
+          tile two-up, so picking one costs no scrolling. */}
+      <Pane index="01" label="Board" bodyClassName="grid grid-cols-2 p-0 sm:grid-cols-3 lg:block" scroll className="lg:col-span-2">
         {INSTRUMENTS.map((it) => {
           const q = new Map((quotesEnv?.data ?? []).map((x) => [x.symbol, x])).get(it.s);
           const on = it.s === sym;
@@ -128,7 +130,7 @@ export function FuturesTab() {
           </span>
         }
         bodyClassName="flex flex-col p-0"
-        className="min-h-[320px] lg:col-span-7"
+        className="min-h-[400px] lg:col-span-7 lg:min-h-[320px]"
       >
         {/* Reading line: price, move, and where in the day's range it sits */}
         <div className="flex shrink-0 flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b border-border/30 px-3 py-2">
@@ -181,7 +183,7 @@ export function FuturesTab() {
           )}
         </div>
 
-        <div className="grid shrink-0 grid-cols-4 divide-x divide-border/30 border-t border-border/30">
+        <div className="grid shrink-0 grid-cols-2 divide-x divide-border/30 border-t border-border/30 sm:grid-cols-4">
           {[
             { k: "Prev close", v: fmtPrice(live?.prevClose) },
             { k: "Day high", v: fmtPrice(live?.dayHigh) },
@@ -202,7 +204,7 @@ export function FuturesTab() {
         label="Cross-asset"
         right={<Switch options={CROSS_RANGES} value={rangeKey} onChange={setRangeKey} />}
         bodyClassName="flex flex-col p-0"
-        className="lg:col-span-3"
+        className="min-h-[420px] lg:col-span-3"
       >
         {symbols.length === 0 ? (
           <Empty label="Loading" />

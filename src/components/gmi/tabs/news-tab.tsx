@@ -50,7 +50,7 @@ export function NewsTab() {
   const [lead, ...rest] = filtered;
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 gap-2 lg:grid-cols-12">
+    <div className="grid grid-cols-1 gap-2 lg:h-full lg:min-h-0 lg:grid-cols-12">
       {/* ── Lead ──────────────────────────────────────────────────────── */}
       <Pane index="01" label="Lead story" className="min-h-[220px] lg:col-span-4" bodyClassName="p-0">
         {env?.status === "unavailable" ? (
@@ -98,11 +98,11 @@ export function NewsTab() {
               placeholder="filter…"
               className="w-28 border-b border-border/50 bg-transparent pb-px text-[12px] text-foreground outline-none placeholder:text-foreground/65 focus:border-primary"
             />
-            <Label className="tracking-[0.18em]">{filtered.length} items</Label>
+            <Label className="hidden tracking-[0.18em] sm:inline">{filtered.length} items</Label>
           </span>
         }
         bodyClassName="flex flex-col p-0"
-        className="lg:col-span-8"
+        className="min-h-[420px] lg:col-span-8"
       >
         {/* Asset filter — words, no chips-with-icons */}
         <div className="scrollbar-none flex shrink-0 items-center gap-3 overflow-x-auto border-b border-border/30 px-3 py-1.5">

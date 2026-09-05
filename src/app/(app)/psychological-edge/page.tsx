@@ -9,6 +9,7 @@ import { MindScoreBreakdown } from "@/components/mind-score/mindscore-breakdown"
 import { TradingRulesEditor } from "@/components/habits/trading-rules";
 import { ConfluencesEditor } from "@/components/habits/confluences-editor";
 import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
+import { MobileSubnav } from "@/components/layout/mobile-nav";
 
 /**
  * My Edge — everything the trader controls away from the chart, in one place.
@@ -29,7 +30,7 @@ const GROUPS: { key: EdgeGroup; label: string; accent: string }[] = [
   { key: "strategy", label: "Strategy", accent: "#06B6D4" },
 ];
 
-const EDGE_TABS: { key: EdgeTab; group: EdgeGroup; label: string; blurb: string }[] = [
+const EDGE_TABS: { key: EdgeTab; group: EdgeGroup; label: string; short?: string; blurb: string }[] = [
   {
     key: "habits",
     group: "mind",
@@ -40,18 +41,21 @@ const EDGE_TABS: { key: EdgeTab; group: EdgeGroup; label: string; blurb: string 
     key: "mindscore",
     group: "mind",
     label: "MC Mindscore",
+    short: "Mindscore",
     blurb: "One number rolling your rule-following, daily habits and process work into a single read.",
   },
   {
     key: "rules",
     group: "strategy",
     label: "Rules & Confluences",
+    short: "Rules",
     blurb: "The non-negotiables and setups that define how you trade — surfaced when you log a trade.",
   },
   {
     key: "simulator",
     group: "strategy",
     label: "Pass Simulation",
+    short: "Simulation",
     blurb: "Pressure-test your edge against a funded account's rules across thousands of simulated runs.",
   },
 ];
@@ -64,7 +68,7 @@ const EDGE_TABS: { key: EdgeTab; group: EdgeGroup; label: string; blurb: string 
 function EdgeToggle({ tab, onChange }: { tab: EdgeTab; onChange: (t: EdgeTab) => void }) {
   return (
     <div
-      className="flex w-full flex-col gap-1 rounded-xl border border-border/50 p-1 sm:w-fit sm:flex-row sm:items-stretch sm:gap-0"
+      className="hidden w-full flex-col gap-1 rounded-xl border border-border/50 p-1 sm:w-fit sm:flex-row sm:items-stretch sm:gap-0 lg:flex"
       style={{
         background: "color-mix(in oklch, var(--card) 70%, transparent)",
         backdropFilter: "blur(10px)",
@@ -152,6 +156,9 @@ export default function MyEdgePage() {
         </div>
         <EdgeToggle tab={tab} onChange={setTab} />
       </div>
+
+      {/* Phone: the same four views, docked above the bottom bar. */}
+      <MobileSubnav items={EDGE_TABS} value={tab} onChange={setTab} label="My Edge sections" />
 
       <PageWrapper>
         {tab === "habits" && <HabitsView />}
