@@ -155,7 +155,7 @@ export default function MyEdgePage() {
         {tab === "habits" && <HabitsView />}
         {tab === "mindscore" && <MindScoreBreakdown />}
         {tab === "rules" && (
-          <div className="grid items-start gap-3 sm:gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 sm:gap-6 lg:grid-cols-2">
             <TradingRulesEditor />
             <ConfluencesEditor />
           </div>

@@ -137,7 +137,7 @@ export function MindScoreBreakdown() {
       </div>
 
       {/* The three parts + the work that lifts the score, side by side */}
-      <div className="grid gap-3 md:grid-cols-2 items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 md:grid-cols-2">
         <AccentPanel accent="primary" eyebrow="Breakdown" title="What makes up the score">
           <div className="mt-4 space-y-2">
           {score.components.map((comp) => {

@@ -215,7 +215,7 @@ export function CommitmentsPanel() {
 
       {/* The working area: what needs answering and what already stands, beside
           the form for writing the next one. Columns scroll, the page does not. */}
-      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
       <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
       {/* Open checks — the ask */}
       <section className="space-y-3">

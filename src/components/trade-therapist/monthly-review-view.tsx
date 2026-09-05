@@ -122,7 +122,7 @@ export function MonthlyReviewView({ month }: { month: string }) {
         <Metric label="Best week" value={data.bestWeek ? formatTotalR(data.bestWeek.totalR) : "—"} tone="text-success" />
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2 items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 lg:grid-cols-2">
         {/* Weeks */}
         <div className="rounded-2xl border border-border/60 bg-card p-4">
           <p className="text-sm font-semibold mb-2.5">Weeks</p>

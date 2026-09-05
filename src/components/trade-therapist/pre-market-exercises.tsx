@@ -141,7 +141,7 @@ export function PreMarketExercises({
             </div>
           </AccentPanel>
 
-          <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2">
+          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
             {/* Losses to prevent */}
             <section className="flex min-h-0 flex-col gap-2.5 overflow-y-auto pr-1">
               <h3 className="shrink-0 font-heading text-sm font-bold uppercase tracking-[0.14em] text-destructive/80">

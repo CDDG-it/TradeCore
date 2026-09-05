@@ -336,7 +336,7 @@ export function DailyBestTrade({
             </p>
           </div>
 
-          <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-2">
+          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
             {/* Left: trades taken + post-market analysis */}
             <div className="flex min-h-0 flex-col gap-3">
               <AccentPanel accent="primary" eyebrow="Execution" title="Trades taken" className="flex max-h-[38%] min-h-0 shrink-0 flex-col">

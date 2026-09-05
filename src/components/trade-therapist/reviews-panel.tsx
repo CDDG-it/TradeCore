@@ -70,9 +70,13 @@ export function ReviewsPanel() {
   const finishedWeeks = weeks.filter((w) => w.reviewable);
   const doneCount = finishedWeeks.filter((w) => written(w.review)).length;
   const pct = finishedWeeks.length ? Math.round((doneCount / finishedWeeks.length) * 100) : 0;
-  // Current streak of consecutive closed weeks with a written review (newest → back).
+  // Current streak of consecutive closed weeks with a written review (newest →
+  // back). The week that has only just closed is still yours to write, so an
+  // empty one there does not break the streak — the same way today never
+  // breaks a habit streak. It simply is not counted yet.
+  const chain = finishedWeeks[0] && !written(finishedWeeks[0].review) ? finishedWeeks.slice(1) : finishedWeeks;
   let streak = 0;
-  for (const w of finishedWeeks) { if (written(w.review)) streak++; else break; }
+  for (const w of chain) { if (written(w.review)) streak++; else break; }
 
   // Oldest → newest, so the strip reads like a timeline instead of a list.
   const strip = [...weeks].reverse();
@@ -94,7 +98,11 @@ export function ReviewsPanel() {
   const earlier = writtenNotes.slice(1, 5);
 
   return (
-    <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+    // `minmax(0,1fr)` on the single-column phone layout, not the implicit
+    // `auto`: an auto column is sized to its content's minimum, so the panels
+    // grew wider than the screen and their own `overflow-hidden` quietly cut
+    // the numbers and quotes off at the right edge.
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
       {/* LEFT — toggle + list.
           On a phone this drops below the progress: a year of week rows is a
           reference, not the thing you open the tab to see. */}
