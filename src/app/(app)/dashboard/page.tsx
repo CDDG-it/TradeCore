@@ -226,7 +226,9 @@ export default function DashboardPage() {
   return (
     // Fixed one-screen dashboard on desktop; on phones it flows and scrolls so
     // the stacked cards aren't squeezed into a single viewport height.
-    <div className="flex flex-col gap-3 lg:h-[calc(100dvh-7rem)] lg:overflow-hidden">
+    // 7.5rem = the top nav (3.5rem) plus the page gutter above and below it —
+    // anything less and the page keeps a stray scrollbar.
+    <div className="flex flex-col gap-3 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -307,8 +309,21 @@ function MindScoreOrb({ score, period, onPeriodChange }: {
   const color = pending ? TURQUOISE : hasData ? bandColorFor(target) : "var(--muted-foreground)";
   const filled = Math.round(prog * METER_BARS);
 
-  const comp = (key: "rules" | "habits" | "objectives") => score?.components.find((c) => c.key === key)?.value ?? null;
+  const comp = (key: "rules" | "habits" | "objectives") =>
+    score?.components.find((c) => c.key === key) ?? null;
   const objectives = score?.objectives ?? [];
+  // An objective with no target has nothing due in this window yet — the engine
+  // scores it as met so a fresh period is not punished, but counting it as
+  // "done" in the header would read as progress that never happened.
+  const objectivesDue = objectives.filter((o) => o.target > 0);
+  const objectivesDone = objectivesDue.filter((o) => o.rate >= 1).length;
+
+  // The three inputs, in the order they carry weight.
+  const inputs: { key: "rules" | "habits" | "objectives"; label: string; accent: string }[] = [
+    { key: "rules", label: "Rules", accent: color },
+    { key: "habits", label: "Habits", accent: CYAN },
+    { key: "objectives", label: "Objectives", accent: TURQUOISE },
+  ];
 
   return (
     <div className={cn(CARD_BASE, "flex flex-col group")}>
@@ -318,17 +333,18 @@ function MindScoreOrb({ score, period, onPeriodChange }: {
         <PeriodToggle value={period} onChange={onPeriodChange} accent={TURQUOISE} />
       </div>
 
-      {/* Score + signal meter */}
-      <div className="flex items-end gap-3 mt-2.5">
+      {/* Score + signal meter. The meter takes whatever height the card has
+          spare, so the card fills rather than leaving a hole in the middle. */}
+      <div className="mt-2.5 flex min-h-0 flex-1 items-end gap-3">
         <div className="shrink-0">
           <p className="text-[40px] font-black tabular-nums leading-none" style={{ color }}>
             {pending ? "·" : hasData ? display : "—"}
           </p>
-          <p className="text-[11px] font-medium mt-1" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
+          <p className="mt-1 text-[11px] font-medium" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
             {pending ? (period === "week" ? "New week" : "New month") : hasData ? score!.band.label : "No data yet"}
           </p>
         </div>
-        <div className="group/meter flex-1 flex items-end gap-[3px] h-16 pb-0.5" aria-hidden>
+        <div className="group/meter flex h-full min-h-[52px] flex-1 items-end gap-[3px] pb-0.5" aria-hidden>
           {Array.from({ length: METER_BARS }).map((_, i) => {
             const on = i < filled;
             const h = 30 + (i / (METER_BARS - 1)) * 70; // 30%..100% rising profile
@@ -348,58 +364,101 @@ function MindScoreOrb({ score, period, onPeriodChange }: {
         </div>
       </div>
 
-      {/* The three inputs — or, at the very start of a fresh period, a reassuring note */}
+      {/* What the number is made of — each input as a bar that fills with the
+          score, and the weight it carries this period. */}
       {pending ? (
-        <p className="mt-2.5 text-[11px] leading-snug text-muted-foreground">
+        <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
           Your score for this {period} is still being calculated — it builds as you
           log trades, tick habits and do the work.
         </p>
       ) : (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5">
-          <MiniStat label="Rules" value={comp("rules")} accent={color} />
-          <MiniStat label="Habits" value={comp("habits")} accent={CYAN} />
-          <MiniStat label="Objectives" value={comp("objectives")} accent={TURQUOISE} />
+        <div className="mt-3 space-y-[7px]">
+          {inputs.map(({ key, label, accent }) => {
+            const c = comp(key);
+            const value = c?.value ?? null;
+            const weight = c?.effectiveWeight ?? 0;
+            return (
+              <div
+                key={key}
+                className="group/row flex items-center gap-2"
+                title={
+                  value == null
+                    ? `${label} does not apply this ${period}`
+                    : `${label}: ${value}% · worth ${Math.round(weight)}% of the score this ${period}`
+                }
+              >
+                <span className="w-[62px] shrink-0 text-[11px] text-muted-foreground">{label}</span>
+                <span className="relative h-[5px] flex-1 overflow-hidden rounded-full" style={{ background: alpha("var(--muted-foreground)", 12) }}>
+                  <span
+                    className="absolute inset-y-0 left-0 rounded-full transition-[width,filter] duration-700 ease-out group-hover/row:brightness-125"
+                    style={{
+                      width: `${(value ?? 0) * prog}%`,
+                      background: value == null ? "transparent" : accent,
+                      boxShadow: value == null ? "none" : `0 0 8px ${alpha(accent, 30)}`,
+                    }}
+                  />
+                </span>
+                <span
+                  className="w-8 shrink-0 text-right text-[11px] font-bold tabular-nums"
+                  style={{ color: value == null ? "var(--muted-foreground)" : accent }}
+                >
+                  {value == null ? "—" : `${value}%`}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Objectives strip — process work that lifts the score */}
-      <div className="mt-auto pt-3">
-        <div className="h-px bg-border/60 mb-3" />
-        <div className="flex items-center gap-1.5">
-          {objectives.map((o) => (
-            <span key={o.key} className="h-1.5 flex-1 rounded-full"
-              style={{ background: o.rate >= 1 ? GREEN : o.rate > 0 ? alpha(TURQUOISE, 55) : alpha("var(--muted-foreground)", 18) }} />
-          ))}
-          <Link
-            href="/psychological-edge?tab=mindscore"
-            className="text-[10px] font-medium text-muted-foreground/70 hover:text-primary transition-colors ml-1 shrink-0"
-          >
-            Breakdown →
-          </Link>
+      {/* Objectives — named, not anonymous bars: each one is a link to the work
+          that lifts it, and shows how far along it is. */}
+      {objectives.length > 0 && (
+        <div className="mt-auto pt-3">
+          <div className="mb-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Objectives ·{" "}
+              {objectivesDue.length === 0 ? (
+                <span className="text-foreground/70">none due yet</span>
+              ) : (
+                <span className="tabular-nums text-foreground/70">{objectivesDone}/{objectivesDue.length}</span>
+              )}
+            </p>
+            <Link
+              href="/psychological-edge?tab=mindscore"
+              className="shrink-0 text-[10px] font-medium text-muted-foreground/70 transition-colors hover:text-primary"
+            >
+              Breakdown →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+            {objectives.map((o) => {
+              const due = o.target > 0;
+              const full = due && o.rate >= 1;
+              const started = due && o.rate > 0;
+              const tone = full ? GREEN : started ? TURQUOISE : "var(--muted-foreground)";
+              return (
+                <Link
+                  key={o.key}
+                  href={o.href}
+                  title={due ? `${o.label} — ${o.description}` : `${o.label} — nothing due yet this ${period}. ${o.description}`}
+                  className="group/obj flex items-center gap-1.5 rounded-md py-0.5 transition-colors hover:bg-muted/30"
+                >
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full transition-transform duration-300 group-hover/obj:scale-125"
+                    style={{ background: tone, opacity: started ? 1 : 0.3, boxShadow: full ? `0 0 6px ${alpha(GREEN, 55)}` : undefined }}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground transition-colors group-hover/obj:text-foreground">
+                    {o.label}
+                  </span>
+                  <span className="shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: started ? tone : "var(--muted-foreground)" }}>
+                    {due ? `${o.progress}/${o.target}` : "—"}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/** Compact inline sub-score for the mind score card. Chip lights up on hover. */
-function MiniStat({ label, value, accent }: {
-  label: string; value: number | null; accent: string;
-}) {
-  const on = value != null;
-  return (
-    <div
-      className="group/mini inline-flex items-center gap-1.5 rounded-full border border-transparent px-2 py-0.5 transition-colors hover:border-border/60"
-      style={{ background: on ? alpha(accent, 6) : "transparent" }}
-    >
-      <span
-        className="w-1.5 h-1.5 rounded-full shrink-0 transition-transform duration-300 group-hover/mini:scale-125"
-        style={{ background: on ? accent : "var(--muted-foreground)", boxShadow: on ? `0 0 6px ${alpha(accent, 55)}` : undefined }}
-      />
-      <span className="text-[11px] text-muted-foreground">{label}</span>
-      <span className="text-[11px] font-bold tabular-nums" style={{ color: on ? accent : "var(--muted-foreground)" }}>
-        {value == null ? "—" : `${value}%`}
-      </span>
+      )}
     </div>
   );
 }
