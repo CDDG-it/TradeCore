@@ -108,8 +108,8 @@ export function FuturesTab() {
               }`}
             >
               <span className="min-w-0">
-                <span className={`block font-mono text-[11px] font-bold tracking-[0.1em] ${on ? "text-primary" : "text-foreground/85"}`}>{it.s}</span>
-                <span className="block truncate text-[9px] text-muted-foreground/45">{it.label}</span>
+                <span className={`block font-mono text-[12px] font-bold tracking-[0.1em] ${on ? "text-primary" : "text-foreground/85"}`}>{it.s}</span>
+                <span className="block truncate text-[11px] text-foreground/75">{it.label}</span>
               </span>
               <Delta value={q?.changePct} />
             </button>
@@ -138,8 +138,8 @@ export function FuturesTab() {
             unit={sym}
             delta={
               <span className="ml-1 flex items-baseline gap-2">
-                <Delta value={live?.changePct} className="text-[12px]" />
-                <span className="text-[11px] tabular-nums text-muted-foreground/50">
+                <Delta value={live?.changePct} className="text-[13px]" />
+                <span className="text-[12px] tabular-nums text-foreground/75">
                   {live?.change == null ? "" : `${live.change > 0 ? "+" : ""}${fmtPrice(live.change)}`}
                 </span>
               </span>
@@ -150,7 +150,7 @@ export function FuturesTab() {
               <div className="relative h-[3px] bg-border/60">
                 <span className="absolute -top-[3px] h-[9px] w-[2px] bg-primary" style={{ left: `calc(${(pos * 100).toFixed(1)}% - 1px)` }} />
               </div>
-              <div className="mt-1 flex justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
+              <div className="mt-1 flex justify-between text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
                 <span>L {fmtPrice(lo)}</span>
                 <span>day range</span>
                 <span>H {fmtPrice(hi)}</span>
@@ -216,7 +216,7 @@ export function FuturesTab() {
                 const w = (Math.abs(v) / maxAbs) * 50; // half-width bars, centred
                 return (
                   <div key={s} className="flex items-center gap-2 py-[3px]">
-                    <span className="w-11 shrink-0 font-mono text-[10px] tracking-wider text-foreground/75">{s}</span>
+                    <span className="w-11 shrink-0 font-mono text-[11px] tracking-wider text-foreground/85">{s}</span>
                     <span className="relative h-[7px] flex-1 border-x border-border/30">
                       <span aria-hidden className="absolute inset-y-0 left-1/2 w-px bg-border/60" />
                       <span
@@ -228,7 +228,7 @@ export function FuturesTab() {
                         }}
                       />
                     </span>
-                    <span className="w-12 shrink-0 text-right text-[11px] tabular-nums" style={{ color: toneFor(v) }}>
+                    <span className="w-12 shrink-0 text-right text-[12px] tabular-nums" style={{ color: toneFor(v) }}>
                       {fmtPct(v)}
                     </span>
                   </div>
@@ -240,18 +240,18 @@ export function FuturesTab() {
             <div className="shrink-0 border-t border-border/30 px-3 py-2">
               <Label className="mb-1.5 block">Correlation · daily returns</Label>
               <div className="overflow-x-auto">
-                <table className="border-separate border-spacing-[2px] font-mono text-[8px]">
+                <table className="border-separate border-spacing-[2px] font-mono text-[10px]">
                   <tbody>
                     {symbols.map((rowSym, ri) => (
                       <tr key={rowSym}>
-                        <td className="pr-1 text-right text-[8px] tracking-wider text-muted-foreground/50">{rowSym}</td>
+                        <td className="pr-1 text-right text-[10px] tracking-wider text-foreground/75">{rowSym}</td>
                         {symbols.map((colSym, ci) => {
                           const v = matrix[ri][ci];
                           const self = ri === ci;
                           return (
                             <td
                               key={colSym}
-                              className="h-[15px] w-[15px] text-center align-middle"
+                              className="h-[18px] w-[18px] text-center align-middle"
                               style={{ background: self ? a("var(--muted-foreground)", 14) : corrShade(v) }}
                               title={`${rowSym} / ${colSym}: ${Number.isNaN(v) ? "—" : v.toFixed(2)}`}
                             />
@@ -262,13 +262,13 @@ export function FuturesTab() {
                     <tr>
                       <td />
                       {symbols.map((s) => (
-                        <td key={s} className="pt-0.5 text-center text-[7px] tracking-wider text-muted-foreground/45">{s.slice(0, 2)}</td>
+                        <td key={s} className="pt-0.5 text-center text-[11px] tracking-wider text-foreground/75">{s.slice(0, 2)}</td>
                       ))}
                     </tr>
                   </tbody>
                 </table>
               </div>
-              <div className="mt-1.5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
+              <div className="mt-1.5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
                 <span className="flex items-center gap-1"><span className="h-2 w-3" style={{ background: corrShade(1) }} /> together</span>
                 <span className="flex items-center gap-1"><span className="h-2 w-3" style={{ background: corrShade(-1) }} /> opposite</span>
               </div>

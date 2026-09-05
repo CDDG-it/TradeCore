@@ -106,8 +106,12 @@ export const FRESHNESS_LABEL: Record<DataFreshness, string> = {
   monthly: "MONTHLY",
 };
 
-/** Directional colour token — conventional finance green/red, never a signal. */
+/**
+ * Directional colour token — conventional finance green/red, never a signal.
+ * "No move" is deliberately not the muted token: at 3.6:1 on the desk's ground
+ * it reads as disabled rather than neutral.
+ */
 export function toneFor(v: number | null | undefined): string {
-  if (v == null || v === 0 || !Number.isFinite(v)) return "var(--muted-foreground)";
+  if (v == null || v === 0 || !Number.isFinite(v)) return "color-mix(in oklch, var(--foreground) 65%, transparent)";
   return v > 0 ? "var(--success)" : "var(--destructive)";
 }

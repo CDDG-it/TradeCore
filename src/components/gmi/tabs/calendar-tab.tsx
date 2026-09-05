@@ -89,21 +89,21 @@ export function CalendarTab() {
               <button
                 onClick={() => setCursor((c) => addMonths(c, -1))}
                 aria-label="Previous month"
-                className="border border-border/50 px-2 text-[12px] font-semibold leading-5 text-muted-foreground/70 transition-colors hover:border-primary/50 hover:text-primary"
+                className="border border-border/50 px-2 text-[13px] font-semibold leading-5 text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
               >
                 &lt;
               </button>
               <button
                 onClick={() => setCursor((c) => addMonths(c, 1))}
                 aria-label="Next month"
-                className="border border-border/50 px-2 text-[12px] font-semibold leading-5 text-muted-foreground/70 transition-colors hover:border-primary/50 hover:text-primary"
+                className="border border-border/50 px-2 text-[13px] font-semibold leading-5 text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
               >
                 &gt;
               </button>
               {!isSameMonth(cursor, new Date()) && (
                 <button
                   onClick={() => { setCursor(startOfMonth(new Date())); setSelected(format(new Date(), "yyyy-MM-dd")); }}
-                  className="border-b border-primary pb-px text-[11px] font-semibold uppercase tracking-wider text-primary"
+                  className="border-b border-primary pb-px text-[12px] font-semibold uppercase tracking-wider text-primary"
                 >
                   Today
                 </button>
@@ -121,7 +121,7 @@ export function CalendarTab() {
           <>
             <div className="grid shrink-0 grid-cols-7 border-b border-border/30">
               {WEEKDAYS.map((d) => (
-                <div key={d} className="px-2 py-1 text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
+                <div key={d} className="px-2 py-1 text-center text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
                   {d}
                 </div>
               ))}
@@ -144,7 +144,7 @@ export function CalendarTab() {
                     } ${outside ? "opacity-25" : past ? "opacity-75" : ""}`}
                   >
                     {isToday(day) && <span aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-primary" />}
-                    <span className={`text-[11px] font-bold tabular-nums ${isToday(day) ? "text-primary" : "text-foreground/60"}`}>
+                    <span className={`text-[12px] font-bold tabular-nums ${isToday(day) ? "text-primary" : "text-foreground/75"}`}>
                       {format(day, "d")}
                     </span>
                     <span className="flex min-h-0 flex-1 flex-col gap-[2px] overflow-hidden">
@@ -152,8 +152,8 @@ export function CalendarTab() {
                         <span
                           key={e.id}
                           // Filled = the print landed. Hollow = an appointment.
-                          className={`truncate border-l-2 pl-1 text-[9px] leading-[13px] ${
-                            e.released ? "text-foreground/85" : "text-muted-foreground/60"
+                          className={`truncate border-l-2 pl-1 text-[11px] leading-[13px] ${
+                            e.released ? "text-foreground/85" : "text-foreground/80"
                           }`}
                           style={{
                             borderColor: IMPORTANCE[e.importance],
@@ -170,7 +170,7 @@ export function CalendarTab() {
               })}
             </div>
 
-            <div className="flex shrink-0 items-center gap-4 border-t border-border/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
+            <div className="flex shrink-0 items-center gap-4 border-t border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2" style={{ background: IMPORTANCE.high }} /> high impact</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2" style={{ background: IMPORTANCE.medium }} /> medium</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-3 border-l-2" style={{ borderColor: IMPORTANCE.high }} /> scheduled, no print yet</span>
@@ -196,8 +196,8 @@ export function CalendarTab() {
               const delta = e.actual != null && e.previous != null ? e.actual - e.previous : null;
               return (
                 <div key={e.id} className="border-l-2 pl-2.5" style={{ borderColor: IMPORTANCE[e.importance] }}>
-                  <p className="text-[12px] font-semibold leading-tight text-foreground">{e.label}</p>
-                  <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
+                  <p className="text-[13px] font-semibold leading-tight text-foreground">{e.label}</p>
+                  <p className="mt-0.5 truncate text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
                     {e.releaseName}
                   </p>
 
@@ -210,15 +210,15 @@ export function CalendarTab() {
                           unit={e.referenceDate ? format(parseISO(e.referenceDate), "MMM yy") : undefined}
                         />
                       </div>
-                      <div className="mt-1.5 flex items-baseline gap-3 text-[11px] tabular-nums">
+                      <div className="mt-1.5 flex items-baseline gap-3 text-[12px] tabular-nums">
                         {delta != null && (
                           <span style={{ color: toneFor(delta) }}>{fmtDelta(delta, e.unit)} vs prior</span>
                         )}
-                        <span className="text-muted-foreground/45">prior {fmtVal(e.previous, e.unit)}</span>
+                        <span className="text-foreground/75">prior {fmtVal(e.previous, e.unit)}</span>
                       </div>
                     </>
                   ) : (
-                    <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/45">
+                    <p className="mt-1.5 text-[12px] font-semibold uppercase tracking-wider text-foreground/75">
                       {e.released ? "released · print not yet in the vintage" : "scheduled · no consensus on this tier"}
                     </p>
                   )}

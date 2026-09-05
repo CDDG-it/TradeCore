@@ -109,39 +109,39 @@ export function MarketsTab() {
             {sel && (
               <div className="pointer-events-none absolute left-3 top-3 w-[188px] border border-border/50 bg-background/80 p-3 backdrop-blur-md">
                 <div className="flex items-baseline gap-2">
-                  <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-primary">{sel.id.toUpperCase()}</span>
-                  <span className="truncate text-[11px] text-foreground/90">{sel.country}</span>
+                  <span className="font-mono text-[11px] font-bold tracking-[0.18em] text-primary">{sel.id.toUpperCase()}</span>
+                  <span className="truncate text-[12px] text-foreground/90">{sel.country}</span>
                 </div>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="text-[28px] font-black leading-none tabular-nums text-foreground">
                     {sel.value != null ? sel.value.toFixed(2) : "—"}
                   </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">% · 10Y</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/75">% · 10Y</span>
                 </div>
                 <div className="mt-2.5 space-y-[3px] border-t border-border/40 pt-2">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/45">Δ 1m</span>
-                    <span className="text-[11px] tabular-nums" style={{ color: toneFor(sel.value != null && sel.prev != null ? sel.value - sel.prev : null) }}>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/75">Δ 1m</span>
+                    <span className="text-[12px] tabular-nums" style={{ color: toneFor(sel.value != null && sel.prev != null ? sel.value - sel.prev : null) }}>
                       {bp(sel.value != null && sel.prev != null ? sel.value - sel.prev : null)}
                     </span>
                   </div>
                   {sel.id !== "us" && (
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/45">vs US</span>
-                      <span className="text-[11px] tabular-nums text-foreground/80">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/75">vs US</span>
+                      <span className="text-[12px] tabular-nums text-foreground/80">
                         {bp(sel.value != null && us?.value != null ? sel.value - us.value : null)}
                       </span>
                     </div>
                   )}
                   {sel.fxSymbol && q.get(sel.fxSymbol) && (
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/45">{sel.fxSymbol}</span>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/75">{sel.fxSymbol}</span>
                       <Delta value={q.get(sel.fxSymbol)!.changePct} />
                     </div>
                   )}
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/45">Bank</span>
-                    <span className="truncate pl-2 text-right text-[10px] text-foreground/70">{sel.centralBank}</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/75">Bank</span>
+                    <span className="truncate pl-2 text-right text-[11px] text-foreground/80">{sel.centralBank}</span>
                   </div>
                 </div>
               </div>
@@ -160,7 +160,7 @@ export function MarketsTab() {
             <Empty label="Loading yields" />
           ) : (
             <div className="flex h-full min-h-0 flex-col">
-              <div className="grid shrink-0 grid-cols-[2.2rem_1fr_3.4rem_3.2rem_3.2rem] gap-x-2 border-b border-border/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">
+              <div className="grid shrink-0 grid-cols-[2.2rem_1fr_3.4rem_3.2rem_3.2rem] gap-x-2 border-b border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
                 <span />
                 <span>Economy</span>
                 <span className="text-right">10Y</span>
@@ -184,24 +184,24 @@ export function MarketsTab() {
                         className="pointer-events-none absolute inset-y-0 left-0 transition-[width] duration-500"
                         style={{ width: `${((y.value ?? 0) / maxYield) * 100}%`, background: a(CYAN_BAR, on ? 12 : 6) }}
                       />
-                      <span className={`relative font-mono text-[10px] font-bold tracking-[0.14em] ${on ? "text-primary" : "text-muted-foreground/55"}`}>
+                      <span className={`relative font-mono text-[11px] font-bold tracking-[0.14em] ${on ? "text-primary" : "text-foreground/75"}`}>
                         {y.id.toUpperCase()}
                       </span>
-                      <span className="relative min-w-0 truncate text-[11px] text-foreground/85">{y.country}</span>
-                      <span className="relative text-right text-[13px] font-bold tabular-nums text-foreground">
+                      <span className="relative min-w-0 truncate text-[12px] text-foreground/85">{y.country}</span>
+                      <span className="relative text-right text-[14px] font-bold tabular-nums text-foreground">
                         {y.value != null ? y.value.toFixed(2) : "—"}
                       </span>
-                      <span className="relative text-right text-[11px] tabular-nums" style={{ color: toneFor(change) }}>
+                      <span className="relative text-right text-[12px] tabular-nums" style={{ color: toneFor(change) }}>
                         {bp(change)}
                       </span>
-                      <span className="relative text-right text-[11px] tabular-nums text-muted-foreground/70">
+                      <span className="relative text-right text-[12px] tabular-nums text-foreground/80">
                         {y.id === "us" ? "—" : bp(spread)}
                       </span>
                     </button>
                   );
                 })}
               </div>
-              <p className="shrink-0 border-t border-border/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/35">
+              <p className="shrink-0 border-t border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
                 OECD harmonised · monthly · {gyEnv?.asOf ? timeAgo(gyEnv.asOf) : "—"} · spread = this yield minus US 10Y
               </p>
             </div>
@@ -264,15 +264,15 @@ export function MarketsTab() {
 
         <Pane index="05" label="Dollar & volatility" right={<Meta env={quotesEnv} />} scroll className="lg:col-span-3">
           {FX.map((s) => (
-            <Field key={s} label={<span className="font-mono text-[11px]">{s}</span>} value={fmtPrice(q.get(s)?.price, q.get(s)?.unit)}
+            <Field key={s} label={<span className="font-mono text-[12px]">{s}</span>} value={fmtPrice(q.get(s)?.price, q.get(s)?.unit)}
               trailing={<span className="mr-2"><Delta value={q.get(s)?.changePct} /></span>} />
           ))}
           <div className="my-1.5 border-t border-border/30" />
           {VOL.map((s) => (
-            <Field key={s} label={<span className="font-mono text-[11px]">{s}</span>} value={q.get(s) ? fmtPrice(q.get(s)!.price) : "n/a"}
+            <Field key={s} label={<span className="font-mono text-[12px]">{s}</span>} value={q.get(s) ? fmtPrice(q.get(s)!.price) : "n/a"}
               trailing={<span className="mr-2"><Delta value={q.get(s)?.changePct} /></span>} />
           ))}
-          <p className="mt-2 border-t border-border/30 pt-1.5 text-[10px] font-semibold uppercase leading-relaxed tracking-wider text-muted-foreground/35">
+          <p className="mt-2 border-t border-border/30 pt-1.5 text-[11px] font-semibold uppercase leading-relaxed tracking-wider text-foreground/65">
             Delayed quotes · last capture, not the current print
           </p>
         </Pane>

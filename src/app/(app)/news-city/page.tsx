@@ -86,8 +86,8 @@ function VenueClocks() {
                 boxShadow: live ? "0 0 8px color-mix(in oklch, var(--success) 70%, transparent)" : undefined,
               }}
             />
-            <span className="font-mono text-[9px] tracking-[0.18em] text-muted-foreground/60">{VENUE_CODE[w.key]}</span>
-            <span className={cn("text-[12px] font-bold tabular-nums", live ? "text-foreground" : "text-muted-foreground/45")}>
+            <span className="font-mono text-[11px] tracking-[0.18em] text-foreground/80">{VENUE_CODE[w.key]}</span>
+            <span className={cn("text-[13px] font-bold tabular-nums", live ? "text-foreground" : "text-foreground/75")}>
               {st?.localTime ?? "--:--"}
             </span>
           </span>
@@ -141,7 +141,7 @@ export default function GlobalMarketsPage() {
             <h1 className="font-heading text-[15px] font-black uppercase leading-none tracking-[0.06em] text-foreground md:text-[17px]">
               Global Markets
             </h1>
-            <span className="hidden text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40 sm:inline">
+            <span className="hidden text-[11px] font-semibold uppercase tracking-wider text-foreground/65 sm:inline">
               objective research
             </span>
           </div>
@@ -163,13 +163,13 @@ export default function GlobalMarketsPage() {
                   on ? "bg-primary/[0.07]" : "hover:bg-muted/20"
                 )}
               >
-                <span className={cn("text-[10px] tabular-nums transition-colors", on ? "text-primary" : "text-muted-foreground/35")}>
+                <span className={cn("text-[11px] tabular-nums transition-colors", on ? "text-primary" : "text-foreground/65")}>
                   {t.num}
                 </span>
                 <span
                   className={cn(
-                    "font-heading text-[12px] font-bold uppercase tracking-[0.1em] transition-colors",
-                    on ? "text-foreground" : "text-muted-foreground/55 group-hover:text-foreground/80"
+                    "font-heading text-[13px] font-bold uppercase tracking-[0.1em] transition-colors",
+                    on ? "text-foreground" : "text-foreground/75 group-hover:text-foreground/80"
                   )}
                 >
                   {t.label}
@@ -180,7 +180,7 @@ export default function GlobalMarketsPage() {
           })}
           {/* What the live section is for, spelled out once — clarity without a tooltip. */}
           <span className="ml-auto hidden shrink-0 items-center px-4 xl:flex">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/35">{active.note}</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/65">{active.note}</span>
           </span>
         </nav>
 

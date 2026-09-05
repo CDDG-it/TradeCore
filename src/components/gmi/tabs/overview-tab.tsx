@@ -84,7 +84,7 @@ export function OverviewTab() {
                     rel="noopener noreferrer"
                     className="group flex items-baseline gap-3 px-3 py-[7px] transition-colors hover:bg-muted/20"
                   >
-                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/40">
+                    <span className="shrink-0 text-[12px] tabular-nums text-foreground/65">
                       {format(parseISO(art.publishedAt), "HH:mm")}
                     </span>
                     <span
@@ -93,13 +93,13 @@ export function OverviewTab() {
                       style={{ background: sentimentColor(art.sentimentScore) }}
                       title={art.sentimentScore == null ? "No sentiment score" : `Sentiment ${art.sentimentScore.toFixed(2)}`}
                     />
-                    <span className="min-w-0 flex-1 truncate text-[12px] leading-snug text-foreground/90 transition-colors group-hover:text-primary">
+                    <span className="min-w-0 flex-1 truncate text-[13px] leading-snug text-foreground/90 transition-colors group-hover:text-primary">
                       {art.title}
                     </span>
                     {art.assets[0] && (
-                      <span className="hidden shrink-0 font-mono text-[9px] tracking-wider text-primary/70 md:inline">{art.assets[0]}</span>
+                      <span className="hidden shrink-0 font-mono text-[11px] tracking-wider text-primary md:inline">{art.assets[0]}</span>
                     )}
-                    <span className="hidden w-24 shrink-0 truncate text-right text-[10px] uppercase tracking-wider text-muted-foreground/35 xl:inline">
+                    <span className="hidden w-24 shrink-0 truncate text-right text-[11px] uppercase tracking-wider text-foreground/65 xl:inline">
                       {art.source}
                     </span>
                   </Link>
@@ -131,7 +131,7 @@ export function OverviewTab() {
                     value={fmtRel(e.actual, e.unit)}
                     trailing={
                       delta != null ? (
-                        <span className="mr-2 text-[11px] tabular-nums" style={{ color: toneFor(delta) }}>
+                        <span className="mr-2 text-[12px] tabular-nums" style={{ color: toneFor(delta) }}>
                           {fmtDelta(delta, e.unit)}
                         </span>
                       ) : undefined
@@ -175,23 +175,23 @@ export function OverviewTab() {
                 }
               >
                 <div className="flex items-baseline gap-1.5">
-                  <span className={`text-[10px] font-semibold uppercase tracking-wider ${isToday ? "text-primary" : "text-muted-foreground/45"}`}>
+                  <span className={`text-[11px] font-semibold uppercase tracking-wider ${isToday ? "text-primary" : "text-foreground/75"}`}>
                     {isToday ? "Today" : format(day, "EEE")}
                   </span>
-                  <span className={`text-[12px] font-bold tabular-nums ${isToday ? "text-primary" : "text-foreground/70"}`}>
+                  <span className={`text-[13px] font-bold tabular-nums ${isToday ? "text-primary" : "text-foreground/80"}`}>
                     {format(day, "d")}
                   </span>
                 </div>
                 <div className="min-h-0 flex-1 space-y-[3px] overflow-hidden">
                   {events.length === 0 ? (
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/25">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
                       {weekend ? "market closed" : "no releases"}
                     </span>
                   ) : (
                     events.slice(0, 3).map((e) => (
                       <p
                         key={e.id}
-                        className="truncate border-l pl-1.5 text-[10px] leading-tight text-foreground/75"
+                        className="truncate border-l pl-1.5 text-[11px] leading-tight text-foreground/85"
                         style={{ borderColor: e.importance === "high" ? "var(--destructive)" : "var(--warning)" }}
                         title={`${e.label} · ${e.releaseName}`}
                       >
@@ -200,7 +200,7 @@ export function OverviewTab() {
                     ))
                   )}
                   {events.length > 3 && (
-                    <p className="pl-1.5 text-[10px] tabular-nums text-muted-foreground/35">+{events.length - 3}</p>
+                    <p className="pl-1.5 text-[11px] tabular-nums text-foreground/65">+{events.length - 3}</p>
                   )}
                 </div>
               </div>

@@ -67,19 +67,19 @@ export function NewsTab() {
             <div className="min-h-0">
               <div className="flex items-baseline gap-2">
                 <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: sentimentColor(lead.sentimentScore) }} />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/55">{lead.source}</span>
-                <span className="text-[10px] tabular-nums text-muted-foreground/35">{timeAgo(lead.publishedAt)}</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/75">{lead.source}</span>
+                <span className="text-[11px] tabular-nums text-foreground/65">{timeAgo(lead.publishedAt)}</span>
               </div>
               <h2 className="mt-3 font-heading text-[19px] font-bold leading-[1.25] tracking-tight text-foreground transition-colors group-hover:text-primary">
                 {lead.title}
               </h2>
               {lead.snippet && (
-                <p className="mt-3 line-clamp-6 text-[12px] leading-relaxed text-muted-foreground/80">{lead.snippet}</p>
+                <p className="mt-3 line-clamp-6 text-[13px] leading-relaxed text-foreground/80">{lead.snippet}</p>
               )}
             </div>
             <div className="mt-4 flex flex-wrap gap-1.5 border-t border-border/30 pt-3">
               {lead.assets.slice(0, 6).map((s) => (
-                <span key={s} className="border border-border/50 px-1.5 py-0.5 font-mono text-[9px] tracking-wider text-primary/80">{s}</span>
+                <span key={s} className="border border-border/50 px-1.5 py-0.5 font-mono text-[11px] tracking-wider text-primary">{s}</span>
               ))}
             </div>
           </Link>
@@ -96,7 +96,7 @@ export function NewsTab() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="filter…"
-              className="w-28 border-b border-border/50 bg-transparent pb-px text-[11px] text-foreground outline-none placeholder:text-muted-foreground/35 focus:border-primary"
+              className="w-28 border-b border-border/50 bg-transparent pb-px text-[12px] text-foreground outline-none placeholder:text-foreground/65 focus:border-primary"
             />
             <Label className="tracking-[0.18em]">{filtered.length} items</Label>
           </span>
@@ -108,8 +108,8 @@ export function NewsTab() {
         <div className="scrollbar-none flex shrink-0 items-center gap-3 overflow-x-auto border-b border-border/30 px-3 py-1.5">
           <button
             onClick={() => setAsset(null)}
-            className={`shrink-0 border-b pb-px text-[11px] font-semibold uppercase tracking-wider transition-colors ${
-              asset === null ? "border-primary text-primary" : "border-transparent text-muted-foreground/50 hover:text-foreground"
+            className={`shrink-0 border-b pb-px text-[12px] font-semibold uppercase tracking-wider transition-colors ${
+              asset === null ? "border-primary text-primary" : "border-transparent text-foreground/75 hover:text-foreground"
             }`}
           >
             All
@@ -118,8 +118,8 @@ export function NewsTab() {
             <button
               key={s}
               onClick={() => setAsset(asset === s ? null : s)}
-              className={`shrink-0 border-b pb-px font-mono text-[10px] tracking-[0.1em] transition-colors ${
-                asset === s ? "border-primary text-primary" : "border-transparent text-muted-foreground/50 hover:text-foreground"
+              className={`shrink-0 border-b pb-px font-mono text-[11px] tracking-[0.1em] transition-colors ${
+                asset === s ? "border-primary text-primary" : "border-transparent text-foreground/75 hover:text-foreground"
               }`}
             >
               {s}
@@ -140,15 +140,15 @@ export function NewsTab() {
                     rel="noopener noreferrer"
                     className="group flex items-baseline gap-3 px-3 py-[7px] transition-colors hover:bg-muted/20"
                   >
-                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/40">
+                    <span className="shrink-0 text-[12px] tabular-nums text-foreground/65">
                       {format(parseISO(art.publishedAt), "HH:mm")}
                     </span>
                     <span aria-hidden className="mt-[5px] h-[3px] w-[3px] shrink-0 rounded-full" style={{ background: sentimentColor(art.sentimentScore) }} />
-                    <span className="min-w-0 flex-1 truncate text-[12px] text-foreground/90 transition-colors group-hover:text-primary">
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-foreground/90 transition-colors group-hover:text-primary">
                       {art.title}
                     </span>
-                    {art.assets[0] && <span className="shrink-0 font-mono text-[9px] tracking-wider text-primary/70">{art.assets[0]}</span>}
-                    <span className="hidden w-28 shrink-0 truncate text-right text-[10px] uppercase tracking-wider text-muted-foreground/35 xl:inline">
+                    {art.assets[0] && <span className="shrink-0 font-mono text-[11px] tracking-wider text-primary">{art.assets[0]}</span>}
+                    <span className="hidden w-28 shrink-0 truncate text-right text-[11px] uppercase tracking-wider text-foreground/65 xl:inline">
                       {art.source}
                     </span>
                   </Link>
@@ -158,7 +158,7 @@ export function NewsTab() {
           )}
         </div>
 
-        <p className="shrink-0 border-t border-border/30 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/35">
+        <p className="shrink-0 border-t border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
           Margin mark = provider sentiment · green positive, red negative, grey neutral or unscored
         </p>
       </Pane>
