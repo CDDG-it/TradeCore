@@ -1,30 +1,31 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { usePathname } from "next/navigation";
 
 /**
- * Pathname-keyed page transition. The new page fades in immediately (no
- * mode="wait", so it doesn't sit and wait for the old page to leave). Kept
- * intentionally lean — a short opacity + tiny y offset only, no blur filter
- * (GPU-heavy, made routes feel like they were "loading in"). Duration is
- * short enough that navigation reads as instant, long enough that content
- * doesn't visibly pop into place.
+ * Pathname-keyed page transition: the incoming page fades up over its own
+ * 160ms — short enough that navigation reads as instant, long enough that
+ * content doesn't visibly pop into place.
+ *
+ * Deliberately no `AnimatePresence`. An exit animation keeps the outgoing page
+ * mounted while the new one arrives, and the two then stack in normal flow: the
+ * document briefly doubles in height and the router, scrolling the new segment
+ * into view, lands somewhere down the combined page. On a phone that reads as
+ * opening a tab onto a blank screen and having to scroll up to find it. Letting
+ * the old page unmount with the route keeps the document one page tall.
  */
 export function TransitionLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <AnimatePresence initial={false}>
-      <motion.div
-        key={pathname}
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      key={pathname}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
   );
 }
