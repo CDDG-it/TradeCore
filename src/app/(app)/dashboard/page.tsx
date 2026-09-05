@@ -114,7 +114,9 @@ function PeriodToggle({ value, onChange, accent }: {
   value: Period; onChange: (p: Period) => void; accent: string;
 }) {
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-border/60 bg-muted/25 p-0.5 shrink-0">
+    // `ml-auto` so the toggle still sits at the right edge on a narrow card
+    // where the header has wrapped it onto its own line.
+    <div className="ml-auto flex shrink-0 items-center gap-0.5 rounded-lg border border-border/60 bg-muted/25 p-0.5">
       {(["week", "month"] as Period[]).map((p) => {
         const active = value === p;
         return (
@@ -252,8 +254,10 @@ export default function DashboardPage() {
         // first two beneath them and the analyses beside it.
         //
         // On a phone it folds to two: the two short readings pair with the tall
-        // win rate, the journal gets the full width under them, and the mind
-        // score and analyses share the last row.
+        // win rate, and the journal, the mind score and the analyses each take
+        // the full width beneath them — the mind score carries a meter, three
+        // input bars and the objectives grid, and half a phone is not enough
+        // for any of it.
         <div className="grid flex-1 min-h-0 grid-cols-2 gap-3 md:grid-cols-3 md:grid-rows-[minmax(0,1fr)_minmax(0,1.35fr)]">
           <div className="flex min-h-0 flex-col gap-3 md:col-start-1 md:row-start-1">
             <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
@@ -277,10 +281,13 @@ export default function DashboardPage() {
 
           <MindScoreOrb
             score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod}
-            className="md:col-start-3 md:row-start-1"
+            className="col-span-2 md:col-span-1 md:col-start-3 md:row-start-1"
           />
 
-          <AnalysisWidget analyses={analyses} trades={trades ?? []} className="md:col-start-3 md:row-start-2" />
+          <AnalysisWidget
+            analyses={analyses} trades={trades ?? []}
+            className="col-span-2 md:col-span-1 md:col-start-3 md:row-start-2"
+          />
         </div>
       )}
     </div>
@@ -339,13 +346,10 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
   ];
 
   return (
-    <div className={cn(CARD_BASE, "group flex flex-col p-3 sm:p-4", className)}>
+    <div className={cn(CARD_BASE, "group flex flex-col", className)}>
       <CardFx accent={color} />
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          <span className="sm:hidden">Mind score</span>
-          <span className="hidden sm:inline">MC mind score</span>
-        </p>
+        <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
         <PeriodToggle value={period} onChange={onPeriodChange} accent={TURQUOISE} />
       </div>
 
@@ -353,16 +357,14 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
           spare, so the card fills rather than leaving a hole in the middle. */}
       <div className="mt-2.5 flex min-h-0 flex-1 items-end gap-3">
         <div className="shrink-0">
-          <p className="text-[32px] font-black leading-none tabular-nums sm:text-[40px]" style={{ color }}>
+          <p className="text-[40px] font-black leading-none tabular-nums" style={{ color }}>
             {pending ? "·" : hasData ? display : "—"}
           </p>
           <p className="mt-1 text-[11px] font-medium" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
             {pending ? (period === "week" ? "New week" : "New month") : hasData ? score!.band.label : "No data yet"}
           </p>
         </div>
-        {/* Decoration, not data — it is the first thing to go when the card is
-            half a phone wide. */}
-        <div className="group/meter hidden h-full min-h-[52px] flex-1 items-end gap-[3px] pb-0.5 sm:flex" aria-hidden>
+        <div className="group/meter flex h-full min-h-[52px] flex-1 items-end gap-[3px] pb-0.5" aria-hidden>
           {Array.from({ length: METER_BARS }).map((_, i) => {
             const on = i < filled;
             const h = 30 + (i / (METER_BARS - 1)) * 70; // 30%..100% rising profile
@@ -405,7 +407,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
                     : `${label}: ${value}% · worth ${Math.round(weight)}% of the score this ${period}`
                 }
               >
-                <span className="w-11 shrink-0 text-[11px] text-muted-foreground sm:w-[62px]">{label}</span>
+                <span className="w-[62px] shrink-0 text-[11px] text-muted-foreground">{label}</span>
                 <span className="relative h-[5px] flex-1 overflow-hidden rounded-full" style={{ background: alpha("var(--muted-foreground)", 12) }}>
                   <span
                     className="absolute inset-y-0 left-0 rounded-full transition-[width,filter] duration-700 ease-out group-hover/row:brightness-125"
@@ -417,7 +419,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
                   />
                 </span>
                 <span
-                  className="w-7 shrink-0 text-right text-[11px] font-bold tabular-nums sm:w-8"
+                  className="w-8 shrink-0 text-right text-[11px] font-bold tabular-nums"
                   style={{ color: value == null ? "var(--muted-foreground)" : accent }}
                 >
                   {value == null ? "—" : `${value}%`}
@@ -448,7 +450,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
               Breakdown →
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-x-3 gap-y-1 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
             {objectives.map((o) => {
               const due = o.target > 0;
               const full = due && o.rate >= 1;
@@ -518,7 +520,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
   let acc = 0; // accumulated fraction, for each arc's rotation
 
   return (
-    <div className={cn(CARD_BASE, "flex flex-col p-3 sm:p-4", className)}>
+    <div className={cn(CARD_BASE, "flex flex-col", className)}>
       <CardFx accent={CYAN} />
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Win rate</p>
@@ -665,13 +667,13 @@ function AnalysisWidget({ analyses, trades, className }: { analyses: PreTradeAna
   const shown = rows.slice(0, 4);
 
   return (
-    <div className={cn(CARD_BASE, "flex flex-col p-3 sm:p-4", className)}>
+    <div className={cn(CARD_BASE, "flex flex-col", className)}>
       <CardFx accent={CYAN} />
 
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Analysis</p>
-          <p className="mt-0.5 hidden text-[11px] text-muted-foreground/60 sm:block">Plans written before the session</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground/60">Plans written before the session</p>
         </div>
         <Link href="/analysis" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">All plans</Link>
       </div>
@@ -693,7 +695,7 @@ function AnalysisWidget({ analyses, trades, className }: { analyses: PreTradeAna
                   className="block rounded-lg border-l-2 py-1 pl-2.5 pr-1 transition-colors hover:bg-muted/25"
                   style={{ borderColor: alpha(bias.color, 70) }}
                 >
-                  <div className="flex flex-col items-start gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+                  <div className="flex items-baseline justify-between gap-2">
                     <div className="flex min-w-0 items-baseline gap-1.5">
                       <span className="font-mono text-[12px] font-black text-foreground">{a.instrument}</span>
                       <span className="text-[11px] font-semibold" style={{ color: bias.color }}>{bias.word}</span>
