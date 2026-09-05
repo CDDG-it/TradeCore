@@ -44,6 +44,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // globals.css sets `scroll-behavior: smooth` for the landing page's anchor
+      // links. Next needs to be told about it, otherwise it leaves smooth
+      // scrolling on for its own scroll-to-top after a route change and every
+      // navigation animates the old page sliding upward first.
+      data-scroll-behavior="smooth"
       className={`${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} ${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-body">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Brain, HeartPulse, Globe, type LucideIcon } from "lucide-react";
@@ -92,19 +93,31 @@ export function BottomNav() {
  * extra bottom padding — the strip is fixed, so it can't push content itself.
  */
 let mounted = 0;
+const noSubscribe = () => () => {};
 
 export function MobileSubnav<T extends string>({
   items,
   value,
   onChange,
   label = "Sections",
+  scrollRef,
 }: {
   items: { key: T; label: string; short?: string }[];
   value: T;
   onChange: (key: T) => void;
   label?: string;
+  /** The element the section scrolls in, when it isn't the page itself. */
+  scrollRef?: RefObject<HTMLElement | null>;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const picked = useRef(false);
+  // The strip is portalled to <body>. The page it belongs to is rendered inside
+  // the route transition's motion wrapper, and a `transform` there — even the
+  // 4px lift of the page fade-in — would make this `fixed` element resolve
+  // against that wrapper instead of the viewport, so it would slide with the
+  // page rather than staying docked to the bottom of the screen.
+  // `document.body` only exists on the client, hence the hydration gate.
+  const onClient = useSyncExternalStore(noSubscribe, () => true, () => false);
 
   // Counted rather than set/unset: a page transition can hold the outgoing and
   // incoming page on screen at once, and a plain cleanup would then clear the
@@ -119,12 +132,35 @@ export function MobileSubnav<T extends string>({
   }, []);
 
   // Keep the selected pill in view when the strip is wider than the screen.
+  // The strip is moved directly rather than with `scrollIntoView`, which walks
+  // up every scrollable ancestor — and this strip is fixed over the page, so
+  // that would drag the page under it as a side effect.
   useEffect(() => {
-    ref.current?.querySelector<HTMLElement>('[data-active="true"]')
-      ?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+    const strip = ref.current;
+    const active = strip?.querySelector<HTMLElement>('[data-active="true"]');
+    if (!strip || !active) return;
+    const left = active.offsetLeft - (strip.clientWidth - active.clientWidth) / 2;
+    // Glide only when the reader tapped a pill; a tab restored from the URL
+    // should already be in place on the first paint.
+    strip.scrollTo({ left: Math.max(0, left), behavior: picked.current ? "smooth" : "instant" });
+    picked.current = false;
   }, [value]);
 
-  return (
+  // Switching section is a content swap, not a navigation: start the new one at
+  // its top instead of wherever the previous section happened to be scrolled.
+  // Instant, because the old content is already gone by the time it would land.
+  function select(key: T) {
+    picked.current = true;
+    if (key !== value) {
+      scrollRef?.current?.scrollTo({ top: 0, behavior: "instant" });
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+    onChange(key);
+  }
+
+  if (!onClient) return null;
+
+  return createPortal(
     <div
       aria-label={label}
       className="fixed inset-x-0 z-40 lg:hidden border-t border-sidebar-border/70"
@@ -146,7 +182,7 @@ export function MobileSubnav<T extends string>({
               key={item.key}
               type="button"
               data-active={active}
-              onClick={() => onChange(item.key)}
+              onClick={() => select(item.key)}
               className={cn(
                 "shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-colors",
                 active
@@ -167,6 +203,7 @@ export function MobileSubnav<T extends string>({
           );
         })}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

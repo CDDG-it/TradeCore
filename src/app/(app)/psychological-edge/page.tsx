@@ -135,6 +135,13 @@ export default function MyEdgePage() {
     if (EDGE_TABS.some((x) => x.key === t)) setTab(t as EdgeTab);
   }, []);
 
+  // Switching half or view starts at the top: these pages are tall enough that
+  // keeping the old offset drops you into the middle of the incoming one.
+  function selectTab(next: EdgeTab) {
+    if (next !== tab) window.scrollTo({ top: 0, behavior: "instant" });
+    setTab(next);
+  }
+
   const active = EDGE_TABS.find((x) => x.key === tab)!;
   const group = GROUPS.find((g) => g.key === active.group)!;
 
@@ -154,11 +161,11 @@ export default function MyEdgePage() {
             {active.blurb}
           </p>
         </div>
-        <EdgeToggle tab={tab} onChange={setTab} />
+        <EdgeToggle tab={tab} onChange={selectTab} />
       </div>
 
       {/* Phone: the same four views, docked above the bottom bar. */}
-      <MobileSubnav items={EDGE_TABS} value={tab} onChange={setTab} label="My Edge sections" />
+      <MobileSubnav items={EDGE_TABS} value={tab} onChange={selectTab} label="My Edge sections" />
 
       <PageWrapper>
         {tab === "habits" && <HabitsView />}

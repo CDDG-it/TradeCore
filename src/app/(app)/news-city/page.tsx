@@ -14,7 +14,7 @@
  *
  * (Route kept as /news-city to preserve existing links; the page is retitled.)
  */
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { SESSIONS, sessionState } from "@/lib/gmi/sessions";
@@ -100,6 +100,7 @@ function VenueClocks() {
 
 export default function GlobalMarketsPage() {
   const [tab, setTab] = useState<Tab>("overview");
+  const deskRef = useRef<HTMLDivElement>(null);
 
   // Deep-linking, e.g. the /option-flow route redirects in here. Read after
   // mount rather than during render: the page is prerendered, so seeding state
@@ -186,13 +187,18 @@ export default function GlobalMarketsPage() {
         </nav>
 
         {/* Phone: the same index, docked above the bottom tab bar. */}
-        <MobileSubnav items={TABS} value={tab} onChange={setTab} label="Global Markets sections" />
+        <MobileSubnav items={TABS} value={tab} onChange={setTab} label="Global Markets sections" scrollRef={deskRef} />
 
         {/* ── Working area ─────────────────────────────────────────────── */}
         {/* On a laptop the working area holds still and each pane scrolls
             itself. A phone has no room for that: the area scrolls as one and
             the panes take their natural height. */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-1.5 sm:p-2 lg:overflow-hidden lg:p-2.5">{content}</div>
+        <div
+          ref={deskRef}
+          className="min-h-0 flex-1 overscroll-contain overflow-y-auto p-1.5 sm:p-2 lg:overflow-hidden lg:p-2.5"
+        >
+          {content}
+        </div>
       </div>
     </div>
   );
