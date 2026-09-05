@@ -1,8 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Trash2, Pencil, Check, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Trash2, Pencil, Check, X, CheckCircle2, AlertCircle, Loader2, GripVertical } from "lucide-react";
 import { getProfile, upsertProfile } from "@/lib/supabase/queries";
+import { cn } from "@/lib/utils";
+
+/** Move an item to another index, without mutating the original array. */
+function moveItem<T>(list: T[], from: number, to: number): T[] {
+  const next = [...list];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
 
 /**
  * Trading Rules editor. These are the trader's personal, non-negotiable rules
@@ -11,6 +20,12 @@ import { getProfile, upsertProfile } from "@/lib/supabase/queries";
  * same field the Journal reads — so existing rules and journal behaviour are
  * preserved. This used to be edited on the Profile page; it now lives here in
  * the discipline environment.
+ *
+ * The order is the order: the list can be dragged into the sequence you want to
+ * be reminded of them in, and that is exactly the order the pre-trade checklist
+ * shows. Dragging runs on pointer events rather than HTML5 drag-and-drop, so it
+ * works the same with a mouse, a pen and a finger; the grip also takes arrow
+ * keys for anyone not dragging at all.
  */
 export function TradingRulesEditor() {
   const [rules, setRules] = useState<string[]>([]);
@@ -22,6 +37,14 @@ export function TradingRulesEditor() {
   // Tracks whether the in-memory rules diverge from what's stored, so we can
   // show a clear "unsaved changes" state and avoid silently losing edits.
   const [dirty, setDirty] = useState(false);
+  // Index currently being dragged, and the order it started from — so a drag
+  // that ends where it began does not mark the list unsaved.
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const dragStart = useRef<string[] | null>(null);
+  const listRef = useRef<HTMLOListElement>(null);
+  // Which grip to put focus back on after a keyboard move, applied once React
+  // has actually committed the new order.
+  const focusAfterMove = useRef<number | null>(null);
 
   useEffect(() => {
     getProfile()
@@ -32,6 +55,15 @@ export function TradingRulesEditor() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  // Focus follows the rule you moved, so repeated arrow presses keep moving the
+  // same one instead of walking down the list.
+  useEffect(() => {
+    const i = focusAfterMove.current;
+    if (i == null) return;
+    focusAfterMove.current = null;
+    listRef.current?.querySelector<HTMLButtonElement>(`li[data-idx="${i}"] button[data-grip]`)?.focus();
+  }, [rules]);
 
   function mutate(next: string[]) {
     setRules(next);
@@ -60,6 +92,49 @@ export function TradingRulesEditor() {
     if (!t) { setEditingIdx(null); return; }
     mutate(rules.map((r, i) => (i === idx ? t : r)));
     setEditingIdx(null);
+  }
+
+  /** Pick a rule up. Pointer capture keeps the moves coming even if the cursor
+   *  outruns the row. */
+  function startDrag(idx: number, e: React.PointerEvent<HTMLButtonElement>) {
+    if (editingIdx !== null) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragStart.current = rules;
+    setDragIdx(idx);
+  }
+
+  /** Rows reorder as you pass them, so the list you see is the list you get. */
+  function onDragMove(e: React.PointerEvent) {
+    if (dragIdx === null || !listRef.current) return;
+    const rows = Array.from(listRef.current.querySelectorAll<HTMLLIElement>("li[data-idx]"));
+    const over = rows.find((row) => {
+      const r = row.getBoundingClientRect();
+      return e.clientY >= r.top && e.clientY <= r.bottom;
+    });
+    if (!over) return;
+    const to = Number(over.dataset.idx);
+    if (Number.isNaN(to) || to === dragIdx) return;
+    setRules((prev) => moveItem(prev, dragIdx, to));
+    setDragIdx(to);
+  }
+
+  function endDrag() {
+    if (dragIdx === null) return;
+    const before = dragStart.current;
+    setDragIdx(null);
+    dragStart.current = null;
+    if (before && before.join("\n") !== rules.join("\n")) {
+      setDirty(true);
+      setSaveState("idle");
+    }
+  }
+
+  /** Arrow keys on the grip move a rule too — dragging is not the only way. */
+  function nudge(idx: number, delta: number) {
+    const to = idx + delta;
+    if (to < 0 || to >= rules.length) return;
+    focusAfterMove.current = to;
+    mutate(moveItem(rules, idx, to));
   }
 
   async function persist() {
@@ -103,7 +178,8 @@ export function TradingRulesEditor() {
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary/70">Discipline</p>
         <h2 className="mt-1.5 font-heading text-xl font-bold tracking-tight">Trading Rules</h2>
         <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted-foreground">
-          Your non-negotiables. These surface as the pre-trade checklist every time you log a trade.
+          Your non-negotiables. These surface as the pre-trade checklist every time you log a trade — drag them into
+          the order you want to read them in.
         </p>
       </div>
 
@@ -119,14 +195,30 @@ export function TradingRulesEditor() {
               <p className="mt-1 text-xs text-muted-foreground/70">Write your first non-negotiable below.</p>
             </div>
           ) : (
-            <ol className="mt-5 divide-y divide-border/40 border-y border-border/40">
+            <ol
+              ref={listRef}
+              onPointerMove={onDragMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              className="mt-5 divide-y divide-border/40 border-y border-border/40"
+            >
               {rules.map((rule, idx) => (
                 <li
+                  // Keyed by position, not by text: a live reorder swaps the
+                  // content of stable rows, so the row you are holding — and
+                  // its pointer capture — survives the move.
                   key={idx}
-                  className="group relative -mx-2 flex items-center gap-4 rounded-lg px-2 py-3 transition-colors hover:bg-primary/[0.05]"
+                  data-idx={idx}
+                  className={cn(
+                    "group relative -mx-2 flex select-none items-center gap-2.5 rounded-lg px-2 py-3 transition-colors",
+                    dragIdx === idx
+                      ? "z-10 bg-primary/[0.09] shadow-[0_8px_24px_-14px_rgba(0,0,0,0.8)] ring-1 ring-primary/30"
+                      : "hover:bg-primary/[0.05]"
+                  )}
                 >
                   {editingIdx === idx ? (
                     <>
+                      <span aria-hidden className="w-4 shrink-0" />
                       <span className="w-7 shrink-0 text-right text-lg font-black leading-none tabular-nums text-primary/40">
                         {idx + 1}
                       </span>
@@ -149,10 +241,28 @@ export function TradingRulesEditor() {
                     </>
                   ) : (
                     <>
+                      {/* Grab here to reorder — or focus it and use the arrows. */}
+                      <button
+                        type="button"
+                        data-grip
+                        aria-label={`Reorder rule ${idx + 1}: ${rule}`}
+                        onPointerDown={(e) => startDrag(idx, e)}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowUp") { e.preventDefault(); nudge(idx, -1); }
+                          if (e.key === "ArrowDown") { e.preventDefault(); nudge(idx, 1); }
+                        }}
+                        className={cn(
+                          "-ml-1 flex h-7 w-4 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/50 transition-opacity",
+                          "hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50",
+                          dragIdx === idx ? "cursor-grabbing text-primary opacity-100" : "opacity-0 group-hover:opacity-100"
+                        )}
+                      >
+                        <GripVertical className="h-4 w-4" />
+                      </button>
                       <span className="w-7 shrink-0 text-right text-lg font-black leading-none tabular-nums text-primary/35 transition-colors group-hover:text-primary/80">
                         {idx + 1}
                       </span>
-                      <span className="min-w-0 flex-1 text-[15px] leading-snug">{rule}</span>
+                      <span className="min-w-0 flex-1 select-none text-[15px] leading-snug">{rule}</span>
                       <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                         <button
                           type="button"
