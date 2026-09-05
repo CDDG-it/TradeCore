@@ -95,8 +95,10 @@ export function ReviewsPanel() {
 
   return (
     <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-      {/* LEFT — toggle + list */}
-      <AccentPanel accent="primary" className="flex min-h-0 flex-col p-0 pl-1">
+      {/* LEFT — toggle + list.
+          On a phone this drops below the progress: a year of week rows is a
+          reference, not the thing you open the tab to see. */}
+      <AccentPanel accent="primary" className="order-2 flex min-h-0 flex-col p-0 pl-1 lg:order-none">
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border/40 p-3">
           <div className="flex rounded-lg border border-border/60 overflow-hidden">
             {(["weekly", "monthly"] as Mode[]).map((m) => (
@@ -120,7 +122,7 @@ export function ReviewsPanel() {
         </div>
 
         {listOpen && (
-          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <div className="max-h-[20rem] min-h-0 flex-1 overflow-y-auto p-3 lg:max-h-none">
             {mode === "weekly" ? (
               <div className="space-y-1.5">
                 {weeks.map(({ ws, group, reviewable, current, review }) => {
@@ -173,7 +175,7 @@ export function ReviewsPanel() {
       </AccentPanel>
 
       {/* RIGHT — how the habit is holding, and the line you set for yourself */}
-      <div className="flex min-h-0 flex-col gap-3">
+      <div className="order-1 flex min-h-0 flex-col gap-3 lg:order-none">
         {/* Progress you cannot miss: the streak in full size, the ratio beside
             it, and every tracked week as its own cell. */}
         <AccentPanel accent="primary" eyebrow="Consistency" title="Reviews kept" className="shrink-0">
@@ -224,14 +226,16 @@ weeks done · {pct}%
               );
             })}
           </div>
-          <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted-foreground/60">
-            <span>{format(new Date(strip[0].ws + "T12:00:00"), "MMM d")}</span>
-            <span className="flex items-center gap-3">
+          {/* The two end dates are the first thing to go when the row cannot
+              hold the legend as well. */}
+          <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-muted-foreground/60">
+            <span className="hidden sm:inline">{format(new Date(strip[0].ws + "T12:00:00"), "MMM d")}</span>
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px]" style={{ background: "#14B8A6" }} /> written</span>
               <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-border bg-muted-foreground/[0.09]" /> missed</span>
               <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-dashed border-primary/50" /> still trading</span>
             </span>
-            <span>this week</span>
+            <span className="hidden sm:inline">this week</span>
           </div>
         </AccentPanel>
 

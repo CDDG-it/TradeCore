@@ -38,7 +38,7 @@ export function AccentPanel({
   const hex = ACCENT_HEX[accent];
   return (
     <div
-      className={cn("relative overflow-hidden rounded-2xl border border-border/60 p-5 pl-6", className)}
+      className={cn("relative overflow-hidden rounded-2xl border border-border/60 p-4 pl-5 sm:p-5 sm:pl-6", className)}
       style={{
         background: `linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, ${hex} 4%), var(--card) 55%)`,
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 32px -18px rgba(0,0,0,0.8)",

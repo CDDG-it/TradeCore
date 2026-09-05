@@ -170,7 +170,6 @@ export function MindScoreBreakdown() {
           accent="cyan"
           eyebrow="Next steps"
           title="What lifts your score"
-          subtitle="The process work still outstanding — each one links straight to where you do it."
         >
           <div className="mt-4 space-y-1.5">
             {score.objectives.map((o) => {

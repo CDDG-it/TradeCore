@@ -152,7 +152,7 @@ export function TradingRulesEditor() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-border/60 p-6 pl-7"
+      className="relative overflow-hidden rounded-2xl border border-border/60 p-4 pl-5 sm:p-6 sm:pl-7"
       style={{
         background: "linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, #14B8A6 4%), var(--card) 55%)",
         boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 32px -18px rgba(0,0,0,0.8)",
@@ -177,10 +177,6 @@ export function TradingRulesEditor() {
       <div className="relative">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary/70">Discipline</p>
         <h2 className="mt-1.5 font-heading text-xl font-bold tracking-tight">Trading Rules</h2>
-        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted-foreground">
-          Your non-negotiables. These surface as the pre-trade checklist every time you log a trade — drag them into
-          the order you want to read them in.
-        </p>
       </div>
 
       {loading ? (
@@ -190,7 +186,7 @@ export function TradingRulesEditor() {
       ) : (
         <>
           {rules.length === 0 ? (
-            <div className="mt-5 rounded-xl border border-dashed border-border/60 px-4 py-10 text-center">
+            <div className="mt-4 rounded-xl border border-dashed border-border/60 px-4 py-6 text-center sm:mt-5 sm:py-10">
               <p className="text-sm font-medium text-muted-foreground">No rules yet</p>
               <p className="mt-1 text-xs text-muted-foreground/70">Write your first non-negotiable below.</p>
             </div>
@@ -200,7 +196,7 @@ export function TradingRulesEditor() {
               onPointerMove={onDragMove}
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
-              className="mt-5 divide-y divide-border/40 border-y border-border/40"
+              className="mt-4 divide-y divide-border/40 border-y border-border/40 sm:mt-5"
             >
               {rules.map((rule, idx) => (
                 <li
@@ -210,7 +206,7 @@ export function TradingRulesEditor() {
                   key={idx}
                   data-idx={idx}
                   className={cn(
-                    "group relative -mx-2 flex select-none items-center gap-2.5 rounded-lg px-2 py-3 transition-colors",
+                    "group relative -mx-2 flex select-none items-center gap-2.5 rounded-lg px-2 py-2.5 transition-colors sm:py-3",
                     dragIdx === idx
                       ? "z-10 bg-primary/[0.09] shadow-[0_8px_24px_-14px_rgba(0,0,0,0.8)] ring-1 ring-primary/30"
                       : "hover:bg-primary/[0.05]"
@@ -289,7 +285,7 @@ export function TradingRulesEditor() {
           )}
 
           {/* Composer */}
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-2 transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10">
+          <div className="mt-3 flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-2 transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 sm:mt-4">
             <input
               value={newRule}
               onChange={(e) => setNewRule(e.target.value)}
@@ -309,7 +305,7 @@ export function TradingRulesEditor() {
           </div>
 
           {/* Save row */}
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/40 pt-4">
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/40 pt-3 sm:mt-4 sm:pt-4">
             <div className="text-xs">
               {saveState === "saved" && (
                 <span className="flex items-center gap-1.5 text-success"><CheckCircle2 className="h-3.5 w-3.5" /> Saved</span>

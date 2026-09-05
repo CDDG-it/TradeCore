@@ -124,7 +124,7 @@ function PeriodToggle({ value, onChange, accent }: {
             aria-pressed={active}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(p); }}
             className={cn(
-              "rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider transition-colors sm:px-2 sm:text-[10px]",
+              "rounded-md px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider transition-colors sm:px-2 sm:text-[10px]",
               active ? "text-white" : "text-muted-foreground hover:text-foreground"
             )}
             style={active ? { background: accent } : undefined}
@@ -245,39 +245,42 @@ export default function DashboardPage() {
           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className="flex flex-1 flex-col gap-3 min-h-0">
-          {/* Row 1 — the same three columns as the desk, folded to two on a
-              phone: capital over habits on the left, win rate beside them, and
-              the mind score taking the full width underneath. Pairing the two
-              short readings with the tall one costs no legibility and saves a
-              whole screenful of scrolling. */}
-          <div className="grid flex-1 min-h-0 grid-cols-2 gap-3 md:grid-cols-3">
-            <div className="flex min-h-0 flex-col gap-3">
-              <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
-              <HabitsCard
-                habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit}
-                className="max-h-[18rem] flex-1 md:max-h-none"
-              />
-            </div>
-            <WinRateCard
-              winRate={winRate} wins={wins} losses={losses} be={be}
-              total={periodTrades.length} netR={periodR}
-              goodExec={goodExec} badExec={badExec}
-              period={wrPeriod} onPeriodChange={setWrPeriod}
-            />
-            <MindScoreOrb
-              score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod}
-              className="col-span-2 md:col-span-1"
+        // One grid for the whole desk, read two ways.
+        //
+        // From md it is the three columns it has always been: capital over
+        // habits, the win rate, the mind score — with the journal spanning the
+        // first two beneath them and the analyses beside it.
+        //
+        // On a phone it folds to two: the two short readings pair with the tall
+        // win rate, the journal gets the full width under them, and the mind
+        // score and analyses share the last row.
+        <div className="grid flex-1 min-h-0 grid-cols-2 gap-3 md:grid-cols-3 md:grid-rows-[minmax(0,1fr)_minmax(0,1.35fr)]">
+          <div className="flex min-h-0 flex-col gap-3 md:col-start-1 md:row-start-1">
+            <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
+            <HabitsCard
+              habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit}
+              className="max-h-[18rem] flex-1 md:max-h-none"
             />
           </div>
 
-          {/* Row 2 — journal fills to the bottom, analysis beside it (a touch taller) */}
-          <div className="grid gap-3 lg:grid-cols-3 flex-[1.35] min-h-0">
-            <div className="lg:col-span-2 min-h-0">
-              <WeekStrip days={weekDays} />
-            </div>
-            <AnalysisWidget analyses={analyses} trades={trades ?? []} />
+          <WinRateCard
+            winRate={winRate} wins={wins} losses={losses} be={be}
+            total={periodTrades.length} netR={periodR}
+            goodExec={goodExec} badExec={badExec}
+            period={wrPeriod} onPeriodChange={setWrPeriod}
+            className="md:col-start-2 md:row-start-1"
+          />
+
+          <div className="col-span-2 min-h-0 md:col-start-1 md:row-start-2">
+            <WeekStrip days={weekDays} />
           </div>
+
+          <MindScoreOrb
+            score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod}
+            className="md:col-start-3 md:row-start-1"
+          />
+
+          <AnalysisWidget analyses={analyses} trades={trades ?? []} className="md:col-start-3 md:row-start-2" />
         </div>
       )}
     </div>
@@ -336,10 +339,13 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
   ];
 
   return (
-    <div className={cn(CARD_BASE, "flex flex-col group", className)}>
+    <div className={cn(CARD_BASE, "group flex flex-col p-3 sm:p-4", className)}>
       <CardFx accent={color} />
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="sm:hidden">Mind score</span>
+          <span className="hidden sm:inline">MC mind score</span>
+        </p>
         <PeriodToggle value={period} onChange={onPeriodChange} accent={TURQUOISE} />
       </div>
 
@@ -347,14 +353,16 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
           spare, so the card fills rather than leaving a hole in the middle. */}
       <div className="mt-2.5 flex min-h-0 flex-1 items-end gap-3">
         <div className="shrink-0">
-          <p className="text-[40px] font-black tabular-nums leading-none" style={{ color }}>
+          <p className="text-[32px] font-black leading-none tabular-nums sm:text-[40px]" style={{ color }}>
             {pending ? "·" : hasData ? display : "—"}
           </p>
           <p className="mt-1 text-[11px] font-medium" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
             {pending ? (period === "week" ? "New week" : "New month") : hasData ? score!.band.label : "No data yet"}
           </p>
         </div>
-        <div className="group/meter flex h-full min-h-[52px] flex-1 items-end gap-[3px] pb-0.5" aria-hidden>
+        {/* Decoration, not data — it is the first thing to go when the card is
+            half a phone wide. */}
+        <div className="group/meter hidden h-full min-h-[52px] flex-1 items-end gap-[3px] pb-0.5 sm:flex" aria-hidden>
           {Array.from({ length: METER_BARS }).map((_, i) => {
             const on = i < filled;
             const h = 30 + (i / (METER_BARS - 1)) * 70; // 30%..100% rising profile
@@ -397,7 +405,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
                     : `${label}: ${value}% · worth ${Math.round(weight)}% of the score this ${period}`
                 }
               >
-                <span className="w-[62px] shrink-0 text-[11px] text-muted-foreground">{label}</span>
+                <span className="w-11 shrink-0 text-[11px] text-muted-foreground sm:w-[62px]">{label}</span>
                 <span className="relative h-[5px] flex-1 overflow-hidden rounded-full" style={{ background: alpha("var(--muted-foreground)", 12) }}>
                   <span
                     className="absolute inset-y-0 left-0 rounded-full transition-[width,filter] duration-700 ease-out group-hover/row:brightness-125"
@@ -409,7 +417,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
                   />
                 </span>
                 <span
-                  className="w-8 shrink-0 text-right text-[11px] font-bold tabular-nums"
+                  className="w-7 shrink-0 text-right text-[11px] font-bold tabular-nums sm:w-8"
                   style={{ color: value == null ? "var(--muted-foreground)" : accent }}
                 >
                   {value == null ? "—" : `${value}%`}
@@ -440,7 +448,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
               Breakdown →
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+          <div className="grid grid-cols-1 gap-x-3 gap-y-1 sm:grid-cols-2">
             {objectives.map((o) => {
               const due = o.target > 0;
               const full = due && o.rate >= 1;
@@ -512,7 +520,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
   return (
     <div className={cn(CARD_BASE, "flex flex-col p-3 sm:p-4", className)}>
       <CardFx accent={CYAN} />
-      <div className="flex items-center justify-between gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Win rate</p>
         <PeriodToggle value={period} onChange={onPeriodChange} accent={CYAN} />
       </div>
@@ -628,7 +636,7 @@ const BIAS_WORD: Record<string, { word: string; color: string }> = {
   choppy: { word: "Neutral", color: AMBER },
 };
 
-function AnalysisWidget({ analyses, trades }: { analyses: PreTradeAnalysis[]; trades: TradeJournalEntry[] }) {
+function AnalysisWidget({ analyses, trades, className }: { analyses: PreTradeAnalysis[]; trades: TradeJournalEntry[]; className?: string }) {
   const rows = useMemo(() => {
     const linked = new Map<string, TradeJournalEntry[]>();
     for (const t of trades) {
@@ -657,15 +665,15 @@ function AnalysisWidget({ analyses, trades }: { analyses: PreTradeAnalysis[]; tr
   const shown = rows.slice(0, 4);
 
   return (
-    <div className={cn(CARD_BASE, "flex flex-col")}>
+    <div className={cn(CARD_BASE, "flex flex-col p-3 sm:p-4", className)}>
       <CardFx accent={CYAN} />
 
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Analysis</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground/60">Plans written before the session</p>
+          <p className="mt-0.5 hidden text-[11px] text-muted-foreground/60 sm:block">Plans written before the session</p>
         </div>
-        <Link href="/analysis" className="shrink-0 text-[11px] font-semibold text-primary hover:underline">All plans</Link>
+        <Link href="/analysis" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">All plans</Link>
       </div>
 
       {shown.length === 0 ? (
@@ -685,7 +693,7 @@ function AnalysisWidget({ analyses, trades }: { analyses: PreTradeAnalysis[]; tr
                   className="block rounded-lg border-l-2 py-1 pl-2.5 pr-1 transition-colors hover:bg-muted/25"
                   style={{ borderColor: alpha(bias.color, 70) }}
                 >
-                  <div className="flex items-baseline justify-between gap-2">
+                  <div className="flex flex-col items-start gap-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
                     <div className="flex min-w-0 items-baseline gap-1.5">
                       <span className="font-mono text-[12px] font-black text-foreground">{a.instrument}</span>
                       <span className="text-[11px] font-semibold" style={{ color: bias.color }}>{bias.word}</span>
@@ -835,19 +843,22 @@ function HabitsCard({ habits, doneToday, pendingHabit, onToggle, className }: {
 
 function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; r: number }[] }) {
   return (
-    <div className={cn(CARD_BASE, "h-full flex flex-col")}>
+    <div className={cn(CARD_BASE, "flex h-full flex-col p-3 sm:p-4")}>
       <CardFx accent={TURQUOISE} />
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold">This week</p>
-          <span className="text-[11px] text-muted-foreground/70 tabular-nums">
+      <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <p className="whitespace-nowrap text-[13px] font-semibold sm:text-sm">This week</p>
+          <span className="truncate text-[11px] tabular-nums text-muted-foreground/70">
             {format(days[0].date, "MMM d")} – {format(days[6].date, "MMM d")}
           </span>
         </div>
-        <Link href="/journal" className="text-[11px] font-semibold text-primary hover:underline">Open journal →</Link>
+        <Link href="/journal" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">
+          <span className="sm:hidden">Open →</span>
+          <span className="hidden sm:inline">Open journal →</span>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 flex-1 min-h-0">
+      <div className="grid min-h-0 flex-1 grid-cols-7 gap-1 sm:gap-2">
         {days.map(({ date, trades: dt, r }) => {
           const has = dt.length > 0;
           // Chronological, so the bands run in the order the day actually went.
@@ -863,7 +874,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
               // to its entry and offers a picker when the day holds several.
               href={has ? `/journal?day=${format(date, "yyyy-MM-dd")}` : "/journal"}
               className={cn(
-                "group/day relative flex flex-col items-center rounded-xl border px-1 pb-2.5 pt-3 overflow-hidden",
+                "group/day relative flex flex-col items-center overflow-hidden rounded-lg border px-0.5 pb-2 pt-2 sm:rounded-xl sm:px-1 sm:pb-2.5 sm:pt-3",
                 "transition-all duration-300 ease-out hover:-translate-y-1",
                 today ? "border-primary/50" : "border-border/60"
               )}
@@ -905,7 +916,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
               />
 
               <span className={cn("relative text-[10px] font-semibold uppercase tracking-wide", today ? "text-primary" : "text-muted-foreground/60")}>{format(date, "EEE")}</span>
-              <span className={cn("relative text-lg font-bold tabular-nums mt-0.5 transition-transform duration-300 group-hover/day:scale-110", today ? "text-primary" : "text-foreground/85")}>
+              <span className={cn("relative mt-0.5 text-base font-bold tabular-nums transition-transform duration-300 group-hover/day:scale-110 sm:text-lg", today ? "text-primary" : "text-foreground/85")}>
                 {format(date, "d")}
               </span>
 
@@ -927,7 +938,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
               {/* Per trade: pair, its R, and how cleanly it was run — each on the
                   rail of its own result colour. */}
               {has && (
-                <div className="relative mt-2 w-full space-y-1.5 overflow-hidden px-0.5">
+                <div className="relative mt-2 hidden w-full space-y-1.5 overflow-hidden px-0.5 sm:block">
                   {shown.map((t) => {
                     const c = resultColor(t);
                     return (
@@ -960,7 +971,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
         })}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/40 pt-3 text-[10px] text-muted-foreground/70">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border/40 pt-2 text-[10px] text-muted-foreground/70 sm:mt-3 sm:gap-x-4 sm:pt-3">
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: GREEN }} /> Win</span>
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} /> Loss</span>
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: AMBER }} /> B/E</span>

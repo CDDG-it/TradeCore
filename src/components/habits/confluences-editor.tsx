@@ -84,7 +84,7 @@ export function ConfluencesEditor() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-border/60 p-6 pl-7"
+      className="relative overflow-hidden rounded-2xl border border-border/60 p-4 pl-5 sm:p-6 sm:pl-7"
       style={{
         background: "linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, #06B6D4 4%), var(--card) 55%)",
         boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 32px -18px rgba(0,0,0,0.8)",
@@ -110,9 +110,6 @@ export function ConfluencesEditor() {
       <div className="relative">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: "rgba(6,182,212,0.75)" }}>Setups</p>
         <h2 className="mt-1.5 font-heading text-xl font-bold tracking-tight">Confluences</h2>
-        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted-foreground">
-          Your reusable setup library. These become the quick-select chips when logging a trade.
-        </p>
       </div>
 
       {loading ? (
@@ -122,7 +119,7 @@ export function ConfluencesEditor() {
       ) : (
         <>
           {items.length === 0 ? (
-            <div className="mt-5 rounded-xl border border-dashed border-border/60 px-4 py-10 text-center">
+            <div className="mt-4 rounded-xl border border-dashed border-border/60 px-4 py-6 text-center sm:mt-5 sm:py-10">
               <p className="text-sm font-medium text-muted-foreground">No confluences yet</p>
               <p className="mt-1 text-xs text-muted-foreground/70">Add your own or pick from the suggestions below.</p>
             </div>
@@ -224,7 +221,7 @@ export function ConfluencesEditor() {
           )}
 
           {/* Save row */}
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/40 pt-4">
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/40 pt-3 sm:mt-4 sm:pt-4">
             <div className="text-xs">
               {saveState === "saved" && (
                 <span className="flex items-center gap-1.5 text-success"><CheckCircle2 className="h-3.5 w-3.5" /> Saved</span>

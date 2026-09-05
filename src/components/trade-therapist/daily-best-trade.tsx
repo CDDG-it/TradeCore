@@ -378,7 +378,6 @@ export function DailyBestTrade({
                 accent="cyan"
                 eyebrow="Analysis"
                 title="Post-market analysis"
-                subtitle="What did the market actually do? Key levels, the setups that appeared, how the day should have been traded."
                 className="flex min-h-0 flex-1 flex-col"
               >
                 <textarea
@@ -395,7 +394,6 @@ export function DailyBestTrade({
               accent="primary"
               eyebrow="Benchmark"
               title="Best trade of the day"
-              subtitle="The single best trade the market offered — take it apart so you recognise it next time."
               className="flex min-h-0 flex-col"
             >
               {/* One scrolling column: on a short laptop screen the parts give

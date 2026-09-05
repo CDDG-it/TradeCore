@@ -30,33 +30,29 @@ const GROUPS: { key: EdgeGroup; label: string; accent: string }[] = [
   { key: "strategy", label: "Strategy", accent: "#06B6D4" },
 ];
 
-const EDGE_TABS: { key: EdgeTab; group: EdgeGroup; label: string; short?: string; blurb: string }[] = [
+const EDGE_TABS: { key: EdgeTab; group: EdgeGroup; label: string; short?: string }[] = [
   {
     key: "habits",
     group: "mind",
     label: "Habits",
-    blurb: "The routines you keep away from the charts — the daily reps that build the state you trade from.",
   },
   {
     key: "mindscore",
     group: "mind",
     label: "MC Mindscore",
     short: "Mindscore",
-    blurb: "One number rolling your rule-following, daily habits and process work into a single read.",
   },
   {
     key: "rules",
     group: "strategy",
     label: "Rules & Confluences",
     short: "Rules",
-    blurb: "The non-negotiables and setups that define how you trade — surfaced when you log a trade.",
   },
   {
     key: "simulator",
     group: "strategy",
     label: "Pass Simulation",
     short: "Simulation",
-    blurb: "Pressure-test your edge against a funded account's rules across thousands of simulated runs.",
   },
 ];
 
@@ -142,25 +138,13 @@ export default function MyEdgePage() {
     setTab(next);
   }
 
-  const active = EDGE_TABS.find((x) => x.key === tab)!;
-  const group = GROUPS.find((g) => g.key === active.group)!;
-
   return (
-    <div className="space-y-5">
-      {/* Header — title, which half you are in, and the split control */}
+    <div className="space-y-3 sm:space-y-5">
+      {/* Header — the title and, from lg, the split control. */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">
-            My Edge
-          </h1>
-          <p className="mt-2 max-w-xl text-[12px] leading-relaxed text-muted-foreground">
-            <span className="font-semibold" style={{ color: group.accent }}>
-              {group.label}
-            </span>
-            <span className="mx-1.5 text-border">/</span>
-            {active.blurb}
-          </p>
-        </div>
+        <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">
+          My Edge
+        </h1>
         <EdgeToggle tab={tab} onChange={selectTab} />
       </div>
 
@@ -171,7 +155,7 @@ export default function MyEdgePage() {
         {tab === "habits" && <HabitsView />}
         {tab === "mindscore" && <MindScoreBreakdown />}
         {tab === "rules" && (
-          <div className="grid items-start gap-6 lg:grid-cols-2">
+          <div className="grid items-start gap-3 sm:gap-6 lg:grid-cols-2">
             <TradingRulesEditor />
             <ConfluencesEditor />
           </div>

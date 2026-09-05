@@ -190,7 +190,6 @@ export function CommitmentsPanel() {
         className="shrink-0 py-3.5"
         eyebrow="Commitments"
         title="Does the reflection actually carry?"
-        subtitle="An if/then in your own words. When the behaviour it guards against shows up again, you get asked whether you held it — the kept rate is the honest read on whether your sessions change anything."
         headerRight={
           keptRate !== null ? (
             <div className="text-right">

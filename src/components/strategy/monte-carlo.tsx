@@ -155,7 +155,7 @@ export function MonteCarloSimulator() {
   const edgePositive = result.expectancyR > 0;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-5">
       {/* Header + data controls: pull your real edge, save your setup */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold">MC Pass Simulation</h2>
@@ -239,9 +239,9 @@ export function MonteCarloSimulator() {
         </button>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] items-start">
+      <div className="grid items-start gap-3 sm:gap-5 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
         {/* ── Controls ─────────────────────────────────────────── */}
-        <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-4">
+        <div className="space-y-3 rounded-2xl border border-border/60 bg-card p-3 sm:space-y-4 sm:p-4">
           <FieldGroup title="Your edge">
             <SliderField label="Win rate" value={input.winRate * 100} min={10} max={90} step={1} unit="%"
               onChange={(v) => set("winRate", v / 100)} />
@@ -294,7 +294,7 @@ export function MonteCarloSimulator() {
         </div>
 
         {/* ── Results ──────────────────────────────────────────── */}
-        <div className="space-y-4 min-w-0">
+        <div className="min-w-0 space-y-3 sm:space-y-4">
           {/* Headline read on the odds */}
           <div className="rounded-2xl border border-primary/25 bg-primary/[0.06] px-4 py-3">
             <p className="text-sm leading-relaxed">
@@ -316,7 +316,7 @@ export function MonteCarloSimulator() {
           </div>
 
           {/* Outcome bar */}
-          <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-2">
+          <div className="space-y-2 rounded-2xl border border-border/60 bg-card p-3 sm:p-4">
             <div className="flex h-3 w-full overflow-hidden rounded-full bg-border/60">
               <div className="h-full transition-all" style={{ width: pct(result.passRate), background: GREEN }} />
               <div className="h-full transition-all" style={{ width: pct(result.timeoutRate), background: AMBER }} />
@@ -341,7 +341,7 @@ export function MonteCarloSimulator() {
           )}
 
           {/* Equity curves */}
-          <div className="rounded-2xl border border-border/60 bg-card p-4">
+          <div className="rounded-2xl border border-border/60 bg-card p-3 sm:p-4">
             <div className="mb-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Sample equity paths · {curveData.meta.length} of {input.simulations.toLocaleString()} runs
@@ -381,7 +381,7 @@ export function MonteCarloSimulator() {
           </div>
 
           {/* Ending balance distribution */}
-          <div className="rounded-2xl border border-border/60 bg-card p-4">
+          <div className="rounded-2xl border border-border/60 bg-card p-3 sm:p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Ending balance distribution
@@ -430,7 +430,7 @@ function Dot({ c }: { c: string }) {
 
 function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2 sm:space-y-2.5">
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{title}</p>
       {children}
     </div>
