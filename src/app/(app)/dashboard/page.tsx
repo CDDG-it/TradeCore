@@ -124,7 +124,7 @@ function PeriodToggle({ value, onChange, accent }: {
             aria-pressed={active}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(p); }}
             className={cn(
-              "rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors",
+              "rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider transition-colors sm:px-2 sm:text-[10px]",
               active ? "text-white" : "text-muted-foreground hover:text-foreground"
             )}
             style={active ? { background: accent } : undefined}
@@ -246,11 +246,18 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="flex flex-1 flex-col gap-3 min-h-0">
-          {/* Row 1 — capital + habits (left), win rate (middle), mind score (right) */}
-          <div className="grid gap-3 md:grid-cols-3 flex-1 min-h-0">
-            <div className="flex flex-col gap-3 min-h-0">
+          {/* Row 1 — the same three columns as the desk, folded to two on a
+              phone: capital over habits on the left, win rate beside them, and
+              the mind score taking the full width underneath. Pairing the two
+              short readings with the tall one costs no legibility and saves a
+              whole screenful of scrolling. */}
+          <div className="grid flex-1 min-h-0 grid-cols-2 gap-3 md:grid-cols-3">
+            <div className="flex min-h-0 flex-col gap-3">
               <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
-              <HabitsCard habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit} />
+              <HabitsCard
+                habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit}
+                className="max-h-[18rem] flex-1 md:max-h-none"
+              />
             </div>
             <WinRateCard
               winRate={winRate} wins={wins} losses={losses} be={be}
@@ -258,7 +265,10 @@ export default function DashboardPage() {
               goodExec={goodExec} badExec={badExec}
               period={wrPeriod} onPeriodChange={setWrPeriod}
             />
-            <MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} />
+            <MindScoreOrb
+              score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod}
+              className="col-span-2 md:col-span-1"
+            />
           </div>
 
           {/* Row 2 — journal fills to the bottom, analysis beside it (a touch taller) */}
@@ -281,8 +291,8 @@ export default function DashboardPage() {
    breakdown page with the calculation and week / month / all-time scores. */
 const METER_BARS = 22;
 
-function MindScoreOrb({ score, period, onPeriodChange }: {
-  score: MindScore | null; period: Period; onPeriodChange: (p: Period) => void;
+function MindScoreOrb({ score, period, onPeriodChange, className }: {
+  score: MindScore | null; period: Period; onPeriodChange: (p: Period) => void; className?: string;
 }) {
   const pending = score?.pending ?? false;
   const target = score?.total ?? 0;
@@ -326,7 +336,7 @@ function MindScoreOrb({ score, period, onPeriodChange }: {
   ];
 
   return (
-    <div className={cn(CARD_BASE, "flex flex-col group")}>
+    <div className={cn(CARD_BASE, "flex flex-col group", className)}>
       <CardFx accent={color} />
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
@@ -464,10 +474,10 @@ function MindScoreOrb({ score, period, onPeriodChange }: {
 }
 
 /* ── Win rate — hero donut of the month's W/L/BE split + net R ─────────── */
-function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec, period, onPeriodChange }: {
+function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec, period, onPeriodChange, className }: {
   winRate: number | null; wins: number; losses: number; be: number; total: number; netR: number;
   goodExec: number; badExec: number;
-  period: Period; onPeriodChange: (p: Period) => void;
+  period: Period; onPeriodChange: (p: Period) => void; className?: string;
 }) {
   const rColor = netR > 0 ? GREEN : netR < 0 ? RED : "var(--muted-foreground)";
   const ratedExec = goodExec + badExec;
@@ -500,10 +510,10 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
   let acc = 0; // accumulated fraction, for each arc's rotation
 
   return (
-    <div className={cn(CARD_BASE, "flex flex-col")}>
+    <div className={cn(CARD_BASE, "flex flex-col p-3 sm:p-4", className)}>
       <CardFx accent={CYAN} />
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Win rate</p>
+      <div className="flex items-center justify-between gap-1">
+        <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Win rate</p>
         <PeriodToggle value={period} onChange={onPeriodChange} accent={CYAN} />
       </div>
 
@@ -718,11 +728,11 @@ function AnalysisWidget({ analyses, trades }: { analyses: PreTradeAnalysis[]; tr
 }
 
 /* ── Active capital — compact + link to Accounts ──────────────────────── */
-function ActiveCapitalCard({ capital, count, hidden, onToggle }: {
-  capital: number; count: number; hidden: boolean; onToggle: () => void;
+function ActiveCapitalCard({ capital, count, hidden, onToggle, className }: {
+  capital: number; count: number; hidden: boolean; onToggle: () => void; className?: string;
 }) {
   return (
-    <div className={cn(CARD_BASE, "flex flex-col justify-center py-3 shrink-0")}>
+    <div className={cn(CARD_BASE, "flex flex-col justify-center p-3 sm:px-4 sm:py-3", className)}>
       <CardFx accent={TURQUOISE} />
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Active capital</p>
@@ -743,17 +753,21 @@ function ActiveCapitalCard({ capital, count, hidden, onToggle }: {
 }
 
 /* ── Habits — check off today, and jump to the full page ──────────────── */
-function HabitsCard({ habits, doneToday, pendingHabit, onToggle }: {
-  habits: Habit[]; doneToday: Set<string>; pendingHabit: string | null; onToggle: (id: string) => void;
+function HabitsCard({ habits, doneToday, pendingHabit, onToggle, className }: {
+  habits: Habit[]; doneToday: Set<string>; pendingHabit: string | null; onToggle: (id: string) => void; className?: string;
 }) {
   return (
-    <div className={cn(CARD_BASE, "flex flex-col flex-1 min-h-0")}>
+    <div className={cn(CARD_BASE, "flex min-h-0 flex-col", className)}>
       <CardFx accent={TURQUOISE} />
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold">Today&apos;s habits</p>
-        <div className="flex items-center gap-2.5">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        {/* Half a phone screen has no room for the full title. */}
+        <p className="whitespace-nowrap text-[13px] font-semibold sm:text-sm">
+          <span className="sm:hidden">Habits</span>
+          <span className="hidden sm:inline">Today&apos;s habits</span>
+        </p>
+        <div className="flex shrink-0 items-center gap-2">
           <span className="text-[11px] font-semibold tabular-nums text-primary">{doneToday.size}/{habits.length}</span>
-          <Link href="/habits" className="text-[11px] font-semibold text-primary hover:underline">Open →</Link>
+          <Link href="/habits" className="whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">Open →</Link>
         </div>
       </div>
       {habits.length === 0 ? (
@@ -800,7 +814,7 @@ function HabitsCard({ habits, doneToday, pendingHabit, onToggle }: {
                     </svg>
                   )}
                 </span>
-                <span className={cn("text-[13px] truncate flex-1 transition-colors", done ? "text-foreground" : "text-muted-foreground group-hover/habit:text-foreground")}>
+                <span className={cn("line-clamp-2 flex-1 text-[13px] transition-colors", done ? "text-foreground" : "text-muted-foreground group-hover/habit:text-foreground")}>
                   {habit.name}
                 </span>
                 {pending && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground/60 shrink-0" />}
