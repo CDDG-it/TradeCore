@@ -1,12 +1,17 @@
 "use client";
 
 import { CardFlip } from "@/components/landing/card-flip";
+import {
+  DashboardSignature, EdgeSignature, TherapistSignature, MarketsSignature,
+} from "@/components/landing/card-signatures";
 import { FlowField } from "@/components/landing/flow-field";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
-// The five primary destinations, shown as liquid-glass cards that flip on hover
-// to reveal what each one does. No screenshots, no icons beyond the flip hint.
+// The four primary destinations. The face of each card is that product's own
+// widget drawn small — the win-rate ring, the Mindscore meter, the review
+// calendar, the desk — so the card shows the thing rather than describing it.
+// Hovering flips it to what the surface holds and a way in.
 const CARDS: React.ComponentProps<typeof CardFlip>[] = [
   {
     title: "Dashboard",
@@ -14,6 +19,7 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
     description: "Every account, trade and metric in a single command center.",
     features: ["Live P&L", "Account overview", "Daily focus", "Quick journal"],
     href: "/dashboard",
+    visual: <DashboardSignature />,
   },
   {
     title: "My Edge",
@@ -21,6 +27,7 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
     description: "The playbook you trade against, and the Mindscore that reads how well you follow it.",
     features: ["Rules & confluences", "Daily habits", "Mindscore", "Pass simulation"],
     href: "/psychological-edge",
+    visual: <EdgeSignature />,
   },
   {
     title: "MC Trade Therapist",
@@ -28,6 +35,7 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
     description: "Pattern detection and reflective prompts drawn from your history.",
     features: ["Pattern engine", "Post-trade 5R", "Bias alerts", "Session recaps"],
     href: "/trade-therapist",
+    visual: <TherapistSignature />,
   },
   {
     title: "MC News Dashboard",
@@ -35,6 +43,7 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
     description: "A live read on the forces and headlines driving NQ and GC.",
     features: ["Live news feed", "Market forces", "Session structure", "Impact scan"],
     href: "/news-city",
+    visual: <MarketsSignature />,
   },
 ];
 
@@ -73,7 +82,8 @@ export function LayoutShowcase() {
             </h2>
           </div>
           <p className="max-w-sm font-body text-sm leading-relaxed text-[rgba(248,250,252,0.55)]">
-            Five surfaces, one account. Hover any card to see what it holds.
+            Four surfaces, one account. Each card wears its own screen — hover to
+            see what it holds.
           </p>
         </div>
 

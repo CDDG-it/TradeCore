@@ -715,25 +715,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 60%, transparent), 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
-/* ── Landing showcase — liquid-glass flip cards ──
-   Ambient turquoise glow rings that pulse behind the front face. */
-@keyframes glassRing {
-  0% {
-    transform: scale(2);
-    opacity: 0;
-    box-shadow: 0 0 50px rgba(20, 184, 166, 0.5);
-  }
-  50% {
-    transform: translateY(-5px) scale(1);
-    opacity: 1;
-    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.5);
-  }
-  100% {
-    transform: translateY(5px) scale(0.1);
-    opacity: 0;
-    box-shadow: 0 10px 20px rgba(20, 184, 166, 0);
-  }
-}
+
 
 /* ── Phone shell — fixed bottom tab bar ──
    Below `lg` the primary navigation is a bar pinned to the bottom of the

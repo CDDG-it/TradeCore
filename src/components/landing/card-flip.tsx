@@ -18,6 +18,9 @@ export interface CardFlipProps {
   features: string[];
   href: string;
   cta?: string;
+  /** The face of the card: a small, static rendering of what the product
+   *  actually puts on screen. See card-signatures.tsx. */
+  visual?: React.ReactNode;
 }
 
 // Shared glass surface for both faces. The fill is a navy tint rather than a
@@ -55,6 +58,7 @@ export function CardFlip({
   features,
   href,
   cta = "Open",
+  visual,
 }: CardFlipProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -82,38 +86,40 @@ export function CardFlip({
         >
           <Sheen />
 
-          {/* Ambient turquoise glow rings */}
-          <div aria-hidden className="absolute inset-0 flex items-center justify-center">
-            <div className="relative flex h-[100px] w-[160px] items-center justify-center">
-              {[...Array(10)].map((_, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "absolute h-[50px] w-[50px] rounded-[140px] opacity-0",
-                    "shadow-[0_0_50px_rgba(20,184,166,0.5)]",
-                    "animate-[glassRing_3s_linear_infinite] motion-reduce:animate-none",
-                    "group-hover:animate-[glassRing_2s_linear_infinite]",
-                  )}
-                  style={{ animationDelay: `${i * 0.3}s` }}
-                />
-              ))}
+          {/* The card's face: the product's own widget, drawn small. It lifts
+              and dims a touch on hover so the flip reads as turning the card
+              over rather than swapping two unrelated pictures. */}
+          <div className="absolute inset-0 flex flex-col">
+            <div
+              aria-hidden
+              className={cn(
+                "min-h-0 flex-1 px-5 pb-2 pt-5",
+                "transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+                "group-hover:-translate-y-1 group-hover:opacity-70 motion-reduce:transition-none",
+              )}
+            >
+              {visual}
             </div>
-          </div>
 
-          {/* Bottom label */}
-          <div className="absolute inset-x-0 bottom-0 p-5">
-            <div className="flex items-end justify-between gap-3">
-              <div className="space-y-1.5">
-                <h3 className="font-heading text-lg font-bold leading-snug tracking-tight text-white transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1">
-                  {title}
-                </h3>
-                <p className="line-clamp-2 text-sm leading-snug text-white/55 transition-transform delay-[50ms] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1">
-                  {subtitle}
-                </p>
-              </div>
-              <div className="relative shrink-0">
-                <div className="absolute inset-[-8px] rounded-lg bg-gradient-to-br from-primary/25 via-primary/10 to-transparent" />
-                <Repeat2 aria-hidden className="relative z-10 h-4 w-4 text-primary" />
+            {/* Label — over a scrim, so a busy visual never eats the title. */}
+            <div className="relative shrink-0 p-5 pt-3">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 top-[-2.5rem] bg-gradient-to-t from-[rgba(11,17,32,0.92)] via-[rgba(11,17,32,0.75)] to-transparent"
+              />
+              <div className="relative flex items-end justify-between gap-3">
+                <div className="space-y-1.5">
+                  <h3 className="font-heading text-lg font-bold leading-snug tracking-tight text-white transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1">
+                    {title}
+                  </h3>
+                  <p className="line-clamp-2 text-sm leading-snug text-white/55 transition-transform delay-[50ms] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1">
+                    {subtitle}
+                  </p>
+                </div>
+                <div className="relative shrink-0">
+                  <div className="absolute inset-[-8px] rounded-lg bg-gradient-to-br from-primary/25 via-primary/10 to-transparent" />
+                  <Repeat2 aria-hidden className="relative z-10 h-4 w-4 text-primary" />
+                </div>
               </div>
             </div>
           </div>
