@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  format, endOfWeek, startOfDay, startOfWeek, addWeeks, subWeeks,
+  format, startOfWeek, addWeeks, subWeeks,
 } from "date-fns";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Loader2, Check, Lock, CheckCircle2,
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, saveWeeklyTradeReview } from "@/lib/supabase/queries";
-import { getWeekGroup, tradeR, formatTotalR } from "@/lib/journal/weeks";
+import { getWeekGroup, tradeR, formatTotalR, reviewOpensOn, isReviewOpen } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview, BestTradeOfDay } from "@/lib/types";
 
 const TURQUOISE = "#14B8A6";
@@ -21,7 +21,7 @@ const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
  * Weekly review — a day-by-day result strip (win / loss / break-even, and
  * whether the best trade was taken) plus the week's reflection. The numbers are
  * live until the week closes; the reflection is the only thing to fill in, and
- * completing it is what the MC Mindscore counts once the week has ended. A
+ * completing it is what the MC Mindscore counts once the trading week is over. A
  * toggle brings up the previous week's notes so you can check you held to them.
  */
 export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
@@ -55,8 +55,10 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
     });
   }, [weekStart, prevWeekKey]);
 
-  const weekEnd = useMemo(() => endOfWeek(monday, { weekStartsOn: 1 }), [monday]);
-  const ended = weekEnd < startOfDay(new Date());
+  // The trading week is what matters, not the calendar one: the review opens on
+  // Friday, and only from then can it be saved or counted by the Mindscore.
+  const opensOn = useMemo(() => reviewOpensOn(weekStart), [weekStart]);
+  const open = useMemo(() => isReviewOpen(weekStart), [weekStart]);
 
   const group = useMemo(() => (trades ? getWeekGroup(trades, weekStart) : null), [trades, weekStart]);
 
@@ -68,6 +70,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const prevWritten = Boolean(prevReview && (prevReview.lessons || prevReview.mistakes || prevReview.prevention_plan));
 
   async function save() {
+    if (!open) return;
     setSaving(true); setError(false);
     try {
       const rev = await saveWeeklyTradeReview({
@@ -130,12 +133,12 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
 
       {/* Status banner */}
       <div className={cn("flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs",
-        ended ? "border-success/25 bg-success/5" : "border-primary/25 bg-primary/5")}>
-        {ended ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" /> : <Lock className="w-4 h-4 text-primary shrink-0" />}
+        open ? "border-success/25 bg-success/5" : "border-primary/25 bg-primary/5")}>
+        {open ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" /> : <Lock className="w-4 h-4 text-primary shrink-0" />}
         <p className="text-muted-foreground">
-          {ended
-            ? <>This week is closed. {complete ? "Reflection complete — it counts toward your MC Mindscore." : "Add your reflection below to complete it and count it toward your MC Mindscore."}</>
-            : <>This week is still running. It finalises on Sunday — only then does the review count toward your MC Mindscore.</>}
+          {open
+            ? <>The trading week is done. {complete ? "Reflection complete — it counts toward your MC Mindscore." : "Add your reflection below to complete it and count it toward your MC Mindscore."}</>
+            : <>This week is still trading. The review unlocks on {format(opensOn, "EEEE d MMMM")}, once the week&apos;s last session is behind you — it counts toward your MC Mindscore from then.</>}
         </p>
       </div>
 
@@ -234,8 +237,9 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
                 value={f.value}
                 onChange={(e) => { f.set(e.target.value); setSaved(false); }}
                 rows={3}
-                placeholder={f.ph}
-                className="w-full resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-muted-foreground/40"
+                disabled={!open}
+                placeholder={open ? f.ph : "Opens Friday"}
+                className="w-full resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-muted-foreground/40 disabled:cursor-not-allowed"
               />
             </div>
           ))}
@@ -244,16 +248,18 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
           <span className="text-xs">
             {error ? <span className="text-destructive">Could not save.</span>
               : saved ? <span className="inline-flex items-center gap-1.5 text-success"><Check className="w-3.5 h-3.5" /> Saved</span>
+              : !open ? <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Lock className="w-3.5 h-3.5" /> Unlocks {format(opensOn, "EEE d MMM")}</span>
               : null}
           </span>
           <button
             onClick={save}
-            disabled={saving || !dirty}
+            title={open ? undefined : `The review opens on ${format(opensOn, "EEEE d MMMM")}, once the trading week is over`}
+            disabled={saving || !dirty || !open}
             className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
             style={{ background: TURQUOISE, boxShadow: "0 2px 12px rgba(20,184,166,0.26)" }}
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            {complete ? "Save reflection" : "Complete review"}
+            {!open ? "Opens Friday" : complete ? "Save reflection" : "Complete review"}
           </button>
         </div>
       </div>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  format, startOfWeek, subWeeks, endOfWeek, startOfDay, subMonths, startOfMonth, endOfMonth, isWithinInterval,
+  format, startOfWeek, subWeeks, subMonths, startOfMonth, endOfMonth, isWithinInterval,
 } from "date-fns";
 import {
   Loader2, ArrowRight, CheckCircle2, Circle, Lock, ChevronDown, ChevronUp,
@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { getTrades, getWeeklyTradeReviews } from "@/lib/supabase/queries";
-import { getWeekGroup, formatTotalR, tradeR } from "@/lib/journal/weeks";
+import { getWeekGroup, formatTotalR, tradeR, isReviewOpen } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
 
 type Mode = "weekly" | "monthly";
@@ -43,7 +43,8 @@ export function ReviewsPanel() {
       const ws = format(monday, "yyyy-MM-dd");
       return {
         ws, group: getWeekGroup(trades, ws),
-        ended: endOfWeek(monday, { weekStartsOn: 1 }) < startOfDay(now),
+        // Reviewable once the trading week is over — Friday, not Sunday.
+        reviewable: isReviewOpen(ws, now),
         current: i === 0, review: reviewByWeek.get(ws),
       };
     });
@@ -66,17 +67,17 @@ export function ReviewsPanel() {
     return <div className="flex items-center justify-center h-64"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
   }
 
-  const closedWeeks = weeks.filter((w) => w.ended);
-  const doneCount = closedWeeks.filter((w) => written(w.review)).length;
-  const pct = closedWeeks.length ? Math.round((doneCount / closedWeeks.length) * 100) : 0;
+  const finishedWeeks = weeks.filter((w) => w.reviewable);
+  const doneCount = finishedWeeks.filter((w) => written(w.review)).length;
+  const pct = finishedWeeks.length ? Math.round((doneCount / finishedWeeks.length) * 100) : 0;
   // Current streak of consecutive closed weeks with a written review (newest → back).
   let streak = 0;
-  for (const w of closedWeeks) { if (written(w.review)) streak++; else break; }
+  for (const w of finishedWeeks) { if (written(w.review)) streak++; else break; }
 
   // Oldest → newest, so the strip reads like a timeline instead of a list.
   const strip = [...weeks].reverse();
   // The closed week most in need of attention — what the empty state points at.
-  const nextToWrite = closedWeeks.find((w) => !written(w.review));
+  const nextToWrite = finishedWeeks.find((w) => !written(w.review));
 
   // The line that actually carries forward: the focus you set for the week
   // ahead. Falls back to what you wrote instead, so the panel is never blank
@@ -122,7 +123,7 @@ export function ReviewsPanel() {
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
             {mode === "weekly" ? (
               <div className="space-y-1.5">
-                {weeks.map(({ ws, group, ended, current, review }) => {
+                {weeks.map(({ ws, group, reviewable, current, review }) => {
                   const done = written(review);
                   return (
                     <Link key={ws} href={`/trade-therapist/review/${ws}`}
@@ -130,9 +131,9 @@ export function ReviewsPanel() {
                         "group flex items-center gap-2.5 rounded-lg border px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30",
                         // A closed week with nothing written is the only row
                         // that is actually asking for something.
-                        ended && !done ? "border-warning/35 bg-warning/[0.04]" : "border-border/60"
+                        reviewable && !done ? "border-warning/35 bg-warning/[0.04]" : "border-border/60"
                       )}>
-                      {!ended ? <Lock className="w-4 h-4 shrink-0 text-primary/70" />
+                      {!reviewable ? <Lock className="w-4 h-4 shrink-0 text-primary/70" />
                         : done ? <CheckCircle2 className="w-4 h-4 shrink-0 text-success" />
                         : <Circle className="w-4 h-4 shrink-0 text-muted-foreground/40" />}
                       <div className="min-w-0 flex-1">
@@ -187,26 +188,26 @@ export function ReviewsPanel() {
             </div>
             <div className="text-right">
               <p className="text-lg font-black leading-none tabular-nums text-foreground">
-                {doneCount}<span className="text-muted-foreground/50">/{closedWeeks.length}</span>
+                {doneCount}<span className="text-muted-foreground/50">/{finishedWeeks.length}</span>
               </p>
               <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                closed weeks · {pct}%
+weeks done · {pct}%
               </p>
             </div>
           </div>
 
           {/* One cell per week, oldest first — written, missed, or still open. */}
           <div className="mt-4 flex items-end gap-[3px]">
-            {strip.map(({ ws, group, ended, current, review }) => {
+            {strip.map(({ ws, group, reviewable, current, review }) => {
               const done = written(review);
-              const state = !ended ? "open" : done ? "done" : "missed";
+              const state = !reviewable ? "open" : done ? "done" : "missed";
               return (
                 <Link
                   key={ws}
                   href={`/trade-therapist/review/${ws}`}
                   title={
                     `Week ${group.weekNum} · ${group.rangeLabel} — ` +
-                    (state === "open" ? "still running" : state === "done" ? "reviewed" : "not written")
+                    (state === "open" ? "still trading — review opens Friday" : state === "done" ? "reviewed" : "not written")
                   }
                   className={cn(
                     "group/cell h-9 flex-1 rounded-[3px] border transition-all duration-200 hover:-translate-y-0.5",
@@ -228,7 +229,7 @@ export function ReviewsPanel() {
             <span className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px]" style={{ background: "#14B8A6" }} /> written</span>
               <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-border bg-muted-foreground/[0.09]" /> missed</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-dashed border-primary/50" /> open</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-dashed border-primary/50" /> still trading</span>
             </span>
             <span>this week</span>
           </div>

@@ -1,6 +1,6 @@
 import {
   format, startOfISOWeek, endOfISOWeek, eachDayOfInterval,
-  getISOWeek, getISOWeekYear,
+  getISOWeek, getISOWeekYear, addDays, startOfDay,
 } from "date-fns";
 import type { TradeJournalEntry } from "@/lib/types";
 
@@ -92,6 +92,24 @@ export function buildWeekGroups(trades: TradeJournalEntry[]): WeekGroup[] {
   return [...weekStarts]
     .map((ws) => getWeekGroup(trades, ws))
     .sort((a, b) => b.weekStart.localeCompare(a.weekStart));
+}
+
+/**
+ * When a week's review opens.
+ *
+ * The trading week is done when Friday's session is — Saturday and Sunday add
+ * nothing to review — so the review unlocks on that Friday rather than waiting
+ * for the calendar week to run out. The same rule decides whether the MC
+ * Mindscore counts the review as due, so the page and the score can never
+ * disagree about what is expected of you.
+ */
+export function reviewOpensOn(weekStart: string): Date {
+  return startOfDay(addDays(new Date(weekStart + "T12:00:00"), 4)); // Monday + 4 = Friday
+}
+
+/** True once the trading week behind `weekStart` (a Monday) has finished. */
+export function isReviewOpen(weekStart: string, now: Date = new Date()): boolean {
+  return startOfDay(now).getTime() >= reviewOpensOn(weekStart).getTime();
 }
 
 export function formatTotalR(totalR: number): string {

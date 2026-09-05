@@ -16,6 +16,7 @@ import {
   eachDayOfInterval, min as dfMin, subDays,
 } from "date-fns";
 import { computeTradeRulesScore, computeHabitCounts } from "@/lib/discipline";
+import { isReviewOpen } from "@/lib/journal/weeks";
 import type {
   TradeJournalEntry, Habit, HabitCompletion, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, PreTradeAnalysis,
   CommitmentAdherenceLog,
@@ -180,11 +181,11 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
     return d >= start && d <= clampEnd;
   };
   const bestDays = new Set(input.bestTrades.filter((b) => inRange(b.date)).map((b) => dayKey(b.date)));
-  // A weekly review only becomes "due" once its week has fully ended. The
-  // current week's review is never counted for or against you until Sunday
-  // passes — so the objective can't drag the score down mid-week.
-  const todayStart = startOfDay(now);
-  const completedMondays = mondaysInRange.filter((k) => endOfWeek(new Date(k + "T12:00:00"), { weekStartsOn: 1 }) < todayStart);
+  // A weekly review becomes "due" when the trading week behind it is over —
+  // that is Friday, not Sunday, since the weekend adds nothing to review. Until
+  // then the week is neither counted for nor against you, so the objective
+  // cannot drag the score down mid-week. Same rule as the review page itself.
+  const completedMondays = mondaysInRange.filter((k) => isReviewOpen(k, now));
   const reviewTarget = completedMondays.length;
   const reviewsDone = completedMondays.filter((k) => reviewSet.has(k)).length;
   const reviewRate = reviewTarget === 0 ? 1 : Math.min(1, reviewsDone / reviewTarget);
@@ -216,7 +217,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
 
   const rawObjectives: Omit<Objective, "contribution">[] = [
     {
-      key: "weekly-review", label: "Weekly review", description: "Complete each week's review once the week has ended",
+      key: "weekly-review", label: "Weekly review", description: "Complete each week's review once the trading week is over — from Friday",
       href: "/trade-therapist?tab=reviews", progress: reviewsDone, target: reviewTarget,
       rate: reviewRate,
     },
