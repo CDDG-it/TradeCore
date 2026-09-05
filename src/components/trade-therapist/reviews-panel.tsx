@@ -73,6 +73,25 @@ export function ReviewsPanel() {
   let streak = 0;
   for (const w of closedWeeks) { if (written(w.review)) streak++; else break; }
 
+  // Oldest → newest, so the strip reads like a timeline instead of a list.
+  const strip = [...weeks].reverse();
+  // The closed week most in need of attention — what the empty state points at.
+  const nextToWrite = closedWeeks.find((w) => !written(w.review));
+
+  // The line that actually carries forward: the focus you set for the week
+  // ahead. Falls back to what you wrote instead, so the panel is never blank
+  // when a review exists.
+  const latest = writtenNotes[0];
+  const latestGroup = latest ? getWeekGroup(trades, latest.week_start) : null;
+  const headline = latest
+    ? latest.prevention_plan
+      ? { label: "Focus you set", text: latest.prevention_plan, tone: "#14B8A6" }
+      : latest.mistakes
+      ? { label: "What you wanted to fix", text: latest.mistakes, tone: "#ef4444" }
+      : { label: "What worked", text: latest.lessons, tone: "#22c55e" }
+    : null;
+  const earlier = writtenNotes.slice(1, 5);
+
   return (
     <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
       {/* LEFT — toggle + list */}
@@ -107,7 +126,12 @@ export function ReviewsPanel() {
                   const done = written(review);
                   return (
                     <Link key={ws} href={`/trade-therapist/review/${ws}`}
-                      className="group flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30">
+                      className={cn(
+                        "group flex items-center gap-2.5 rounded-lg border px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30",
+                        // A closed week with nothing written is the only row
+                        // that is actually asking for something.
+                        ended && !done ? "border-warning/35 bg-warning/[0.04]" : "border-border/60"
+                      )}>
                       {!ended ? <Lock className="w-4 h-4 shrink-0 text-primary/70" />
                         : done ? <CheckCircle2 className="w-4 h-4 shrink-0 text-success" />
                         : <Circle className="w-4 h-4 shrink-0 text-muted-foreground/40" />}
@@ -147,64 +171,133 @@ export function ReviewsPanel() {
         )}
       </AccentPanel>
 
-      {/* RIGHT — progress + what you wrote (facts only) */}
-      <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1">
-        <AccentPanel
-          accent="primary"
-          eyebrow="Consistency"
-          title="Review progress"
-          headerRight={
-            <span className="text-xs font-bold tabular-nums text-primary">{doneCount}/{closedWeeks.length}</span>
-          }
-        >
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted-foreground/12">
-            <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, background: "#14B8A6" }} />
+      {/* RIGHT — how the habit is holding, and the line you set for yourself */}
+      <div className="flex min-h-0 flex-col gap-3">
+        {/* Progress you cannot miss: the streak in full size, the ratio beside
+            it, and every tracked week as its own cell. */}
+        <AccentPanel accent="primary" eyebrow="Consistency" title="Reviews kept" className="shrink-0">
+          <div className="mt-3 flex items-end justify-between gap-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-[40px] font-black leading-none tabular-nums" style={{ color: streak > 0 ? "#14B8A6" : "var(--muted-foreground)" }}>
+                {streak}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                week{streak === 1 ? "" : "s"} in a row
+              </span>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-black leading-none tabular-nums text-foreground">
+                {doneCount}<span className="text-muted-foreground/50">/{closedWeeks.length}</span>
+              </p>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                closed weeks · {pct}%
+              </p>
+            </div>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="rounded-lg border border-border/50 bg-muted/15 px-3 py-2 text-center">
-              <p className="text-lg font-black tabular-nums leading-none text-foreground">{streak}</p>
-              <p className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Week streak</p>
-            </div>
-            <div className="rounded-lg border border-border/50 bg-muted/15 px-3 py-2 text-center">
-              <p className="text-lg font-black tabular-nums leading-none text-foreground">{closedWeeks.length - doneCount}</p>
-              <p className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Still to write</p>
-            </div>
+
+          {/* One cell per week, oldest first — written, missed, or still open. */}
+          <div className="mt-4 flex items-end gap-[3px]">
+            {strip.map(({ ws, group, ended, current, review }) => {
+              const done = written(review);
+              const state = !ended ? "open" : done ? "done" : "missed";
+              return (
+                <Link
+                  key={ws}
+                  href={`/trade-therapist/review/${ws}`}
+                  title={
+                    `Week ${group.weekNum} · ${group.rangeLabel} — ` +
+                    (state === "open" ? "still running" : state === "done" ? "reviewed" : "not written")
+                  }
+                  className={cn(
+                    "group/cell h-9 flex-1 rounded-[3px] border transition-all duration-200 hover:-translate-y-0.5",
+                    state === "done" && "border-transparent",
+                    // A missed week still has to read as a week, not a gap.
+                    state === "missed" && "border-border bg-muted-foreground/[0.09]",
+                    state === "open" && "border-dashed border-primary/50 bg-primary/5"
+                  )}
+                  style={state === "done" ? { background: "#14B8A6", boxShadow: "0 0 10px rgba(20,184,166,0.35)" } : undefined}
+                >
+                  <span className="sr-only">Week {group.weekNum}</span>
+                  {current && <span aria-hidden className="mx-auto mt-1 block h-1 w-1 rounded-full bg-primary" />}
+                </Link>
+              );
+            })}
+          </div>
+          <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted-foreground/60">
+            <span>{format(new Date(strip[0].ws + "T12:00:00"), "MMM d")}</span>
+            <span className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px]" style={{ background: "#14B8A6" }} /> written</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-border bg-muted-foreground/[0.09]" /> missed</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-dashed border-primary/50" /> open</span>
+            </span>
+            <span>this week</span>
           </div>
         </AccentPanel>
 
-        <AccentPanel
-          accent="cyan"
-          eyebrow="In your words"
-          title="Your reflections"
-          subtitle="Exactly what you wrote, newest first — your words only."
-        >
-          <div className="mt-4 space-y-2.5">
-            {writtenNotes.length === 0 ? (
-              <p className="py-6 text-center text-xs text-muted-foreground/70">No reflections written yet — close a week to add one.</p>
-            ) : (
-              writtenNotes.map((r) => {
-                const group = getWeekGroup(trades, r.week_start);
-                return (
-                  <Link key={r.week_start} href={`/trade-therapist/review/${r.week_start}`}
-                    className="block rounded-lg border border-border/60 px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-[11px] font-bold">Week {group.weekNum}</span>
-                      <span className="text-[10px] text-muted-foreground">{group.rangeLabel}</span>
-                    </div>
-                    {r.mistakes && (
-                      <p className="mt-1.5 text-[11px] leading-snug"><span className="font-semibold text-destructive">The problem: </span><span className="text-muted-foreground">{r.mistakes}</span></p>
-                    )}
-                    {r.lessons && (
-                      <p className="mt-1 text-[11px] leading-snug"><span className="font-semibold text-success">What worked: </span><span className="text-muted-foreground">{r.lessons}</span></p>
-                    )}
-                    {r.prevention_plan && (
-                      <p className="mt-1 text-[11px] leading-snug"><span className="font-semibold text-primary">Focus next week: </span><span className="text-muted-foreground">{r.prevention_plan}</span></p>
-                    )}
-                  </Link>
-                );
-              })
-            )}
-          </div>
+        {/* The one line worth carrying into the next session, then the trail of
+            the ones before it — so repeating yourself becomes visible. */}
+        <AccentPanel accent="cyan" eyebrow="Carried forward" title="What you told yourself" className="flex min-h-0 flex-1 flex-col">
+          {!headline ? (
+            <div className="mt-4 flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 py-8 text-center">
+              <p className="text-xs text-muted-foreground">Nothing written yet.</p>
+              <p className="max-w-xs text-[11px] leading-relaxed text-muted-foreground/70">
+                Close out a week and the focus you set for the next one lands here, so you start the week with your own
+                instruction in front of you.
+              </p>
+              {nextToWrite && (
+                <Link
+                  href={`/trade-therapist/review/${nextToWrite.ws}`}
+                  className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                >
+                  Write week {nextToWrite.group.weekNum}&apos;s review <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="mt-3 flex min-h-0 flex-1 flex-col">
+              {/* The headline instruction, in your own words */}
+              <Link
+                href={`/trade-therapist/review/${latest.week_start}`}
+                className="group block shrink-0 border-l-2 pl-3 transition-colors"
+                style={{ borderColor: headline.tone }}
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: headline.tone }}>
+                  {headline.label}
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">&ldquo;{headline.text}&rdquo;</p>
+                <p className="mt-2 text-[10px] text-muted-foreground/60 transition-colors group-hover:text-primary">
+                  Week {latestGroup!.weekNum} · {latestGroup!.rangeLabel} →
+                </p>
+              </Link>
+
+              {earlier.length > 0 && (
+                <div className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-border/40 pt-3">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    Before that
+                  </p>
+                  <div className="space-y-1">
+                    {earlier.map((r) => {
+                      const g = getWeekGroup(trades, r.week_start);
+                      const line = r.prevention_plan || r.mistakes || r.lessons;
+                      return (
+                        <Link
+                          key={r.week_start}
+                          href={`/trade-therapist/review/${r.week_start}`}
+                          title={line}
+                          className="flex items-baseline gap-2.5 rounded-md px-1 py-1 transition-colors hover:bg-muted/30"
+                        >
+                          <span className="w-12 shrink-0 text-[10px] font-bold tabular-nums text-muted-foreground/70">
+                            Wk {g.weekNum}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{line}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </AccentPanel>
       </div>
     </div>
