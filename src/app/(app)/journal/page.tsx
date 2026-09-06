@@ -10,7 +10,7 @@ import {
   eachDayOfInterval, isSameMonth, addMonths, subMonths, addWeeks, subWeeks,
   getDay, isToday,
 } from "date-fns";
-import { Plus, ChevronLeft, ChevronRight, Info, X } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getTrades, getProfile, getBestTradesOfDay } from "@/lib/supabase/queries";
 import { BestTradeDayDialog } from "@/components/journal/best-trade-day";
@@ -19,19 +19,12 @@ import { DayTradesDialog } from "@/components/journal/day-trades-dialog";
 import type { TradeJournalEntry, BestTradeOfDay } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
-import { inOrder } from "@/lib/journal/colors";
+import {
+  inOrder, resultColor, resultBands, netRColor, alpha,
+  WIN_COLOR, LOSS_COLOR, BE_COLOR,
+} from "@/lib/journal/colors";
 
 type CalendarPeriod = "month" | "week";
-
-/** The execution lens on the calendar. "unrated" is its own answer, not a gap. */
-type ExecFilter = "all" | "good" | "bad" | "unrated";
-
-const EXEC_FILTERS: { key: ExecFilter; label: string }[] = [
-  { key: "all", label: "All trades" },
-  { key: "good", label: "Good execution" },
-  { key: "bad", label: "Bad execution" },
-  { key: "unrated", label: "Not rated" },
-];
 
 /** Footer control on each week-view day cell — opens the Best-trade-of-the-day
  *  dialog and reflects whether that day already has an entry. */
@@ -66,11 +59,6 @@ export default function JournalPage() {
   const [bestTrades, setBestTrades] = useState<Record<string, BestTradeOfDay>>({});
   const [btdDate, setBtdDate] = useState<string | null>(null); // open dialog for this date
   const [dayTradesDate, setDayTradesDate] = useState<string | null>(null); // month view: inspect a day's trades
-
-  // Execution is the journal's own lens: not whether the trade won, but whether
-  // it was the trade your plan and your edge called for.
-  const [execFilter, setExecFilter] = useState<ExecFilter>("all");
-  const [explainerOpen, setExplainerOpen] = useState(false);
 
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [calendarPeriod, setCalendarPeriod] = useState<CalendarPeriod>("month");
@@ -120,20 +108,9 @@ export default function JournalPage() {
   const calWeekEnd = endOfWeek(calendarWeekDate, { weekStartsOn: 1 });
   const calWeekDays = eachDayOfInterval({ start: calWeekStart, end: calWeekEnd });
 
-  /** What the calendar is currently showing, after the execution filter. */
-  const visibleTrades = useMemo(
-    () =>
-      execFilter === "all"
-        ? allTrades
-        : allTrades.filter((t) =>
-            execFilter === "unrated" ? !t.execution_quality : t.execution_quality === execFilter
-          ),
-    [allTrades, execFilter]
-  );
-
   const tradesByDay = useMemo(() => {
     const map: Record<string, typeof allTrades> = {};
-    visibleTrades.forEach((t) => {
+    allTrades.forEach((t) => {
       const key = t.date_time.slice(0, 10);
       if (!map[key]) map[key] = [];
       map[key].push(t);
@@ -141,16 +118,16 @@ export default function JournalPage() {
     // Earliest trade first, so a day always reads in the order it happened.
     for (const key of Object.keys(map)) map[key] = inOrder(map[key]);
     return map;
-  }, [visibleTrades]);
+  }, [allTrades]);
 
   /** Trades inside the month on screen — powers the analytics panel. */
   const monthTrades = useMemo(
-    () => visibleTrades.filter((t) => {
+    () => allTrades.filter((t) => {
       const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
       return d >= calMonthStart && d <= calMonthEnd;
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visibleTrades, calendarMonth]
+    [allTrades, calendarMonth]
   );
 
   // Total R for the currently displayed calendar period (matches what's on screen).
@@ -159,12 +136,12 @@ export default function JournalPage() {
   const calendarR = useMemo(() => {
     const start = calendarPeriod === "month" ? calMonthStart : calWeekStart;
     const end = calendarPeriod === "month" ? calMonthEnd : calWeekEnd;
-    return visibleTrades.reduce((sum, t) => {
+    return allTrades.reduce((sum, t) => {
       const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
       return d >= start && d <= end ? sum + tradeR(t) : sum;
     }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleTrades, calendarPeriod, calendarMonth, calendarWeekDate]);
+  }, [allTrades, calendarPeriod, calendarMonth, calendarWeekDate]);
 
   // Calendar navigation
   function prevCalendar() {
@@ -239,12 +216,21 @@ export default function JournalPage() {
     </>
   );
 
-  /** Month grid — compact day tiles, each summarising its net R. */
+  /**
+   * Month grid — the same vocabulary the dashboard week strip and the Trade
+   * Therapist calendar already speak, so a day reads identically wherever you
+   * meet it: the tile is banded once per trade, a 3px rail on top carries each
+   * trade's result, and a count pill says how many there were. A day with two
+   * trades can never be mistaken for a day with one.
+   */
   const monthGrid = (
-    <CardContent className="p-3">
-      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+    <CardContent className="p-2.5 sm:p-3">
+      <div className="mb-1.5 grid grid-cols-7 gap-1.5">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{d}</div>
+          <div key={d} className="text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            <span className="sm:hidden">{d[0]}</span>
+            <span className="hidden sm:inline">{d}</span>
+          </div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1.5">
@@ -253,51 +239,94 @@ export default function JournalPage() {
         ))}
         {calDays.map((day) => {
           const key = format(day, "yyyy-MM-dd");
-          const dayTrades = tradesByDay[key] || [];
+          const dayTrades = inOrder(tradesByDay[key] || []);
           const isCurrentMonth = isSameMonth(day, calendarMonth);
           const has = dayTrades.length > 0;
           const dayR = dayTrades.reduce((s, t) => s + tradeR(t), 0);
+          const netColor = netRColor(dayR);
           const goodCount = dayTrades.filter((t) => t.execution_quality === "good").length;
           const badCount = dayTrades.filter((t) => t.execution_quality === "bad").length;
-          // Tile tint + R colour follow the day's net R: green up, red down, amber flat.
-          const tone = !has
-            ? { text: "", bg: "", ring: "" }
-            : dayR > 0
-            ? { text: "text-success", bg: "bg-success/10", ring: "border-success/25 hover:border-success/45" }
-            : dayR < 0
-            ? { text: "text-destructive", bg: "bg-destructive/10", ring: "border-destructive/25 hover:border-destructive/45" }
-            : { text: "text-warning", bg: "bg-warning/10", ring: "border-warning/25 hover:border-warning/45" };
+          const today = isToday(day);
+
           const tileClass = cn(
-            "min-h-[68px] xl:min-h-[92px] rounded-lg px-1.5 py-1 flex flex-col border text-left transition-all",
-            isToday(day)
-              ? "border-primary/50 bg-primary/8"
-              : has
-              ? cn(tone.bg, tone.ring)
-              : "border-border/25 bg-muted/5",
-            has && "cursor-pointer hover:-translate-y-px"
+            "group/day relative flex min-h-[74px] flex-col overflow-hidden rounded-xl border px-1.5 pb-1 pt-1.5 text-left xl:min-h-[96px]",
+            "transition-all duration-300 ease-out",
+            today ? "border-primary/55" : has ? "border-border/70" : "border-border/25",
+            !has && !today && "bg-muted/5",
+            has && "cursor-pointer hover:-translate-y-0.5 hover:border-primary/40"
           );
+
           const tileInner = (
             <>
-              <div className="flex items-start justify-between leading-none">
-                <span className={cn("text-xs font-bold",
-                  isToday(day) ? "text-primary" : isCurrentMonth ? "text-foreground/75" : "text-muted-foreground/30")}>
+              {/* Result rail — one full-strength segment per trade, in the order
+                  they were taken. */}
+              {has && (
+                <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-[3px] gap-px">
+                  {dayTrades.map((t) => {
+                    const c = resultColor(t);
+                    return (
+                      <span
+                        key={t.id}
+                        className="flex-1 transition-[filter] duration-300 group-hover/day:brightness-125"
+                        style={{ background: c, boxShadow: `0 0 8px ${alpha(c, 45)}` }}
+                      />
+                    );
+                  })}
+                </span>
+              )}
+              {/* Hairlines between the bands, so two trades read as two halves
+                  rather than one blended wash. */}
+              {dayTrades.length > 1 && (
+                <span aria-hidden className="pointer-events-none absolute inset-0">
+                  {dayTrades.slice(1).map((t, i) => (
+                    <span
+                      key={t.id}
+                      className="absolute inset-y-0 w-px"
+                      style={{
+                        left: `${(((i + 1) / dayTrades.length) * 100).toFixed(3)}%`,
+                        background: `linear-gradient(180deg, transparent, ${alpha("var(--foreground)", 12)} 30%, transparent)`,
+                      }}
+                    />
+                  ))}
+                </span>
+              )}
+              {/* Hover floor in the day's net colour. */}
+              {has && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/day:opacity-100"
+                  style={{ background: `radial-gradient(120% 90% at 50% 100%, ${alpha(netColor, 18)}, transparent 65%)` }}
+                />
+              )}
+
+              <div className="relative flex items-start justify-between gap-1 leading-none">
+                <span className={cn("text-xs font-bold tabular-nums",
+                  today ? "text-primary" : isCurrentMonth ? "text-foreground/75" : "text-muted-foreground/30")}>
                   {format(day, "d")}
                 </span>
-                {has && (goodCount > 0 || badCount > 0) && (
-                  <span className="flex items-center gap-0.5 text-[8px] font-bold tabular-nums">
-                    {goodCount > 0 && <span className="text-success/80">✓{goodCount}</span>}
-                    {badCount > 0 && <span className="text-destructive/80">✗{badCount}</span>}
+                {/* How many trades that day — the pill only appears when there
+                    was more than one, so it reads as an exception. */}
+                {dayTrades.length > 1 && (
+                  <span className="shrink-0 rounded-full border border-border/70 bg-background/60 px-1 text-[9px] font-bold leading-[14px] text-foreground/70">
+                    {dayTrades.length}
                   </span>
                 )}
               </div>
+
               {has && (
-                <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-                  <span className={cn("text-base xl:text-lg font-black tabular-nums leading-none", tone.text)}>
+                <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center">
+                  <span
+                    className="text-[15px] font-black leading-none tabular-nums transition-transform duration-300 group-hover/day:scale-105 xl:text-lg"
+                    style={{ color: netColor }}
+                  >
                     {formatTotalR(dayR)}
                   </span>
-                  <span className="text-[9px] text-muted-foreground/60 leading-none mt-1">
-                    {dayTrades.length} trade{dayTrades.length !== 1 ? "s" : ""}
-                  </span>
+                  {(goodCount > 0 || badCount > 0) && (
+                    <span className="mt-1 flex items-center gap-1 text-[9px] font-bold leading-none tabular-nums">
+                      {goodCount > 0 && <span className="text-success/85">✓{goodCount}</span>}
+                      {badCount > 0 && <span className="text-destructive/85">✗{badCount}</span>}
+                    </span>
+                  )}
                 </div>
               )}
             </>
@@ -313,6 +342,7 @@ export default function JournalPage() {
                 href={`/journal/${only.id}`}
                 title={`Open ${instrumentName(only.instrument)} log`}
                 className={tileClass}
+                style={{ background: resultBands(dayTrades, 12) }}
               >
                 {tileInner}
               </Link>
@@ -326,6 +356,7 @@ export default function JournalPage() {
                 onClick={() => setDayTradesDate(key)}
                 title={`${dayTrades.length} trades — open the day`}
                 className={tileClass}
+                style={{ background: resultBands(dayTrades, 12) }}
               >
                 {tileInner}
               </button>
@@ -333,6 +364,14 @@ export default function JournalPage() {
           }
           return <div key={key} className={tileClass}>{tileInner}</div>;
         })}
+      </div>
+      {/* Legend — the month grid now carries per-trade colour, so it needs the
+          same key the week view has. */}
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/40 pt-2 text-[10px] text-muted-foreground/70">
+        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: WIN_COLOR }} />Win</span>
+        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: LOSS_COLOR }} />Loss</span>
+        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: BE_COLOR }} />B/E</span>
+        <span className="text-muted-foreground/50">A split tile = several trades that day</span>
       </div>
     </CardContent>
   );
@@ -357,71 +396,6 @@ export default function JournalPage() {
           </Link>
         }
       />
-      {/* What "execution" means here, and the lens it gives you over the
-          calendar. The definition sits behind an "i" rather than in permanent
-          copy: you need it once, not every visit. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setExplainerOpen((v) => !v)}
-          aria-expanded={explainerOpen}
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
-          aria-label="What execution means"
-        >
-          <Info className="h-3.5 w-3.5" />
-        </button>
-
-        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-border/50 bg-card/60 p-1">
-          {EXEC_FILTERS.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setExecFilter(key)}
-              className={cn(
-                "rounded-lg px-3 py-1 text-xs font-semibold transition-colors",
-                execFilter === key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {execFilter !== "all" && (
-          <span className="text-xs tabular-nums text-muted-foreground">
-            {visibleTrades.length} of {allTrades.length} trades
-          </span>
-        )}
-      </div>
-
-      {explainerOpen && (
-        <div className="relative rounded-xl border border-primary/25 bg-primary/[0.05] p-4 pr-10">
-          <button
-            type="button"
-            onClick={() => setExplainerOpen(false)}
-            aria-label="Close"
-            className="absolute right-3 top-3 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-          <p className="text-sm font-semibold text-foreground">What execution means</p>
-          <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
-            Execution is whether you held to your plan and your edge — not whether the
-            trade made money. A trade you took at your level, at your size, for the
-            reason you wrote down is <span className="font-semibold text-success">good execution</span>,
-            even when it loses. One you talked yourself into is{" "}
-            <span className="font-semibold text-destructive">bad execution</span>, even when it pays.
-          </p>
-          <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
-            You set it per trade when you log it. It is what the filter above reads,
-            it is summed up in every weekly review, and it is one of the four inputs
-            to your MC Mindscore.
-          </p>
-        </div>
-      )}
-
       <PageWrapper>
         {calendarPeriod === "month" ? (
           /* Month: compact calendar on the left, this month's analytics on the right */
@@ -433,75 +407,201 @@ export default function JournalPage() {
             <MonthAnalytics trades={monthTrades} monthLabel={format(calendarMonth, "MMMM yyyy")} />
           </div>
         ) : (
-          /* Week: full width, room for each trade */
+          /* Week: one column per day, each a self-contained card. Same
+             vocabulary as the month grid and the dashboard week strip — a
+             result rail per trade on top, the day's net R in the header, then
+             one compact rail per trade so a four-trade day stays readable. */
           <div className="space-y-4">
             <Card className="bg-card border-border/50 overflow-hidden">
               {calendarNav}
-              <CardContent className="p-4">
-                <div className="grid grid-cols-7 gap-2 mb-3">
-                  {calWeekDays.map((day) => (
-                    <div key={day.toISOString()} className={cn(
-                      "text-center rounded-lg py-2 border",
-                      isToday(day) ? "bg-primary/8 border-primary/40" : "border-transparent"
-                    )}>
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{format(day, "EEE")}</p>
-                      <p className={cn("text-xl font-extrabold mt-0.5 leading-none",
-                        isToday(day) ? "text-primary" : "text-foreground/85")}>
-                        {format(day, "d")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-2">
+              <CardContent className="p-2.5 sm:p-3">
+                {/* Phone: a week is a list of days. Seven columns on a 375px
+                    screen leaves ~46px per day, which truncates every
+                    instrument name — so the same data is laid out in rows,
+                    and days without trades collapse to a single line. */}
+                <div className="flex flex-col gap-1.5 sm:hidden">
                   {calWeekDays.map((day) => {
                     const key = format(day, "yyyy-MM-dd");
-                    const dayTrades = tradesByDay[key] || [];
-                    const best = bestTrades[key];
+                    const dayTrades = inOrder(tradesByDay[key] || []);
+                    const has = dayTrades.length > 0;
+                    const dayR = dayTrades.reduce((sum, t) => sum + tradeR(t), 0);
+                    const netColor = netRColor(dayR);
+                    const today = isToday(day);
                     return (
-                      <div key={key}
-                        className={cn("min-h-[200px] lg:min-h-[300px] rounded-xl p-1.5 flex flex-col gap-1 transition-colors",
-                          isToday(day) ? "bg-primary/4 ring-1 ring-primary/20" : "bg-muted/20"
+                      <div
+                        key={key}
+                        className={cn(
+                          "overflow-hidden rounded-xl border",
+                          today ? "border-primary/55" : has ? "border-border/70" : "border-border/30"
+                        )}
+                        style={has ? { background: alpha(netColor, 7) } : undefined}
+                      >
+                        <div className={cn(
+                          "flex items-center gap-2 px-2.5 py-2",
+                          has && "border-b",
+                          has && (today ? "border-primary/25" : "border-border/40")
                         )}>
-                        <div className={cn("flex-1 flex flex-col gap-1 min-h-0",
-                          dayTrades.length === 0 && "items-center justify-center")}>
-                          {dayTrades.length === 0 ? (
-                            <span className="text-[10px] text-muted-foreground/30 text-center">—</span>
+                          <span className={cn("w-16 shrink-0 text-[11px] font-bold uppercase tracking-wide",
+                            today ? "text-primary" : "text-foreground/80")}>
+                            {format(day, "EEE d")}
+                          </span>
+                          {has ? (
+                            <>
+                              <span className="text-sm font-black tabular-nums" style={{ color: netColor }}>
+                                {formatTotalR(dayR)}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground/70">
+                                {dayTrades.length} trade{dayTrades.length !== 1 ? "s" : ""}
+                              </span>
+                            </>
                           ) : (
-                            dayTrades.map((t) => (
-                              <Link key={t.id} href={`/journal/${t.id}`}
-                                className={cn("flex-1 flex flex-col items-center justify-center gap-1.5 rounded-lg px-1.5 py-2.5 transition-colors min-h-0",
-                                  t.result === "win" ? "bg-success/15 hover:bg-success/25"
-                                    : t.result === "loss" ? "bg-destructive/15 hover:bg-destructive/25"
-                                    : "bg-warning/15 hover:bg-warning/25")}>
-                                <p className={cn("text-base font-extrabold text-center leading-tight tracking-tight",
-                                  t.result === "win" ? "text-success"
-                                    : t.result === "loss" ? "text-destructive"
-                                    : "text-warning")}>
-                                  {instrumentName(t.instrument)}
-                                </p>
-                                {t.execution_quality && (
-                                  <span className={cn(
-                                    "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold leading-none",
-                                    t.execution_quality === "good"
-                                      ? "bg-success/20 text-success"
-                                      : "bg-destructive/20 text-destructive"
-                                  )}>
-                                    {t.execution_quality === "good" ? "✓ Good" : "✗ Bad"}
+                            <span className="text-[11px] text-muted-foreground/40">No trades</span>
+                          )}
+                          <span className="ml-auto w-24 shrink-0">
+                            <BestTradeCellButton best={bestTrades[key]} onClick={() => setBtdDate(key)} />
+                          </span>
+                        </div>
+
+                        {has && (
+                          <div className="flex flex-col gap-1 p-1.5">
+                            {dayTrades.map((t) => {
+                              const c = resultColor(t);
+                              return (
+                                <Link
+                                  key={t.id}
+                                  href={`/journal/${t.id}`}
+                                  className="flex items-center gap-2 rounded-md border-l-2 bg-background/30 py-1.5 pl-2 pr-2 transition-colors active:bg-background/60"
+                                  style={{ borderColor: c }}
+                                >
+                                  <span className="min-w-0 flex-1 truncate text-xs font-bold text-foreground">
+                                    {instrumentName(t.instrument)}
                                   </span>
-                                )}
-                                <p className="text-xs font-semibold text-muted-foreground/80 text-center leading-none">
-                                  {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
-                                </p>
-                              </Link>
-                            ))
+                                  {t.execution_quality && (
+                                    <span
+                                      className="shrink-0 text-[10px] font-semibold uppercase tracking-wide"
+                                      style={{ color: t.execution_quality === "good" ? WIN_COLOR : LOSS_COLOR }}
+                                    >
+                                      {t.execution_quality === "good" ? "✓ good exec" : "✗ bad exec"}
+                                    </span>
+                                  )}
+                                  <span className="shrink-0 text-xs font-black tabular-nums" style={{ color: c }}>
+                                    {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+                                  </span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Tablet and up: one column per day. */}
+                <div className="hidden grid-cols-7 gap-1.5 sm:grid sm:gap-2">
+                  {calWeekDays.map((day) => {
+                    const key = format(day, "yyyy-MM-dd");
+                    const dayTrades = inOrder(tradesByDay[key] || []);
+                    const has = dayTrades.length > 0;
+                    const dayR = dayTrades.reduce((sum, t) => sum + tradeR(t), 0);
+                    const netColor = netRColor(dayR);
+                    const best = bestTrades[key];
+                    const today = isToday(day);
+                    return (
+                      <div
+                        key={key}
+                        className={cn(
+                          "group/day relative flex min-h-[210px] flex-col overflow-hidden rounded-xl border transition-colors lg:min-h-[280px]",
+                          today ? "border-primary/55" : has ? "border-border/70" : "border-border/30"
+                        )}
+                        /* A tall column is stacked, not banded: horizontal
+                           bands would run across the trades instead of with
+                           them. The day takes one soft tint in its net colour;
+                           the per-trade colour lives on the rails below. */
+                        style={has ? { background: alpha(netColor, 7) } : undefined}
+                      >
+                        {/* Result rail — one segment per trade, in order taken. */}
+                        {has && (
+                          <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-[3px] gap-px">
+                            {dayTrades.map((t) => {
+                              const c = resultColor(t);
+                              return (
+                                <span
+                                  key={t.id}
+                                  className="flex-1"
+                                  style={{ background: c, boxShadow: `0 0 8px ${alpha(c, 45)}` }}
+                                />
+                              );
+                            })}
+                          </span>
+                        )}
+
+                        {/* Day header — lives inside the card, so the date can
+                            never drift away from the day it labels. */}
+                        <div className={cn(
+                          "relative flex flex-col items-center border-b px-1 pb-1.5 pt-2",
+                          today ? "border-primary/25" : "border-border/40"
+                        )}>
+                          <span className={cn("text-[9px] font-semibold uppercase tracking-wider",
+                            today ? "text-primary/80" : "text-muted-foreground/60")}>
+                            {format(day, "EEE")}
+                          </span>
+                          <span className={cn("mt-0.5 text-lg font-bold leading-none tabular-nums",
+                            today ? "text-primary" : "text-foreground/85")}>
+                            {format(day, "d")}
+                          </span>
+                          {has && (
+                            <span className="mt-1 flex items-center gap-1">
+                              <span className="text-[11px] font-black leading-none tabular-nums" style={{ color: netColor }}>
+                                {formatTotalR(dayR)}
+                              </span>
+                              {dayTrades.length > 1 && (
+                                <span className="rounded-full border border-border/70 bg-background/50 px-1 text-[9px] font-bold leading-[13px] text-muted-foreground/80">
+                                  {dayTrades.length}
+                                </span>
+                              )}
+                            </span>
                           )}
                         </div>
 
-                        {/* Best trade of the day — available on every day */}
-                        <BestTradeCellButton
-                          best={best}
-                          onClick={() => setBtdDate(key)}
-                        />
+                        <div className="relative flex min-h-0 flex-1 flex-col gap-1 p-1.5">
+                          {!has ? (
+                            <span className="m-auto text-[10px] text-muted-foreground/25">—</span>
+                          ) : (
+                            dayTrades.map((t) => {
+                              const c = resultColor(t);
+                              return (
+                                <Link
+                                  key={t.id}
+                                  href={`/journal/${t.id}`}
+                                  title={`${instrumentName(t.instrument)} — open log`}
+                                  className="rounded-md border-l-2 bg-background/30 py-1.5 pl-1.5 pr-1 leading-tight transition-colors hover:bg-background/60"
+                                  style={{ borderColor: c }}
+                                >
+                                  <div className="flex items-baseline justify-between gap-1">
+                                    <p className="truncate text-[11px] font-bold text-foreground">
+                                      {instrumentName(t.instrument)}
+                                    </p>
+                                    <p className="shrink-0 text-[11px] font-black tabular-nums" style={{ color: c }}>
+                                      {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+                                    </p>
+                                  </div>
+                                  {t.execution_quality && (
+                                    <p
+                                      className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide"
+                                      style={{ color: t.execution_quality === "good" ? WIN_COLOR : LOSS_COLOR }}
+                                    >
+                                      {t.execution_quality === "good" ? "✓ good exec" : "✗ bad exec"}
+                                    </p>
+                                  )}
+                                </Link>
+                              );
+                            })
+                          )}
+
+                          {/* Best trade of the day — available on every day */}
+                          <BestTradeCellButton best={best} onClick={() => setBtdDate(key)} />
+                        </div>
                       </div>
                     );
                   })}
@@ -509,12 +609,13 @@ export default function JournalPage() {
               </CardContent>
             </Card>
 
-            {/* Legend — week view only; the month grid is R-based and self-explanatory */}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-success/40" />Win</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-destructive/40" />Loss</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-warning/40" />B/E</span>
-              <span className="text-muted-foreground/60">✓ good execution · ✗ bad execution</span>
+            {/* Legend — matches the month grid's, plus the execution marks the
+                per-trade rails carry. */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground/70">
+              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: WIN_COLOR }} />Win</span>
+              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: LOSS_COLOR }} />Loss</span>
+              <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: BE_COLOR }} />B/E</span>
+              <span className="text-muted-foreground/50">✓ good execution · ✗ bad execution</span>
             </div>
           </div>
         )}

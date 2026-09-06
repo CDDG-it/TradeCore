@@ -23,6 +23,7 @@ const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
 
 import type { Market } from "@/lib/types";
+import { ExecutionQualityField } from "@/components/journal/execution-quality-field";
 
 const DEFAULT_FORM = {
   date_time: new Date().toISOString().split("T")[0],
@@ -308,29 +309,11 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
               </div>
             </div>
 
-            {/* Execution Quality */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Execution Quality</Label>
-              <div className="flex gap-1.5">
-                {(["good", "bad"] as const).map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => set("execution_quality", form.execution_quality === q ? undefined : q)}
-                    className={cn(
-                      "flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all capitalize",
-                      form.execution_quality === q
-                        ? q === "good"
-                          ? "bg-success text-success-foreground shadow-sm"
-                          : "bg-destructive text-white shadow-sm"
-                        : "bg-muted text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {q === "good" ? "✓ Good execution" : "✗ Bad execution"}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Execution quality — the "i" explains what the two answers mean. */}
+            <ExecutionQualityField
+              value={form.execution_quality}
+              onChange={(next) => set("execution_quality", next)}
+            />
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">

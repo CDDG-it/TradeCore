@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { TIMEFRAMES, normalizeTimeframe } from "@/lib/timeframes";
 import { useFormDraft } from "@/lib/drafts";
 import { DraftBanner } from "@/components/ui/draft-banner";
+import { ExecutionQualityField } from "@/components/journal/execution-quality-field";
 
 // A draft is only worth keeping once the trader has entered something real —
 // keeps pristine, untouched forms from persisting an empty draft.
@@ -301,29 +302,11 @@ export default function NewTradePage() {
               </div>
             </div>
 
-            {/* Execution Quality */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Execution Quality</Label>
-              <div className="flex gap-1.5">
-                {(["good", "bad"] as const).map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => set("execution_quality", form.execution_quality === q ? undefined : q)}
-                    className={cn(
-                      "flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all capitalize",
-                      form.execution_quality === q
-                        ? q === "good"
-                          ? "bg-success text-success-foreground shadow-sm"
-                          : "bg-destructive text-white shadow-sm"
-                        : "bg-muted text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {q === "good" ? "✓ Good execution" : "✗ Bad execution"}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Execution quality — the "i" explains what the two answers mean. */}
+            <ExecutionQualityField
+              value={form.execution_quality}
+              onChange={(next) => set("execution_quality", next)}
+            />
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
