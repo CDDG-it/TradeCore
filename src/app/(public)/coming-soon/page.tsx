@@ -6,7 +6,7 @@ import { LandingFooter } from "@/components/landing/footer";
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
 export const metadata: Metadata = {
-  title: "Coming soon — TradingMC",
+  title: "Coming soon",
   description: "What is next for TradingMC.",
 };
 

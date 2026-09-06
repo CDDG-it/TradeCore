@@ -21,9 +21,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const feature = FEATURE_BY_SLUG[slug];
-  if (!feature) return { title: "TradingMC" };
+  // Bare page names: the root layout's title template appends the brand.
+  if (!feature) return {};
   return {
-    title: `${feature.name} — TradingMC`,
+    title: feature.name,
     description: feature.tagline,
   };
 }
