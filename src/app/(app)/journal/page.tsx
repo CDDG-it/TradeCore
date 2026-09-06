@@ -10,7 +10,7 @@ import {
   eachDayOfInterval, isSameMonth, addMonths, subMonths, addWeeks, subWeeks,
   getDay, isToday,
 } from "date-fns";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Info, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getTrades, getProfile, getBestTradesOfDay } from "@/lib/supabase/queries";
 import { BestTradeDayDialog } from "@/components/journal/best-trade-day";
@@ -22,6 +22,16 @@ import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
 import { inOrder } from "@/lib/journal/colors";
 
 type CalendarPeriod = "month" | "week";
+
+/** The execution lens on the calendar. "unrated" is its own answer, not a gap. */
+type ExecFilter = "all" | "good" | "bad" | "unrated";
+
+const EXEC_FILTERS: { key: ExecFilter; label: string }[] = [
+  { key: "all", label: "All trades" },
+  { key: "good", label: "Good execution" },
+  { key: "bad", label: "Bad execution" },
+  { key: "unrated", label: "Not rated" },
+];
 
 /** Footer control on each week-view day cell — opens the Best-trade-of-the-day
  *  dialog and reflects whether that day already has an entry. */
@@ -56,6 +66,11 @@ export default function JournalPage() {
   const [bestTrades, setBestTrades] = useState<Record<string, BestTradeOfDay>>({});
   const [btdDate, setBtdDate] = useState<string | null>(null); // open dialog for this date
   const [dayTradesDate, setDayTradesDate] = useState<string | null>(null); // month view: inspect a day's trades
+
+  // Execution is the journal's own lens: not whether the trade won, but whether
+  // it was the trade your plan and your edge called for.
+  const [execFilter, setExecFilter] = useState<ExecFilter>("all");
+  const [explainerOpen, setExplainerOpen] = useState(false);
 
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [calendarPeriod, setCalendarPeriod] = useState<CalendarPeriod>("month");
@@ -105,9 +120,20 @@ export default function JournalPage() {
   const calWeekEnd = endOfWeek(calendarWeekDate, { weekStartsOn: 1 });
   const calWeekDays = eachDayOfInterval({ start: calWeekStart, end: calWeekEnd });
 
+  /** What the calendar is currently showing, after the execution filter. */
+  const visibleTrades = useMemo(
+    () =>
+      execFilter === "all"
+        ? allTrades
+        : allTrades.filter((t) =>
+            execFilter === "unrated" ? !t.execution_quality : t.execution_quality === execFilter
+          ),
+    [allTrades, execFilter]
+  );
+
   const tradesByDay = useMemo(() => {
     const map: Record<string, typeof allTrades> = {};
-    allTrades.forEach((t) => {
+    visibleTrades.forEach((t) => {
       const key = t.date_time.slice(0, 10);
       if (!map[key]) map[key] = [];
       map[key].push(t);
@@ -115,16 +141,16 @@ export default function JournalPage() {
     // Earliest trade first, so a day always reads in the order it happened.
     for (const key of Object.keys(map)) map[key] = inOrder(map[key]);
     return map;
-  }, [allTrades]);
+  }, [visibleTrades]);
 
   /** Trades inside the month on screen — powers the analytics panel. */
   const monthTrades = useMemo(
-    () => allTrades.filter((t) => {
+    () => visibleTrades.filter((t) => {
       const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
       return d >= calMonthStart && d <= calMonthEnd;
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allTrades, calendarMonth]
+    [visibleTrades, calendarMonth]
   );
 
   // Total R for the currently displayed calendar period (matches what's on screen).
@@ -133,12 +159,12 @@ export default function JournalPage() {
   const calendarR = useMemo(() => {
     const start = calendarPeriod === "month" ? calMonthStart : calWeekStart;
     const end = calendarPeriod === "month" ? calMonthEnd : calWeekEnd;
-    return allTrades.reduce((sum, t) => {
+    return visibleTrades.reduce((sum, t) => {
       const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
       return d >= start && d <= end ? sum + tradeR(t) : sum;
     }, 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allTrades, calendarPeriod, calendarMonth, calendarWeekDate]);
+  }, [visibleTrades, calendarPeriod, calendarMonth, calendarWeekDate]);
 
   // Calendar navigation
   function prevCalendar() {
@@ -331,6 +357,71 @@ export default function JournalPage() {
           </Link>
         }
       />
+      {/* What "execution" means here, and the lens it gives you over the
+          calendar. The definition sits behind an "i" rather than in permanent
+          copy: you need it once, not every visit. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setExplainerOpen((v) => !v)}
+          aria-expanded={explainerOpen}
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+          aria-label="What execution means"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+
+        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-border/50 bg-card/60 p-1">
+          {EXEC_FILTERS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setExecFilter(key)}
+              className={cn(
+                "rounded-lg px-3 py-1 text-xs font-semibold transition-colors",
+                execFilter === key
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {execFilter !== "all" && (
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {visibleTrades.length} of {allTrades.length} trades
+          </span>
+        )}
+      </div>
+
+      {explainerOpen && (
+        <div className="relative rounded-xl border border-primary/25 bg-primary/[0.05] p-4 pr-10">
+          <button
+            type="button"
+            onClick={() => setExplainerOpen(false)}
+            aria-label="Close"
+            className="absolute right-3 top-3 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+          <p className="text-sm font-semibold text-foreground">What execution means</p>
+          <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+            Execution is whether you held to your plan and your edge — not whether the
+            trade made money. A trade you took at your level, at your size, for the
+            reason you wrote down is <span className="font-semibold text-success">good execution</span>,
+            even when it loses. One you talked yourself into is{" "}
+            <span className="font-semibold text-destructive">bad execution</span>, even when it pays.
+          </p>
+          <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+            You set it per trade when you log it. It is what the filter above reads,
+            it is summed up in every weekly review, and it is one of the four inputs
+            to your MC Mindscore.
+          </p>
+        </div>
+      )}
+
       <PageWrapper>
         {calendarPeriod === "month" ? (
           /* Month: compact calendar on the left, this month's analytics on the right */

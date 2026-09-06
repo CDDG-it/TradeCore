@@ -19,15 +19,16 @@ const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, tra
 
 const PERIOD_LABEL: Record<MindPeriod, string> = { week: "This week", month: "This month", all: "All time" };
 
-/** Plain-language identity for each of the three parts of the score. */
+/** Plain-language identity for each part of the score. */
 const PART_META: Record<MindComponent["key"], { title: string; sub: string; accent: string }> = {
   rules:      { title: "Following your rules", sub: "Sticking to your plan on every trade",      accent: "#14B8A6" },
+  execution:  { title: "Execution",            sub: "Trades you took to plan and to your edge",   accent: "#06B6D4" },
   habits:     { title: "Daily habits",         sub: "The routines you keep away from the charts", accent: "#06B6D4" },
   objectives: { title: "Doing the work",       sub: "Reviews, prep and logging your best trade",  accent: "#14B8A6" },
 };
 
 /**
- * The MC Mindscore — one number, one bar, three plain-language parts.
+ * The MC Mindscore — one number, one bar, four plain-language parts.
  * Laid out to fit a single screen: no internal scrolling, no jargon.
  */
 export function MindScoreBreakdown() {
@@ -136,7 +137,7 @@ export function MindScoreBreakdown() {
         </div>
       </div>
 
-      {/* The three parts + the work that lifts the score, side by side */}
+      {/* The four parts + the work that lifts the score, side by side */}
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 md:grid-cols-2">
         <AccentPanel accent="primary" eyebrow="Breakdown" title="What makes up the score">
           <div className="mt-4 space-y-2">

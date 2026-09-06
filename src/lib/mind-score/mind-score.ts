@@ -3,6 +3,7 @@
  *
  * It blends the things a trader controls into a single 0–100 score:
  *   • Rule adherence   — the per-trade discipline checklist (at the screen)
+ *   • Execution        — the share of rated trades taken to plan and to edge
  *   • Habit consistency — daily/lifestyle habits (away from the charts)
  *   • Objectives       — the process work that compounds an edge: weekly review,
  *                        pre-trade analysis, logging the best trade of the day
@@ -15,7 +16,7 @@ import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay,
   eachDayOfInterval, min as dfMin, subDays,
 } from "date-fns";
-import { computeTradeRulesScore, computeHabitCounts } from "@/lib/discipline";
+import { computeTradeRulesScore, computeHabitCounts, computeExecutionScore } from "@/lib/discipline";
 import { isReviewOpen } from "@/lib/journal/weeks";
 import type {
   TradeJournalEntry, Habit, HabitCompletion, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, PreTradeAnalysis,
@@ -24,8 +25,15 @@ import type {
 
 export type MindPeriod = "week" | "month" | "all";
 
-/** Nominal weights (out of 100). Rescaled among the components that apply. */
-export const MIND_WEIGHTS = { rules: 50, habits: 25, objectives: 25 } as const;
+/**
+ * Nominal weights (out of 100), rescaled among the components that apply.
+ *
+ * Rules and execution are both "at the screen" and together carry 60 — the
+ * checklist says whether you ticked your non-negotiables, execution says
+ * whether the trade was actually the one your plan and your edge called for.
+ * They overlap, so execution is deliberately the smaller of the two.
+ */
+export const MIND_WEIGHTS = { rules: 40, execution: 20, habits: 20, objectives: 20 } as const;
 
 export interface Objective {
   key: string;
@@ -43,7 +51,7 @@ export interface Objective {
 }
 
 export interface MindComponent {
-  key: "rules" | "habits" | "objectives";
+  key: "rules" | "execution" | "habits" | "objectives";
   label: string;
   /** 0..100 sub-score, or null when the component does not apply this window. */
   value: number | null;
@@ -253,6 +261,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
 
   // ── Rules & habits over the same window ───────────────────────────────
   const rules = computeTradeRulesScore(input.trades, start, clampEnd);
+  const execution = computeExecutionScore(input.trades, start, clampEnd);
   const { completed: habitCompleted, expected: habitExpected } = computeHabitCounts(input.habits, input.completions, start, clampEnd);
   const habits = habitExpected === 0 ? null : Math.round((habitCompleted / habitExpected) * 100);
   const tradeCount = input.trades.filter((t) => {
@@ -264,6 +273,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   // ── Blend (rescale weights among applicable components) ───────────────
   const raw: { key: MindComponent["key"]; label: string; value: number | null; weight: number }[] = [
     { key: "rules", label: "Rule adherence", value: rules, weight: MIND_WEIGHTS.rules },
+    { key: "execution", label: "Execution", value: execution.score, weight: MIND_WEIGHTS.execution },
     { key: "habits", label: "Habit consistency", value: habits, weight: MIND_WEIGHTS.habits },
     { key: "objectives", label: "Objectives", value: Math.round(objectivesScore), weight: MIND_WEIGHTS.objectives },
   ];

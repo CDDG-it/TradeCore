@@ -124,9 +124,34 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
               </Link>
             )}
           </div>
-          <div className="text-right">
-            <p className={cn("text-3xl font-black leading-none", rTone)}>{formatTotalR(group.totalR)}</p>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mt-1">Week R</p>
+          <div className="flex items-start gap-5">
+            {/* How much of the week was traded to plan, beside what it paid —
+                the two halves of a week you can actually act on. */}
+            <div className="text-right">
+              <p
+                className={cn(
+                  "text-3xl font-black leading-none",
+                  group.execRate == null ? "text-muted-foreground/50"
+                    : group.execRate >= 70 ? "text-success"
+                    : group.execRate >= 40 ? "text-warning"
+                    : "text-destructive"
+                )}
+              >
+                {group.execRate == null ? "—" : `${group.execRate}%`}
+              </p>
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                Execution
+                {group.goodExec + group.badExec > 0 && (
+                  <span className="ml-1 normal-case tracking-normal tabular-nums">
+                    {group.goodExec}/{group.goodExec + group.badExec}
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className={cn("text-3xl font-black leading-none", rTone)}>{formatTotalR(group.totalR)}</p>
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">Week R</p>
+            </div>
           </div>
         </div>
       </div>

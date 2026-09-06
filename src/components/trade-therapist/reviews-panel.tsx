@@ -152,7 +152,22 @@ export function ReviewsPanel() {
                         </p>
                         <p className="mt-1 text-[10px] text-muted-foreground leading-none">{group.rangeLabel}</p>
                       </div>
-                      <span className="text-[11px] font-semibold text-muted-foreground tabular-nums">{group.wins}W {group.losses}L</span>
+                      <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">{group.wins}W {group.losses}L</span>
+                      {/* How much of that week was traded to plan. */}
+                      <span
+                        title={
+                          group.execRate == null
+                            ? "No trade that week was rated on execution"
+                            : `${group.goodExec} of ${group.goodExec + group.badExec} rated trades executed to plan`
+                        }
+                        className={cn("w-9 shrink-0 text-right text-[11px] font-semibold tabular-nums",
+                          group.execRate == null ? "text-muted-foreground/40"
+                            : group.execRate >= 70 ? "text-success"
+                            : group.execRate >= 40 ? "text-warning"
+                            : "text-destructive")}
+                      >
+                        {group.execRate == null ? "—" : `${group.execRate}%`}
+                      </span>
                       <span className={cn("w-12 shrink-0 text-right text-xs font-bold tabular-nums",
                         group.totalR > 0 ? "text-success" : group.totalR < 0 ? "text-destructive" : "text-warning")}>
                         {formatTotalR(group.totalR)}

@@ -296,8 +296,8 @@ export default function DashboardPage() {
 
 /* ── MC mind score — one readiness number, split into its inputs ──────────
    A rising "signal-strength" bar meter for the blended score, the current band
-   as its state label, the three inputs (rules, habits, objectives) as inline
-   sub-scores, and a compact objectives strip. Clicking through opens the full
+   as its state label, the four inputs (rules, execution, habits, objectives) as
+   inline sub-scores, and a compact objectives strip. Clicking through opens the full
    breakdown page with the calculation and week / month / all-time scores. */
 const METER_BARS = 22;
 
@@ -329,7 +329,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
   const color = pending ? TURQUOISE : hasData ? bandColorFor(target) : "var(--muted-foreground)";
   const filled = Math.round(prog * METER_BARS);
 
-  const comp = (key: "rules" | "habits" | "objectives") =>
+  const comp = (key: "rules" | "execution" | "habits" | "objectives") =>
     score?.components.find((c) => c.key === key) ?? null;
   const objectives = score?.objectives ?? [];
   // An objective with no target has nothing due in this window yet — the engine
@@ -338,9 +338,10 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
   const objectivesDue = objectives.filter((o) => o.target > 0);
   const objectivesDone = objectivesDue.filter((o) => o.rate >= 1).length;
 
-  // The three inputs, in the order they carry weight.
-  const inputs: { key: "rules" | "habits" | "objectives"; label: string; accent: string }[] = [
+  // The four inputs, in the order they carry weight.
+  const inputs: { key: "rules" | "execution" | "habits" | "objectives"; label: string; accent: string }[] = [
     { key: "rules", label: "Rules", accent: color },
+    { key: "execution", label: "Execution", accent: CYAN },
     { key: "habits", label: "Habits", accent: CYAN },
     { key: "objectives", label: "Objectives", accent: TURQUOISE },
   ];

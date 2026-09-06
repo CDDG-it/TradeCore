@@ -45,6 +45,32 @@ function frequencyAppliesOn(freq: Habit["frequency"], weekday: number): boolean 
   return true; // "daily"
 }
 
+/**
+ * Execution quality across [start, end] — the share of rated trades the trader
+ * marked as good.
+ *
+ * Only rated trades count. An unrated trade is not a bad one: leaving it out
+ * keeps the number honest, the same way break-even trades are kept out of the
+ * win-rate denominator instead of being scored as losses.
+ */
+export function computeExecutionScore(
+  trades: TradeJournalEntry[],
+  start: Date,
+  end: Date
+): { score: number | null; good: number; bad: number } {
+  let good = 0;
+  let bad = 0;
+  for (const t of trades) {
+    if (!t.execution_quality) continue;
+    const d = tradeDate(t);
+    if (d < start || d > end) continue;
+    if (t.execution_quality === "good") good++;
+    else bad++;
+  }
+  const rated = good + bad;
+  return { score: rated > 0 ? Math.round((good / rated) * 100) : null, good, bad };
+}
+
 /** Average per-trade discipline score for trades inside [start, end]. */
 export function computeTradeRulesScore(
   trades: TradeJournalEntry[],

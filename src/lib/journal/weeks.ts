@@ -52,6 +52,13 @@ export type WeekGroup = {
   losses: number;
   bes: number;
   totalR: number;
+  /** Trades rated good / bad on execution — whether they were the trade the
+   *  plan and the edge called for, regardless of what they paid. */
+  goodExec: number;
+  badExec: number;
+  /** Share of *rated* trades executed well, or null when none were rated.
+   *  Unrated trades are left out rather than counted against you. */
+  execRate: number | null;
 };
 
 /** Build a single week group (Mon–Fri) for a given Monday date string. */
@@ -79,7 +86,16 @@ export function getWeekGroup(trades: TradeJournalEntry[], weekStart: string): We
     losses: weekTrades.filter((t) => t.result === "loss").length,
     bes: weekTrades.filter((t) => t.result === "break-even").length,
     totalR: weekTrades.reduce((s, t) => s + tradeR(t), 0),
+    ...execOf(weekTrades),
   };
+}
+
+/** Execution counts and rate for a set of trades. */
+function execOf(trades: TradeJournalEntry[]) {
+  const goodExec = trades.filter((t) => t.execution_quality === "good").length;
+  const badExec = trades.filter((t) => t.execution_quality === "bad").length;
+  const rated = goodExec + badExec;
+  return { goodExec, badExec, execRate: rated > 0 ? Math.round((goodExec / rated) * 100) : null };
 }
 
 /** Group all trades into weeks (Mon–Fri), newest first. */

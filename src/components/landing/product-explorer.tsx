@@ -274,7 +274,7 @@ function MindscoreMock() {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold" style={{ color: c }}>{d.band}</p>
             <p className="text-[11px] leading-snug text-muted-foreground">
-              Built from your rules, habits and process work — not how the session felt.
+              Built from your rules, your execution, your habits and your process work — not how the session felt.
             </p>
             <div className="mt-2">
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted-foreground/12">
