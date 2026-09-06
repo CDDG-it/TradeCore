@@ -98,7 +98,17 @@ export default function HomePage() {
     // horizontally contain their own overflow instead.
     <div style={{ background: "#0B1120" }}>
 
-      {/* ── Top navigation: Features dropdown, Coming soon, Sign in, Make account ── */}
+      {/* Keyboard and screen-reader users get past the nav in one keystroke.
+          Invisible until it is focused, which is the whole point of it. */}
+      <a
+        href="#features"
+        className="sr-only rounded-full px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50"
+        style={{ background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)" }}
+      >
+        Skip to content
+      </a>
+
+      {/* ── Top navigation: Features button, Sign in, Make account ── */}
       <LandingNav />
 
       {/* One background carries the hero, the explorer and the cards, so the

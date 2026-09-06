@@ -127,6 +127,10 @@ export function CandlesCanvas() {
       // translated by the parallax offset so it reacts to the cursor.
       ctx.save();
       ctx.translate(parX, parY);
+      // Candles near the cursor come up out of the background one by one. The
+      // falloff is on the horizontal distance only, so running the cursor along
+      // the hero lights a travelling band of the series rather than a blob.
+      const REACH = 190;
       for (let i = 0; i < count; i++) {
         const ci = (startIdx + i) % N;
         const c = CANDLES[ci];
@@ -139,19 +143,55 @@ export function CandlesCanvas() {
         const bH = Math.max(1.5, bBot - bTop);
         const cx = x + W / 2;
 
+        // 0 far away, 1 right under the cursor, eased so the edge of the band
+        // is soft instead of a hard circle.
+        const d = Math.abs(cx + parX - ptr.x);
+        const near = d > REACH ? 0 : Math.pow(1 - d / REACH, 2);
+
+        const hue = bull ? "20,184,166" : "100,116,139";
+        const base = bull ? 0.55 : 0.45;
+
         // Wick
-        ctx.strokeStyle = bull ? "rgba(20,184,166,0.55)" : "rgba(100,116,139,0.45)";
+        ctx.strokeStyle = `rgba(${hue},${base + near * 0.35})`;
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(cx, py(c.h)); ctx.lineTo(cx, py(c.l)); ctx.stroke();
         // Body fill
-        ctx.fillStyle = bull ? "rgba(20,184,166,0.22)" : "rgba(100,116,139,0.18)";
+        ctx.fillStyle = `rgba(${hue},${(bull ? 0.22 : 0.18) + near * 0.3})`;
         ctx.fillRect(x, bTop, W, bH);
-        // Body border
-        ctx.strokeStyle = bull ? "rgba(20,184,166,0.72)" : "rgba(100,116,139,0.55)";
-        ctx.lineWidth = 0.75;
+        // Body border — the lit candles also gain a faint bloom of their own.
+        if (near > 0.05) {
+          ctx.shadowColor = `rgba(${hue},${near * 0.5})`;
+          ctx.shadowBlur = 12 * near;
+        }
+        ctx.strokeStyle = `rgba(${hue},${(bull ? 0.72 : 0.55) + near * 0.28})`;
+        ctx.lineWidth = 0.75 + near * 0.6;
         ctx.strokeRect(x, bTop, W, bH);
+        ctx.shadowBlur = 0;
       }
       ctx.restore();
+
+      // Crosshair — the one gesture every chart shares. Only drawn once the
+      // reader has actually moved a pointer, and kept faint enough that it
+      // reads as an instrument rather than a graphic.
+      if (ptr.tx !== null && ptr.ty !== null) {
+        ctx.save();
+        ctx.setLineDash([3, 5]);
+        ctx.lineWidth = 1;
+        const fadeH = ctx.createLinearGradient(0, 0, cw, 0);
+        fadeH.addColorStop(0, "rgba(20,184,166,0)");
+        fadeH.addColorStop(0.5, "rgba(20,184,166,0.20)");
+        fadeH.addColorStop(1, "rgba(20,184,166,0)");
+        ctx.strokeStyle = fadeH;
+        ctx.beginPath(); ctx.moveTo(0, ptr.y); ctx.lineTo(cw, ptr.y); ctx.stroke();
+
+        const fadeV = ctx.createLinearGradient(0, 0, 0, ch);
+        fadeV.addColorStop(0, "rgba(20,184,166,0)");
+        fadeV.addColorStop(0.45, "rgba(20,184,166,0.20)");
+        fadeV.addColorStop(1, "rgba(20,184,166,0)");
+        ctx.strokeStyle = fadeV;
+        ctx.beginPath(); ctx.moveTo(ptr.x, 0); ctx.lineTo(ptr.x, ch); ctx.stroke();
+        ctx.restore();
+      }
 
       // Cursor spotlight — an additive turquoise glow that lifts the candles it
       // passes over. Drawn before the readability mask so the text area stays calm.
@@ -210,8 +250,9 @@ export function CandlesCanvas() {
     };
     window.addEventListener("resize", onResize);
 
-    // Track the cursor relative to the canvas; the draw loop eases toward it.
-    const onMove = (e: MouseEvent) => {
+    // Pointer rather than mouse events, so a finger dragging across the hero
+    // moves the crosshair and lights the candles the same way a cursor does.
+    const onMove = (e: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
       pointerRef.current.tx = e.clientX - rect.left;
       pointerRef.current.ty = e.clientY - rect.top;
@@ -221,16 +262,18 @@ export function CandlesCanvas() {
       pointerRef.current.ty = null;
     };
     if (!reducedMotion) {
-      window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseout", onLeave);
+      window.addEventListener("pointermove", onMove, { passive: true });
+      window.addEventListener("pointerleave", onLeave);
+      window.addEventListener("pointercancel", onLeave);
     }
 
     rafRef.current = requestAnimationFrame(draw);
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", onResize);
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseout", onLeave);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("pointercancel", onLeave);
     };
   }, []);
 

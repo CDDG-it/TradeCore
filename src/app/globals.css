@@ -743,3 +743,24 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     height: calc(100dvh - 4.5rem - 7.25rem - env(safe-area-inset-bottom));
   }
 }
+
+/* ── Selection and keyboard focus ──
+   Two details that cost nothing and are noticed the moment they are missing:
+   highlighted text picks up the brand turquoise instead of the browser's blue,
+   and anything reachable by keyboard shows a visible ring. `:focus-visible`
+   rather than `:focus`, so a mouse click never leaves a ring behind. */
+::selection {
+  background: color-mix(in srgb, #14b8a6 32%, transparent);
+  color: #f8fafc;
+}
+
+:where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid color-mix(in srgb, #14b8a6 80%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* An anchor jump should land the section below the sticky header, not under it. */
+:target {
+  scroll-margin-top: 6rem;
+}

@@ -53,8 +53,9 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
 export function LayoutShowcase() {
   return (
     <section id="products" className="relative overflow-hidden px-6 py-24 md:px-10 md:py-32">
-      {/* Slowed flow-field particle stream, held to the lower half so it reads as
-          depth behind the cards rather than a haze across the type. */}
+      {/* Flow-field particle stream, held to the lower half so it reads as depth
+          behind the cards rather than a haze across the type — and slowed right
+          down, so it drifts under the cards instead of streaking past them. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-70"
@@ -63,7 +64,7 @@ export function LayoutShowcase() {
           WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, #000 28%)",
         }}
       >
-        <FlowField className="inset-0" density="medium" speed={0.3} />
+        <FlowField className="inset-0" density="medium" speed={0.11} />
       </div>
 
       <div className="relative mx-auto max-w-[1700px]">
