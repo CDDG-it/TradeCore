@@ -3,8 +3,8 @@
 -- My Edge → Mind Edge.
 --
 -- A goal is a target on a number the app already computes — execution rate,
--- rule adherence, Mindscore, win rate, net R, clean days, trades logged —
--- measured over a window you pick. Progress is never stored: it is recomputed
+-- clean days, rule adherence, habit consistency, win rate, net R, trades
+-- logged — measured over a window you pick. Progress is never stored: it is recomputed
 -- from your trades and habits every time the tab is opened, so a goal can
 -- never drift out of step with the data behind it. The row only holds the
 -- intent: what you are aiming at, from where, and by when.
