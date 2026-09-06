@@ -3,12 +3,19 @@ import { cached } from "@/lib/gmi/cache";
 import { fetchNews } from "@/lib/gmi/news";
 import type { DataEnvelope, NewsArticle } from "@/lib/gmi/types";
 
-// Marketaux financial news. Free tier is 100 req/day, so we cache for an hour
-// and let the client filter the cached batch — never per-filter refetches.
+// Marketaux financial news. The client filters the cached batch rather than
+// refetching per filter, so one batch serves every view of the wire.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const TTL_MS = 60 * 60_000;
+/**
+ * Two hours, not one — the free tier allows 100 requests a day and a refresh
+ * spends four of them (one per page). Hourly meant 96 a day for a single warm
+ * instance, so a second instance would push the desk over the limit and the
+ * wire would start coming back stale. Two hours halves that to 48 and leaves
+ * real headroom; the desk labels this feed delayed either way.
+ */
+const TTL_MS = 2 * 60 * 60_000;
 
 /**
  * The wire is the same for every reader, so a good answer is worth sharing.
