@@ -2,35 +2,60 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ChevronDown, ArrowRight } from "lucide-react";
+import { ChevronDown, ArrowDown } from "lucide-react";
 import { FEATURES } from "@/lib/landing/features";
 import { APP_TABS } from "@/lib/nav";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
-// The dropdown always lists every current app tab, written exactly as in the
-// sidebar. Tabs with a deep marketing page (FEATURES) link there and reuse
-// its tagline; the rest link straight into the app with a short description.
-const FEATURE_BY_HREF = new Map(FEATURES.map((f) => [`/${f.slug}`, f]));
-const TAB_FALLBACK_TAGLINE: Record<string, string> = {
-  "/trade-therapist": "A pre-trade mirror and post-trade 5R sessions, built on your own trade data.",
-  "/habits": "Track daily habits and discipline, in one streak.",
-  "/trading-behaviour": "Your trading rules and confluence library, in one place.",
-  "/news-city": "Scan the market news feed and explore the forces in a live city.",
+/**
+ * The Features menu is a map of the product, not a set of doors out of the page.
+ * Every surface the app actually has is listed, grouped the way the app groups
+ * them, and each row scrolls down to the card that shows it. Nothing here
+ * navigates away: the cards are the answer to "what is in this thing", so the
+ * menu takes you to them rather than to a separate marketing page.
+ */
+const FEATURE_BY_SLUG = new Map(FEATURES.map((f) => [f.slug, f]));
+
+// The four cards on the showcase. A surface that lives inside one of them —
+// the Journal sits under the Dashboard — points at its parent card.
+const CARD_FOR: Record<string, string> = {
+  "/dashboard": "card-dashboard",
+  "/journal": "card-dashboard",
+  "/analysis": "card-dashboard",
+  "/analytics": "card-dashboard",
+  "/accounts": "card-dashboard",
+  "/psychological-edge": "card-psychological-edge",
+  "/trade-therapist": "card-trade-therapist",
+  "/news-city": "card-news-city",
 };
-// The Features menu lists exactly the products shown on the animated landing
-// cards, in the same order. The label falls back to the marketing name rather
-// than assuming a matching APP_TABS entry.
-const CARD_HREFS = ["/dashboard", "/psychological-edge", "/trade-therapist", "/news-city"];
-const NAV_ITEMS = CARD_HREFS.map((href) => {
-  const tab = APP_TABS.find((t) => t.href === href);
-  const feature = FEATURE_BY_HREF.get(href);
-  return {
-    label: tab?.label ?? feature?.name ?? href,
-    href: feature ? `/features/${feature.slug}` : href,
-    tagline: feature?.tagline ?? TAB_FALLBACK_TAGLINE[href] ?? "",
-  };
-});
+
+// Headings for the groups APP_TABS already defines, so the menu and the app
+// describe the product with the same words.
+const GROUP_LABEL: Record<string, string> = {
+  "": "Every day",
+  Trading: "Trading",
+  "MC Mindset formula": "MC Mindset formula",
+  "MC News Dashboard": "MC News Dashboard",
+};
+
+const NAV_GROUPS = APP_TABS.reduce<{ heading: string; items: { label: string; anchor: string; tagline: string }[] }[]>(
+  (groups, tab) => {
+    const anchor = CARD_FOR[tab.href];
+    if (!anchor) return groups;
+    const heading = GROUP_LABEL[tab.group ?? ""] ?? tab.group ?? "";
+    const item = {
+      label: tab.label,
+      anchor: `#${anchor}`,
+      tagline: FEATURE_BY_SLUG.get(tab.href.slice(1))?.tagline ?? "",
+    };
+    const last = groups[groups.length - 1];
+    if (last && last.heading === heading) last.items.push(item);
+    else groups.push({ heading, items: [item] });
+    return groups;
+  },
+  []
+);
 
 /* Top-of-hero navigation: brand at the left, a centered Features dropdown
    listing the five product pages, then Sign in and a Make account button. */
@@ -117,7 +142,7 @@ export function LandingNav() {
               <div
                 onMouseEnter={cancelClose}
                 onMouseLeave={scheduleClose}
-                className="absolute left-1/2 top-full z-40 mt-2 w-[300px] max-h-[70vh] -translate-x-1/2 overflow-y-auto rounded-2xl p-1.5"
+                className="absolute left-1/2 top-full z-40 mt-2 max-h-[70vh] w-[340px] -translate-x-1/2 overflow-y-auto rounded-2xl p-1.5"
                 style={{
                   background: "rgba(19,27,46,0.97)",
                   backdropFilter: "blur(20px)",
@@ -126,31 +151,35 @@ export function LandingNav() {
                   boxShadow: "0 1px 3px rgba(0,0,0,0.25), 0 18px 50px rgba(0,0,0,0.45)",
                 }}
               >
-                {NAV_ITEMS.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className="group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors duration-200 hover:bg-[rgba(20,184,166,0.07)]"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-sm font-bold"
-                          style={{ color: "rgba(248,250,252,0.90)" }}
-                        >
-                          {item.label}
-                        </span>
-                      </div>
-                      <p
-                        className="mt-0.5 text-xs leading-snug"
-                        style={{ color: "rgba(248,250,252,0.55)" }}
+                {NAV_GROUPS.map((group) => (
+                  <div key={group.heading} className="pt-1 first:pt-0">
+                    <p
+                      className="px-3 pb-1 pt-2.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+                      style={{ color: "rgba(248,250,252,0.35)" }}
+                    >
+                      {group.heading}
+                    </p>
+                    {group.items.map((item) => (
+                      <a
+                        key={item.label}
+                        href={item.anchor}
+                        onClick={() => setOpen(false)}
+                        className="group flex items-start gap-3 rounded-lg px-3 py-1.5 transition-colors duration-200 hover:bg-[rgba(20,184,166,0.07)]"
                       >
-                        {item.tagline}
-                      </p>
-                    </div>
-                    <ArrowRight className="mt-1 h-3.5 w-3.5 shrink-0 -translate-x-1 text-[#14B8A6] opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
-                  </Link>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-sm font-bold" style={{ color: "rgba(248,250,252,0.90)" }}>
+                            {item.label}
+                          </span>
+                          {item.tagline && (
+                            <p className="mt-0.5 text-[11px] leading-snug" style={{ color: "rgba(248,250,252,0.55)" }}>
+                              {item.tagline}
+                            </p>
+                          )}
+                        </div>
+                        <ArrowDown className="mt-1 h-3.5 w-3.5 shrink-0 -translate-y-1 text-[#14B8A6] opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100" />
+                      </a>
+                    ))}
+                  </div>
                 ))}
               </div>
             )}

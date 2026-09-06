@@ -12,9 +12,8 @@
  */
 
 import { useRef, useState } from "react";
-import Link from "next/link";
 import { motion, useScroll, useSpring, useReducedMotion } from "motion/react";
-import { ArrowRight, Check, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
+import { ArrowDown, Check, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TURQUOISE = "#14B8A6";
@@ -640,7 +639,7 @@ const INSTRUMENTS: Instrument[] = [
       "Running profit and loss as the session unfolds.",
       "The one thing to work on today, kept front and center.",
     ],
-    href: "/features/dashboard",
+    href: "#card-dashboard",
     accent: CYAN,
     visual: <WinRateMock />,
   },
@@ -654,7 +653,7 @@ const INSTRUMENTS: Instrument[] = [
       "Mind Edge: the habits you keep, and a Mindscore built from them.",
       "Pressure-test the whole thing before risking a live evaluation.",
     ],
-    href: "/features/psychological-edge",
+    href: "#card-psychological-edge",
     accent: TURQUOISE,
     visual: <MyEdgeMock />,
   },
@@ -668,7 +667,7 @@ const INSTRUMENTS: Instrument[] = [
       "Each prompt names the trade you overheld or the rule you skipped.",
       "What you promise is saved and resurfaced on later trades.",
     ],
-    href: "/features/trade-therapist",
+    href: "#card-trade-therapist",
     accent: RED,
     visual: <TherapistMock />,
   },
@@ -682,7 +681,7 @@ const INSTRUMENTS: Instrument[] = [
       "Signals scored by impact, direction and confidence.",
       "Narrow to what moves your instrument.",
     ],
-    href: "/features/news-city",
+    href: "#card-news-city",
     accent: CYAN,
     visual: <MarketsMock />,
   },
@@ -698,7 +697,7 @@ export function ProductExplorer() {
   const fill = useSpring(scrollYProgress, { stiffness: 120, damping: 30, mass: 0.4 });
 
   return (
-    <section id="features" className="relative bg-background px-6 py-24 md:px-10 md:py-32">
+    <section id="features" className="relative px-6 py-24 md:px-10 md:py-32">
       <div className="mx-auto max-w-6xl">
         <div className="max-w-3xl">
           <p className="font-body text-[13px] font-semibold text-primary">Inside the platform</p>
@@ -783,13 +782,14 @@ function InstrumentBlock({
           ))}
         </ul>
 
-        <Link
+        {/* Down to this product's card, not out to a separate page. */}
+        <a
           href={inst.href}
           className="group mt-7 inline-flex items-center gap-1.5 font-body text-sm font-semibold text-primary transition-colors hover:text-foreground"
         >
-          Explore {inst.name}
-          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-        </Link>
+          See the {inst.name} card
+          <ArrowDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-y-0.5" />
+        </a>
       </motion.div>
 
       <motion.div

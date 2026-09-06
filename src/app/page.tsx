@@ -6,6 +6,7 @@ import { ArrowRight, ArrowDown } from "lucide-react";
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "motion/react";
 import { animate, splitText, stagger } from "animejs";
 import { CandlesCanvas } from "@/components/landing/candles-canvas";
+import { LandingGround } from "@/components/landing/landing-ground";
 import { LayoutShowcase } from "@/components/landing/layout-showcase";
 import { ProductExplorer } from "@/components/landing/product-explorer";
 import { LandingFooter } from "@/components/landing/footer";
@@ -99,6 +100,12 @@ export default function HomePage() {
 
       {/* ── Top navigation: Features dropdown, Coming soon, Sign in, Make account ── */}
       <LandingNav />
+
+      {/* One background carries the hero, the explorer and the cards, so the
+          opening stretch reads as a single surface instead of three fills
+          stacked on top of each other. */}
+      <div className="relative">
+        <LandingGround />
 
       {/* ── Hero — dark navy background, turquoise + neutral candle visuals ── */}
       {/* 53px = header height (py-4 + text-base logo + 1px border).
@@ -226,9 +233,10 @@ export default function HomePage() {
 
       </section>
 
-      <ProductExplorer />
+        <ProductExplorer />
 
-      <LayoutShowcase />
+        <LayoutShowcase />
+      </div>
 
       <LandingFooter />
     </div>

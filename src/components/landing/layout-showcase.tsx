@@ -52,7 +52,7 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
  */
 export function LayoutShowcase() {
   return (
-    <section className="relative overflow-hidden px-6 py-24 md:px-10 md:py-32" style={{ background: "#0B1120" }}>
+    <section id="products" className="relative overflow-hidden px-6 py-24 md:px-10 md:py-32">
       {/* Slowed flow-field particle stream, held to the lower half so it reads as
           depth behind the cards rather than a haze across the type. */}
       <div
@@ -87,9 +87,14 @@ export function LayoutShowcase() {
           </p>
         </div>
 
+        {/* Each card is an anchor target: the Features menu and the explorer
+            scroll here rather than navigating away. `scroll-mt` clears the
+            sticky header so the card lands below it, not under it. */}
         <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {CARDS.map((c) => (
-            <CardFlip key={c.href} {...c} />
+            <div key={c.href} id={`card-${c.href.slice(1)}`} className="scroll-mt-28">
+              <CardFlip {...c} />
+            </div>
           ))}
         </div>
       </div>
