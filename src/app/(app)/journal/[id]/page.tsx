@@ -94,7 +94,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
   const scoreColor = disciplineScore >= 80
     ? "oklch(0.72 0.17 145)"
     : disciplineScore >= 60
-    ? "#EAB308"
+    ? "var(--be)"
     : "oklch(0.65 0.22 25)";
 
   return (
@@ -176,7 +176,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Target className="w-4 h-4" style={{ color: "#14B8A6" }} />
+              <Target className="w-4 h-4" style={{ color: "var(--primary)" }} />
               Discipline Check
               <span className="ml-auto text-sm font-bold" style={{ color: scoreColor }}>
                 {hasCustomChecks ? `${disciplineScore}%` : "—"}

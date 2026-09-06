@@ -86,7 +86,7 @@ export function ConfluencesEditor() {
     <div
       className="relative overflow-hidden rounded-2xl border border-border/60 p-4 pl-5 sm:p-6 sm:pl-7"
       style={{
-        background: "linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, #06B6D4 4%), var(--card) 55%)",
+        background: "linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, var(--ice) 4%), var(--card) 55%)",
         boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 32px -18px rgba(0,0,0,0.8)",
       }}
     >
@@ -94,21 +94,21 @@ export function ConfluencesEditor() {
       <span
         aria-hidden
         className="absolute inset-y-0 left-0 w-1"
-        style={{ background: "linear-gradient(180deg, #06B6D4, rgba(6,182,212,0.12))" }}
+        style={{ background: "linear-gradient(180deg, var(--ice), color-mix(in oklch, var(--ice) 12%, transparent))" }}
       />
       {/* Oversized ghost count */}
       {!loading && items.length > 0 && (
         <span
           aria-hidden
           className="pointer-events-none absolute -top-5 right-3 select-none text-[92px] font-black leading-none tracking-tighter"
-          style={{ color: "rgba(6,182,212,0.07)" }}
+          style={{ color: "color-mix(in oklch, var(--ice) 7%, transparent)" }}
         >
           {items.length}
         </span>
       )}
 
       <div className="relative">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: "rgba(6,182,212,0.75)" }}>Setups</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: "color-mix(in oklch, var(--ice) 75%, transparent)" }}>Setups</p>
         <h2 className="mt-1.5 font-heading text-xl font-bold tracking-tight">Confluences</h2>
       </div>
 
@@ -130,7 +130,7 @@ export function ConfluencesEditor() {
                   <div
                     key={idx}
                     className="inline-flex items-center gap-1 rounded-lg border bg-background py-1.5 pl-2.5 pr-1.5"
-                    style={{ borderColor: "rgba(6,182,212,0.5)" }}
+                    style={{ borderColor: "color-mix(in oklch, var(--ice) 50%, transparent)" }}
                   >
                     <input
                       value={editText}
@@ -154,7 +154,7 @@ export function ConfluencesEditor() {
                   <span
                     key={idx}
                     className="group inline-flex items-center gap-1.5 rounded-lg border border-border/60 py-2 pl-3.5 pr-2 text-sm transition-all hover:-translate-y-px"
-                    style={{ background: "linear-gradient(180deg, rgba(6,182,212,0.10), rgba(6,182,212,0.03))" }}
+                    style={{ background: "linear-gradient(180deg, color-mix(in oklch, var(--ice) 10%, transparent), color-mix(in oklch, var(--ice) 3%, transparent))" }}
                   >
                     <button
                       type="button"
@@ -181,7 +181,7 @@ export function ConfluencesEditor() {
           {/* Composer */}
           <div
             className="mt-4 flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-2 transition-all focus-within:ring-2"
-            style={{ ["--tw-ring-color" as string]: "rgba(6,182,212,0.12)" }}
+            style={{ ["--tw-ring-color" as string]: "color-mix(in oklch, var(--ice) 12%, transparent)" }}
           >
             <input
               value={newItem}
@@ -195,7 +195,7 @@ export function ConfluencesEditor() {
               onClick={addNew}
               disabled={!newItem.trim()}
               className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-xs font-bold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
-              style={{ background: "#06B6D4" }}
+              style={{ background: "var(--ice)" }}
             >
               <Plus className="h-3.5 w-3.5" /> Add
             </button>
@@ -238,7 +238,7 @@ export function ConfluencesEditor() {
               onClick={persist}
               disabled={!dirty || saveState === "saving"}
               className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
-              style={{ background: "#06B6D4" }}
+              style={{ background: "var(--ice)" }}
             >
               {saveState === "saving" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…</> : "Save confluences"}
             </button>

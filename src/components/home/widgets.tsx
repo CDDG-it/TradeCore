@@ -269,7 +269,7 @@ function Loading() {
 }
 
 const scoreColor = (v: number) =>
-  v >= 80 ? "oklch(0.58 0.17 145)" : v >= 60 ? "oklch(0.70 0.16 72)" : "oklch(0.58 0.22 25)";
+  v >= 80 ? "var(--win)" : v >= 60 ? "var(--be)" : "var(--loss)";
 
 function scopeSubtitle(options: WidgetOptions, suffix: string): string {
   const scope = options.scope ?? "week";
@@ -292,7 +292,7 @@ function WeeklyRWidget({ options }: { options: WidgetOptions }) {
   if (!trades) return <Loading />;
   const inScope = scopeTrades(trades, options);
   const r = inScope.reduce((s, t) => s + tradeR(t), 0);
-  const color = r > 0 ? "oklch(0.58 0.17 145)" : r < 0 ? "oklch(0.58 0.22 25)" : "var(--muted-foreground)";
+  const color = r > 0 ? "var(--win)" : r < 0 ? "var(--loss)" : "var(--muted-foreground)";
   const wins = inScope.filter((t) => t.result === "win").length;
   const losses = inScope.filter((t) => t.result === "loss").length;
   const avg = inScope.length ? r / inScope.length : 0;
@@ -321,7 +321,7 @@ function WinRateWidget({ options }: { options: WidgetOptions }) {
   const pct = winRateOf(wins, losses) ?? 0;
   return (
     <div>
-      <p className="text-3xl font-black tabular-nums" style={{ color: "oklch(0.72 0.14 220)" }}>{pct}%</p>
+      <p className="text-3xl font-black tabular-nums" style={{ color: "var(--ice)" }}>{pct}%</p>
       <p className="text-xs text-muted-foreground mt-1">{inScope.length} trade{inScope.length !== 1 ? "s" : ""} · {scopeSubtitle(options, "")}</p>
       {options.details && inScope.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground space-y-0.5">
@@ -374,11 +374,11 @@ function ExecutionWidget({ options }: { options: WidgetOptions }) {
       {options.details && rated.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border/50 space-y-1.5">
           <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-border/60">
-            <div className="h-full" style={{ width: `${(good / rated.length) * 100}%`, background: "oklch(0.58 0.17 145)" }} />
-            <div className="h-full" style={{ width: `${(bad / rated.length) * 100}%`, background: "oklch(0.58 0.22 25)" }} />
+            <div className="h-full" style={{ width: `${(good / rated.length) * 100}%`, background: "var(--win)" }} />
+            <div className="h-full" style={{ width: `${(bad / rated.length) * 100}%`, background: "var(--loss)" }} />
           </div>
           <p className="text-xs text-muted-foreground">
-            <span style={{ color: "oklch(0.58 0.17 145)" }}>{good} good</span> · <span style={{ color: "oklch(0.58 0.22 25)" }}>{bad} bad</span>
+            <span style={{ color: "var(--win)" }}>{good} good</span> · <span style={{ color: "var(--loss)" }}>{bad} bad</span>
           </p>
         </div>
       )}
@@ -388,7 +388,7 @@ function ExecutionWidget({ options }: { options: WidgetOptions }) {
 
 // ── Pre-Market Analysis (latest pre-trade prep) ──────────────────────
 const BIAS_COLOR: Record<string, string> = {
-  bullish: "oklch(0.58 0.17 145)", bearish: "oklch(0.58 0.22 25)", choppy: "oklch(0.70 0.16 72)",
+  bullish: "var(--win)", bearish: "var(--loss)", choppy: "var(--be)",
 };
 function PreMarketAnalysisWidget({ options }: { options: WidgetOptions }) {
   const [analyses, setAnalyses] = useState<PreTradeAnalysis[] | null>(null);
@@ -488,7 +488,7 @@ function DisciplineWidget({ options }: { options: WidgetOptions }) {
           weight="70%"
           score={tradeRules}
           detail={tradeRules === null ? "no scored trades" : `across ${tradeCount} scored trade${tradeCount !== 1 ? "s" : ""}`}
-          color="oklch(0.72 0.14 220)"
+          color="var(--ice)"
         />
         <ContributionRow
           label="Habits"
@@ -622,7 +622,7 @@ function HabitsStreakWidget({ options }: { options: WidgetOptions }) {
 
 // ── Recent trades ─────────────────────────────────────────────────────
 function ResultDot({ t }: { t: TradeJournalEntry }) {
-  const color = t.result === "win" ? "oklch(0.58 0.17 145)" : t.result === "loss" ? "oklch(0.58 0.22 25)" : "oklch(0.70 0.16 72)";
+  const color = t.result === "win" ? "var(--win)" : t.result === "loss" ? "var(--loss)" : "var(--be)";
   return (
     <span className="inline-flex items-center gap-1 shrink-0" style={{ color }}>
       {t.direction === "long" ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
@@ -641,7 +641,7 @@ function RecentTradesWidget({ options }: { options: WidgetOptions }) {
   return (
     <div className="space-y-1 overflow-y-auto">
       {shown.map((t) => {
-        const color = t.result === "win" ? "oklch(0.58 0.17 145)" : t.result === "loss" ? "oklch(0.58 0.22 25)" : "oklch(0.70 0.16 72)";
+        const color = t.result === "win" ? "var(--win)" : t.result === "loss" ? "var(--loss)" : "var(--be)";
         return (
           <Link
             key={t.id}
@@ -681,7 +681,7 @@ function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
   if ((options.size === "small" && !options.details) || active.length === 0) {
     return (
       <div className="min-w-0">
-        <p className="text-2xl font-black tabular-nums truncate" style={{ color: "oklch(0.58 0.17 145)" }}>
+        <p className="text-2xl font-black tabular-nums truncate" style={{ color: "var(--win)" }}>
           {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "—"}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">{active.length} active account{active.length !== 1 ? "s" : ""}</p>
@@ -692,7 +692,7 @@ function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
   const visible = active.slice(0, listCap(options, active.length, 3));
   return (
     <div className="flex flex-col h-full">
-      <p className="text-xl font-black tabular-nums mb-2" style={{ color: "oklch(0.58 0.17 145)" }}>
+      <p className="text-xl font-black tabular-nums mb-2" style={{ color: "var(--win)" }}>
         {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "—"}
       </p>
       <div className="space-y-1 overflow-y-auto">
@@ -704,7 +704,7 @@ function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
           >
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="truncate">{a.account_name || a.firm_name}</span>
-              <span className="font-bold tabular-nums shrink-0" style={{ color: "oklch(0.58 0.17 145)" }}>
+              <span className="font-bold tabular-nums shrink-0" style={{ color: "var(--win)" }}>
                 {mask(`$${a.current_balance.toLocaleString()}`, hidden)}
               </span>
             </div>
@@ -735,7 +735,7 @@ function TradingRulesWidget({ options }: { options: WidgetOptions }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <ScrollText className="w-4 h-4" style={{ color: "oklch(0.72 0.14 220)" }} />
+        <ScrollText className="w-4 h-4" style={{ color: "var(--ice)" }} />
         <span className="text-2xl font-black tabular-nums">{rules.length}</span>
         <span className="text-xs text-muted-foreground">rules</span>
       </div>
@@ -771,7 +771,7 @@ function JournalCalendarWidget() {
     dayR.set(k, (dayR.get(k) ?? 0) + tradeR(t));
   }
   const dotColor = (r: number) =>
-    r > 0 ? "oklch(0.58 0.17 145)" : r < 0 ? "oklch(0.58 0.22 25)" : "oklch(0.70 0.16 72)";
+    r > 0 ? "var(--win)" : r < 0 ? "var(--loss)" : "var(--be)";
 
   const monthStart = startOfMonth(cursor);
   const days = eachDayOfInterval({ start: monthStart, end: endOfMonth(cursor) });
@@ -826,9 +826,9 @@ function JournalCalendarWidget() {
       </div>
 
       <div className="mt-auto pt-2 flex items-center gap-3 text-[10px] text-muted-foreground/70">
-        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: "oklch(0.58 0.17 145)" }} /> Win</span>
-        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: "oklch(0.58 0.22 25)" }} /> Loss</span>
-        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: "oklch(0.70 0.16 72)" }} /> B/E</span>
+        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--win)" }} /> Win</span>
+        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--loss)" }} /> Loss</span>
+        <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--be)" }} /> B/E</span>
       </div>
     </div>
   );

@@ -10,11 +10,13 @@ import { cn } from "@/lib/utils";
  */
 export type PanelAccent = "primary" | "cyan" | "success" | "destructive";
 
-const ACCENT_HEX: Record<PanelAccent, string> = {
-  primary: "#14B8A6",
-  cyan: "#06B6D4",
-  success: "#22c55e",
-  destructive: "#ef4444",
+/** Tokens, not literals, so the light theme's darker set applies — a mid-tone
+ *  brand colour turns to pastel on a white card. */
+const ACCENT_VAR: Record<PanelAccent, string> = {
+  primary: "var(--primary)",
+  cyan: "var(--ice)",
+  success: "var(--win)",
+  destructive: "var(--loss)",
 };
 
 export function AccentPanel({
@@ -35,19 +37,19 @@ export function AccentPanel({
   className?: string;
   children?: React.ReactNode;
 }) {
-  const hex = ACCENT_HEX[accent];
+  const c = ACCENT_VAR[accent];
   return (
     <div
       className={cn("relative overflow-hidden rounded-2xl border border-border/60 p-4 pl-5 sm:p-5 sm:pl-6", className)}
       style={{
-        background: `linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, ${hex} 4%), var(--card) 55%)`,
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 32px -18px rgba(0,0,0,0.8)",
+        background: `linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, ${c} 4%), var(--card) 55%)`,
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), var(--panel-shadow)",
       }}
     >
       <span
         aria-hidden
         className="absolute inset-y-0 left-0 w-1"
-        style={{ background: `linear-gradient(180deg, ${hex}, ${hex}1f)` }}
+        style={{ background: `linear-gradient(180deg, ${c}, color-mix(in oklch, ${c} 12%, transparent))` }}
       />
 
       {(eyebrow || title || subtitle || headerRight) && (
@@ -56,7 +58,7 @@ export function AccentPanel({
             {eyebrow && (
               <p
                 className="text-[10px] font-semibold uppercase tracking-[0.2em]"
-                style={{ color: `${hex}bf` }}
+                style={{ color: `color-mix(in oklch, ${c} var(--accent-label-strength), transparent)` }}
               >
                 {eyebrow}
               </p>

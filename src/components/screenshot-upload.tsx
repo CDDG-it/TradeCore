@@ -206,7 +206,7 @@ export function ScreenshotUpload({
             <div className="flex items-center gap-2.5 mb-3">
               <span
                 className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider"
-                style={{ background: "rgba(20,184,166,0.12)", color: "#14B8A6" }}
+                style={{ background: "color-mix(in oklch, var(--primary) 12%, transparent)", color: "var(--primary)" }}
               >
                 {group.label}
               </span>

@@ -300,8 +300,8 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
         <div className="px-4 pb-6 space-y-5">
           {/* ── Lifetime summary ─────────────────────────────────────── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <SummaryTile icon={Receipt} label="Total costs" value={money(totals.lifetimeCosts)} color="#14B8A6" note="all time" />
-            <SummaryTile icon={DollarSign} label="Total payouts" value={money(totals.lifetimePayouts)} color="#06B6D4" note="all time" />
+            <SummaryTile icon={Receipt} label="Total costs" value={money(totals.lifetimeCosts)} color="var(--primary)" note="all time" />
+            <SummaryTile icon={DollarSign} label="Total payouts" value={money(totals.lifetimePayouts)} color="var(--ice)" note="all time" />
             <SummaryTile
               icon={Activity}
               label="Lifetime ROFA"
@@ -313,7 +313,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
               icon={Trophy}
               label="Accounts passed"
               value={`${totals.lifetimePassed}/${totals.lifetimeBought}`}
-              color="oklch(0.58 0.17 145)"
+              color="var(--win)"
               note={totals.lifetimeBought > 0 ? `${Math.round((totals.lifetimePassed / totals.lifetimeBought) * 100)}% pass rate` : "no accounts yet"}
             />
           </div>
@@ -325,19 +325,19 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
                 {rangeLabel}
               </span>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                <StatChip label="Costs" value={money(totals.costs)} color="#14B8A6" />
-                <StatChip label="Payouts" value={money(totals.payouts)} color="#06B6D4" />
+                <StatChip label="Costs" value={money(totals.costs)} color="var(--primary)" />
+                <StatChip label="Payouts" value={money(totals.payouts)} color="var(--ice)" />
                 <StatChip
                   label="Net"
                   value={`${totals.payouts - totals.costs >= 0 ? "+" : ""}${money(totals.payouts - totals.costs)}`}
-                  color={totals.payouts - totals.costs >= 0 ? "oklch(0.58 0.17 145)" : "oklch(0.58 0.22 25)"}
+                  color={totals.payouts - totals.costs >= 0 ? "var(--win)" : "var(--loss)"}
                 />
                 <StatChip
                   label="ROFA"
                   value={totals.rofa == null ? "—" : `${totals.rofa.toFixed(2)}x`}
                   color={rofaColor(totals.rofa)}
                 />
-                <StatChip label="Passed" value={`${totals.passed}/${totals.bought}`} color="oklch(0.58 0.17 145)" />
+                <StatChip label="Passed" value={`${totals.passed}/${totals.bought}`} color="var(--win)" />
               </div>
             </div>
           </div>
@@ -403,9 +403,9 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
                 <tfoot className="border-t-2 border-border/60 bg-muted/20 font-semibold">
                   <tr>
                     <td className="px-3 py-2 uppercase tracking-wider text-[10px] text-muted-foreground">Total</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: "#14B8A6" }}>{money(totals.costs)}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: "#06B6D4" }}>{money(totals.payouts)}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: totals.payouts - totals.costs >= 0 ? "oklch(0.58 0.17 145)" : "oklch(0.58 0.22 25)" }}>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: "var(--primary)" }}>{money(totals.costs)}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: "var(--ice)" }}>{money(totals.payouts)}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: totals.payouts - totals.costs >= 0 ? "var(--win)" : "var(--loss)" }}>
                       {totals.payouts - totals.costs >= 0 ? "+" : ""}{money(totals.payouts - totals.costs)}
                     </td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: rofaColor(totals.rofa) }}>
@@ -413,7 +413,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">{totals.bought}</td>
                     <td className="px-3 py-2 text-right tabular-nums">
-                      <span className="font-semibold" style={{ color: totals.passed > 0 ? "oklch(0.58 0.17 145)" : "var(--muted-foreground)" }}>
+                      <span className="font-semibold" style={{ color: totals.passed > 0 ? "var(--win)" : "var(--muted-foreground)" }}>
                         {totals.passed}
                       </span>
                       <span className="text-muted-foreground/60"> / {totals.bought}</span>
@@ -456,12 +456,12 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
                           >
                             <div
                               className="w-1/2 max-w-[16px] rounded-t-sm transition-all"
-                              style={{ height: cH, background: "#14B8A6", boxShadow: r.costs > 0 ? "0 0 8px rgba(20,184,166,0.35)" : undefined }}
+                              style={{ height: cH, background: "var(--primary)", boxShadow: r.costs > 0 ? "0 0 8px color-mix(in oklch, var(--primary) 35%, transparent)" : undefined }}
                               title={`${r.label} · Costs: ${money(r.costs)}`}
                             />
                             <div
                               className="w-1/2 max-w-[16px] rounded-t-sm transition-all"
-                              style={{ height: pH, background: "#06B6D4", boxShadow: r.payouts > 0 ? "0 0 8px rgba(6,182,212,0.35)" : undefined }}
+                              style={{ height: pH, background: "var(--ice)", boxShadow: r.payouts > 0 ? "0 0 8px color-mix(in oklch, var(--ice) 35%, transparent)" : undefined }}
                               title={`${r.label} · Payouts: ${money(r.payouts)}`}
                             />
                           </div>
@@ -474,8 +474,8 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
                   </div>
                 </div>
                 <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-muted-foreground/80">
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ background: "#14B8A6" }} /> Costs</span>
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ background: "#06B6D4" }} /> Payouts</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ background: "var(--primary)" }} /> Costs</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm" style={{ background: "var(--ice)" }} /> Payouts</span>
                 </div>
               </>
             )}
@@ -496,14 +496,14 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
 function MetricCells({ row }: { row: Pick<BucketRow, "costs" | "payouts" | "net" | "rofa" | "bought" | "passed"> }) {
   return (
     <>
-      <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: row.costs > 0 ? "#14B8A6" : "var(--muted-foreground)" }}>
+      <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: row.costs > 0 ? "var(--primary)" : "var(--muted-foreground)" }}>
         {row.costs > 0 ? money(row.costs) : "—"}
       </td>
-      <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: row.payouts > 0 ? "#06B6D4" : "var(--muted-foreground)" }}>
+      <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: row.payouts > 0 ? "var(--ice)" : "var(--muted-foreground)" }}>
         {row.payouts > 0 ? money(row.payouts) : "—"}
       </td>
       <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
-        <span className="inline-flex items-center justify-end gap-1" style={{ color: row.net === 0 ? "var(--muted-foreground)" : row.net > 0 ? "oklch(0.58 0.17 145)" : "oklch(0.58 0.22 25)" }}>
+        <span className="inline-flex items-center justify-end gap-1" style={{ color: row.net === 0 ? "var(--muted-foreground)" : row.net > 0 ? "var(--win)" : "var(--loss)" }}>
           {row.net > 0 && <TrendingUp className="w-3 h-3" />}
           {row.net < 0 && <TrendingDown className="w-3 h-3" />}
           {row.net === 0 ? "—" : `${row.net > 0 ? "+" : ""}${money(row.net)}`}
@@ -516,7 +516,7 @@ function MetricCells({ row }: { row: Pick<BucketRow, "costs" | "payouts" | "net"
       <td className="px-3 py-2 text-right tabular-nums">
         {row.bought === 0 ? "—" : (
           <span className="inline-flex items-center gap-1">
-            <span className="font-semibold" style={{ color: row.passed > 0 ? "oklch(0.58 0.17 145)" : "var(--muted-foreground)" }}>
+            <span className="font-semibold" style={{ color: row.passed > 0 ? "var(--win)" : "var(--muted-foreground)" }}>
               {row.passed}
             </span>
             <span className="text-muted-foreground/60">/ {row.bought}</span>
@@ -563,7 +563,7 @@ function rofaColor(r: number | null): string {
   if (r >= 5) return "oklch(0.38 0.14 145)";
   if (r >= 3) return "oklch(0.45 0.16 145)";
   if (r >= 2) return "oklch(0.52 0.17 145)";
-  if (r >= 1) return "oklch(0.58 0.17 145)";
-  if (r > 0) return "#EAB308";
-  return "oklch(0.58 0.22 25)";
+  if (r >= 1) return "var(--win)";
+  if (r > 0) return "var(--be)";
+  return "var(--loss)";
 }

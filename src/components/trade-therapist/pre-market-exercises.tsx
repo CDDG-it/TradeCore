@@ -10,7 +10,7 @@ import { getPreMarketExercise, savePreMarketExercise } from "@/lib/supabase/quer
 import { instrumentName } from "@/lib/journal/weeks";
 import type { TradeJournalEntry } from "@/lib/types";
 
-const TURQUOISE = "#14B8A6";
+const TURQUOISE = "var(--primary)";
 
 /** Most recent `n` trades matching a result, newest first. */
 function recent(trades: TradeJournalEntry[], result: "win" | "loss", n: number): TradeJournalEntry[] {
@@ -202,7 +202,7 @@ export function PreMarketExercises({
               onClick={save}
               disabled={saving || !dirty || !hasContent}
               className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
-              style={{ background: TURQUOISE, boxShadow: "0 2px 12px rgba(20,184,166,0.26)" }}
+              style={{ background: TURQUOISE, boxShadow: "0 2px 12px color-mix(in oklch, var(--primary) 26%, transparent)" }}
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               {loaded && hasContent && !dirty ? "Saved" : "Save today's plan"}

@@ -14,7 +14,7 @@ import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, saveWeeklyTradeRe
 import { getWeekGroup, tradeR, formatTotalR, reviewOpensOn, isReviewOpen } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview, BestTradeOfDay } from "@/lib/types";
 
-const TURQUOISE = "#14B8A6";
+const TURQUOISE = "var(--primary)";
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 /**
@@ -248,7 +248,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
           {[
             { label: "The problem", value: toImprove, set: setToImprove, ph: "The one mistake to fix…", tone: "var(--destructive)" },
             { label: "What worked", value: wentWell, set: setWentWell, ph: "One thing done well…", tone: "var(--success)" },
-            { label: "Focus next week", value: focus, set: setFocus, ph: "One rule to hold…", tone: "#14B8A6" },
+            { label: "Focus next week", value: focus, set: setFocus, ph: "One rule to hold…", tone: "var(--primary)" },
           ].map((f) => (
             <div
               key={f.label}
@@ -281,7 +281,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
             title={open ? undefined : `The review opens on ${format(opensOn, "EEEE d MMMM")}, once the trading week is over`}
             disabled={saving || !dirty || !open}
             className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
-            style={{ background: TURQUOISE, boxShadow: "0 2px 12px rgba(20,184,166,0.26)" }}
+            style={{ background: TURQUOISE, boxShadow: "0 2px 12px color-mix(in oklch, var(--primary) 26%, transparent)" }}
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {!open ? "Opens Friday" : complete ? "Save reflection" : "Complete review"}

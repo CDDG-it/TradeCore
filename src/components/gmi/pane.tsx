@@ -18,8 +18,8 @@ import type { DataEnvelope } from "@/lib/gmi/types";
 /** Alpha-blend toward transparent — `pct` 0–100. */
 export const a = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
 
-export const TURQUOISE = "#14B8A6";
-export const CYAN = "#06B6D4";
+export const TURQUOISE = "var(--primary)";
+export const CYAN = "var(--ice)";
 
 /** The faint plotting grid that runs under the whole desk. */
 export const gridBackground = {

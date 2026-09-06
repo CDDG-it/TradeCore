@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Shield, Lock, KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle, BarChart2, Palette, Sun, Moon } from "lucide-react";
+import { Shield, Lock, KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle, BarChart2, Palette, Sun, Moon, Monitor } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,13 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { getProfile, upsertProfile } from "@/lib/supabase/queries";
-import { useTheme } from "@/lib/theme-context";
+import { useTheme, type ThemePreference } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
 
 const PREFERRED_INSTRUMENTS = ["NQ", "ES", "Gold"] as const;
 
+/** Dark, Light, or hand it to the operating system. */
+const THEME_OPTIONS: { key: ThemePreference; label: string; Icon: typeof Moon }[] = [
+  { key: "dark", label: "Dark", Icon: Moon },
+  { key: "light", label: "Light", Icon: Sun },
+  { key: "system", label: "Auto", Icon: Monitor },
+];
+
 export default function SettingsPage() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, preference, setPreference } = useTheme();
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNext, setShowNext] = useState(false);
@@ -93,33 +100,29 @@ export default function SettingsPage() {
           <CardContent>
             <Label className="text-xs mb-2 block">Theme</Label>
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => theme !== "dark" && toggleTheme()}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all",
-                  theme === "dark"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                )}
-              >
-                <Moon className="w-3.5 h-3.5" />
-                Dark
-              </button>
-              <button
-                type="button"
-                onClick={() => theme !== "light" && toggleTheme()}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all",
-                  theme === "light"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                )}
-              >
-                <Sun className="w-3.5 h-3.5" />
-                Light
-              </button>
+              {THEME_OPTIONS.map(({ key, label, Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setPreference(key)}
+                  aria-pressed={preference === key}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all",
+                    preference === key
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                  )}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </button>
+              ))}
             </div>
+            <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+              {preference === "system"
+                ? `Following your device — currently ${theme}. It switches on its own when your system does.`
+                : "Set to Auto to follow your device's appearance, the way macOS and iOS do."}
+            </p>
           </CardContent>
         </Card>
 

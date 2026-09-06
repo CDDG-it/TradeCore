@@ -19,11 +19,11 @@ import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, CommitmentAdherenceLog } from "@/lib/types";
 
-const TURQUOISE = "oklch(0.70 0.13 183)";
-const CYAN = "oklch(0.72 0.14 220)";
-const GREEN = "oklch(0.58 0.17 145)";
-const RED = "oklch(0.58 0.22 25)";
-const AMBER = "oklch(0.70 0.16 72)";
+const TURQUOISE = "var(--primary)";
+const CYAN = "var(--ice)";
+const GREEN = "var(--win)";
+const RED = "var(--loss)";
+const AMBER = "var(--be)";
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
 /** Alpha-blend a colour toward transparent — works for oklch() strings. `pct` 0–100. */

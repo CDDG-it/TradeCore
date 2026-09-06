@@ -69,7 +69,7 @@ export function BottomNav() {
                 <span
                   aria-hidden
                   className="absolute inset-x-5 top-0 h-0.5 rounded-full"
-                  style={{ background: "linear-gradient(90deg, #14B8A6, #06B6D4)" }}
+                  style={{ background: "linear-gradient(90deg, var(--primary), var(--ice))" }}
                 />
               )}
               <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.4 : 1.9} />
@@ -192,7 +192,7 @@ export function MobileSubnav<T extends string>({
               style={
                 active
                   ? {
-                      background: "linear-gradient(150deg, #14B8A6, #0D9488 90%)",
+                      background: "linear-gradient(150deg, var(--primary), color-mix(in oklch, var(--primary) 82%, black) 90%)",
                       boxShadow: "inset 0 1px 0 rgba(255,255,255,0.2)",
                     }
                   : undefined

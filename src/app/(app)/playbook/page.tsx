@@ -48,13 +48,13 @@ function TagInput({
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); }}}
           placeholder={placeholder ?? "Type and press Enter..."}
           className="flex-1 rounded-lg px-3 py-2 text-sm outline-none transition-colors"
-          style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.26 0.005 28)", color: "oklch(0.94 0.002 28)" }}
+          style={{ background: "var(--input)", border: "1px solid var(--border)", color: "var(--foreground)" }}
         />
         <button
           type="button"
           onClick={add}
           className="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-          style={{ background: "oklch(0.20 0.025 28)", color: "oklch(0.65 0.005 28)" }}
+          style={{ background: "var(--secondary)", color: "var(--secondary-foreground)" }}
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -65,7 +65,7 @@ function TagInput({
             <span
               key={t}
               className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium"
-              style={{ background: "oklch(0.18 0.025 28)", color: "oklch(0.75 0.04 28)", border: "1px solid oklch(0.22 0.005 28)" }}
+              style={{ background: "var(--muted)", color: "var(--foreground)", border: "1px solid var(--border)" }}
             >
               {t}
               <button
@@ -109,11 +109,11 @@ function ChecklistInput({
             <div
               key={i}
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 group"
-              style={{ background: "oklch(0.10 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
+              style={{ background: "var(--card)", border: "1px solid var(--border)" }}
             >
               <span
                 className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                style={{ background: "oklch(0.70 0.12 183 / 0.15)", color: "oklch(0.70 0.12 183)" }}
+                style={{ background: "color-mix(in oklch, var(--primary) 15%, transparent)", color: "var(--primary)" }}
               >
                 {i + 1}
               </span>
@@ -137,9 +137,9 @@ function ChecklistInput({
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); }}}
           placeholder={placeholder ?? "Add step..."}
           className="flex-1 rounded-lg px-3 py-2 text-sm outline-none transition-colors"
-          style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.26 0.005 28)", color: "oklch(0.94 0.002 28)" }}
+          style={{ background: "var(--input)", border: "1px solid var(--border)", color: "var(--foreground)" }}
         />
-        <button type="button" onClick={add} className="px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ background: "oklch(0.20 0.025 28)", color: "oklch(0.65 0.005 28)" }}>
+        <button type="button" onClick={add} className="px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ background: "var(--secondary)", color: "var(--secondary-foreground)" }}>
           <Plus className="w-4 h-4" />
         </button>
       </div>
@@ -175,8 +175,8 @@ function MultiSelect({
               className="px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all"
               style={
                 active
-                  ? { background: "oklch(0.70 0.12 183 / 0.20)", color: "oklch(0.70 0.12 183)", border: "1px solid oklch(0.70 0.12 183 / 0.40)" }
-                  : { background: "oklch(0.08 0.003 28)", color: "oklch(0.50 0.005 28)", border: "1px solid oklch(0.18 0.005 28)" }
+                  ? { background: "color-mix(in oklch, var(--primary) 20%, transparent)", color: "var(--primary)", border: "1px solid color-mix(in oklch, var(--primary) 40%, transparent)" }
+                  : { background: "var(--input)", color: "var(--muted-foreground)", border: "1px solid var(--border)" }
               }
             >
               {opt}
@@ -202,10 +202,10 @@ function Section({
   return (
     <div
       className="rounded-xl p-6 space-y-5"
-      style={{ background: "oklch(0.10 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }}
+      style={{ background: "var(--card)", border: "1px solid var(--border)" }}
     >
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color.replace(")", " / 0.15)")}` }}>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `color-mix(in oklch, ${color} 15%, transparent)` }}>
           <Icon className="w-4 h-4" style={{ color }} />
         </div>
         <h2 className="text-sm font-bold">{title}</h2>
@@ -251,9 +251,9 @@ export default function PlaybookPage() {
             onClick={handleSave}
             className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
             style={{
-              background: saved ? "oklch(0.58 0.17 145)" : "oklch(0.70 0.12 183)",
-              color: "oklch(0.07 0.003 28)",
-              boxShadow: "0 4px 14px oklch(0.70 0.12 183 / 0.30)",
+              background: saved ? "var(--win)" : "var(--primary)",
+              color: "var(--on-brand)",
+              boxShadow: "0 4px 14px color-mix(in oklch, var(--primary) 30%, transparent)",
             }}
           >
             <Save className="w-4 h-4" />
@@ -263,7 +263,7 @@ export default function PlaybookPage() {
       />
       <PageWrapper>
       {/* Trader Type */}
-      <Section icon={Target} title="Who are you as a trader?" color="oklch(0.70 0.12 183)">
+      <Section icon={Target} title="Who are you as a trader?" color="var(--primary)">
         <div className="space-y-2">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Trader Type</label>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -275,8 +275,8 @@ export default function PlaybookPage() {
                 className={cn("p-3 rounded-xl text-left transition-all", form.trader_type === value ? "ring-2" : "")}
                 style={
                   form.trader_type === value
-                    ? { background: "oklch(0.70 0.12 183 / 0.15)", border: "1px solid oklch(0.70 0.12 183 / 0.50)", outline: "2px solid oklch(0.70 0.12 183 / 0.30)" }
-                    : { background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.18 0.005 28)" }
+                    ? { background: "color-mix(in oklch, var(--primary) 15%, transparent)", border: "1px solid color-mix(in oklch, var(--primary) 50%, transparent)", outline: "2px solid color-mix(in oklch, var(--primary) 30%, transparent)" }
+                    : { background: "var(--input)", border: "1px solid var(--border)" }
                 }
               >
                 <p className={cn("text-xs font-bold mb-0.5", form.trader_type === value ? "text-ice" : "text-foreground")}>{label}</p>
@@ -294,7 +294,7 @@ export default function PlaybookPage() {
             placeholder="Describe your approach in your own words — methods, philosophy, market structure..."
             rows={3}
             className="w-full rounded-lg px-3 py-2.5 text-sm outline-none resize-none leading-relaxed"
-            style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.26 0.005 28)", color: "oklch(0.94 0.002 28)" }}
+            style={{ background: "var(--input)", border: "1px solid var(--border)", color: "var(--foreground)" }}
           />
         </div>
 
@@ -314,7 +314,7 @@ export default function PlaybookPage() {
               value={form.max_trades_per_day}
               onChange={(e) => set("max_trades_per_day", parseInt(e.target.value) || 1)}
               className="w-full rounded-lg px-3 py-2.5 text-sm font-mono outline-none"
-              style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.26 0.005 28)", color: "oklch(0.94 0.002 28)" }}
+              style={{ background: "var(--input)", border: "1px solid var(--border)", color: "var(--foreground)" }}
             />
           </div>
           <div className="space-y-1.5">
@@ -325,14 +325,14 @@ export default function PlaybookPage() {
               value={form.max_daily_risk_percent}
               onChange={(e) => set("max_daily_risk_percent", parseFloat(e.target.value) || 1)}
               className="w-full rounded-lg px-3 py-2.5 text-sm font-mono outline-none"
-              style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.26 0.005 28)", color: "oklch(0.94 0.002 28)" }}
+              style={{ background: "var(--input)", border: "1px solid var(--border)", color: "var(--foreground)" }}
             />
           </div>
         </div>
       </Section>
 
       {/* Edge + Criteria */}
-      <Section icon={Zap} title="Your edge and criteria" color="oklch(0.70 0.12 183)">
+      <Section icon={Zap} title="Your edge and criteria" color="var(--primary)">
         <TagInput
           label="Preferred Setups"
           tags={form.preferred_setups}
@@ -348,7 +348,7 @@ export default function PlaybookPage() {
             placeholder="When do you perform at your best? What market conditions suit your style?"
             rows={3}
             className="w-full rounded-lg px-3 py-2.5 text-sm outline-none resize-none leading-relaxed"
-            style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.26 0.005 28)", color: "oklch(0.94 0.002 28)" }}
+            style={{ background: "var(--input)", border: "1px solid var(--border)", color: "var(--foreground)" }}
           />
         </div>
 
@@ -360,13 +360,13 @@ export default function PlaybookPage() {
             placeholder="What must be true for a trade to qualify as A+? Be specific — this is your standard."
             rows={4}
             className="w-full rounded-lg px-3 py-2.5 text-sm outline-none resize-none leading-relaxed"
-            style={{ background: "oklch(0.08 0.003 28)", border: "1px solid oklch(0.26 0.005 28)", color: "oklch(0.94 0.002 28)" }}
+            style={{ background: "var(--input)", border: "1px solid var(--border)", color: "var(--foreground)" }}
           />
         </div>
       </Section>
 
       {/* Rules */}
-      <Section icon={Shield} title="Non-negotiable rules" color="oklch(0.58 0.17 145)">
+      <Section icon={Shield} title="Non-negotiable rules" color="var(--win)">
         <p className="text-xs text-muted-foreground -mt-2">
           Rules you never break, regardless of how good a setup looks. These protect your capital and your psychology.
         </p>
@@ -379,7 +379,7 @@ export default function PlaybookPage() {
       </Section>
 
       {/* Weaknesses */}
-      <Section icon={AlertTriangle} title="Known weaknesses &amp; behavioral traps" color="oklch(0.58 0.22 25)">
+      <Section icon={AlertTriangle} title="Known weaknesses &amp; behavioral traps" color="var(--loss)">
         <p className="text-xs text-muted-foreground -mt-2">
           Patterns you know you fall into. Naming them makes them easier to catch in the moment.
         </p>
@@ -392,7 +392,7 @@ export default function PlaybookPage() {
       </Section>
 
       {/* Pre-trade routine */}
-      <Section icon={CheckSquare} title="Pre-trade routine" color="oklch(0.71 0.13 215)">
+      <Section icon={CheckSquare} title="Pre-trade routine" color="var(--ice)">
         <p className="text-xs text-muted-foreground -mt-2">
           Your daily checklist before you start trading. These steps are used in the Command Center for daily accountability.
         </p>
@@ -410,9 +410,9 @@ export default function PlaybookPage() {
           onClick={handleSave}
           className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition-all hover:-translate-y-px"
           style={{
-            background: saved ? "oklch(0.58 0.17 145)" : "linear-gradient(135deg, oklch(0.70 0.12 183) 0%, oklch(0.71 0.13 215) 100%)",
-            color: "oklch(0.07 0.003 28)",
-            boxShadow: "0 4px 20px oklch(0.70 0.12 183 / 0.35)",
+            background: saved ? "var(--win)" : "linear-gradient(135deg, var(--primary) 0%, var(--ice) 100%)",
+            color: "var(--on-brand)",
+            boxShadow: "0 4px 20px color-mix(in oklch, var(--primary) 35%, transparent)",
           }}
         >
           <Save className="w-4 h-4" />

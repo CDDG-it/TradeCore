@@ -48,7 +48,7 @@ export function DateField({
       </span>
       {d && (
         <span className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-          style={{ background: "rgba(20,184,166,0.12)", color: "#14B8A6" }}>
+          style={{ background: "color-mix(in oklch, var(--primary) 12%, transparent)", color: "var(--primary)" }}>
           {format(d, "EEE")}
         </span>
       )}

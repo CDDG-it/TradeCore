@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { tradeR, formatTotalR, instrumentName, winRateOf, tradesWinRate } from "@/lib/journal/weeks";
 import type { TradeJournalEntry } from "@/lib/types";
 
-const TURQUOISE = "#14B8A6";
+const TURQUOISE = "var(--primary)";
 
 /** One tight stat cell. */
 function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {

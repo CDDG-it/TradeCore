@@ -30,7 +30,7 @@ function roiGreenDetail(roi: number): string {
   if (roi >= 5) return "oklch(0.38 0.14 145)";
   if (roi >= 3) return "oklch(0.45 0.16 145)";
   if (roi >= 2) return "oklch(0.52 0.17 145)";
-  return "oklch(0.58 0.17 145)";
+  return "var(--win)";
 }
 
 function PayoutStatusBadge({ status }: { status: PayoutStatus }) {
@@ -164,9 +164,9 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
             <div className="text-right">
               <div className="flex items-center gap-1.5 justify-end">
                 {roi >= 0
-                ? <TrendingUp className="w-5 h-5" style={{ color: roi >= 1 ? roiGreenDetail(roi) : "#EAB308" }} />
+                ? <TrendingUp className="w-5 h-5" style={{ color: roi >= 1 ? roiGreenDetail(roi) : "var(--be)" }} />
                 : <TrendingDown className="w-5 h-5 text-destructive" />}
-                <span className="text-3xl font-bold" style={{ color: roi >= 1 ? roiGreenDetail(roi) : roi > 0 ? "#EAB308" : "oklch(0.58 0.22 25)" }}>
+                <span className="text-3xl font-bold" style={{ color: roi >= 1 ? roiGreenDetail(roi) : roi > 0 ? "var(--be)" : "var(--loss)" }}>
                   {roi}x
                 </span>
               </div>
@@ -180,8 +180,8 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Account Size", value: `$${account.account_size.toLocaleString()}`, color: undefined },
-          { label: "Total Costs", value: `$${account.purchase_cost.toLocaleString()}`, color: "#14B8A6" },
-          { label: "Total Payouts", value: `$${totalPaidOut.toLocaleString()}`, color: "#06B6D4" },
+          { label: "Total Costs", value: `$${account.purchase_cost.toLocaleString()}`, color: "var(--primary)" },
+          { label: "Total Payouts", value: `$${totalPaidOut.toLocaleString()}`, color: "var(--ice)" },
         ].map(({ label, value, color }) => (
           <Card key={label} className="bg-card border-border/50">
             <CardContent className="p-4">

@@ -526,14 +526,14 @@ export default function NewTradePage() {
                       <div className="h-full rounded-full transition-all duration-300"
                         style={{
                           width: `${disciplineScore}%`,
-                          background: disciplineScore >= 80 ? "oklch(0.58 0.17 145)"
-                            : disciplineScore >= 60 ? "#EAB308" : "oklch(0.58 0.22 25)",
+                          background: disciplineScore >= 80 ? "var(--win)"
+                            : disciplineScore >= 60 ? "var(--be)" : "var(--loss)",
                         }} />
                     </div>
                     <span className="text-xs font-bold tabular-nums shrink-0"
                       style={{
-                        color: disciplineScore >= 80 ? "oklch(0.58 0.17 145)"
-                          : disciplineScore >= 60 ? "#EAB308" : "oklch(0.58 0.22 25)",
+                        color: disciplineScore >= 80 ? "var(--win)"
+                          : disciplineScore >= 60 ? "var(--be)" : "var(--loss)",
                       }}>
                       {disciplineScore}%
                     </span>

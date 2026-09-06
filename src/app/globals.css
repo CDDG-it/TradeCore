@@ -93,6 +93,24 @@
   --warning: #EAB308;                          /* warning yellow */
   --warning-foreground: #0B1120;
 
+  /* ── Trade outcomes ─────────────────────────────
+     One vocabulary for every surface that shows a trade — the journal
+     calendar, the dashboard week strip, the Trade Therapist. Kept as tokens
+     rather than literals in the components so the light theme can darken them
+     without every caller having to know which theme it is in. */
+  --win: oklch(0.58 0.17 145);
+  --loss: oklch(0.58 0.22 25);
+  --be: oklch(0.70 0.16 72);
+
+  /* ── Mindscore band ramp ────────────────────────
+     Five steps from "off the rails" to "dialled in". Its own scale rather
+     than the semantic colours, because it needs five distinguishable stops. */
+  --band-1: #EF4444;
+  --band-2: #F59E0B;
+  --band-3: #EAB308;
+  --band-4: #14B8A6;
+  --band-5: #22C55E;
+
   /* ── Turquoise brand accent ──────────────────── */
   --gold: #14B8A6;                             /* turquoise */
   --gold-foreground: #F8FAFC;
@@ -134,7 +152,20 @@
   /* Top-nav background — glassy navy in dark. Solid in light (see html.light)
      so nothing behind the bar can bleed through and tint it. */
   --nav-bg: color-mix(in oklch, var(--sidebar) 82%, transparent);
+
+  /* How hard an accent is pushed when it is used as small label text. On navy
+     a brand colour at 75% still reads; on white the same fade turns it into a
+     pastel that fails contrast, so light uses the colour at full strength. */
+  --accent-label-strength: 75%;
+  /* Text that sits on a brand-coloured fill. Turquoise is bright in dark mode,
+     so near-black reads best on it; the light theme's teal is dark, so the
+     same button needs white. One token, flipped per theme. */
+  --on-brand: oklch(0.07 0.003 28);
+  /* Panel drop shadow — near-black works under navy, but reads as grime on a
+     white card, where a much lighter shadow gives the same lift. */
+  --panel-shadow: 0 12px 32px -18px rgba(0, 0, 0, 0.8);
 }
+
 
 /* ── Light mode overrides ────────────────────────── */
 html.light {
@@ -147,33 +178,49 @@ html.light {
   --popover: #FFFFFF;
   --popover-foreground: #030712;
 
-  --primary: #0D9488;
+  --primary: #0F766E;
   --primary-foreground: #F8FAFC;
 
   --secondary: #E2E8F0;
   --secondary-foreground: #1E293B;
 
   --muted: #E2E8F0;
-  --muted-foreground: #64748B;
+  /* Slate-500 washes out on the #E2E8F0 muted surfaces; this still reads as
+     clearly secondary next to the near-black foreground. */
+  --muted-foreground: #526176;
 
   --accent: #CBD5E1;
   --accent-foreground: #030712;
 
+  /* Every one of these is read as text or as a small mark on a white card, so
+     each is picked to clear 4.5:1 against #FFFFFF — the mid-tone versions that
+     read well on navy turn to pastel on white. */
   --destructive: #DC2626;
-  --success: #16A34A;
+  --success: #15803D;
   --success-foreground: #F8FAFC;
-  --warning: #CA8A04;
+  --warning: #A16207;
   --warning-foreground: #F8FAFC;
 
-  --gold: #0D9488;
+  --win: oklch(0.50 0.15 145);
+  --loss: oklch(0.50 0.20 25);
+  --be: oklch(0.52 0.13 72);
+
+  /* The same five steps, walked down so each still reads on white. */
+  --band-1: #DC2626;
+  --band-2: #B45309;
+  --band-3: #A16207;
+  --band-4: #0F766E;
+  --band-5: #15803D;
+
+  --gold: #0F766E;
   --gold-foreground: #F8FAFC;
 
-  --ice: #0891B2;
+  --ice: #0E7490;
   --ice-foreground: #F8FAFC;
 
   --border: #E2E8F0;
   --input: #F1F5F9;
-  --ring: #0D9488;
+  --ring: #0F766E;
 
   --chart-1: #0D9488;
   --chart-2: #0891B2;
@@ -184,12 +231,12 @@ html.light {
   /* sidebar */
   --sidebar: #E2E8F0;
   --sidebar-foreground: #030712;
-  --sidebar-primary: #0D9488;
+  --sidebar-primary: #0F766E;
   --sidebar-primary-foreground: #F8FAFC;
   --sidebar-accent: #CBD5E1;
   --sidebar-accent-foreground: #030712;
   --sidebar-border: oklch(0 0 0 / 6%);
-  --sidebar-ring: #0D9488;
+  --sidebar-ring: #0F766E;
 
   /* sidebar helpers */
   --sidebar-separator: oklch(0 0 0 / 6%);
@@ -200,6 +247,10 @@ html.light {
   /* Top-nav in light mode — solid white to match the cards and the rest of the
      UI (opaque so no content bleeds through and tints the bar). */
   --nav-bg: #FFFFFF;
+
+  --accent-label-strength: 100%;
+  --on-brand: #F8FAFC;
+  --panel-shadow: 0 10px 26px -18px rgba(15, 23, 42, 0.28);
 }
 
 /* Light mode — liquid glass overrides */

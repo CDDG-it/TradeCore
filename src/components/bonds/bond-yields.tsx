@@ -12,8 +12,8 @@ import {
 import { cn } from "@/lib/utils";
 import type { BondSnapshot, CurveShape, Spread, Tenor } from "@/lib/bonds/types";
 
-const TURQUOISE = "#14B8A6";
-const CYAN = "#06B6D4";
+const TURQUOISE = "var(--primary)";
+const CYAN = "var(--ice)";
 
 const SHAPE_META: Record<CurveShape, { icon: typeof TrendingUp; tone: string; ring: string }> = {
   normal: { icon: TrendingUp, tone: "text-success", ring: "border-success/25 bg-success/5" },
@@ -32,7 +32,7 @@ function ChangeChip({ bps }: { bps: number | null }) {
     <span
       className={cn(
         "inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-bold tabular-nums",
-        flat ? "bg-muted/50 text-muted-foreground" : up ? "bg-primary/12 text-primary" : "bg-[#06B6D4]/12 text-[#06B6D4]"
+        flat ? "bg-muted/50 text-muted-foreground" : up ? "bg-primary/12 text-primary" : "bg-ice/12 text-ice"
       )}
     >
       {flat ? <Minus className="w-2.5 h-2.5" /> : up ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />}

@@ -304,4 +304,4 @@ export function MarketsTab() {
   );
 }
 
-const CYAN_BAR = "#06B6D4";
+const CYAN_BAR = "var(--ice)";

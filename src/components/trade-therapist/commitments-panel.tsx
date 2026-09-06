@@ -195,7 +195,7 @@ export function CommitmentsPanel() {
             <div className="text-right">
               <p
                 className="font-heading text-2xl font-black tabular-nums leading-none"
-                style={{ color: keptRate >= 70 ? "#22c55e" : keptRate >= 40 ? "#14B8A6" : "#ef4444" }}
+                style={{ color: keptRate >= 70 ? "var(--win)" : keptRate >= 40 ? "var(--primary)" : "var(--loss)" }}
               >
                 {keptRate}%
               </p>
@@ -329,7 +329,7 @@ export function CommitmentsPanel() {
                       <div className="shrink-0 text-right">
                         <p
                           className="text-sm font-black tabular-nums leading-none"
-                          style={{ color: r.rate >= 70 ? "#22c55e" : r.rate >= 40 ? "#14B8A6" : "#ef4444" }}
+                          style={{ color: r.rate >= 70 ? "var(--win)" : r.rate >= 40 ? "var(--primary)" : "var(--loss)" }}
                         >
                           {r.rate}%
                         </p>
@@ -403,7 +403,7 @@ export function CommitmentsPanel() {
             onClick={add}
             disabled={adding || !trigger.trim() || !action.trim()}
             className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
-            style={{ background: "#14B8A6", boxShadow: "0 2px 12px rgba(20,184,166,0.26)" }}
+            style={{ background: "var(--primary)", boxShadow: "0 2px 12px color-mix(in oklch, var(--primary) 26%, transparent)" }}
           >
             {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Commit to it

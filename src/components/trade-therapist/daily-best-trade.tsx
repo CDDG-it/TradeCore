@@ -23,7 +23,7 @@ import {
 } from "@/lib/journal/colors";
 import type { TradeJournalEntry, BestTradeOfDay, ScreenshotGroup } from "@/lib/types";
 
-const TURQUOISE = "#14B8A6";
+const TURQUOISE = "var(--primary)";
 
 /** Whether a best-trade entry holds anything worth marking. */
 function hasEntry(b: BestTradeOfDay | undefined): boolean {
@@ -439,7 +439,7 @@ export function DailyBestTrade({
               onClick={save}
               disabled={saving || !dirty || !hasContent}
               className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
-              style={{ background: TURQUOISE, boxShadow: "0 2px 12px rgba(20,184,166,0.26)" }}
+              style={{ background: TURQUOISE, boxShadow: "0 2px 12px color-mix(in oklch, var(--primary) 26%, transparent)" }}
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
               {loaded ? "Save changes" : "Save analysis"}

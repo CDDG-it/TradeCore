@@ -7,9 +7,17 @@
  */
 import type { TradeJournalEntry } from "@/lib/types";
 
-export const WIN_COLOR = "oklch(0.58 0.17 145)";
-export const LOSS_COLOR = "oklch(0.58 0.22 25)";
-export const BE_COLOR = "oklch(0.70 0.16 72)";
+/**
+ * The literals live in globals.css as `--win` / `--loss` / `--be`, with a
+ * darker set under `html.light`: the mid-tones that read well on navy turn to
+ * pastel on a white card. Referencing the tokens keeps every caller — inline
+ * styles, gradients, `color-mix` — theme-correct without knowing the theme.
+ * (These are only ever used as CSS values, never as canvas or SVG attributes,
+ * where `var()` would not resolve.)
+ */
+export const WIN_COLOR = "var(--win)";
+export const LOSS_COLOR = "var(--loss)";
+export const BE_COLOR = "var(--be)";
 
 /** Alpha-blend a colour toward transparent — works for oklch() strings. `pct` 0–100. */
 export const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;

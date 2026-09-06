@@ -123,7 +123,11 @@ export function bandFor(total: number | null): MindBand {
 }
 
 /** Band colours, one per band: red → amber → yellow → turquoise → green. No orange, per the brand palette. */
-export const BAND_COLORS = ["#ef4444", "#f59e0b", "#eab308", "#14B8A6", "#22c55e"];
+/** Band colours as tokens, so the light theme's darker ramp applies too — the
+ *  raw amber and green read as pastel on a white card. */
+export const BAND_COLORS = [
+  "var(--band-1)", "var(--band-2)", "var(--band-3)", "var(--band-4)", "var(--band-5)",
+];
 
 /** The colour for a score, matched to its band. Drives every MC Mindscore visual so they stay in sync. */
 export function bandColorFor(total: number | null): string {

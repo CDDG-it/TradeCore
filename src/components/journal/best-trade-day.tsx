@@ -195,7 +195,7 @@ export function BestTradeDayDialog({
                 onClick={save}
                 disabled={saving || !hasContent}
                 className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all disabled:opacity-50"
-                style={{ background: "#14B8A6", boxShadow: "0 2px 12px rgba(20,184,166,0.26)" }}
+                style={{ background: "var(--primary)", boxShadow: "0 2px 12px color-mix(in oklch, var(--primary) 26%, transparent)" }}
               >
                 {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Save

@@ -30,6 +30,7 @@ import type {
   PatternEventInput,
   CommitmentAdherenceLog,
   CommitmentAdherenceLogInput,
+  TradingGoal,
 } from "@/lib/types";
 
 function now() {
@@ -1045,6 +1046,72 @@ export function getProfile(): Promise<UserProfile | null> {
 
 export function getAccounts(): Promise<FundedAccount[]> {
   return cachedRead("accounts", _getAccounts);
+}
+
+// ── My Goals ─────────────────────────────────────────────────────────
+
+async function _getTradingGoals(): Promise<TradingGoal[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("trading_goals")
+    .select("*")
+    .order("end_date", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as TradingGoal[];
+}
+
+export function getTradingGoals(): Promise<TradingGoal[]> {
+  return cachedRead("trading_goals", _getTradingGoals);
+}
+
+export async function createTradingGoal(
+  input: Omit<TradingGoal, "id" | "user_id" | "created_at" | "updated_at">
+): Promise<TradingGoal> {
+  const supabase = createClient();
+  invalidateReads();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const record = { ...input, user_id: user.id, created_at: now(), updated_at: now() };
+  const { data, error } = await supabase
+    .from("trading_goals")
+    .insert(record)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as TradingGoal;
+}
+
+export async function updateTradingGoal(
+  id: string,
+  input: Partial<TradingGoal>
+): Promise<TradingGoal> {
+  const supabase = createClient();
+  invalidateReads();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { data, error } = await supabase
+    .from("trading_goals")
+    .update({ ...input, updated_at: now() })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as TradingGoal;
+}
+
+export async function deleteTradingGoal(id: string): Promise<void> {
+  const supabase = createClient();
+  invalidateReads();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase
+    .from("trading_goals")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) throw error;
 }
 
 export function getHabits(): Promise<Habit[]> {

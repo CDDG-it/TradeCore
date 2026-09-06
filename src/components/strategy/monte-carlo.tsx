@@ -10,10 +10,10 @@ import { cn } from "@/lib/utils";
 import { runMonteCarlo, type MonteCarloInputs, type DrawdownMode } from "@/lib/strategy/monte-carlo";
 import { getTrades, getMonteCarloSettings, saveMonteCarloSettings } from "@/lib/supabase/queries";
 
-const GREEN = "#22c55e";
-const RED = "#ef4444";
-const AMBER = "#f59e0b";
-const CYAN = "#06B6D4";
+const GREEN = "var(--win)";
+const RED = "var(--loss)";
+const AMBER = "var(--be)";
+const CYAN = "var(--ice)";
 
 /** Representative prop-firm setups. Numbers are typical, round starting points —
  *  every field stays editable, so a trader dials in their own firm's exact rules. */

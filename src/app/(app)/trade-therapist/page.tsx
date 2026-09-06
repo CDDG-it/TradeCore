@@ -62,8 +62,8 @@ function GlassToggle({ tab, onChange }: { tab: TherapistTab; onChange: (t: Thera
                 layoutId="therapist-tab-pill"
                 className="absolute inset-0 rounded-lg"
                 style={{
-                  background: "linear-gradient(160deg, #14B8A6, #0d9488 60%, #0f766e)",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 18px rgba(20,184,166,0.30)",
+                  background: "linear-gradient(160deg, var(--primary), color-mix(in oklch, var(--primary) 88%, black) 60%, color-mix(in oklch, var(--primary) 76%, black))",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 18px color-mix(in oklch, var(--primary) 30%, transparent)",
                 }}
                 transition={{ type: "spring", stiffness: 460, damping: 34 }}
               />

@@ -154,7 +154,7 @@ export function TradingRulesEditor() {
     <div
       className="relative overflow-hidden rounded-2xl border border-border/60 p-4 pl-5 sm:p-6 sm:pl-7"
       style={{
-        background: "linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, #14B8A6 4%), var(--card) 55%)",
+        background: "linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, var(--primary) 4%), var(--card) 55%)",
         boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 32px -18px rgba(0,0,0,0.8)",
       }}
     >
@@ -162,7 +162,7 @@ export function TradingRulesEditor() {
       <span
         aria-hidden
         className="absolute inset-y-0 left-0 w-1"
-        style={{ background: "linear-gradient(180deg, #14B8A6, rgba(20,184,166,0.12))" }}
+        style={{ background: "linear-gradient(180deg, var(--primary), color-mix(in oklch, var(--primary) 12%, transparent))" }}
       />
       {/* Oversized ghost count */}
       {!loading && rules.length > 0 && (

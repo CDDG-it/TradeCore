@@ -77,6 +77,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // The inline script below writes `class` and `color-scheme` onto this
+      // element before React hydrates, so the server's markup deliberately
+      // does not match. Suppressing the warning here is the standard theme-
+      // script pattern; it covers this element's own attributes only.
+      suppressHydrationWarning
+
       // globals.css sets `scroll-behavior: smooth` for the landing page's anchor
       // links. Next needs to be told about it, otherwise it leaves smooth
       // scrolling on for its own scroll-to-top after a route change and every
@@ -84,6 +90,21 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} ${nunito.variable} h-full antialiased`}
     >
+      <head>
+        {/*
+          Paint the stored theme before the first frame. Without this the
+          server always renders dark and the class is only corrected in an
+          effect, so anyone on light — or on "system" during the day — gets a
+          navy flash on every page load. It has to be inline and blocking to
+          run ahead of paint, which is why it is a raw script rather than a
+          component.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=localStorage.getItem("th_theme");var light=p==="light"||(p==="system"&&window.matchMedia("(prefers-color-scheme: light)").matches);var r=document.documentElement;if(light){r.classList.add("light");}r.style.colorScheme=light?"light":"dark";}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col font-body">
         <AuthProvider>
           <ThemeProvider>{children}</ThemeProvider>

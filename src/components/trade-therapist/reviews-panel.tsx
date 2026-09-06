@@ -90,10 +90,10 @@ export function ReviewsPanel() {
   const latestGroup = latest ? getWeekGroup(trades, latest.week_start) : null;
   const headline = latest
     ? latest.prevention_plan
-      ? { label: "Focus you set", text: latest.prevention_plan, tone: "#14B8A6" }
+      ? { label: "Focus you set", text: latest.prevention_plan, tone: "var(--primary)" }
       : latest.mistakes
-      ? { label: "What you wanted to fix", text: latest.mistakes, tone: "#ef4444" }
-      : { label: "What worked", text: latest.lessons, tone: "#22c55e" }
+      ? { label: "What you wanted to fix", text: latest.mistakes, tone: "var(--loss)" }
+      : { label: "What worked", text: latest.lessons, tone: "var(--win)" }
     : null;
   const earlier = writtenNotes.slice(1, 5);
 
@@ -204,7 +204,7 @@ export function ReviewsPanel() {
         <AccentPanel accent="primary" eyebrow="Consistency" title="Reviews kept" className="shrink-0">
           <div className="mt-3 flex items-end justify-between gap-4">
             <div className="flex items-baseline gap-2">
-              <span className="text-[40px] font-black leading-none tabular-nums" style={{ color: streak > 0 ? "#14B8A6" : "var(--muted-foreground)" }}>
+              <span className="text-[40px] font-black leading-none tabular-nums" style={{ color: streak > 0 ? "var(--primary)" : "var(--muted-foreground)" }}>
                 {streak}
               </span>
               <span className="text-xs text-muted-foreground">
@@ -241,7 +241,7 @@ weeks done · {pct}%
                     state === "missed" && "border-border bg-muted-foreground/[0.09]",
                     state === "open" && "border-dashed border-primary/50 bg-primary/5"
                   )}
-                  style={state === "done" ? { background: "#14B8A6", boxShadow: "0 0 10px rgba(20,184,166,0.35)" } : undefined}
+                  style={state === "done" ? { background: "var(--primary)", boxShadow: "0 0 10px color-mix(in oklch, var(--primary) 35%, transparent)" } : undefined}
                 >
                   <span className="sr-only">Week {group.weekNum}</span>
                   {current && <span aria-hidden className="mx-auto mt-1 block h-1 w-1 rounded-full bg-primary" />}
@@ -254,7 +254,7 @@ weeks done · {pct}%
           <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-muted-foreground/60">
             <span className="hidden sm:inline">{format(new Date(strip[0].ws + "T12:00:00"), "MMM d")}</span>
             <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px]" style={{ background: "#14B8A6" }} /> written</span>
+              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px]" style={{ background: "var(--primary)" }} /> written</span>
               <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-border bg-muted-foreground/[0.09]" /> missed</span>
               <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-dashed border-primary/50" /> still trading</span>
             </span>

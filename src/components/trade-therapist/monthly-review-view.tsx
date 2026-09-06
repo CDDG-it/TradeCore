@@ -11,7 +11,7 @@ import { getTrades, getWeeklyTradeReviews } from "@/lib/supabase/queries";
 import { getWeekGroup, tradeR, formatTotalR, instrumentName, tradesWinRate } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
 
-const TURQUOISE = "#14B8A6";
+const TURQUOISE = "var(--primary)";
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (

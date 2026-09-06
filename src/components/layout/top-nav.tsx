@@ -47,11 +47,11 @@ function DesktopItem({ href, label, active, soon }: { href: string; label: strin
           layoutId="nav-active-pill"
           className="absolute inset-0 rounded-lg overflow-hidden"
           style={{
-            background: "linear-gradient(160deg, rgba(20,184,166,0.28), rgba(6,182,212,0.12) 60%, rgba(20,184,166,0.06))",
+            background: "linear-gradient(160deg, color-mix(in oklch, var(--primary) 28%, transparent), color-mix(in oklch, var(--ice) 12%, transparent) 60%, color-mix(in oklch, var(--primary) 6%, transparent))",
             backdropFilter: "blur(8px)",
             WebkitBackdropFilter: "blur(8px)",
-            border: "1px solid rgba(20,184,166,0.38)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -8px 14px rgba(6,182,212,0.10), 0 4px 14px rgba(20,184,166,0.20)",
+            border: "1px solid color-mix(in oklch, var(--primary) 38%, transparent)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -8px 14px color-mix(in oklch, var(--ice) 10%, transparent), 0 4px 14px color-mix(in oklch, var(--primary) 20%, transparent)",
           }}
           transition={{ type: "spring", stiffness: 480, damping: 36 }}
         >
@@ -168,7 +168,7 @@ function AvatarChip({ initials, size }: { initials: string; size: number }) {
   return (
     <span
       className="flex shrink-0 items-center justify-center rounded-full p-[1.5px]"
-      style={{ width: size, height: size, background: "linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%)" }}
+      style={{ width: size, height: size, background: "linear-gradient(135deg, var(--primary) 0%, var(--ice) 100%)" }}
     >
       <span
         className="flex h-full w-full items-center justify-center rounded-full"

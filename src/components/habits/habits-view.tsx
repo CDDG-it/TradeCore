@@ -78,13 +78,27 @@ function fade(color: string, a: number): string {
 
 /** Category identity, drawn from the product palette (no orange anywhere). */
 const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label: string; Icon: IconComponent }> = {
-  mindset:  { accent: "#14B8A6", bg: "rgba(20,184,166,0.12)", label: "Mindset",  Icon: Brain },
-  routine:  { accent: "#06B6D4", bg: "rgba(6,182,212,0.12)",  label: "Routine",  Icon: Coffee },
-  research: { accent: "#22c55e", bg: "rgba(34,197,94,0.12)",  label: "Research", Icon: Search },
-  health:   { accent: "#ef4444", bg: "rgba(239,68,68,0.12)",  label: "Health",   Icon: Dumbbell },
-  review:   { accent: "#f59e0b", bg: "rgba(245,158,11,0.12)", label: "Review",   Icon: BookOpen },
-  other:    { accent: "var(--muted-foreground)", bg: "rgba(100,116,139,0.12)", label: "Other", Icon: Circle },
+  mindset:  { accent: "var(--primary)", bg: "color-mix(in oklch, var(--primary) 12%, transparent)", label: "Mindset",  Icon: Brain },
+  routine:  { accent: "var(--ice)",     bg: "color-mix(in oklch, var(--ice) 12%, transparent)",     label: "Routine",  Icon: Coffee },
+  research: { accent: "var(--win)",     bg: "color-mix(in oklch, var(--win) 12%, transparent)",     label: "Research", Icon: Search },
+  health:   { accent: "var(--loss)",    bg: "color-mix(in oklch, var(--loss) 12%, transparent)",    label: "Health",   Icon: Dumbbell },
+  review:   { accent: "var(--be)",      bg: "color-mix(in oklch, var(--be) 12%, transparent)",      label: "Review",   Icon: BookOpen },
+  other:    { accent: "var(--muted-foreground)", bg: "color-mix(in oklch, var(--muted-foreground) 12%, transparent)", label: "Other", Icon: Circle },
 };
+
+/**
+ * The colour a habit is drawn in.
+ *
+ * `habits.color` holds whatever literal the build that created the row wrote —
+ * legacy `oklch()` strings, later palette hexes — and none of those know about
+ * the light theme, where a mid-tone accent turns to pastel on a white card.
+ * There is no colour picker, so the category has always been the real source
+ * of truth; reading it back from the category makes every existing row follow
+ * the theme without a migration.
+ */
+function habitColor(habit: { category: HabitCategory }): string {
+  return CATEGORY_COLORS[habit.category].accent;
+}
 
 
 // How far back the insights look. Lets you see beyond just today/this week.
@@ -248,14 +262,14 @@ function WeekGrid({
             style={
               done
                 ? {
-                    background: fade(habit.color, 0.2),
-                    borderColor: habit.color,
-                    color: habit.color,
+                    background: fade(habitColor(habit), 0.2),
+                    borderColor: habitColor(habit),
+                    color: habitColor(habit),
                   }
                 : {
                     background: "var(--muted)",
                     borderColor: isToday
-                      ? habit.color
+                      ? habitColor(habit)
                       : "var(--border)",
                     color: "var(--muted-foreground)",
                   }
@@ -429,7 +443,7 @@ export function HabitsView() {
             <button
               onClick={() => setShowNewHabit(true)}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
-              style={{ background: "#14B8A6", boxShadow: "0 2px 12px rgba(20,184,166,0.26)" }}
+              style={{ background: "var(--primary)", boxShadow: "0 2px 12px color-mix(in oklch, var(--primary) 26%, transparent)" }}
             >
               <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> New habit
             </button>
@@ -446,7 +460,7 @@ export function HabitsView() {
             <button
               onClick={() => setShowNewHabit(true)}
               className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold"
-              style={{ color: "#14B8A6" }}
+              style={{ color: "var(--primary)" }}
             >
               <Plus className="h-3.5 w-3.5" /> Create your first habit
             </button>
@@ -456,7 +470,7 @@ export function HabitsView() {
             {/* The count, and the same count as a ring */}
             <div className="flex shrink-0 items-center gap-3">
               <div className="relative">
-                <ProgressRing percent={todayPct} size={44} stroke={3.5} color="#14B8A6" />
+                <ProgressRing percent={todayPct} size={44} stroke={3.5} color="var(--primary)" />
                 <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black tabular-nums text-primary">
                   {todayPct}
                 </span>
@@ -493,16 +507,16 @@ export function HabitsView() {
                         "group/chip inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-all duration-200 hover:-translate-y-px",
                         done ? "border-transparent" : "border-dashed border-border/70 hover:border-solid"
                       )}
-                      style={done ? { background: fade(habit.color, 0.16), borderColor: fade(habit.color, 0.5) } : undefined}
+                      style={done ? { background: fade(habitColor(habit), 0.16), borderColor: fade(habitColor(habit), 0.5) } : undefined}
                     >
                       <span
                         className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px]"
-                        style={{ background: done ? habit.color : "transparent", border: done ? "none" : "1px solid var(--border)" }}
+                        style={{ background: done ? habitColor(habit) : "transparent", border: done ? "none" : "1px solid var(--border)" }}
                       >
                         {done ? (
                           <Check className="h-3 w-3 text-background" strokeWidth={3.5} />
                         ) : (
-                          <HabitGlyph icon={habit.icon} className="h-2.5 w-2.5" style={{ color: habit.color }} />
+                          <HabitGlyph icon={habit.icon} className="h-2.5 w-2.5" style={{ color: habitColor(habit) }} />
                         )}
                       </span>
                       <span className={cn("text-xs font-medium", done ? "text-foreground" : "text-muted-foreground")}>
@@ -594,13 +608,13 @@ export function HabitsView() {
                       !appliesToday && "opacity-35"
                     )}
                     style={{
-                      background: completedToday ? fade(habit.color, 0.2) : "transparent",
-                      borderColor: completedToday ? habit.color : "var(--border)",
+                      background: completedToday ? fade(habitColor(habit), 0.2) : "transparent",
+                      borderColor: completedToday ? habitColor(habit) : "var(--border)",
                     }}
                   >
                     {completedToday
-                      ? <Check className="h-3.5 w-3.5" strokeWidth={3} style={{ color: habit.color }} />
-                      : <HabitGlyph icon={habit.icon} className="h-3 w-3" style={{ color: habit.color }} />}
+                      ? <Check className="h-3.5 w-3.5" strokeWidth={3} style={{ color: habitColor(habit) }} />
+                      : <HabitGlyph icon={habit.icon} className="h-3 w-3" style={{ color: habitColor(habit) }} />}
                   </button>
 
                   {/* Name, category and — on hover — the edit controls */}
@@ -633,7 +647,7 @@ export function HabitsView() {
                   </div>
 
                   {/* Streak */}
-                  <span className="text-right text-[12px] font-bold tabular-nums" style={{ color: streak > 0 ? habit.color : "var(--muted-foreground)" }}>
+                  <span className="text-right text-[12px] font-bold tabular-nums" style={{ color: streak > 0 ? habitColor(habit) : "var(--muted-foreground)" }}>
                     {streak > 0 ? `${streak}d` : "—"}
                   </span>
 
@@ -650,11 +664,11 @@ export function HabitsView() {
                   {/* Where the habit stands over the chosen window */}
                   <div className="hidden sm:block">
                     <div className="flex items-baseline justify-end gap-1.5">
-                      <span className="text-[12px] font-bold tabular-nums" style={{ color: habit.color }}>{stat.pct}%</span>
+                      <span className="text-[12px] font-bold tabular-nums" style={{ color: habitColor(habit) }}>{stat.pct}%</span>
                       <span className="text-[10px] tabular-nums text-muted-foreground/50">{stat.completed}/{stat.expected}</span>
                     </div>
                     <span className="mt-1 block h-[3px] w-full overflow-hidden rounded-full bg-border/60">
-                      <span className="block h-full rounded-full" style={{ width: `${stat.pct}%`, background: habit.color }} />
+                      <span className="block h-full rounded-full" style={{ width: `${stat.pct}%`, background: habitColor(habit) }} />
                     </span>
                   </div>
                 </div>
@@ -676,7 +690,7 @@ export function HabitsView() {
                       start={rangeStart}
                       end={rangeEnd}
                       cell={9}
-                      color={habit.color}
+                      color={habitColor(habit)}
                       intensityFor={(key, d) =>
                         frequencyApplies(habit.frequency, d.getDay()) &&
                         startOfDay(d).getTime() >= startOfDay(new Date(habit.created_at)).getTime()
@@ -750,11 +764,11 @@ export function HabitsView() {
                       onClick={() => setNewHabit({ ...newHabit, icon: key })}
                       className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
                       style={{
-                        background: active ? "rgba(20,184,166,0.2)" : "var(--secondary)",
-                        border: `1px solid ${active ? "rgba(20,184,166,0.5)" : "var(--border)"}`,
+                        background: active ? "color-mix(in oklch, var(--primary) 20%, transparent)" : "var(--secondary)",
+                        border: `1px solid ${active ? "color-mix(in oklch, var(--primary) 50%, transparent)" : "var(--border)"}`,
                       }}
                     >
-                      <Icon className="w-4 h-4" style={{ color: active ? "#14B8A6" : "var(--muted-foreground)" }} />
+                      <Icon className="w-4 h-4" style={{ color: active ? "var(--primary)" : "var(--muted-foreground)" }} />
                     </button>
                   );
                 })}
@@ -800,9 +814,9 @@ export function HabitsView() {
                     style={
                       newHabit.frequency === freq
                         ? {
-                            background: "rgba(20,184,166,0.15)",
-                            color: "#14B8A6",
-                            border: "1px solid rgba(20,184,166,0.4)",
+                            background: "color-mix(in oklch, var(--primary) 15%, transparent)",
+                            color: "var(--primary)",
+                            border: "1px solid color-mix(in oklch, var(--primary) 40%, transparent)",
                           }
                         : {
                             background: "var(--secondary)",
@@ -844,9 +858,9 @@ export function HabitsView() {
               disabled={!newHabit.name.trim() || creating}
               className="inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
               style={{
-                background: "linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%)",
+                background: "linear-gradient(135deg, var(--primary) 0%, var(--ice) 100%)",
                 color: "#F8FAFC",
-                boxShadow: "0 4px 14px rgba(20,184,166,0.35)",
+                boxShadow: "0 4px 14px color-mix(in oklch, var(--primary) 35%, transparent)",
               }}
             >
               {creating

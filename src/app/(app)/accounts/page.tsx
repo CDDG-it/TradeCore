@@ -32,7 +32,7 @@ function roiGreen(roi: number): string {
   if (roi >= 5) return "oklch(0.38 0.14 145)";
   if (roi >= 3) return "oklch(0.45 0.16 145)";
   if (roi >= 2) return "oklch(0.52 0.17 145)";
-  return "oklch(0.58 0.17 145)";
+  return "var(--win)";
 }
 
 export default function AccountsPage() {
@@ -279,9 +279,9 @@ export default function AccountsPage() {
               ? overallRoi >= 5 ? "oklch(0.38 0.14 145)"
                 : overallRoi >= 3 ? "oklch(0.45 0.16 145)"
                 : overallRoi >= 2 ? "oklch(0.52 0.17 145)"
-                : overallRoi >= 1 ? "oklch(0.58 0.17 145)"
-                : overallRoi > 0 ? "#EAB308"
-                : "oklch(0.58 0.22 25)"
+                : overallRoi >= 1 ? "var(--win)"
+                : overallRoi > 0 ? "var(--be)"
+                : "var(--loss)"
               : undefined;
             return (
             <div key={label} className={cn(
@@ -291,10 +291,10 @@ export default function AccountsPage() {
               <p
                 className="text-xl font-bold"
                 style={{
-                  color: type === "cost" ? "#14B8A6"
-                    : type === "payout" ? "#06B6D4"
+                  color: type === "cost" ? "var(--primary)"
+                    : type === "payout" ? "var(--ice)"
                     : type === "roi" ? roiColor
-                    : type === "capital" ? "oklch(0.58 0.17 145)"
+                    : type === "capital" ? "var(--win)"
                     : undefined,
                 }}
               >{value}</p>
@@ -404,17 +404,17 @@ export default function AccountsPage() {
                       <div className="grid grid-cols-2 gap-2.5 mb-3">
                         <div>
                           <p className="text-xs text-muted-foreground mb-0.5">Total Costs</p>
-                          <p className="text-sm font-semibold font-mono" style={{ color: "#14B8A6" }}>{mask(`$${acct.purchase_cost.toLocaleString()}`, hidden)}</p>
+                          <p className="text-sm font-semibold font-mono" style={{ color: "var(--primary)" }}>{mask(`$${acct.purchase_cost.toLocaleString()}`, hidden)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-0.5">Total Payout</p>
-                          <p className="text-sm font-semibold font-mono" style={{ color: "#06B6D4" }}>{mask(`$${totalPaid.toLocaleString()}`, hidden)}</p>
+                          <p className="text-sm font-semibold font-mono" style={{ color: "var(--ice)" }}>{mask(`$${totalPaid.toLocaleString()}`, hidden)}</p>
                         </div>
                         <div className="col-span-2">
                           <p className="text-xs text-muted-foreground mb-0.5">Return on Cost</p>
                           <div className="flex items-center gap-1">
-                            {roi >= 0 ? <TrendingUp className="w-3.5 h-3.5" style={{ color: roi >= 1 ? roiGreen(roi) : "#EAB308" }} /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
-                            <span className="text-sm font-bold" style={{ color: roi >= 1 ? roiGreen(roi) : roi > 0 ? "#EAB308" : "oklch(0.58 0.22 25)" }}>
+                            {roi >= 0 ? <TrendingUp className="w-3.5 h-3.5" style={{ color: roi >= 1 ? roiGreen(roi) : "var(--be)" }} /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
+                            <span className="text-sm font-bold" style={{ color: roi >= 1 ? roiGreen(roi) : roi > 0 ? "var(--be)" : "var(--loss)" }}>
                               {mask(`${roi}x`, hidden)}
                             </span>
                           </div>

@@ -387,9 +387,9 @@ export default function JournalPage() {
             href="/journal/new"
             className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:-translate-y-px shrink-0"
             style={{
-              background: "#14B8A6",
-              color: "oklch(0.07 0.003 28)",
-              boxShadow: "0 4px 14px rgba(20,184,166,0.30)",
+              background: "var(--primary)",
+              color: "var(--on-brand)",
+              boxShadow: "0 4px 14px color-mix(in oklch, var(--primary) 30%, transparent)",
             }}
           >
             <Plus className="w-4 h-4" /> Log trade

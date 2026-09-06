@@ -461,3 +461,42 @@ export interface CommitmentAdherenceLog {
 }
 
 export type CommitmentAdherenceLogInput = Omit<CommitmentAdherenceLog, "id" | "user_id" | "created_at">;
+
+/* ── My Goals ──────────────────────────────────────────────────────────── */
+
+/**
+ * The numbers a goal can be set on. All are "higher is better", which is what
+ * lets one progress bar serve every one of them.
+ *
+ * Every one of these can be measured honestly over any date range. The MC
+ * Mindscore is deliberately not on the list: its objectives are shaped per
+ * week and per month (a weekly review, a day's best trade), so scoring it
+ * across an arbitrary window would mean inventing targets it never had. Its
+ * two behavioural inputs — execution and rule adherence — are here instead.
+ */
+export type GoalMetric =
+  | "execution_rate"   // % of rated trades executed to plan
+  | "clean_days"       // days traded with no bad execution on them
+  | "rule_adherence"   // average per-trade discipline checklist score
+  | "habit_consistency" // % of scheduled habit reps kept
+  | "win_rate"         // % of decided trades won
+  | "net_r"            // total R banked
+  | "trades_logged";   // trades written up
+
+export interface TradingGoal {
+  id: string;
+  user_id: string;
+  /** What the trader wrote. Empty means "describe me from the metric". */
+  title: string;
+  metric: GoalMetric;
+  target: number;
+  /** Where they were starting from, so progress reads as a journey. */
+  baseline?: number | null;
+  /** Inclusive ISO dates (yyyy-mm-dd). */
+  start_date: string;
+  end_date: string;
+  /** Set when archived by hand; live goals are judged on the data. */
+  archived_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}

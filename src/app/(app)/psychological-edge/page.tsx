@@ -6,6 +6,7 @@ import { PageWrapper } from "@/components/ui/page-wrapper";
 import { cn } from "@/lib/utils";
 import { HabitsView } from "@/components/habits/habits-view";
 import { MindScoreBreakdown } from "@/components/mind-score/mindscore-breakdown";
+import { GoalsView } from "@/components/goals/goals-view";
 import { TradingRulesEditor } from "@/components/habits/trading-rules";
 import { ConfluencesEditor } from "@/components/habits/confluences-editor";
 import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
@@ -15,19 +16,20 @@ import { MobileSubnav } from "@/components/layout/mobile-nav";
  * My Edge — everything the trader controls away from the chart, in one place.
  *
  * Two halves, kept visibly separate rather than blended into one tab strip:
- *   • Mind Edge — the habits that build state and the Mindscore that reads it.
+ *   • Mind Edge — the habits that build state, the goals you are working
+ *                 towards, and the Mindscore that reads how it is going.
  *   • Strategy  — the rules and confluences you trade against, and the Monte
  *                 Carlo pass simulation that pressure-tests them.
  *
  * (Route stays /psychological-edge so existing links keep working; /strategy
  * redirects into the Strategy half.)
  */
-type EdgeTab = "habits" | "mindscore" | "rules" | "simulator";
+type EdgeTab = "habits" | "goals" | "mindscore" | "rules" | "simulator";
 type EdgeGroup = "mind" | "strategy";
 
 const GROUPS: { key: EdgeGroup; label: string; accent: string }[] = [
-  { key: "mind", label: "Mind Edge", accent: "#14B8A6" },
-  { key: "strategy", label: "Strategy", accent: "#06B6D4" },
+  { key: "mind", label: "Mind Edge", accent: "var(--primary)" },
+  { key: "strategy", label: "Strategy", accent: "var(--ice)" },
 ];
 
 const EDGE_TABS: { key: EdgeTab; group: EdgeGroup; label: string; short?: string }[] = [
@@ -35,6 +37,12 @@ const EDGE_TABS: { key: EdgeTab; group: EdgeGroup; label: string; short?: string
     key: "habits",
     group: "mind",
     label: "Habits",
+  },
+  {
+    key: "goals",
+    group: "mind",
+    label: "My Goals",
+    short: "Goals",
   },
   {
     key: "mindscore",
@@ -82,7 +90,7 @@ function EdgeToggle({ tab, onChange }: { tab: EdgeTab; onChange: (t: EdgeTab) =>
         >
           <span
             className="px-2 pt-0.5 text-[9px] font-bold uppercase tracking-[0.16em]"
-            style={{ color: `color-mix(in oklch, ${g.accent} 75%, transparent)` }}
+            style={{ color: `color-mix(in oklch, ${g.accent} var(--accent-label-strength), transparent)` }}
           >
             {g.label}
           </span>
@@ -154,6 +162,7 @@ export default function MyEdgePage() {
 
       <PageWrapper>
         {tab === "habits" && <HabitsView />}
+        {tab === "goals" && <GoalsView />}
         {tab === "mindscore" && <MindScoreBreakdown />}
         {tab === "rules" && (
           <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 sm:gap-6 lg:grid-cols-2">
