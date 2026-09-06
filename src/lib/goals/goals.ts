@@ -242,12 +242,17 @@ export function computeGoalProgress(goal: TradingGoal, input: GoalInputs): GoalP
   return { current, ratio, state, daysLeft, timeElapsed, closed };
 }
 
-/** The sentence shown when the trader did not write their own title. */
+/**
+ * The line shown when the trader did not name the goal themselves.
+ *
+ * The metric is already printed above it, so this says only what the metric
+ * cannot: where the journey starts and where it ends.
+ */
 export function describeGoal(goal: TradingGoal): string {
   const meta = METRIC_META[goal.metric];
   const target = formatGoalValue(goal.metric, goal.target);
   if (goal.baseline != null && !meta.accumulates) {
-    return `${meta.label}: ${formatGoalValue(goal.metric, goal.baseline)} → ${target}`;
+    return `From ${formatGoalValue(goal.metric, goal.baseline)} to ${target}`;
   }
-  return `${meta.label} of ${target}`;
+  return `Reach ${target}`;
 }
