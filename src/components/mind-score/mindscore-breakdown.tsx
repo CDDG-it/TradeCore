@@ -11,7 +11,7 @@ import {
 } from "@/lib/supabase/queries";
 import {
   bandColorFor, computeMindScoreAll,
-  type MindPeriod, type MindScore, type MindInputs, type MindComponent,
+  type MindPeriod, type MindInputs, type MindComponent,
 } from "@/lib/mind-score/mind-score";
 
 const TURQUOISE = "#14B8A6";

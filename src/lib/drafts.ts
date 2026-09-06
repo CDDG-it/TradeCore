@@ -90,11 +90,15 @@ export function useFormDraft<T>({
   const checkedRef = useRef(false);
   const clearedRef = useRef(false);
 
-  // Keep the latest callbacks without re-triggering the restore effect.
+  // Keep the latest callbacks without re-triggering the restore effect. The
+  // refs are written in an effect rather than during render: a render pass has
+  // to stay free of side effects to be safely repeatable.
   const applyRef = useRef(apply);
-  applyRef.current = apply;
   const shouldPersistRef = useRef(shouldPersist);
-  shouldPersistRef.current = shouldPersist;
+  useEffect(() => {
+    applyRef.current = apply;
+    shouldPersistRef.current = shouldPersist;
+  }, [apply, shouldPersist]);
 
   // ── Restore once, as soon as the form is ready ──
   useEffect(() => {
@@ -113,6 +117,7 @@ export function useFormDraft<T>({
       return;
     }
     applyRef.current(env.data);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot restore from localStorage
     setRestored(true);
   }, [ready, key, recordUpdatedAt]);
 

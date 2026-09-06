@@ -8,14 +8,12 @@ import {
   Eye, Zap, Brain, BarChart2, Target, RefreshCw,
   ChevronDown, ChevronUp,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   getTrades, getHabits, getHabitCompletions, getPlaybook,
   generateCoachingInsights, getAvgDisciplineScore,
 } from "@/lib/supabase/queries";
-import { cn } from "@/lib/utils";
 import type { CoachingInsight, InsightType, InsightCategory } from "@/lib/types";
 
 type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
@@ -202,6 +200,7 @@ export default function CoachingPage() {
     setLoading(false);
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- first load of the page's data
   useEffect(() => { loadInsights(); }, []);
 
   const filtered = insights.filter((i) => {

@@ -63,10 +63,19 @@ const inputClass =
   "hover:border-[rgba(20,184,166,0.35)] " +
   "focus:border-[rgba(20,184,166,0.55)] focus:bg-white focus:ring-2 focus:ring-[rgba(20,184,166,0.15)]";
 
-function SubmitButton({ loading, children }: { loading: boolean; children: React.ReactNode }) {
+function SubmitButton({
+  loading, children, onClick, type = "submit",
+}: {
+  loading: boolean;
+  children: React.ReactNode;
+  /** Set alongside type="button" for a button that acts on its own. */
+  onClick?: () => void;
+  type?: "submit" | "button";
+}) {
   return (
     <button
-      type="submit"
+      type={type}
+      onClick={onClick}
       disabled={loading}
       className="group inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
       style={{
@@ -201,7 +210,9 @@ function LoginForm() {
             <p className="text-sm" style={{ color: "rgba(60,48,36,0.55)" }}>
               Check your inbox for the original verification email, or request a new one below.
             </p>
-            <SubmitButton loading={isResending}>
+            {/* Not inside a form, so it needs its own handler: without one the
+                button was inert and the resend never fired. */}
+            <SubmitButton type="button" onClick={handleResend} loading={isResending}>
               {isResending ? "Sending" : "Resend verification email"}
             </SubmitButton>
             <SecondaryButton onClick={() => setPageState("login")}>Back to sign in</SecondaryButton>

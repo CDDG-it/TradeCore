@@ -74,6 +74,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     if (loading || !account) return;
     if (new URLSearchParams(window.location.search).get("payout") === "open") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot read of the ?payout= deep link
       setShowAddPayout(true);
       requestAnimationFrame(() =>
         document.getElementById("payouts")?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -260,7 +261,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
           {payouts.length === 0 ? (
             <div className="px-5 py-8 text-center">
               <p className="text-sm text-muted-foreground">No payouts logged yet.</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Click "Add payout" to log your first payout.</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Click &ldquo;Add payout&rdquo; to log your first payout.</p>
             </div>
           ) : (
             <>

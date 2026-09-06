@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAccountById, updateAccount } from "@/lib/supabase/queries";
-import type { FundedAccount } from "@/lib/types";
 import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +28,6 @@ const DEFAULT_FORM = {
 export default function EditAccountPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [account, setAccount] = useState<FundedAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -39,7 +37,6 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     getAccountById(id).then((acct) => {
       if (!acct) { setNotFound(true); setLoading(false); return; }
-      setAccount(acct);
       setCustomSize(!ACCOUNT_SIZE_PRESETS.some((p) => p.value === acct.account_size));
       setForm({
         firm_name: acct.firm_name, account_name: acct.account_name,

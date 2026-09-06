@@ -38,7 +38,6 @@ const SMA20 = calcSMA(CANDLES, 20);
 const SMA50 = calcSMA(CANDLES, 50);
 const W_CANDLE = 13;
 const GAP = 4;
-const STEP = W_CANDLE + GAP;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function CandlestickBackground() {
@@ -50,8 +49,12 @@ export function CandlestickBackground() {
   const themeRef = useRef(theme);
   const rafRef = useRef<number>(0);
 
-  // Keep theme ref in sync
-  themeRef.current = theme;
+  // The draw loop reads the theme from a ref so a theme switch does not tear
+  // down and rebuild the animation. Writing that ref is a side effect, so it
+  // belongs in an effect rather than in the render pass.
+  useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
 
   const visible = [
     "/dashboard", "/journal", "/analysis", "/analytics", "/accounts",

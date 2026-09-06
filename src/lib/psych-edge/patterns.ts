@@ -28,7 +28,7 @@
  * the R target rather than raw contract size. If a size column is added later, the
  * thresholds here are the seams to tighten.
  */
-import { differenceInMinutes, format, parse } from "date-fns";
+import { format, parse } from "date-fns";
 import { tradeR, instrumentName } from "@/lib/journal/weeks";
 import type { PatternType, PreTradeAnalysis, TradeJournalEntry } from "@/lib/types";
 

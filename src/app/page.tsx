@@ -155,7 +155,6 @@ export default function HomePage() {
           }}
           className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-20">
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <motion.img
             src="/tradingmc-app-dark.svg"
             alt="TradingMC"

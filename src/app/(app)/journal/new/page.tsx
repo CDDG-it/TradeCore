@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, X, Check } from "lucide-react";
 import { DateField, TimeField } from "@/components/journal/field-inputs";
-import { format } from "date-fns";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -70,6 +69,32 @@ export default function NewTradePage() {
   const [entityId] = useState(() => crypto.randomUUID());
   const [userId, setUserId] = useState<string | null>(null);
 
+  const [form, setForm] = useState<TradeJournalEntryInput>({
+    date_time: new Date().toISOString().split("T")[0],
+    instrument: "",
+    market: "futures",
+    session: "New York",
+    timeframe: "",
+    direction: "long",
+    confluences: [],
+    rr: 2,
+    result: "win",
+    screenshot_groups: [
+      { label: "Entry TF", urls: [] },
+      { label: "HTF", urls: [] },
+    ],
+    execution_notes: "",
+    psychology_notes: "",
+    mistakes: "",
+    lessons: "",
+    linked_analysis_id: undefined,
+    discipline: { ...EMPTY_DISCIPLINE },
+    market_context: undefined,
+    execution_time: "",
+    execution_end_time: "",
+    execution_quality: undefined as TradeJournalEntry["execution_quality"],
+  });
+
   useEffect(() => {
     Promise.all([getAnalyses(), getProfile()]).then(([analyses, profile]) => {
       setAllAnalyses(analyses);
@@ -98,32 +123,6 @@ export default function NewTradePage() {
       }
     });
   }, []);
-
-  const [form, setForm] = useState<TradeJournalEntryInput>({
-    date_time: new Date().toISOString().split("T")[0],
-    instrument: "",
-    market: "futures",
-    session: "New York",
-    timeframe: "",
-    direction: "long",
-    confluences: [],
-    rr: 2,
-    result: "win",
-    screenshot_groups: [
-      { label: "Entry TF", urls: [] },
-      { label: "HTF", urls: [] },
-    ],
-    execution_notes: "",
-    psychology_notes: "",
-    mistakes: "",
-    lessons: "",
-    linked_analysis_id: undefined,
-    discipline: { ...EMPTY_DISCIPLINE },
-    market_context: undefined,
-    execution_time: "",
-    execution_end_time: "",
-    execution_quality: undefined as TradeJournalEntry["execution_quality"],
-  });
 
   const analyses = allAnalyses.filter((a) => a.date === form.date_time);
 

@@ -2,29 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
-function verifyHookSignature(authHeader: string | null, secret: string): boolean {
-  if (!authHeader?.startsWith("Bearer ")) return false;
-  const token = authHeader.substring(7);
-  const parts = token.split(".");
-  if (parts.length !== 3) return false;
-  const [header, payload, signature] = parts;
-  const secretBase64 = secret.replace(/^v1,whsec_/, "");
-  const secretBytes = Buffer.from(secretBase64, "base64");
-  const expected = crypto
-    .createHmac("sha256", secretBytes)
-    .update(`${header}.${payload}`)
-    .digest("base64url");
-  try {
-    // Compare decoded bytes to avoid base64url padding mismatches
-    const sigBytes = Buffer.from(signature, "base64url");
-    const expBytes = Buffer.from(expected, "base64url");
-    if (sigBytes.length !== expBytes.length) return false;
-    return crypto.timingSafeEqual(sigBytes, expBytes);
-  } catch {
-    return false;
-  }
-}
-
 const SENDER_EMAIL = "collinalmelo@gmail.com";
 const SENDER_NAME = "TradingMC";
 
@@ -101,7 +78,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { user, email_data } = body;
-  const { token_hash, redirect_to, email_action_type, site_url } = email_data;
+  const { token_hash, redirect_to, email_action_type } = email_data;
 
   const finalRedirect = email_action_type === "recovery" ? "/auth/update-password" : redirect_to;
   // Use configured site URL — never rely on site_url from payload (may point to Supabase directly)

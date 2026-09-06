@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 /**
  * Privacy mode — masks monetary figures (balances, costs, payouts) across the app,
@@ -20,31 +20,35 @@ function read(): boolean {
   }
 }
 
-export function usePrivacy() {
-  const [hidden, setHidden] = useState(false);
+function subscribe(onChange: () => void) {
+  window.addEventListener(EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
 
-  useEffect(() => {
-    setHidden(read());
-    const sync = () => setHidden(read());
-    window.addEventListener(EVENT, sync);
-    window.addEventListener("storage", sync);
-    return () => {
-      window.removeEventListener(EVENT, sync);
-      window.removeEventListener("storage", sync);
-    };
-  }, []);
+// Nothing is hidden until the browser says otherwise, which is also what the
+// server renders.
+const serverSnapshot = () => false;
+
+/**
+ * The setting lives in localStorage, so it is read straight from there with
+ * `useSyncExternalStore` instead of being copied into React state on mount.
+ * Every caller of the hook reads the same source, so one toggle still hides
+ * everything at once — now without a second render per component.
+ */
+export function usePrivacy() {
+  const hidden = useSyncExternalStore(subscribe, read, serverSnapshot);
 
   const toggle = useCallback(() => {
-    setHidden((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(KEY, next ? "1" : "0");
-      } catch {
-        /* ignore */
-      }
-      window.dispatchEvent(new Event(EVENT));
-      return next;
-    });
+    try {
+      localStorage.setItem(KEY, read() ? "0" : "1");
+    } catch {
+      /* ignore */
+    }
+    window.dispatchEvent(new Event(EVENT));
   }, []);
 
   return { hidden, toggle };

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowRight, X, TrendingUp, TrendingDown,
   ScrollText, Loader2, GripVertical, ChevronLeft, ChevronRight,
-  SlidersHorizontal, Check, Circle, Crosshair, Radar, FileText, Maximize2,
+  SlidersHorizontal, Check, Circle, Radar, Maximize2,
 } from "lucide-react";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval,
@@ -554,6 +554,7 @@ function HabitsStreakWidget({ options }: { options: WidgetOptions }) {
     setStreaks(Object.fromEntries(entries));
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- first load of the widget's data
   useEffect(() => { refresh(); }, []);
 
   async function handleToggle(habitId: string) {

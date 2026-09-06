@@ -128,6 +128,7 @@ export default function MyEdgePage() {
   // Deep-linking, including /strategy redirecting into the Strategy half.
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tab");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
     if (EDGE_TABS.some((x) => x.key === t)) setTab(t as EdgeTab);
   }, []);
 

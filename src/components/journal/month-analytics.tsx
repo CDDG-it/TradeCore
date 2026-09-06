@@ -36,8 +36,13 @@ function Bar({ label, value, total, color }: { label: string; value: number; tot
 function RCurve({ trades }: { trades: TradeJournalEntry[] }) {
   const pts = useMemo(() => {
     const sorted = [...trades].sort((a, b) => a.date_time.localeCompare(b.date_time));
+    const out: number[] = [];
     let run = 0;
-    return sorted.map((t) => (run += tradeR(t)));
+    for (const t of sorted) {
+      run += tradeR(t);
+      out.push(run);
+    }
+    return out;
   }, [trades]);
 
   const W = 240, H = 48;

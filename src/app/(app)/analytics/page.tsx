@@ -77,8 +77,12 @@ export default function AnalyticsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Reset the "how far back" cursor whenever the period type changes.
-  useEffect(() => { setOffset(0); }, [period]);
+  // Changing the period starts you at the most recent window again. Done in
+  // the handler rather than an effect, so it is one render, not two.
+  function selectPeriod(next: Period) {
+    setPeriod(next);
+    setOffset(0);
+  }
 
   // ── The concrete window the selected period + offset resolves to ──────
   const periodWindow = useMemo(() => {
@@ -106,11 +110,14 @@ export default function AnalyticsPage() {
 
   // Pull the week's reflection when a specific week is in view.
   useEffect(() => {
-    if (!periodWindow.weekStart) { setWeekReflection(null); return; }
+    if (!periodWindow.weekStart) return;
     let active = true;
     getWeeklyReflection(periodWindow.weekStart).then((r) => { if (active) setWeekReflection(r); });
     return () => { active = false; };
   }, [periodWindow.weekStart]);
+
+  // Outside a week window there is nothing to show, whatever was last fetched.
+  const reflection = periodWindow.weekStart ? weekReflection : null;
 
   const weekReview = useMemo(
     () => (periodWindow.weekStart ? weekReviews.find((r) => r.week_start === periodWindow.weekStart) ?? null : null),
@@ -163,15 +170,18 @@ export default function AnalyticsPage() {
       new Date(a.date_time.slice(0, 10) + "T12:00:00").getTime() -
       new Date(b.date_time.slice(0, 10) + "T12:00:00").getTime()
   );
-  let runningR = 0;
-  const rrCurve = sortedTrades.map((t) => {
-    if (t.result === "win") runningR += t.rr;
-    else if (t.result === "loss") runningR -= 1;
-    return {
-      date: format(new Date(t.date_time.slice(0, 10) + "T12:00:00"), "MMM d"),
-      r: Math.round(runningR * 100) / 100,
-    };
-  });
+  const rrCurve: { date: string; r: number }[] = [];
+  {
+    let runningR = 0;
+    for (const t of sortedTrades) {
+      if (t.result === "win") runningR += t.rr;
+      else if (t.result === "loss") runningR -= 1;
+      rrCurve.push({
+        date: format(new Date(t.date_time.slice(0, 10) + "T12:00:00"), "MMM d"),
+        r: Math.round(runningR * 100) / 100,
+      });
+    }
+  }
 
   // ── Result breakdown ─────────────────────────────────────────────────
   const resultData = [
@@ -268,7 +278,7 @@ export default function AnalyticsPage() {
             {PERIODS.map(({ id, label }) => (
               <button
                 key={id}
-                onClick={() => setPeriod(id)}
+                onClick={() => selectPeriod(id)}
                 className={cn(
                   "px-3 py-1.5 text-xs font-medium rounded-lg transition-all",
                   period === id
@@ -361,7 +371,7 @@ export default function AnalyticsPage() {
           weekStart={periodWindow.weekStart}
           label={periodWindow.label}
           review={weekReview}
-          reflection={weekReflection}
+          reflection={reflection}
         />
       )}
 

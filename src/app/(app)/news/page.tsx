@@ -47,7 +47,6 @@ export default function NewsPage() {
 
   // Non-featured news
   const regularNews = allNews.filter((n) => !n.is_featured);
-  const filteredFeatured = allNews.filter((n) => n.is_featured);
 
   const showFeatured = filterImpact === "all" && filterMarket === "all" && !search;
 

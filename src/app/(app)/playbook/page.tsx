@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, X, Save, BookMarked, Shield, AlertTriangle, Target, Zap, CheckSquare } from "lucide-react";
+import { Plus, X, Save, Shield, AlertTriangle, Target, Zap, CheckSquare } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { getPlaybook, savePlaybook } from "@/lib/supabase/queries";
