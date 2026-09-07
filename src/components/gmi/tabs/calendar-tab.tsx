@@ -10,6 +10,10 @@
  * appointment and nothing else: what a number will be is never guessed, and
  * market consensus (a paid dataset) is absent rather than invented. FRED
  * publishes no clock times, so none are shown.
+ *
+ * Alongside the releases sit the days the market itself is shut: US and UK
+ * exchange holidays and half days, computed from the published rules, so a
+ * thin or absent session is visible before it is traded rather than after.
  */
 import { useMemo, useState } from "react";
 import {
@@ -18,6 +22,7 @@ import {
 } from "date-fns";
 import { useGmi, toneFor } from "@/lib/gmi/client";
 import type { CalendarMonth, CalendarEvent } from "@/lib/gmi/calendar";
+import { holidaysByDate, holidayChips, type MarketHoliday } from "@/lib/gmi/holidays";
 import { Pane, Empty, Label, Meta, Figure, a } from "../pane";
 
 const IMPORTANCE: Record<string, string> = {
@@ -27,6 +32,15 @@ const IMPORTANCE: Record<string, string> = {
 };
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+// A closure is not an event with an impact rating, so it is deliberately kept
+// out of the red/amber importance scale: a hatched, colourless ground reads as
+// "no session here" without competing with the releases for attention.
+const hatch = (pct: number) =>
+  `repeating-linear-gradient(135deg, color-mix(in oklch, var(--muted-foreground) ${pct}%, transparent) 0 1px, transparent 1px 6px)`;
+const CLOSED_HATCH = hatch(13);
+/** A half day is still a session, so it is marked more lightly than a closure. */
+const EARLY_HATCH = hatch(6);
 
 function fmtVal(v: number | null, unit: string): string {
   if (v == null) return "-";
@@ -68,9 +82,16 @@ export function CalendarTab() {
     return eachDayOfInterval({ start, end });
   }, [cursor]);
 
+  const holidays = useMemo(
+    () => holidaysByDate(grid[0], grid[grid.length - 1]),
+    [grid]
+  );
+
   const events = env?.data?.events ?? [];
   const scheduled = events.filter((e) => !e.released).length;
   const selectedEvents = byDate.get(selected) ?? [];
+  const selectedHolidays = holidays.get(selected) ?? [];
+  const closures = [...holidays.values()].flat().filter((h) => isSameMonth(parseISO(h.date), cursor)).length;
   const today = startOfDay(new Date());
   const weeks = Math.ceil(grid.length / 7);
 
@@ -83,7 +104,7 @@ export function CalendarTab() {
         right={
           <span className="flex items-center gap-3">
             <Label className="hidden tracking-[0.18em] md:inline">
-              {events.length} releases · {scheduled} scheduled
+              {events.length} releases · {scheduled} scheduled · {closures} closure{closures === 1 ? "" : "s"}
             </Label>
             <span className="flex items-center gap-1.5">
               <button
@@ -135,19 +156,37 @@ export function CalendarTab() {
                 const outside = !isSameMonth(day, cursor);
                 const past = isBefore(day, today);
                 const on = key === selected;
+                const dayHolidays = holidays.get(key) ?? [];
+                const shut = dayHolidays.some((h) => h.kind === "closed");
                 return (
                   <button
                     key={key}
                     onClick={() => setSelected(key)}
+                    title={dayHolidays.map((h) => `${h.market}: ${h.name}${h.closes ? ` · closes ${h.closes}` : " · closed"}`).join("\n") || undefined}
                     className={`relative flex min-h-0 flex-col gap-0.5 overflow-hidden border-b border-r border-border/20 p-1.5 text-left transition-colors ${
                       on ? "bg-primary/[0.1]" : "hover:bg-muted/15"
                     } ${outside ? "opacity-25" : past ? "opacity-75" : ""}`}
                   >
+                    {dayHolidays.length > 0 && (
+                      <span aria-hidden className="absolute inset-0" style={{ background: shut ? CLOSED_HATCH : EARLY_HATCH }} />
+                    )}
                     {isToday(day) && <span aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-primary" />}
-                    <span className={`text-[12px] font-bold tabular-nums ${isToday(day) ? "text-primary" : "text-foreground/75"}`}>
-                      {format(day, "d")}
+                    <span className="relative flex items-baseline gap-1 overflow-hidden">
+                      <span className={`text-[12px] font-bold tabular-nums ${isToday(day) ? "text-primary" : "text-foreground/75"}`}>
+                        {format(day, "d")}
+                      </span>
+                      {holidayChips(dayHolidays).map((c) => (
+                        <span
+                          key={c.key}
+                          className={`hidden truncate text-[10px] font-semibold uppercase tracking-wider sm:inline ${
+                            c.closed ? "text-foreground/70" : "text-foreground/55"
+                          }`}
+                        >
+                          {c.text}
+                        </span>
+                      ))}
                     </span>
-                    <span className="flex min-h-0 flex-1 flex-col gap-[2px] overflow-hidden">
+                    <span className="relative flex min-h-0 flex-1 flex-col gap-[2px] overflow-hidden">
                       {dayEvents.map((e) => (
                         <span
                           key={e.id}
@@ -177,6 +216,8 @@ export function CalendarTab() {
               <span className="flex items-center gap-1.5"><span className="h-2 w-2" style={{ background: IMPORTANCE.high }} /> high impact</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2" style={{ background: IMPORTANCE.medium }} /> medium</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-3 border-l-2" style={{ borderColor: IMPORTANCE.high }} /> scheduled, no print yet</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-3 border border-border/60" style={{ background: CLOSED_HATCH }} /> exchange closed</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-3 border border-border/60" style={{ background: EARLY_HATCH }} /> half day</span>
               <span className="ml-auto hidden xl:inline">FRED publishes dates, not clock times</span>
             </div>
           </>
@@ -187,12 +228,27 @@ export function CalendarTab() {
       <Pane
         index="02"
         label={isToday(parseISO(selected)) ? "Today" : format(parseISO(selected), "EEE d MMM")}
-        right={<Label className="tracking-[0.18em]">{selectedEvents.length || "no"} releases</Label>}
+        right={
+          <Label className="tracking-[0.18em]">
+            {selectedEvents.length || "no"} release{selectedEvents.length === 1 ? "" : "s"}
+          </Label>
+        }
         scroll
         className="min-h-[220px] lg:col-span-4 xl:col-span-3"
       >
+        {selectedHolidays.length > 0 && (
+          <div className="mb-3 space-y-1.5 border border-border/50 p-2.5" style={{ background: CLOSED_HATCH }}>
+            {selectedHolidays.map((h) => (
+              <HolidayLine key={`${h.market}-${h.kind}-${h.name}`} holiday={h} />
+            ))}
+          </div>
+        )}
+
         {selectedEvents.length === 0 ? (
-          <Empty label="Nothing scheduled" hint="No US macro release on this date." />
+          <Empty
+            label={selectedHolidays.some((h) => h.kind === "closed") ? "Market closed" : "Nothing scheduled"}
+            hint="No US macro release on this date."
+          />
         ) : (
           <div className="space-y-3">
             {selectedEvents.map((e) => {
@@ -231,6 +287,24 @@ export function CalendarTab() {
           </div>
         )}
       </Pane>
+    </div>
+  );
+}
+
+/** One closure on the selected day: who is shut, why, and until when. */
+function HolidayLine({ holiday }: { holiday: MarketHoliday }) {
+  const shut = holiday.kind === "closed";
+  return (
+    <div className="flex items-baseline gap-2">
+      <span className="shrink-0 border border-border/60 px-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground/80">
+        {holiday.market}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13px] font-semibold leading-tight text-foreground">{holiday.name}</span>
+        <span className="mt-0.5 block text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
+          {shut ? "exchange closed all day" : `half day · closes ${holiday.closes}`}
+        </span>
+      </span>
     </div>
   );
 }
