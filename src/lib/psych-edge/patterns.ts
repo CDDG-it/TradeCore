@@ -1,5 +1,5 @@
 /**
- * MC Trade Therapist — the pattern engine.
+ * MC Trade Therapist: the pattern engine.
  *
  * Rule-based, deterministic, and fully explainable: no LLM, no scoring model,
  * no generic advice. Every pattern fires on a FIXED threshold, and every finding
@@ -9,19 +9,19 @@
  *
  * Four behavioural patterns are detected:
  *
- *   1. Revenge trade    — a trade taken shortly after a loss, with impulsive /
- *                         aggressive markers. (Size isn't recorded in the
- *                         journal, so we proxy "oversize after a loss" with a
- *                         short re-entry window + a broken rule + an above-average
- *                         R target.)
- *   2. Size escalation  — 2+ consecutive losses whose R targets step up. (Again a
- *                         proxy for growing size — rr is the only aggression
- *                         number the journal records.)
- *   3. Overtrading      — a day whose trade count exceeds the trader's personal
- *                         mean + 1.5·SD of daily counts.
- *   4. Plan deviation   — a trade that ignores the day's pre-trade analysis:
- *                         either no analysis linked when one existed for the day,
- *                         or a direction that contradicts the linked bias.
+ *   1. Revenge trade:   a trade taken shortly after a loss, with impulsive /
+ *                       aggressive markers. (Size isn't recorded in the
+ *                       journal, so we proxy "oversize after a loss" with a
+ *                       short re-entry window + a broken rule + an above-average
+ *                       R target.)
+ *   2. Size escalation: 2+ consecutive losses whose R targets step up. (Again a
+ *                       proxy for growing size: rr is the only aggression
+ *                       number the journal records.)
+ *   3. Overtrading:     a day whose trade count exceeds the trader's personal
+ *                       mean + 1.5·SD of daily counts.
+ *   4. Plan deviation:  a trade that ignores the day's pre-trade analysis:
+ *                       either no analysis linked when one existed for the day,
+ *                       or a direction that contradicts the linked bias.
  *
  * The proxies are a deliberate call (see the codebase notes): the journal has no
  * position-size or € field, so revenge/escalation lean on timing, rule breaks and
@@ -32,7 +32,7 @@ import { format, parse } from "date-fns";
 import { tradeR, instrumentName } from "@/lib/journal/weeks";
 import type { PatternType, PreTradeAnalysis, TradeJournalEntry } from "@/lib/types";
 
-// ── Fixed thresholds — the whole engine's tunable surface, in one place ──
+// ── Fixed thresholds: the whole engine's tunable surface, in one place ──
 export const PATTERN_THRESHOLDS = {
   /** Revenge: a re-entry within this many minutes of the prior trade counts as "quick". */
   revengeWindowMin: 30,
@@ -69,9 +69,9 @@ export interface DetectedPattern {
   tradeId: string;
   /** ISO day of the focus trade. */
   date: string;
-  /** 0–1, deterministic from how far the situation overshot the threshold. */
+  /** 0-1, deterministic from how far the situation overshot the threshold. */
   confidence: number;
-  /** R contribution of the focus trade — uniform across patterns so cumulative
+  /** R contribution of the focus trade: uniform across patterns so cumulative
    *  P&L is comparable. Pattern-specific numbers live in `detail`. */
   rImpact: number;
   /** Deterministic explanation, with the numbers behind it. */
@@ -129,7 +129,7 @@ function brokeARule(t: TradeJournalEntry): boolean {
   return (t.discipline?.custom_checks ?? []).some((c) => !c.passed);
 }
 
-/** Trader's average R target (rr) across all trades — the baseline the revenge
+/** Trader's average R target (rr) across all trades: the baseline the revenge
  *  "aggressive size" proxy compares against. */
 function avgRrTarget(trades: TradeJournalEntry[]): number {
   const rrs = trades.map((t) => t.rr).filter((n) => Number.isFinite(n) && n > 0);
@@ -158,7 +158,7 @@ function revengeFor(idx: number, ord: Ordered[], avgRr: number): DetectedPattern
   const brokeRule = brokeARule(cur.trade);
   const aboveAvgRr = avgRr > 0 && cur.trade.rr > avgRr;
 
-  // Without a timestamp we can't confirm speed — only fire on a corroborating
+  // Without a timestamp we can't confirm speed: only fire on a corroborating
   // marker (broken rule or oversized target) and cap the confidence.
   if (!timingKnown && !brokeRule && !aboveAvgRr) return null;
 
@@ -251,7 +251,7 @@ function overtradingFor(cur: Ordered, norm: DailyNorm): DetectedPattern | null {
   const over = count - norm.threshold;
   const confidence = clamp01(0.6 + (norm.sd > 0 ? Math.min(0.4, (over / norm.sd) * 0.4) : 0.2));
   const detail =
-    `${count} trades that day — your norm is ${norm.mean.toFixed(1)} ± ${norm.sd.toFixed(1)}, ` +
+    `${count} trades that day: your norm is ${norm.mean.toFixed(1)} ± ${norm.sd.toFixed(1)}, ` +
     `so anything over ${norm.threshold.toFixed(1)} is unusual for you.`;
 
   return { type: "overtrading", tradeId: cur.trade.id, date: cur.day, confidence, rImpact: round2(cur.r), detail };
@@ -277,7 +277,7 @@ function planDeviationFor(
         date: cur.day,
         confidence: 0.9,
         rImpact: round2(cur.r),
-        detail: `Your analysis called ${linked.bias} but you took this ${instrumentName(t.instrument)} trade ${t.direction} — a direct reversal of your own plan.`,
+        detail: `Your analysis called ${linked.bias} but you took this ${instrumentName(t.instrument)} trade ${t.direction}: a direct reversal of your own plan.`,
       };
     }
     return null; // linked and consistent → no deviation
@@ -291,7 +291,7 @@ function planDeviationFor(
       date: cur.day,
       confidence: 0.6,
       rImpact: round2(cur.r),
-      detail: `You prepared an analysis that day but took this ${instrumentName(t.instrument)} trade without linking it — the plan wasn't in the loop.`,
+      detail: `You prepared an analysis that day but took this ${instrumentName(t.instrument)} trade without linking it: the plan wasn't in the loop.`,
     };
   }
   return null;
@@ -300,7 +300,7 @@ function planDeviationFor(
 // ── Full-history detection ──────────────────────────────────────────────
 /**
  * Every pattern occurrence across the trade history, in chronological order.
- * Deterministic and recomputable — nothing here depends on stored state.
+ * Deterministic and recomputable: nothing here depends on stored state.
  */
 export function detectPatterns(
   trades: TradeJournalEntry[],
@@ -343,9 +343,9 @@ export interface PatternStat {
   label: string;
   /** Number of times this pattern has fired. */
   count: number;
-  /** Sum of the R impact across every occurrence — the cumulative cost/gain. */
+  /** Sum of the R impact across every occurrence: the cumulative cost/gain. */
   cumulativeR: number;
-  /** Mean confidence across occurrences (0–1). */
+  /** Mean confidence across occurrences (0-1). */
   avgConfidence: number;
   /** Most recent occurrence, if any. */
   lastDate: string | null;
@@ -365,7 +365,7 @@ export function summarizePatterns(events: DetectedPattern[]): Record<PatternType
 }
 
 /**
- * A comparable earlier occurrence of the same pattern — the "Relating" evidence.
+ * A comparable earlier occurrence of the same pattern: the "Relating" evidence.
  * Given a focus trade and one of its detected patterns, returns the most recent
  * PRIOR occurrence of that pattern type (before the focus trade), if any, above
  * the Mirror confidence floor. This is the concrete "on [date] the same thing

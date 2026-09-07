@@ -12,7 +12,7 @@ export const INSTRUMENT_NAMES: Record<string, string> = {
 };
 export const instrumentName = (s: string) => INSTRUMENT_NAMES[(s ?? "").toUpperCase()] ?? s;
 
-// Weekdays only — Saturday and Sunday are dropped from the review.
+// Weekdays only: Saturday and Sunday are dropped from the review.
 export const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 /** R contribution of a single trade. */
@@ -24,7 +24,7 @@ export function tradeR(t: TradeJournalEntry): number {
 
 /**
  * Win rate over decisive trades only. Break-even trades are still reported in
- * the counts everywhere, but they never sit in the denominator — a scratch is
+ * the counts everywhere, but they never sit in the denominator: a scratch is
  * neither a win nor a loss, so counting it as one understates the edge.
  * Returns null when there is nothing decisive to rate.
  */
@@ -33,7 +33,7 @@ export function winRateOf(wins: number, losses: number): number | null {
   return decisive > 0 ? Math.round((wins / decisive) * 100) : null;
 }
 
-/** Win rate of a set of trades — wins / (wins + losses), break-even excluded. */
+/** Win rate of a set of trades: wins / (wins + losses), break-even excluded. */
 export function tradesWinRate(trades: TradeJournalEntry[]): number | null {
   return winRateOf(
     trades.filter((t) => t.result === "win").length,
@@ -45,14 +45,14 @@ export type WeekGroup = {
   weekStart: string;        // yyyy-MM-dd (Monday)
   weekNum: number;
   year: number;
-  rangeLabel: string;       // "Jun 8 – Jun 12, 2026" (Mon–Fri)
-  days: { date: string; trades: TradeJournalEntry[] }[]; // Mon–Fri
+  rangeLabel: string;       // "Jun 8 - Jun 12, 2026" (Mon-Fri)
+  days: { date: string; trades: TradeJournalEntry[] }[]; // Mon-Fri
   trades: TradeJournalEntry[];
   wins: number;
   losses: number;
   bes: number;
   totalR: number;
-  /** Trades rated good / bad on execution — whether they were the trade the
+  /** Trades rated good / bad on execution: whether they were the trade the
    *  plan and the edge called for, regardless of what they paid. */
   goodExec: number;
   badExec: number;
@@ -61,11 +61,11 @@ export type WeekGroup = {
   execRate: number | null;
 };
 
-/** Build a single week group (Mon–Fri) for a given Monday date string. */
+/** Build a single week group (Mon-Fri) for a given Monday date string. */
 export function getWeekGroup(trades: TradeJournalEntry[], weekStart: string): WeekGroup {
   const start = new Date(weekStart + "T12:00:00");
   const end = endOfISOWeek(start);
-  // Mon–Fri only (drop the weekend)
+  // Mon-Fri only (drop the weekend)
   const weekdays = eachDayOfInterval({ start, end }).slice(0, 5);
   const friday = weekdays[weekdays.length - 1];
 
@@ -79,7 +79,7 @@ export function getWeekGroup(trades: TradeJournalEntry[], weekStart: string): We
     weekStart,
     weekNum: getISOWeek(start),
     year: getISOWeekYear(start),
-    rangeLabel: `${format(start, "MMM d")} – ${format(friday, "MMM d, yyyy")}`,
+    rangeLabel: `${format(start, "MMM d")} - ${format(friday, "MMM d, yyyy")}`,
     days,
     trades: weekTrades,
     wins: weekTrades.filter((t) => t.result === "win").length,
@@ -98,7 +98,7 @@ function execOf(trades: TradeJournalEntry[]) {
   return { goodExec, badExec, execRate: rated > 0 ? Math.round((goodExec / rated) * 100) : null };
 }
 
-/** Group all trades into weeks (Mon–Fri), newest first. */
+/** Group all trades into weeks (Mon-Fri), newest first. */
 export function buildWeekGroups(trades: TradeJournalEntry[]): WeekGroup[] {
   const weekStarts = new Set<string>();
   trades.forEach((t) => {
@@ -113,8 +113,8 @@ export function buildWeekGroups(trades: TradeJournalEntry[]): WeekGroup[] {
 /**
  * When a week's review opens.
  *
- * The trading week is done when Friday's session is — Saturday and Sunday add
- * nothing to review — so the review unlocks on that Friday rather than waiting
+ * The trading week is done when Friday's session is: Saturday and Sunday add
+ * nothing to review, so the review unlocks on that Friday rather than waiting
  * for the calendar week to run out. The same rule decides whether the MC
  * Mindscore counts the review as due, so the page and the score can never
  * disagree about what is expected of you.

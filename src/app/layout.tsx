@@ -39,7 +39,7 @@ const nunito = Nunito({
  */
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tradinghub-lovat.vercel.app";
 
-const TITLE = "TradingMC — where self-improvement meets trading";
+const TITLE = "TradingMC: where self-improvement meets trading";
 const DESCRIPTION =
   "A trading desk for futures traders who work on themselves as seriously as on their entries. " +
   "Journal every trade, read your own numbers, hold your habits, and see what is moving the market.";
@@ -94,7 +94,7 @@ export default function RootLayout({
         {/*
           Paint the stored theme before the first frame. Without this the
           server always renders dark and the class is only corrected in an
-          effect, so anyone on light — or on "system" during the day — gets a
+          effect, so anyone on light, or on "system" during the day: gets a
           navy flash on every page load. It has to be inline and blocking to
           run ahead of paint, which is why it is a raw script rather than a
           component.

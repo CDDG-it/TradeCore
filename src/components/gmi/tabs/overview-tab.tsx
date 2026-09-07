@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 01 OVERVIEW — the day so far, in three readings: what came over the wire,
+ * 01 OVERVIEW: the day so far, in three readings: what came over the wire,
  * what the last macro prints said, and what the week still has scheduled.
  *
  * Deliberately price-free. The quote providers on this tier are delayed, so a
@@ -16,7 +16,7 @@ import type { CalendarEntry, CalendarMonth, CalendarEvent } from "@/lib/gmi/cale
 import { Pane, Empty, Field, Label, a } from "../pane";
 
 function fmtRel(v: number | null, unit: string): string {
-  if (v == null) return "—";
+  if (v == null) return "-";
   if (unit === "%") return `${v.toFixed(1)}%`;
   if (unit === "count") return Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(v);
   if (unit === "kpersons") return `${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}M`;
@@ -33,7 +33,7 @@ function fmtDelta(v: number, unit: string): string {
   return `${s}${fmtRel(v, unit)}`;
 }
 
-/** Provider sentiment, shown as a hairline in the margin — never a label. */
+/** Provider sentiment, shown as a hairline in the margin: never a label. */
 function sentimentColor(score: number | null): string {
   if (score == null) return "var(--muted-foreground)";
   if (score > 0.15) return "var(--success)";
@@ -53,7 +53,7 @@ export function OverviewTab() {
   const articles = newsEnv?.data ?? [];
   const prints = (printsEnv?.data ?? []).slice(0, 9);
 
-  // The seven days from today — the horizon a desk actually plans against.
+  // The seven days from today: the horizon a desk actually plans against.
   const today = new Date();
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i));
   const scheduled: CalendarEvent[] = [...(monthEnv?.data?.events ?? []), ...(nextEnv?.data?.events ?? [])];

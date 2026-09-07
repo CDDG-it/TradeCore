@@ -14,15 +14,15 @@ import { MobileSubnav } from "@/components/layout/mobile-nav";
 import type { TradeJournalEntry } from "@/lib/types";
 
 /**
- * MC Trade Therapist — the surface for getting better at trading. Four views:
- *   • Best trades  — a week calendar of your results and executions, and the
- *                    best trade of the day for the selected date.
- *   • Pre-market   — the last two losses and two wins, with a written plan for
- *                    preventing and repeating them today.
- *   • Commitments  — your standing if/then rules, and whether you held them
- *                    when the behaviour they guard against recurred.
- *   • Reviews      — the weekly and monthly write-ups, auto-synced and only
- *                    counted in the MC Mindscore once a week has closed.
+ * MC Trade Therapist: the surface for getting better at trading. Four views:
+ *   • Best trades: a week calendar of your results and executions, and the
+ *                  best trade of the day for the selected date.
+ *   • Pre-market:  the last two losses and two wins, with a written plan for
+ *                  preventing and repeating them today.
+ *   • Commitments: your standing if/then rules, and whether you held them
+ *                  when the behaviour they guard against recurred.
+ *   • Reviews:     the weekly and monthly write-ups, auto-synced and only
+ *                  counted in the MC Mindscore once a week has closed.
  * Every read is deterministic and traces back to the trader's own history.
  */
 type TherapistTab = "daily" | "premarket" | "commitments" | "reviews";
@@ -33,7 +33,7 @@ const TABS: { key: TherapistTab; label: string; short?: string }[] = [
   { key: "reviews", label: "Reviews" },
 ];
 
-/** Glassy, animated segmented toggle — the active pill slides between tabs. */
+/** Glassy, animated segmented toggle: the active pill slides between tabs. */
 function GlassToggle({ tab, onChange }: { tab: TherapistTab; onChange: (t: TherapistTab) => void }) {
   return (
     <div

@@ -4,7 +4,7 @@ import { fetchAllQuotes, fetchQuoteSeries } from "@/lib/gmi/quotes";
 import type { DataEnvelope, Quote } from "@/lib/gmi/types";
 
 // Delayed market quotes from Yahoo. Server-side (CORS) with a short TTL cache so
-// many polling clients collapse onto one upstream call. Never mock — on failure
+// many polling clients collapse onto one upstream call. Never mock: on failure
 // the cache serves the last real snapshot, flagged stale.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

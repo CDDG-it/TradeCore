@@ -1,5 +1,5 @@
 /**
- * US Treasury yields — data model.
+ * US Treasury yields: data model.
  *
  * Source is the Treasury's own Daily Treasury Par Yield Curve: the rate the US
  * government pays to borrow at each maturity, published every business day.
@@ -15,7 +15,7 @@ export interface Tenor {
   key: string;
   /** Display label, e.g. "10 yr". */
   label: string
-  /** Maturity in years — drives x-axis spacing. */
+  /** Maturity in years: drives x-axis spacing. */
   years: number;
   /** Yield in percent, e.g. 4.68. */
   yield: number;

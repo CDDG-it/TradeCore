@@ -224,7 +224,7 @@ export default function NewAnalysisPage() {
     try {
       const created = await createAnalysis({
         ...form,
-        title: `${form.instrument} — ${form.date}`,
+        title: `${form.instrument}: ${form.date}`,
         market: "futures",
         session: "New York",
         notes: "",
@@ -234,7 +234,7 @@ export default function NewAnalysisPage() {
           { label: `LTF${ltfTF ? ` · ${ltfTF}` : ""}`, urls: ltfUrls },
         ],
       });
-      clearDraft(); // saved for real — drop the draft
+      clearDraft(); // saved for real: drop the draft
       router.push(`/analysis/${created.id}`);
     } catch (err) {
       console.error("Failed to save analysis:", err);
@@ -244,7 +244,7 @@ export default function NewAnalysisPage() {
 
   return (
     <div className="space-y-4">
-      {/* Compact header — actions stay in view so the form needs no scroll to submit */}
+      {/* Compact header: actions stay in view so the form needs no scroll to submit */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Link href="/analysis" aria-label="Back to Analysis"
@@ -344,7 +344,7 @@ export default function NewAnalysisPage() {
 
         {/* ── RIGHT: charts ────────────────────────────────────────── */}
         <div className="space-y-4 min-w-0">
-        {/* Charts — HTF / LTF */}
+        {/* Charts: HTF / LTF */}
         <Card className="bg-card border-border/50 shadow-sm">
           <CardHeader className="pb-2.5">
             <div className="flex items-center justify-between">

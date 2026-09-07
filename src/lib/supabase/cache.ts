@@ -2,7 +2,7 @@
  * A tiny client-side read cache for Supabase queries.
  *
  * Every page fetches its data in a `useEffect`, so without this each navigation
- * re-runs the same reads (getTrades, getProfile, …) from scratch and shows a
+ * re-runs the same reads (getTrades, getProfile, ...) from scratch and shows a
  * spinner. This memoises read results for a short window and de-duplicates
  * concurrent identical requests, so moving between the dashboard, journal,
  * analytics and therapist feels instant instead of reloading everything.

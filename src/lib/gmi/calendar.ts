@@ -1,11 +1,11 @@
 /**
- * Economic calendar provider — US macro releases from FRED.
+ * Economic calendar provider: US macro releases from FRED.
  *
  * Two shapes, one provider:
- *   • {@link fetchCalendar}      — the most recent prints (actual, prior, trend).
- *   • {@link fetchCalendarMonth} — a real calendar: every scheduled release date
- *     in a month, straight from FRED's own release calendar, with the print
- *     attached once it has landed.
+ *   • {@link fetchCalendar}:      the most recent prints (actual, prior, trend).
+ *   • {@link fetchCalendarMonth}: a real calendar: every scheduled release date
+ *                                 in a month, straight from FRED's own release calendar, with the print
+ *                                 attached once it has landed.
  *
  * Release dates are FRED's published schedule (past *and* forthcoming), so the
  * forward half of the calendar is real rather than estimated. What a print will
@@ -138,7 +138,7 @@ async function releaseDates(releaseId: number, from: string, to: string, apiKey:
   try {
     const { value } = await cached(`fred:release-dates:${releaseId}:${from}:${to}`, 6 * 60 * 60_000, async () => {
       const json = await fetchJson<{ release_dates?: { date: string }[] }>(
-        // Singular `release/dates` — the plural endpoint ignores release_id and
+        // Singular `release/dates`: the plural endpoint ignores release_id and
         // would hand every series the whole calendar.
         `https://api.stlouisfed.org/fred/release/dates?release_id=${releaseId}` +
           `&api_key=${apiKey}&file_type=json&realtime_start=${from}&realtime_end=${to}` +
@@ -156,7 +156,7 @@ async function releaseDates(releaseId: number, from: string, to: string, apiKey:
 /**
  * First-print observations with the date they were published (`output_type=4`
  * returns initial releases, whose `realtime_start` is the publication date), so
- * a past calendar day can show exactly what landed on it — matched, not guessed.
+ * a past calendar day can show exactly what landed on it: matched, not guessed.
  */
 async function initialPrints(
   seriesId: string, from: string, to: string, apiKey: string

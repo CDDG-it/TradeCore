@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Card signatures — the face of each landing card.
+ * Card signatures: the face of each landing card.
  *
  * Rather than an abstract glow, the front of a card shows the thing the product
  * actually puts on screen: the win-rate ring and the week strip for the
  * dashboard, the Mindscore meter for My Edge, the review calendar for the
  * Therapist, the desk's clocks and index for Global Markets. Same shapes, same
- * colour vocabulary, drawn small — so the card is a look at the product, not a
+ * colour vocabulary, drawn small, so the card is a look at the product, not a
  * decoration next to a claim about it.
  *
  * Everything here is static and presentational: illustrative numbers, no state,
@@ -47,7 +47,7 @@ function Row({ children }: { children: React.ReactNode }) {
   return <div className="flex items-center justify-between gap-2">{children}</div>;
 }
 
-/* ── 01 · Dashboard — the win-rate ring over this week's journal ────────── */
+/* ── 01 · Dashboard: the win-rate ring over this week's journal ────────── */
 
 const WEEK = [
   { d: "M", n: 31, bands: [GREEN] },
@@ -135,7 +135,7 @@ export function DashboardSignature() {
   );
 }
 
-/* ── 02 · My Edge — the Mindscore meter and what feeds it ──────────────── */
+/* ── 02 · My Edge: the Mindscore meter and what feeds it ──────────────── */
 
 const METER_BARS = 20;
 const INPUTS = [
@@ -203,7 +203,7 @@ export function EdgeSignature() {
   );
 }
 
-/* ── 03 · Trade Therapist — the week you review, and the weeks you kept ── */
+/* ── 03 · Trade Therapist: the week you review, and the weeks you kept ── */
 
 const REVIEW_WEEK = [
   { d: "Mon", r: "+2.0R", c: GREEN },
@@ -219,7 +219,7 @@ export function TherapistSignature() {
     <div className="flex h-full flex-col gap-3">
       <Row>
         <Label>Best trades</Label>
-        <span className="text-[9px] tabular-nums text-white/35">Aug 31 – Sep 6</span>
+        <span className="text-[9px] tabular-nums text-white/35">Aug 31 - Sep 6</span>
       </Row>
 
       <div className="space-y-1.5">
@@ -265,7 +265,7 @@ export function TherapistSignature() {
   );
 }
 
-/* ── 04 · Global Markets — the desk: clocks, index, the wire ───────────── */
+/* ── 04 · Global Markets: the desk: clocks, index, the wire ───────────── */
 
 const VENUES = [
   { code: "TYO", time: "21:55", live: false },
@@ -311,7 +311,7 @@ export function MarketsSignature() {
         ))}
       </div>
 
-      {/* The numbered index — words and numerals, the way the desk navigates. */}
+      {/* The numbered index: words and numerals, the way the desk navigates. */}
       <div className="flex border-y border-white/[0.08]">
         {SECTIONS.map(({ n, name }, i) => (
           <span

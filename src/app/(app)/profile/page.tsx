@@ -101,7 +101,7 @@ export default function ProfilePage() {
 
   const memberSince = user?.created_at
     ? format(new Date(user.created_at), "MMMM yyyy")
-    : "—";
+    : "-";
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -184,7 +184,7 @@ export default function ProfilePage() {
                     value={form.bio}
                     onChange={(e) => setForm((p) => ({ ...p, bio: e.target.value.slice(0, 280) }))}
                     className="text-sm bg-background/50 min-h-20 resize-none"
-                    placeholder="Tell us about your trading style, experience, or goals…"
+                    placeholder="Tell us about your trading style, experience, or goals..."
                   />
                 </div>
 
@@ -212,7 +212,7 @@ export default function ProfilePage() {
                       onValueChange={(v) => setForm((p) => ({ ...p, preferred_session: v ?? p.preferred_session }))}
                     >
                       <SelectTrigger className="h-9 text-sm bg-background/50">
-                        <SelectValue placeholder="Select session…" />
+                        <SelectValue placeholder="Select session..." />
                       </SelectTrigger>
                       <SelectContent>
                         {SESSIONS.map((s) => (
@@ -230,7 +230,7 @@ export default function ProfilePage() {
                     onValueChange={(v) => setForm((p) => ({ ...p, preferred_instrument: v ?? p.preferred_instrument }))}
                   >
                     <SelectTrigger className="h-9 text-sm bg-background/50">
-                      <SelectValue placeholder="Select instrument…" />
+                      <SelectValue placeholder="Select instrument..." />
                     </SelectTrigger>
                     <SelectContent>
                       {INSTRUMENTS.map((i) => (
@@ -259,7 +259,7 @@ export default function ProfilePage() {
             <div className="flex justify-end">
               <Button type="submit" disabled={saveState === "loading" || saveState === "saved"}>
                 {saveState === "loading" ? (
-                  <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />Saving…</>
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />Saving...</>
                 ) : saveState === "saved" ? "Saved!" : "Save profile"}
               </Button>
             </div>

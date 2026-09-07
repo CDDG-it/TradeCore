@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * 05 CALENDAR — a real month of US macro releases.
+ * 05 CALENDAR: a real month of US macro releases.
  *
  * Every scheduled release sits on its own date, taken from FRED's published
  * release calendar, so the forward half is a genuine schedule rather than an
- * estimate. A past date carries the print that actually landed on it — matched
+ * estimate. A past date carries the print that actually landed on it: matched
  * through FRED's vintage data, not inferred. A future one carries the
  * appointment and nothing else: what a number will be is never guessed, and
  * market consensus (a paid dataset) is absent rather than invented. FRED
@@ -29,7 +29,7 @@ const IMPORTANCE: Record<string, string> = {
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function fmtVal(v: number | null, unit: string): string {
-  if (v == null) return "—";
+  if (v == null) return "-";
   if (unit === "%") return `${v.toFixed(1)}%`;
   if (unit === "count") return Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(v);
   if (unit === "kpersons") return `${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}M`;

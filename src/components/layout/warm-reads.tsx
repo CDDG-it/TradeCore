@@ -5,8 +5,8 @@
  *
  * Each page fetches its own data on mount, so the first visit to the journal,
  * analytics or the therapist used to start with a spinner even though the
- * dashboard had already loaded the same rows. This runs once for the session —
- * the app shell survives navigation — and fills the read cache in the
+ * dashboard had already loaded the same rows. This runs once for the session:
+ * the app shell survives navigation, and fills the read cache in the
  * background, so a page switch renders from memory instead of a round trip.
  *
  * Deliberately fire-and-forget: nothing renders, nothing blocks, and a failure

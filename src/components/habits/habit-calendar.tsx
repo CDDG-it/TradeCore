@@ -69,7 +69,7 @@ export function HabitCalendar({
     const k = key(d);
     const isSel = k === selected;
     const filled = s.exp > 0 && s.pct > 0;
-    // Turquoise "heat" — more habits done = brighter & more saturated tile.
+    // Turquoise "heat": more habits done = brighter & more saturated tile.
     // Lightness climbs and alpha climbs together so the ramp reads clearly in
     // both dark and light mode. Empty days stay a flat muted panel.
     const light = 0.55 + s.pct * 0.24;

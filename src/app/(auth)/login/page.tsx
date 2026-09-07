@@ -38,7 +38,7 @@ function AuthShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* Glass card over the canvas — same treatment as the landing header */
+/* Glass card over the canvas: same treatment as the landing header */
 function AuthCard({ children }: { children: React.ReactNode }) {
   return (
     <div

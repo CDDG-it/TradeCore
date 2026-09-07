@@ -291,7 +291,7 @@ export default function PlaybookPage() {
           <textarea
             value={form.trading_style}
             onChange={(e) => set("trading_style", e.target.value)}
-            placeholder="Describe your approach in your own words — methods, philosophy, market structure..."
+            placeholder="Describe your approach in your own words: methods, philosophy, market structure..."
             rows={3}
             className="w-full rounded-lg px-3 py-2.5 text-sm outline-none resize-none leading-relaxed"
             style={{ background: "var(--input)", border: "1px solid var(--border)", color: "var(--foreground)" }}
@@ -357,7 +357,7 @@ export default function PlaybookPage() {
           <textarea
             value={form.a_plus_criteria}
             onChange={(e) => set("a_plus_criteria", e.target.value)}
-            placeholder="What must be true for a trade to qualify as A+? Be specific — this is your standard."
+            placeholder="What must be true for a trade to qualify as A+? Be specific: this is your standard."
             rows={4}
             className="w-full rounded-lg px-3 py-2.5 text-sm outline-none resize-none leading-relaxed"
             style={{ background: "var(--input)", border: "1px solid var(--border)", color: "var(--foreground)" }}

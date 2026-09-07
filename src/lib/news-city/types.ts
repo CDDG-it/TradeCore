@@ -1,5 +1,5 @@
 /**
- * Market Intelligence Hub — data model.
+ * Market Intelligence Hub: data model.
  *
  * Every signal is backed by a plain data object so the scene (Three.js nodes)
  * stays a dumb renderer and the content can later be swapped for a live news /
@@ -52,7 +52,7 @@ export interface MacroForce {
   direction: TrendDirection;
   /** Display strength of the force, e.g. "HIGH" / "MODERATE" / "POSITIVE". */
   level: string;
-  /** 0..1 — drives how much energy the node radiates in the scene. */
+  /** 0..1: drives how much energy the node radiates in the scene. */
   intensity: number;
   impact: string;
 }
@@ -106,7 +106,7 @@ export interface NewsItem {
   tag: SignalTag;
   /** Human label, e.g. "12m ago". */
   time: string;
-  /** Minutes since publication — used for sorting/filtering. */
+  /** Minutes since publication: used for sorting/filtering. */
   minutesAgo: number;
   source: string;
   category: NewsCategory;
@@ -115,7 +115,7 @@ export interface NewsItem {
   title: string;
   /** Short "Market Impact:" line, e.g. "NASDAQ ↓". */
   marketImpact: string;
-  /** 0..100 — how confident the read on this signal is. */
+  /** 0..100: how confident the read on this signal is. */
   confidence: number;
   whatHappened: string;
   whyItMatters: string;

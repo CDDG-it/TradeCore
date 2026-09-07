@@ -21,7 +21,7 @@ const MIN_BUCKETS: Record<Period, number> = { week: 8, month: 6 };
 /** Safety ceiling so a stray date can't blow the range up to thousands of rows. */
 const MAX_BUCKETS: Record<Period, number> = { week: 156, month: 60 };
 
-/** An account counts as "passed" once it has left the evaluation phase — the
+/** An account counts as "passed" once it has left the evaluation phase: the
  *  trader graduated the eval, whether the account is now funded, paying out,
  *  or was later marked passed / inactive. */
 function accountPassed(a: FundedAccount): boolean {
@@ -47,7 +47,7 @@ function bucketLabel(d: Date, period: Period): string {
 }
 
 /* Build one bucket per period from the earliest activity (or a minimum
- * lookback floor, whichever is earlier) up to the bucket containing today —
+ * lookback floor, whichever is earlier) up to the bucket containing today,
  * so every month / week you added an account or took a payout is visible. */
 function buildBuckets(
   period: Period,
@@ -90,7 +90,7 @@ function buildBuckets(
 
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-/** Bar-chart plot height in px — bars are sized in px against this so their
+/** Bar-chart plot height in px: bars are sized in px against this so their
  *  heights resolve reliably (percentage heights collapse inside a flex column). */
 const CHART_PLOT_H = 140;
 
@@ -128,7 +128,7 @@ interface Props {
 }
 
 /**
- * Performance overview — a right-side sheet that breaks funded-account P&L
+ * Performance overview: a right-side sheet that breaks funded-account P&L
  * (costs paid, payouts received, net, ROFA) into weekly or monthly buckets,
  * plus a cohort view of how many bought accounts eventually passed the eval.
  */
@@ -138,7 +138,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
   // default: only the latest month (index 0) is open, the rest are collapsed.
   const [expandedOverride, setExpandedOverride] = useState<Record<string, boolean>>({});
 
-  // Flatten all paid payouts once — the bucketing loop consults this list per period.
+  // Flatten all paid payouts once: the bucketing loop consults this list per period.
   const paidPayouts = useMemo(() => {
     const rows: { date: Date; amount: number }[] = [];
     for (const a of accounts) {
@@ -151,7 +151,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
     return rows;
   }, [accounts, payoutMap]);
 
-  // Earliest dated activity — the first purchase or payout — anchors the range.
+  // Earliest dated activity: the first purchase or payout: anchors the range.
   const earliestActivity = useMemo(() => {
     let min: number | null = null;
     for (const a of accounts) {
@@ -188,7 +188,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
     });
   }, [buckets, accounts, paidPayouts]);
 
-  // Week view groups its weeks by calendar month — latest month first, newest
+  // Week view groups its weeks by calendar month: latest month first, newest
   // week first inside each. Month view uses the flat `rows` directly.
   const weekGroups = useMemo<WeekGroup[]>(() => {
     if (period !== "week") return [];
@@ -250,10 +250,10 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, rows, weekGroups, expandedOverride]);
 
-  // Chart scale — largest absolute costs/payouts among the visible bars.
+  // Chart scale: largest absolute costs/payouts among the visible bars.
   const chartMax = Math.max(1, ...chartRows.map((r) => Math.max(Math.abs(r.costs), Math.abs(r.payouts))));
 
-  // Summary label for the visible range — first→last bucket, or a plain count.
+  // Summary label for the visible range: first→last bucket, or a plain count.
   const rangeLabel = useMemo(() => {
     if (rows.length === 0) return "No activity";
     const first = rows[0].start;
@@ -275,7 +275,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
           <div className="flex items-center justify-between gap-3 pr-8">
             <div>
               <SheetTitle className="text-lg font-heading font-semibold">Performance overview</SheetTitle>
-              <SheetDescription>Costs, payouts and pass rate — per {period}.</SheetDescription>
+              <SheetDescription>Costs, payouts and pass rate, per {period}.</SheetDescription>
             </div>
             <div className="flex rounded-lg border border-border/60 overflow-hidden shrink-0">
               {(["week", "month"] as Period[]).map((p) => (
@@ -305,7 +305,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
             <SummaryTile
               icon={Activity}
               label="Lifetime ROFA"
-              value={totals.lifetimeRofa == null ? "—" : `${totals.lifetimeRofa.toFixed(2)}x`}
+              value={totals.lifetimeRofa == null ? "-" : `${totals.lifetimeRofa.toFixed(2)}x`}
               color={rofaColor(totals.lifetimeRofa)}
               note="payouts / costs"
             />
@@ -334,7 +334,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
                 />
                 <StatChip
                   label="ROFA"
-                  value={totals.rofa == null ? "—" : `${totals.rofa.toFixed(2)}x`}
+                  value={totals.rofa == null ? "-" : `${totals.rofa.toFixed(2)}x`}
                   color={rofaColor(totals.rofa)}
                 />
                 <StatChip label="Passed" value={`${totals.passed}/${totals.bought}`} color="var(--win)" />
@@ -373,7 +373,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
                       const expanded = isMonthExpanded(g.key, idx);
                       return (
                         <Fragment key={g.key}>
-                          {/* Month header — click to reveal / hide its weeks */}
+                          {/* Month header: click to reveal / hide its weeks */}
                           <tr
                             onClick={() => toggleMonth(g.key, idx)}
                             className="cursor-pointer bg-muted/25 hover:bg-muted/40 transition-colors"
@@ -409,7 +409,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
                       {totals.payouts - totals.costs >= 0 ? "+" : ""}{money(totals.payouts - totals.costs)}
                     </td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: rofaColor(totals.rofa) }}>
-                      {totals.rofa == null ? "—" : `${totals.rofa.toFixed(2)}x`}
+                      {totals.rofa == null ? "-" : `${totals.rofa.toFixed(2)}x`}
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">{totals.bought}</td>
                     <td className="px-3 py-2 text-right tabular-nums">
@@ -424,7 +424,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
             </div>
           </div>
 
-          {/* ── Bar chart — costs (turquoise) vs payouts (cyan) per bucket ── */}
+          {/* ── Bar chart: costs (turquoise) vs payouts (cyan) per bucket ── */}
           <div className="rounded-xl border border-border/60 bg-card p-3">
             <div className="flex items-center justify-between gap-2 mb-3">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -497,24 +497,24 @@ function MetricCells({ row }: { row: Pick<BucketRow, "costs" | "payouts" | "net"
   return (
     <>
       <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: row.costs > 0 ? "var(--primary)" : "var(--muted-foreground)" }}>
-        {row.costs > 0 ? money(row.costs) : "—"}
+        {row.costs > 0 ? money(row.costs) : "-"}
       </td>
       <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: row.payouts > 0 ? "var(--ice)" : "var(--muted-foreground)" }}>
-        {row.payouts > 0 ? money(row.payouts) : "—"}
+        {row.payouts > 0 ? money(row.payouts) : "-"}
       </td>
       <td className="px-3 py-2 text-right font-mono tabular-nums font-semibold">
         <span className="inline-flex items-center justify-end gap-1" style={{ color: row.net === 0 ? "var(--muted-foreground)" : row.net > 0 ? "var(--win)" : "var(--loss)" }}>
           {row.net > 0 && <TrendingUp className="w-3 h-3" />}
           {row.net < 0 && <TrendingDown className="w-3 h-3" />}
-          {row.net === 0 ? "—" : `${row.net > 0 ? "+" : ""}${money(row.net)}`}
+          {row.net === 0 ? "-" : `${row.net > 0 ? "+" : ""}${money(row.net)}`}
         </span>
       </td>
       <td className="px-3 py-2 text-right font-mono tabular-nums" style={{ color: rofaColor(row.rofa) }}>
-        {row.rofa == null ? "—" : `${row.rofa.toFixed(2)}x`}
+        {row.rofa == null ? "-" : `${row.rofa.toFixed(2)}x`}
       </td>
-      <td className="px-3 py-2 text-right tabular-nums">{row.bought || "—"}</td>
+      <td className="px-3 py-2 text-right tabular-nums">{row.bought || "-"}</td>
       <td className="px-3 py-2 text-right tabular-nums">
-        {row.bought === 0 ? "—" : (
+        {row.bought === 0 ? "-" : (
           <span className="inline-flex items-center gap-1">
             <span className="font-semibold" style={{ color: row.passed > 0 ? "var(--win)" : "var(--muted-foreground)" }}>
               {row.passed}
@@ -557,7 +557,7 @@ function StatChip({ label, value, color }: { label: string; value: string; color
   );
 }
 
-/** Colour ramp for ROFA multiples — matches the accounts page's roi tiles. */
+/** Colour ramp for ROFA multiples: matches the accounts page's roi tiles. */
 function rofaColor(r: number | null): string {
   if (r == null) return "var(--muted-foreground)";
   if (r >= 5) return "oklch(0.38 0.14 145)";

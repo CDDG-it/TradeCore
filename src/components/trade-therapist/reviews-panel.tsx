@@ -17,9 +17,9 @@ import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
 type Mode = "weekly" | "monthly";
 
 /**
- * Reviews — a two-pane surface. On the left a weekly/monthly toggle and the list
+ * Reviews: a two-pane surface. On the left a weekly/monthly toggle and the list
  * of periods (collapsible); on the right your review progress and a running
- * digest of exactly what you wrote. It reports only facts and your own words —
+ * digest of exactly what you wrote. It reports only facts and your own words:
  * it makes no assumptions about your mistakes or patterns.
  */
 export function ReviewsPanel() {
@@ -43,7 +43,7 @@ export function ReviewsPanel() {
       const ws = format(monday, "yyyy-MM-dd");
       return {
         ws, group: getWeekGroup(trades, ws),
-        // Reviewable once the trading week is over — Friday, not Sunday.
+        // Reviewable once the trading week is over: Friday, not Sunday.
         reviewable: isReviewOpen(ws, now),
         current: i === 0, review: reviewByWeek.get(ws),
       };
@@ -72,7 +72,7 @@ export function ReviewsPanel() {
   const pct = finishedWeeks.length ? Math.round((doneCount / finishedWeeks.length) * 100) : 0;
   // Current streak of consecutive closed weeks with a written review (newest →
   // back). The week that has only just closed is still yours to write, so an
-  // empty one there does not break the streak — the same way today never
+  // empty one there does not break the streak: the same way today never
   // breaks a habit streak. It simply is not counted yet.
   const chain = finishedWeeks[0] && !written(finishedWeeks[0].review) ? finishedWeeks.slice(1) : finishedWeeks;
   let streak = 0;
@@ -80,7 +80,7 @@ export function ReviewsPanel() {
 
   // Oldest → newest, so the strip reads like a timeline instead of a list.
   const strip = [...weeks].reverse();
-  // The closed week most in need of attention — what the empty state points at.
+  // The closed week most in need of attention: what the empty state points at.
   const nextToWrite = finishedWeeks.find((w) => !written(w.review));
 
   // The line that actually carries forward: the focus you set for the week
@@ -103,7 +103,7 @@ export function ReviewsPanel() {
     // grew wider than the screen and their own `overflow-hidden` quietly cut
     // the numbers and quotes off at the right edge.
     <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-      {/* LEFT — toggle + list.
+      {/* LEFT: toggle + list.
           On a phone this drops below the progress: a year of week rows is a
           reference, not the thing you open the tab to see. */}
       <AccentPanel accent="primary" className="order-2 flex min-h-0 flex-col p-0 pl-1 lg:order-none">
@@ -166,7 +166,7 @@ export function ReviewsPanel() {
                             : group.execRate >= 40 ? "text-warning"
                             : "text-destructive")}
                       >
-                        {group.execRate == null ? "—" : `${group.execRate}%`}
+                        {group.execRate == null ? "-" : `${group.execRate}%`}
                       </span>
                       <span className={cn("w-12 shrink-0 text-right text-xs font-bold tabular-nums",
                         group.totalR > 0 ? "text-success" : group.totalR < 0 ? "text-destructive" : "text-warning")}>
@@ -197,7 +197,7 @@ export function ReviewsPanel() {
         )}
       </AccentPanel>
 
-      {/* RIGHT — how the habit is holding, and the line you set for yourself */}
+      {/* RIGHT: how the habit is holding, and the line you set for yourself */}
       <div className="order-1 flex min-h-0 flex-col gap-3 lg:order-none">
         {/* Progress you cannot miss: the streak in full size, the ratio beside
             it, and every tracked week as its own cell. */}
@@ -221,7 +221,7 @@ weeks done · {pct}%
             </div>
           </div>
 
-          {/* One cell per week, oldest first — written, missed, or still open. */}
+          {/* One cell per week, oldest first: written, missed, or still open. */}
           <div className="mt-4 flex items-end gap-[3px]">
             {strip.map(({ ws, group, reviewable, current, review }) => {
               const done = written(review);
@@ -231,8 +231,8 @@ weeks done · {pct}%
                   key={ws}
                   href={`/trade-therapist/review/${ws}`}
                   title={
-                    `Week ${group.weekNum} · ${group.rangeLabel} — ` +
-                    (state === "open" ? "still trading — review opens Friday" : state === "done" ? "reviewed" : "not written")
+                    `Week ${group.weekNum} · ${group.rangeLabel}: ` +
+                    (state === "open" ? "still trading: review opens Friday" : state === "done" ? "reviewed" : "not written")
                   }
                   className={cn(
                     "group/cell h-9 flex-1 rounded-[3px] border transition-all duration-200 hover:-translate-y-0.5",
@@ -263,7 +263,7 @@ weeks done · {pct}%
         </AccentPanel>
 
         {/* The one line worth carrying into the next session, then the trail of
-            the ones before it — so repeating yourself becomes visible. */}
+            the ones before it, so repeating yourself becomes visible. */}
         <AccentPanel accent="cyan" eyebrow="Carried forward" title="What you told yourself" className="flex min-h-0 flex-1 flex-col">
           {!headline ? (
             <div className="mt-4 flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 py-8 text-center">

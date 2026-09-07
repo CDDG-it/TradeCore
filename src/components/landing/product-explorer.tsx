@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Product explorer — the stretch between the hero and the flip cards.
+ * Product explorer: the stretch between the hero and the flip cards.
  *
  * Each instrument gets its own block that reveals as you scroll, with a mock of
  * the real card it renders in the app: the same chrome (accent hairline, radial
  * glow, corner sheen), the same labels and the same figures treatment, so the
  * landing page shows the actual product rather than an abstract illustration.
- * The mocks stay interactive — the controls are the real ones, wired to
+ * The mocks stay interactive: the controls are the real ones, wired to
  * illustrative data, and every block says so.
  */
 
@@ -126,7 +126,7 @@ interface Instrument {
   visual: React.ReactNode;
 }
 
-/* ── 1. Dashboard — the real win-rate card ───────────────────────────────── */
+/* ── 1. Dashboard: the real win-rate card ───────────────────────────────── */
 
 const WR_DATA = {
   week: { wins: 7, losses: 4, be: 1, netR: 6.4 },
@@ -213,7 +213,7 @@ function WinRateMock() {
   );
 }
 
-/* ── 2. Mind Edge — the real Mindscore breakdown ─────────────────────────── */
+/* ── 2. Mind Edge: the real Mindscore breakdown ─────────────────────────── */
 
 const MS_DATA = {
   week: { total: 82, rules: 90, habits: 74, objectives: 80, band: "Locked in" },
@@ -274,7 +274,7 @@ function MindscoreMock() {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold" style={{ color: c }}>{d.band}</p>
             <p className="text-[11px] leading-snug text-muted-foreground">
-              Built from your rules, your execution, your habits and your process work — not how the session felt.
+              Built from your rules, your execution, your habits and your process work, not how the session felt.
             </p>
             <div className="mt-2">
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted-foreground/12">
@@ -314,7 +314,7 @@ function MindscoreMock() {
   );
 }
 
-/* ── 3. Trade Therapist — the real pre-market review card ────────────────── */
+/* ── 3. Trade Therapist: the real pre-market review card ────────────────── */
 
 const REVIEWS = [
   {
@@ -324,7 +324,7 @@ const REVIEWS = [
     dir: "short" as const,
     r: "-1R",
     takeaways: [
-      { label: "Mistake", text: "Entered before the level was confirmed — chased the breakdown." },
+      { label: "Mistake", text: "Entered before the level was confirmed: chased the breakdown." },
       { label: "Mindset", text: "Frustrated after missing the first move of the session." },
     ],
     plan: "No market order on the first break. Mark the level, wait for the retest to close, then enter.",
@@ -337,7 +337,7 @@ const REVIEWS = [
     r: "-1R",
     takeaways: [
       { label: "Mistake", text: "Sized up to 2R after two winners in a row." },
-      { label: "Mindset", text: "Overconfident — felt the read was obvious." },
+      { label: "Mindset", text: "Overconfident: felt the read was obvious." },
     ],
     plan: "Position size is set before the open and does not move, win or lose.",
   },
@@ -420,11 +420,11 @@ function TherapistMock() {
   );
 }
 
-/* ── Strategy half — the real rulebook editor ───────────────────────────── */
+/* ── Strategy half: the real rulebook editor ───────────────────────────── */
 
 const RULES = [
   "No trade without a completed pre-market analysis",
-  "Maximum 1R risk per trade — no exceptions",
+  "Maximum 1R risk per trade: no exceptions",
   "Stop trading for the day after two consecutive losses",
   "Never move a stop away from price",
 ];
@@ -500,14 +500,14 @@ function StrategyMock() {
 
       <p className="mt-4 text-[11px] text-muted-foreground">
         {active.length === RULES.length
-          ? "Every rule active — this is the checklist you trade against."
+          ? "Every rule active: this is the checklist you trade against."
           : `${RULES.length - active.length} rule${RULES.length - active.length !== 1 ? "s" : ""} switched off. Tap to bring back.`}
       </p>
     </div>
   );
 }
 
-/* ── My Edge — both halves behind the app's own split control ────────────── */
+/* ── My Edge: both halves behind the app's own split control ────────────── */
 
 function MyEdgeMock() {
   const [half, setHalf] = useState<"mind" | "strategy">("mind");
@@ -551,7 +551,7 @@ function MyEdgeMock() {
   );
 }
 
-/* ── 5. News Dashboard — the real Global Markets subtabs ─────────────────── */
+/* ── 5. News Dashboard: the real Global Markets subtabs ─────────────────── */
 
 const GM_TABS = ["Overview", "Markets", "News"] as const;
 const GM_ROWS: Record<(typeof GM_TABS)[number], { a: string; b: string; v: string; dir: number }[]> = {
@@ -709,7 +709,7 @@ export function ProductExplorer() {
           </h2>
           <p className="mt-5 max-w-xl font-body text-[0.95rem] leading-relaxed text-muted-foreground">
             Every panel below is the real card, running on illustrative numbers.
-            Try the controls — they behave exactly as they do inside the product.
+            Try the controls: they behave exactly as they do inside the product.
           </p>
         </div>
 
@@ -801,7 +801,7 @@ function InstrumentBlock({
       >
         {inst.visual}
         <p className="mt-3 text-center font-body text-[11px] text-muted-foreground/60">
-          Illustrative figures — the product runs this on your own trades.
+          Illustrative figures: the product runs this on your own trades.
         </p>
       </motion.div>
     </article>

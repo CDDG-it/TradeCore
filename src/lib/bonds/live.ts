@@ -97,8 +97,8 @@ function classify(y3m: number | null, y2: number | null, y10: number | null): { 
       shape: "inverted",
       label: "Inverted curve",
       detail:
-        `Two-year yields sit above ten-year (${s} bp). Investors are paid more to lend for two years than for ten — a bet that rates must fall, ` +
-        `which has historically preceded recessions by roughly 6–18 months.${s3m != null && s3m < 0 ? " The 3-month/10-year spread is inverted too, the version the Fed's own research watches most closely." : ""}`,
+        `Two-year yields sit above ten-year (${s} bp). Investors are paid more to lend for two years than for ten: a bet that rates must fall, ` +
+        `which has historically preceded recessions by roughly 6-18 months.${s3m != null && s3m < 0 ? " The 3-month/10-year spread is inverted too, the version the Fed's own research watches most closely." : ""}`,
     };
   }
   if (s < 25) {
@@ -106,7 +106,7 @@ function classify(y3m: number | null, y2: number | null, y10: number | null): { 
       shape: "flat",
       label: "Flat curve",
       detail:
-        `Only ${s} bp separates two-year and ten-year yields. A flat curve says the market sees little growth or inflation premium ahead — ` +
+        `Only ${s} bp separates two-year and ten-year yields. A flat curve says the market sees little growth or inflation premium ahead: ` +
         `late-cycle behaviour, and a curve that can tip either way on the next inflation print.`,
     };
   }
@@ -114,7 +114,7 @@ function classify(y3m: number | null, y2: number | null, y10: number | null): { 
     shape: "normal",
     label: "Normal curve",
     detail:
-      `Ten-year yields sit ${s} bp above two-year. Lenders are paid for taking duration risk, the historically healthy shape — ` +
+      `Ten-year yields sit ${s} bp above two-year. Lenders are paid for taking duration risk, the historically healthy shape: ` +
       `it points to growth and inflation expectations that build with time rather than a market bracing for cuts.`,
   };
 }
@@ -168,9 +168,9 @@ export async function fetchBondSnapshot(): Promise<BondSnapshot> {
   };
 
   const spreads: Spread[] = [
-    ...mkSpread("2s10s", "2s10s", "The classic recession bellwether — ten-year minus two-year.", y10, y2, "10 Yr", "2 Yr"),
+    ...mkSpread("2s10s", "2s10s", "The classic recession bellwether: ten-year minus two-year.", y10, y2, "10 Yr", "2 Yr"),
     ...mkSpread("3m10y", "3M/10Y", "The Fed's preferred inversion measure.", y10, y3m, "10 Yr", "3 Mo"),
-    ...mkSpread("5s30s", "5s30s", "Long-end steepness — inflation and fiscal risk premium.", y30, y5, "30 Yr", "5 Yr"),
+    ...mkSpread("5s30s", "5s30s", "Long-end steepness: inflation and fiscal risk premium.", y30, y5, "30 Yr", "5 Yr"),
   ];
 
   const read = classify(y3m, y2, y10);

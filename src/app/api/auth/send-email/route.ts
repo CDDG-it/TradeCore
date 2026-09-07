@@ -40,7 +40,7 @@ function getEmailContent(type: string, confirmUrl: string): { subject: string; h
     };
   }
   return {
-    subject: "Action required — TradingMC",
+    subject: "Action required: TradingMC",
     html: `${header}<h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111;">Action required</h2><p style="color:#555;margin-bottom:24px;">Click the button below to continue.</p>${btn}Continue</a>${footer}`,
   };
 }
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   const { token_hash, redirect_to, email_action_type } = email_data;
 
   const finalRedirect = email_action_type === "recovery" ? "/auth/update-password" : redirect_to;
-  // Use configured site URL — never rely on site_url from payload (may point to Supabase directly)
+  // Use configured site URL: never rely on site_url from payload (may point to Supabase directly)
   const appUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tradinghub-lovat.vercel.app";
   const confirmUrl = buildConfirmUrl(appUrl, token_hash, email_action_type, finalRedirect);
   const { subject, html } = getEmailContent(email_action_type, confirmUrl);

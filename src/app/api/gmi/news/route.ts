@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 /**
- * Two hours, not one — the free tier allows 100 requests a day and a refresh
+ * Two hours, not one: the free tier allows 100 requests a day and a refresh
  * spends four of them (one per page). Hourly meant 96 a day for a single warm
  * instance, so a second instance would push the desk over the limit and the
  * wire would start coming back stale. Two hours halves that to 48 and leaves
@@ -21,7 +21,7 @@ const TTL_MS = 2 * 60 * 60_000;
  * The wire is the same for every reader, so a good answer is worth sharing.
  * The in-process cache above only covers one warm instance; this lets the edge
  * hold the payload for fifteen minutes and keep serving it for an hour while it
- * refreshes behind the reader — so a cold instance is not a cold page, and the
+ * refreshes behind the reader, so a cold instance is not a cold page, and the
  * upstream quota is spent once per window instead of once per instance.
  */
 const CACHE_OK = "public, max-age=0, s-maxage=900, stale-while-revalidate=3600";

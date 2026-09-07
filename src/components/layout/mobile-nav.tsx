@@ -13,7 +13,7 @@ import { PRIMARY_NAV } from "@/lib/nav";
  * a fixed tab bar pinned to the bottom of the viewport, thumb-height, with the
  * profile living top-right in the header instead of behind a hamburger.
  *
- * Desktop is untouched — everything here is `lg:hidden`.
+ * Desktop is untouched: everything here is `lg:hidden`.
  */
 
 const ICONS: Record<string, LucideIcon> = {
@@ -90,7 +90,7 @@ export function BottomNav() {
  * strip and simply hide it below `lg`.
  *
  * Mounting sets `data-subnav` on <html>, which globals.css reads to reserve the
- * extra bottom padding — the strip is fixed, so it can't push content itself.
+ * extra bottom padding: the strip is fixed, so it can't push content itself.
  */
 let mounted = 0;
 const noSubscribe = () => () => {};
@@ -112,8 +112,8 @@ export function MobileSubnav<T extends string>({
   const ref = useRef<HTMLDivElement>(null);
   const picked = useRef(false);
   // The strip is portalled to <body>. The page it belongs to is rendered inside
-  // the route transition's motion wrapper, and a `transform` there — even the
-  // 4px lift of the page fade-in — would make this `fixed` element resolve
+  // the route transition's motion wrapper, and a `transform` there: even the
+  // 4px lift of the page fade-in: would make this `fixed` element resolve
   // against that wrapper instead of the viewport, so it would slide with the
   // page rather than staying docked to the bottom of the screen.
   // `document.body` only exists on the client, hence the hydration gate.
@@ -133,7 +133,7 @@ export function MobileSubnav<T extends string>({
 
   // Keep the selected pill in view when the strip is wider than the screen.
   // The strip is moved directly rather than with `scrollIntoView`, which walks
-  // up every scrollable ancestor — and this strip is fixed over the page, so
+  // up every scrollable ancestor, and this strip is fixed over the page, so
   // that would drag the page under it as a side effect.
   useEffect(() => {
     const strip = ref.current;

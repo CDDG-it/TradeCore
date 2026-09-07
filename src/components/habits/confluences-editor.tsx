@@ -6,7 +6,7 @@ import { getProfile, upsertProfile } from "@/lib/supabase/queries";
 import { DEFAULT_CONFLUENCES } from "@/lib/journal/confluences";
 
 /**
- * Confluences editor. This is the trader's saved confluence library — the
+ * Confluences editor. This is the trader's saved confluence library: the
  * exact list that shows up as quick-select chips when logging a trade. Only
  * confluences created and saved here appear in the Journal (the trader can
  * still type a one-off directly on a trade, but the reusable library is this).
@@ -187,7 +187,7 @@ export function ConfluencesEditor() {
               value={newItem}
               onChange={(e) => setNewItem(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNew(); } }}
-              placeholder="Add a confluence…"
+              placeholder="Add a confluence..."
               className="min-w-0 flex-1 bg-transparent px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
             />
             <button
@@ -240,7 +240,7 @@ export function ConfluencesEditor() {
               className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
               style={{ background: "var(--ice)" }}
             >
-              {saveState === "saving" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…</> : "Save confluences"}
+              {saveState === "saving" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</> : "Save confluences"}
             </button>
           </div>
         </>

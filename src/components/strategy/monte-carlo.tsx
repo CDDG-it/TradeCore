@@ -15,7 +15,7 @@ const RED = "var(--loss)";
 const AMBER = "var(--be)";
 const CYAN = "var(--ice)";
 
-/** Representative prop-firm setups. Numbers are typical, round starting points —
+/** Representative prop-firm setups. Numbers are typical, round starting points:
  *  every field stays editable, so a trader dials in their own firm's exact rules. */
 interface Preset extends Omit<MonteCarloInputs, "winRate" | "rewardRisk" | "tradesPerDay" | "simulations" | "sampleCurves"> {
   key: string;
@@ -55,7 +55,7 @@ function thin<T>(arr: T[], max: number): T[] {
   return out;
 }
 
-/** Win rate + reward:risk pulled from the trader's real journal — the same
+/** Win rate + reward:risk pulled from the trader's real journal: the same
  *  figures the Analytics page reports, measured over decisive (win/loss) trades. */
 interface RealStats { winRate: number; avgRR: number; decisive: number; total: number }
 
@@ -202,14 +202,14 @@ export function MonteCarloSimulator() {
       {realStats && (
         <p className="-mt-2 text-[11px] text-muted-foreground">
           {appliedStats
-            ? <>Using your real edge — <span className="tabular-nums">{pct(realStats.winRate)}</span> win rate and <span className="tabular-nums">{realStats.avgRR || "—"}R</span> avg reward:risk over {realStats.decisive} decisive trade{realStats.decisive === 1 ? "" : "s"}.</>
-            : <>Your journal shows <span className="tabular-nums text-foreground/80">{pct(realStats.winRate)}</span> win rate and <span className="tabular-nums text-foreground/80">{realStats.avgRR || "—"}R</span> avg reward:risk over {realStats.decisive} decisive trade{realStats.decisive === 1 ? "" : "s"}.</>}
+            ? <>Using your real edge: <span className="tabular-nums">{pct(realStats.winRate)}</span> win rate and <span className="tabular-nums">{realStats.avgRR || "-"}R</span> avg reward:risk over {realStats.decisive} decisive trade{realStats.decisive === 1 ? "" : "s"}.</>
+            : <>Your journal shows <span className="tabular-nums text-foreground/80">{pct(realStats.winRate)}</span> win rate and <span className="tabular-nums text-foreground/80">{realStats.avgRR || "-"}R</span> avg reward:risk over {realStats.decisive} decisive trade{realStats.decisive === 1 ? "" : "s"}.</>}
         </p>
       )}
 
       {saveState === "error" && (
         <p className="-mt-2 text-[11px] text-destructive">
-          Couldn&apos;t save — run <span className="font-mono">monte_carlo_settings.sql</span> in the Supabase SQL editor, then try again.
+          Couldn&apos;t save: run <span className="font-mono">monte_carlo_settings.sql</span> in the Supabase SQL editor, then try again.
         </p>
       )}
 
@@ -336,7 +336,7 @@ export function MonteCarloSimulator() {
 
           {!edgePositive && (
             <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-xs text-destructive">
-              Negative expectancy — this edge loses money over a large sample.
+              Negative expectancy: this edge loses money over a large sample.
             </div>
           )}
 
@@ -347,7 +347,7 @@ export function MonteCarloSimulator() {
                 Sample equity paths · {curveData.meta.length} of {input.simulations.toLocaleString()} runs
               </p>
               <p className="text-[11px] text-muted-foreground/80 mt-1 leading-snug">
-                Each line is one simulated attempt — same edge, a different order of wins and losses.
+                Each line is one simulated attempt: same edge, a different order of wins and losses.
                 <span style={{ color: GREEN }}> Green</span> hit the target,
                 <span style={{ color: RED }}> red</span> breached the floor,
                 <span style={{ color: AMBER }}> amber</span> ran out of time. The spread between them is your luck-of-the-draw risk.
@@ -411,7 +411,7 @@ export function MonteCarloSimulator() {
             </div>
             <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
               Where every run finished. Taller bars = more likely landing spots. The wider this spread, the more
-              variance in your results — a tall stack near the target is a consistent edge.
+              variance in your results: a tall stack near the target is a consistent edge.
               <span style={{ color: GREEN }}> Green</span> cleared the target,
               <span style={{ color: RED }}> red</span> fell below the drawdown floor.
             </p>

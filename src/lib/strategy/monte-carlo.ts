@@ -63,7 +63,7 @@ export interface MonteCarloResult {
   histogram: { label: string; from: number; to: number; count: number }[];
 }
 
-/** Mulberry32 — a tiny, fast, seedable PRNG so runs are reproducible. */
+/** Mulberry32: a tiny, fast, seedable PRNG so runs are reproducible. */
 function makeRng(seed: number) {
   let a = seed >>> 0;
   return () => {
@@ -105,7 +105,7 @@ export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): Monte
     let balance = accountSize;
     let peak = accountSize;
     // The static floor is fixed from the start; the trailing floor rises with
-    // the peak balance until it locks at (initial + target) on many firms — we
+    // the peak balance until it locks at (initial + target) on many firms: we
     // keep it simply trailing the peak, which is the stricter, common case.
     const keepCurve = s < sampleCount;
     const curve: number[] = keepCurve ? [balance] : [];
@@ -124,7 +124,7 @@ export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): Monte
 
         const floor = drawdownMode === "trailing" ? peak - maxDrawdown : accountSize - maxDrawdown;
 
-        // Failure checks first — a breach on the same trade that hits target
+        // Failure checks first: a breach on the same trade that hits target
         // still counts as a blow-up (you cannot pass through a violation).
         if (balance <= floor) { outcome = "fail"; resolved = true; break; }
         if (dailyLossLimit > 0 && balance <= dayStart - dailyLossLimit) { outcome = "fail"; resolved = true; break; }
@@ -145,7 +145,7 @@ export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): Monte
   endBalances.sort((a, b) => a - b);
   daysToPass.sort((a, b) => a - b);
 
-  // Histogram of ending balances — 12 buckets across the observed range.
+  // Histogram of ending balances: 12 buckets across the observed range.
   const lo = endBalances[0];
   const hi = endBalances[endBalances.length - 1];
   const buckets = 12;

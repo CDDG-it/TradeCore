@@ -129,7 +129,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
               {(trade.execution_time || trade.execution_end_time) && (
                 <span className="flex items-center gap-1.5 tabular-nums">
                   <Clock className="w-3.5 h-3.5" />
-                  {trade.execution_time || "—"}
+                  {trade.execution_time || "-"}
                   {trade.execution_end_time ? ` → ${trade.execution_end_time}` : ""}
                 </span>
               )}
@@ -179,7 +179,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
               <Target className="w-4 h-4" style={{ color: "var(--primary)" }} />
               Discipline Check
               <span className="ml-auto text-sm font-bold" style={{ color: scoreColor }}>
-                {hasCustomChecks ? `${disciplineScore}%` : "—"}
+                {hasCustomChecks ? `${disciplineScore}%` : "-"}
               </span>
             </CardTitle>
           </CardHeader>
@@ -270,7 +270,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed text-foreground/80">{trade.execution_notes || "—"}</p>
+            <p className="text-sm leading-relaxed text-foreground/80">{trade.execution_notes || "-"}</p>
           </CardContent>
         </Card>
         <Card className="shadow-sm">
@@ -280,7 +280,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm leading-relaxed text-foreground/80">{trade.psychology_notes || "—"}</p>
+            <p className="text-sm leading-relaxed text-foreground/80">{trade.psychology_notes || "-"}</p>
           </CardContent>
         </Card>
       </div>

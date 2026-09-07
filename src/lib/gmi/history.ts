@@ -1,9 +1,9 @@
 /**
- * Cross-asset daily history — Yahoo Finance.
+ * Cross-asset daily history: Yahoo Finance.
  *
  * Returns date-aligned daily closes for a fixed cross-asset set so the client
  * can draw normalised performance and a correlation matrix. Correlation is a
- * descriptive statistic of past co-movement — never a signal.
+ * descriptive statistic of past co-movement: never a signal.
  */
 import { fetchJson } from "./cache";
 

@@ -1,11 +1,11 @@
 /**
- * MC Mindscore — one number for how ready a trader is to trade their edge.
+ * MC Mindscore: one number for how ready a trader is to trade their edge.
  *
- * It blends the things a trader controls into a single 0–100 score:
- *   • Rule adherence   — the per-trade discipline checklist (at the screen)
- *   • Execution        — the share of rated trades taken to plan and to edge
- *   • Habit consistency — daily/lifestyle habits (away from the charts)
- *   • Objectives       — the process work that compounds an edge: weekly review,
+ * It blends the things a trader controls into a single 0-100 score:
+ *   • Rule adherence:    the per-trade discipline checklist (at the screen)
+ *   • Execution:         the share of rated trades taken to plan and to edge
+ *   • Habit consistency: daily/lifestyle habits (away from the charts)
+ *   • Objectives:        the process work that compounds an edge: weekly review,
  *                        pre-trade analysis, logging the best trade of the day
  *
  * Every input is derived from data the trader already produces, so nothing is faked.
@@ -28,7 +28,7 @@ export type MindPeriod = "week" | "month" | "all";
 /**
  * Nominal weights (out of 100), rescaled among the components that apply.
  *
- * Rules and execution are both "at the screen" and together carry 60 — the
+ * Rules and execution are both "at the screen" and together carry 60: the
  * checklist says whether you ticked your non-negotiables, execution says
  * whether the trade was actually the one your plan and your edge called for.
  * They overlap, so execution is deliberately the smaller of the two.
@@ -76,7 +76,7 @@ export interface MindScore {
   total: number | null;
   /**
    * The window is the current, still-unfolding period and nothing has been
-   * logged in it yet — so a computed 0 would be misleading and demotivating.
+   * logged in it yet, so a computed 0 would be misleading and demotivating.
    * When true, surfaces should show a friendly "score builds as you go" state
    * instead of a red zero.
    */
@@ -97,7 +97,7 @@ export interface MindScore {
 export const MIND_BANDS: MindBand[] = [
   {
     min: 0, max: 20, label: "Not trade-ready",
-    description: "Process and state are off — step back and protect your capital before taking risk.",
+    description: "Process and state are off: step back and protect your capital before taking risk.",
   },
   {
     min: 20, max: 40, label: "Fragile",
@@ -123,7 +123,7 @@ export function bandFor(total: number | null): MindBand {
 }
 
 /** Band colours, one per band: red → amber → yellow → turquoise → green. No orange, per the brand palette. */
-/** Band colours as tokens, so the light theme's darker ramp applies too — the
+/** Band colours as tokens, so the light theme's darker ramp applies too: the
  *  raw amber and green read as pastel on a white card. */
 export const BAND_COLORS = [
   "var(--band-1)", "var(--band-2)", "var(--band-3)", "var(--band-4)", "var(--band-5)",
@@ -158,7 +158,7 @@ export interface MindInputs {
   adherenceLogs?: CommitmentAdherenceLog[];
 }
 
-/** Earliest day any tracked activity exists — the anchor for the all-time window. */
+/** Earliest day any tracked activity exists: the anchor for the all-time window. */
 function earliestActivity(input: MindInputs): Date {
   const dates: number[] = [];
   input.trades.forEach((t) => dates.push(new Date(dayKey(t.date_time) + "T12:00:00").getTime()));
@@ -193,7 +193,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
     return d >= start && d <= clampEnd;
   };
   const bestDays = new Set(input.bestTrades.filter((b) => inRange(b.date)).map((b) => dayKey(b.date)));
-  // A weekly review becomes "due" when the trading week behind it is over —
+  // A weekly review becomes "due" when the trading week behind it is over:
   // that is Friday, not Sunday, since the weekend adds nothing to review. Until
   // then the week is neither counted for nor against you, so the objective
   // cannot drag the score down mid-week. Same rule as the review page itself.
@@ -204,7 +204,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
 
   // ── Pre-trade analysis: every day you traded needs an analysis prepared
   // beforehand. A trade only earns its day if it links to an analysis dated
-  // on or before the trade's day — an analysis written after the fact, or none
+  // on or before the trade's day: an analysis written after the fact, or none
   // at all, earns nothing. Days without trades are not required.
   const analysisById = new Map(input.analyses.map((a) => [a.id, a]));
   const tradedDays = new Set<string>();
@@ -220,7 +220,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   const analysisRate = analysisTarget === 0 ? 1 : Math.min(1, analysedDays.size / analysisTarget);
 
   // ── Commitments: did the reflection carry into the next trade? ────────
-  // Counts every check raised in the window, not only the answered ones —
+  // Counts every check raised in the window, not only the answered ones:
   // confirming the check is part of the work, so ignoring them cannot score.
   // Never kept is never guessed: an unanswered check simply is not a kept one.
   const windowLogs = (input.adherenceLogs ?? []).filter((l) => inRange(l.date));
@@ -229,12 +229,12 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
 
   const rawObjectives: Omit<Objective, "contribution">[] = [
     {
-      key: "weekly-review", label: "Weekly review", description: "Complete each week's review once the trading week is over — from Friday",
+      key: "weekly-review", label: "Weekly review", description: "Complete each week's review once the trading week is over: from Friday",
       href: "/trade-therapist?tab=reviews", progress: reviewsDone, target: reviewTarget,
       rate: reviewRate,
     },
     {
-      key: "pre-trade-analysis", label: "Pre-trade analysis", description: "Prepare an analysis before you trade — every day you take a trade",
+      key: "pre-trade-analysis", label: "Pre-trade analysis", description: "Prepare an analysis before you trade: every day you take a trade",
       href: "/analysis", progress: analysedDays.size, target: analysisTarget,
       rate: analysisRate,
     },
@@ -245,7 +245,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
     },
   ];
 
-  // Only an objective once a commitment has actually been tested — otherwise it
+  // Only an objective once a commitment has actually been tested: otherwise it
   // would contribute a free full score and dilute the others.
   if (checksRaised > 0) {
     rawObjectives.push({
@@ -296,7 +296,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   // logged in it yet. Every real activity signal is checked, so a single trade,
   // habit tick or review flips it off. Past windows always have their earliest
   // activity inside them (all-time is anchored to it), so this only fires for a
-  // just-started week or month — never for a completed one.
+  // just-started week or month: never for a completed one.
   const tradesInWindow = input.trades.filter((t) => {
     const d = new Date(dayKey(t.date_time) + "T12:00:00");
     return d >= start && d <= clampEnd;
@@ -314,7 +314,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   };
 }
 
-/** Convenience — compute all three windows at once. */
+/** Convenience: compute all three windows at once. */
 export function computeMindScoreAll(input: MindInputs): Record<MindPeriod, MindScore> {
   return {
     week: computeMindScore(input, "week"),

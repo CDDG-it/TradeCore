@@ -44,7 +44,7 @@ export default async function FeaturePage({
 
   // Only render the media block when a real screenshot file is actually present
   // in /public. Features without a capture (e.g. Trade Therapist, Option Flow)
-  // stay text-only — no mockups, no broken images. Drop a PNG in and it appears.
+  // stay text-only: no mockups, no broken images. Drop a PNG in and it appears.
   const hasShot = existsSync(
     path.join(process.cwd(), "public", feature.screenshot.replace(/^\//, "")),
   );
@@ -116,7 +116,7 @@ export default async function FeaturePage({
         </p>
       </section>
 
-      {/* Screenshot — only when a real capture exists in /public/screenshots. */}
+      {/* Screenshot: only when a real capture exists in /public/screenshots. */}
       {hasShot && (
         <section className="mx-auto max-w-5xl px-6">
           <div

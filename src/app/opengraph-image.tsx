@@ -9,10 +9,10 @@ import { ImageResponse } from "next/og";
  *
  * Drawn with the same vocabulary as the landing page: navy ground, a plotting
  * grid, two soft turquoise and cyan glows, and a row of candles along the base.
- * The candles are a deterministic decorative series — no figure here claims to
+ * The candles are a deterministic decorative series: no figure here claims to
  * be a market or a result.
  */
-export const alt = "TradingMC — where self-improvement meets trading";
+export const alt = "TradingMC: where self-improvement meets trading";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -29,7 +29,7 @@ const BAND = 230;
 
 /**
  * A fixed pseudo-random walk, normalised into the band so the field always
- * fills it — the same series every build, and never running off the edge.
+ * fills it: the same series every build, and never running off the edge.
  */
 function candles(n: number) {
   let s = 1337;

@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * 02 MARKETS — the macro frame: what the world's sovereign debt yields, the
+ * 02 MARKETS: the macro frame: what the world's sovereign debt yields, the
  * shape of the US curve, what the Fed's balance sheet is doing, and where the
  * dollar and volatility sit.
  *
  * Cadences genuinely differ and are stated per pane: OECD harmonised yields are
  * monthly, US constant maturities daily, balance-sheet series weekly, FX and
- * volatility delayed quotes. A country is its ISO code — no flags, no ornament.
+ * volatility delayed quotes. A country is its ISO code: no flags, no ornament.
  */
 import dynamic from "next/dynamic";
 import { useMemo, useState, useSyncExternalStore } from "react";
@@ -39,7 +39,7 @@ const RATE_LABEL: Record<string, string> = {
 };
 
 function macroVal(s: MacroSeries): string {
-  if (s.value == null) return "—";
+  if (s.value == null) return "-";
   if (s.unit === "%") return `${s.value.toFixed(2)}%`;
   if (s.unit === "bp") return `${Math.round(s.value * 100)}bp`;
   if (s.unit === "$B") {
@@ -49,11 +49,11 @@ function macroVal(s: MacroSeries): string {
   return s.value.toLocaleString();
 }
 
-const bp = (v: number | null) => (v == null ? "—" : `${v > 0 ? "+" : ""}${(v * 100).toFixed(0)}bp`);
+const bp = (v: number | null) => (v == null ? "-" : `${v > 0 ? "+" : ""}${(v * 100).toFixed(0)}bp`);
 
 /**
- * True once the viewport is at least `px` wide. Used to keep the globe — and
- * three.js with it — off phones entirely rather than merely hidden: at 375px a
+ * True once the viewport is at least `px` wide. Used to keep the globe: and
+ * three.js with it: off phones entirely rather than merely hidden: at 375px a
  * spinning world under a readout card is decoration you pay megabytes for.
  */
 function useWide(px = 640) {
@@ -122,7 +122,7 @@ export function MarketsTab() {
           bodyClassName="p-0"
           className="sm:min-h-[260px] lg:col-span-7"
         >
-          {/* On a phone the pane is the readout itself — the economy is picked
+          {/* On a phone the pane is the readout itself: the economy is picked
               from the table below, not from a 375px-wide globe. */}
           <div className="relative h-full w-full overflow-hidden" style={{ background: "#0a1019" }}>
             {wide && <WorldMap3D markers={markers} selected={selected} onSelect={setSelected} />}
@@ -135,7 +135,7 @@ export function MarketsTab() {
                 </div>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span className="text-[28px] font-black leading-none tabular-nums text-foreground">
-                    {sel.value != null ? sel.value.toFixed(2) : "—"}
+                    {sel.value != null ? sel.value.toFixed(2) : "-"}
                   </span>
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/75">% · 10Y</span>
                 </div>
@@ -199,7 +199,7 @@ export function MarketsTab() {
                         on ? "bg-primary/[0.09]" : "hover:bg-muted/20"
                       }`}
                     >
-                      {/* The bar is the ranking — length is the yield itself */}
+                      {/* The bar is the ranking: length is the yield itself */}
                       <span
                         aria-hidden
                         className="pointer-events-none absolute inset-y-0 left-0 transition-[width] duration-500"
@@ -210,20 +210,20 @@ export function MarketsTab() {
                       </span>
                       <span className="relative min-w-0 truncate text-[12px] text-foreground/85">{y.country}</span>
                       <span className="relative text-right text-[14px] font-bold tabular-nums text-foreground">
-                        {y.value != null ? y.value.toFixed(2) : "—"}
+                        {y.value != null ? y.value.toFixed(2) : "-"}
                       </span>
                       <span className="relative text-right text-[12px] tabular-nums" style={{ color: toneFor(change) }}>
                         {bp(change)}
                       </span>
                       <span className="relative text-right text-[12px] tabular-nums text-foreground/80">
-                        {y.id === "us" ? "—" : bp(spread)}
+                        {y.id === "us" ? "-" : bp(spread)}
                       </span>
                     </button>
                   );
                 })}
               </div>
               <p className="shrink-0 border-t border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
-                OECD harmonised · monthly · {gyEnv?.asOf ? timeAgo(gyEnv.asOf) : "—"} · spread = this yield minus US 10Y
+                OECD harmonised · monthly · {gyEnv?.asOf ? timeAgo(gyEnv.asOf) : "-"} · spread = this yield minus US 10Y
               </p>
             </div>
           )}

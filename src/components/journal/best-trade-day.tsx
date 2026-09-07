@@ -13,7 +13,7 @@ import { getBestTradeOfDay, saveBestTradeOfDay, deleteBestTradeOfDay } from "@/l
 import type { BestTradeOfDay, ScreenshotGroup } from "@/lib/types";
 
 /**
- * Best trade of the day — a per-day reflection that lives in the Journal for
+ * Best trade of the day: a per-day reflection that lives in the Journal for
  * every calendar day, traded or not. The trader drops screenshots of the best
  * trade that was on offer that day and notes why it was the better play (or why
  * it was takeable), or flags that the trade they actually took was already the
@@ -151,7 +151,7 @@ export function BestTradeDayDialog({
                 storageConfig={userId ? { userId, entityType: "best-trade", entityId: date } : undefined}
               />
               {!userId && (
-                <p className="text-[11px] text-muted-foreground/70 mt-1.5">Loading your account…</p>
+                <p className="text-[11px] text-muted-foreground/70 mt-1.5">Loading your account...</p>
               )}
             </div>
 

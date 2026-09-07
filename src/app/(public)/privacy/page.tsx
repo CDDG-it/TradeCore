@@ -31,7 +31,7 @@ export default function PrivacyPage() {
           <p className="text-sm text-muted-foreground leading-relaxed">
             Screenshots you upload are stored in a private, access-controlled storage bucket. They are only accessible
             to your account and cannot be viewed by other users. Screenshots may contain sensitive trading information
-            such as account balances and chart patterns — they are stored solely to support your personal trading journal
+            such as account balances and chart patterns: they are stored solely to support your personal trading journal
             and are never shared with third parties.
           </p>
         </section>
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
           <h2 className="text-lg font-semibold">Data isolation</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
             All database tables use Row Level Security (RLS). Your data is strictly isolated from other users&apos;
-            data at the database level — every query is automatically scoped to your user ID. No other user can
+            data at the database level: every query is automatically scoped to your user ID. No other user can
             read, write, or delete your records.
           </p>
         </section>
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
             You can request full deletion of your account and all associated data by emailing{" "}
             <a href="mailto:info@cddegroot.nl" className="text-primary hover:underline">info@cddegroot.nl</a>.
             We will process your request within 30 days. We do not claim full legal compliance (GDPR, CCPA) at this stage
-            of development — deletion requests are handled manually.
+            of development: deletion requests are handled manually.
           </p>
         </section>
 

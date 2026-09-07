@@ -1,11 +1,11 @@
--- Psychological Edge — reflections are now one deep 5R walkthrough per
+-- Psychological Edge: reflections are now one deep 5R walkthrough per
 -- bad-execution trade, not one summary per day. Re-key the table on trade_id.
 -- Safe to run more than once.
 
 -- 1) Drop the old one-per-day uniqueness.
 alter table psych_edge_sessions drop constraint if exists psych_edge_sessions_user_id_date_key;
 
--- 2) A reflection now always belongs to a trade — clear any legacy day-only rows.
+-- 2) A reflection now always belongs to a trade: clear any legacy day-only rows.
 delete from psych_edge_sessions where trade_id is null;
 
 -- 3) Collapse any duplicates that share a trade_id (keep the most recently updated).

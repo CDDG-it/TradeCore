@@ -28,7 +28,7 @@ const PART_META: Record<MindComponent["key"], { title: string; sub: string; acce
 };
 
 /**
- * The MC Mindscore — one number, one bar, four plain-language parts.
+ * The MC Mindscore: one number, one bar, four plain-language parts.
  * Laid out to fit a single screen: no internal scrolling, no jargon.
  */
 export function MindScoreBreakdown() {
@@ -60,7 +60,7 @@ export function MindScoreBreakdown() {
 
   return (
     <div className="space-y-3">
-      {/* Period switch — each shows its own score */}
+      {/* Period switch: each shows its own score */}
       <div className="grid grid-cols-3 gap-2">
         {(["week", "month", "all"] as MindPeriod[]).map((p) => {
           const s = scores[p];
@@ -78,14 +78,14 @@ export function MindScoreBreakdown() {
             >
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{PERIOD_LABEL[p]}</span>
               <span className="text-lg font-black tabular-nums leading-none" style={{ color: pc }}>
-                {s.pending ? "·" : s.total == null ? "—" : s.total}
+                {s.pending ? "·" : s.total == null ? "-" : s.total}
               </span>
             </button>
           );
         })}
       </div>
 
-      {/* Hero — the score, or a friendly "just getting started" note.
+      {/* Hero: the score, or a friendly "just getting started" note.
           The spine takes the band colour, so the panel reads at a glance. */}
       <div
         className="relative overflow-hidden rounded-2xl border p-5 pl-6"
@@ -106,7 +106,7 @@ export function MindScoreBreakdown() {
             style={{ borderColor: alpha(c, 40), background: alpha(c, 12) }}
           >
             <span className="text-2xl font-black tabular-nums leading-none" style={{ color: c }}>
-              {score.pending ? "·" : score.total == null ? "—" : score.total}
+              {score.pending ? "·" : score.total == null ? "-" : score.total}
             </span>
           </div>
           <div className="min-w-0 flex-1">
@@ -117,7 +117,7 @@ export function MindScoreBreakdown() {
             </p>
             <p className="text-[11px] leading-snug text-muted-foreground">
               {score.pending
-                ? "Your score is still being calculated — it builds up as you log trades, tick your habits and do the work."
+                ? "Your score is still being calculated: it builds up as you log trades, tick your habits and do the work."
                 : score.band.description}
             </p>
             {/* One simple bar, 0 → 100 */}
@@ -151,7 +151,7 @@ export function MindScoreBreakdown() {
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="text-xs font-semibold truncate">{meta.title}</p>
                   <span className="text-xs font-black tabular-nums shrink-0" style={{ color: accent }}>
-                    {has ? `${value}%` : "—"}
+                    {has ? `${value}%` : "-"}
                   </span>
                 </div>
                 <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted-foreground/12">

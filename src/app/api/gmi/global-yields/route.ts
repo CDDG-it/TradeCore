@@ -3,7 +3,7 @@ import { cached } from "@/lib/gmi/cache";
 import { fetchGlobalYields, type GlobalYield } from "@/lib/gmi/global-yields";
 import type { DataEnvelope } from "@/lib/gmi/types";
 
-// Global 10Y government bond yields (FRED / OECD, monthly). Cached 6h — these
+// Global 10Y government bond yields (FRED / OECD, monthly). Cached 6h: these
 // series update monthly, so nothing is gained by fetching more often.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 06 POSITIONING — who is holding what.
+ * 06 POSITIONING: who is holding what.
  *
  * The CFTC's weekly Commitments of Traders report, read as a board rather than
  * a stack of cards: one line per futures market, the selected line opened up
@@ -9,7 +9,7 @@
  * commercials sit opposite them by construction, so "short" there is hedging,
  * not a bet.
  *
- * Tuesday's positions, published Friday — weekly by nature, never realtime, and
+ * Tuesday's positions, published Friday: weekly by nature, never realtime, and
  * labelled that way. ETF creation flow is not on the free sources this desk
  * uses, so it is stated as missing rather than estimated.
  */
@@ -26,7 +26,7 @@ const GROUPS = [
   { key: "energy", label: "Energy" },
 ];
 
-/** Tone per derived read — colour only, the words carry the meaning. */
+/** Tone per derived read: colour only, the words carry the meaning. */
 const SIGNAL_TONE: Record<string, string> = {
   "crowded-long": "var(--destructive)",
   "crowded-short": "var(--chart-2)",
@@ -215,7 +215,7 @@ export function FlowOptionsTab() {
                 </div>
               </div>
 
-              {/* Who is on which side — the three groups, as one bar each */}
+              {/* Who is on which side: the three groups, as one bar each */}
               <div className="space-y-2">
                 <Label className="block">Long share of each group</Label>
                 {[

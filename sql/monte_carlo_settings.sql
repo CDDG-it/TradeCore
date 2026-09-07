@@ -1,4 +1,4 @@
--- MC Pass Simulation — saved settings
+-- MC Pass Simulation: saved settings
 -- Run this once in the Supabase SQL editor. Lets the Strategy page save your
 -- simulation setup (firm rules + edge) so it persists across sessions/devices.
 -- Safe to re-run: uses "if not exists" and drops/recreates the policy.

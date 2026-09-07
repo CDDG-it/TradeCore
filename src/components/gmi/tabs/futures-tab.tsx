@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 03 FUTURES — one contract on the glass, the rest of the board beside it.
+ * 03 FUTURES: one contract on the glass, the rest of the board beside it.
  *
  * The chart is the pane, not a card inside one. Cross-asset behaviour is read
  * as a ranking and a grid rather than a tangle of overlaid lines: how much each
@@ -88,7 +88,7 @@ export function FuturesTab() {
   const ranked = [...symbols].sort((x, y) => (perf[y] ?? 0) - (perf[x] ?? 0));
   const maxAbs = Math.max(1, ...symbols.map((s) => Math.abs(perf[s] ?? 0)));
 
-  // Day range — where the last print sits between the session's extremes.
+  // Day range: where the last print sits between the session's extremes.
   const lo = live?.dayLow, hi = live?.dayHigh, px = live?.price;
   const pos = lo != null && hi != null && px != null && hi > lo ? Math.min(1, Math.max(0, (px - lo) / (hi - lo))) : null;
 
@@ -188,7 +188,7 @@ export function FuturesTab() {
             { k: "Prev close", v: fmtPrice(live?.prevClose) },
             { k: "Day high", v: fmtPrice(live?.dayHigh) },
             { k: "Day low", v: fmtPrice(live?.dayLow) },
-            { k: "Volume", v: live?.volume != null ? Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(live.volume) : "—" },
+            { k: "Volume", v: live?.volume != null ? Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(live.volume) : "-" },
           ].map(({ k, v }) => (
             <div key={k} className="px-3 py-1.5">
               <Label className="block">{k}</Label>
@@ -210,7 +210,7 @@ export function FuturesTab() {
           <Empty label="Loading" />
         ) : (
           <>
-            {/* Ranked move over the window — a leaderboard, not a tangle of lines */}
+            {/* Ranked move over the window: a leaderboard, not a tangle of lines */}
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
               <Label className="mb-1.5 block">Move over {CROSS_RANGES.find((r) => r.key === rangeKey)?.label}</Label>
               {ranked.map((s) => {
@@ -255,7 +255,7 @@ export function FuturesTab() {
                               key={colSym}
                               className="h-[18px] w-[18px] text-center align-middle"
                               style={{ background: self ? a("var(--muted-foreground)", 14) : corrShade(v) }}
-                              title={`${rowSym} / ${colSym}: ${Number.isNaN(v) ? "—" : v.toFixed(2)}`}
+                              title={`${rowSym} / ${colSym}: ${Number.isNaN(v) ? "-" : v.toFixed(2)}`}
                             />
                           );
                         })}

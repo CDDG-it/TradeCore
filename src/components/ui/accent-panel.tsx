@@ -5,12 +5,12 @@ import { cn } from "@/lib/utils";
  * Trade Therapist): a coloured spine down the left edge, a faint wash of that
  * same accent through the card ground, and a deep, soft shadow.
  *
- * The accent is meant to carry meaning rather than decoration — turquoise for
+ * The accent is meant to carry meaning rather than decoration: turquoise for
  * discipline, cyan for analysis, green for what worked, red for what cost you.
  */
 export type PanelAccent = "primary" | "cyan" | "success" | "destructive";
 
-/** Tokens, not literals, so the light theme's darker set applies — a mid-tone
+/** Tokens, not literals, so the light theme's darker set applies: a mid-tone
  *  brand colour turns to pastel on a white card. */
 const ACCENT_VAR: Record<PanelAccent, string> = {
   primary: "var(--primary)",

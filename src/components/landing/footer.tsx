@@ -10,7 +10,7 @@ const COLUMNS = [
   {
     heading: "Platform",
     // Always the current app tabs, written exactly as they are in the
-    // sidebar — sourced from APP_TABS so this list can't drift out of sync.
+    // sidebar: sourced from APP_TABS so this list can't drift out of sync.
     links: APP_TABS.map((tab) => ({ label: tab.label, href: tab.href })),
   },
   {

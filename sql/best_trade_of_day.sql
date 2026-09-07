@@ -6,7 +6,7 @@
 -- screenshots + notes of the best trade that was on offer that day, or a flag
 -- that the trade you actually took was already the best one available.
 -- Screenshots reuse the existing trade-screenshots bucket, under the path
--- {userId}/best-trade/{date}/…, so no new storage bucket or policy is needed.
+-- {userId}/best-trade/{date}/..., so no new storage bucket or policy is needed.
 --
 -- Safe to re-run: creates the table only if it does not exist yet.
 

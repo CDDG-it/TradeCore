@@ -21,11 +21,11 @@ const SHAPE_META: Record<CurveShape, { icon: typeof TrendingUp; tone: string; ri
   inverted: { icon: AlertOctagon, tone: "text-destructive", ring: "border-destructive/25 bg-destructive/5" },
 };
 
-const fmtBps = (n: number | null) => (n == null ? "—" : `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n)} bp`);
+const fmtBps = (n: number | null) => (n == null ? "-" : `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n)} bp`);
 
 /** Rising yields are not "good" or "bad", so changes use a neutral accent. */
 function ChangeChip({ bps }: { bps: number | null }) {
-  if (bps == null) return <span className="text-[10px] text-muted-foreground">—</span>;
+  if (bps == null) return <span className="text-[10px] text-muted-foreground">-</span>;
   const up = bps > 0;
   const flat = bps === 0;
   return (
@@ -42,7 +42,7 @@ function ChangeChip({ bps }: { bps: number | null }) {
 }
 
 /**
- * Bond Yields — the US Treasury curve, live from the Treasury's own daily
+ * Bond Yields: the US Treasury curve, live from the Treasury's own daily
  * publication, with the spreads and plain-language reads that matter to an
  * index and commodity trader.
  */
@@ -90,7 +90,7 @@ export function BondYields() {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Loading the Treasury curve…</p>
+        <p className="text-sm text-muted-foreground">Loading the Treasury curve...</p>
       </div>
     );
   }
@@ -100,7 +100,7 @@ export function BondYields() {
       <div className="flex flex-col items-center justify-center h-64 gap-3 text-center">
         <AlertTriangle className="w-6 h-6 text-warning" />
         <p className="text-sm text-muted-foreground max-w-sm">
-          The US Treasury feed is unreachable right now. Yields publish once per business day — try again in a moment.
+          The US Treasury feed is unreachable right now. Yields publish once per business day: try again in a moment.
         </p>
         <button
           onClick={() => load(true)}
@@ -322,7 +322,7 @@ export function BondYields() {
           className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/30"
         >
           <Info className="w-4 h-4 text-primary shrink-0" />
-          <span className="text-sm font-semibold flex-1">Why yields matter to your trading — and where the data comes from</span>
+          <span className="text-sm font-semibold flex-1">Why yields matter to your trading, and where the data comes from</span>
           <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", showMethod && "rotate-180")} />
         </button>
 
@@ -340,10 +340,10 @@ export function BondYields() {
             <div>
               <p className="font-semibold text-foreground mb-1.5">Reading the curve</p>
               <ul className="space-y-1.5">
-                <li><span className="font-semibold text-foreground">Short end (1M–2Y)</span> — tracks what the market thinks the Fed will do next. It moves on policy expectations.</li>
-                <li><span className="font-semibold text-foreground">Long end (10Y–30Y)</span> — tracks long-run growth, inflation and fiscal risk. It moves on the economy, not the next meeting.</li>
-                <li><span className="font-semibold text-foreground">Normal</span> — long yields above short. Lenders are paid for duration risk; the healthy shape.</li>
-                <li><span className="font-semibold text-foreground">Inverted</span> — short above long. The market expects rates to be cut, i.e. a slowdown. Historically preceded recessions by 6–18 months, but with a long and unreliable lag.</li>
+                <li><span className="font-semibold text-foreground">Short end (1M-2Y)</span>: tracks what the market thinks the Fed will do next. It moves on policy expectations.</li>
+                <li><span className="font-semibold text-foreground">Long end (10Y-30Y)</span>: tracks long-run growth, inflation and fiscal risk. It moves on the economy, not the next meeting.</li>
+                <li><span className="font-semibold text-foreground">Normal</span>: long yields above short. Lenders are paid for duration risk; the healthy shape.</li>
+                <li><span className="font-semibold text-foreground">Inverted</span>: short above long. The market expects rates to be cut, i.e. a slowdown. Historically preceded recessions by 6 to 18 months, but with a long and unreliable lag.</li>
               </ul>
             </div>
 
@@ -351,8 +351,8 @@ export function BondYields() {
               <p className="font-semibold text-foreground mb-1.5">Why an index trader watches this</p>
               <ul className="space-y-1.5">
                 <li><span className="font-semibold text-foreground">NQ is the rate-sensitive one.</span> Tech earnings sit far in the future, so a higher discount rate cuts their present value hardest. Sharp 10-year moves usually hit the Nasdaq before the Dow.</li>
-                <li><span className="font-semibold text-foreground">Speed beats level.</span> A 4.7% ten-year is not itself a problem; the market breaks on a fast repricing. A 15–20 bp move in a day is the kind that moves ES and NQ.</li>
-                <li><span className="font-semibold text-foreground">Gold trades against real yields.</span> Gold pays no coupon, so rising real yields raise its opportunity cost — and falling real yields are its strongest tailwind.</li>
+                <li><span className="font-semibold text-foreground">Speed beats level.</span> A 4.7% ten-year is not itself a problem; the market breaks on a fast repricing. A 15-20 bp move in a day is the kind that moves ES and NQ.</li>
+                <li><span className="font-semibold text-foreground">Gold trades against real yields.</span> Gold pays no coupon, so rising real yields raise its opportunity cost, and falling real yields are its strongest tailwind.</li>
                 <li><span className="font-semibold text-foreground">The 2-year is the Fed proxy.</span> When it moves hard, expectations for policy just changed, which is the fastest read on a CPI or jobs surprise.</li>
               </ul>
             </div>
@@ -363,7 +363,7 @@ export function BondYields() {
                 The Treasury publishes the par yield curve once per business day, based on
                 <span className="font-semibold text-foreground"> roughly 3:30 pm ET bid-side quotes</span>. So this is an
                 end-of-day series, not a live feed: intraday it will lag the futures market. Basis points (bp) are hundredths
-                of a percent — 0.25% = 25 bp.
+                of a percent: 0.25% = 25 bp.
               </p>
             </div>
 
@@ -373,23 +373,23 @@ export function BondYields() {
                 <li>
                   <a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve" target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-primary hover:underline">
-                    US Treasury — Daily Treasury Par Yield Curve Rates <ExternalLink className="w-3 h-3" />
+                    US Treasury: Daily Treasury Par Yield Curve Rates <ExternalLink className="w-3 h-3" />
                   </a>
-                  <span className="text-muted-foreground/70"> — the exact series this tab reads.</span>
+                  <span className="text-muted-foreground/70">, the exact series this tab reads.</span>
                 </li>
                 <li>
                   <a href="https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics" target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-primary hover:underline">
-                    US Treasury — Interest rate statistics <ExternalLink className="w-3 h-3" />
+                    US Treasury: Interest rate statistics <ExternalLink className="w-3 h-3" />
                   </a>
-                  <span className="text-muted-foreground/70"> — how the par curve is constructed and quoted.</span>
+                  <span className="text-muted-foreground/70">, how the par curve is constructed and quoted.</span>
                 </li>
                 <li>
                   <a href="https://www.newyorkfed.org/research/capital_markets/ycfaq" target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-primary hover:underline">
-                    NY Fed — Yield curve as a recession predictor <ExternalLink className="w-3 h-3" />
+                    NY Fed: Yield curve as a recession predictor <ExternalLink className="w-3 h-3" />
                   </a>
-                  <span className="text-muted-foreground/70"> — the research behind the 3M/10Y signal.</span>
+                  <span className="text-muted-foreground/70">, the research behind the 3M/10Y signal.</span>
                 </li>
               </ul>
               <p className="mt-2 text-muted-foreground/70">

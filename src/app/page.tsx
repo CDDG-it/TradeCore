@@ -64,7 +64,7 @@ export default function HomePage() {
     });
 
     // splitText rewraps each glyph, which breaks the gradient's
-    // background-clip on the "MC" span — reapply it to those two chars so the
+    // background-clip on the "MC" span: reapply it to those two chars so the
     // turquoise→cyan fill survives. (MC are the last two characters.)
     for (const el of headingChars.slice(-2) as HTMLElement[]) {
       el.style.background = "linear-gradient(135deg,#14B8A6 0%,#06B6D4 100%)";
@@ -117,10 +117,10 @@ export default function HomePage() {
       <div className="relative">
         <LandingGround />
 
-      {/* ── Hero — dark navy background, turquoise + neutral candle visuals ── */}
+      {/* ── Hero: dark navy background, turquoise + neutral candle visuals ── */}
       {/* 53px = header height (py-4 + text-base logo + 1px border).
           overflow-hidden clips the decorative 520px glow and the candle canvas
-          to the section — without it the glow sticks ~110px past the viewport on
+          to the section. Without it the glow sticks ~110px past the viewport on
           a phone and the whole page scrolls sideways. Scoped to the section, so
           it does not disable the sticky header or page scrolling the way an
           overflow rule on the page wrapper would. */}
@@ -135,7 +135,7 @@ export default function HomePage() {
         {/* Candlestick background */}
         <CandlesCanvas />
 
-        {/* Ambient drifting glow — adds depth behind the headline */}
+        {/* Ambient drifting glow: adds depth behind the headline */}
         <motion.div
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full"
@@ -144,7 +144,7 @@ export default function HomePage() {
           transition={{ duration: 9, ease: "easeInOut", repeat: Infinity }}
         />
 
-        {/* Content — parallax + fade on scroll */}
+        {/* Content: parallax + fade on scroll */}
         <motion.div
           style={{
             y: contentY,

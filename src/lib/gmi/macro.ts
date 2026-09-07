@@ -1,9 +1,9 @@
 /**
- * Macro provider — FRED (Federal Reserve Bank of St. Louis).
+ * Macro provider: FRED (Federal Reserve Bank of St. Louis).
  *
  * Powers the Macro subtab: the rates ladder, real yields, curve spreads and the
  * Fed & liquidity block. Each series carries its own publication cadence, which
- * we surface honestly — a weekly balance-sheet figure is never shown as daily.
+ * we surface honestly: a weekly balance-sheet figure is never shown as daily.
  *
  * Requires FRED_API_KEY (server-side only). FRED allows generous rate limits,
  * but we still fetch the whole set in one cached batch per request.

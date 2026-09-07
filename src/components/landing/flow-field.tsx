@@ -2,7 +2,7 @@
 
 /**
  * Flow-field particle background. Adapted from KokonutUI's FlowField (MIT,
- * https://kokonutui.com) — reworked to fill its parent container (instead of the
+ * https://kokonutui.com): reworked to fill its parent container (instead of the
  * viewport) and locked to the TradingMC palette: turquoise→cyan streams over the
  * navy base. Used only behind the landing showcase cards.
  */
@@ -103,7 +103,7 @@ export function FlowField({ className, density = "medium", speed = 1 }: FlowFiel
     const render = () => {
       time += speed;
 
-      // Fade the previous frame — dots persist a few frames, forming soft trails.
+      // Fade the previous frame: dots persist a few frames, forming soft trails.
       ctx.fillStyle = `rgba(${BG}, ${TRAIL_ALPHA})`;
       ctx.fillRect(0, 0, width, height);
 

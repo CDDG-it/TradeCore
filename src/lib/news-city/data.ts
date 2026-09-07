@@ -106,7 +106,7 @@ export const NEWS_CITY_DATA: NewsCityData = {
       direction: "flat",
       level: "MODERATE",
       intensity: 0.55,
-      impact: "Labor market cooling gradually, not breaking — supports a soft-landing narrative.",
+      impact: "Labor market cooling gradually, not breaking: supports a soft-landing narrative.",
     },
     {
       id: "growth",
@@ -163,9 +163,9 @@ export const NEWS_CITY_DATA: NewsCityData = {
       marketImpact: "NASDAQ ↓",
       confidence: 87,
       whatHappened:
-        "FOMC leaves the target range at 4.25–4.50% and Powell reiterates a data-dependent, higher-for-longer stance, pushing back on an early-2026 cut.",
+        "FOMC leaves the target range at 4.25-4.50% and Powell reiterates a data-dependent, higher-for-longer stance, pushing back on an early-2026 cut.",
       whyItMatters:
-        "Rate-path repricing raises the discount rate applied to long-duration growth cash flows — the most rate-sensitive corner of the Nasdaq.",
+        "Rate-path repricing raises the discount rate applied to long-duration growth cash flows: the most rate-sensitive corner of the Nasdaq.",
       historicalContext:
         "Similar hawkish holds in the last two cycles (Sep '23, Jun '24) each preceded a 2-4% NQ pullback within five sessions before stabilizing.",
       affectedAssets: ["NASDAQ", "S&P 500", "USD", "Bonds"],
@@ -312,7 +312,7 @@ export const NEWS_CITY_DATA: NewsCityData = {
       marketImpact: "Growth backdrop supportive",
       confidence: 65,
       whatHappened: "Q3 GDP revised up to 2.8% annualized on resilient consumer spending.",
-      whyItMatters: "Solid growth supports earnings but complicates the case for near-term rate cuts — a two-sided signal for equities.",
+      whyItMatters: "Solid growth supports earnings but complicates the case for near-term rate cuts: a two-sided signal for equities.",
       historicalContext: "Upward GDP revisions this cycle have coincided with modest Fed hawkishness in the following meeting.",
       affectedAssets: ["GDP", "Consumer spending"],
       tickers: ["GDP"],

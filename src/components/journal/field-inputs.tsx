@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * Premium replacements for the raw <input type="date"/> and <input type="time"/>
- * controls in the trade form. The function is unchanged — a real native
- * date/time input still drives the value and opens the system picker — but it
+ * controls in the trade form. The function is unchanged: a real native
+ * date/time input still drives the value and opens the system picker, but it
  * sits invisibly over a formatted, on-brand display instead of showing the
  * browser's default grey control.
  */

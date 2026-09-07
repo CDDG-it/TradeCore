@@ -9,8 +9,8 @@ import { FlowField } from "@/components/landing/flow-field";
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
 // The four primary destinations. The face of each card is that product's own
-// widget drawn small — the win-rate ring, the Mindscore meter, the review
-// calendar, the desk — so the card shows the thing rather than describing it.
+// widget drawn small: the win-rate ring, the Mindscore meter, the review
+// calendar, the desk, so the card shows the thing rather than describing it.
 // Hovering flips it to what the surface holds and a way in.
 const CARDS: React.ComponentProps<typeof CardFlip>[] = [
   {
@@ -48,13 +48,13 @@ const CARDS: React.ComponentProps<typeof CardFlip>[] = [
 ];
 
 /**
- * Landing showcase — the four products as liquid-glass flip cards.
+ * Landing showcase: the four products as liquid-glass flip cards.
  */
 export function LayoutShowcase() {
   return (
     <section id="products" className="relative overflow-hidden px-6 py-24 md:px-10 md:py-32">
       {/* Flow-field particle stream, held to the lower half so it reads as depth
-          behind the cards rather than a haze across the type — and slowed right
+          behind the cards rather than a haze across the type, and slowed right
           down, so it drifts under the cards instead of streaking past them. */}
       <div
         aria-hidden
@@ -83,7 +83,7 @@ export function LayoutShowcase() {
             </h2>
           </div>
           <p className="max-w-sm font-body text-sm leading-relaxed text-[rgba(248,250,252,0.55)]">
-            Four surfaces, one account. Each card wears its own screen — hover to
+            Four surfaces, one account. Each card wears its own screen: hover to
             see what it holds.
           </p>
         </div>

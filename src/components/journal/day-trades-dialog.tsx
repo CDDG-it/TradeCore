@@ -17,7 +17,7 @@ function tradeRLabel(t: TradeJournalEntry): string {
 
 /**
  * The trades logged on one calendar day, listed so each opens its own log
- * entry. Reached by clicking a day in the month calendar — days with a single
+ * entry. Reached by clicking a day in the month calendar: days with a single
  * trade link straight through, so this only appears when there is a choice.
  */
 export function DayTradesDialog({
@@ -49,7 +49,7 @@ export function DayTradesDialog({
             </span>
           </DialogTitle>
           <DialogDescription>
-            {trades.length} trade{trades.length !== 1 ? "s" : ""} logged — open one to see the full entry.
+            {trades.length} trade{trades.length !== 1 ? "s" : ""} logged: open one to see the full entry.
           </DialogDescription>
         </DialogHeader>
 

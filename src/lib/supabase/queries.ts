@@ -1,5 +1,5 @@
 /**
- * All Supabase database queries. RLS enforces user_id = auth.uid() —
+ * All Supabase database queries. RLS enforces user_id = auth.uid():
  * every function here is automatically scoped to the authenticated user.
  * Never import or use the service_role key in this file.
  */
@@ -581,7 +581,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   return {
     total_trades: trades.length,
-    // Win rate counts decisive trades only — break-even has its own rate below.
+    // Win rate counts decisive trades only: break-even has its own rate below.
     win_rate: winRateOf(wins.length, trades.filter((t) => t.result === "loss").length) ?? 0,
     break_even_rate: trades.length > 0 ? Math.round((breakEvens.length / trades.length) * 100) : 0,
     average_rr:
@@ -752,7 +752,7 @@ export {
 
 // ── Psychological Edge (psych_edge_sessions) ─────────────────────────
 // Fail-soft: if the psych_edge_sessions table has not been created yet,
-// reads return empty so the page still renders the computed reflection —
+// reads return empty so the page still renders the computed reflection:
 // it just can't persist history or check prior commitments until the
 // migration runs.
 
@@ -774,7 +774,7 @@ export async function savePsychEdgeSession(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Reflections are keyed per trade — one deep 5R walkthrough per bad-execution
+  // Reflections are keyed per trade: one deep 5R walkthrough per bad-execution
   // trade. Fall back to the day key only for any legacy row without a trade_id.
   const lookup = supabase.from("psych_edge_sessions").select("id");
   const { data: existing } = await (
@@ -801,7 +801,7 @@ export async function savePsychEdgeSession(
   return data as PsychEdgeSession;
 }
 
-// ── MC Trade Therapist — commitments, pattern events, adherence ──────
+// ── MC Trade Therapist: commitments, pattern events, adherence ──────
 // All fail-soft: until trade_therapist.sql is run, reads return empty and
 // writes throw a caught error, so the pages still render the computed content.
 

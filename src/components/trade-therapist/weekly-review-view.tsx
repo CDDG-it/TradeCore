@@ -18,7 +18,7 @@ const TURQUOISE = "var(--primary)";
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 /**
- * Weekly review — a day-by-day result strip (win / loss / break-even, and
+ * Weekly review: a day-by-day result strip (win / loss / break-even, and
  * whether the best trade was taken) plus the week's reflection. The numbers are
  * live until the week closes; the reflection is the only thing to fill in, and
  * completing it is what the MC Mindscore counts once the trading week is over. A
@@ -125,7 +125,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
             )}
           </div>
           <div className="flex items-start gap-5">
-            {/* How much of the week was traded to plan, beside what it paid —
+            {/* How much of the week was traded to plan, beside what it paid:
                 the two halves of a week you can actually act on. */}
             <div className="text-right">
               <p
@@ -137,7 +137,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
                     : "text-destructive"
                 )}
               >
-                {group.execRate == null ? "—" : `${group.execRate}%`}
+                {group.execRate == null ? "-" : `${group.execRate}%`}
               </p>
               <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">
                 Execution
@@ -162,12 +162,12 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         {open ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" /> : <Lock className="w-4 h-4 text-primary shrink-0" />}
         <p className="text-muted-foreground">
           {open
-            ? <>The trading week is done. {complete ? "Reflection complete — it counts toward your MC Mindscore." : "Add your reflection below to complete it and count it toward your MC Mindscore."}</>
-            : <>This week is still trading. The review unlocks on {format(opensOn, "EEEE d MMMM")}, once the week&apos;s last session is behind you — it counts toward your MC Mindscore from then.</>}
+            ? <>The trading week is done. {complete ? "Reflection complete: it counts toward your MC Mindscore." : "Add your reflection below to complete it and count it toward your MC Mindscore."}</>
+            : <>This week is still trading. The review unlocks on {format(opensOn, "EEEE d MMMM")}, once the week&apos;s last session is behind you. It counts toward your MC Mindscore from then.</>}
         </p>
       </div>
 
-      {/* Day by day — result + whether the best trade was taken */}
+      {/* Day by day: result + whether the best trade was taken */}
       <div className="rounded-2xl border border-border/60 bg-card p-4">
         <p className="text-sm font-semibold mb-3">Day by day</p>
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
@@ -193,7 +193,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
                     {outcome === "win" ? "W" : outcome === "loss" ? "L" : "BE"}
                   </span>
                 ) : (
-                  <span className="text-lg font-black leading-none text-muted-foreground/30">—</span>
+                  <span className="text-lg font-black leading-none text-muted-foreground/30">-</span>
                 )}
                 <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold leading-none",
                   bestTaken ? "bg-success/15 text-success"
@@ -208,12 +208,12 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         </div>
       </div>
 
-      {/* Previous week reference — did I hold to it? */}
+      {/* Previous week reference: did I hold to it? */}
       <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
         <button onClick={() => setShowPrev((v) => !v)}
           className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/30">
           <History className="w-4 h-4 text-primary shrink-0" />
-          <span className="text-sm font-semibold flex-1">Last week&apos;s notes — did you hold to them?</span>
+          <span className="text-sm font-semibold flex-1">Last week&apos;s notes: did you hold to them?</span>
           {showPrev ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </button>
         {showPrev && (
@@ -238,7 +238,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         )}
       </div>
 
-      {/* Reflection — compact, problem-first. One short line per field. */}
+      {/* Reflection: compact, problem-first. One short line per field. */}
       <div className="rounded-2xl border border-border/60 bg-card p-4">
         <div className="flex items-baseline justify-between gap-3">
           <p className="text-sm font-semibold">Your reflection</p>
@@ -246,9 +246,9 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         </div>
         <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
           {[
-            { label: "The problem", value: toImprove, set: setToImprove, ph: "The one mistake to fix…", tone: "var(--destructive)" },
-            { label: "What worked", value: wentWell, set: setWentWell, ph: "One thing done well…", tone: "var(--success)" },
-            { label: "Focus next week", value: focus, set: setFocus, ph: "One rule to hold…", tone: "var(--primary)" },
+            { label: "The problem", value: toImprove, set: setToImprove, ph: "The one mistake to fix...", tone: "var(--destructive)" },
+            { label: "What worked", value: wentWell, set: setWentWell, ph: "One thing done well...", tone: "var(--success)" },
+            { label: "Focus next week", value: focus, set: setFocus, ph: "One rule to hold...", tone: "var(--primary)" },
           ].map((f) => (
             <div
               key={f.label}

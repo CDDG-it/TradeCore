@@ -238,7 +238,7 @@ export const FEATURES: Feature[] = [
         body: "The signals that move index futures, gathered into one readable view.",
         points: [
           "Explore an interactive 3D hub where central banks, macro data, commodities, earnings and index impact each feed the market core in real time.",
-          "Click any node to drill into its signals — each scored by impact, direction and confidence, with what happened, why it matters and the historical context.",
+          "Click any node to drill into its signals: each scored by impact, direction and confidence, with what happened, why it matters and the historical context.",
           "Filter to the categories and impact levels you care about, so you see the events that actually matter for your instrument.",
         ],
       },

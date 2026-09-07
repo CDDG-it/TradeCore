@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * The Global Markets desk — its own visual language, deliberately unlike the
+ * The Global Markets desk: its own visual language, deliberately unlike the
  * card-grid dashboards everywhere else.
  *
  * The page is one instrument: a single frame ruled into panes by hairlines,
  * labels set small and letterspaced in the corner of each pane, every number in
  * mono with tabular figures, and colour reserved for direction and state. No
- * rounded cards stacked on a scrolling page, no decorative icons — the screen
+ * rounded cards stacked on a scrolling page, no decorative icons: the screen
  * is the instrument and it holds still while you read it.
  */
 import { AlertTriangle } from "lucide-react";
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { FRESHNESS_LABEL, timeAgo } from "@/lib/gmi/client";
 import type { DataEnvelope } from "@/lib/gmi/types";
 
-/** Alpha-blend toward transparent — `pct` 0–100. */
+/** Alpha-blend toward transparent: `pct` 0-100. */
 export const a = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
 
 export const TURQUOISE = "var(--primary)";
@@ -29,7 +29,7 @@ export const gridBackground = {
   backgroundSize: "28px 28px",
 };
 
-/** Corner ticks — the frame's registration marks. */
+/** Corner ticks: the frame's registration marks. */
 export function Ticks({ inset = "0.25rem" }: { inset?: string }) {
   const common = "pointer-events-none absolute h-2 w-2 border-primary/40";
   return (
@@ -98,7 +98,7 @@ export function Pane({
   children,
 }: {
   label?: string;
-  /** Optional pane number, e.g. "02" — the desk's own index. */
+  /** Optional pane number, e.g. "02": the desk's own index. */
   index?: string;
   right?: React.ReactNode;
   scroll?: boolean;
@@ -124,7 +124,7 @@ export function Pane({
   );
 }
 
-/** Label … value, joined by a dotted leader — a table without table furniture. */
+/** Label ... value, joined by a dotted leader: a table without table furniture. */
 export function Field({
   label,
   value,
@@ -226,7 +226,7 @@ export function Switch<T extends string>({
 /** Direction, without an icon: the sign carries it, colour confirms it. */
 export function Delta({ value, format, className }: { value: number | null | undefined; format?: (v: number) => string; className?: string }) {
   if (value == null || !Number.isFinite(value)) {
-    return <span className={cn("text-[12px] text-foreground/65", className)}>—</span>;
+    return <span className={cn("text-[12px] text-foreground/65", className)}>-</span>;
   }
   const color = value > 0 ? "var(--success)" : value < 0 ? "var(--destructive)" : "var(--muted-foreground)";
   const text = format ? format(value) : `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;

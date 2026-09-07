@@ -3,8 +3,8 @@
  * coastline polygons onto an equirectangular canvas.
  *
  * Two maps come out of one pass:
- *   • colour     — deep ocean gradient + filled landmasses (ice toward the poles)
- *   • roughness  — ocean smooth (so it catches a specular highlight), land matte
+ *   • colour:    deep ocean gradient + filled landmasses (ice toward the poles)
+ *   • roughness: ocean smooth (so it catches a specular highlight), land matte
  *
  * Drawing to a canvas rather than triangulating on the sphere keeps the
  * antimeridian and polar caps artefact-free, and needs no texture downloads.
@@ -20,7 +20,7 @@ type Polygon = Ring[]; // [outer, ...holes]
 const W = 4096;
 const H = 2048;
 
-/** Equirectangular projection — lng/lat degrees to canvas pixels. */
+/** Equirectangular projection: lng/lat degrees to canvas pixels. */
 const px = (lng: number) => ((lng + 180) / 360) * W;
 const py = (lat: number) => ((90 - lat) / 180) * H;
 
@@ -74,7 +74,7 @@ export interface GlobeTextures {
 }
 
 /**
- * Palette — the TradingMC brand in its blue register, not photographic Earth:
+ * Palette: the TradingMC brand in its blue register, not photographic Earth:
  * navy oceans, steel-blue land, cyan coastlines and pale-blue ice. Only the
  * *shapes* are real; the colours stay on-brand.
  */
@@ -104,7 +104,7 @@ export function buildGlobeTextures(dark: boolean): GlobeTextures {
   cc.fillStyle = g;
   cc.fillRect(0, 0, W, H);
 
-  // Ocean is only slightly smoother than land — enough for a hint of sheen at
+  // Ocean is only slightly smoother than land: enough for a hint of sheen at
   // the sub-solar point, not a mirror blob.
   rc.fillStyle = "#a8a8a8";
   rc.fillRect(0, 0, W, H);
@@ -121,7 +121,7 @@ export function buildGlobeTextures(dark: boolean): GlobeTextures {
     tracePolygon(cc, poly);
     cc.fillStyle = fill;
     cc.fill("evenodd");
-    // Coastline in brand cyan — this is what makes the borders legible.
+    // Coastline in brand cyan: this is what makes the borders legible.
     // Scaled with the canvas so it stays a hairline at any texture size.
     cc.strokeStyle = mix(LAND_EDGE, LAND_POLAR, icy);
     cc.lineWidth = Math.max(1, W / 1700);

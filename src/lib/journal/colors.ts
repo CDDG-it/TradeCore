@@ -1,5 +1,5 @@
 /**
- * Outcome colours — one vocabulary for every surface that shows trades.
+ * Outcome colours: one vocabulary for every surface that shows trades.
  *
  * Green wins, red losses, amber break-even (see globals.css). Kept here rather
  * than re-declared per page so the dashboard's week strip, the journal and the
@@ -10,8 +10,8 @@ import type { TradeJournalEntry } from "@/lib/types";
 /**
  * The literals live in globals.css as `--win` / `--loss` / `--be`, with a
  * darker set under `html.light`: the mid-tones that read well on navy turn to
- * pastel on a white card. Referencing the tokens keeps every caller — inline
- * styles, gradients, `color-mix` — theme-correct without knowing the theme.
+ * pastel on a white card. Referencing the tokens keeps every caller: inline
+ * styles, gradients, `color-mix`: theme-correct without knowing the theme.
  * (These are only ever used as CSS values, never as canvas or SVG attributes,
  * where `var()` would not resolve.)
  */
@@ -19,7 +19,7 @@ export const WIN_COLOR = "var(--win)";
 export const LOSS_COLOR = "var(--loss)";
 export const BE_COLOR = "var(--be)";
 
-/** Alpha-blend a colour toward transparent — works for oklch() strings. `pct` 0–100. */
+/** Alpha-blend a colour toward transparent: works for oklch() strings. `pct` 0-100. */
 export const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
 
 /** The colour that stands for a trade's outcome. */
@@ -27,13 +27,13 @@ export function resultColor(t: TradeJournalEntry): string {
   return t.result === "win" ? WIN_COLOR : t.result === "loss" ? LOSS_COLOR : BE_COLOR;
 }
 
-/** Net R for a day/period gets its own colour — flat reads as break-even. */
+/** Net R for a day/period gets its own colour: flat reads as break-even. */
 export function netRColor(r: number): string {
   return r > 0 ? WIN_COLOR : r < 0 ? LOSS_COLOR : BE_COLOR;
 }
 
 /**
- * Trades in the order they were taken — earliest first, so the leftmost band
+ * Trades in the order they were taken: earliest first, so the leftmost band
  * is the day's first trade.
  *
  * `date_time` carries the date only; the clock time lives in `execution_time`,
@@ -51,7 +51,7 @@ export function inOrder(trades: TradeJournalEntry[]): TradeJournalEntry[] {
 
 /**
  * Hard-stop gradient: one equal band per trade, in the order taken. A day with
- * a break-even and a loss reads as half amber, half red — a mixed day can never
+ * a break-even and a loss reads as half amber, half red: a mixed day can never
  * be mistaken for a single outcome.
  */
 export function resultBands(trades: TradeJournalEntry[], pct: number): string | undefined {

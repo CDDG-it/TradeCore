@@ -26,7 +26,7 @@ const RED = "var(--loss)";
 const AMBER = "var(--be)";
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
-/** Alpha-blend a colour toward transparent — works for oklch() strings. `pct` 0–100. */
+/** Alpha-blend a colour toward transparent: works for oklch() strings. `pct` 0-100. */
 const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
 
 const CARD_BASE =
@@ -35,7 +35,7 @@ const CARD_BASE =
   "transition-[transform,box-shadow,border-color] duration-300 ease-out " +
   "hover:-translate-y-0.5 hover:border-border/90 hover:shadow-[0_10px_36px_-14px_rgba(0,0,0,0.45)]";
 
-/** Ambient card decoration — a top hairline in the accent colour, a soft radial
+/** Ambient card decoration: a top hairline in the accent colour, a soft radial
  *  glow anchored top-left, and a corner sheen + bottom underline that light up
  *  on hover. Purely decorative; sits behind content and never intercepts input. */
 function CardFx({ accent }: { accent: string }) {
@@ -45,7 +45,7 @@ function CardFx({ accent }: { accent: string }) {
         className="pointer-events-none absolute inset-0 transition-opacity duration-500 group-hover/card:opacity-100"
         style={{ background: `radial-gradient(115% 85% at 0% 0%, ${alpha(accent, 9)}, transparent 55%)`, opacity: 0.85 }}
       />
-      {/* Top hairline — brightens on hover */}
+      {/* Top hairline: brightens on hover */}
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-px transition-opacity duration-300"
         style={{ background: `linear-gradient(90deg, transparent, ${alpha(accent, 55)}, transparent)` }}
@@ -54,12 +54,12 @@ function CardFx({ accent }: { accent: string }) {
         className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-0 transition-opacity duration-300 group-hover/card:opacity-100"
         style={{ background: `linear-gradient(90deg, transparent, ${alpha(accent, 95)}, transparent)` }}
       />
-      {/* Corner sheen — only visible on hover */}
+      {/* Corner sheen: only visible on hover */}
       <div
         className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full blur-2xl opacity-0 transition-opacity duration-500 group-hover/card:opacity-100"
         style={{ background: `radial-gradient(circle, ${alpha(accent, 25)}, transparent 70%)` }}
       />
-      {/* Bottom underline — draws in on hover */}
+      {/* Bottom underline: draws in on hover */}
       <div
         className="pointer-events-none absolute inset-x-6 bottom-0 h-px scale-x-0 origin-left transition-transform duration-500 ease-out group-hover/card:scale-x-100"
         style={{ background: `linear-gradient(90deg, ${alpha(accent, 65)}, transparent)` }}
@@ -75,7 +75,7 @@ const PERIOD_LABEL: Record<Period, string> = { week: "week", month: "month" };
 /** Remembers a card's week / month choice across reloads and navigation, so a
  *  switch to "week" stays put. Read through a store subscription rather than an
  *  effect: the server has no localStorage, so it renders the default and the
- *  client swaps in the stored value on its first paint — no extra render pass,
+ *  client swaps in the stored value on its first paint: no extra render pass,
  *  no hydration mismatch. */
 const periodListeners = new Set<() => void>();
 function readPeriod(key: string): Period {
@@ -228,7 +228,7 @@ export default function DashboardPage() {
   return (
     // Fixed one-screen dashboard on desktop; on phones it flows and scrolls so
     // the stacked cards aren't squeezed into a single viewport height.
-    // 7.5rem = the top nav (3.5rem) plus the page gutter above and below it —
+    // 7.5rem = the top nav (3.5rem) plus the page gutter above and below it:
     // anything less and the page keeps a stray scrollbar.
     <div className="flex flex-col gap-3 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
       <motion.div
@@ -250,12 +250,12 @@ export default function DashboardPage() {
         // One grid for the whole desk, read two ways.
         //
         // From md it is the three columns it has always been: capital over
-        // habits, the win rate, the mind score — with the journal spanning the
+        // habits, the win rate, the mind score, with the journal spanning the
         // first two beneath them and the analyses beside it.
         //
         // On a phone it folds to two: the two short readings pair with the tall
         // win rate, and the journal, the mind score and the analyses each take
-        // the full width beneath them — the mind score carries a meter, three
+        // the full width beneath them: the mind score carries a meter, three
         // input bars and the objectives grid, and half a phone is not enough
         // for any of it.
         <div className="grid flex-1 min-h-0 grid-cols-2 gap-3 md:grid-cols-3 md:grid-rows-[minmax(0,1fr)_minmax(0,1.35fr)]">
@@ -294,7 +294,7 @@ export default function DashboardPage() {
   );
 }
 
-/* ── MC mind score — one readiness number, split into its inputs ──────────
+/* ── MC mind score: one readiness number, split into its inputs ──────────
    A rising "signal-strength" bar meter for the blended score, the current band
    as its state label, the four inputs (rules, execution, habits, objectives) as
    inline sub-scores, and a compact objectives strip. Clicking through opens the full
@@ -332,7 +332,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
   const comp = (key: "rules" | "execution" | "habits" | "objectives") =>
     score?.components.find((c) => c.key === key) ?? null;
   const objectives = score?.objectives ?? [];
-  // An objective with no target has nothing due in this window yet — the engine
+  // An objective with no target has nothing due in this window yet: the engine
   // scores it as met so a fresh period is not punished, but counting it as
   // "done" in the header would read as progress that never happened.
   const objectivesDue = objectives.filter((o) => o.target > 0);
@@ -359,7 +359,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
       <div className="mt-2.5 flex min-h-0 flex-1 items-end gap-3">
         <div className="shrink-0">
           <p className="text-[40px] font-black leading-none tabular-nums" style={{ color }}>
-            {pending ? "·" : hasData ? display : "—"}
+            {pending ? "·" : hasData ? display : "-"}
           </p>
           <p className="mt-1 text-[11px] font-medium" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
             {pending ? (period === "week" ? "New week" : "New month") : hasData ? score!.band.label : "No data yet"}
@@ -385,11 +385,11 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
         </div>
       </div>
 
-      {/* What the number is made of — each input as a bar that fills with the
+      {/* What the number is made of: each input as a bar that fills with the
           score, and the weight it carries this period. */}
       {pending ? (
         <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
-          Your score for this {period} is still being calculated — it builds as you
+          Your score for this {period} is still being calculated: it builds as you
           log trades, tick habits and do the work.
         </p>
       ) : (
@@ -423,7 +423,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
                   className="w-8 shrink-0 text-right text-[11px] font-bold tabular-nums"
                   style={{ color: value == null ? "var(--muted-foreground)" : accent }}
                 >
-                  {value == null ? "—" : `${value}%`}
+                  {value == null ? "-" : `${value}%`}
                 </span>
               </div>
             );
@@ -431,7 +431,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
         </div>
       )}
 
-      {/* Objectives — named, not anonymous bars: each one is a link to the work
+      {/* Objectives: named, not anonymous bars: each one is a link to the work
           that lifts it, and shows how far along it is. */}
       {objectives.length > 0 && (
         <div className="mt-auto pt-3">
@@ -461,7 +461,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
                 <Link
                   key={o.key}
                   href={o.href}
-                  title={due ? `${o.label} — ${o.description}` : `${o.label} — nothing due yet this ${period}. ${o.description}`}
+                  title={due ? `${o.label}: ${o.description}` : `${o.label}: nothing due yet this ${period}. ${o.description}`}
                   className="group/obj flex items-center gap-1.5 rounded-md py-0.5 transition-colors hover:bg-muted/30"
                 >
                   <span
@@ -472,7 +472,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
                     {o.label}
                   </span>
                   <span className="shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: started ? tone : "var(--muted-foreground)" }}>
-                    {due ? `${o.progress}/${o.target}` : "—"}
+                    {due ? `${o.progress}/${o.target}` : "-"}
                   </span>
                 </Link>
               );
@@ -484,7 +484,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
   );
 }
 
-/* ── Win rate — hero donut of the month's W/L/BE split + net R ─────────── */
+/* ── Win rate: hero donut of the month's W/L/BE split + net R ─────────── */
 function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec, period, onPeriodChange, className }: {
   winRate: number | null; wins: number; losses: number; be: number; total: number; netR: number;
   goodExec: number; badExec: number;
@@ -511,7 +511,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
     return () => cancelAnimationFrame(raf.current);
   }, [targetWr]);
 
-  // Donut geometry — a full ring split into W / BE / L arcs by share of trades.
+  // Donut geometry: a full ring split into W / BE / L arcs by share of trades.
   const R = 46, SW = 11, C = 2 * Math.PI * R;
   const segs = [
     { v: wins, c: GREEN },
@@ -528,7 +528,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
         <PeriodToggle value={period} onChange={onPeriodChange} accent={CYAN} />
       </div>
 
-      {/* Donut — sized from the viewport height rather than just the leftover
+      {/* Donut: sized from the viewport height rather than just the leftover
           card space, so a short laptop viewport gets a proportionate ring
           instead of one that crowds out the legend. The floor keeps it a proper
           ring (not a dot) on phones, where the column is not height-capped. */}
@@ -537,7 +537,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
           <svg viewBox="0 0 116 116" className="block h-full w-full">
             {/* Track */}
             <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
-            {/* Segments — arcs draw in on mount and brighten on hover */}
+            {/* Segments: arcs draw in on mount and brighten on hover */}
             {total > 0 && segs.map((s, i) => {
               if (s.v === 0) return null;
               const frac = s.v / total;
@@ -562,7 +562,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {/* Tracks the ring's own scale, so the figure never crowds a small ring. */}
             <p className="text-[clamp(18px,2.6vh,28px)] font-black tabular-nums leading-none" style={{ color: CYAN }}>
-              {winRate === null ? "—" : `${display}%`}
+              {winRate === null ? "-" : `${display}%`}
             </p>
             <p className="text-[clamp(8px,1vh,9px)] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
               {total > 0 ? `${total} trade${total !== 1 ? "s" : ""}` : "no trades"}
@@ -571,7 +571,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
         </div>
       </div>
 
-      {/* W / L / BE legend — chips light up on hover */}
+      {/* W / L / BE legend: chips light up on hover */}
       <div className="grid grid-cols-3 gap-2 mt-0.5">
         {[
           { label: "Win", value: wins, color: GREEN },
@@ -596,7 +596,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
         ))}
       </div>
 
-      {/* Net R + execution quality — one compact block keeps the ring roomy on laptops */}
+      {/* Net R + execution quality: one compact block keeps the ring roomy on laptops */}
       <div className="mt-1.5 rounded-xl border border-border/60 bg-muted/25 px-3 py-1.5 space-y-1">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Net R · {PERIOD_LABEL[period]}</span>
@@ -615,7 +615,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
             )}
           </div>
           <span className="shrink-0 text-sm font-black tabular-nums" style={{ color: goodPct === null ? "var(--muted-foreground)" : GREEN }}>
-            {goodPct === null ? "—" : `${goodPct}%`}
+            {goodPct === null ? "-" : `${goodPct}%`}
           </span>
           <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">{goodExec}G · {badExec}B</span>
         </div>
@@ -628,7 +628,7 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
   );
 }
 
-/* ── Analysis — the plans you wrote, and what became of them ──────────────
+/* ── Analysis: the plans you wrote, and what became of them ──────────────
    Written to be read at a glance and without a legend: a plan states its
    instrument, which way you leaned, and in plain words whether you traded it
    and at what R. No meters, no abbreviations to decode. */
@@ -738,7 +738,7 @@ function AnalysisWidget({ analyses, trades, className }: { analyses: PreTradeAna
   );
 }
 
-/* ── Active capital — compact + link to Accounts ──────────────────────── */
+/* ── Active capital: compact + link to Accounts ──────────────────────── */
 function ActiveCapitalCard({ capital, count, hidden, onToggle, className }: {
   capital: number; count: number; hidden: boolean; onToggle: () => void; className?: string;
 }) {
@@ -753,7 +753,7 @@ function ActiveCapitalCard({ capital, count, hidden, onToggle, className }: {
         </button>
       </div>
       <p className="text-xl font-black tabular-nums leading-none mt-1.5" style={{ color: TURQUOISE }}>
-        {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "—"}
+        {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "-"}
       </p>
       <div className="mt-1.5 flex items-center justify-between">
         <p className="text-[11px] text-muted-foreground">{count} active account{count !== 1 ? "s" : ""}</p>
@@ -763,7 +763,7 @@ function ActiveCapitalCard({ capital, count, hidden, onToggle, className }: {
   );
 }
 
-/* ── Habits — check off today, and jump to the full page ──────────────── */
+/* ── Habits: check off today, and jump to the full page ──────────────── */
 function HabitsCard({ habits, doneToday, pendingHabit, onToggle, className }: {
   habits: Habit[]; doneToday: Set<string>; pendingHabit: string | null; onToggle: (id: string) => void; className?: string;
 }) {
@@ -802,7 +802,7 @@ function HabitsCard({ habits, doneToday, pendingHabit, onToggle, className }: {
                   done ? "bg-success/8" : "hover:bg-muted/50 hover:translate-x-0.5"
                 )}
               >
-                {/* Left accent bar — draws in on hover, stays lit when done */}
+                {/* Left accent bar: draws in on hover, stays lit when done */}
                 <span
                   className={cn(
                     "absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full transition-all duration-300",
@@ -838,10 +838,10 @@ function HabitsCard({ habits, doneToday, pendingHabit, onToggle, className }: {
   );
 }
 
-/* ── Journal — this week ───────────────────────────────────────────────────
+/* ── Journal: this week ───────────────────────────────────────────────────
    A day is not one outcome. When several trades were taken, the card is split
-   into one band per trade in the order they were logged — a break-even next to
-   a loss reads as half amber, half red — so a mixed day can never be mistaken
+   into one band per trade in the order they were logged: a break-even next to
+   a loss reads as half amber, half red, so a mixed day can never be mistaken
    for a single result. The net R keeps its own colour. */
 
 function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; r: number }[] }) {
@@ -852,7 +852,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
         <div className="flex min-w-0 items-baseline gap-2">
           <p className="whitespace-nowrap text-[13px] font-semibold sm:text-sm">This week</p>
           <span className="truncate text-[11px] tabular-nums text-muted-foreground/70">
-            {format(days[0].date, "MMM d")} – {format(days[6].date, "MMM d")}
+            {format(days[0].date, "MMM d")} - {format(days[6].date, "MMM d")}
           </span>
         </div>
         <Link href="/journal" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">
@@ -873,7 +873,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
           return (
             <Link
               key={date.toISOString()}
-              // Straight to that day's log — the journal resolves a single trade
+              // Straight to that day's log: the journal resolves a single trade
               // to its entry and offers a picker when the day holds several.
               href={has ? `/journal?day=${format(date, "yyyy-MM-dd")}` : "/journal"}
               className={cn(
@@ -883,7 +883,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
               )}
               style={has ? { background: resultBands(ordered, 14) } : undefined}
             >
-              {/* Result bar — one full-strength segment per trade, the day's
+              {/* Result bar: one full-strength segment per trade, the day's
                   outcome at a glance even before the numbers are read. */}
               {has && (
                 <span className="pointer-events-none absolute inset-x-0 top-0 flex h-[3px] gap-px">
@@ -912,7 +912,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
                   ))}
                 </span>
               )}
-              {/* Hover glow — soft radial in the day's net colour */}
+              {/* Hover glow: soft radial in the day's net colour */}
               <span
                 className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/day:opacity-100"
                 style={{ background: has ? `radial-gradient(120% 90% at 50% 100%, ${alpha(netColor, 18)}, transparent 65%)` : undefined }}
@@ -938,7 +938,7 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
                 <span className="relative mt-2 h-1.5 w-1.5 rounded-full bg-border transition-all duration-300 group-hover/day:bg-muted-foreground/50 group-hover/day:scale-125" />
               )}
 
-              {/* Per trade: pair, its R, and how cleanly it was run — each on the
+              {/* Per trade: pair, its R, and how cleanly it was run: each on the
                   rail of its own result colour. */}
               {has && (
                 <div className="relative mt-2 hidden w-full space-y-1.5 overflow-hidden px-0.5 sm:block">

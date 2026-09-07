@@ -9,7 +9,7 @@ import type { TradeJournalEntry } from "@/lib/types";
 type Quality = TradeJournalEntry["execution_quality"];
 
 /**
- * The one place a trader rates a trade on execution — and therefore the one
+ * The one place a trader rates a trade on execution, and therefore the one
  * place the word needs explaining. The definition sits behind an "i" so it is
  * there the first few times and out of the way after that.
  *
@@ -58,23 +58,23 @@ export function ExecutionQualityField({
             <X className="h-3.5 w-3.5" />
           </button>
           <p className="text-[13px] leading-relaxed text-muted-foreground">
-            Execution is whether you held to your plan and your edge — not whether the
+            Execution is whether you held to your plan and your edge, not whether the
             trade made money.
           </p>
           <ul className="mt-2 space-y-1.5 text-[13px] leading-relaxed text-muted-foreground">
             <li>
-              <span className="font-semibold text-success">Good execution</span> — the
+              <span className="font-semibold text-success">Good execution.</span> The
               setup was your setup, at your level, at your size, entered and exited the
               way you had written it down. It stays good execution when it loses.
             </li>
             <li>
-              <span className="font-semibold text-destructive">Bad execution</span> — you
+              <span className="font-semibold text-destructive">Bad execution.</span> You
               chased it, sized up, moved your stop, cut a runner early or took a trade
               your plan never called for. It stays bad execution when it pays.
             </li>
           </ul>
           <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-            Leave it unset if you genuinely can&apos;t call it — an unrated trade is left
+            Leave it unset if you genuinely can&apos;t call it. An unrated trade is left
             out of the maths rather than counted against you. What you set here is summed
             up in every weekly review and is one of the four inputs to your MC Mindscore.
           </p>

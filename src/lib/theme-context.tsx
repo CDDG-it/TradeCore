@@ -12,7 +12,7 @@ const EVENT = "th_theme_change";
 const MEDIA = "(prefers-color-scheme: light)";
 
 interface ThemeContextValue {
-  /** The theme on screen right now — always resolved, never "system". */
+  /** The theme on screen right now: always resolved, never "system". */
   theme: Theme;
   /** What the trader chose, which may be "system". */
   preference: ThemePreference;
@@ -56,7 +56,7 @@ export function readPreference(): ThemePreference {
 
 /* ── The system's own setting ─────────────────────────────────────────────
    A second external store, so that a trader on "system" repaints the moment
-   macOS flips at sunset — without the preference store having to know about
+   macOS flips at sunset: without the preference store having to know about
    the OS, or vice versa. */
 
 function subscribeSystem(onChange: () => void) {
@@ -92,7 +92,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     document.documentElement.classList.toggle("light", theme === "light");
     // Lets the browser paint form controls, scrollbars and the overscroll area
-    // in the right scheme — the parts CSS variables cannot reach.
+    // in the right scheme: the parts CSS variables cannot reach.
     document.documentElement.style.colorScheme = theme;
   }, [theme]);
 

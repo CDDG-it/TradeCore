@@ -70,7 +70,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [recordUpdatedAt, setRecordUpdatedAt] = useState<string | null>(null);
 
   const [form, setForm] = useState(DEFAULT_FORM);
-  // Snapshot of the saved trade — a draft only persists once the form diverges
+  // Snapshot of the saved trade: a draft only persists once the form diverges
   // from this, so an unchanged edit never shows a spurious "draft restored".
   const baselineRef = useRef<typeof DEFAULT_FORM | null>(null);
 
@@ -209,7 +209,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     setSaving(true);
     try {
       await updateTrade(id, form);
-      clearDraft(); // saved for real — drop the draft
+      clearDraft(); // saved for real: drop the draft
       router.push(`/journal/${id}`);
     } catch (err) {
       console.error("Failed to save trade:", err);
@@ -243,7 +243,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         <p className="text-sm text-muted-foreground mt-0.5">{tradeInfo.instrument} · {tradeInfo.session} session</p>
       </div>
 
-      {restored && <DraftBanner onDismiss={dismiss} label="Draft restored — you have unsaved edits from before." />}
+      {restored && <DraftBanner onDismiss={dismiss} label="Draft restored: you have unsaved edits from before." />}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <Card className="shadow-sm">
@@ -309,7 +309,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
               </div>
             </div>
 
-            {/* Execution quality — the "i" explains what the two answers mean. */}
+            {/* Execution quality: the "i" explains what the two answers mean. */}
             <ExecutionQualityField
               value={form.execution_quality}
               onChange={(next) => set("execution_quality", next)}
@@ -394,7 +394,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         {/* Link to Analysis */}
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold">Analysis — {form.date_time}</CardTitle>
+            <CardTitle className="text-sm font-semibold">Analysis: {form.date_time}</CardTitle>
           </CardHeader>
           <CardContent>
             {(() => {
@@ -412,7 +412,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                     <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
                       className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all max-w-xs truncate",
                         form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}…` : a.title}
+                      {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}...` : a.title}
                     </button>
                   ))}
                 </div>
@@ -507,7 +507,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
             <CardContent className="space-y-3">
               {customChecks.length === 0 && (
                 <p className="text-xs text-muted-foreground/60 text-center py-2">
-                  No rules yet — add your personal discipline rules below.
+                  No rules yet: add your personal discipline rules below.
                 </p>
               )}
               <div className="space-y-1.5">

@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * GLOBAL MARKETS — the desk.
+ * GLOBAL MARKETS: the desk.
  *
  * One screen, held still: a masthead with the venue clocks, a numbered index
  * of sections, and a framed working area that fills the viewport. Nothing here
- * scrolls the page — a section that outgrows its slot scrolls inside its own
+ * scrolls the page: a section that outgrows its slot scrolls inside its own
  * pane, so the frame, the clocks and the index never move out from under you.
  *
  * Every dataset states its cadence, source and age in the corner of its pane;
@@ -128,8 +128,8 @@ export default function GlobalMarketsPage() {
 
   return (
     // The desk fills the viewport at every size: `fill-phone` (globals.css)
-    // measures out what the phone chrome leaves, and 7.5rem — the top nav plus
-    // the page gutter above and below it — does the same on laptops and up.
+    // measures out what the phone chrome leaves, and 7.5rem (the top nav plus
+    // the page gutter above and below it) does the same on laptops and up.
     <div className="fill-phone relative flex flex-col gap-0 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
       <div
         className="relative flex min-h-0 flex-1 flex-col border border-border/60"
@@ -180,7 +180,7 @@ export default function GlobalMarketsPage() {
               </button>
             );
           })}
-          {/* What the live section is for, spelled out once — clarity without a tooltip. */}
+          {/* What the live section is for, spelled out once: clarity without a tooltip. */}
           <span className="ml-auto hidden shrink-0 items-center px-4 xl:flex">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/65">{active.note}</span>
           </span>

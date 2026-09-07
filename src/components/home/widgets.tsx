@@ -150,7 +150,7 @@ function WidgetOptionsMenu({
 
 /**
  * Shared shell for every widget. Only the header (source label, title, arrow)
- * is a navigable `<Link>` to the widget's full page — the body renders as a
+ * is a navigable `<Link>` to the widget's full page: the body renders as a
  * plain sibling `<div>` so widgets are free to hold their own interactive
  * elements (checkboxes, per-row links) without nesting them inside an anchor,
  * which is invalid HTML and makes click handling unreliable.
@@ -367,7 +367,7 @@ function ExecutionWidget({ options }: { options: WidgetOptions }) {
   const color = pct === null ? "var(--muted-foreground)" : scoreColor(pct);
   return (
     <div>
-      <p className="text-3xl font-black tabular-nums" style={{ color }}>{pct === null ? "—" : `${pct}%`}</p>
+      <p className="text-3xl font-black tabular-nums" style={{ color }}>{pct === null ? "-" : `${pct}%`}</p>
       <p className="text-xs text-muted-foreground mt-1">
         {rated.length ? `${good} of ${rated.length} well executed` : "no rated trades"} · {scopeSubtitle(options, "")}
       </p>
@@ -450,7 +450,7 @@ function DisciplineWidget({ options }: { options: WidgetOptions }) {
       const scope = options.scope ?? "week";
       const now = new Date();
       // "All-time" begins at your earliest real data point (first habit created
-      // or first trade), never an arbitrary epoch — otherwise the expected
+      // or first trade), never an arbitrary epoch: otherwise the expected
       // count balloons across empty decades (e.g. "14/29070").
       const allStart = () => {
         const times = [
@@ -471,17 +471,17 @@ function DisciplineWidget({ options }: { options: WidgetOptions }) {
   const scopeWord = SCOPE_LABEL[options.scope ?? "week"].toLowerCase();
 
   // Plain-language read of where the score comes from.
-  const label = score === null ? "No data yet" : score >= 80 ? "Locked in" : score >= 60 ? "Holding the line" : "Slipping — tighten up";
+  const label = score === null ? "No data yet" : score >= 80 ? "Locked in" : score >= 60 ? "Holding the line" : "Slipping: tighten up";
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-baseline gap-2">
-        <p className="text-3xl font-black tabular-nums" style={{ color }}>{score === null ? "—" : `${score}%`}</p>
+        <p className="text-3xl font-black tabular-nums" style={{ color }}>{score === null ? "-" : `${score}%`}</p>
         <p className="text-xs font-semibold" style={{ color }}>{label}</p>
       </div>
       <p className="text-xs text-muted-foreground mt-0.5">Discipline · {scopeWord}</p>
 
-      {/* Contribution breakdown — how much each side is pulling the score */}
+      {/* Contribution breakdown: how much each side is pulling the score */}
       <div className="mt-3 space-y-2.5">
         <ContributionRow
           label="Trading rules"
@@ -501,7 +501,7 @@ function DisciplineWidget({ options }: { options: WidgetOptions }) {
 
       {options.details && (
         <p className="mt-3 pt-2.5 border-t border-border/50 text-[11px] leading-relaxed text-muted-foreground">
-          Your discipline score blends how well you followed your <span className="text-foreground/80 font-medium">trading rules at the screen</span> (weighted 70%) with your <span className="text-foreground/80 font-medium">habit consistency away from the charts</span> (30%). Trade rules dominate on purpose — habits should nudge the score, never overpower the actual process.
+          Your discipline score blends how well you followed your <span className="text-foreground/80 font-medium">trading rules at the screen</span> (weighted 70%) with your <span className="text-foreground/80 font-medium">habit consistency away from the charts</span> (30%). Trade rules dominate on purpose: habits should nudge the score, never overpower the actual process.
         </p>
       )}
     </div>
@@ -527,7 +527,7 @@ function ContributionRow({
           <span className="text-[10px] font-semibold text-muted-foreground/60 tabular-nums">{weight}</span>
         </span>
         <span className="font-bold tabular-nums" style={{ color: score === null ? "var(--muted-foreground)" : color }}>
-          {score === null ? "—" : `${score}%`}
+          {score === null ? "-" : `${score}%`}
         </span>
       </div>
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-border/60">
@@ -538,7 +538,7 @@ function ContributionRow({
   );
 }
 
-// ── Habits streak — with an inline checklist so today's habits can be ─
+// ── Habits streak, with an inline checklist so today's habits can be ─
 // ── checked off without leaving Home. ──────────────────────────────────
 function HabitsStreakWidget({ options }: { options: WidgetOptions }) {
   const [habits, setHabits] = useState<Habit[] | null>(null);
@@ -668,7 +668,7 @@ function RecentTradesWidget({ options }: { options: WidgetOptions }) {
   );
 }
 
-// ── Active accounts — lists individual accounts once there's room ────
+// ── Active accounts: lists individual accounts once there's room ────
 function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
   const { hidden } = usePrivacy();
   const [accounts, setAccounts] = useState<import("@/lib/types").FundedAccount[] | null>(null);
@@ -682,7 +682,7 @@ function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
     return (
       <div className="min-w-0">
         <p className="text-2xl font-black tabular-nums truncate" style={{ color: "var(--win)" }}>
-          {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "—"}
+          {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "-"}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">{active.length} active account{active.length !== 1 ? "s" : ""}</p>
       </div>
@@ -693,7 +693,7 @@ function ActiveAccountsWidget({ options }: { options: WidgetOptions }) {
   return (
     <div className="flex flex-col h-full">
       <p className="text-xl font-black tabular-nums mb-2" style={{ color: "var(--win)" }}>
-        {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "—"}
+        {capital > 0 ? mask(`$${capital.toLocaleString()}`, hidden) : "-"}
       </p>
       <div className="space-y-1 overflow-y-auto">
         {visible.map((a) => (
@@ -757,7 +757,7 @@ function TradingRulesWidget({ options }: { options: WidgetOptions }) {
   );
 }
 
-// ── Journal calendar — a month at a glance, opens the full journal ────
+// ── Journal calendar: a month at a glance, opens the full journal ────
 function JournalCalendarWidget() {
   const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
   const [cursor, setCursor] = useState(new Date());

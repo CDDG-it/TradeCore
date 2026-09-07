@@ -1,8 +1,8 @@
--- Psychological Edge — generated 5R coaching sessions.
+-- Psychological Edge: generated 5R coaching sessions.
 -- Run this once in the Supabase SQL editor to enable saving on
 -- /psychological-edge.
 --
--- report/relate/reason are engine-written from the journal — nothing here
+-- report/relate/reason are engine-written from the journal: nothing here
 -- duplicates data entry. response_tag/reasoning_answer/reconstruction_* are
 -- the trader's own input (a one-tap emotional read, a short written answer
 -- to the engine's "why" question, and a commit on the action plan), which

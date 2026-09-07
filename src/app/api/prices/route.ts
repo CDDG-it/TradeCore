@@ -55,7 +55,7 @@ export async function GET() {
       _lastGood = prices;
       return NextResponse.json({ prices, live: true });
     }
-    // Partial failure — merge fresh values over the last good snapshot.
+    // Partial failure: merge fresh values over the last good snapshot.
     if (_lastGood) {
       const merged = _lastGood.map((old) => prices.find((p) => p.symbol === old.symbol) ?? old);
       return NextResponse.json({ prices: merged, live: true, stale: true });

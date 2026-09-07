@@ -120,7 +120,7 @@ export default function SettingsPage() {
             </div>
             <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
               {preference === "system"
-                ? `Following your device — currently ${theme}. It switches on its own when your system does.`
+                ? `Following your device, currently ${theme}. It switches on its own when your system does.`
                 : "Set to Auto to follow your device's appearance, the way macOS and iOS do."}
             </p>
           </CardContent>
@@ -161,7 +161,7 @@ export default function SettingsPage() {
                 </div>
               )}
               {prefSaveState === "saving" && (
-                <p className="text-xs text-muted-foreground mt-2">Saving…</p>
+                <p className="text-xs text-muted-foreground mt-2">Saving...</p>
               )}
             </div>
           </CardContent>
@@ -261,14 +261,14 @@ export default function SettingsPage() {
                   disabled={pwState === "loading" || pwState === "saved"}
                   className="mt-1"
                 >
-                  {pwState === "loading" ? "Updating…" : pwState === "saved" ? "Updated!" : "Update password"}
+                  {pwState === "loading" ? "Updating..." : pwState === "saved" ? "Updated!" : "Update password"}
                 </Button>
               </form>
             </div>
 
             <div className="border-t border-border/40" />
 
-            {/* 2FA — coming soon */}
+            {/* 2FA: coming soon */}
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <KeyRound className="w-3.5 h-3.5 text-muted-foreground" />
@@ -278,7 +278,7 @@ export default function SettingsPage() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                TOTP-based two-factor authentication (via authenticator app) is planned for a future release. No configuration is available yet — enabling a non-functional toggle would be misleading, so this section will unlock once the feature is fully implemented.
+                TOTP-based two-factor authentication (via authenticator app) is planned for a future release. No configuration is available yet: enabling a non-functional toggle would be misleading, so this section will unlock once the feature is fully implemented.
               </p>
             </div>
           </CardContent>

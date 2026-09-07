@@ -47,9 +47,9 @@ const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, tra
 function windowLabel(start: Date, end: Date, now: Date): string {
   const year = start.getFullYear() === now.getFullYear() ? "" : ` ${format(start, "yyyy")}`;
   if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
-    return `${format(start, "d")}–${format(end, "d MMM")}${year}`;
+    return `${format(start, "d")}-${format(end, "d MMM")}${year}`;
   }
-  return `${format(start, "d MMM")} – ${format(end, "d MMM")}${year}`;
+  return `${format(start, "d MMM")} - ${format(end, "d MMM")}${year}`;
 }
 
 /**
@@ -103,7 +103,7 @@ export function GoalsView() {
     });
   }, [showArchived, archived, live, data]);
 
-  /** How the live goals are standing — the one summary worth printing. */
+  /** How the live goals are standing: the one summary worth printing. */
   const tally = useMemo(() => {
     if (!data || live.length === 0) return null;
     const counts: Record<GoalProgress["state"], number> = {
@@ -151,7 +151,7 @@ export function GoalsView() {
 
   if (goals == null || data == null) {
     return (
-      <p className={cn(EYEBROW, "py-16 text-center text-muted-foreground/60")}>Reading your journal…</p>
+      <p className={cn(EYEBROW, "py-16 text-center text-muted-foreground/60")}>Reading your journal...</p>
     );
   }
 
@@ -228,7 +228,7 @@ function Empty({ archived, onStart }: { archived: boolean; onStart: () => void }
         Getting your execution from where it is now to where you want it. Stringing
         together days without a single trade you had to talk yourself into. Every
         number here is read straight out of your journal, so there is nothing to
-        keep up to date afterwards — you either did it or you did not.
+        keep up to date afterwards. You either did it or you did not.
       </p>
       <button
         type="button"
@@ -247,8 +247,8 @@ function Empty({ archived, onStart }: { archived: boolean; onStart: () => void }
  * The verdict, written out rather than templated.
  *
  * The measure above it already shows the two percentages, so this says the
- * thing the bar cannot: whether the target is still in reach, and — the case
- * worth catching — whether the number has actually gone backwards from where
+ * thing the bar cannot: whether the target is still in reach, and (the case
+ * worth catching) whether the number has actually gone backwards from where
  * the trader started.
  */
 function verdict(goal: TradingGoal, p: GoalProgress, slipped: boolean): string {
@@ -258,21 +258,21 @@ function verdict(goal: TradingGoal, p: GoalProgress, slipped: boolean): string {
 
   switch (p.state) {
     case "no-data":
-      return "nothing logged in this window yet";
+      return "Nothing logged in this window yet.";
     case "achieved":
       return p.closed
-        ? "the window closed past your target"
-        : `already past your target with ${p.daysLeft} ${p.daysLeft === 1 ? "day" : "days"} still to run`;
+        ? "The window closed past your target."
+        : `Already past your target with ${p.daysLeft} ${p.daysLeft === 1 ? "day" : "days"} still to run.`;
     case "missed":
-      return `the window closed ${short} short`;
+      return `The window closed ${short} short.`;
     case "behind":
       return slipped
-        ? `under the ${formatGoalValue(goal.metric, goal.baseline ?? 0)} you started from, ${gone}% of the window gone`
-        : `${pct}% of the way with ${gone}% of the window gone`;
+        ? `Under the ${formatGoalValue(goal.metric, goal.baseline ?? 0)} you started from, with ${gone}% of the window gone.`
+        : `${pct}% of the way, with ${gone}% of the window gone.`;
     case "on-track":
       return pct >= gone
-        ? `${pct}% of the way, ahead of the calendar`
-        : `${pct}% of the way with ${gone}% of the window gone`;
+        ? `${pct}% of the way, ahead of the calendar.`
+        : `${pct}% of the way, with ${gone}% of the window gone.`;
   }
 }
 
@@ -315,7 +315,7 @@ function GoalRow({
         </span>
       </div>
 
-      {/* The reading and the target on one line — said once, here, and never
+      {/* The reading and the target on one line, said once here and never
           repeated further down the row. */}
       <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <p className="font-heading text-[2rem] font-black leading-none tracking-tight tabular-nums sm:text-4xl">
@@ -376,11 +376,10 @@ function GoalRow({
 
       <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5">
         <p className="text-[12px] leading-snug">
-          <span className="font-semibold" style={{ color: tone.color }}>{tone.word}</span>
+          <span className="font-semibold" style={{ color: tone.color }}>{tone.word}.</span>{" "}
           <span className="text-muted-foreground">
-            {" — "}
             {parked
-              ? `put aside on ${format(new Date(goal.archived_at!), "d MMM")}`
+              ? `Put aside on ${format(new Date(goal.archived_at!), "d MMM")}.`
               : verdict(goal, p, !!slipped)}
           </span>
         </p>
@@ -393,7 +392,7 @@ function GoalRow({
           "sm:opacity-0 sm:transition-opacity sm:focus-within:opacity-100 sm:group-hover:opacity-100"
         )}>
           {busy ? (
-            <span>Saving…</span>
+            <span>Saving...</span>
           ) : confirming ? (
             <>
               <button type="button" onClick={onDelete} className="text-destructive underline underline-offset-4">
@@ -428,7 +427,7 @@ const BLANK =
 
 /**
  * A `<select>` sized to the option it is currently showing, not to the widest
- * one it could show — otherwise every blank in the sentence trails a stretch
+ * one it could show. Otherwise every blank in the sentence trails a stretch
  * of empty underline and the line stops reading as a sentence. An invisible
  * copy of the current label does the measuring; the real control sits on top
  * of it. The native picker is kept because it is what phones do best.
@@ -493,8 +492,8 @@ function GoalForm({
   /**
    * Where the metric stands today.
    *
-   * For a level metric this is the honest starting line — "60% → 80%" only
-   * means something if the 60% is real — so it is written into the sentence
+   * For a level metric this is the honest starting line, since "60 to 80%"
+   * only means something if the 60% is real, so it is written into the sentence
    * and saved as the goal's baseline. For a metric that piles up inside the
    * window it is just the running total so far, so it is noted below the
    * sentence but never stored: those days are part of the target, not a line
@@ -547,7 +546,7 @@ function GoalForm({
           options={GOAL_METRICS.map((m) => ({ value: m.key, label: m.phrase }))}
         />{" "}
         {/* The starting line belongs in the sentence, not in a footnote under
-            it — "from 67% to 85%" is the whole point of setting the goal. */}
+            it: "from 67% to 85%" is the whole point of setting the goal. */}
         {!accumulates && reading != null && (
           <>
             <span className="text-muted-foreground">from</span>{" "}
@@ -592,8 +591,8 @@ function GoalForm({
         </div>
       )}
 
-      {/* What that sentence will be measured on, and — for a metric that piles
-          up — what the window has already put in the bank. */}
+      {/* What that sentence will be measured on, plus what the window has
+          already put in the bank for a metric that piles up. */}
       <p className="mt-2.5 max-w-2xl text-[12px] leading-relaxed text-muted-foreground">
         {METRIC_META[metric].help}
         {accumulates && reading != null && (
@@ -604,7 +603,7 @@ function GoalForm({
           </>
         )}
         {reading == null && (
-          <> Nothing logged in {windowLabel(range.start, range.end, now)} yet — you start from zero.</>
+          <> Nothing logged in {windowLabel(range.start, range.end, now)} yet, so you start from zero.</>
         )}
       </p>
 
@@ -631,7 +630,7 @@ function GoalForm({
             "hover:border-foreground hover:text-foreground disabled:opacity-50"
           )}
         >
-          {busy ? "Setting…" : "Set goal"}
+          {busy ? "Setting..." : "Set goal"}
         </button>
       </div>
     </div>

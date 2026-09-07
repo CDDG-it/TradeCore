@@ -5,7 +5,7 @@
 -- removed; this file removes the tables themselves.
 --
 -- DESTRUCTIVE: this permanently deletes any rows these tables hold. It is
--- OPTIONAL — the app runs fine with the tables left in place, they are simply
+-- OPTIONAL: the app runs fine with the tables left in place, they are simply
 -- unused. Run it only once you are sure you do not want the data.
 --
 -- Check first if you are unsure:

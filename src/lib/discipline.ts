@@ -4,12 +4,12 @@ import type { TradeJournalEntry, Habit, HabitCompletion } from "@/lib/types";
 /**
  * Discipline blends the two things a trader actually controls:
  *
- *   1. Trade-rule adherence — the per-trade discipline checklist score.
- *      This is what happens *at the screen* and stays the dominant signal.
- *   2. Habit consistency     — completion of the daily/lifestyle habits that
- *      happen *away from the charts*. This is the behavioural layer.
+ *   1. Trade-rule adherence: the per-trade discipline checklist score.
+ *                            This is what happens *at the screen* and stays the dominant signal.
+ *   2. Habit consistency:    completion of the daily/lifestyle habits that
+ *                            happen *away from the charts*. This is the behavioural layer.
  *
- * Weighting: 70% trade rules, 30% habits. Trade rules dominate on purpose —
+ * Weighting: 70% trade rules, 30% habits. Trade rules dominate on purpose:
  * habits should nudge the score, never overpower the actual trading process.
  * When only one side has data for the period, that side stands alone; we never
  * punish a trader for a dimension we cannot measure yet (e.g. no habits set up,
@@ -22,11 +22,11 @@ import type { TradeJournalEntry, Habit, HabitCompletion } from "@/lib/types";
 export const DISCIPLINE_WEIGHTS = { tradeRules: 0.7, habits: 0.3 } as const;
 
 export interface DisciplineBreakdown {
-  /** 0–100 average of the per-trade discipline scores, or null if none scored. */
+  /** 0-100 average of the per-trade discipline scores, or null if none scored. */
   tradeRules: number | null;
-  /** 0–100 habit completion across the period, or null if no habits apply. */
+  /** 0-100 habit completion across the period, or null if no habits apply. */
   habits: number | null;
-  /** 0–100 blended score, or null when there is nothing to measure. */
+  /** 0-100 blended score, or null when there is nothing to measure. */
   total: number | null;
   /** Number of scored trades that fed the trade-rule score. */
   tradeCount: number;
@@ -39,14 +39,14 @@ const tradeDate = (t: TradeJournalEntry) => new Date(t.date_time.slice(0, 10) + 
 
 /** Whether a habit with the given frequency is expected on a specific weekday. */
 function frequencyAppliesOn(freq: Habit["frequency"], weekday: number): boolean {
-  // weekday: 0 = Sunday … 6 = Saturday
+  // weekday: 0 = Sunday ... 6 = Saturday
   if (freq === "weekdays") return weekday >= 1 && weekday <= 5;
   if (freq === "weekends") return weekday === 0 || weekday === 6;
   return true; // "daily"
 }
 
 /**
- * Execution quality across [start, end] — the share of rated trades the trader
+ * Execution quality across [start, end]: the share of rated trades the trader
  * marked as good.
  *
  * Only rated trades count. An unrated trade is not a bad one: leaving it out
@@ -127,7 +127,7 @@ export function computeHabitCounts(
     completions.filter((c) => c.completed).map((c) => `${c.habit_id}|${c.date}`)
   );
 
-  // A habit only starts counting from the day it became active — days before it
+  // A habit only starts counting from the day it became active: days before it
   // existed are neither expected nor a "miss", so a fresh habit isn't penalised
   // for history it was never part of. `created_at` is the source of truth, but
   // guard against missing/bogus values (a null date parses to 1970, which would

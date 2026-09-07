@@ -23,7 +23,7 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
 }
 
 /**
- * Monthly review — a read-only rollup of the month's weeks. It aggregates the
+ * Monthly review: a read-only rollup of the month's weeks. It aggregates the
  * weekly numbers, surfaces the standout weeks and recurring behaviour, and links
  * into each week's review. Nothing to fill in here: the month is the sum of its
  * weeks, so completion is tracked at the weekly level.
@@ -49,7 +49,7 @@ export function MonthlyReviewView({ month }: { month: string }) {
 
     const wins = inMonth.filter((t) => t.result === "win");
     const winRate = tradesWinRate(inMonth);
-    const avgRR = wins.length ? (wins.reduce((s, t) => s + t.rr, 0) / wins.length).toFixed(1) : "—";
+    const avgRR = wins.length ? (wins.reduce((s, t) => s + t.rr, 0) / wins.length).toFixed(1) : "-";
     const totalR = inMonth.reduce((s, t) => s + tradeR(t), 0);
 
     const instruments = new Map<string, number>();
@@ -115,11 +115,11 @@ export function MonthlyReviewView({ month }: { month: string }) {
 
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         <Metric label="Trades" value={String(data.inMonth.length)} tone="text-foreground" />
-        <Metric label="Win rate" value={data.winRate == null ? "—" : `${data.winRate}%`} />
-        <Metric label="Avg R:R" value={data.avgRR === "—" ? "—" : `${data.avgRR}R`} tone="text-primary" />
+        <Metric label="Win rate" value={data.winRate == null ? "-" : `${data.winRate}%`} />
+        <Metric label="Avg R:R" value={data.avgRR === "-" ? "-" : `${data.avgRR}R`} tone="text-primary" />
         <Metric label="Wins" value={String(data.wins)} tone="text-success" />
         <Metric label="Losses" value={String(data.losses)} tone="text-destructive" />
-        <Metric label="Best week" value={data.bestWeek ? formatTotalR(data.bestWeek.totalR) : "—"} tone="text-success" />
+        <Metric label="Best week" value={data.bestWeek ? formatTotalR(data.bestWeek.totalR) : "-"} tone="text-success" />
       </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 lg:grid-cols-2">
@@ -155,7 +155,7 @@ export function MonthlyReviewView({ month }: { month: string }) {
           )}
         </div>
 
-        {/* Most traded — factual, no behavioural assumptions */}
+        {/* Most traded: factual, no behavioural assumptions */}
         <div className="rounded-2xl border border-border/60 bg-card p-4">
           <div>
             <p className="text-sm font-semibold mb-2">Most traded</p>

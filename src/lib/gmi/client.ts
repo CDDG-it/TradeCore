@@ -3,12 +3,12 @@
 /**
  * Client-side helpers for the Global Markets page: a small polling fetch hook
  * over the standard DataEnvelope, plus number/label formatters shared by every
- * subtab. No data-fetching library — this mirrors the app's existing pattern of
+ * subtab. No data-fetching library: this mirrors the app's existing pattern of
  * fetch + setInterval.
  *
  * Three things keep the desk cheap to run:
- *   • A module-level cache keyed by URL, so switching sections — or two panes
- *     asking for the same feed — reuses the payload instead of re-fetching it.
+ *   • A module-level cache keyed by URL, so switching sections, or two panes
+ *     asking for the same feed: reuses the payload instead of re-fetching it.
  *   • In-flight dedupe, so a mount that races an existing request joins it.
  *   • Polling that stops while the tab is hidden, and catches up on return.
  *
@@ -73,7 +73,7 @@ export function useGmi<T>(url: string | null, intervalMs = 60_000) {
             ? { ...prev, status: "stale" }
             : {
                 data: null,
-                source: "—",
+                source: "-",
                 freshness: "delayed",
                 asOf: null,
                 fetchedAt: new Date().toISOString(),
@@ -112,7 +112,7 @@ export function useGmi<T>(url: string | null, intervalMs = 60_000) {
 /* ── Formatters ─────────────────────────────────────────────────────────── */
 
 export function fmtPrice(v: number | null | undefined, unit = ""): string {
-  if (v == null || !Number.isFinite(v)) return "—";
+  if (v == null || !Number.isFinite(v)) return "-";
   if (unit === "%") return `${v.toFixed(2)}%`;
   const abs = Math.abs(v);
   const digits = abs >= 1000 ? 0 : abs >= 100 ? 1 : abs >= 1 ? 2 : 4;
@@ -120,7 +120,7 @@ export function fmtPrice(v: number | null | undefined, unit = ""): string {
 }
 
 export function fmtChange(v: number | null | undefined, unit = ""): string {
-  if (v == null || !Number.isFinite(v)) return "—";
+  if (v == null || !Number.isFinite(v)) return "-";
   const sign = v > 0 ? "+" : "";
   if (unit === "%") return `${sign}${v.toFixed(2)}pp`;
   const abs = Math.abs(v);
@@ -129,20 +129,20 @@ export function fmtChange(v: number | null | undefined, unit = ""): string {
 }
 
 export function fmtPct(v: number | null | undefined): string {
-  if (v == null || !Number.isFinite(v)) return "—";
+  if (v == null || !Number.isFinite(v)) return "-";
   return `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
 }
 
 export function fmtBp(v: number | null | undefined): string {
-  if (v == null || !Number.isFinite(v)) return "—";
+  if (v == null || !Number.isFinite(v)) return "-";
   return `${v > 0 ? "+" : ""}${Math.round(v)} bp`;
 }
 
-/** "3m ago", "2h ago", "just now" — for asOf / fetchedAt stamps. */
+/** "3m ago", "2h ago", "just now": for asOf / fetchedAt stamps. */
 export function timeAgo(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const t = new Date(iso).getTime();
-  if (!Number.isFinite(t)) return "—";
+  if (!Number.isFinite(t)) return "-";
   const s = Math.max(0, Math.floor((Date.now() - t) / 1000));
   if (s < 45) return "just now";
   const m = Math.floor(s / 60);
@@ -162,7 +162,7 @@ export const FRESHNESS_LABEL: Record<DataFreshness, string> = {
 };
 
 /**
- * Directional colour token — conventional finance green/red, never a signal.
+ * Directional colour token: conventional finance green/red, never a signal.
  * "No move" is deliberately not the muted token: at 3.6:1 on the desk's ground
  * it reads as disabled rather than neutral.
  */

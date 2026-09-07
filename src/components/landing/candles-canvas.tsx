@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-// Dark bg constant – app navy background  #0B1120 ≈ rgba(11,17,32)
+// Dark bg constant - app navy background  #0B1120 ≈ rgba(11,17,32)
 const DARK = "rgba(11,17,32,";
 
 // ── Candle generation ────────────────────────────────────────────────────────
@@ -158,7 +158,7 @@ export function CandlesCanvas() {
         // Body fill
         ctx.fillStyle = `rgba(${hue},${(bull ? 0.22 : 0.18) + near * 0.3})`;
         ctx.fillRect(x, bTop, W, bH);
-        // Body border — the lit candles also gain a faint bloom of their own.
+        // Body border: the lit candles also gain a faint bloom of their own.
         if (near > 0.05) {
           ctx.shadowColor = `rgba(${hue},${near * 0.5})`;
           ctx.shadowBlur = 12 * near;
@@ -170,7 +170,7 @@ export function CandlesCanvas() {
       }
       ctx.restore();
 
-      // Crosshair — the one gesture every chart shares. Only drawn once the
+      // Crosshair: the one gesture every chart shares. Only drawn once the
       // reader has actually moved a pointer, and kept faint enough that it
       // reads as an instrument rather than a graphic.
       if (ptr.tx !== null && ptr.ty !== null) {
@@ -193,7 +193,7 @@ export function CandlesCanvas() {
         ctx.restore();
       }
 
-      // Cursor spotlight — an additive turquoise glow that lifts the candles it
+      // Cursor spotlight: an additive turquoise glow that lifts the candles it
       // passes over. Drawn before the readability mask so the text area stays calm.
       ctx.globalCompositeOperation = "lighter";
       const spot = ctx.createRadialGradient(ptr.x, ptr.y, 0, ptr.x, ptr.y, 260);
@@ -204,7 +204,7 @@ export function CandlesCanvas() {
       ctx.fillRect(0, 0, cw, ch);
       ctx.globalCompositeOperation = "source-over";
 
-      // Center radial mask — softens candles in the content area on dark bg
+      // Center radial mask: softens candles in the content area on dark bg
       const radialCx = cw / 2;
       const radialCy = ch * 0.42;
       const radialR = Math.min(cw * 0.46, ch * 0.56);

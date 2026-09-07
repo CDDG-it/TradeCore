@@ -147,7 +147,7 @@ function InsightCard({ insight }: { insight: CoachingInsight }) {
               </span>
             </div>
 
-            {/* Data points — collapsible */}
+            {/* Data points: collapsible */}
             {insight.data_points.length > 0 && (
               <div className="mt-2.5">
                 <button
@@ -248,7 +248,7 @@ export default function CoachingPage() {
           },
           {
             label: "Avg Discipline",
-            value: avgDiscipline > 0 ? avgDiscipline : "—",
+            value: avgDiscipline > 0 ? avgDiscipline : "-",
             icon: Shield,
             color: disciplineColor,
           },

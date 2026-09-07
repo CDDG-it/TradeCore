@@ -3,12 +3,12 @@
 import { History, X } from "lucide-react";
 
 /**
- * Subtle "we restored your unsaved draft" notice. Premium and quiet — a soft
+ * Subtle "we restored your unsaved draft" notice. Premium and quiet: a soft
  * orange-tinted bar that the user can dismiss without deleting anything.
  */
 export function DraftBanner({
   onDismiss,
-  label = "Draft restored — we kept your unsaved changes.",
+  label = "Draft restored: we kept your unsaved changes.",
 }: {
   onDismiss: () => void;
   label?: string;

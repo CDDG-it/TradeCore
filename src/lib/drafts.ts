@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
  *    when `shouldPersist` considers the content meaningful (avoids saving an
  *    empty/pristine form).
  *  - On edit forms, `recordUpdatedAt` lets us discard a draft that is older than
- *    the saved record — so a stale draft never clobbers newer saved data.
+ *    the saved record, so a stale draft never clobbers newer saved data.
  *  - `clear()` is called after a successful submit, so restored drafts can never
  *    resurrect and cause a duplicate entry.
  */
@@ -39,7 +39,7 @@ export function writeDraft<T>(key: string, data: T): void {
   try {
     window.localStorage.setItem(PREFIX + key, JSON.stringify({ savedAt: Date.now(), data }));
   } catch {
-    /* storage full / unavailable — drafts are best-effort */
+    /* storage full / unavailable: drafts are best-effort */
   }
 }
 

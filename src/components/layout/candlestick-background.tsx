@@ -68,7 +68,7 @@ export function CandlestickBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Cap DPR at 2 — 3× devices don't need triple-resolution canvas
+    // Cap DPR at 2: 3× devices don't need triple-resolution canvas
     let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     const getSize = () => ({
@@ -93,8 +93,8 @@ export function CandlestickBackground() {
 
     const draw = (ts: number) => {
       if (lastTsRef.current !== null) {
-        const dt = Math.min(ts - lastTsRef.current, 100); // cap at 100ms — absorbs tab-switch spikes cleanly
-        offsetRef.current += (dt / 1000) * 9; // 9 px/s — slow, cinematic
+        const dt = Math.min(ts - lastTsRef.current, 100); // cap at 100ms: absorbs tab-switch spikes cleanly
+        offsetRef.current += (dt / 1000) * 9; // 9 px/s: slow, cinematic
       }
       lastTsRef.current = ts;
 
@@ -169,7 +169,7 @@ export function CandlestickBackground() {
           ctx.lineWidth = 0.75;
           ctx.strokeRect(x, bTop, wCandle, bH);
         } else {
-          // Bearish candles use brand slate (navy family) — never the old
+          // Bearish candles use brand slate (navy family): never the old
           // brown, which bled through the translucent nav as an orange tint.
           ctx.strokeStyle = bull ? "rgba(20,184,166,0.55)" : "rgba(71,85,105,0.45)";
           ctx.lineWidth = 1;

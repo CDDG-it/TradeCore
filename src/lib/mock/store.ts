@@ -1,7 +1,7 @@
 /**
  * Persistent data store using localStorage.
  * All data survives page refreshes. Clear localStorage to reset.
- * When Supabase is connected, replace these functions with real DB queries —
+ * When Supabase is connected, replace these functions with real DB queries:
  * the interface stays identical.
  */
 import type {
@@ -240,7 +240,7 @@ export function deletePayout(id: string): boolean {
   return _payouts.length < before;
 }
 
-// ── News (static — not user-editable) ──────────────────────────────
+// ── News (static, not user-editable) ──────────────────────────────
 const news = [...mockNews];
 
 export function getNews(filters?: {
@@ -569,7 +569,7 @@ export function generateCoachingInsights(
   }
 
   // ── 1. Session performance ───────────────────────────────────────────
-  // Rates below are wins / decisive trades — break-even never dilutes them.
+  // Rates below are wins / decisive trades: break-even never dilutes them.
   const sessionMap: Record<string, { wins: number; decisive: number; total: number }> = {};
   trades.forEach((t) => {
     if (!sessionMap[t.session]) sessionMap[t.session] = { wins: 0, decisive: 0, total: 0 };
@@ -617,7 +617,7 @@ export function generateCoachingInsights(
         type: "pattern",
         category: "discipline",
         title: "Discipline score directly predicts your outcomes",
-        description: `Winning trades average ${Math.round(avgWin)}% discipline vs ${Math.round(avgLoss)}% on losses — a ${Math.round(avgWin - avgLoss)} point gap. Your process quality is your edge.`,
+        description: `Winning trades average ${Math.round(avgWin)}% discipline vs ${Math.round(avgLoss)}% on losses: a ${Math.round(avgWin - avgLoss)} point gap. Your process quality is your edge.`,
         data_points: [
           `Wins avg discipline: ${Math.round(avgWin)}%`,
           `Losses avg discipline: ${Math.round(avgLoss)}%`,
@@ -713,7 +713,7 @@ export function generateCoachingInsights(
       type: "strength",
       category: "performance",
       title: "Your recent form is above your historical average",
-      description: `Last 10 trades: ${Math.round(recWR * 100)}% win rate vs ${Math.round(allWR * 100)}% all-time. You're in a strong phase — maintain the approach and protect your capital.`,
+      description: `Last 10 trades: ${Math.round(recWR * 100)}% win rate vs ${Math.round(allWR * 100)}% all-time. You're in a strong phase: maintain the approach and protect your capital.`,
       data_points: [
         `Recent 10 trades: ${Math.round(recWR * 100)}% win rate`,
         `All-time: ${Math.round(allWR * 100)}% win rate`,
@@ -793,7 +793,7 @@ export function generateCoachingInsights(
         type: "weakness",
         category: "discipline",
         title: `Overtrading detected on ${overtradingDays} day${overtradingDays > 1 ? "s" : ""}`,
-        description: `You exceeded your ${playbook.max_trades_per_day} trade/day limit. Overtrading is a primary cause of compounding losses — quality always beats quantity.`,
+        description: `You exceeded your ${playbook.max_trades_per_day} trade/day limit. Overtrading is a primary cause of compounding losses: quality always beats quantity.`,
         data_points: [
           `Your limit: ${playbook.max_trades_per_day} trades/day`,
           `Days exceeded: ${overtradingDays}`,
@@ -813,7 +813,7 @@ export function generateCoachingInsights(
       type: "suggestion",
       category: "performance",
       title: "Raise your minimum R:R threshold",
-      description: `${lowRR} trades were taken below 1.5R — more than your high-quality trades. Only entering at 2R+ significantly improves your mathematical expectancy.`,
+      description: `${lowRR} trades were taken below 1.5R: more than your high-quality trades. Only entering at 2R+ significantly improves your mathematical expectancy.`,
       data_points: [
         `Trades below 1.5R: ${lowRR}`,
         `Trades above 2.5R: ${highRR}`,
@@ -887,7 +887,7 @@ export function saveWeeklyReflection(input: Omit<WeeklyReflection, "id" | "user_
   return entry;
 }
 
-// ── Dev helper — clears all user data from localStorage ─────────────
+// ── Dev helper: clears all user data from localStorage ─────────────
 export function clearAllData(): void {
   if (typeof window === "undefined") return;
   Object.values(KEYS).forEach((k) => localStorage.removeItem(k));

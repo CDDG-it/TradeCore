@@ -3,7 +3,7 @@ import { fetchCotSnapshot } from "@/lib/cot/live";
 import type { CotSnapshot } from "@/lib/cot/types";
 
 // On-demand: live CFTC fetches. The route keeps its own last-good snapshot so a
-// transient upstream failure still serves real, last-known-good numbers —
+// transient upstream failure still serves real, last-known-good numbers:
 // never mock data. COT updates weekly, so a short cache is plenty.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

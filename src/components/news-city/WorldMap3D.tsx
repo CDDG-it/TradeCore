@@ -31,10 +31,10 @@ function latLonToVec3(lat: number, lon: number, r: number): THREE.Vector3 {
   );
 }
 
-// The sun direction — fixed, so the globe keeps a stable, gentle terminator.
+// The sun direction: fixed, so the globe keeps a stable, gentle terminator.
 const SUN = new THREE.Vector3(1, 0.35, 0.7).normalize().multiplyScalar(30);
 
-/* ── Earth surface — real coastlines, brand palette ─────────────────────── */
+/* ── Earth surface: real coastlines, brand palette ─────────────────────── */
 function EarthSurface({ dark }: { dark: boolean }) {
   const { gl } = useThree();
   const { map, roughnessMap } = useMemo(() => {
@@ -44,7 +44,7 @@ function EarthSurface({ dark }: { dark: boolean }) {
     for (const t of [m, r]) {
       t.colorSpace = t === m ? THREE.SRGBColorSpace : THREE.NoColorSpace;
       // Max anisotropy keeps the coastlines sharp where the sphere turns away
-      // from the camera — the other half of fixing the pixelated look.
+      // from the camera: the other half of fixing the pixelated look.
       t.anisotropy = gl.capabilities.getMaxAnisotropy();
       t.minFilter = THREE.LinearMipmapLinearFilter;
       t.magFilter = THREE.LinearFilter;
@@ -73,7 +73,7 @@ function EarthSurface({ dark }: { dark: boolean }) {
   );
 }
 
-/* ── Atmosphere — fresnel rim in brand cyan ─────────────────────────────── */
+/* ── Atmosphere: fresnel rim in brand cyan ─────────────────────────────── */
 const ATMO_VERT = /* glsl */ `
   varying vec3 vNormal;
   varying vec3 vView;

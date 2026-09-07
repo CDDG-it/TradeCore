@@ -1,10 +1,10 @@
 /**
- * News provider — Marketaux (financial news + per-entity sentiment).
+ * News provider: Marketaux (financial news + per-entity sentiment).
  *
  * The free tier returns 3 articles per request and allows 100 requests/day, so
  * we fetch a small batch of pages once and cache it for an hour; all filtering
  * (asset, category, sentiment) happens client-side over that batch. Sentiment
- * is Marketaux's own per-entity score, averaged across an article's entities —
+ * is Marketaux's own per-entity score, averaged across an article's entities:
  * we never invent a score, and show "neutral/none" when the provider gives none.
  */
 import { fetchJson } from "./cache";
@@ -70,7 +70,7 @@ export async function fetchNews(apiKey: string): Promise<NewsArticle[]> {
     })
   );
 
-  // A page that fails is simply missing from the batch — the rest still ships.
+  // A page that fails is simply missing from the batch: the rest still ships.
   const seen = new Set<string>();
   const out: NewsArticle[] = [];
   for (const page of pages) {

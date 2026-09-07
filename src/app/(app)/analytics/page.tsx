@@ -97,7 +97,7 @@ export default function AnalyticsPage() {
       return {
         start: startOfDay(monday),
         end: endOfISOWeek(monday),
-        label: `Week ${getISOWeek(monday)} · ${format(monday, "MMM d")} – ${format(friday, "MMM d, yyyy")}`,
+        label: `Week ${getISOWeek(monday)} · ${format(monday, "MMM d")} - ${format(friday, "MMM d, yyyy")}`,
         weekStart: format(monday, "yyyy-MM-dd"),
       };
     }
@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
   const losses = trades.filter((t) => t.result === "loss");
   const bes = trades.filter((t) => t.result === "break-even");
   // Break-even trades are counted and charted, but never sit in the win-rate
-  // denominator — a scratch is neither a win nor a loss.
+  // denominator: a scratch is neither a win nor a loss.
   const winRate = winRateOf(wins.length, losses.length) ?? 0;
 
   // ── Execution quality breakdown ──────────────────────────────────────
@@ -158,7 +158,7 @@ export default function AnalyticsPage() {
   const badExec = trades.filter((t) => t.execution_quality === "bad");
   const unratedExec = trades.length - goodExec.length - badExec.length;
   const goodExecRate = trades.length > 0 ? Math.round((goodExec.length / trades.length) * 100) : 0;
-  // Average R:R calculated only over winning trades — losses are excluded to avoid skewing the metric
+  // Average R:R calculated only over winning trades: losses are excluded to avoid skewing the metric
   const avgRR =
     wins.length > 0
       ? Math.round((wins.reduce((s, t) => s + t.rr, 0) / wins.length) * 100) / 100
@@ -293,7 +293,7 @@ export default function AnalyticsPage() {
         }
       />
       <PageWrapper>
-      {/* Period navigator — step back through past days / weeks / months */}
+      {/* Period navigator: step back through past days / weeks / months */}
       {period !== "all" && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-card px-3 py-2.5">
           <button
@@ -365,7 +365,7 @@ export default function AnalyticsPage() {
         </Card>
       )}
 
-      {/* Week journal & reflection — the qualitative record for the selected week */}
+      {/* Week journal & reflection: the qualitative record for the selected week */}
       {period === "week" && periodWindow.weekStart && (
         <WeekReflectionCard
           weekStart={periodWindow.weekStart}
@@ -388,7 +388,7 @@ export default function AnalyticsPage() {
               },
               {
                 label: "Avg R:R",
-                value: wins.length > 0 ? `${avgRR}R` : "—",
+                value: wins.length > 0 ? `${avgRR}R` : "-",
                 sub: "Winning trades only",
                 color: "text-primary",
               },
@@ -410,7 +410,7 @@ export default function AnalyticsPage() {
               </Card>
             ))}
 
-            {/* Execution breakdown — segmented bar instead of another donut */}
+            {/* Execution breakdown: segmented bar instead of another donut */}
             <Card className="bg-card border-border/50">
               <CardContent className="p-5">
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
@@ -686,7 +686,7 @@ export default function AnalyticsPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold">Confluence Breakdown</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  What each setup earns per trade. Ranked by R per trade, not win rate — a
+                  What each setup earns per trade. Ranked by R per trade, not win rate: a
                   selective setup with bigger winners beats a frequent one that barely pays.
                 </p>
               </CardHeader>
@@ -705,11 +705,11 @@ export default function AnalyticsPage() {
                     >
                       <span className={cn("flex items-center gap-2 font-medium", c.thin && "text-muted-foreground")}>
                         <span className="truncate">{c.name}</span>
-                        {/* Too few trades to be evidence — say so rather than let it read as a finding */}
+                        {/* Too few trades to be evidence: say so rather than let it read as a finding */}
                         {c.thin && (
                           <span
                             className="shrink-0 rounded border border-border/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80"
-                            title={`Fewer than ${CONFLUENCE_MIN_SAMPLE} trades — not enough to draw a conclusion`}
+                            title={`Fewer than ${CONFLUENCE_MIN_SAMPLE} trades, not enough to draw a conclusion`}
                           >
                             Thin
                           </span>
@@ -757,7 +757,7 @@ export default function AnalyticsPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold">Rule Breakdown</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  Which of your rules get broken, and what each breach costs — the gap between
+                  Which of your rules get broken, and what each breach costs: the gap between
                   your average R when you keep the rule and when you don&apos;t.
                 </p>
               </CardHeader>
@@ -779,7 +779,7 @@ export default function AnalyticsPage() {
                         {r.thin && (
                           <span
                             className="shrink-0 rounded border border-border/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80"
-                            title={`Checked on fewer than ${RULE_MIN_SAMPLE} trades — not enough to draw a conclusion`}
+                            title={`Checked on fewer than ${RULE_MIN_SAMPLE} trades, not enough to draw a conclusion`}
                           >
                             Thin
                           </span>
@@ -816,12 +816,12 @@ export default function AnalyticsPage() {
                         title={
                           r.cost === null
                             ? r.broken === 0
-                              ? "Never broken — nothing to compare against"
-                              : "Never kept — nothing to compare against"
+                              ? "Never broken: nothing to compare against"
+                              : "Never kept: nothing to compare against"
                             : `Avg ${r.rKept}R when kept vs ${r.rBroken}R when broken`
                         }
                       >
-                        {r.cost === null ? "—" : `${r.cost > 0 ? "−" : "+"}${Math.abs(r.cost).toFixed(2)}R`}
+                        {r.cost === null ? "-" : `${r.cost > 0 ? "−" : "+"}${Math.abs(r.cost).toFixed(2)}R`}
                       </span>
                     </div>
                   ))}
@@ -839,7 +839,7 @@ export default function AnalyticsPage() {
 /* ── Week journal & reflection ─────────────────────────────────────────────
  * Surfaces the qualitative record the trader wrote for the week being viewed:
  * the Journal's Weekly Review (mistakes / lessons / prevention) and the deeper
- * Weekly Reflection. Read-only here — editing stays on the review page. */
+ * Weekly Reflection. Read-only here: editing stays on the review page. */
 function WeekReflectionCard({
   weekStart, label, review, reflection,
 }: {
@@ -882,7 +882,7 @@ function WeekReflectionCard({
       <CardContent className="pt-0">
         {!hasContent ? (
           <p className="text-sm text-muted-foreground">
-            No written review for {label} yet — capture the mistakes, lessons and plan while it&apos;s fresh.
+            No written review for {label} yet: capture the mistakes, lessons and plan while it&apos;s fresh.
           </p>
         ) : (
           <div className="space-y-4">

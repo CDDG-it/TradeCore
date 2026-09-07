@@ -25,7 +25,7 @@ export function LogoMark({ size = 32 }: LogoProps) {
       </defs>
 
       {/* ─────────────────────────────────────────────
-          BRAIN — white fill + thick black strokes
+          BRAIN: white fill + thick black strokes
           Side-view (lateral) left hemisphere
           ───────────────────────────────────────────── */}
       {/* White brain fill */}
@@ -98,7 +98,7 @@ export function LogoMark({ size = 32 }: LogoProps) {
         d="M 43 106 C 53 112 64 113 74 110" />
 
       {/* ─────────────────────────────────────────────
-          BOLD LETTER D — orange→yellow gradient
+          BOLD LETTER D: orange→yellow gradient
           Flat left edge aligned with brain right side
           ───────────────────────────────────────────── */}
       <path
@@ -107,21 +107,21 @@ export function LogoMark({ size = 32 }: LogoProps) {
       />
 
       {/* ─────────────────────────────────────────────
-          CANDLESTICK 1 — dark silhouette, on D (shorter)
+          CANDLESTICK 1: dark silhouette, on D (shorter)
           ───────────────────────────────────────────── */}
       <line x1="108" y1="35" x2="108" y2="56" stroke="#130600" strokeWidth="5.5" strokeLinecap="round" opacity="0.92"/>
       <rect x="100" y="56" width="16" height="46" rx="3" fill="#130600" opacity="0.92"/>
       <line x1="108" y1="102" x2="108" y2="125" stroke="#130600" strokeWidth="5.5" strokeLinecap="round" opacity="0.92"/>
 
       {/* ─────────────────────────────────────────────
-          CANDLESTICK 2 — dark silhouette, on D (taller)
+          CANDLESTICK 2: dark silhouette, on D (taller)
           ───────────────────────────────────────────── */}
       <line x1="130" y1="22" x2="130" y2="47" stroke="#130600" strokeWidth="5.5" strokeLinecap="round" opacity="0.92"/>
       <rect x="122" y="47" width="16" height="56" rx="3" fill="#130600" opacity="0.92"/>
       <line x1="130" y1="103" x2="130" y2="130" stroke="#130600" strokeWidth="5.5" strokeLinecap="round" opacity="0.92"/>
 
       {/* ─────────────────────────────────────────────
-          CANDLESTICK 3 — gradient, outside D (right)
+          CANDLESTICK 3: gradient, outside D (right)
           ───────────────────────────────────────────── */}
       <line x1="168" y1="8" x2="168" y2="38" stroke="url(#gC)" strokeWidth="5.5" strokeLinecap="round"/>
       <rect x="159" y="38" width="18" height="62" rx="3" fill="url(#gC)"/>

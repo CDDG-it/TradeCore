@@ -3,7 +3,7 @@
 -- tab in the MC Trade Therapist.
 --
 -- One row per calendar day. Before the session opens, the trader reviews their
--- two most recent losses and two most recent wins and commits — in writing — to
+-- two most recent losses and two most recent wins and commits: in writing: to
 -- a plan for each: how to prevent the losing mistake from repeating today, and
 -- how to reproduce what worked. Plans are keyed by the trade's id so they stay
 -- attached to the exact trade being reviewed.

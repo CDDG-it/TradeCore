@@ -1,5 +1,5 @@
 /**
- * My Goals — targets on the numbers the app already measures.
+ * My Goals: targets on the numbers the app already measures.
  *
  * Nothing about a goal's progress is stored. The row holds the intent (what
  * you are aiming at, from where, over which window) and everything else is
@@ -112,7 +112,7 @@ export const METRIC_META: Record<GoalMetric, GoalMetricMeta> = Object.fromEntrie
 
 /** Format a metric's value in its own unit. */
 export function formatGoalValue(metric: GoalMetric, value: number | null): string {
-  if (value == null) return "—";
+  if (value == null) return "-";
   const { unit } = METRIC_META[metric];
   if (unit === "percent") return `${Math.round(value)}%`;
   if (unit === "R") return `${value > 0 ? "+" : ""}${value.toFixed(1)}R`;
@@ -131,12 +131,12 @@ export type GoalState = "on-track" | "behind" | "achieved" | "missed" | "no-data
 export interface GoalProgress {
   /** Where the metric stands right now, or null when nothing measurable yet. */
   current: number | null;
-  /** 0–1 of the way from the baseline to the target. */
+  /** 0 to 1 of the way from the baseline to the target. */
   ratio: number;
   state: GoalState;
   /** Days left in the window; 0 once it has closed. */
   daysLeft: number;
-  /** How far through the window we are, 0–1 — the bar a goal has to keep up with. */
+  /** How far through the window we are, 0 to 1: the bar a goal has to keep up with. */
   timeElapsed: number;
   /** True once the window has closed. */
   closed: boolean;
@@ -212,8 +212,8 @@ export function measureMetric(
  * metrics ("15 clean days").
  *
  * `state` compares progress against how much of the window has gone. A goal
- * is only "behind" once the calendar has moved further than the number has —
- * before the window opens there is nothing to be behind on.
+ * is only "behind" once the calendar has moved further than the number has.
+ * Before the window opens there is nothing to be behind on.
  */
 export function computeGoalProgress(goal: TradingGoal, input: GoalInputs): GoalProgress {
   const now = input.now ?? new Date();

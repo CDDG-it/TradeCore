@@ -27,7 +27,7 @@ export const RISK_META: Record<RiskLevel, { label: string; className: string; he
   high: { label: "High", className: "text-destructive bg-destructive/10 border-destructive/30", hex: "#e0533d" },
 };
 
-/** Category node colour — the node glow, its data-flow line, and the feed's
+/** Category node colour: the node glow, its data-flow line, and the feed's
  *  colour rail all share this so the whole hub reads as one system. */
 export const NEWS_CATEGORY_META: Record<NewsCategory, { label: string; short: string; className: string; hex: string }> = {
   "central-bank": { label: "Central Banks", short: "Central Banks", className: "text-gold bg-gold/10 border-gold/30", hex: "var(--primary)" },

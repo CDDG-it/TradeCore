@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 /**
  * Pathname-keyed page transition: the incoming page fades up over its own
- * 160ms — short enough that navigation reads as instant, long enough that
+ * 160ms: short enough that navigation reads as instant, long enough that
  * content doesn't visibly pop into place.
  *
  * Deliberately no `AnimatePresence`. An exit animation keeps the outgoing page

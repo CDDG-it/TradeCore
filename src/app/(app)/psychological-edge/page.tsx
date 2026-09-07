@@ -13,13 +13,13 @@ import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
 import { MobileSubnav } from "@/components/layout/mobile-nav";
 
 /**
- * My Edge — everything the trader controls away from the chart, in one place.
+ * My Edge: everything the trader controls away from the chart, in one place.
  *
  * Two halves, kept visibly separate rather than blended into one tab strip:
- *   • Mind Edge — the habits that build state, the goals you are working
- *                 towards, and the Mindscore that reads how it is going.
- *   • Strategy  — the rules and confluences you trade against, and the Monte
- *                 Carlo pass simulation that pressure-tests them.
+ *   • Mind Edge: the habits that build state, the goals you are working
+ *                towards, and the Mindscore that reads how it is going.
+ *   • Strategy:  the rules and confluences you trade against, and the Monte
+ *                Carlo pass simulation that pressure-tests them.
  *
  * (Route stays /psychological-edge so existing links keep working; /strategy
  * redirects into the Strategy half.)
@@ -130,7 +130,7 @@ function EdgeToggle({ tab, onChange }: { tab: EdgeTab; onChange: (t: EdgeTab) =>
 }
 
 export default function MyEdgePage() {
-  // Habits is the landing tab — it's the daily-touch surface of My Edge.
+  // Habits is the landing tab: it's the daily-touch surface of My Edge.
   const [tab, setTab] = useState<EdgeTab>("habits");
 
   // Deep-linking, including /strategy redirecting into the Strategy half.
@@ -149,7 +149,7 @@ export default function MyEdgePage() {
 
   return (
     <div className="space-y-3 sm:space-y-5">
-      {/* Header — the title and, from lg, the split control. */}
+      {/* Header: the title and, from lg, the split control. */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">
           My Edge

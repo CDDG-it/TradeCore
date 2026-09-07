@@ -2,7 +2,7 @@
 
 /**
  * Liquid Glass Card. Adapted from KokonutUI's Liquid Glass Card (MIT,
- * https://kokonutui.com) — trimmed to the essence of the effect and tuned for
+ * https://kokonutui.com): trimmed to the essence of the effect and tuned for
  * the TradingMC dark navy surfaces: translucent fill, backdrop blur, a bright
  * inset edge-light, a top sheen and a soft hover sweep.
  */

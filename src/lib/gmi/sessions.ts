@@ -1,5 +1,5 @@
 /**
- * Trading-session clock — objective exchange hours, nothing more.
+ * Trading-session clock: objective exchange hours, nothing more.
  *
  * The three sessions the journal already speaks in (Asia, London, New York),
  * expressed in each venue's own local time and resolved through the IANA
@@ -18,9 +18,9 @@ export interface SessionWindow {
 }
 
 export const SESSIONS: SessionWindow[] = [
-  { key: "asia", label: "Asia", timeZone: "Asia/Tokyo", openMin: 9 * 60, closeMin: 15 * 60, hours: "09:00–15:00 JST" },
-  { key: "london", label: "London", timeZone: "Europe/London", openMin: 8 * 60, closeMin: 16 * 60 + 30, hours: "08:00–16:30 UK" },
-  { key: "newYork", label: "New York", timeZone: "America/New_York", openMin: 9 * 60 + 30, closeMin: 16 * 60, hours: "09:30–16:00 ET" },
+  { key: "asia", label: "Asia", timeZone: "Asia/Tokyo", openMin: 9 * 60, closeMin: 15 * 60, hours: "09:00-15:00 JST" },
+  { key: "london", label: "London", timeZone: "Europe/London", openMin: 8 * 60, closeMin: 16 * 60 + 30, hours: "08:00-16:30 UK" },
+  { key: "newYork", label: "New York", timeZone: "America/New_York", openMin: 9 * 60 + 30, closeMin: 16 * 60, hours: "09:30-16:00 ET" },
 ];
 
 export interface SessionState {
@@ -29,11 +29,11 @@ export interface SessionState {
   localTime: string;
   weekend: boolean;
   open: boolean;
-  /** 0–1 through the session; 0 before the open, 1 after the close. */
+  /** 0-1 through the session; 0 before the open, 1 after the close. */
   progress: number;
   /** Minutes to the close when open, or to the next open when closed. */
   minutesToEdge: number;
-  /** Venue-local weekday of the next open, e.g. "Mon" — null when it is today. */
+  /** Venue-local weekday of the next open, e.g. "Mon": null when it is today. */
   nextOpenDay: string | null;
 }
 
@@ -66,7 +66,7 @@ export function sessionState(w: SessionWindow, at: Date = new Date()): SessionSt
     return { window: w, localTime: time, weekend, open, progress, minutesToEdge: w.closeMin - minutes, nextOpenDay: null };
   }
 
-  // Walk forward to the next weekday that actually has a session — a Friday
+  // Walk forward to the next weekday that actually has a session: a Friday
   // evening in London opens again on Monday, not tomorrow.
   let offset = minutes < w.openMin ? 0 : 1;
   while (true) {
@@ -85,9 +85,9 @@ export function sessionState(w: SessionWindow, at: Date = new Date()): SessionSt
   };
 }
 
-/** "3h 20m", "45m" — for the countdown to the next open/close. */
+/** "3h 20m", "45m": for the countdown to the next open/close. */
 export function fmtDuration(mins: number | null): string {
-  if (mins == null || !Number.isFinite(mins)) return "—";
+  if (mins == null || !Number.isFinite(mins)) return "-";
   const h = Math.floor(mins / 60);
   const m = Math.round(mins % 60);
   return h > 0 ? `${h}h ${m}m` : `${m}m`;

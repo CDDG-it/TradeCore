@@ -30,7 +30,7 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Route gating only — read the session locally from the cookie instead of
+  // Route gating only: read the session locally from the cookie instead of
   // calling getUser(), which hits the Supabase Auth server on every single
   // navigation and is the main source of slow page loads. This still refreshes
   // an expired token (which persists via setAll above); actual data access
@@ -40,7 +40,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getSession();
   const user = session?.user ?? null;
 
-  // Protected routes — redirect to login if not authenticated
+  // Protected routes: redirect to login if not authenticated
   const isAuthPage =
     request.nextUrl.pathname === "/login" ||
     request.nextUrl.pathname === "/signup" ||
@@ -60,7 +60,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages — but NOT from
+  // Redirect authenticated users away from auth pages, but NOT from
   // /auth/update-password, which requires an active session to work.
   if (user && isAuthPage && request.nextUrl.pathname !== "/auth/update-password") {
     const url = request.nextUrl.clone();

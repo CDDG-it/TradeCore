@@ -29,7 +29,7 @@ function tradeRLabel(t: TradeJournalEntry): string {
 }
 
 /**
- * Pre-Market Exercises — a pre-session discipline drill.
+ * Pre-Market Exercises: a pre-session discipline drill.
  *
  * Before the open the trader looks back at their two most recent losses and two
  * most recent wins, then commits in writing to a plan for the day: how each
@@ -125,7 +125,7 @@ export function PreMarketExercises({
         </div>
       ) : (
         <>
-          {/* Today's focus — the single instruction the rest of this page feeds */}
+          {/* Today's focus: the single instruction the rest of this page feeds */}
           <AccentPanel accent="primary" className="shrink-0 py-3.5">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <div className="shrink-0">
@@ -266,7 +266,7 @@ function ReviewCard({
       <div className="mt-3 space-y-2">
         {takeaways.length === 0 ? (
           <p className="text-[11px] italic text-muted-foreground/70">
-            No notes were logged on this trade — write your plan from memory.
+            No notes were logged on this trade: write your plan from memory.
           </p>
         ) : (
           takeaways.map((tk) => (

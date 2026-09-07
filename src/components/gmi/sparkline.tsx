@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Sparkline — a dependency-free inline SVG trend line. Coloured by net
+ * Sparkline: a dependency-free inline SVG trend line. Coloured by net
  * direction over the window (conventional green/red), purely descriptive.
  */
 import { useId } from "react";

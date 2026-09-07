@@ -115,7 +115,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
               <Label className="text-xs">Firm *</Label>
               <Select value={form.firm_name} onValueChange={(v) => { if (v) set("firm_name", v); }}>
                 <SelectTrigger className="h-9 text-sm">
-                  <SelectValue placeholder="Select a prop firm…" />
+                  <SelectValue placeholder="Select a prop firm..." />
                 </SelectTrigger>
                 <SelectContent>
                   {PROP_FIRMS.map((firm) => (
@@ -166,7 +166,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
                   autoFocus
                   value={form.account_size}
                   onChange={(e) => setForm((prev) => ({ ...prev, account_size: parseFloat(e.target.value) || 0 }))}
-                  placeholder="Enter custom size…"
+                  placeholder="Enter custom size..."
                   className="h-9 text-sm font-mono mt-2"
                 />
               )}
@@ -177,7 +177,7 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
               <div className="space-y-1.5">
                 <Label className="text-xs">
                   Purchase Cost ($)
-                  <span className="ml-1 text-muted-foreground/60 font-normal">— eval fee paid</span>
+                  <span className="ml-1 text-muted-foreground/60 font-normal">, eval fee paid</span>
                 </Label>
                 <Input type="number" step="0.01" value={form.purchase_cost}
                   onChange={(e) => set("purchase_cost", parseFloat(e.target.value) || 0)}
@@ -198,14 +198,14 @@ export default function EditAccountPage({ params }: { params: Promise<{ id: stri
             <div className="space-y-1.5">
               <Label className="text-xs">Notes</Label>
               <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)}
-                placeholder="Any notes about this account, rules, strategy…" className="text-sm min-h-20 resize-none" />
+                placeholder="Any notes about this account, rules, strategy..." className="text-sm min-h-20 resize-none" />
             </div>
           </CardContent>
         </Card>
 
         <div className="flex items-center justify-end gap-3">
           <Link href={`/accounts/${id}`}><Button type="button" variant="outline">Cancel</Button></Link>
-          <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
+          <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save changes"}</Button>
         </div>
       </form>
     </div>

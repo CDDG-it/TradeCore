@@ -106,7 +106,7 @@ export function ScreenshotUpload({
     return resolvedUrls.get(url) ?? url;
   }
 
-  // Paste (Ctrl+V / Cmd+V) — only active in edit mode when a group exists
+  // Paste (Ctrl+V / Cmd+V): only active in edit mode when a group exists
   useEffect(() => {
     if (readOnly || !currentGroup) return;
     const handler = (e: ClipboardEvent) => {
@@ -159,7 +159,7 @@ export function ScreenshotUpload({
     try {
       let newUrls: string[];
       if (storageConfig) {
-        // Upload directly to Supabase Storage — returns storage path
+        // Upload directly to Supabase Storage: returns storage path
         newUrls = await Promise.all(
           toAdd.map((f) =>
             uploadScreenshot(storageConfig.userId, storageConfig.entityType, storageConfig.entityId, f)
@@ -215,7 +215,7 @@ export function ScreenshotUpload({
               </span>
               <span className="h-px flex-1 bg-border/50" />
             </div>
-            {/* Full charts, never cropped — one per row on the widest layouts */}
+            {/* Full charts, never cropped: one per row on the widest layouts */}
             <div className={cn("grid gap-4", group.urls.length > 1 && "lg:grid-cols-2")}>
               {group.urls.map((url, i) => (
                 <button
@@ -409,7 +409,7 @@ export function ScreenshotUpload({
       {/* Current group screenshots + upload zone */}
       {currentGroup && (
         <>
-          {/* Thumbnails — full charts, never cropped */}
+          {/* Thumbnails: full charts, never cropped */}
           {currentGroup.urls.length > 0 && (
             <div className="grid gap-3 sm:grid-cols-2">
               {currentGroup.urls.map((url, i) => (

@@ -49,7 +49,7 @@ type IconComponent = React.ComponentType<{ className?: string; style?: React.CSS
  * Habit colours are persisted on the row (`habits.color`), so the database
  * still holds the legacy `oklch(...)` strings written by older builds while new
  * habits are saved with the palette hex below. This handles both, plus CSS
- * variables — the old `color.replace(")", " / 0.2)")` trick silently produced
+ * variables: the old `color.replace(")", " / 0.2)")` trick silently produced
  * an opaque colour for anything that wasn't a bare `oklch()`.
  */
 function fade(color: string, a: number): string {
@@ -60,7 +60,7 @@ function fade(color: string, a: number): string {
     const n = parseInt(full, 16);
     return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
   }
-  // Modern space-separated oklch()/rgb()/hsl() carrying no alpha — the only
+  // Modern space-separated oklch()/rgb()/hsl() carrying no alpha: the only
   // shape that takes CSS relative-alpha syntax. Matched on the function name
   // rather than a trailing ")", so `var(--x)` does not land here and become the
   // invalid `var(--x / 0.2)`; comma forms are excluded too, since
@@ -89,8 +89,8 @@ const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label
 /**
  * The colour a habit is drawn in.
  *
- * `habits.color` holds whatever literal the build that created the row wrote —
- * legacy `oklch()` strings, later palette hexes — and none of those know about
+ * `habits.color` holds whatever literal the build that created the row wrote:
+ * legacy `oklch()` strings, later palette hexes, and none of those know about
  * the light theme, where a mid-tone accent turns to pastel on a white card.
  * There is no colour picker, so the category has always been the real source
  * of truth; reading it back from the category makes every existing row follow
@@ -111,7 +111,7 @@ type RangeKey = (typeof RANGES)[number]["key"];
 
 /**
  * GitHub-style history grid: weekday rows × week columns over [start, end].
- * `intensityFor` returns 0–1 for a day (color strength), or null when the day
+ * `intensityFor` returns 0-1 for a day (color strength), or null when the day
  * doesn't apply (rendered dim) - so you can actually see earlier weeks/months.
  */
 function ActivityHeatmap({
@@ -484,7 +484,7 @@ export function HabitsView() {
                   {todayHabits.length === 0
                     ? "nothing scheduled today"
                     : doneToday === todayHabits.length
-                    ? "all done — that is the day won"
+                    ? "all done: that is the day won"
                     : `${todayHabits.length - doneToday} still open`}
                 </p>
               </div>
@@ -617,7 +617,7 @@ export function HabitsView() {
                       : <HabitGlyph icon={habit.icon} className="h-3 w-3" style={{ color: habitColor(habit) }} />}
                   </button>
 
-                  {/* Name, category and — on hover — the edit controls */}
+                  {/* Name, category and: on hover: the edit controls */}
                   <div className="flex min-w-0 items-baseline gap-2">
                     <span className="truncate text-[13px] font-semibold text-foreground">{habit.name}</span>
                     <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider" style={{ color: cat.accent }}>
@@ -648,10 +648,10 @@ export function HabitsView() {
 
                   {/* Streak */}
                   <span className="text-right text-[12px] font-bold tabular-nums" style={{ color: streak > 0 ? habitColor(habit) : "var(--muted-foreground)" }}>
-                    {streak > 0 ? `${streak}d` : "—"}
+                    {streak > 0 ? `${streak}d` : "-"}
                   </span>
 
-                  {/* The week, still clickable — a missed day can be fixed here */}
+                  {/* The week, still clickable: a missed day can be fixed here */}
                   <div className="hidden justify-center sm:flex">
                     <WeekGrid
                       habit={habit}
@@ -676,7 +676,7 @@ export function HabitsView() {
             })}
           </div>
 
-          {/* The long view — only worth the space once the window is longer than the week strip above */}
+          {/* The long view: only worth the space once the window is longer than the week strip above */}
           {rangeDays > 7 && (
             <div className="mt-4 space-y-2 border-t border-border/40 pt-3">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
@@ -864,7 +864,7 @@ export function HabitsView() {
               }}
             >
               {creating
-                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {editingId ? "Saving…" : "Creating…"}</>
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {editingId ? "Saving..." : "Creating..."}</>
                 : editingId ? "Save changes" : "Create habit"}
             </button>
           </DialogFooter>

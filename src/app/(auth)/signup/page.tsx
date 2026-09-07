@@ -90,7 +90,7 @@ export default function SignupPage() {
                 </div>
               ) : (
                 <Button variant="outline" className="w-full" onClick={handleResend} disabled={isResending}>
-                  {isResending ? "Sending…" : "Resend verification email"}
+                  {isResending ? "Sending..." : "Resend verification email"}
                 </Button>
               )}
               <Link href="/login">
@@ -172,7 +172,7 @@ export default function SignupPage() {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account…" : "Create account"}
+                {isLoading ? "Creating account..." : "Create account"}
               </Button>
 
               <p className="text-center text-xs text-muted-foreground">

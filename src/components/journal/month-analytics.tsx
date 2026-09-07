@@ -90,12 +90,12 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
   const bes = trades.filter((t) => t.result === "break-even");
   const totalR = trades.reduce((s, t) => s + tradeR(t), 0);
   const winRate = winRateOf(wins.length, losses.length);
-  const avgRR = wins.length ? (wins.reduce((s, t) => s + t.rr, 0) / wins.length).toFixed(1) : "—";
+  const avgRR = wins.length ? (wins.reduce((s, t) => s + t.rr, 0) / wins.length).toFixed(1) : "-";
   const goodExec = trades.filter((t) => t.execution_quality === "good").length;
   const ratedExec = goodExec + trades.filter((t) => t.execution_quality === "bad").length;
   const execRate = ratedExec ? Math.round((goodExec / ratedExec) * 100) : null;
 
-  // Long vs short — count, win rate and R for each side.
+  // Long vs short: count, win rate and R for each side.
   const longs = trades.filter((t) => t.direction === "long");
   const shorts = trades.filter((t) => t.direction === "short");
   const sideWinRate = (list: TradeJournalEntry[]) => tradesWinRate(list) ?? 0;
@@ -150,7 +150,7 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
           <div className="text-right">
             <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">Win rate</p>
             <p className="mt-1 text-2xl font-black tabular-nums leading-none" style={{ color: TURQUOISE }}>
-              {winRate == null ? "—" : `${winRate}%`}
+              {winRate == null ? "-" : `${winRate}%`}
             </p>
           </div>
         </div>
@@ -162,8 +162,8 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
       {/* Stat grid */}
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Trades" value={String(trades.length)} />
-        <Stat label="Avg R:R" value={avgRR === "—" ? "—" : `${avgRR}R`} tone="text-primary" />
-        <Stat label="Good exec" value={execRate == null ? "—" : `${execRate}%`} tone="text-success" />
+        <Stat label="Avg R:R" value={avgRR === "-" ? "-" : `${avgRR}R`} tone="text-primary" />
+        <Stat label="Good exec" value={execRate == null ? "-" : `${execRate}%`} tone="text-success" />
       </div>
 
       {/* Result split */}
@@ -184,7 +184,7 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
         </div>
       )}
 
-      {/* Long vs short — how the month was actually traded */}
+      {/* Long vs short: how the month was actually traded */}
       <div className="mt-auto border-t border-border/40 pt-2.5">
         <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Direction</p>
         <div className="grid grid-cols-2 gap-2">
@@ -194,7 +194,7 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
               <span className="text-base font-black tabular-nums leading-none text-success">{longs.length}</span>
             </div>
             <p className="mt-0.5 text-[9px] tabular-nums text-muted-foreground/70">
-              {longs.length ? `${longWinRate}% win · ${formatTotalR(longR)}` : "—"}
+              {longs.length ? `${longWinRate}% win · ${formatTotalR(longR)}` : "-"}
             </p>
           </div>
           <div className="rounded-lg border border-border/50 bg-muted/20 px-2 py-1.5">
@@ -203,7 +203,7 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
               <span className="text-base font-black tabular-nums leading-none text-destructive">{shorts.length}</span>
             </div>
             <p className="mt-0.5 text-[9px] tabular-nums text-muted-foreground/70">
-              {shorts.length ? `${shortWinRate}% win · ${formatTotalR(shortR)}` : "—"}
+              {shorts.length ? `${shortWinRate}% win · ${formatTotalR(shortR)}` : "-"}
             </p>
           </div>
         </div>

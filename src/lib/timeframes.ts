@@ -3,7 +3,7 @@
  *
  * Scalpers work down to seconds, so the presets include second-based
  * timeframes, and the "Custom" field accepts anything a trader might type
- * ("15s", "15 sec", "15 seconds", "2h", "90m", …) and canonicalises it.
+ * ("15s", "15 sec", "15 seconds", "2h", "90m", ...) and canonicalises it.
  */
 
 export const TIMEFRAMES = ["5s", "15s", "30s", "1m", "5m", "15m", "1H", "4H", "Daily"];
@@ -23,7 +23,7 @@ export function normalizeTimeframe(input: string): string {
   const m = low.match(
     /^(\d+(?:\.\d+)?)\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|wk|week|weeks)$/
   );
-  if (!m) return raw; // e.g. a bare number or an unusual label — keep it verbatim
+  if (!m) return raw; // e.g. a bare number or an unusual label: keep it verbatim
 
   const n = m[1];
   const unit = m[2];

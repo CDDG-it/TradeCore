@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * Commitments — the loop that carries a 5R session into the next trade.
+ * Commitments: the loop that carries a 5R session into the next trade.
  *
  * A commitment is an if/then the trader wrote themselves: when <trigger>, then
  * <action>. The pattern engine already detects the behaviours those are meant
  * to counter, so when the same pattern fires on a later trade this raises a
- * check: "you committed to this — did you hold it?" The trader answers, and the
+ * check: "you committed to this: did you hold it?" The trader answers, and the
  * kept rate becomes the one honest measure of whether reflection changed
  * anything.
  *
@@ -33,7 +33,7 @@ import type {
 
 const PATTERN_OPTIONS = Object.entries(PATTERN_LABELS) as [PatternType, string][];
 
-/** The day a commitment came into force — checks only count trades after it. */
+/** The day a commitment came into force: checks only count trades after it. */
 const inForceFrom = (c: Commitment) => c.created_at.slice(0, 10);
 
 export function CommitmentsPanel() {
@@ -98,7 +98,7 @@ export function CommitmentsPanel() {
         } catch {
           // A later failure is most likely the unique index rejecting a check
           // another session raised first, so keep going. A failure on the very
-          // first is systemic — usually trade_therapist.sql not run yet — so
+          // first is systemic: usually trade_therapist.sql not run yet: so
           // stop rather than firing a request per pattern occurrence.
           if (i === 0) break;
         }
@@ -217,7 +217,7 @@ export function CommitmentsPanel() {
           the form for writing the next one. Columns scroll, the page does not. */}
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
       <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
-      {/* Open checks — the ask */}
+      {/* Open checks: the ask */}
       <section className="space-y-3">
         <h3 className="font-heading text-sm font-bold uppercase tracking-[0.14em] text-destructive/80">
           Needs an answer{open.length > 0 && ` · ${open.length}`}
@@ -240,7 +240,7 @@ export function CommitmentsPanel() {
                 <p className="mt-2 text-sm leading-relaxed">
                   <span className="text-muted-foreground">When</span>{" "}
                   <span className="font-semibold">{c.trigger_text}</span>
-                  <span className="text-muted-foreground"> — then </span>
+                  <span className="text-muted-foreground">, then </span>
                   <span className="font-semibold">{c.action_text}</span>
                 </p>
 
@@ -311,14 +311,14 @@ export function CommitmentsPanel() {
                       <p className="text-sm leading-relaxed">
                         <span className="text-muted-foreground">When</span>{" "}
                         <span className="font-semibold">{c.trigger_text}</span>
-                        <span className="text-muted-foreground"> — then </span>
+                        <span className="text-muted-foreground">, then </span>
                         <span className="font-semibold">{c.action_text}</span>
                       </p>
                       <p className="mt-1.5 text-[11px] text-muted-foreground">
                         {c.pattern_type ? (
                           <>Auto-checked on {PATTERN_LABELS[c.pattern_type]}</>
                         ) : (
-                          <>No pattern attached — this one is not checked automatically</>
+                          <>No pattern attached: this one is not checked automatically</>
                         )}
                         {" · in force since "}
                         {format(new Date(c.created_at), "MMM d")}
@@ -343,7 +343,7 @@ export function CommitmentsPanel() {
                       type="button"
                       onClick={() => retire(c.id)}
                       disabled={busy === c.id}
-                      title="Retire — keeps the history, stops new checks"
+                      title="Retire: keeps the history, stops new checks"
                       aria-label="Retire commitment"
                       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
                     >
@@ -363,7 +363,7 @@ export function CommitmentsPanel() {
       <AccentPanel accent="cyan" eyebrow="New" title="Write a commitment" className="min-h-0 overflow-y-auto">
         <div className="mt-4 space-y-2.5">
           <label className="block">
-            <span className="text-[11px] font-semibold text-muted-foreground">When… (the trigger)</span>
+            <span className="text-[11px] font-semibold text-muted-foreground">When... (the trigger)</span>
             <input
               value={trigger}
               onChange={(e) => setTrigger(e.target.value)}
@@ -372,7 +372,7 @@ export function CommitmentsPanel() {
             />
           </label>
           <label className="block">
-            <span className="text-[11px] font-semibold text-muted-foreground">…then (the action)</span>
+            <span className="text-[11px] font-semibold text-muted-foreground">...then (the action)</span>
             <input
               value={action}
               onChange={(e) => setAction(e.target.value)}
@@ -382,7 +382,7 @@ export function CommitmentsPanel() {
           </label>
           <label className="block">
             <span className="text-[11px] font-semibold text-muted-foreground">
-              Check it against (optional — needed for automatic checks)
+              Check it against (optional: needed for automatic checks)
             </span>
             <select
               value={pattern}

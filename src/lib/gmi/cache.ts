@@ -1,12 +1,12 @@
 /**
- * Global Markets Intelligence — server-side cache, dedupe and resilient fetch.
+ * Global Markets Intelligence: server-side cache, dedupe and resilient fetch.
  *
  * All external calls funnel through here so the page respects provider rate
  * limits and never hammers an upstream. Three guarantees:
- *   • TTL cache        — repeated requests inside the window reuse one payload.
- *   • In-flight dedupe — concurrent misses share a single upstream call.
- *   • Last-good        — on failure we serve the previous value (flagged stale)
- *                        rather than mock data or an error.
+ *   • TTL cache:        repeated requests inside the window reuse one payload.
+ *   • In-flight dedupe: concurrent misses share a single upstream call.
+ *   • Last-good:        on failure we serve the previous value (flagged stale)
+ *                       rather than mock data or an error.
  *
  * The cache is module-scoped: it lives for the lifetime of a warm server
  * instance, exactly like the existing `_lastGood` snapshots in the other API
@@ -93,7 +93,7 @@ export async function fetchJson<T = unknown>(
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     if (attempt > 0) {
-      // 400ms, 800ms, 1600ms … with a little jitter.
+      // 400ms, 800ms, 1600ms ... with a little jitter.
       const backoff = 400 * 2 ** (attempt - 1) + Math.random() * 200;
       await new Promise((r) => setTimeout(r, backoff));
     }

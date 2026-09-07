@@ -53,7 +53,7 @@ export function LandingNav() {
       />
 
       <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4">
-        {/* Brand — logo + wordmark, same font family as the hero heading, much smaller */}
+        {/* Brand: logo + wordmark, same font family as the hero heading, much smaller */}
         <Link href="/" className="flex items-center gap-2.5 justify-self-start transition-opacity hover:opacity-80">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/tradingmc-app-dark.svg" alt="" width={44} height={44} className="h-9 w-9 shrink-0 sm:h-11 sm:w-11" />
@@ -63,7 +63,7 @@ export function LandingNav() {
           </span>
         </Link>
 
-        {/* Centre — one way into the product: the cards. */}
+        {/* Centre: one way into the product: the cards. */}
         <nav className="col-start-2 flex items-center justify-center" style={{ fontFamily: NUNITO }}>
           <a
             href="#products"
@@ -74,7 +74,7 @@ export function LandingNav() {
           </a>
         </nav>
 
-        {/* Right nav — account actions, pushed to the far right */}
+        {/* Right nav: account actions, pushed to the far right */}
         <nav className="col-start-3 flex items-center justify-end gap-1 sm:gap-2" style={{ fontFamily: NUNITO }}>
           <Link
             href="/login"

@@ -3,7 +3,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 
 /**
- * Privacy mode — masks monetary figures (balances, costs, payouts) across the app,
+ * Privacy mode: masks monetary figures (balances, costs, payouts) across the app,
  * like a banking app's "hide balance" shield for when you're in public.
  *
  * Persisted in localStorage and synced across every component that uses the hook
@@ -37,7 +37,7 @@ const serverSnapshot = () => false;
  * The setting lives in localStorage, so it is read straight from there with
  * `useSyncExternalStore` instead of being copied into React state on mount.
  * Every caller of the hook reads the same source, so one toggle still hides
- * everything at once — now without a second render per component.
+ * everything at once: now without a second render per component.
  */
 export function usePrivacy() {
   const hidden = useSyncExternalStore(subscribe, read, serverSnapshot);

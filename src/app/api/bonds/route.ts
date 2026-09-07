@@ -3,7 +3,7 @@ import { fetchBondSnapshot } from "@/lib/bonds/live";
 import type { BondSnapshot } from "@/lib/bonds/types";
 
 // On-demand: live Treasury fetches. The route keeps its own last-good snapshot
-// so a transient upstream failure still serves real, last-known-good yields —
+// so a transient upstream failure still serves real, last-known-good yields:
 // never mock data. The curve updates once per business day.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

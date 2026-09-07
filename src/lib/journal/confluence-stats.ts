@@ -1,5 +1,5 @@
 /**
- * Confluence performance — which of the trader's own setups actually pay.
+ * Confluence performance: which of the trader's own setups actually pay.
  *
  * Every trade carries the confluences that justified it, and the library is
  * curated in My Edge, but nothing measured them until now. This groups the
@@ -22,11 +22,11 @@ export interface ConfluenceStat {
   trades: number;
   wins: number;
   losses: number;
-  /** 0–100, over decisive trades only (break-evens excluded from the rate). */
+  /** 0-100, over decisive trades only (break-evens excluded from the rate). */
   winRate: number;
   /** Sum of R across every trade carrying this confluence. */
   totalR: number;
-  /** R per trade — the number that decides whether a setup is worth taking. */
+  /** R per trade: the number that decides whether a setup is worth taking. */
   expectancy: number;
   /** True when the sample is too small to draw a conclusion from. */
   thin: boolean;

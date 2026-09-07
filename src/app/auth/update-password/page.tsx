@@ -66,7 +66,7 @@ export default function UpdatePasswordPage() {
                 <Input id="confirm" type="password" placeholder="••••••••" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={8} autoComplete="new-password" className="bg-background/50" />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Saving…" : "Save new password"}
+                {isLoading ? "Saving..." : "Save new password"}
               </Button>
             </form>
           </CardContent>

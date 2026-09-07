@@ -4,9 +4,9 @@ import { fetchCalendar, fetchCalendarMonth, type CalendarEntry, type CalendarMon
 import type { DataEnvelope } from "@/lib/gmi/types";
 
 // US economic releases from FRED. Two modes:
-//   • no params      — the most recent prints (actual + prior + trend).
-//   • ?month=YYYY-MM — the release calendar for that month, FRED's own
-//                      schedule, with the print attached where one has landed.
+//   • no params:      the most recent prints (actual + prior + trend).
+//   • ?month=YYYY-MM: the release calendar for that month, FRED's own
+//                     schedule, with the print attached where one has landed.
 // Consensus is not available on the free tier and is returned as null.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

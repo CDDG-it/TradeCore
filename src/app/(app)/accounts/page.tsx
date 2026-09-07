@@ -20,7 +20,7 @@ type StatusFilter = "all" | "active" | "inactive";
 type PhaseFilter = "all" | "evaluation" | "funded";
 type SortOrder = "newest" | "oldest";
 
-/* "Funded" covers both the funded and payout phases — an account receiving
+/* "Funded" covers both the funded and payout phases: an account receiving
    payouts is past evaluation by definition. */
 function matchesPhase(acct: FundedAccount, filter: PhaseFilter): boolean {
   if (filter === "all") return true;
@@ -170,10 +170,10 @@ export default function AccountsPage() {
         onOpenChange={setPerfOpen}
       />
       <PageWrapper>
-        {/* ── Filters — always visible when accounts exist ── */}
+        {/* ── Filters: always visible when accounts exist ── */}
         {accounts.length > 0 && (
           <div className="flex flex-wrap items-center gap-3">
-            {/* Firm filter — dropdown */}
+            {/* Firm filter: dropdown */}
             {allFirms.length > 0 && (
               <Select value={firmFilter} onValueChange={(v) => setFirmFilter(v ?? "all")}>
                 <SelectTrigger className="h-9 min-w-[160px] border-border bg-card text-sm">
@@ -214,7 +214,7 @@ export default function AccountsPage() {
 
             <div className="h-4 w-px bg-border" />
 
-            {/* Phase filter — evaluation vs funded */}
+            {/* Phase filter: evaluation vs funded */}
             <div className="flex gap-1.5">
               {(["all", "evaluation", "funded"] as PhaseFilter[]).map((p) => (
                 <button
@@ -249,7 +249,7 @@ export default function AccountsPage() {
 
             <div className="h-4 w-px bg-border" />
 
-            {/* Privacy toggle — hide balances when in public */}
+            {/* Privacy toggle: hide balances when in public */}
             <button
               type="button"
               onClick={toggle}

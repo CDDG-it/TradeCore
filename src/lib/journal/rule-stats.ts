@@ -1,5 +1,5 @@
 /**
- * Per-rule breakdown — which of the trader's own rules get broken, and what
+ * Per-rule breakdown: which of the trader's own rules get broken, and what
  * each breach actually costs.
  *
  * Every trade stores its discipline checklist in `discipline.custom_checks`,
@@ -8,8 +8,8 @@
  * not see that, say, sizing up costs them a full R every time.
  *
  * Built deliberately on custom_checks alone. TradeDiscipline also carries nine
- * fixed booleans (followed_plan, no_revenge_trade, …) but no surface in the app
- * ever toggles them — they are defaulted to false and left there, so counting
+ * fixed booleans (followed_plan, no_revenge_trade, ...) but no surface in the app
+ * ever toggles them: they are defaulted to false and left there, so counting
  * them would report every standard rule as broken on every trade.
  */
 import { tradeR } from "@/lib/journal/weeks";
@@ -25,14 +25,14 @@ export interface RuleStat {
   evaluated: number;
   kept: number;
   broken: number;
-  /** 0–100 — how often it gets broken when it applies. */
+  /** 0-100: how often it gets broken when it applies. */
   breakRate: number;
   /** Average R on trades where the rule was kept (null if never kept). */
   rKept: number | null;
   /** Average R on trades where it was broken (null if never broken). */
   rBroken: number | null;
   /**
-   * R given up per breach — the gap between keeping and breaking it. Null when
+   * R given up per breach: the gap between keeping and breaking it. Null when
    * one side has no trades, since there is nothing to compare against.
    */
   cost: number | null;
@@ -96,7 +96,7 @@ export function computeRuleStats(
     })
     .sort((a, b) => {
       // Reliable samples first, then the most expensive breach, then the most
-      // frequent — so the top of the list is what to fix on Monday.
+      // frequent, so the top of the list is what to fix on Monday.
       if (a.thin !== b.thin) return Number(a.thin) - Number(b.thin);
       if (a.cost !== null && b.cost !== null && a.cost !== b.cost) return b.cost - a.cost;
       if (a.cost !== null && b.cost === null) return -1;

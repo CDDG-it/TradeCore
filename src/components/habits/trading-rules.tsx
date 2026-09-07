@@ -16,8 +16,8 @@ function moveItem<T>(list: T[], from: number, to: number): T[] {
 /**
  * Trading Rules editor. These are the trader's personal, non-negotiable rules
  * that appear as the pre-trade discipline checklist when logging a trade.
- * They are persisted in `profiles.discipline_rules` (one rule per line) — the
- * same field the Journal reads — so existing rules and journal behaviour are
+ * They are persisted in `profiles.discipline_rules` (one rule per line): the
+ * same field the Journal reads, so existing rules and journal behaviour are
  * preserved. This used to be edited on the Profile page; it now lives here in
  * the discipline environment.
  *
@@ -37,7 +37,7 @@ export function TradingRulesEditor() {
   // Tracks whether the in-memory rules diverge from what's stored, so we can
   // show a clear "unsaved changes" state and avoid silently losing edits.
   const [dirty, setDirty] = useState(false);
-  // Index currently being dragged, and the order it started from — so a drag
+  // Index currently being dragged, and the order it started from, so a drag
   // that ends where it began does not mark the list unsaved.
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const dragStart = useRef<string[] | null>(null);
@@ -129,7 +129,7 @@ export function TradingRulesEditor() {
     }
   }
 
-  /** Arrow keys on the grip move a rule too — dragging is not the only way. */
+  /** Arrow keys on the grip move a rule too: dragging is not the only way. */
   function nudge(idx: number, delta: number) {
     const to = idx + delta;
     if (to < 0 || to >= rules.length) return;
@@ -201,8 +201,8 @@ export function TradingRulesEditor() {
               {rules.map((rule, idx) => (
                 <li
                   // Keyed by position, not by text: a live reorder swaps the
-                  // content of stable rows, so the row you are holding — and
-                  // its pointer capture — survives the move.
+                  // content of stable rows, so the row you are holding: and
+                  // its pointer capture: survives the move.
                   key={idx}
                   data-idx={idx}
                   className={cn(
@@ -237,7 +237,7 @@ export function TradingRulesEditor() {
                     </>
                   ) : (
                     <>
-                      {/* Grab here to reorder — or focus it and use the arrows. */}
+                      {/* Grab here to reorder, or focus it and use the arrows. */}
                       <button
                         type="button"
                         data-grip
@@ -290,7 +290,7 @@ export function TradingRulesEditor() {
               value={newRule}
               onChange={(e) => setNewRule(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addRule(); } }}
-              placeholder="Add a trading rule…"
+              placeholder="Add a trading rule..."
               className="min-w-0 flex-1 bg-transparent px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
             />
             <button
@@ -324,7 +324,7 @@ export function TradingRulesEditor() {
               className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
               style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
             >
-              {saveState === "saving" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…</> : "Save rules"}
+              {saveState === "saving" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</> : "Save rules"}
             </button>
           </div>
         </>

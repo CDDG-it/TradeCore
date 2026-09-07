@@ -33,7 +33,7 @@ function hasEntry(b: BestTradeOfDay | undefined): boolean {
 }
 
 /**
- * Daily / best trade of the day — a week calendar of results across the top,
+ * Daily / best trade of the day: a week calendar of results across the top,
  * and the selected day's trades, post-market recap and best trade below. Pick
  * any day in the week to work through it.
  */
@@ -72,7 +72,7 @@ export function DailyBestTrade({
     return map;
   }, [trades]);
 
-  // All best-trade entries — only for marking which week days are done.
+  // All best-trade entries: only for marking which week days are done.
   useEffect(() => {
     getBestTradesOfDay()
       .then((rows) => setBestByDay(Object.fromEntries(rows.map((r) => [r.date.slice(0, 10), r]))))
@@ -99,7 +99,7 @@ export function DailyBestTrade({
   );
   const dayR = dayTrades.reduce((s, t) => s + tradeR(t), 0);
 
-  // Week-level review progress — only days that were actually traded can be
+  // Week-level review progress: only days that were actually traded can be
   // "still to review", so the ratio never punishes a quiet week.
   const isThisWeek = weekDays.some((day) => isToday(day));
   const { tradedDays, reviewedDays } = useMemo(() => {
@@ -161,8 +161,8 @@ export function DailyBestTrade({
       {/* ── Week rail ────────────────────────────────────────────────────────
           Deliberately not the Journal's calendar: this one answers "which day
           still needs working through". It carries review state as the primary
-          signal, with the day's result bands underneath — one band per trade,
-          in the order taken — so a mixed day reads as mixed at a glance. */}
+          signal, with the day's result bands underneath: one band per trade,
+          in the order taken, so a mixed day reads as mixed at a glance. */}
       <AccentPanel accent="primary" className="shrink-0 p-0">
         <div className="flex items-center justify-between gap-3 border-b border-border/40 px-3 py-2.5 sm:px-4">
           <div className="flex items-center gap-1.5">
@@ -184,7 +184,7 @@ export function DailyBestTrade({
 
           <div className="min-w-0 text-center">
             <p className="truncate text-sm font-semibold tracking-tight">
-              {format(weekStart, "MMM d")} – {format(weekEnd, "MMM d, yyyy")}
+              {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}
             </p>
             <p className="mt-0.5 text-[10px] tabular-nums text-muted-foreground/70">
               {tradedDays === 0
@@ -193,7 +193,7 @@ export function DailyBestTrade({
             </p>
           </div>
 
-          {/* Review progress — only meaningful once something was traded */}
+          {/* Review progress: only meaningful once something was traded */}
           <div className="flex w-16 shrink-0 items-center justify-end gap-2">
             {tradedDays > 0 && (
               <>
@@ -227,7 +227,7 @@ export function DailyBestTrade({
                 type="button"
                 onClick={() => onDateChange(key)}
                 disabled={future}
-                title={future ? "" : done ? "Reviewed" : traded ? "Traded — not reviewed yet" : "No trades"}
+                title={future ? "" : done ? "Reviewed" : traded ? "Traded, not reviewed yet" : "No trades"}
                 className={cn(
                   "group relative flex flex-col items-center overflow-hidden rounded-xl border px-1 pb-2 pt-2.5 transition-all duration-300",
                   selected
@@ -239,7 +239,7 @@ export function DailyBestTrade({
                 )}
                 style={traded ? { background: resultBands(dayTradesFor, selected ? 18 : 12) } : undefined}
               >
-                {/* Result bar — one full-strength segment per trade */}
+                {/* Result bar: one full-strength segment per trade */}
                 {traded && (
                   <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-[3px] gap-px">
                     {dayTradesFor.map((t) => (
@@ -273,7 +273,7 @@ export function DailyBestTrade({
                   {format(day, "d")}
                 </span>
 
-                {/* Net R — the day's outcome, or a placeholder dot when nothing was taken */}
+                {/* Net R: the day's outcome, or a placeholder dot when nothing was taken */}
                 {traded ? (
                   <span className="relative mt-1.5 flex items-center gap-1">
                     <span className="text-[11px] font-black leading-none tabular-nums" style={{ color: netRColor(netR) }}>
@@ -289,7 +289,7 @@ export function DailyBestTrade({
                   <span className="relative mt-2 h-1 w-1 rounded-full bg-muted-foreground/25" />
                 )}
 
-                {/* Review state — a filled check once the day has been worked
+                {/* Review state: a filled check once the day has been worked
                     through, an open ring while it is still waiting. */}
                 <span
                   aria-hidden
@@ -309,7 +309,7 @@ export function DailyBestTrade({
           })}
         </div>
 
-        {/* Legend — review state first, outcome colours second */}
+        {/* Legend: review state first, outcome colours second */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/40 px-3 py-2 text-[10px] text-muted-foreground sm:px-4">
           <span className="inline-flex items-center gap-1.5">
             <span className="flex h-3 w-3 items-center justify-center rounded-full bg-primary" /> Reviewed
@@ -383,7 +383,7 @@ export function DailyBestTrade({
                 <textarea
                   value={postMarket}
                   onChange={(e) => { setPostMarket(e.target.value); setSaved(false); }}
-                  placeholder="Range held the overnight low, first pullback into VWAP was the A+ long, chased the breakout instead…"
+                  placeholder="Range held the overnight low, first pullback into VWAP was the A+ long, chased the breakout instead..."
                   className="mt-3 min-h-[90px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                 />
               </AccentPanel>
@@ -410,7 +410,7 @@ export function DailyBestTrade({
                   value={notes}
                   onChange={(e) => { setNotes(e.target.value); setSaved(false); }}
                   rows={4}
-                  placeholder="Cleaner level, more room to target, aligned with the daily bias…"
+                  placeholder="Cleaner level, more room to target, aligned with the daily bias..."
                   className="w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                 />
               </div>

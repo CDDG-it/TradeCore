@@ -207,7 +207,7 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
     try {
       await updateAnalysis(id, {
         ...form,
-        title: `${form.instrument} — ${form.date}`,
+        title: `${form.instrument}: ${form.date}`,
         market: analysis.market,
         session: analysis.session,
         notes: "",

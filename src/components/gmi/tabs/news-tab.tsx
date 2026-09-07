@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * 04 NEWS — the wire, at length.
+ * 04 NEWS: the wire, at length.
  *
  * The lead story gets room to be read; everything else runs as a dense feed you
  * can scan by time. Sentiment is Marketaux's own per-entity score, shown as a
- * mark in the margin — provider-supplied, never a call, never a written verdict.
+ * mark in the margin: provider-supplied, never a call, never a written verdict.
  */
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -95,7 +95,7 @@ export function NewsTab() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="filter…"
+              placeholder="filter..."
               className="w-28 border-b border-border/50 bg-transparent pb-px text-[12px] text-foreground outline-none placeholder:text-foreground/65 focus:border-primary"
             />
             <Label className="hidden tracking-[0.18em] sm:inline">{filtered.length} items</Label>
@@ -104,7 +104,7 @@ export function NewsTab() {
         bodyClassName="flex flex-col p-0"
         className="min-h-[420px] lg:col-span-8"
       >
-        {/* Asset filter — words, no chips-with-icons */}
+        {/* Asset filter: words, no chips-with-icons */}
         <div className="scrollbar-none flex shrink-0 items-center gap-3 overflow-x-auto border-b border-border/30 px-3 py-1.5">
           <button
             onClick={() => setAsset(null)}

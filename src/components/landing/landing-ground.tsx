@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * One ground for the whole opening stretch of the landing page — hero, product
+ * One ground for the whole opening stretch of the landing page: hero, product
  * explorer and the product cards.
  *
  * Those three sections each used to paint their own flat fill, so scrolling
  * crossed two visible seams. This is a single layer behind all of them: a faint
  * plotting grid, the same one the Global Markets desk is ruled with, lit by a
  * few slow turquoise and cyan glows and darkened toward the fold at each end.
- * Purely decorative and entirely static — no animation to repaint on a surface
+ * Purely decorative and entirely static: no animation to repaint on a surface
  * this tall.
  */
 
@@ -47,7 +47,7 @@ export function LandingGround() {
         }}
       />
 
-      {/* A slow vertical shade — the page sinks a little as you go down, which
+      {/* A slow vertical shade: the page sinks a little as you go down, which
           keeps the cards reading as the end of the stretch. */}
       <div
         className="absolute inset-0"

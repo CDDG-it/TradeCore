@@ -28,14 +28,14 @@ export interface ScreenshotGroup {
   urls: string[];
 }
 
-/** Best trade of the day — one per calendar day, whether or not you traded. */
+/** Best trade of the day: one per calendar day, whether or not you traded. */
 export interface BestTradeOfDay {
   id: string;
   user_id: string;
   date: string; // ISO date (day)
   taken_was_best: boolean;
   notes: string;
-  /** Free-form post-market recap of the whole session — what the market did,
+  /** Free-form post-market recap of the whole session: what the market did,
    *  which setups appeared, how the day should have been traded. */
   post_market_analysis: string;
   screenshot_groups: ScreenshotGroup[];
@@ -45,7 +45,7 @@ export interface BestTradeOfDay {
 
 // ── Pre-Market Exercise ─────────────────────────────────────────────────────
 // A pre-session drill: review the two most recent losses and two most recent
-// wins, then commit — in writing, before the open — to a plan for preventing
+// wins, then commit: in writing, before the open: to a plan for preventing
 // each mistake from repeating and reproducing each thing that worked today.
 export interface PreMarketExercise {
   id: string;
@@ -90,7 +90,7 @@ export interface TradeDiscipline {
   no_revenge_trade: boolean;
   respected_stop_loss: boolean;
   journal_completed: boolean;
-  /** Computed 0–100 from the boolean fields above + custom_checks */
+  /** Computed 0-100 from the boolean fields above + custom_checks */
   score: number;
   notes: string;
   /** User-defined custom discipline rules */
@@ -104,7 +104,7 @@ export interface TradeMarketContext {
   news_day: boolean;
   major_event: boolean;
   htf_bias: Bias;
-  /** Trader's confidence in their read of the context, 1–5 */
+  /** Trader's confidence in their read of the context, 1-5 */
   confidence: number;
   notes: string;
 }
@@ -329,7 +329,7 @@ export interface DashboardStats {
 // ── Psychological Edge ────────────────────────────────────────────────────────
 // A generated coaching session: reads the trade journal, finds contradictions
 // and behavioral patterns, and produces one measurable objective for the next
-// session. The facts (report/relate) come entirely from the journal — the
+// session. The facts (report/relate) come entirely from the journal: the
 // trader is never asked to re-type anything that's already logged. The only
 // things the trader adds are a one-tap emotional tag and a short written
 // answer to the engine's targeted "why" question, which becomes memory for
@@ -344,33 +344,33 @@ export interface PsychEdgeSession {
   /** The most recent trade this session's analysis is based on, if any. */
   trade_id: string | null;
   /** Stable key identifying the behavioral pattern driving this session's
-   *  focus, e.g. "recurring-rule:no-revenge-trade" or "bias-mismatch" — used
+   *  focus, e.g. "recurring-rule:no-revenge-trade" or "bias-mismatch": used
    *  to check next session whether the same pattern recurred. */
   pattern_key: string | null;
   /** Human label for the pattern, e.g. the broken rule's own wording. */
   recurring_pattern_label: string | null;
-  /** Report — a factual, no-judgement recap of the trade this session covers. */
+  /** Report: a factual, no-judgement recap of the trade this session covers. */
   report: string;
-  /** Relate — how this trade connects to trailing history, if anything does. */
+  /** Relate: how this trade connects to trailing history, if anything does. */
   relate: string | null;
-  /** Reason — the engine's targeted challenge question for this trade. */
+  /** Reason: the engine's targeted challenge question for this trade. */
   reason: string;
   primary_objective: string | null;
   reminder: string | null;
   success_metric: string | null;
-  /** Respond — one-tap emotional read of the trade, set by the trader. */
+  /** Respond: one-tap emotional read of the trade, set by the trader. */
   response_tag: PsychEdgeResponseTag | null;
-  /** Respond — how strongly that emotion ran, 1 (barely) – 5 (overwhelming). */
+  /** Respond: how strongly that emotion ran, 1 (barely) - 5 (overwhelming). */
   emotion_intensity: number | null;
-  /** Reason, trader's side — their own written answer to `reason` (why it happened). */
+  /** Reason, trader's side: their own written answer to `reason` (why it happened). */
   reasoning_answer: string | null;
-  /** Reason, deeper — the trader spelling out why this was a mistake and what it
+  /** Reason, deeper: the trader spelling out why this was a mistake and what it
    *  actually cost them (the R, the rule, the trust in their own process). */
   mistake_cost: string | null;
-  /** Reconstruct — the trader's own, explicit commitment not to repeat this,
+  /** Reconstruct: the trader's own, explicit commitment not to repeat this,
    *  in their own words. Required before a reflection can be committed. */
   commitment_statement: string | null;
-  /** Reconstruct — optional trader override/addition to `primary_objective`. */
+  /** Reconstruct: optional trader override/addition to `primary_objective`. */
   reconstruction_note: string | null;
   /** Whether the trader has explicitly committed to today's objective. */
   reconstruction_confirmed: boolean;
@@ -385,7 +385,7 @@ export type PsychEdgeSessionInput = Omit<
 
 // ── MC Trade Therapist ────────────────────────────────────────────────────────
 // A deterministic, data-driven behavioural coach. Everything below is derived
-// from — and traceable to — the trader's own trade history. No LLM, no generic
+// from, and traceable to: the trader's own trade history. No LLM, no generic
 // motivation: the pattern engine (src/lib/psych-edge/patterns.ts) fires on fixed,
 // explainable thresholds, and each finding carries the concrete numbers behind it.
 
@@ -396,7 +396,7 @@ export type PatternType = "revenge" | "size-escalation" | "overtrading" | "plan-
 /** A single occurrence of a pattern the engine detected on one trade. Persisted
  *  so the Pre-Trade Mirror can point back to concrete past situations, and so a
  *  cumulative P&L impact per pattern can be tracked over time. The row is a log
- *  of a deterministic detection — recomputable from trades — plus the trader's
+ *  of a deterministic detection: recomputable from trades: plus the trader's
  *  own confirm/refute from the 5R "Relating" step. */
 export interface PatternEvent {
   id: string;
@@ -406,9 +406,9 @@ export interface PatternEvent {
   /** ISO day of that trade. */
   date: string;
   pattern_type: PatternType;
-  /** 0–1, built deterministically from the threshold overshoot. */
+  /** 0-1, built deterministically from the threshold overshoot. */
   confidence: number;
-  /** R contribution of the focus trade — the cost (or gain) attributed to this event. */
+  /** R contribution of the focus trade: the cost (or gain) attributed to this event. */
   r_impact: number;
   /** Deterministic, human-readable explanation with the numbers behind it. */
   detail: string;
@@ -430,9 +430,9 @@ export interface Commitment {
   trade_id: string | null;
   /** Which behavioural pattern this commitment is meant to counter. */
   pattern_type: PatternType | null;
-  /** The "if" — the trigger condition, in the trader's own words. */
+  /** The "if": the trigger condition, in the trader's own words. */
   trigger_text: string;
-  /** The "then" — the committed action. */
+  /** The "then": the committed action. */
   action_text: string;
   /** Still in force. Superseded commitments are kept for history but deactivated. */
   active: boolean;
@@ -472,7 +472,7 @@ export type CommitmentAdherenceLogInput = Omit<CommitmentAdherenceLog, "id" | "u
  * Mindscore is deliberately not on the list: its objectives are shaped per
  * week and per month (a weekly review, a day's best trade), so scoring it
  * across an arbitrary window would mean inventing targets it never had. Its
- * two behavioural inputs — execution and rule adherence — are here instead.
+ * two behavioural inputs: execution and rule adherence: are here instead.
  */
 export type GoalMetric =
   | "execution_rate"   // % of rated trades executed to plan

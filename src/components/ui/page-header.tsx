@@ -3,17 +3,17 @@
 import { motion } from "motion/react";
 
 interface PageHeaderProps {
-  /** Kept for API compatibility — no longer rendered. */
+  /** Kept for API compatibility: no longer rendered. */
   badge?: string;
   title: string;
-  /** Kept for API compatibility — no longer rendered. */
+  /** Kept for API compatibility: no longer rendered. */
   subtitle?: string;
   action?: React.ReactNode;
   className?: string;
 }
 
 /**
- * Page heading — just a compact title (and an optional action on the right).
+ * Page heading: just a compact title (and an optional action on the right).
  * The old eyebrow badge and subtitle are intentionally dropped so every page
  * leads with a small, clean title.
  */

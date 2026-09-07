@@ -10,7 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // (the top nav and the Global Markets header). Clip contains overflow the
     // same way without creating one.
     <div className="min-h-screen bg-background relative overflow-x-clip">
-      {/* Full-width top navigation — no fixed left sidebar */}
+      {/* Full-width top navigation: no fixed left sidebar */}
       <TopNav />
       <WarmReads />
 
@@ -18,7 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           and vertical padding on phones so content uses the full screen. */}
       <main className="relative z-10">
         {/* `app-shell` reserves room for the fixed phone tab bar (and a page's
-            docked subnav strip) — see globals.css. */}
+            docked subnav strip). See globals.css. */}
         <div className="app-shell mx-auto w-full max-w-[1700px] px-3 py-4 sm:px-6 sm:py-8 lg:px-10">
           <TransitionLayout>{children}</TransitionLayout>
         </div>

@@ -1,5 +1,5 @@
 /**
- * Global Markets Intelligence — shared data-layer types.
+ * Global Markets Intelligence: shared data-layer types.
  *
  * Every dataset the page shows is wrapped in a {@link DataEnvelope} so the UI
  * can always state, honestly, where a number came from, when it was captured,
@@ -7,7 +7,7 @@
  * when a provider has no value we return `status: "unavailable"`, never a guess.
  */
 
-/** How fresh a dataset is, by its provider's nature — drives the status badge. */
+/** How fresh a dataset is, by its provider's nature: drives the status badge. */
 export type DataFreshness =
   | "realtime"
   | "delayed"
@@ -72,7 +72,7 @@ export interface MacroSeries {
   status: DataStatus;
 }
 
-/** A news article, objective fields only — sentiment shown as the provider's own score. */
+/** A news article, objective fields only: sentiment shown as the provider's own score. */
 export interface NewsArticle {
   id: string;
   title: string;

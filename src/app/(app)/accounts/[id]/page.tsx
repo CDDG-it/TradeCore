@@ -137,7 +137,7 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
 
         <div className="flex items-start justify-between gap-4">
           <div>
-            {/* Just the firm as the heading — account size and cost live in the summary cards below */}
+            {/* Just the firm as the heading: account size and cost live in the summary cards below */}
             <h1 className="text-2xl font-bold tracking-tight">{account.firm_name}</h1>
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">

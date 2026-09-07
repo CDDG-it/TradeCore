@@ -2,7 +2,7 @@
 
 /**
  * Liquid-glass flip card. Adapted from KokonutUI's Card Flip (MIT,
- * https://kokonutui.com) — reworked to glassmorphism and the TradingMC palette
+ * https://kokonutui.com): reworked to glassmorphism and the TradingMC palette
  * (turquoise/cyan, no orange), with a real product link on the back.
  */
 
@@ -101,7 +101,7 @@ export function CardFlip({
               {visual}
             </div>
 
-            {/* Label — over a scrim, so a busy visual never eats the title. */}
+            {/* Label: over a scrim, so a busy visual never eats the title. */}
             <div className="relative shrink-0 p-5 pt-3">
               <div
                 aria-hidden

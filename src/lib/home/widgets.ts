@@ -4,7 +4,7 @@
  * The Home page is a modular dashboard: each widget is a small, self-contained
  * preview of one area of the app that links through to the full page. New
  * widgets only need an entry here plus a component in
- * `src/components/home/widgets.tsx` — nothing else in the page has to change.
+ * `src/components/home/widgets.tsx`: nothing else in the page has to change.
  *
  * Which widgets are enabled (and in what order) is stored per-browser in
  * localStorage so the layout is personal and survives reloads without needing
@@ -25,7 +25,7 @@ export type WidgetId =
   | "premarket-analysis"
   | "journal-calendar";
 
-/** The page/area a widget belongs to — used to group the "Add widget" picker. */
+/** The page/area a widget belongs to: used to group the "Add widget" picker. */
 export type WidgetSource =
   | "Journal"
   | "Habits"
@@ -44,7 +44,7 @@ export interface WidgetMeta {
 }
 
 export const WIDGETS: WidgetMeta[] = [
-  { id: "journal-calendar", title: "Journal Calendar", source: "Journal", href: "/journal", description: "A month at a glance — open the full journal for detail." },
+  { id: "journal-calendar", title: "Journal Calendar", source: "Journal", href: "/journal", description: "A month at a glance: open the full journal for detail." },
   { id: "weekly-r", title: "Weekly R", source: "Journal", href: "/journal", description: "Your net R for the current week." },
   { id: "recent-trades", title: "Recent Trades", source: "Journal", href: "/journal", description: "Your latest logged trades." },
   { id: "win-rate", title: "Win Rate", source: "Analytics", href: "/analytics", description: "Win rate across all trades." },

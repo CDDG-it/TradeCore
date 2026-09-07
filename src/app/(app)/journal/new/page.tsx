@@ -20,7 +20,7 @@ import { useFormDraft } from "@/lib/drafts";
 import { DraftBanner } from "@/components/ui/draft-banner";
 import { ExecutionQualityField } from "@/components/journal/execution-quality-field";
 
-// A draft is only worth keeping once the trader has entered something real —
+// A draft is only worth keeping once the trader has entered something real:
 // keeps pristine, untouched forms from persisting an empty draft.
 function tradeDraftHasContent(f: TradeJournalEntryInput): boolean {
   return (
@@ -199,7 +199,7 @@ export default function NewTradePage() {
     setSaving(true);
     try {
       const created = await createTrade(form, entityId);
-      clearDraft(); // saved for real — drop the draft so it can't resurrect
+      clearDraft(); // saved for real: drop the draft so it can't resurrect
       router.push(`/journal/${created.id}`);
     } catch (err) {
       console.error("Failed to save trade:", err);
@@ -215,7 +215,7 @@ export default function NewTradePage() {
 
   return (
     <div className="space-y-4">
-      {/* Compact header — actions stay in view so the form needs no scroll to submit */}
+      {/* Compact header: actions stay in view so the form needs no scroll to submit */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Link href="/journal" aria-label="Back to Journal"
@@ -302,7 +302,7 @@ export default function NewTradePage() {
               </div>
             </div>
 
-            {/* Execution quality — the "i" explains what the two answers mean. */}
+            {/* Execution quality: the "i" explains what the two answers mean. */}
             <ExecutionQualityField
               value={form.execution_quality}
               onChange={(next) => set("execution_quality", next)}
@@ -384,7 +384,7 @@ export default function NewTradePage() {
           </CardContent>
         </Card>
 
-        {/* Notes — execution, psychology, mistakes & lessons in one compact block */}
+        {/* Notes: execution, psychology, mistakes & lessons in one compact block */}
         <Card className="bg-card border-border/50 shadow-sm">
           <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Notes</CardTitle></CardHeader>
           <CardContent className="grid sm:grid-cols-2 gap-3">
@@ -434,7 +434,7 @@ export default function NewTradePage() {
         <Card className="bg-card border-border/50 shadow-sm">
           <CardHeader className="pb-2.5">
             <CardTitle className="text-sm font-semibold">
-              Analysis — {form.date_time}
+              Analysis: {form.date_time}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -451,7 +451,7 @@ export default function NewTradePage() {
                   <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
                     className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all max-w-xs truncate",
                       form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                    {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}…` : a.title}
+                    {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}...` : a.title}
                   </button>
                 ))}
               </div>
@@ -550,7 +550,7 @@ export default function NewTradePage() {
             <CardContent className="space-y-3">
               {customChecks.length === 0 && (
                 <p className="text-xs text-muted-foreground/60 text-center py-2">
-                  No rules yet — add your personal discipline rules below.
+                  No rules yet: add your personal discipline rules below.
                 </p>
               )}
               <div className="space-y-1.5">

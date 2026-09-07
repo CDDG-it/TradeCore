@@ -88,27 +88,27 @@ export function TopNav() {
             (logo) and right (actions) slots share equal flex width, keeping the
             centre nav horizontally centred regardless of their content. */}
         <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
-          {/* Left — logo */}
+          {/* Left: logo */}
           <div className="flex-1 flex items-center min-w-0">
-            <Link href="/" aria-label="TradingMC — home" className="shrink-0 hover:opacity-80 transition-opacity">
+            <Link href="/" aria-label="TradingMC home" className="shrink-0 hover:opacity-80 transition-opacity">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={38} height={38} className="h-9 w-9" />
             </Link>
           </div>
 
-          {/* Centre — desktop nav */}
+          {/* Centre: desktop nav */}
           <nav className="hidden lg:flex items-center justify-center gap-1 min-w-0 max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {PRIMARY_NAV.map((tab) => (
               <DesktopItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} soon={tab.soon} />
             ))}
           </nav>
 
-          {/* Right — actions */}
+          {/* Right: actions */}
           <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
             <div className="hidden lg:flex items-center gap-2 shrink-0">
               <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} onSignOut={signOut} />
             </div>
-            {/* Phone: the profile lives top-right, the way every app does it —
+            {/* Phone: the profile lives top-right, the way every app does it:
                 navigation itself has moved to the bottom tab bar. */}
             <button type="button" onClick={() => setOpen(true)} aria-label="Open profile menu"
               className="inline-flex lg:hidden items-center justify-center rounded-full">
@@ -118,7 +118,7 @@ export function TopNav() {
         </div>
       </header>
 
-      {/* Phone profile sheet — identity and account actions only; the primary
+      {/* Phone profile sheet: identity and account actions only; the primary
           destinations are in the bottom tab bar. */}
       {open && (
         <div className="lg:hidden fixed inset-0 z-50" onClick={() => setOpen(false)}>
@@ -163,7 +163,7 @@ export function TopNav() {
   );
 }
 
-/** Avatar chip — initials on a turquoise→cyan gradient ring, over the nav bg. */
+/** Avatar chip: initials on a turquoise→cyan gradient ring, over the nav bg. */
 function AvatarChip({ initials, size }: { initials: string; size: number }) {
   return (
     <span
@@ -182,7 +182,7 @@ function AvatarChip({ initials, size }: { initials: string; size: number }) {
   );
 }
 
-/** Click-to-open profile dropdown — a polished glass panel listing Profile,
+/** Click-to-open profile dropdown: a polished glass panel listing Profile,
  *  Settings and Sign out. Adapted from KokonutUI's Profile Dropdown (MIT,
  *  https://kokonutui.com), reworked to the TradingMC palette. */
 function ProfileMenu({
@@ -231,7 +231,7 @@ function ProfileMenu({
           className="absolute right-0 top-full mt-2 w-64 origin-top-right rounded-2xl border border-border p-2 shadow-xl z-50 backdrop-blur-sm"
           style={{ background: "color-mix(in oklch, var(--popover, var(--card)) 94%, transparent)" }}
         >
-          {/* Header — avatar + identity */}
+          {/* Header: avatar + identity */}
           <div className="flex items-center gap-3 px-2 py-2">
             <AvatarChip initials={initials} size={40} />
             <div className="min-w-0 flex-1">

@@ -1,5 +1,5 @@
 /**
- * Global 10-year government bond yields — FRED (OECD harmonised long-term rates).
+ * Global 10-year government bond yields: FRED (OECD harmonised long-term rates).
  *
  * One consistent methodology across the major economies, so the numbers are
  * comparable. These OECD series are MONTHLY and lag by a couple of months; that

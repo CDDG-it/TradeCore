@@ -1,21 +1,21 @@
--- MC Trade Therapist — deterministic behavioural coaching.
+-- MC Trade Therapist: deterministic behavioural coaching.
 -- Run this once in the Supabase SQL editor to enable the Post-Trade 5R session,
 -- the Pre-Trade Mirror, and the Mindscore commitment-adherence component.
 --
 -- Three tables:
---   commitments               — if-then commitments from the 5R "Reconstructing"
+--   commitments              : if-then commitments from the 5R "Reconstructing"
 --                               step, reused by the Pre-Trade Mirror.
---   pattern_events            — a log of pattern occurrences the engine surfaced,
+--   pattern_events           : a log of pattern occurrences the engine surfaced,
 --                               plus the trader's confirm/refute. Cumulative
 --                               P&L per pattern is derived from these rows.
---   commitment_adherence_log  — each time a commitment's trigger re-matched,
+--   commitment_adherence_log : each time a commitment's trigger re-matched,
 --                               whether the trader honoured it. This is the
 --                               behaviour-change signal in the Mindscore.
 --
 -- The 5R session itself is stored in psych_edge_sessions (already migrated).
 -- Safe to re-run.
 
--- The Post-Trade 5R "Responding" step records an emotion intensity (1–5)
+-- The Post-Trade 5R "Responding" step records an emotion intensity (1-5)
 -- alongside the existing one-tap emotion tag.
 alter table psych_edge_sessions add column if not exists emotion_intensity int;
 
@@ -52,7 +52,7 @@ create table if not exists pattern_events (
   detail           text not null default '',
   trader_confirmed boolean,                            -- null = not reviewed
   created_at       timestamptz not null default now(),
-  -- One stored event per (trade, pattern) — re-running detection upserts.
+  -- One stored event per (trade, pattern): re-running detection upserts.
   unique (user_id, trade_id, pattern_type)
 );
 

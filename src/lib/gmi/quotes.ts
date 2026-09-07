@@ -1,10 +1,10 @@
 /**
- * Quotes provider — Yahoo Finance (free, no key, ~15-min delayed).
+ * Quotes provider: Yahoo Finance (free, no key, ~15-min delayed).
  *
  * One catalogue drives the ticker header, the Overview pulse cards, the Futures
  * grid, FX, volatility and the cross-asset tools. Fetched server-side (Yahoo
  * blocks browser CORS) and cached briefly so polling clients don't multiply the
- * upstream load. Delayed data is always labelled delayed — never "realtime".
+ * upstream load. Delayed data is always labelled delayed: never "realtime".
  */
 import { fetchJson } from "./cache";
 import type { Quote } from "./types";

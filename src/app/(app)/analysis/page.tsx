@@ -63,7 +63,7 @@ export default function AnalysisPage() {
     return format(d, "yyyy-MM-dd");
   });
 
-  // Day map — used by the week navigation indicators and the day groups
+  // Day map: used by the week navigation indicators and the day groups
   const analysesByDay = useMemo(() => {
     const map: Record<string, PreTradeAnalysis[]> = {};
     allAnalyses.forEach((a) => {
@@ -127,7 +127,7 @@ export default function AnalysisPage() {
                 W{listWeekNum}
               </span>
               <span className="text-base font-semibold">
-                {format(listWeekStart, "MMM d")} – {format(listWeekEnd, "MMM d, yyyy")}
+                {format(listWeekStart, "MMM d")} - {format(listWeekEnd, "MMM d, yyyy")}
               </span>
               {isCurrentWeek && (
                 <span className="text-xs text-primary font-medium">This week</span>

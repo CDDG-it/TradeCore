@@ -26,7 +26,7 @@ import {
 
 type CalendarPeriod = "month" | "week";
 
-/** Footer control on each week-view day cell — opens the Best-trade-of-the-day
+/** Footer control on each week-view day cell: opens the Best-trade-of-the-day
  *  dialog and reflects whether that day already has an entry. */
 function BestTradeCellButton({ best, onClick }: { best?: BestTradeOfDay; onClick: () => void }) {
   const taken = best?.taken_was_best;
@@ -73,7 +73,7 @@ export default function JournalPage() {
   }, []);
 
   // Deep link from the dashboard: /journal?day=YYYY-MM-DD jumps straight to that
-  // day's log — through to the entry when the day holds one trade, to the day
+  // day's log: through to the entry when the day holds one trade, to the day
   // picker when it holds several.
   useEffect(() => {
     if (!allTrades.length) return;
@@ -97,13 +97,13 @@ export default function JournalPage() {
     });
   }
 
-  // Calendar helpers — month view
+  // Calendar helpers: month view
   const calMonthStart = startOfMonth(calendarMonth);
   const calMonthEnd = endOfMonth(calendarMonth);
   const calDays = eachDayOfInterval({ start: calMonthStart, end: calMonthEnd });
   const startPad = (getDay(calMonthStart) + 6) % 7; // Mon-start
 
-  // Calendar helpers — week view
+  // Calendar helpers: week view
   const calWeekStart = startOfWeek(calendarWeekDate, { weekStartsOn: 1 });
   const calWeekEnd = endOfWeek(calendarWeekDate, { weekStartsOn: 1 });
   const calWeekDays = eachDayOfInterval({ start: calWeekStart, end: calWeekEnd });
@@ -120,7 +120,7 @@ export default function JournalPage() {
     return map;
   }, [allTrades]);
 
-  /** Trades inside the month on screen — powers the analytics panel. */
+  /** Trades inside the month on screen: powers the analytics panel. */
   const monthTrades = useMemo(
     () => allTrades.filter((t) => {
       const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");
@@ -131,7 +131,7 @@ export default function JournalPage() {
   );
 
   // Total R for the currently displayed calendar period (matches what's on screen).
-  // Wins count their R:R, losses -1R, break-even 0R — via the shared tradeR helper,
+  // Wins count their R:R, losses -1R, break-even 0R: via the shared tradeR helper,
   // so calendar and weekly views can never disagree.
   const calendarR = useMemo(() => {
     const start = calendarPeriod === "month" ? calMonthStart : calWeekStart;
@@ -155,7 +155,7 @@ export default function JournalPage() {
 
   const calendarTitle = calendarPeriod === "month"
     ? format(calendarMonth, "MMMM yyyy")
-    : `${format(calWeekStart, "MMM d")} – ${format(calWeekEnd, "MMM d, yyyy")}`;
+    : `${format(calWeekStart, "MMM d")} - ${format(calWeekEnd, "MMM d, yyyy")}`;
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -163,7 +163,7 @@ export default function JournalPage() {
     </div>
   );
 
-  /** Navigation header — shared by both calendar periods. */
+  /** Navigation header: shared by both calendar periods. */
   const calendarNav = (
     <>
       <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/40 bg-gradient-to-b from-muted/25 to-transparent">
@@ -186,7 +186,7 @@ export default function JournalPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Period R — week view only; in month view the analytics panel
+          {/* Period R: week view only; in month view the analytics panel
               beside the grid already carries the month's net R. */}
           {calendarPeriod === "week" && (
             <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border/50 bg-muted/20 px-2 py-1">
@@ -203,7 +203,7 @@ export default function JournalPage() {
           </button>
         </div>
       </div>
-      {/* Compact R summary for narrow screens — week view only */}
+      {/* Compact R summary for narrow screens: week view only */}
       {calendarPeriod === "week" && (
         <div className="flex sm:hidden items-center justify-end gap-2 px-4 pt-1.5">
           <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/80">Week R</span>
@@ -217,7 +217,7 @@ export default function JournalPage() {
   );
 
   /**
-   * Month grid — the same vocabulary the dashboard week strip and the Trade
+   * Month grid: the same vocabulary the dashboard week strip and the Trade
    * Therapist calendar already speak, so a day reads identically wherever you
    * meet it: the tile is banded once per trade, a 3px rail on top carries each
    * trade's result, and a count pill says how many there were. A day with two
@@ -258,7 +258,7 @@ export default function JournalPage() {
 
           const tileInner = (
             <>
-              {/* Result rail — one full-strength segment per trade, in the order
+              {/* Result rail: one full-strength segment per trade, in the order
                   they were taken. */}
               {has && (
                 <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-[3px] gap-px">
@@ -304,7 +304,7 @@ export default function JournalPage() {
                   today ? "text-primary" : isCurrentMonth ? "text-foreground/75" : "text-muted-foreground/30")}>
                   {format(day, "d")}
                 </span>
-                {/* How many trades that day — the pill only appears when there
+                {/* How many trades that day: the pill only appears when there
                     was more than one, so it reads as an exception. */}
                 {dayTrades.length > 1 && (
                   <span className="shrink-0 rounded-full border border-border/70 bg-background/60 px-1 text-[9px] font-bold leading-[14px] text-foreground/70">
@@ -354,7 +354,7 @@ export default function JournalPage() {
                 key={key}
                 type="button"
                 onClick={() => setDayTradesDate(key)}
-                title={`${dayTrades.length} trades — open the day`}
+                title={`${dayTrades.length} trades: open the day`}
                 className={tileClass}
                 style={{ background: resultBands(dayTrades, 12) }}
               >
@@ -365,7 +365,7 @@ export default function JournalPage() {
           return <div key={key} className={tileClass}>{tileInner}</div>;
         })}
       </div>
-      {/* Legend — the month grid now carries per-trade colour, so it needs the
+      {/* Legend: the month grid now carries per-trade colour, so it needs the
           same key the week view has. */}
       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/40 pt-2 text-[10px] text-muted-foreground/70">
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: WIN_COLOR }} />Win</span>
@@ -408,7 +408,7 @@ export default function JournalPage() {
           </div>
         ) : (
           /* Week: one column per day, each a self-contained card. Same
-             vocabulary as the month grid and the dashboard week strip — a
+             vocabulary as the month grid and the dashboard week strip: a
              result rail per trade on top, the day's net R in the header, then
              one compact rail per trade so a four-trade day stays readable. */
           <div className="space-y-4">
@@ -417,7 +417,7 @@ export default function JournalPage() {
               <CardContent className="p-2.5 sm:p-3">
                 {/* Phone: a week is a list of days. Seven columns on a 375px
                     screen leaves ~46px per day, which truncates every
-                    instrument name — so the same data is laid out in rows,
+                    instrument name, so the same data is laid out in rows,
                     and days without trades collapse to a single line. */}
                 <div className="flex flex-col gap-1.5 sm:hidden">
                   {calWeekDays.map((day) => {
@@ -520,7 +520,7 @@ export default function JournalPage() {
                            the per-trade colour lives on the rails below. */
                         style={has ? { background: alpha(netColor, 7) } : undefined}
                       >
-                        {/* Result rail — one segment per trade, in order taken. */}
+                        {/* Result rail: one segment per trade, in order taken. */}
                         {has && (
                           <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-[3px] gap-px">
                             {dayTrades.map((t) => {
@@ -536,7 +536,7 @@ export default function JournalPage() {
                           </span>
                         )}
 
-                        {/* Day header — lives inside the card, so the date can
+                        {/* Day header: lives inside the card, so the date can
                             never drift away from the day it labels. */}
                         <div className={cn(
                           "relative flex flex-col items-center border-b px-1 pb-1.5 pt-2",
@@ -566,7 +566,7 @@ export default function JournalPage() {
 
                         <div className="relative flex min-h-0 flex-1 flex-col gap-1 p-1.5">
                           {!has ? (
-                            <span className="m-auto text-[10px] text-muted-foreground/25">—</span>
+                            <span className="m-auto text-[10px] text-muted-foreground/25">-</span>
                           ) : (
                             dayTrades.map((t) => {
                               const c = resultColor(t);
@@ -574,7 +574,7 @@ export default function JournalPage() {
                                 <Link
                                   key={t.id}
                                   href={`/journal/${t.id}`}
-                                  title={`${instrumentName(t.instrument)} — open log`}
+                                  title={`${instrumentName(t.instrument)}: open log`}
                                   className="rounded-md border-l-2 bg-background/30 py-1.5 pl-1.5 pr-1 leading-tight transition-colors hover:bg-background/60"
                                   style={{ borderColor: c }}
                                 >
@@ -599,7 +599,7 @@ export default function JournalPage() {
                             })
                           )}
 
-                          {/* Best trade of the day — available on every day */}
+                          {/* Best trade of the day: available on every day */}
                           <BestTradeCellButton best={best} onClick={() => setBtdDate(key)} />
                         </div>
                       </div>
@@ -609,7 +609,7 @@ export default function JournalPage() {
               </CardContent>
             </Card>
 
-            {/* Legend — matches the month grid's, plus the execution marks the
+            {/* Legend: matches the month grid's, plus the execution marks the
                 per-trade rails carry. */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground/70">
               <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: WIN_COLOR }} />Win</span>
