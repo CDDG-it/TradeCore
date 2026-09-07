@@ -45,7 +45,7 @@ export interface BestTradeOfDay {
 
 // ── Pre-Market Exercise ─────────────────────────────────────────────────────
 // A pre-session drill: review the two most recent losses and two most recent
-// wins, then commit: in writing, before the open: to a plan for preventing
+// wins, then commit (in writing, before the open) to a plan for preventing
 // each mistake from repeating and reproducing each thing that worked today.
 export interface PreMarketExercise {
   id: string;
@@ -396,7 +396,7 @@ export type PatternType = "revenge" | "size-escalation" | "overtrading" | "plan-
 /** A single occurrence of a pattern the engine detected on one trade. Persisted
  *  so the Pre-Trade Mirror can point back to concrete past situations, and so a
  *  cumulative P&L impact per pattern can be tracked over time. The row is a log
- *  of a deterministic detection: recomputable from trades: plus the trader's
+ *  of a deterministic detection (recomputable from trades) plus the trader's
  *  own confirm/refute from the 5R "Relating" step. */
 export interface PatternEvent {
   id: string;
@@ -472,7 +472,7 @@ export type CommitmentAdherenceLogInput = Omit<CommitmentAdherenceLog, "id" | "u
  * Mindscore is deliberately not on the list: its objectives are shaped per
  * week and per month (a weekly review, a day's best trade), so scoring it
  * across an arbitrary window would mean inventing targets it never had. Its
- * two behavioural inputs: execution and rule adherence: are here instead.
+ * two behavioural inputs (execution and rule adherence) are here instead.
  */
 export type GoalMetric =
   | "execution_rate"   // % of rated trades executed to plan

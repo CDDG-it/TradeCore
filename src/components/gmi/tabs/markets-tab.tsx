@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 02 MARKETS: the macro frame: what the world's sovereign debt yields, the
+ * 02 MARKETS, the macro frame: what the world's sovereign debt yields, the
  * shape of the US curve, what the Fed's balance sheet is doing, and where the
  * dollar and volatility sit.
  *
@@ -52,8 +52,8 @@ function macroVal(s: MacroSeries): string {
 const bp = (v: number | null) => (v == null ? "-" : `${v > 0 ? "+" : ""}${(v * 100).toFixed(0)}bp`);
 
 /**
- * True once the viewport is at least `px` wide. Used to keep the globe: and
- * three.js with it: off phones entirely rather than merely hidden: at 375px a
+ * True once the viewport is at least `px` wide. Used to keep the globe (and
+ * three.js with it) off phones entirely rather than merely hidden: at 375px a
  * spinning world under a readout card is decoration you pay megabytes for.
  */
 function useWide(px = 640) {

@@ -201,8 +201,8 @@ export function TradingRulesEditor() {
               {rules.map((rule, idx) => (
                 <li
                   // Keyed by position, not by text: a live reorder swaps the
-                  // content of stable rows, so the row you are holding: and
-                  // its pointer capture: survives the move.
+                  // content of stable rows, so the row you are holding (and
+                  // its pointer capture) survives the move.
                   key={idx}
                   data-idx={idx}
                   className={cn(

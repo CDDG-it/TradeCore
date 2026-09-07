@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 01 OVERVIEW: the day so far, in three readings: what came over the wire,
+ * 01 OVERVIEW, the day so far, in three readings: what came over the wire,
  * what the last macro prints said, and what the week still has scheduled.
  *
  * Deliberately price-free. The quote providers on this tier are delayed, so a

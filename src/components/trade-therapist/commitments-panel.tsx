@@ -98,7 +98,7 @@ export function CommitmentsPanel() {
         } catch {
           // A later failure is most likely the unique index rejecting a check
           // another session raised first, so keep going. A failure on the very
-          // first is systemic: usually trade_therapist.sql not run yet: so
+          // first is systemic (usually trade_therapist.sql not run yet), so
           // stop rather than firing a request per pattern occurrence.
           if (i === 0) break;
         }

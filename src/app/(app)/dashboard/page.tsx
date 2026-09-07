@@ -356,16 +356,22 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
 
       {/* Score + signal meter. The meter takes whatever height the card has
           spare, so the card fills rather than leaving a hole in the middle. */}
-      <div className="mt-2.5 flex min-h-0 flex-1 items-end gap-3">
-        <div className="shrink-0">
-          <p className="text-[40px] font-black leading-none tabular-nums" style={{ color }}>
+      {/* Grow, but never shrink. The row is bottom-aligned, so squeezing it
+          pushes the score up over the title instead of just making it smaller.
+          On a screen too short for the whole card the objectives strip below
+          gives way, which is a far kinder way to run out of room. */}
+      <div className="mt-2.5 flex shrink-0 grow items-end gap-3 short:mt-1.5">
+        {/* On a laptop the band label moves up beside the number instead of
+            sitting under it, which is most of the height this card has to find. */}
+        <div className="shrink-0 short:flex short:items-baseline short:gap-2">
+          <p className="text-[40px] font-black leading-none tabular-nums short:text-[28px]" style={{ color }}>
             {pending ? "·" : hasData ? display : "-"}
           </p>
-          <p className="mt-1 text-[11px] font-medium" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
+          <p className="mt-1 text-[11px] font-medium short:mt-0" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
             {pending ? (period === "week" ? "New week" : "New month") : hasData ? score!.band.label : "No data yet"}
           </p>
         </div>
-        <div className="group/meter flex h-full min-h-[52px] flex-1 items-end gap-[3px] pb-0.5" aria-hidden>
+        <div className="group/meter flex h-full min-h-[52px] flex-1 items-end gap-[3px] pb-0.5 short:min-h-[26px]" aria-hidden>
           {Array.from({ length: METER_BARS }).map((_, i) => {
             const on = i < filled;
             const h = 30 + (i / (METER_BARS - 1)) * 70; // 30%..100% rising profile
@@ -393,7 +399,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
           log trades, tick habits and do the work.
         </p>
       ) : (
-        <div className="mt-3 space-y-[7px]">
+        <div className="mt-3 space-y-[7px] short:mt-2 short:space-y-[3px]">
           {inputs.map(({ key, label, accent }) => {
             const c = comp(key);
             const value = c?.value ?? null;
@@ -434,8 +440,8 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
       {/* Objectives: named, not anonymous bars: each one is a link to the work
           that lifts it, and shows how far along it is. */}
       {objectives.length > 0 && (
-        <div className="mt-auto pt-3">
-          <div className="mb-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2.5">
+        <div className="mt-auto pt-3 short:pt-2">
+          <div className="mb-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2.5 short:mb-1.5 short:pt-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
               Objectives ·{" "}
               {objectivesDue.length === 0 ? (

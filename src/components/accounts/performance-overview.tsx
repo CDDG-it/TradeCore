@@ -151,7 +151,7 @@ export function PerformanceOverview({ accounts, payoutMap, open, onOpenChange }:
     return rows;
   }, [accounts, payoutMap]);
 
-  // Earliest dated activity: the first purchase or payout: anchors the range.
+  // Earliest dated activity (the first purchase or payout) anchors the range.
   const earliestActivity = useMemo(() => {
     let min: number | null = null;
     for (const a of accounts) {
