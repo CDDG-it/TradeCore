@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ImagePlus, X, ZoomIn, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScreenshotGroup } from "@/lib/types";
@@ -241,24 +242,7 @@ export function ScreenshotUpload({
           </div>
         ))}
 
-        {lightbox && (
-          <div className="screenshot-lightbox-overlay" onClick={() => setLightbox(null)}>
-            <button
-              type="button"
-              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
-              onClick={() => setLightbox(null)}
-            >
-              <X className="w-4 h-4" />
-            </button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lightbox}
-              alt="Screenshot full size"
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        )}
+        <Lightbox src={lightbox} onClose={() => setLightbox(null)} />
       </div>
     );
   }
@@ -502,24 +486,35 @@ export function ScreenshotUpload({
       />
 
       {/* Lightbox */}
-      {lightbox && (
-        <div className="screenshot-lightbox-overlay" onClick={() => setLightbox(null)}>
-          <button
-            type="button"
-            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
-            onClick={() => setLightbox(null)}
-          >
-            <X className="w-4 h-4" />
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={lightbox}
-            alt="Screenshot full size"
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
+      <Lightbox src={lightbox} onClose={() => setLightbox(null)} />
     </div>
+  );
+}
+
+/**
+ * The full-size viewer, portalled to the document body: a transformed ancestor
+ * (a dialog, say) would otherwise become the containing block for the fixed
+ * overlay and crop the chart to the panel it was opened from.
+ */
+function Lightbox({ src, onClose }: { src: string | null; onClose: () => void }) {
+  if (!src || typeof document === "undefined") return null;
+  return createPortal(
+    <div className="screenshot-lightbox-overlay" onClick={onClose}>
+      <button
+        type="button"
+        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+        onClick={onClose}
+      >
+        <X className="w-4 h-4" />
+      </button>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt="Screenshot full size"
+        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>,
+    document.body
   );
 }
