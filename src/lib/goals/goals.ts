@@ -16,6 +16,11 @@ import type { GoalMetric, TradingGoal, TradeJournalEntry, Habit, HabitCompletion
 export interface GoalMetricMeta {
   key: GoalMetric;
   label: string;
+  /**
+   * The metric as it reads inside a sentence ("Get my net R to 25R"). Not
+   * derivable from the label: lower-casing it would give "net r".
+   */
+  phrase: string;
   /** What the number means, in the trader's language. */
   help: string;
   unit: "percent" | "R" | "count";
@@ -39,6 +44,7 @@ export const GOAL_METRICS: GoalMetricMeta[] = [
   {
     key: "execution_rate",
     label: "Execution rate",
+    phrase: "execution rate",
     help: "The share of rated trades you took to plan and to your edge.",
     unit: "percent",
     defaultTarget: 80,
@@ -47,6 +53,7 @@ export const GOAL_METRICS: GoalMetricMeta[] = [
   {
     key: "clean_days",
     label: "Clean days",
+    phrase: "clean days",
     help: "Days you traded without a single badly executed trade on them.",
     unit: "count",
     defaultTarget: 15,
@@ -55,6 +62,7 @@ export const GOAL_METRICS: GoalMetricMeta[] = [
   {
     key: "rule_adherence",
     label: "Rule adherence",
+    phrase: "rule adherence",
     help: "Your average score on the discipline checklist you fill in per trade.",
     unit: "percent",
     defaultTarget: 90,
@@ -63,6 +71,7 @@ export const GOAL_METRICS: GoalMetricMeta[] = [
   {
     key: "habit_consistency",
     label: "Habit consistency",
+    phrase: "habit consistency",
     help: "The share of scheduled habit reps you actually kept.",
     unit: "percent",
     defaultTarget: 85,
@@ -71,6 +80,7 @@ export const GOAL_METRICS: GoalMetricMeta[] = [
   {
     key: "win_rate",
     label: "Win rate",
+    phrase: "win rate",
     help: "Wins as a share of decided trades. Break-evens sit out of the maths.",
     unit: "percent",
     defaultTarget: 55,
@@ -79,6 +89,7 @@ export const GOAL_METRICS: GoalMetricMeta[] = [
   {
     key: "net_r",
     label: "Net R",
+    phrase: "net R",
     help: "Total R banked across the window.",
     unit: "R",
     defaultTarget: 20,
@@ -87,6 +98,7 @@ export const GOAL_METRICS: GoalMetricMeta[] = [
   {
     key: "trades_logged",
     label: "Trades logged",
+    phrase: "trades logged",
     help: "How many trades you actually wrote up.",
     unit: "count",
     defaultTarget: 40,
@@ -240,19 +252,4 @@ export function computeGoalProgress(goal: TradingGoal, input: GoalInputs): GoalP
           : "behind";
 
   return { current, ratio, state, daysLeft, timeElapsed, closed };
-}
-
-/**
- * The line shown when the trader did not name the goal themselves.
- *
- * The metric is already printed above it, so this says only what the metric
- * cannot: where the journey starts and where it ends.
- */
-export function describeGoal(goal: TradingGoal): string {
-  const meta = METRIC_META[goal.metric];
-  const target = formatGoalValue(goal.metric, goal.target);
-  if (goal.baseline != null && !meta.accumulates) {
-    return `From ${formatGoalValue(goal.metric, goal.baseline)} to ${target}`;
-  }
-  return `Reach ${target}`;
 }
