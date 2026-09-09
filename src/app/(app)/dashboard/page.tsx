@@ -447,11 +447,10 @@ function GoalsCard({ goals, progress, className }: {
     <div className={cn(CARD_BASE, "flex flex-col", className)}>
       <CardFx accent={TURQUOISE} />
 
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Goals</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground/60">What you are working towards</p>
-        </div>
+      {/* No strapline: the rows now say what each goal is, and the height it
+          would cost is the height the third goal needs to sit complete. */}
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Goals</p>
         <Link href="/psychological-edge?tab=goals" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">
           {goals.length > 0 ? "All goals" : "Set one"}
         </Link>
@@ -467,12 +466,20 @@ function GoalsCard({ goals, progress, className }: {
           {shown.map(({ goal, p }) => {
             const meta = METRIC_META[goal.metric];
             const tone = GOAL_STATE[p.state];
+            const named = goal.title.trim();
             return (
               <li key={goal.id}>
-                <Link href="/psychological-edge?tab=goals" className="group/goal block rounded-lg py-0.5 transition-colors hover:bg-muted/25">
+                <Link
+                  href="/psychological-edge?tab=goals"
+                  title={`${meta.label}: now ${formatGoalValue(goal.metric, p.current)}, target ${formatGoalValue(goal.metric, goal.target)}. ${meta.help}`}
+                  className="group/goal block rounded-lg py-0.5 transition-colors hover:bg-muted/25"
+                >
+                  {/* What it is called, then where it stands. A goal the trader
+                      named keeps their words; an unnamed one is called after
+                      the thing it measures. */}
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="min-w-0 truncate text-[11px] font-semibold text-foreground/85">
-                      {goal.title.trim() || meta.label}
+                      {named || meta.label}
                     </span>
                     <span className="shrink-0 text-[11px] font-bold tabular-nums" style={{ color: tone.color }}>
                       {formatGoalValue(goal.metric, p.current)}
@@ -495,9 +502,15 @@ function GoalsCard({ goals, progress, className }: {
                       />
                     )}
                   </div>
+                  {/* Without the metric spelled out, "9 / 15" is a number
+                      without a subject: the title says what the trader is
+                      after, this says what is actually being counted. */}
                   <p className="mt-0.5 flex items-baseline justify-between gap-2 text-[10px] leading-tight text-muted-foreground/70">
-                    <span style={{ color: tone.color }}>{tone.word}</span>
-                    <span className="tabular-nums">
+                    <span className="min-w-0 truncate">
+                      {named && <>{meta.label} <span className="text-muted-foreground/40">·</span> </>}
+                      <span style={{ color: tone.color }}>{tone.word}</span>
+                    </span>
+                    <span className="shrink-0 tabular-nums">
                       {p.closed ? "window closed" : p.daysLeft === 0 ? "last day" : `${p.daysLeft} ${p.daysLeft === 1 ? "day" : "days"} left`}
                     </span>
                   </p>
