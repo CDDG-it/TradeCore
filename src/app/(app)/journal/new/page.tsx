@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, X, Check } from "lucide-react";
-import { DateField, TimeField } from "@/components/journal/field-inputs";
+import { DateField, TimeField, RRField } from "@/components/journal/field-inputs";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -78,7 +78,7 @@ export default function NewTradePage() {
     timeframe: "",
     direction: "long",
     confluences: [],
-    rr: 2,
+    rr: 0,
     result: "win",
     screenshot_groups: [
       { label: "Entry TF", urls: [] },
@@ -193,6 +193,12 @@ export default function NewTradePage() {
     e.preventDefault();
     if (!form.instrument) {
       setError("Select an instrument before logging the trade.");
+      return;
+    }
+    // A win is worth exactly its R:R, so that one cannot be left blank. A loss
+    // and a scratch are fixed at -1R and 0R, and are logged without it.
+    if (form.result === "win" && !(form.rr > 0)) {
+      setError("Enter the R:R this winning trade returned.");
       return;
     }
     setError(null);
@@ -367,18 +373,28 @@ export default function NewTradePage() {
 
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="rr" className="text-xs">R:R *</Label>
-                <Input id="rr" type="number" step="0.1" min="0" value={form.rr}
-                  onChange={(e) => set("rr", parseFloat(e.target.value) || 0)}
-                  className="h-9 text-sm bg-background/50 font-mono" required />
+                {/* Only a win is scored off R:R: a loss is -1R and a scratch 0R
+                    whatever is typed here, so it is asked for, not demanded. */}
+                <Label htmlFor="rr" className="text-xs">R:R{form.result === "win" ? " *" : ""}</Label>
+                <RRField id="rr" value={form.rr > 0 ? form.rr : null} onChange={(v) => set("rr", v ?? 0)} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Entry Time</Label>
-                <TimeField value={form.execution_time ?? ""} onChange={(v) => set("execution_time", v)} />
+                <TimeField
+                  value={form.execution_time ?? ""}
+                  onChange={(v) => set("execution_time", v)}
+                  placeholder="e.g. 09:32"
+                  label="Entry time"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Exit Time</Label>
-                <TimeField value={form.execution_end_time ?? ""} onChange={(v) => set("execution_end_time", v)} />
+                <TimeField
+                  value={form.execution_end_time ?? ""}
+                  onChange={(v) => set("execution_end_time", v)}
+                  placeholder="e.g. 10:14"
+                  label="Exit time"
+                />
               </div>
             </div>
           </CardContent>

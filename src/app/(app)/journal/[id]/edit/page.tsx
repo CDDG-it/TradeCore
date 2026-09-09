@@ -3,7 +3,7 @@
 import { use, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, X, Check } from "lucide-react";
-import { DateField, TimeField } from "@/components/journal/field-inputs";
+import { DateField, TimeField, RRField } from "@/components/journal/field-inputs";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,6 +68,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [userId, setUserId] = useState<string | null>(null);
   const [savedConfluences, setSavedConfluences] = useState<string[]>([]);
   const [recordUpdatedAt, setRecordUpdatedAt] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState(DEFAULT_FORM);
   // Snapshot of the saved trade: a draft only persists once the form diverges
@@ -206,6 +207,13 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // A win is worth exactly its R:R, so that one cannot be left blank. A loss
+    // and a scratch are fixed at -1R and 0R, and are saved without it.
+    if (form.result === "win" && !(form.rr > 0)) {
+      setError("Enter the R:R this winning trade returned.");
+      return;
+    }
+    setError(null);
     setSaving(true);
     try {
       await updateTrade(id, form);
@@ -374,18 +382,28 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
 
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs">R:R</Label>
-                <Input type="number" step="0.1" min="0" value={form.rr}
-                  onChange={(e) => set("rr", parseFloat(e.target.value) || 0)}
-                  className="h-11 text-sm font-mono" required />
+                {/* Only a win is scored off R:R: a loss is -1R and a scratch 0R
+                    whatever is typed here, so it is asked for, not demanded. */}
+                <Label className="text-xs">R:R{form.result === "win" ? " *" : ""}</Label>
+                <RRField value={form.rr > 0 ? form.rr : null} onChange={(v) => set("rr", v ?? 0)} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Entry Time</Label>
-                <TimeField value={form.execution_time ?? ""} onChange={(v) => set("execution_time", v)} />
+                <TimeField
+                  value={form.execution_time ?? ""}
+                  onChange={(v) => set("execution_time", v)}
+                  placeholder="e.g. 09:32"
+                  label="Entry time"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Exit Time</Label>
-                <TimeField value={form.execution_end_time ?? ""} onChange={(v) => set("execution_end_time", v)} />
+                <TimeField
+                  value={form.execution_end_time ?? ""}
+                  onChange={(v) => set("execution_end_time", v)}
+                  placeholder="e.g. 10:14"
+                  label="Exit time"
+                />
               </div>
             </div>
           </CardContent>
@@ -615,7 +633,8 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {error && <p className="mr-auto text-sm text-destructive">{error}</p>}
           <Link href={`/journal/${id}`}><Button type="button" variant="outline">Cancel</Button></Link>
           <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save changes"}</Button>
         </div>

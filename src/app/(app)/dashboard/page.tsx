@@ -11,13 +11,15 @@ import { Loader2, Plus } from "lucide-react";
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getProfile, getAnalyses, toggleHabitCompletion,
   getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getCommitmentAdherenceLogs,
+  getTradingGoals,
 } from "@/lib/supabase/queries";
 import { computeMindScore, bandColorFor, type MindScore } from "@/lib/mind-score/mind-score";
+import { computeGoalProgress, formatGoalValue, METRIC_META, type GoalProgress } from "@/lib/goals/goals";
 import { tradeR, instrumentName, winRateOf } from "@/lib/journal/weeks";
 import { resultColor, resultBands, netRColor, inOrder } from "@/lib/journal/colors";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
-import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, CommitmentAdherenceLog } from "@/lib/types";
+import type { TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, CommitmentAdherenceLog, TradingGoal } from "@/lib/types";
 
 const TURQUOISE = "var(--primary)";
 const CYAN = "var(--ice)";
@@ -154,6 +156,7 @@ export default function DashboardPage() {
   const [bestTrades, setBestTrades] = useState<BestTradeOfDay[]>([]);
   const [weeklyReviews, setWeeklyReviews] = useState<WeeklyTradeReview[]>([]);
   const [adherenceLogs, setAdherenceLogs] = useState<CommitmentAdherenceLog[]>([]);
+  const [goals, setGoals] = useState<TradingGoal[]>([]);
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -167,6 +170,7 @@ export default function DashboardPage() {
     Promise.all([getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews(), getCommitmentAdherenceLogs()])
       .then(([ps, bt, wr, al]) => { setPsychSessions(ps); setBestTrades(bt); setWeeklyReviews(wr); setAdherenceLogs(al); })
       .catch(() => {});
+    getTradingGoals().then(setGoals).catch(() => {});
   }, []);
 
   async function handleToggleHabit(habitId: string) {
@@ -212,6 +216,20 @@ export default function DashboardPage() {
       mindPeriod
     );
   }, [trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs, mindPeriod]);
+
+  // Live goals with their standing, closest deadline first: the same reading
+  // the Mind Edge goals tab gives, off data the desk already holds.
+  const goalProgress = useMemo(() => {
+    if (!trades) return [];
+    const input = { trades, habits, completions };
+    return goals
+      .filter((g) => !g.archived_at)
+      .map((g) => ({ goal: g, p: computeGoalProgress(g, input) }))
+      .sort((a, b) => {
+        if (a.p.closed !== b.p.closed) return a.p.closed ? 1 : -1;
+        return a.p.daysLeft - b.p.daysLeft;
+      });
+  }, [goals, trades, habits, completions]);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(now, { weekStartsOn: 1 });
@@ -279,26 +297,33 @@ export default function DashboardPage() {
             <WeekStrip days={weekDays} />
           </div>
 
-          <MindScoreOrb
-            score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod}
-            className="col-span-2 md:col-span-1 md:col-start-3 md:row-start-1"
-          />
-
-          <AnalysisWidget
-            analyses={analyses} trades={trades ?? []}
-            className="col-span-2 md:col-span-1 md:col-start-3 md:row-start-2"
-          />
+          {/* The right rail reads top to bottom as one thought: where your head
+              is at, what you are working towards, and what you planned. The
+              score is the headline only: its breakdown lives a click away. */}
+          <div className="col-span-2 flex flex-col gap-3 md:col-span-1 md:col-start-3 md:row-span-2 md:row-start-1 md:min-h-0">
+            <MindScoreOrb
+              score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod}
+              className="shrink-0"
+            />
+            <GoalsCard goals={goals} progress={goalProgress} className="md:min-h-0 md:flex-1" />
+            <AnalysisWidget
+              analyses={analyses} trades={trades ?? []}
+              className="md:min-h-0 md:flex-1"
+            />
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-/* ── MC mind score: one readiness number, split into its inputs ──────────
-   A rising "signal-strength" bar meter for the blended score, the current band
-   as its state label, the four inputs (rules, execution, habits, objectives) as
-   inline sub-scores, and a compact objectives strip. Clicking through opens the full
-   breakdown page with the calculation and week / month / all-time scores. */
+/* ── MC mind score: the readiness number, and nothing else ───────────────
+   One figure, its band, and a rising "signal-strength" meter. What the score is
+   made of (rules, execution, habits, objectives) is a study in its own right,
+   not something to scan past on a dashboard, so it lives one click away on the
+   breakdown page together with the calculation and the week / month / all-time
+   scores. Keeping the card to the headline is what makes room beneath it for
+   the goals and the plans. */
 const METER_BARS = 22;
 
 function MindScoreOrb({ score, period, onPeriodChange, className }: {
@@ -329,22 +354,11 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
   const color = pending ? TURQUOISE : hasData ? bandColorFor(target) : "var(--muted-foreground)";
   const filled = Math.round(prog * METER_BARS);
 
-  const comp = (key: "rules" | "execution" | "habits" | "objectives") =>
-    score?.components.find((c) => c.key === key) ?? null;
-  const objectives = score?.objectives ?? [];
   // An objective with no target has nothing due in this window yet: the engine
   // scores it as met so a fresh period is not punished, but counting it as
-  // "done" in the header would read as progress that never happened.
-  const objectivesDue = objectives.filter((o) => o.target > 0);
+  // "done" would read as progress that never happened.
+  const objectivesDue = (score?.objectives ?? []).filter((o) => o.target > 0);
   const objectivesDone = objectivesDue.filter((o) => o.rate >= 1).length;
-
-  // The four inputs, in the order they carry weight.
-  const inputs: { key: "rules" | "execution" | "habits" | "objectives"; label: string; accent: string }[] = [
-    { key: "rules", label: "Rules", accent: color },
-    { key: "execution", label: "Execution", accent: CYAN },
-    { key: "habits", label: "Habits", accent: CYAN },
-    { key: "objectives", label: "Objectives", accent: TURQUOISE },
-  ];
 
   return (
     <div className={cn(CARD_BASE, "group flex flex-col", className)}>
@@ -391,100 +405,113 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
         </div>
       </div>
 
-      {/* What the number is made of: each input as a bar that fills with the
-          score, and the weight it carries this period. */}
-      {pending ? (
+      {pending && (
         <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
           Your score for this {period} is still being calculated: it builds as you
           log trades, tick habits and do the work.
         </p>
-      ) : (
-        <div className="mt-3 space-y-[7px] short:mt-2 short:space-y-[3px]">
-          {inputs.map(({ key, label, accent }) => {
-            const c = comp(key);
-            const value = c?.value ?? null;
-            const weight = c?.effectiveWeight ?? 0;
-            return (
-              <div
-                key={key}
-                className="group/row flex items-center gap-2"
-                title={
-                  value == null
-                    ? `${label} does not apply this ${period}`
-                    : `${label}: ${value}% · worth ${Math.round(weight)}% of the score this ${period}`
-                }
-              >
-                <span className="w-[62px] shrink-0 text-[11px] text-muted-foreground">{label}</span>
-                <span className="relative h-[5px] flex-1 overflow-hidden rounded-full" style={{ background: alpha("var(--muted-foreground)", 12) }}>
-                  <span
-                    className="absolute inset-y-0 left-0 rounded-full transition-[width,filter] duration-700 ease-out group-hover/row:brightness-125"
-                    style={{
-                      width: `${(value ?? 0) * prog}%`,
-                      background: value == null ? "transparent" : accent,
-                      boxShadow: value == null ? "none" : `0 0 8px ${alpha(accent, 30)}`,
-                    }}
-                  />
-                </span>
-                <span
-                  className="w-8 shrink-0 text-right text-[11px] font-bold tabular-nums"
-                  style={{ color: value == null ? "var(--muted-foreground)" : accent }}
-                >
-                  {value == null ? "-" : `${value}%`}
-                </span>
-              </div>
-            );
-          })}
-        </div>
       )}
 
-      {/* Objectives: named, not anonymous bars: each one is a link to the work
-          that lifts it, and shows how far along it is. */}
-      {objectives.length > 0 && (
-        <div className="mt-auto pt-3 short:pt-2">
-          <div className="mb-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2.5 short:mb-1.5 short:pt-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              Objectives ·{" "}
-              {objectivesDue.length === 0 ? (
-                <span className="text-foreground/70">none due yet</span>
-              ) : (
-                <span className="tabular-nums text-foreground/70">{objectivesDone}/{objectivesDue.length}</span>
-              )}
-            </p>
-            <Link
-              href="/psychological-edge?tab=mindscore"
-              className="shrink-0 text-[10px] font-medium text-muted-foreground/70 transition-colors hover:text-primary"
-            >
-              Breakdown →
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-            {objectives.map((o) => {
-              const due = o.target > 0;
-              const full = due && o.rate >= 1;
-              const started = due && o.rate > 0;
-              const tone = full ? GREEN : started ? TURQUOISE : "var(--muted-foreground)";
-              return (
-                <Link
-                  key={o.key}
-                  href={o.href}
-                  title={due ? `${o.label}: ${o.description}` : `${o.label}: nothing due yet this ${period}. ${o.description}`}
-                  className="group/obj flex items-center gap-1.5 rounded-md py-0.5 transition-colors hover:bg-muted/30"
-                >
-                  <span
-                    className="h-1.5 w-1.5 shrink-0 rounded-full transition-transform duration-300 group-hover/obj:scale-125"
-                    style={{ background: tone, opacity: started ? 1 : 0.3, boxShadow: full ? `0 0 6px ${alpha(GREEN, 55)}` : undefined }}
-                  />
-                  <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground transition-colors group-hover/obj:text-foreground">
-                    {o.label}
-                  </span>
-                  <span className="shrink-0 text-[10px] font-semibold tabular-nums" style={{ color: started ? tone : "var(--muted-foreground)" }}>
-                    {due ? `${o.progress}/${o.target}` : "-"}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
+      <Link
+        href="/psychological-edge?tab=mindscore"
+        className="mt-3 flex items-center justify-between gap-2 border-t border-border/60 pt-2.5 text-[11px] font-medium text-muted-foreground/70 transition-colors hover:text-primary"
+      >
+        <span>{objectivesDue.length > 0 ? `Objectives ${objectivesDone}/${objectivesDue.length}` : "What this is made of"}</span>
+        <span aria-hidden>Breakdown →</span>
+      </Link>
+    </div>
+  );
+}
+
+/* ── Goals: what you are working towards, from Mind Edge ─────────────────
+   The live goals with the one reading that matters on a dashboard: where the
+   metric stands, what it is chasing, and whether it is keeping up with the
+   calendar. The full journey (baseline, pace tick, verdict) stays on the Mind
+   Edge goals tab; this is the glance. */
+const GOAL_STATE: Record<GoalProgress["state"], { color: string; word: string }> = {
+  "achieved": { color: GREEN, word: "Achieved" },
+  "on-track": { color: TURQUOISE, word: "On track" },
+  "behind": { color: AMBER, word: "Behind" },
+  "missed": { color: RED, word: "Missed" },
+  "no-data": { color: "var(--muted-foreground)", word: "Not started" },
+};
+
+function GoalsCard({ goals, progress, className }: {
+  goals: TradingGoal[];
+  progress: { goal: TradingGoal; p: GoalProgress }[];
+  className?: string;
+}) {
+  const shown = progress.slice(0, 3);
+
+  return (
+    <div className={cn(CARD_BASE, "flex flex-col", className)}>
+      <CardFx accent={TURQUOISE} />
+
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Goals</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground/60">What you are working towards</p>
         </div>
+        <Link href="/psychological-edge?tab=goals" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">
+          {goals.length > 0 ? "All goals" : "Set one"}
+        </Link>
+      </div>
+
+      {shown.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-1 py-3 text-center">
+          <p className="text-xs text-muted-foreground">No goals running.</p>
+          <p className="text-[11px] text-muted-foreground/60">Name one in Mind Edge and it tracks itself.</p>
+        </div>
+      ) : (
+        <ul className="mt-2.5 space-y-2 md:min-h-0 md:flex-1 md:overflow-hidden">
+          {shown.map(({ goal, p }) => {
+            const meta = METRIC_META[goal.metric];
+            const tone = GOAL_STATE[p.state];
+            return (
+              <li key={goal.id}>
+                <Link href="/psychological-edge?tab=goals" className="group/goal block rounded-lg py-0.5 transition-colors hover:bg-muted/25">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="min-w-0 truncate text-[11px] font-semibold text-foreground/85">
+                      {goal.title.trim() || meta.label}
+                    </span>
+                    <span className="shrink-0 text-[11px] font-bold tabular-nums" style={{ color: tone.color }}>
+                      {formatGoalValue(goal.metric, p.current)}
+                      <span className="font-medium text-muted-foreground/60"> / {formatGoalValue(goal.metric, goal.target)}</span>
+                    </span>
+                  </div>
+                  {/* The fill is the goal, the tick is the calendar: the gap
+                      between them is exactly how far off the pace it is. */}
+                  <div className="relative mt-1 h-[5px] overflow-hidden rounded-full" style={{ background: alpha("var(--muted-foreground)", 12) }}>
+                    <span
+                      className="absolute inset-y-0 left-0 rounded-full transition-[width,filter] duration-700 ease-out group-hover/goal:brightness-125"
+                      style={{ width: `${Math.round(p.ratio * 100)}%`, background: tone.color, boxShadow: `0 0 8px ${alpha(tone.color, 30)}` }}
+                    />
+                    {!p.closed && (
+                      <span
+                        aria-hidden
+                        className="absolute inset-y-0 w-px bg-foreground/45"
+                        style={{ left: `${Math.round(p.timeElapsed * 100)}%` }}
+                        title="Where the calendar is"
+                      />
+                    )}
+                  </div>
+                  <p className="mt-0.5 flex items-baseline justify-between gap-2 text-[10px] leading-tight text-muted-foreground/70">
+                    <span style={{ color: tone.color }}>{tone.word}</span>
+                    <span className="tabular-nums">
+                      {p.closed ? "window closed" : p.daysLeft === 0 ? "last day" : `${p.daysLeft} ${p.daysLeft === 1 ? "day" : "days"} left`}
+                    </span>
+                  </p>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {progress.length > shown.length && (
+        <p className="mt-2 border-t border-border/40 pt-2 text-[11px] text-muted-foreground/70">
+          <span className="font-bold text-foreground/85">{progress.length - shown.length} more</span> running in Mind Edge
+        </p>
       )}
     </div>
   );
@@ -671,7 +698,7 @@ function AnalysisWidget({ analyses, trades, className }: { analyses: PreTradeAna
 
   const recent = rows.slice(0, 8);
   const tradedCount = recent.filter((r) => r.traded).length;
-  const shown = rows.slice(0, 4);
+  const shown = rows.slice(0, 3);
 
   return (
     <div className={cn(CARD_BASE, "flex flex-col", className)}>
