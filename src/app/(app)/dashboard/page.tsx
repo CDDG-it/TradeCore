@@ -15,6 +15,9 @@ import {
 } from "@/lib/supabase/queries";
 import { computeMindScore, bandColorFor, type MindScore } from "@/lib/mind-score/mind-score";
 import { computeGoalProgress, formatGoalValue, METRIC_META, type GoalProgress } from "@/lib/goals/goals";
+import { useGmi } from "@/lib/gmi/client";
+import type { CalendarMonth, CalendarEvent } from "@/lib/gmi/calendar";
+import { holidaysByDate } from "@/lib/gmi/holidays";
 import { tradeR, instrumentName, winRateOf } from "@/lib/journal/weeks";
 import { resultColor, resultBands, netRColor, inOrder } from "@/lib/journal/colors";
 import { usePrivacy, mask } from "@/lib/use-privacy";
@@ -267,15 +270,14 @@ export default function DashboardPage() {
       ) : (
         // One grid for the whole desk, read two ways.
         //
-        // From md it is the three columns it has always been: capital over
-        // habits, the win rate, the mind score, with the journal spanning the
-        // first two beneath them and the analyses beside it.
+        // From md it is three columns: capital over habits, the win rate, and a
+        // right rail running the full height, with the journal week spanning
+        // the first two beneath them.
         //
         // On a phone it folds to two: the two short readings pair with the tall
-        // win rate, and the journal, the mind score and the analyses each take
-        // the full width beneath them: the mind score carries a meter, three
-        // input bars and the objectives grid, and half a phone is not enough
-        // for any of it.
+        // win rate, and the journal and the rail take the full width beneath
+        // them, since half a phone is not enough for a meter, a set of goals or
+        // a week of releases.
         <div className="grid flex-1 min-h-0 grid-cols-2 gap-3 md:grid-cols-3 md:grid-rows-[minmax(0,1fr)_minmax(0,1.35fr)]">
           <div className="flex min-h-0 flex-col gap-3 md:col-start-1 md:row-start-1">
             <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
@@ -306,10 +308,7 @@ export default function DashboardPage() {
               className="shrink-0"
             />
             <GoalsCard goals={goals} progress={goalProgress} className="md:min-h-0 md:flex-1" />
-            <AnalysisWidget
-              analyses={analyses} trades={trades ?? []}
-              className="md:min-h-0 md:flex-1"
-            />
+            <NewsHub className="md:min-h-0 md:flex-1" />
           </div>
         </div>
       )}
@@ -354,11 +353,6 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
   const color = pending ? TURQUOISE : hasData ? bandColorFor(target) : "var(--muted-foreground)";
   const filled = Math.round(prog * METER_BARS);
 
-  // An objective with no target has nothing due in this window yet: the engine
-  // scores it as met so a fresh period is not punished, but counting it as
-  // "done" would read as progress that never happened.
-  const objectivesDue = (score?.objectives ?? []).filter((o) => o.target > 0);
-  const objectivesDone = objectivesDue.filter((o) => o.rate >= 1).length;
 
   return (
     <div className={cn(CARD_BASE, "group flex flex-col", className)}>
@@ -416,7 +410,7 @@ function MindScoreOrb({ score, period, onPeriodChange, className }: {
         href="/psychological-edge?tab=mindscore"
         className="mt-3 flex items-center justify-between gap-2 border-t border-border/60 pt-2.5 text-[11px] font-medium text-muted-foreground/70 transition-colors hover:text-primary"
       >
-        <span>{objectivesDue.length > 0 ? `Objectives ${objectivesDone}/${objectivesDue.length}` : "What this is made of"}</span>
+        <span>What this is made of</span>
         <span aria-hidden>Breakdown →</span>
       </Link>
     </div>
@@ -467,19 +461,20 @@ function GoalsCard({ goals, progress, className }: {
             const meta = METRIC_META[goal.metric];
             const tone = GOAL_STATE[p.state];
             const named = goal.title.trim();
+            // What is being moved is the goal: "Execution rate 64% / 80%" says
+            // it, where the trader's own name for it ("Stop revenge trading")
+            // does not. The name is kept, but on the tooltip.
+            const tip = `${named ? `${named}. ` : ""}${meta.label}: now ${formatGoalValue(goal.metric, p.current)}, target ${formatGoalValue(goal.metric, goal.target)}. ${meta.help}`;
             return (
               <li key={goal.id}>
                 <Link
                   href="/psychological-edge?tab=goals"
-                  title={`${meta.label}: now ${formatGoalValue(goal.metric, p.current)}, target ${formatGoalValue(goal.metric, goal.target)}. ${meta.help}`}
+                  title={tip}
                   className="group/goal block rounded-lg py-0.5 transition-colors hover:bg-muted/25"
                 >
-                  {/* What it is called, then where it stands. A goal the trader
-                      named keeps their words; an unnamed one is called after
-                      the thing it measures. */}
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="min-w-0 truncate text-[11px] font-semibold text-foreground/85">
-                      {named || meta.label}
+                      {meta.label}
                     </span>
                     <span className="shrink-0 text-[11px] font-bold tabular-nums" style={{ color: tone.color }}>
                       {formatGoalValue(goal.metric, p.current)}
@@ -502,14 +497,8 @@ function GoalsCard({ goals, progress, className }: {
                       />
                     )}
                   </div>
-                  {/* Without the metric spelled out, "9 / 15" is a number
-                      without a subject: the title says what the trader is
-                      after, this says what is actually being counted. */}
                   <p className="mt-0.5 flex items-baseline justify-between gap-2 text-[10px] leading-tight text-muted-foreground/70">
-                    <span className="min-w-0 truncate">
-                      {named && <>{meta.label} <span className="text-muted-foreground/40">·</span> </>}
-                      <span style={{ color: tone.color }}>{tone.word}</span>
-                    </span>
+                    <span className="min-w-0 truncate" style={{ color: tone.color }}>{tone.word}</span>
                     <span className="shrink-0 tabular-nums">
                       {p.closed ? "window closed" : p.daysLeft === 0 ? "last day" : `${p.daysLeft} ${p.daysLeft === 1 ? "day" : "days"} left`}
                     </span>
@@ -674,112 +663,133 @@ function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec
   );
 }
 
-/* ── Analysis: the plans you wrote, and what became of them ──────────────
-   Written to be read at a glance and without a legend: a plan states its
-   instrument, which way you leaned, and in plain words whether you traded it
-   and at what R. No meters, no abbreviations to decode. */
+/* ── This week's news: the releases that move the tape ───────────────────
+   The week's scheduled US macro prints, straight off FRED's own release
+   calendar, plus any day the exchange is shut. A trader plans around CPI and
+   payrolls whether or not they intend to trade them, so the week's high-impact
+   dates belong on the desk rather than a click away. Past days carry what
+   actually printed; a forthcoming one carries the appointment and nothing
+   else, because what a number will be is never guessed. FRED publishes dates,
+   not clock times, so none are shown. */
+const NEWS_IMPORTANCE: Record<string, string> = { high: RED, medium: AMBER, low: "var(--muted-foreground)" };
 
-const BIAS_WORD: Record<string, { word: string; color: string }> = {
-  bullish: { word: "Long", color: GREEN },
-  bearish: { word: "Short", color: RED },
-  choppy: { word: "Neutral", color: AMBER },
-};
+function NewsHub({ className }: { className?: string }) {
+  const now = new Date();
+  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+  const thisMonth = format(weekStart, "yyyy-MM");
+  const nextMonth = format(weekEnd, "yyyy-MM");
 
-function AnalysisWidget({ analyses, trades, className }: { analyses: PreTradeAnalysis[]; trades: TradeJournalEntry[]; className?: string }) {
+  // A week can straddle a month end, so the spill-over month is fetched too.
+  const { env: a } = useGmi<CalendarMonth>(`/api/gmi/calendar?month=${thisMonth}`, 30 * 60_000);
+  const { env: b } = useGmi<CalendarMonth>(
+    nextMonth === thisMonth ? null : `/api/gmi/calendar?month=${nextMonth}`,
+    30 * 60_000
+  );
+
+  const from = format(weekStart, "yyyy-MM-dd");
+  const to = format(weekEnd, "yyyy-MM-dd");
+
   const rows = useMemo(() => {
-    const linked = new Map<string, TradeJournalEntry[]>();
-    for (const t of trades) {
-      if (!t.linked_analysis_id) continue;
-      const list = linked.get(t.linked_analysis_id) ?? [];
-      list.push(t);
-      linked.set(t.linked_analysis_id, list);
+    // One line per release, not one per series: CPI and Core CPI land together
+    // and would otherwise say the same thing twice. The headline print is the
+    // one that moves the tape, so a "Core" variant never speaks for a release.
+    const byRelease = new Map<string, CalendarEvent>();
+    for (const e of [...(a?.data?.events ?? []), ...(b?.data?.events ?? [])]) {
+      if (e.date < from || e.date > to) continue;
+      const key = `${e.date}:${e.releaseName}`;
+      const held = byRelease.get(key);
+      const rank = (x: CalendarEvent) => (x.label.startsWith("Core") ? 1 : 0);
+      if (!held || rank(e) < rank(held) || (rank(e) === rank(held) && e.label < held.label)) {
+        byRelease.set(key, e);
+      }
     }
-    return [...analyses]
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .map((a) => {
-        const its = linked.get(a.id) ?? [];
-        return {
-          analysis: a,
-          // A plan counts as traded when a trade points at it, or when the
-          // trader ticked it off on the analysis itself.
-          traded: its.length > 0 || a.used_for_trade,
-          hasR: its.length > 0,
-          r: its.reduce((s, t) => s + tradeR(t), 0),
-        };
-      });
-  }, [analyses, trades]);
+    const events = [...byRelease.values()];
 
-  const recent = rows.slice(0, 8);
-  const tradedCount = recent.filter((r) => r.traded).length;
-  const shown = rows.slice(0, 3);
+    const closures = [...holidaysByDate(weekStart, weekEnd).values()]
+      .flat()
+      .filter((h) => h.kind === "closed" && h.market === "US");
+
+    const list: { key: string; date: string; label: string; importance: string; note: string | null }[] = [
+      ...events.map((e) => ({
+        key: e.id,
+        date: e.date,
+        label: e.label,
+        importance: e.importance,
+        note: e.released && e.actual != null ? "released" : null,
+      })),
+      ...closures.map((h) => ({
+        key: `holiday-${h.date}`,
+        date: h.date,
+        label: `${h.name}: US market closed`,
+        importance: "closed",
+        note: null,
+      })),
+    ].sort((x, y) => x.date.localeCompare(y.date));
+
+    // More than fits? The quiet ones go first, never a high-impact print.
+    const rank = (i: string) => (i === "closed" ? 0 : i === "high" ? 1 : i === "medium" ? 2 : 3);
+    if (list.length <= 5) return list;
+    return [...list].sort((x, y) => rank(x.importance) - rank(y.importance)).slice(0, 5)
+      .sort((x, y) => x.date.localeCompare(y.date));
+  }, [a, b, from, to, weekStart, weekEnd]);
+
+  const unavailable = a?.status === "unavailable";
 
   return (
     <div className={cn(CARD_BASE, "flex flex-col", className)}>
       <CardFx accent={CYAN} />
 
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Analysis</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground/60">Plans written before the session</p>
-        </div>
-        <Link href="/analysis" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">All plans</Link>
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">This week&apos;s news</p>
+        <Link href="/news-city?tab=calendar" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">
+          Calendar
+        </Link>
       </div>
 
-      {shown.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-1 py-4 text-center">
-          <p className="text-xs text-muted-foreground">No plans written yet.</p>
-          <p className="text-[11px] text-muted-foreground/60">Prep a session and it shows up here.</p>
+      {rows.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-1 py-3 text-center">
+          <p className="text-xs text-muted-foreground">{unavailable ? "Calendar unavailable" : "A quiet week"}</p>
+          <p className="text-[11px] text-muted-foreground/60">
+            {unavailable ? "FRED is not answering right now." : "No major US release scheduled."}
+          </p>
         </div>
       ) : (
-        <ul className="mt-3 mb-2 min-h-0 flex-1 space-y-1.5 overflow-hidden">
-          {shown.map(({ analysis: a, traded, hasR, r }) => {
-            const bias = BIAS_WORD[a.bias] ?? { word: a.bias, color: "var(--muted-foreground)" };
-            const rColor = r > 0 ? GREEN : r < 0 ? RED : AMBER;
+        <ul className="mt-2.5 space-y-1.5 md:min-h-0 md:flex-1 md:overflow-hidden">
+          {rows.map((r) => {
+            const day = new Date(r.date + "T12:00:00");
+            const today = isToday(day);
+            const past = !today && r.date < TODAY;
+            const color = NEWS_IMPORTANCE[r.importance] ?? "var(--muted-foreground)";
             return (
-              <li key={a.id}>
-                <Link
-                  href={`/analysis/${a.id}`}
-                  className="block rounded-lg border-l-2 py-1 pl-2.5 pr-1 transition-colors hover:bg-muted/25"
-                  style={{ borderColor: alpha(bias.color, 70) }}
+              <li key={r.key} className={cn("flex items-baseline gap-2", past && "opacity-55")}>
+                <span
+                  className={cn(
+                    "w-9 shrink-0 text-[10px] font-bold uppercase tracking-wider tabular-nums",
+                    today ? "text-primary" : "text-muted-foreground/70"
+                  )}
                 >
-                  <div className="flex items-baseline justify-between gap-2">
-                    <div className="flex min-w-0 items-baseline gap-1.5">
-                      <span className="font-mono text-[12px] font-black text-foreground">{a.instrument}</span>
-                      <span className="text-[11px] font-semibold" style={{ color: bias.color }}>{bias.word}</span>
-                    </div>
-                    {/* Spelled out, so no chip needs explaining */}
-                    {traded ? (
-                      <span className="shrink-0 text-[11px] font-bold tabular-nums" style={{ color: hasR ? rColor : "var(--muted-foreground)" }}>
-                        {hasR ? `Traded ${r > 0 ? "+" : ""}${r.toFixed(1)}R` : "Traded"}
-                      </span>
-                    ) : (
-                      <span className="shrink-0 text-[11px] font-medium text-muted-foreground/60">Not traded</span>
-                    )}
-                  </div>
-                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">
-                    <span className="tabular-nums text-muted-foreground/50">{format(new Date(a.date + "T12:00:00"), "EEE d MMM")}</span>
-                    {(a.title || a.thesis) && <> · {a.title || a.thesis}</>}
-                  </p>
-                </Link>
+                  {today ? "Today" : format(day, "EEE d")}
+                </span>
+                {r.importance === "closed" ? (
+                  <span aria-hidden className="mt-[3px] h-1.5 w-1.5 shrink-0 rotate-45 border border-muted-foreground/60" />
+                ) : (
+                  <span aria-hidden className="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} />
+                )}
+                <span className="min-w-0 flex-1 truncate text-[11px] text-foreground/85">{r.label}</span>
+                {r.note && <span className="shrink-0 text-[10px] text-muted-foreground/60">{r.note}</span>}
               </li>
             );
           })}
         </ul>
       )}
 
-      {recent.length > 0 && (
-        <p className="mb-2 border-t border-border/40 pt-2 text-[11px] text-muted-foreground/70">
-          <span className="font-bold text-foreground/85">{tradedCount} of {recent.length}</span> recent plans became trades
-        </p>
-      )}
-
-      <Link
-        href="/analysis/new"
-        className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
-        style={{ background: TURQUOISE, boxShadow: `0 2px 12px ${alpha(TURQUOISE, 26)}` }}
-      >
-        <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> New analysis
-      </Link>
+      <p className="mt-2 border-t border-border/40 pt-2 text-[10px] text-muted-foreground/60">
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} /> high impact
+        </span>
+        <span className="ml-3">FRED publishes dates, not times</span>
+      </p>
     </div>
   );
 }
@@ -1025,15 +1035,23 @@ function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; 
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} /> Loss</span>
         <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full" style={{ background: AMBER }} /> B/E</span>
         <span className="hidden text-muted-foreground/50 lg:inline">A split card = several trades that day</span>
-        {/* The week is where you notice a trade is missing, so the way to add
-            one sits right under it. */}
-        <Link
-          href="/journal/new"
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
-          style={{ background: TURQUOISE, boxShadow: `0 2px 12px ${alpha(TURQUOISE, 26)}` }}
-        >
-          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> Log trade
-        </Link>
+        {/* The week is where you notice a trade is missing, and where the next
+            session gets planned, so both ways in sit right under it. */}
+        <span className="ml-auto flex items-center gap-2">
+          <Link
+            href="/analysis/new"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 px-2.5 py-1.5 text-[11px] font-semibold text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> New analysis
+          </Link>
+          <Link
+            href="/journal/new"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
+            style={{ background: TURQUOISE, boxShadow: `0 2px 12px ${alpha(TURQUOISE, 26)}` }}
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> Log trade
+          </Link>
+        </span>
       </div>
     </div>
   );
