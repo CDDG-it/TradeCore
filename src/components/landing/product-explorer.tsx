@@ -11,9 +11,9 @@
  * illustrative data, and every block says so.
  */
 
-import { useRef, useState } from "react";
-import { motion, useScroll, useSpring, useReducedMotion } from "motion/react";
-import { ArrowDown, Check, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowRight, Check, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TURQUOISE = "#14B8A6";
@@ -639,7 +639,7 @@ const INSTRUMENTS: Instrument[] = [
       "Running profit and loss as the session unfolds.",
       "The one thing to work on today, kept front and center.",
     ],
-    href: "#card-dashboard",
+    href: "/dashboard",
     accent: CYAN,
     visual: <WinRateMock />,
   },
@@ -653,7 +653,7 @@ const INSTRUMENTS: Instrument[] = [
       "Mind Edge: the habits you keep, and a Mindscore built from them.",
       "Pressure-test the whole thing before risking a live evaluation.",
     ],
-    href: "#card-psychological-edge",
+    href: "/psychological-edge",
     accent: TURQUOISE,
     visual: <MyEdgeMock />,
   },
@@ -667,7 +667,7 @@ const INSTRUMENTS: Instrument[] = [
       "Each prompt names the trade you overheld or the rule you skipped.",
       "What you promise is saved and resurfaced on later trades.",
     ],
-    href: "#card-trade-therapist",
+    href: "/trade-therapist",
     accent: RED,
     visual: <TherapistMock />,
   },
@@ -681,57 +681,33 @@ const INSTRUMENTS: Instrument[] = [
       "Signals scored by impact, direction and confidence.",
       "Narrow to what moves your instrument.",
     ],
-    href: "#card-news-city",
+    href: "/news-city",
     accent: CYAN,
     visual: <MarketsMock />,
   },
 ];
 
 export function ProductExplorer() {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: trackRef,
-    offset: ["start 0.85", "end 0.4"],
-  });
-  const fill = useSpring(scrollYProgress, { stiffness: 120, damping: 30, mass: 0.4 });
-
   return (
-    <section id="features" className="relative px-6 py-24 md:px-10 md:py-32">
-      <div className="mx-auto max-w-6xl">
+    <section id="features" className="relative scroll-mt-20 px-6 py-20 md:px-10 md:py-28 lg:px-16">
+      <div className="mx-auto max-w-[1400px]">
         <div className="max-w-3xl">
-          <p className="font-body text-[13px] font-semibold text-primary">Inside the platform</p>
           <h2
-            className="mt-5 font-heading font-black tracking-tight text-foreground"
+            id="products"
+            className="scroll-mt-24 font-heading font-black tracking-tight text-foreground"
             style={{ fontSize: "clamp(2rem,4.6vw,3.25rem)", lineHeight: 1.05 }}
           >
-            Four instruments for the operator behind the trades.
+            Four tools for a clearer trading process.
           </h2>
           <p className="mt-5 max-w-xl font-body text-[0.95rem] leading-relaxed text-muted-foreground">
-            Every panel below is the real card, running on illustrative numbers.
-            Try the controls: they behave exactly as they do inside the product.
+            Explore the product with illustrative data. The controls respond just as they do inside your account.
           </p>
         </div>
 
-        {/* Scroll track: a rail that fills as you move through the instruments */}
-        <div ref={trackRef} className="relative mt-20 md:mt-28">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-0 top-0 hidden h-full w-px bg-border/60 lg:block"
-          >
-            <motion.div
-              className="absolute inset-x-0 top-0 origin-top"
-              style={{
-                height: "100%",
-                scaleY: reduce ? 1 : fill,
-                background: `linear-gradient(180deg, ${TURQUOISE}, ${CYAN})`,
-              }}
-            />
-          </div>
-
-          <div className="flex flex-col gap-28 md:gap-40 lg:pl-14">
+        <div className="mt-16 md:mt-20">
+          <div className="flex flex-col gap-24 md:gap-32">
             {INSTRUMENTS.map((inst, i) => (
-              <InstrumentBlock key={inst.key} inst={inst} flip={i % 2 === 1} reduce={!!reduce} />
+              <InstrumentBlock key={inst.key} inst={inst} flip={i % 2 === 1} />
             ))}
           </div>
         </div>
@@ -743,28 +719,13 @@ export function ProductExplorer() {
 function InstrumentBlock({
   inst,
   flip,
-  reduce,
 }: {
   inst: Instrument;
   flip: boolean;
-  reduce: boolean;
 }) {
   return (
-    <article className="relative grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-      {/* Node on the rail */}
-      <span
-        aria-hidden
-        className="absolute -left-14 top-2 hidden h-2.5 w-2.5 -translate-x-1/2 rounded-full ring-4 ring-background lg:block"
-        style={{ background: inst.accent }}
-      />
-
-      <motion.div
-        initial={reduce ? false : { opacity: 0, y: 28 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-12%" }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className={cn(flip && "lg:order-2")}
-      >
+    <article id={`card-${inst.href.slice(1)}`} className="relative grid scroll-mt-28 items-center gap-10 lg:grid-cols-2 lg:gap-20">
+      <div className={cn("max-w-xl", flip && "lg:order-2")}>
         <p className="font-body text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
           {inst.label}
         </p>
@@ -782,28 +743,21 @@ function InstrumentBlock({
           ))}
         </ul>
 
-        {/* Down to this product's card, not out to a separate page. */}
-        <a
+        <Link
           href={inst.href}
-          className="group mt-7 inline-flex items-center gap-1.5 font-body text-sm font-semibold text-primary transition-colors hover:text-foreground"
+          className="group mt-7 inline-flex items-center gap-1.5 rounded-sm font-body text-sm font-semibold text-primary transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          See the {inst.name} card
-          <ArrowDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-y-0.5" />
-        </a>
-      </motion.div>
+          Open {inst.name}
+          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+        </Link>
+      </div>
 
-      <motion.div
-        initial={reduce ? false : { opacity: 0, y: 34, scale: 0.985 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        viewport={{ once: true, margin: "-10%" }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
-        className={cn("min-w-0", flip && "lg:order-1")}
-      >
+      <div className={cn("min-w-0", flip && "lg:order-1")}>
         {inst.visual}
         <p className="mt-3 text-center font-body text-[11px] text-muted-foreground/60">
           Illustrative figures: the product runs this on your own trades.
         </p>
-      </motion.div>
+      </div>
     </article>
   );
 }

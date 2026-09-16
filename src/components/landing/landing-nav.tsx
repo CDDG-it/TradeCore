@@ -32,7 +32,7 @@ export function LandingNav() {
 
   return (
     <header
-      className="sticky top-0 z-30 px-4 py-4 transition-[background-color,border-color,backdrop-filter] duration-300 sm:px-6"
+      className="sticky top-0 z-30 px-4 py-3 transition-[background-color,border-color,backdrop-filter] duration-300 sm:px-6 sm:py-4"
       style={{
         background: lifted ? "rgba(11,17,32,0.88)" : "rgba(11,17,32,0)",
         backdropFilter: lifted ? "blur(20px)" : "blur(0px)",
@@ -52,7 +52,7 @@ export function LandingNav() {
         }}
       />
 
-      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 sm:gap-4">
         {/* Brand: logo + wordmark, same font family as the hero heading, much smaller */}
         <Link href="/" className="flex items-center gap-2.5 justify-self-start transition-opacity hover:opacity-80">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -64,7 +64,7 @@ export function LandingNav() {
         </Link>
 
         {/* Centre: one way into the product: the cards. */}
-        <nav className="col-start-2 flex items-center justify-center" style={{ fontFamily: NUNITO }}>
+        <nav className="hidden items-center justify-center md:flex" style={{ fontFamily: NUNITO }}>
           <a
             href="#products"
             className="group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(248,250,252,0.60)] transition-colors duration-200 hover:text-[rgba(248,250,252,0.92)]"
@@ -75,17 +75,17 @@ export function LandingNav() {
         </nav>
 
         {/* Right nav: account actions, pushed to the far right */}
-        <nav className="col-start-3 flex items-center justify-end gap-1 sm:gap-2" style={{ fontFamily: NUNITO }}>
+        <nav className="flex shrink-0 items-center justify-end gap-1 sm:gap-2" style={{ fontFamily: NUNITO }}>
           <Link
             href="/login"
-            className="rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(248,250,252,0.60)] transition-colors duration-200 hover:text-[rgba(248,250,252,0.92)]"
+            className="whitespace-nowrap rounded-full px-2 py-1.5 text-xs font-semibold text-[rgba(248,250,252,0.60)] transition-colors duration-200 hover:text-[rgba(248,250,252,0.92)] sm:px-3 sm:text-sm"
           >
             Sign in
           </Link>
 
           <Link
             href="/signup"
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 sm:px-4 sm:py-1.5 sm:text-sm"
             style={{
               background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
               boxShadow: "0 2px 14px rgba(20,184,166,0.35), 0 1px 2px rgba(0,0,0,0.30)",
