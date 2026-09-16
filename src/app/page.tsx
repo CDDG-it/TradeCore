@@ -1,253 +1,55 @@
-"use client";
-
-import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, ArrowDown } from "lucide-react";
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from "motion/react";
-import { animate, splitText, stagger } from "animejs";
-import { CandlesCanvas } from "@/components/landing/candles-canvas";
-import { LandingGround } from "@/components/landing/landing-ground";
-import { LayoutShowcase } from "@/components/landing/layout-showcase";
-import { ProductExplorer } from "@/components/landing/product-explorer";
-import { LandingFooter } from "@/components/landing/footer";
-import { LandingNav } from "@/components/landing/landing-nav";
+import Image from "next/image";
+import { ArrowRight, ArrowDown, Brain, ScanLine, BookOpen, Check, MoveUpRight } from "lucide-react";
+import { Logo, LogoMark } from "@/components/logo";
+import { ScreenshotShowcase } from "@/components/landing/screenshot-showcase";
+import habits from "../../public/screenshots/habits.png";
+import styles from "./home.module.css";
 
-const NUNITO = "var(--font-nunito), system-ui, sans-serif";
+const practices = [
+  { number: "01", title: "Prepare with intention.", text: "Check in with yourself. Review your trading rules and decide what a well-executed session looks like before you enter.", tag: "Before the session", icon: Brain },
+  { number: "02", title: "Capture more than the trade.", text: "Journal your execution and the thinking behind it. Give your future self the context a P&L number cannot provide.", tag: "During the session", icon: BookOpen },
+  { number: "03", title: "Reflect. Adjust. Repeat.", text: "Review your results alongside your habits. Recognize recurring patterns and choose what to work on next.", tag: "After the session", icon: ScanLine },
+];
 
-// ── Page ─────────────────────────────────────────────────────────────────────
 export default function HomePage() {
-  // Scroll-driven parallax: the hero content drifts down and fades as you scroll
-  // into the product section, so the two layers feel like they have depth.
-  const heroRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-  const contentY = useTransform(scrollYProgress, [0, 1], [0, 110]);
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-
-  // Pointer-driven 3D tilt: the hero content leans toward the cursor. Values are
-  // normalized to [-0.5, 0.5] across the hero and spring-smoothed so it glides.
-  const pointerX = useMotionValue(0);
-  const pointerY = useMotionValue(0);
-  const springTilt = { stiffness: 70, damping: 18, mass: 0.4 };
-  const smoothX = useSpring(pointerX, springTilt);
-  const smoothY = useSpring(pointerY, springTilt);
-  const tiltY = useTransform(smoothX, [-0.5, 0.5], [-6, 6]);
-  const tiltX = useTransform(smoothY, [-0.5, 0.5], [6, -6]);
-
-  const handleHeroPointer = (e: React.MouseEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    pointerX.set((e.clientX - rect.left) / rect.width - 0.5);
-    pointerY.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
-  const resetHeroPointer = () => {
-    pointerX.set(0);
-    pointerY.set(0);
-  };
-
-  // Split-text reveal for the headline + subtext (anime.js). Each character
-  // rises into a clipped mask, staggered, so the copy "typesets" on load.
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const paraRef = useRef<HTMLParagraphElement>(null);
-  const revealed = useRef(false);
-
-  useEffect(() => {
-    if (revealed.current || !headingRef.current || !paraRef.current) return;
-    revealed.current = true;
-
-    const { chars: headingChars } = splitText(headingRef.current, {
-      chars: { wrap: "clip" },
-    });
-    const { chars: paraChars } = splitText(paraRef.current, {
-      chars: { wrap: "clip" },
-    });
-
-    // splitText rewraps each glyph, which breaks the gradient's
-    // background-clip on the "MC" span: reapply it to those two chars so the
-    // turquoise→cyan fill survives. (MC are the last two characters.)
-    for (const el of headingChars.slice(-2) as HTMLElement[]) {
-      el.style.background = "linear-gradient(135deg,#14B8A6 0%,#06B6D4 100%)";
-      el.style.webkitBackgroundClip = "text";
-      el.style.backgroundClip = "text";
-      el.style.webkitTextFillColor = "transparent";
-    }
-
-    // Reveal the containers now that the text is split (avoids a flash of the
-    // un-split copy before the effect runs).
-    headingRef.current.style.opacity = "1";
-    paraRef.current.style.opacity = "1";
-
-    animate(headingChars, {
-      y: [{ to: ["100%", "0%"] }],
-      duration: 480,
-      ease: "out(3)",
-      delay: stagger(28),
-    });
-    animate(paraChars, {
-      y: [{ to: ["100%", "0%"] }],
-      duration: 420,
-      ease: "out(3)",
-      delay: stagger(6, { start: 220 }),
-    });
-  }, []);
-
   return (
-    // No overflow class here: overflow-x-hidden disables the sticky header and
-    // overflow-x-clip kills page scrolling entirely. Sections that animate
-    // horizontally contain their own overflow instead.
-    <div style={{ background: "#0B1120" }}>
-
-      {/* Keyboard and screen-reader users get past the nav in one keystroke.
-          Invisible until it is focused, which is the whole point of it. */}
-      <a
-        href="#features"
-        className="sr-only rounded-full px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50"
-        style={{ background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)" }}
-      >
-        Skip to content
-      </a>
-
-      {/* ── Top navigation: Features button, Sign in, Make account ── */}
-      <LandingNav />
-
-      {/* One background carries the hero, the explorer and the cards, so the
-          opening stretch reads as a single surface instead of three fills
-          stacked on top of each other. */}
-      <div className="relative">
-        <LandingGround />
-
-      {/* ── Hero: dark navy background, turquoise + neutral candle visuals ── */}
-      {/* 53px = header height (py-4 + text-base logo + 1px border).
-          overflow-hidden clips the decorative 520px glow and the candle canvas
-          to the section. Without it the glow sticks ~110px past the viewport on
-          a phone and the whole page scrolls sideways. Scoped to the section, so
-          it does not disable the sticky header or page scrolling the way an
-          overflow rule on the page wrapper would. */}
-      <section
-        ref={heroRef}
-        onMouseMove={handleHeroPointer}
-        onMouseLeave={resetHeroPointer}
-        className="relative flex flex-col overflow-hidden"
-        style={{ minHeight: "calc(100svh - 53px)" }}
-      >
-
-        {/* Candlestick background */}
-        <CandlesCanvas />
-
-        {/* Ambient drifting glow: adds depth behind the headline */}
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(20,184,166,0.16) 0%, transparent 65%)" }}
-          animate={{ scale: [1, 1.18, 1], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 9, ease: "easeInOut", repeat: Infinity }}
-        />
-
-        {/* Content: parallax + fade on scroll */}
-        <motion.div
-          style={{
-            y: contentY,
-            opacity: contentOpacity,
-            rotateX: tiltX,
-            rotateY: tiltY,
-            transformPerspective: 1200,
-          }}
-          className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-20">
-
-          <motion.img
-            src="/tradingmc-app-dark.svg"
-            alt="TradingMC"
-            width={104}
-            height={104}
-            initial={{ opacity: 0, y: 18, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-8 h-24 w-24 sm:h-28 sm:w-28"
-            style={{ filter: "drop-shadow(0 8px 30px rgba(20,184,166,0.22))" }}
-          />
-
-          <h1
-            ref={headingRef}
-            className="font-black tracking-tight leading-[1.06] mb-6 pb-[0.08em]"
-            style={{
-              fontFamily: NUNITO,
-              fontSize: "clamp(2.5rem,8vw,6rem)",
-              color: "rgba(248,250,252,0.94)",
-              opacity: 0,
-            }}
-          >
-            Trading
-            <span style={{
-              background: "linear-gradient(135deg,#14B8A6 0%,#06B6D4 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}>
-              MC
-            </span>
-          </h1>
-
-          <p
-            ref={paraRef}
-            className="mb-10 max-w-xl leading-relaxed"
-            style={{
-              fontFamily: NUNITO,
-              fontSize: "clamp(1rem,2.4vw,1.2rem)",
-              fontWeight: 400,
-              letterSpacing: "0.01em",
-              color: "rgba(248,250,252,0.60)",
-              opacity: 0,
-            }}
-          >
-            Great traders are built beyond the charts. Capture every trade,
-            analyze your performance, and develop the habits that drive
-            long-term consistency.
-          </p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1], delay: 0.34 }}
-            className="flex flex-wrap items-center justify-center gap-3"
-          >
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
-              style={{
-                fontFamily: NUNITO,
-                background: "linear-gradient(135deg,#14B8A6 0%,#0D9488 100%)",
-                boxShadow: "0 4px 28px rgba(20,184,166,0.40), 0 1px 3px rgba(0,0,0,0.35)",
-              }}
-            >
-              Open dashboard
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <a
-              href="#features"
-              className="inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-sm font-semibold text-[rgba(248,250,252,0.65)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[rgba(248,250,252,0.92)] active:translate-y-0"
-              style={{
-                fontFamily: NUNITO,
-                borderColor: "rgba(248,250,252,0.14)",
-                background: "rgba(248,250,252,0.06)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-              }}
-            >
-              See the platform
-              <ArrowDown className="w-3.5 h-3.5" />
-            </a>
-          </motion.div>
-        </motion.div>
-
-      </section>
-
-        <ProductExplorer />
-
-        <LayoutShowcase />
-      </div>
-
-      <LandingFooter />
+    <div className={styles.home} id="top">
+      <a className={styles.skip} href="#main">Skip to content</a>
+      <header className={styles.header}>
+        <div className={styles.nav}>
+          <Link href="/" aria-label="TradingMC home"><Logo size={36} /></Link>
+          <nav aria-label="Main navigation" className={styles.navLinks}><a href="#platform">The platform</a><a href="#practice">Your practice</a><a href="#questions">FAQ</a></nav>
+          <div className={styles.accountLinks}><Link href="/login">Sign in</Link><Link href="/signup" className={styles.smallButton}>Get started <ArrowRight size={15} /></Link></div>
+        </div>
+      </header>
+      <main id="main">
+        <section className={styles.hero}>
+          <div className={styles.eyebrow}><span /> THE MINDSET BEHIND THE TRADE</div>
+          <h1>Your edge starts<br />with <em>you.</em></h1>
+          <p>A clearer mind. A more deliberate trader.<br className={styles.desktopBreak} /> Bring your journal, psychology and daily habits into one focused workspace.</p>
+          <div className={styles.actions}><Link href="/signup" className={styles.primary}>Build your trading practice <ArrowRight size={18} /></Link><a href="#platform" className={styles.secondary}>Explore the platform <ArrowDown size={17} /></a></div>
+          <div className={styles.heroNote}><span><Check size={14} /> Built for futures traders</span><span><Check size={14} /> Focused on your process</span></div>
+        </section>
+        <section id="platform" className={styles.platform} aria-label="Explore the TradingMC platform"><ScreenshotShowcase /></section>
+        <div className={styles.manifesto}><span>WHERE SELF-IMPROVEMENT MEETS TRADING</span><p>You track the market.<br /><strong>Start understanding the trader.</strong></p></div>
+        <section id="practice" className={styles.section}>
+          <div className={styles.sectionHeading}><div><span className={styles.kicker}>A MORE INTENTIONAL ROUTINE</span><h2>Train the part of trading<br />that is yours to control.</h2></div><p>Good habits need a place to grow. Build a repeatable practice around preparation, execution and honest reflection.</p></div>
+          <div className={styles.cards}>{practices.map(item => <article className={styles.card} key={item.number}><div className={styles.cardTop}><item.icon size={25} strokeWidth={1.5} /><span>{item.number}</span></div><span className={styles.cardTag}>{item.tag}</span><h3>{item.title}</h3><p>{item.text}</p></article>)}</div>
+        </section>
+        <section className={`${styles.section} ${styles.mindSection}`}>
+          <div className={styles.mindCopy}><span className={styles.kicker}>PSYCHOLOGY, PUT INTO PRACTICE</span><h2>Small daily actions.<br /><em>A stronger foundation.</em></h2><p>Your routine deserves the same attention as your setup. Track the habits that support your trading, set meaningful goals and make room for reflection.</p><ul><li><Check size={17} /> Build and track your personal habits</li><li><Check size={17} /> Keep your trading rules close</li><li><Check size={17} /> Reflect on discipline with MC Mindscore</li></ul><Link href="/psychological-edge" className={styles.textLink}>Discover your Mind Edge <ArrowRight size={17} /></Link></div>
+          <figure className={styles.habitFigure}><div className={styles.figureLabel}><Brain size={19} /><span>A practice you can come back to.</span></div><a href={habits.src} target="_blank" rel="noopener noreferrer" aria-label="View full-size habits screenshot (opens in a new tab)"><Image src={habits} alt="TradingMC habit tracker with daily check-ins and habit progress" sizes="(max-width: 800px) 92vw, 600px" /></a><figcaption>Your habits. Your progress. One place to reflect.</figcaption></figure>
+        </section>
+        <section id="questions" className={`${styles.section} ${styles.faq}`}><div><span className={styles.kicker}>A LITTLE MORE CLARITY</span><h2>Before you begin.</h2></div><div>{[
+          ["Who is TradingMC for?", "TradingMC is built for futures and commodities traders who want to work on their decision-making, discipline and consistency alongside their trading performance."],
+          ["What can I do in the platform?", "Record trades, explore your analytics, track daily habits, set goals and define your trading rules. Your workspace brings your results and your process together."],
+          ["How does it support trading psychology?", "Habit check-ins, journaling and reflection help you pay attention to how you trade. Mind Edge brings habits, goals and MC Mindscore together so you can build your own ongoing practice."],
+          ["Does TradingMC provide trading signals?", "TradingMC focuses on your trading process and self-improvement. It does not promise returns or tell you which trades to take."],
+        ].map(([question, answer]) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>
+        <section className={styles.cta}><LogoMark size={60} /><span className={styles.kicker}>MAKE PROGRESS A PRACTICE</span><h2>The next thing to work on?<br /><em>Yourself.</em></h2><p>Build a trading routine with more awareness and intention.</p><Link href="/signup" className={styles.primary}>Create your account <ArrowRight size={18} /></Link></section>
+      </main>
+      <footer className={styles.footer}><div className={styles.footerTop}><div><Link href="/" aria-label="TradingMC home"><Logo size={34} /></Link><p>Where self-improvement meets trading.</p></div><nav aria-label="Footer navigation"><a href="#platform">Platform</a><Link href="/login">Sign in</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav></div><div className={styles.footerBottom}><span>© {new Date().getFullYear()} TradingMC</span><span>Built for the work beyond the charts.</span><a href="#top">Back to top <MoveUpRight size={14} /></a></div></footer>
     </div>
   );
 }
