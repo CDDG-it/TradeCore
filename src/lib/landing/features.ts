@@ -1,5 +1,4 @@
-// Marketing copy for the public feature pages. Kept in one place so the landing
-// nav, the product preview and the /features/[slug] pages all stay in sync.
+// Marketing copy for the public feature pages.
 // House style: plain language, trader-first, no em dashes, no filler.
 
 export type FeatureBlock = {
@@ -12,16 +11,12 @@ export type Feature = {
   slug: string;
   name: string;
   section: "Daily" | "Trading" | "Mindset" | "Markets";
-  // One line shown in the nav dropdown and as the page subtitle.
+  // One line used for feature-page metadata.
   tagline: string;
-  // Short blurb reused on the homepage product preview.
+  // Short summary for reuse outside the landing page.
   blurb: string;
-  // Label for the orange button.
+  // Optional action label for feature-specific links.
   cta: string;
-  screenshot: string;
-  // Native aspect ratio of the screenshot ("width / height"), so the frame
-  // matches the real capture instead of forcing every shot into one crop.
-  aspect: string;
   // Opening paragraph on the feature page.
   intro: string;
   blocks: FeatureBlock[];
@@ -36,8 +31,6 @@ export const FEATURES: Feature[] = [
     blurb:
       "One view for your entire trading day. Habits, recent trades, funded account status and discipline score, all before the opening bell.",
     cta: "Open dashboard",
-    screenshot: "/screenshots-current/dashboard.png",
-    aspect: "1600 / 1000",
     intro:
       "The dashboard is the first thing you open and the last thing you close. It pulls your entire trading day into a single view, so the parts that decide your results never hide in a separate tab.",
     blocks: [
@@ -68,8 +61,6 @@ export const FEATURES: Feature[] = [
     blurb:
       "Log every trade with setup, execution quality and session context. Review your full trade history in list or calendar view.",
     cta: "View journal",
-    screenshot: "/screenshots-current/journal.png",
-    aspect: "1600 / 1000",
     intro:
       "A trade you do not write down is a trade you will take again without knowing why. The journal turns every fill into a record you can actually learn from.",
     blocks: [
@@ -100,8 +91,6 @@ export const FEATURES: Feature[] = [
     blurb:
       "Build structured pre market analysis around bias, key levels and session scenarios before you ever touch the keyboard.",
     cta: "Review analyses",
-    screenshot: "/screenshots-current/analysis.png",
-    aspect: "1100 / 760",
     intro:
       "The session is won before the open. Analysis is where you decide what you are looking for, so you are not improvising once the candles start moving.",
     blocks: [
@@ -132,8 +121,6 @@ export const FEATURES: Feature[] = [
     blurb:
       "Find patterns in your execution over time. Win rate by session, R multiples, day of week tendencies and discipline trends.",
     cta: "See analytics",
-    screenshot: "/screenshots-current/analytics.png",
-    aspect: "1600 / 1000",
     intro:
       "Your edge is hiding in your own data. Analytics finds it. No spreadsheets and no manual tallies, just the patterns in how you actually trade.",
     blocks: [
@@ -164,8 +151,6 @@ export const FEATURES: Feature[] = [
     blurb:
       "Track all funded prop firm accounts in one place. Monitor payouts, ROI multiples, drawdown thresholds and account phases.",
     cta: "View accounts",
-    screenshot: "/screenshots-current/accounts.png",
-    aspect: "1200 / 760",
     intro:
       "Trading one funded account is simple. Trading five across three firms turns into a spreadsheet nightmare. Accounts keeps all of it in one place.",
     blocks: [
@@ -194,12 +179,10 @@ export const FEATURES: Feature[] = [
     section: "Daily",
     tagline: "The routine behind the results.",
     blurb:
-      "Track the daily habits that keep your trading sharp. Completion streaks, discipline trends and a calendar you can check off for any day.",
+      "Inside My Edge, track the daily habits that support your trading routine and review how consistently you complete them.",
     cta: "Track habits",
-    screenshot: "/screenshots-current/psychological-edge.png",
-    aspect: "1600 / 760",
     intro:
-      "Your edge is built long before the open. Habits tracks the routine that keeps you sharp, so the discipline you show away from the charts is the same discipline that shows up on them.",
+      "Your edge is built long before the open. The Habits view inside My Edge makes your routine visible, so you can review the work you do away from the charts.",
     blocks: [
       {
         heading: "How it works",
@@ -222,33 +205,31 @@ export const FEATURES: Feature[] = [
   },
   {
     slug: "news-city",
-    name: "Market Intelligence",
-    section: "Trading",
-    tagline: "See what is actually moving the market.",
+    name: "Global Markets",
+    section: "Markets",
+    tagline: "Bring market context into the trading day.",
     blurb:
-      "A live map of the forces driving price. Central banks, macro data, commodities and earnings, scored by impact, direction and confidence.",
-    cta: "Open the hub",
-    screenshot: "/screenshots-current/news-city.png",
-    aspect: "1600 / 1000",
+      "A market desk for futures, news, the economic calendar, cross-asset context and positioning, with source and timing visible.",
+    cta: "Open Global Markets",
     intro:
-      "Price does not move in a vacuum. Market Intelligence turns the day's noise into a clear picture of what is driving risk right now, so you walk into the session knowing the context instead of reacting to it.",
+      "Price does not move in a vacuum. Global Markets brings the wider context into one desk, so you can prepare for scheduled events and inspect the data behind a move.",
     blocks: [
       {
         heading: "How it works",
-        body: "The signals that move index futures, gathered into one readable view.",
+        body: "Move between a daily overview, markets, futures, news, the calendar and positioning in one place.",
         points: [
-          "Explore an interactive 3D hub where central banks, macro data, commodities, earnings and index impact each feed the market core in real time.",
-          "Click any node to drill into its signals: each scored by impact, direction and confidence, with what happened, why it matters and the historical context.",
-          "Filter to the categories and impact levels you care about, so you see the events that actually matter for your instrument.",
+          "Check venue clocks and move between the overview, cross-asset markets and futures views.",
+          "Read the news and calendar beside the data you use to prepare for a session.",
+          "Each dataset shows its source and age, so delayed figures are not mistaken for a live quote.",
         ],
       },
       {
         heading: "Why it works",
-        body: "Most traders check five tabs and still miss the one number that mattered. Pulling the drivers into a single scored view means the context is already framed before the open, so you spend the session executing instead of scrambling to find out why price is moving.",
+        body: "Keeping the wider market close to your trading plan reduces the need to piece together context from separate tabs. It gives you a clearer starting point for your own read, without pretending to predict the next move.",
       },
       {
         heading: "Why every trader needs this",
-        body: "The difference between a clean read and a blindside is usually knowing the regime you are trading in. A single view of risk and sentiment keeps you on the right side of the days that break the range.",
+        body: "A scheduled event or a change in related markets can alter the conditions you prepared for. Seeing the timing and source helps you decide when your setup still applies.",
       },
     ],
   },
@@ -260,8 +241,6 @@ export const FEATURES: Feature[] = [
     blurb:
       "My Edge holds the two things you control away from the chart: the playbook you trade against, and the Mindscore that reads how well you are actually following it.",
     cta: "Open My Edge",
-    screenshot: "/screenshots-current/psychological-edge.png",
-    aspect: "1600 / 760",
     intro:
       "Discipline is hard to see until it is already gone, and a strategy in your head changes shape under pressure. My Edge puts both in one place: the rules you decided on in the cold light of the weekend, and an honest read on whether you kept them.",
     blocks: [
@@ -288,31 +267,29 @@ export const FEATURES: Feature[] = [
     slug: "trade-therapist",
     name: "MC Trade Therapist",
     section: "Mindset",
-    tagline: "A coach that talks back, built from your own trades.",
+    tagline: "Structured exercises built around your own trades.",
     blurb:
-      "A deterministic coaching session that reads your real history. Every question traces to concrete numbers, never generic motivation, and every commitment comes back when it matters.",
+      "Review your trades, prepare for the next session and write commitments that return when the same pattern appears.",
     cta: "Open Trade Therapist",
-    screenshot: "/screenshots-current/trade-therapist.png",
-    aspect: "1600 / 1000",
     intro:
-      "Most trading advice is a poster on the wall. The MC Trade Therapist runs a real session on your own trades, so the conversation is about what you actually did, not what a generic mindset video thinks you should feel.",
+      "Generic mindset advice is easy to forget. MC Trade Therapist gives your own trades a place in the reflection, so the work begins with specific decisions rather than a motivational slogan.",
     blocks: [
       {
         heading: "How it works",
-        body: "A guided session that pulls its material straight from your history.",
+        body: "Move between best trades, pre-market exercises, commitments and reviews.",
         points: [
-          "The therapist reads your journal, results and discipline data, then works through a structured 5R flow built around the patterns it finds.",
-          "Every prompt is tied to concrete numbers from your trading, so you confront the trade you overheld or the rule you skipped, not a vague feeling.",
-          "Commitments you make in a session are saved and surfaced again later, so the work carries into your next trades instead of ending when you close the tab.",
+          "Review the best trade of a selected day and compare the decision with the result.",
+          "Use recent wins and losses to prepare what you want to repeat or prevent before the next session.",
+          "Write if/then commitments and check them when the guarded pattern appears again in later trades.",
         ],
       },
       {
         heading: "Why it works",
-        body: "Insight fades, patterns do not. Because the therapist is deterministic and data driven, it keeps pointing at the same expensive habit until you actually change it, which is exactly the accountability a motivational quote can never give you.",
+        body: "A concrete reflection is easier to act on than a broad intention. Revisiting a commitment when its trigger recurs gives you a way to examine whether your response changed.",
       },
       {
         heading: "Why every trader needs this",
-        body: "The gap between knowing a rule and keeping it is where accounts die. A session that ties every reflection to your real behavior, and holds you to what you committed to, is how that gap finally closes.",
+        body: "Knowing a rule and following it under pressure are different skills. Structured review helps you practice that distinction from your own history.",
       },
     ],
   },

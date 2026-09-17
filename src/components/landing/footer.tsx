@@ -2,17 +2,10 @@
 
 import Link from "next/link";
 import { ArrowRight, ArrowUp } from "lucide-react";
-import { APP_TABS } from "@/lib/nav";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
 const COLUMNS = [
-  {
-    heading: "Platform",
-    // Always the current app tabs, written exactly as they are in the
-    // sidebar: sourced from APP_TABS so this list can't drift out of sync.
-    links: APP_TABS.map((tab) => ({ label: tab.label, href: tab.href })),
-  },
   {
     heading: "Account",
     links: [
@@ -38,7 +31,7 @@ export function LandingFooter() {
       <div className="mx-auto max-w-6xl px-6 sm:px-10">
 
         {/* Top: brand + link columns */}
-        <div className="grid grid-cols-1 gap-12 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="grid grid-cols-1 gap-12 py-14 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr]">
 
           {/* Brand block */}
           <div className="max-w-xs">
@@ -59,15 +52,14 @@ export function LandingFooter() {
               className="mt-3 text-sm leading-relaxed"
               style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.60)" }}
             >
-              Where self-improvement meets trading. Built for futures traders
-              who take their preparation as seriously as their entries.
+              An ordinary journal won’t build an extraordinary trader.
             </p>
             <Link
-              href="/dashboard"
+              href="/signup"
               className="group mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#14B8A6] transition-colors hover:text-[#0D9488]"
               style={{ fontFamily: NUNITO }}
             >
-              Start your journal
+              Start with your process
               <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
             </Link>
           </div>
@@ -116,7 +108,7 @@ export function LandingFooter() {
           </p>
           <button
             type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })}
             className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold text-[rgba(248,250,252,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[#14B8A6]"
             style={{ fontFamily: NUNITO, borderColor: "rgba(248,250,252,0.12)" }}
           >

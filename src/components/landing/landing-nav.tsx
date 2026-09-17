@@ -1,25 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowDown } from "lucide-react";
 import { motion, useScroll, useMotionValueEvent } from "motion/react";
 import { useState } from "react";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
-/**
- * Top-of-hero navigation: brand at the left, one Features button in the middle
- * that takes you down to the product cards, then Sign in and Make account.
- *
- * The Features menu used to be a hover dropdown. A menu that only ever pointed
- * at four anchors on the same page was a lid over a door: the cards say what
- * the product is far better than a list of names, so the button just opens
- * them.
- *
- * Two details the bar carries: it sits transparent over the hero and only takes
- * on its glass and border once you have scrolled past it, and it draws a
- * hairline of reading progress along its bottom edge.
- */
+/** The reading progress line and account actions stay available while scrolling. */
 export function LandingNav() {
   const [lifted, setLifted] = useState(false);
   const { scrollYProgress, scrollY } = useScroll();
@@ -52,7 +39,7 @@ export function LandingNav() {
         }}
       />
 
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 sm:gap-4">
+      <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-2 sm:gap-4">
         {/* Brand: logo + wordmark, same font family as the hero heading, much smaller */}
         <Link href="/" className="flex items-center gap-2.5 justify-self-start transition-opacity hover:opacity-80">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -63,15 +50,10 @@ export function LandingNav() {
           </span>
         </Link>
 
-        {/* Centre: one way into the product: the cards. */}
-        <nav className="hidden items-center justify-center md:flex" style={{ fontFamily: NUNITO }}>
-          <a
-            href="#products"
-            className="group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(248,250,252,0.60)] transition-colors duration-200 hover:text-[rgba(248,250,252,0.92)]"
-          >
-            Features
-            <ArrowDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-y-0.5" />
-          </a>
+        <nav aria-label="Landing page sections" className="hidden items-center gap-7 font-heading text-xs font-bold text-[#B8C8D1] lg:flex">
+          <a href="#the-problem" className="transition-colors hover:text-[#6BDBCE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6]">The problem</a>
+          <a href="#the-method" className="transition-colors hover:text-[#6BDBCE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6]">How it works</a>
+          <a href="#the-moments" className="transition-colors hover:text-[#6BDBCE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6]">The process</a>
         </nav>
 
         {/* Right nav: account actions, pushed to the far right */}
@@ -91,7 +73,7 @@ export function LandingNav() {
               boxShadow: "0 2px 14px rgba(20,184,166,0.35), 0 1px 2px rgba(0,0,0,0.30)",
             }}
           >
-            Make account
+            Get started
           </Link>
         </nav>
       </div>

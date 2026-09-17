@@ -12,7 +12,7 @@ import { ImageResponse } from "next/og";
  * The candles are a deterministic decorative series: no figure here claims to
  * be a market or a result.
  */
-export const alt = "TradingMC: where self-improvement meets trading";
+export const alt = "TradingMC: An ordinary journal won’t build an extraordinary trader";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -117,7 +117,7 @@ export default function OpengraphImage() {
               color: "rgba(248,250,252,0.72)",
             }}
           >
-            Where self-improvement meets trading.
+            An ordinary journal won’t build an extraordinary trader.
           </div>
         </div>
 

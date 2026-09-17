@@ -39,10 +39,9 @@ const nunito = Nunito({
  */
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tradinghub-lovat.vercel.app";
 
-const TITLE = "TradingMC: where self-improvement meets trading";
+const TITLE = "TradingMC: An ordinary journal won’t build an extraordinary trader";
 const DESCRIPTION =
-  "A trading desk for futures traders who work on themselves as seriously as on their entries. " +
-  "Journal every trade, read your own numbers, hold your habits, and see what is moving the market.";
+  "An ordinary journal records the trade. TradingMC helps futures traders examine the decision, refine their process, and prepare for what comes next.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),

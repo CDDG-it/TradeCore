@@ -1,12 +1,10 @@
-import { existsSync } from "fs";
-import path from "path";
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { FEATURES, FEATURE_BY_SLUG } from "@/lib/landing/features";
 import { LandingFooter } from "@/components/landing/footer";
+import { FeatureScene } from "@/components/landing/feature-scene";
 
 const NUNITO = "var(--font-nunito), system-ui, sans-serif";
 
@@ -41,13 +39,6 @@ export default async function FeaturePage({
   // Index in the list, used for the prev/next footer navigation.
   const idx = FEATURES.findIndex((f) => f.slug === feature.slug);
   const next = FEATURES[(idx + 1) % FEATURES.length];
-
-  // Only render the media block when a real screenshot file is actually present
-  // in /public. Features without a capture (e.g. Trade Therapist, Option Flow)
-  // stay text-only: no mockups, no broken images. Drop a PNG in and it appears.
-  const hasShot = existsSync(
-    path.join(process.cwd(), "public", feature.screenshot.replace(/^\//, "")),
-  );
 
   return (
     <div style={{ background: "#0B1120", fontFamily: NUNITO }}>
@@ -89,7 +80,7 @@ export default async function FeaturePage({
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#CBD5E1]/50 transition-colors duration-200 hover:text-[#14B8A6]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          All features
+          Back to TradingMC
         </Link>
 
         <div className="mt-7 flex items-center gap-3">
@@ -116,29 +107,9 @@ export default async function FeaturePage({
         </p>
       </section>
 
-      {/* Screenshot: only when a real capture exists in /public/screenshots. */}
-      {hasShot && (
-        <section className="mx-auto max-w-5xl px-6">
-          <div
-            className="relative w-full overflow-hidden rounded-2xl"
-            style={{
-              aspectRatio: feature.aspect,
-              boxShadow:
-                "0 0 0 1.5px rgba(20,184,166,0.25), 0 0 34px rgba(6,182,212,0.10), 0 12px 50px rgba(0,0,0,0.45)",
-            }}
-          >
-            <Image
-              src={feature.screenshot}
-              alt={`${feature.name} page in TradingMC`}
-              fill
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              quality={92}
-              className="object-cover object-top"
-              priority
-            />
-          </div>
-        </section>
-      )}
+      <section className="mx-auto max-w-5xl px-6">
+        <FeatureScene key={feature.slug} slug={feature.slug} />
+      </section>
 
       {/* Explainer blocks */}
       <section className="mx-auto max-w-3xl px-6 py-20 sm:py-28">
@@ -193,10 +164,10 @@ export default async function FeaturePage({
             className="font-black tracking-tight"
             style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", color: "#F8FAFC" }}
           >
-            Put {feature.name.toLowerCase()} to work
+            Make this part of your process
           </h3>
           <p className="mx-auto mt-3 max-w-md leading-relaxed" style={{ color: "rgba(203,213,225,0.65)" }}>
-            Start logging the quiet work that separates funded traders from former ones.
+            Start building a process you can examine and improve.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
