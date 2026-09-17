@@ -1,121 +1,19 @@
-"use client";
-
 import Link from "next/link";
-import { ArrowRight, ArrowUp } from "lucide-react";
 
-const NUNITO = "var(--font-nunito), system-ui, sans-serif";
-
-const COLUMNS = [
-  {
-    heading: "Account",
-    links: [
-      { label: "Sign in", href: "/login" },
-      { label: "Create account", href: "/signup" },
-      { label: "Reset password", href: "/reset-password" },
-    ],
-  },
-  {
-    heading: "Legal",
-    links: [
-      { label: "Terms of service", href: "/terms" },
-      { label: "Privacy policy", href: "/privacy" },
-    ],
-  },
+const groups = [
+  { title: "Account", links: [{ label: "Sign in", href: "/login" }, { label: "Create account", href: "/signup" }, { label: "Reset password", href: "/reset-password" }] },
+  { title: "Legal", links: [{ label: "Terms of service", href: "/terms" }, { label: "Privacy policy", href: "/privacy" }] },
 ] as const;
 
 export function LandingFooter() {
   return (
-    <footer
-      style={{ background: "#0B1120", borderTop: "1px solid rgba(248,250,252,0.09)" }}
-    >
-      <div className="mx-auto max-w-6xl px-6 sm:px-10">
-
-        {/* Top: brand + link columns */}
-        <div className="grid grid-cols-1 gap-12 py-14 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr]">
-
-          {/* Brand block */}
-          <div className="max-w-xs">
-            <Link
-              href="/"
-              className="font-black text-lg tracking-tight leading-none transition-opacity hover:opacity-70"
-              style={{ fontFamily: NUNITO }}
-            >
-              <span style={{ color: "rgba(248,250,252,0.92)" }}>Trading</span>
-              <span style={{
-                background: "linear-gradient(90deg,#14B8A6,#0D9488)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}>MC</span>
-            </Link>
-            <p
-              className="mt-3 text-sm leading-relaxed"
-              style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.60)" }}
-            >
-              An ordinary journal won’t build an extraordinary trader.
-            </p>
-            <Link
-              href="/signup"
-              className="group mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#14B8A6] transition-colors hover:text-[#0D9488]"
-              style={{ fontFamily: NUNITO }}
-            >
-              Start with your process
-              <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-            </Link>
-          </div>
-
-          {/* Link columns */}
-          {COLUMNS.map((col) => (
-            <nav key={col.heading} aria-label={col.heading}>
-              <p
-                className="text-[0.625rem] font-bold uppercase tracking-[0.18em]"
-                style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.45)" }}
-              >
-                {col.heading}
-              </p>
-              <ul className="mt-4 space-y-2.5">
-                {col.links.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[rgba(248,250,252,0.60)] transition-colors duration-200 hover:text-[rgba(248,250,252,0.92)]"
-                      style={{ fontFamily: NUNITO }}
-                    >
-                      {/* Accent dash that slides in on hover */}
-                      <span
-                        className="h-px w-0 transition-all duration-200 group-hover:w-3"
-                        style={{ background: "#14B8A6" }}
-                      />
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ))}
+    <footer className="bg-[#f3f7f7] px-6 pb-7 pt-20 text-[#0b1120] sm:px-10 lg:px-12">
+      <div className="mx-auto max-w-[1260px]">
+        <div className="grid gap-16 border-b border-[#cad9dc] pb-20 lg:grid-cols-[1.5fr_1fr]">
+          <div><p className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#46717a]">A better question after every trade</p><Link href="/" className="mt-7 block w-fit text-[clamp(3.5rem,7vw,7rem)] font-semibold leading-none tracking-[-0.08em]">Trading<span className="text-[#0d8d82]">MC</span></Link><p className="mt-6 max-w-sm text-base leading-relaxed text-[#516a72]">Built for traders who want the work between trades to matter.</p></div>
+          <div className="grid grid-cols-2 gap-8 sm:gap-14">{groups.map((group) => <nav key={group.title} aria-label={group.title}><h2 className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#49727a]">{group.title}</h2><ul className="mt-7 space-y-4">{group.links.map((link) => <li key={link.href}><Link href={link.href} className="text-sm font-medium text-[#1d3842] transition-colors hover:text-[#087b72]">{link.label}</Link></li>)}</ul></nav>)}</div>
         </div>
-
-        {/* Bottom bar */}
-        <div
-          className="flex flex-col items-center justify-between gap-4 py-6 sm:flex-row"
-          style={{ borderTop: "1px solid rgba(248,250,252,0.08)" }}
-        >
-          <p className="text-xs" style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.45)" }}>
-            © {new Date().getFullYear()} TradingMC. All rights reserved.
-          </p>
-          <p className="text-xs" style={{ fontFamily: NUNITO, color: "rgba(248,250,252,0.45)" }}>
-            Plan the session. Log the trade. Review the week.
-          </p>
-          <button
-            type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" })}
-            className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold text-[rgba(248,250,252,0.60)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(20,184,166,0.45)] hover:text-[#14B8A6]"
-            style={{ fontFamily: NUNITO, borderColor: "rgba(248,250,252,0.12)" }}
-          >
-            Back to top
-            <ArrowUp className="h-3 w-3" />
-          </button>
-        </div>
+        <div className="flex flex-col justify-between gap-4 pt-6 text-xs text-[#5e7880] sm:flex-row"><p>© {new Date().getFullYear()} TradingMC</p><p>Plan the session. Log the trade. Review the decision.</p></div>
       </div>
     </footer>
   );

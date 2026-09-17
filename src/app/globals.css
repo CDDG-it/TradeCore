@@ -827,26 +827,53 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   scroll-margin-top: 6rem;
 }
 
-/* Marketing page: layered turquoise light, kept separate from the app theme. */
-.landing-aurora {
+/* Public homepage typography and product compositions stay separate from the app. */
+.marketing-page {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.marketing-hero {
   background:
-    radial-gradient(ellipse 46% 48% at 1% 11%, rgba(20, 184, 166, 0.34), transparent 78%),
-    radial-gradient(ellipse 33% 45% at 89% 72%, rgba(6, 182, 212, 0.16), transparent 76%),
-    radial-gradient(ellipse 51% 35% at 47% 107%, rgba(20, 184, 166, 0.19), transparent 75%),
+    radial-gradient(ellipse 45% 60% at 77% 47%, rgba(20, 184, 166, 0.18), transparent 75%),
+    radial-gradient(ellipse 50% 55% at -10% -10%, rgba(6, 182, 212, 0.10), transparent 80%),
     #0b1120;
 }
 
-.landing-aurora::after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-  z-index: 0;
-  left: -17%;
-  bottom: -13%;
-  width: 110%;
-  height: 35%;
-  transform: rotate(-9deg);
-  background: linear-gradient(180deg, transparent, rgba(20, 184, 166, 0.24), transparent);
-  filter: blur(40px);
-  opacity: 0.7;
+.marketing-grid {
+  background-image:
+    linear-gradient(rgba(149, 190, 194, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(149, 190, 194, 0.07) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(90deg, transparent, black 30%, black 90%, transparent);
+}
+
+.marketing-laptop {
+  transform: perspective(1200px) rotateY(-5deg) rotateX(3deg);
+  transform-origin: center;
+}
+
+.marketing-laptop-screen {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 32px 90px rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 640px) {
+  .marketing-laptop { transform: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .marketing-flip-card {
+      transform-origin: center right;
+      animation: marketing-card-flip linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 85%;
+    }
+
+    .marketing-flip-card:nth-child(2) { animation-range: entry 15% entry 100%; }
+  }
+}
+
+@keyframes marketing-card-flip {
+  from { transform: perspective(900px) rotateY(-32deg) translateY(20px); opacity: 0.72; }
+  to { transform: perspective(900px) rotateY(0) translateY(0); opacity: 1; }
 }

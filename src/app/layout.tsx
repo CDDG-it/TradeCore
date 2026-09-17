@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Instrument_Serif, Barlow, Nunito } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif, Barlow, Nunito } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/lib/theme-context";
@@ -7,6 +7,12 @@ import { ThemeProvider } from "@/lib/theme-context";
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const geist = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 const instrumentSerif = Instrument_Serif({
@@ -87,7 +93,7 @@ export default function RootLayout({
       // scrolling on for its own scroll-to-top after a route change and every
       // navigation animates the old page sliding upward first.
       data-scroll-behavior="smooth"
-      className={`${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} ${nunito.variable} h-full antialiased`}
+      className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} ${nunito.variable} h-full antialiased`}
     >
       <head>
         {/*

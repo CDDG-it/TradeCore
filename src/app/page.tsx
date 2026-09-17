@@ -1,147 +1,83 @@
 import Link from "next/link";
-import { ArrowDown, ArrowRight, ArrowUpRight } from "lucide-react";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
-import { DecisionBridge, HeroProcessVisual, MomentsGrid } from "@/components/landing/reference-visuals";
-import { GuidelineBuilder, MarketLens, PatternTrace, ReflectionExercise, StoryReveal, TradeLens } from "@/components/landing/story-visuals";
-
-const eyebrow = "font-body text-[11px] font-bold uppercase tracking-[0.2em] text-[#70D8CC]";
-const heading = "font-heading text-[clamp(2.5rem,4.9vw,5.2rem)] font-black leading-[1.04] tracking-[-0.05em] text-white";
-const body = "font-body text-base leading-[1.7] text-[#AFC0CB] sm:text-lg";
+import { LaptopDashboard, MarketContextVisual, ProcessStack, TradeComparison } from "@/components/landing/marketing-visuals";
 
 const problems = [
-  { number: "01", title: "The result bias", body: "A green trade can hide a broken rule. A red one can hide a good decision." },
-  { number: "02", title: "The forgotten moment", body: "The reason for an entry fades faster than the number in your account." },
-  { number: "03", title: "The repeated slip", body: "The same small compromise returns when nobody asks what triggered it." },
-  { number: "04", title: "The missing context", body: "A plan changes when you ignore the conditions surrounding the trade." },
+  { number: "01", title: "A result can mislead.", detail: "A green trade can contain the same mistake as a red one." },
+  { number: "02", title: "The reason fades.", detail: "By the end of the week, the moment behind an entry is easy to rewrite." },
+  { number: "03", title: "Patterns hide in plain sight.", detail: "The same compromise can keep returning, one trade at a time." },
+  { number: "04", title: "The next session arrives.", detail: "A journal entry is only useful if it changes what you do next." },
 ] as const;
+
+function SectionLabel({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
+  return <p className={`mb-6 flex items-center gap-3 font-mono text-[11px] font-medium uppercase tracking-[0.16em] ${light ? "text-[#3d6871]" : "text-[#7dcac4]"}`}><span className={`h-px w-8 ${light ? "bg-[#3d6871]" : "bg-[#7dcac4]"}`} />{children}</p>;
+}
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen overflow-x-clip bg-[#0B1120] text-[#F8FAFC]">
-      <div aria-hidden="true" className="landing-aurora pointer-events-none absolute inset-x-0 top-0 h-[980px] lg:h-[780px]" />
-      <a href="#main" className="sr-only rounded-lg bg-[#14B8A6] px-4 py-2 font-semibold text-[#0B1120] focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50">Skip to content</a>
+    <div className="marketing-page min-h-screen overflow-x-clip bg-[#0b1120] text-white">
+      <a href="#main" className="sr-only bg-[#14b8a6] px-4 py-2 font-semibold text-[#0b1120] focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50">Skip to content</a>
       <LandingNav />
-      <main id="main" className="relative">
-        <section className="px-5 pb-20 pt-16 sm:px-8 sm:pt-24 lg:px-12 lg:pb-24 lg:pt-28">
-          <div className="mx-auto grid max-w-[1280px] items-center gap-14 lg:min-h-[530px] lg:grid-cols-[0.92fr_1.08fr] lg:gap-16">
-            <StoryReveal className="relative z-10 max-w-[610px]">
-              <p className="inline-flex rounded-full border border-[#14B8A6]/30 bg-[#14B8A6]/10 px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-[0.17em] text-[#91E1D8]">The work behind the trade</p>
-              <h1 className="mt-7 font-heading text-[clamp(3.2rem,5.6vw,6.2rem)] font-black leading-[1.01] tracking-[-0.06em] text-balance text-white">Build the trader <span className="text-[#14B8A6]">behind the trade.</span></h1>
-              <p className="mt-7 max-w-lg font-body text-base leading-[1.75] text-[#CBD8DD] sm:text-lg">An ordinary journal records the result. TradingMC helps you examine the decision and work on what comes next.</p>
-              <div className="mt-8 flex flex-wrap items-center gap-5">
-                <Link href="/signup" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#14B8A6] px-6 py-3 font-heading text-sm font-extrabold text-[#06161C] transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-[#6DDED2] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Build your process <ArrowUpRight aria-hidden="true" className="h-4 w-4" /></Link>
-                <a href="#the-problem" className="inline-flex min-h-12 items-center gap-2 font-heading text-sm font-bold text-white transition-colors hover:text-[#6DDED2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6]">See how it works <ArrowRight aria-hidden="true" className="h-4 w-4" /></a>
+      <main id="main">
+        <section className="marketing-hero relative overflow-hidden px-6 pb-28 pt-20 sm:px-10 sm:pt-28 lg:px-12 lg:pb-36 lg:pt-36">
+          <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-40" />
+          <div className="relative mx-auto grid max-w-[1380px] items-center gap-16 lg:grid-cols-[0.86fr_1.14fr] lg:gap-8">
+            <div className="relative z-10 max-w-[620px]">
+              <SectionLabel>Beyond the journal</SectionLabel>
+              <h1 className="max-w-[700px] text-balance text-[clamp(3.6rem,6.1vw,7.6rem)] font-semibold leading-[0.98] tracking-[-0.075em]">The trade ends. <span className="text-[#6ad5c9]">The work begins.</span></h1>
+              <p className="mt-8 max-w-[520px] text-base leading-[1.75] text-[#b5c9ce] sm:text-lg">An ordinary journal records the result. TradingMC helps you examine the decision, recognise the pattern and prepare for the next session.</p>
+              <div className="mt-10 flex flex-wrap items-center gap-6">
+                <Link href="/signup" className="inline-flex min-h-12 items-center justify-center rounded-[4px] bg-[#14b8a6] px-7 py-3 text-sm font-semibold text-[#081721] transition-colors hover:bg-[#70d9cf]">Build your process</Link>
+                <a href="#the-problem" className="border-b border-[#82b3b6] pb-1 text-sm font-medium text-[#d9e8e9] transition-colors hover:border-white hover:text-white">See the difference</a>
               </div>
-              <p className="mt-7 font-body text-xs text-[#91AAA9]">A private place for your trades, patterns and next-session work.</p>
-            </StoryReveal>
-            <StoryReveal className="relative z-10"><HeroProcessVisual /></StoryReveal>
+              <p className="mt-10 border-l border-[#3b777b] pl-4 text-[12px] leading-relaxed text-[#8ca9b1]">A private desk for the work behind every trade.</p>
+            </div>
+            <div className="relative z-10 lg:translate-x-7"><LaptopDashboard /></div>
           </div>
+          <div className="relative mx-auto mt-24 flex max-w-[1380px] justify-between border-t border-white/10 pt-5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#78939b]"><span>TradingMC / Make the decision visible</span><span>Scroll to explore</span></div>
         </section>
 
-        <section id="the-problem" className="border-y border-white/[0.06] bg-[#080E17] px-5 py-24 sm:px-8 md:py-32 lg:px-12">
-          <div className="mx-auto max-w-[1280px]">
-            <StoryReveal className="mx-auto max-w-3xl text-center">
-              <p className={eyebrow}>The problem</p>
-              <h2 className="mt-5 font-heading text-[clamp(2.5rem,4.6vw,4.8rem)] font-black leading-[1.08] tracking-[-0.05em] text-white">You logged the trade.<br /><span className="text-[#AFC6C7]">Did you learn from it?</span></h2>
-              <p className={`${body} mx-auto mt-5 max-w-xl`}>Most journals keep a record. The difficult part is seeing what your choices say about the next session.</p>
-            </StoryReveal>
-            <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {problems.map((item) => (
-                <StoryReveal key={item.number}>
-                  <article className="h-full rounded-xl border border-white/10 bg-[#121B25] p-6 transition-colors hover:border-[#14B8A6]/35">
-                    <span className="grid h-9 w-9 place-items-center rounded-lg border border-white/15 bg-[#1C2932] font-heading text-xs font-extrabold text-[#88D6CD]">{item.number}</span>
-                    <h3 className="mt-7 font-heading text-lg font-extrabold text-white">{item.title}</h3>
-                    <p className="mt-3 font-body text-sm leading-[1.65] text-[#A9BBC8]">{item.body}</p>
-                  </article>
-                </StoryReveal>
-              ))}
+        <section id="the-problem" className="bg-[#f7f9f9] px-6 py-28 text-[#0b1120] sm:px-10 md:py-40 lg:px-12">
+          <div className="mx-auto max-w-[1260px]">
+            <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:gap-20">
+              <SectionLabel light>The problem</SectionLabel>
+              <div><h2 className="max-w-[810px] text-balance text-[clamp(3rem,5vw,6rem)] font-semibold leading-[1.02] tracking-[-0.07em]">You can track every trade and still miss the point.</h2><p className="mt-8 max-w-[620px] text-lg leading-[1.7] text-[#4f6670]">The numbers tell you what happened. Discipline is built by understanding why it happened and what you will do when the same moment returns.</p></div>
+            </div>
+            <div className="mt-24 grid border-t border-[#bfd0d5] md:grid-cols-2">
+              {problems.map((item) => <article key={item.number} className="grid grid-cols-[58px_1fr] gap-4 border-b border-[#bfd0d5] py-7 md:gap-8 md:px-8 md:first:pl-0 md:[&:nth-child(2n)]:border-l md:[&:nth-child(2n)]:border-[#bfd0d5]"><span className="font-mono text-sm text-[#0e8880]">{item.number}</span><div><h3 className="text-xl font-semibold tracking-[-0.04em] sm:text-2xl">{item.title}</h3><p className="mt-2 max-w-sm text-sm leading-[1.7] text-[#526a74]">{item.detail}</p></div></article>)}
             </div>
           </div>
         </section>
 
-        <section id="the-method" className="bg-[#18232B] px-5 py-24 sm:px-8 md:py-32 lg:px-12">
-          <div className="mx-auto grid max-w-[1280px] items-center gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-24">
-            <StoryReveal>
-              <p className={eyebrow}>The shift</p>
-              <h2 className={`${heading} mt-5 max-w-xl`}>Same trade.<br /><span className="text-[#14B8A6]">A different question.</span></h2>
-              <p className={`${body} mt-6 max-w-lg`}>The record still matters. Its real value appears when you connect the outcome to execution, psychology and the plan you set beforehand.</p>
-              <div className="mt-10 grid max-w-lg grid-cols-2 gap-6 border-t border-white/10 pt-7">
-                <div><p className="font-heading text-3xl font-black text-[#6EDACD]">01</p><p className="mt-2 font-body text-sm text-[#BDCCD2]">See the decision behind the result.</p></div>
-                <div><p className="font-heading text-3xl font-black text-[#6EDACD]">02</p><p className="mt-2 font-body text-sm text-[#BDCCD2]">Carry the lesson into the next session.</p></div>
-              </div>
-            </StoryReveal>
-            <StoryReveal className="flex justify-center lg:justify-end"><DecisionBridge /></StoryReveal>
+        <section id="the-method" className="relative overflow-hidden bg-[#0b1726] px-6 py-28 sm:px-10 md:py-36 lg:px-12">
+          <div aria-hidden="true" className="absolute right-[-20%] top-[-20%] h-[700px] w-[700px] rounded-full bg-[#14b8a6]/[0.07] blur-[120px]" />
+          <div className="relative mx-auto grid max-w-[1260px] items-center gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+            <div><SectionLabel>A different way to review</SectionLabel><h2 className="max-w-[560px] text-balance text-[clamp(3rem,5vw,5.8rem)] font-semibold leading-[1.02] tracking-[-0.07em]">From what happened to what changes next.</h2><p className="mt-8 max-w-[520px] text-lg leading-[1.7] text-[#afc1ca]">Your trades are the starting point. TradingMC connects the record to your behaviour, reflections and personal rules so the next session has a clearer direction.</p><div className="mt-10 border-t border-white/15 pt-5 text-sm text-[#7ecbc4]">One connected process, built around your own trading.</div></div>
+            <ProcessStack />
           </div>
         </section>
 
-        <section id="the-moments" className="relative overflow-hidden bg-[#090F18] px-5 py-28 sm:px-8 md:py-36 lg:px-12">
-          <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-0 h-80 w-[500px] rounded-full bg-[#14B8A6]/10 blur-[100px]" />
-          <div className="relative mx-auto max-w-[1280px]">
-            <StoryReveal className="mx-auto max-w-3xl text-center">
-              <p className={eyebrow}>The process</p>
-              <h2 className="mt-5 font-heading text-[clamp(2.5rem,4.6vw,4.8rem)] font-black leading-[1.08] tracking-[-0.05em] text-white">The work happens <span className="text-[#14B8A6]">between trades.</span></h2>
-              <p className={`${body} mx-auto mt-5 max-w-xl`}>Explore the moments that shape a session. Each one can leave you with a better question.</p>
-            </StoryReveal>
-            <StoryReveal className="mt-14"><MomentsGrid /></StoryReveal>
+        <section className="bg-white px-6 py-28 text-[#0b1120] sm:px-10 md:py-40 lg:px-12">
+          <div className="mx-auto max-w-[1260px]">
+            <div className="mb-16 grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20"><div><SectionLabel light>The same result</SectionLabel><h2 className="text-balance text-[clamp(3rem,5vw,5.8rem)] font-semibold leading-[1.02] tracking-[-0.07em]">Profit does not prove the process.</h2></div><p className="max-w-[540px] self-end text-lg leading-[1.7] text-[#536b74]">Two identical profits can call for opposite reviews. One may confirm a repeatable setup. The other may reveal a rule you bent and got away with.</p></div>
+            <TradeComparison />
+            <p className="mt-5 text-right font-mono text-[10px] uppercase tracking-[0.12em] text-[#6e848d]">Illustrative trade · no account data</p>
           </div>
         </section>
 
-        <section className="border-t border-white/[0.06] bg-[#0F1924] px-5 py-28 sm:px-8 md:py-36 lg:px-12">
-          <div className="mx-auto max-w-[1280px]">
-            <StoryReveal className="mb-10 max-w-3xl">
-              <p className={eyebrow}>Look again</p>
-              <h2 className={`${heading} mt-5`}>Profit can hide a problem.</h2>
-              <p className={`${body} mt-5 max-w-xl`}>Choose two trades with the same outcome. The useful lesson changes completely.</p>
-            </StoryReveal>
-            <StoryReveal><TradeLens /></StoryReveal>
-            <StoryReveal className="mb-10 mt-32 max-w-3xl">
-              <p className={eyebrow}>Follow the pattern</p>
-              <h2 className={`${heading} mt-5`}>Small deviations leave a trail.</h2>
-              <p className={`${body} mt-5 max-w-xl`}>A week of decisions can reveal what a single trade cannot.</p>
-            </StoryReveal>
-            <StoryReveal><PatternTrace /></StoryReveal>
+        <section id="the-moments" className="bg-[#eaf3f3] px-6 py-28 text-[#0b1120] sm:px-10 md:py-40 lg:px-12">
+          <div className="mx-auto grid max-w-[1260px] gap-16 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-24">
+            <div><SectionLabel light>Between sessions</SectionLabel><h2 className="max-w-[610px] text-balance text-[clamp(3rem,5vw,5.8rem)] font-semibold leading-[1.02] tracking-[-0.07em]">A useful review leaves you with a rule.</h2><p className="mt-8 max-w-[540px] text-lg leading-[1.7] text-[#4d6871]">The question is whether you can recognise the conditions behind a mistake and decide what to do when they return.</p></div>
+            <div className="relative border border-[#bfd5d5] bg-[#f9fcfc] p-7 shadow-[18px_18px_0_#d2e5e4] sm:p-10"><p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#497781]">From a weekly reflection</p><div className="mt-10 border-l-2 border-[#14b8a6] pl-6"><p className="text-2xl font-medium leading-snug tracking-[-0.04em] sm:text-3xl">“I entered early after the first loss because I wanted the day back.”</p></div><div className="mt-10 border-t border-[#d2e1e3] pt-6"><p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#497781]">A guideline for the next session</p><p className="mt-3 text-lg font-semibold leading-relaxed text-[#0e635e]">After a loss, I wait for my level and confirmation before taking another trade.</p></div></div>
           </div>
         </section>
 
-        <section className="border-t border-white/[0.06] bg-[#080E17] px-5 py-28 sm:px-8 md:py-36 lg:px-12">
-          <div className="mx-auto max-w-[1280px]">
-            <StoryReveal className="mb-10 max-w-3xl">
-              <p className={eyebrow}>Practice the question</p>
-              <h2 className={`${heading} mt-5`}>Review the moment,<br />not just the money.</h2>
-              <p className={`${body} mt-5 max-w-xl`}>A short exercise can make the next action clearer than another page of numbers.</p>
-            </StoryReveal>
-            <StoryReveal><ReflectionExercise /></StoryReveal>
-          </div>
+        <section className="bg-[#f9fbfb] px-6 py-28 text-[#0b1120] sm:px-10 md:py-40 lg:px-12">
+          <div className="mx-auto grid max-w-[1260px] items-center gap-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-24"><div><SectionLabel light>Context matters</SectionLabel><h2 className="max-w-[590px] text-balance text-[clamp(3rem,5vw,5.8rem)] font-semibold leading-[1.02] tracking-[-0.07em]">Bring the market into the plan.</h2><p className="mt-8 max-w-[520px] text-lg leading-[1.7] text-[#536b74]">The day around your trade matters too. Keep important events in view before the session asks you to react.</p></div><MarketContextVisual /></div>
         </section>
 
-        <section className="border-t border-white/[0.06] bg-[#14212B] px-5 py-28 sm:px-8 md:py-36 lg:px-12">
-          <div className="mx-auto max-w-[1280px]">
-            <StoryReveal className="mb-10 max-w-3xl">
-              <p className={eyebrow}>Make it yours</p>
-              <h2 className={`${heading} mt-5`}>Turn the insight into a rule you can use.</h2>
-              <p className={`${body} mt-5 max-w-xl`}>Specific guidelines make discipline easier to see and easier to revisit.</p>
-            </StoryReveal>
-            <StoryReveal><GuidelineBuilder /></StoryReveal>
-            <StoryReveal className="mb-10 mt-32 max-w-3xl">
-              <p className={eyebrow}>Read the room</p>
-              <h2 className={`${heading} mt-5`}>The market has a say, too.</h2>
-              <p className={`${body} mt-5 max-w-xl`}>Scheduled events can change the conditions your plan depends on. Explore one before it surprises you.</p>
-            </StoryReveal>
-            <StoryReveal><MarketLens /></StoryReveal>
-          </div>
-        </section>
-
-        <section className="relative overflow-hidden border-t border-white/10 bg-[#0A151D] px-5 py-32 sm:px-8 md:py-44 lg:px-12">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-48 h-[670px] w-[700px] rounded-full bg-[#14B8A6]/15 blur-[115px]" />
-          <StoryReveal className="relative mx-auto max-w-[1280px]">
-            <p className={eyebrow}>Your next chapter</p>
-            <h2 className="mt-6 max-w-5xl font-heading text-[clamp(3.1rem,7vw,7.5rem)] font-black leading-[0.99] tracking-[-0.06em] text-white">An ordinary journal won’t build an <span className="text-[#14B8A6]">extraordinary trader.</span></h2>
-            <p className={`${body} mt-8 max-w-xl`}>Start building a process you can return to, challenge and make your own.</p>
-            <Link href="/signup" className="mt-9 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#14B8A6] px-6 py-3 font-heading text-sm font-extrabold text-[#06161C] transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-[#6DDED2] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Create your account <ArrowRight aria-hidden="true" className="h-4 w-4" /></Link>
-            <a href="#main" className="ml-5 mt-9 inline-flex min-h-12 items-center gap-2 font-heading text-sm font-bold text-[#B7C9D1] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14B8A6]">Back to the beginning <ArrowDown aria-hidden="true" className="h-4 w-4 rotate-180" /></a>
-          </StoryReveal>
-        </section>
+        <section className="relative overflow-hidden bg-[#0b1120] px-6 py-32 sm:px-10 md:py-44 lg:px-12"><div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-20" /><div className="relative mx-auto max-w-[1260px]"><SectionLabel>Make the next trade count</SectionLabel><h2 className="max-w-[1050px] text-balance text-[clamp(3.8rem,7vw,8rem)] font-semibold leading-[0.98] tracking-[-0.075em]">An ordinary journal won’t build an <span className="text-[#65d4c8]">extraordinary trader.</span></h2><div className="mt-12 flex flex-wrap items-center gap-8"><Link href="/signup" className="inline-flex min-h-12 items-center justify-center rounded-[4px] bg-[#14b8a6] px-7 py-3 text-sm font-semibold text-[#081721] transition-colors hover:bg-[#70d9cf]">Create your account</Link><p className="max-w-sm text-sm leading-relaxed text-[#9fb8be]">Start with the trades you already make. Build a process you can keep refining.</p></div></div></section>
       </main>
       <LandingFooter />
     </div>
