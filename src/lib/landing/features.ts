@@ -36,8 +36,8 @@ export const FEATURES: Feature[] = [
     blurb:
       "One view for your entire trading day. Habits, recent trades, funded account status and discipline score, all before the opening bell.",
     cta: "Open dashboard",
-    screenshot: "/screenshots/dashboard.png",
-    aspect: "1676 / 714",
+    screenshot: "/screenshots-current/dashboard.png",
+    aspect: "1600 / 1000",
     intro:
       "The dashboard is the first thing you open and the last thing you close. It pulls your entire trading day into a single view, so the parts that decide your results never hide in a separate tab.",
     blocks: [
@@ -68,8 +68,8 @@ export const FEATURES: Feature[] = [
     blurb:
       "Log every trade with setup, execution quality and session context. Review your full trade history in list or calendar view.",
     cta: "View journal",
-    screenshot: "/screenshots/journal.png",
-    aspect: "1667 / 731",
+    screenshot: "/screenshots-current/journal.png",
+    aspect: "1600 / 1000",
     intro:
       "A trade you do not write down is a trade you will take again without knowing why. The journal turns every fill into a record you can actually learn from.",
     blocks: [
@@ -100,8 +100,8 @@ export const FEATURES: Feature[] = [
     blurb:
       "Build structured pre market analysis around bias, key levels and session scenarios before you ever touch the keyboard.",
     cta: "Review analyses",
-    screenshot: "/screenshots/analysis.png",
-    aspect: "848 / 956",
+    screenshot: "/screenshots-current/analysis.png",
+    aspect: "1100 / 760",
     intro:
       "The session is won before the open. Analysis is where you decide what you are looking for, so you are not improvising once the candles start moving.",
     blocks: [
@@ -132,8 +132,8 @@ export const FEATURES: Feature[] = [
     blurb:
       "Find patterns in your execution over time. Win rate by session, R multiples, day of week tendencies and discipline trends.",
     cta: "See analytics",
-    screenshot: "/screenshots/analytics.png",
-    aspect: "1666 / 906",
+    screenshot: "/screenshots-current/analytics.png",
+    aspect: "1600 / 1000",
     intro:
       "Your edge is hiding in your own data. Analytics finds it. No spreadsheets and no manual tallies, just the patterns in how you actually trade.",
     blocks: [
@@ -164,8 +164,8 @@ export const FEATURES: Feature[] = [
     blurb:
       "Track all funded prop firm accounts in one place. Monitor payouts, ROI multiples, drawdown thresholds and account phases.",
     cta: "View accounts",
-    screenshot: "/screenshots/accounts.png",
-    aspect: "1659 / 769",
+    screenshot: "/screenshots-current/accounts.png",
+    aspect: "1200 / 760",
     intro:
       "Trading one funded account is simple. Trading five across three firms turns into a spreadsheet nightmare. Accounts keeps all of it in one place.",
     blocks: [
@@ -196,8 +196,8 @@ export const FEATURES: Feature[] = [
     blurb:
       "Track the daily habits that keep your trading sharp. Completion streaks, discipline trends and a calendar you can check off for any day.",
     cta: "Track habits",
-    screenshot: "/screenshots/habits.png",
-    aspect: "1144 / 626",
+    screenshot: "/screenshots-current/psychological-edge.png",
+    aspect: "1600 / 760",
     intro:
       "Your edge is built long before the open. Habits tracks the routine that keeps you sharp, so the discipline you show away from the charts is the same discipline that shows up on them.",
     blocks: [
@@ -228,8 +228,8 @@ export const FEATURES: Feature[] = [
     blurb:
       "A live map of the forces driving price. Central banks, macro data, commodities and earnings, scored by impact, direction and confidence.",
     cta: "Open the hub",
-    screenshot: "/screenshots/market-intelligence.png",
-    aspect: "1670 / 848",
+    screenshot: "/screenshots-current/news-city.png",
+    aspect: "1600 / 1000",
     intro:
       "Price does not move in a vacuum. Market Intelligence turns the day's noise into a clear picture of what is driving risk right now, so you walk into the session knowing the context instead of reacting to it.",
     blocks: [
@@ -260,8 +260,8 @@ export const FEATURES: Feature[] = [
     blurb:
       "My Edge holds the two things you control away from the chart: the playbook you trade against, and the Mindscore that reads how well you are actually following it.",
     cta: "Open My Edge",
-    screenshot: "/screenshots/psychological-edge.png",
-    aspect: "1639 / 651",
+    screenshot: "/screenshots-current/psychological-edge.png",
+    aspect: "1600 / 760",
     intro:
       "Discipline is hard to see until it is already gone, and a strategy in your head changes shape under pressure. My Edge puts both in one place: the rules you decided on in the cold light of the weekend, and an honest read on whether you kept them.",
     blocks: [
@@ -292,8 +292,8 @@ export const FEATURES: Feature[] = [
     blurb:
       "A deterministic coaching session that reads your real history. Every question traces to concrete numbers, never generic motivation, and every commitment comes back when it matters.",
     cta: "Open Trade Therapist",
-    screenshot: "/screenshots/trade-therapist.png",
-    aspect: "1670 / 848",
+    screenshot: "/screenshots-current/trade-therapist.png",
+    aspect: "1600 / 1000",
     intro:
       "Most trading advice is a poster on the wall. The MC Trade Therapist runs a real session on your own trades, so the conversation is about what you actually did, not what a generic mindset video thinks you should feel.",
     blocks: [
