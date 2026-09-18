@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   format, startOfWeek, addWeeks, subWeeks,
 } from "date-fns";
@@ -25,6 +26,7 @@ const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
  * toggle brings up the previous week's notes so you can check you held to them.
  */
 export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
+  const router = useRouter();
   const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
   const [review, setReview] = useState<WeeklyTradeReview | null>(null);
   const [prevReview, setPrevReview] = useState<WeeklyTradeReview | null>(null);
@@ -77,8 +79,11 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         week_start: weekStart, lessons: wentWell, mistakes: toImprove,
         prevention_plan: focus, best_trade_days: review?.best_trade_days ?? {},
       });
-      setReview(rev); setSaved(true); setTimeout(() => setSaved(false), 2500);
-    } catch { setError(true); } finally { setSaving(false); }
+      setReview(rev);
+      // Done here: send them back to the reviews overview rather than leaving
+      // them parked on the review they just finished.
+      router.push("/trade-therapist?tab=reviews");
+    } catch { setError(true); setSaving(false); }
   }
 
   if (!valid) {

@@ -347,7 +347,9 @@ export function DailyBestTrade({
                     dayTrades.map((t) => (
                       <Link
                         key={t.id}
-                        href={`/journal/${t.id}`}
+                        // `from` so the trade page sends you back here, not into
+                        // the journal, when you were only checking the trade.
+                        href={`/journal/${t.id}?from=trade-therapist`}
                         className="group flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2 transition-colors hover:border-primary/40 hover:bg-muted/30"
                       >
                         {t.direction === "long"

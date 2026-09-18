@@ -25,12 +25,24 @@ import type { TradeDiscipline, TradeMarketContext, TradeJournalEntry, PreTradeAn
 export default function TradeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  // Where the back arrow points. Trades opened from the Trade Therapist's Best
+  // trades tab (via `?from=trade-therapist`) go back there; everything else
+  // returns to the journal. Read from the URL after mount, matching how the
+  // therapist page reads its own deep-link, so the prerendered markup agrees.
+  const [back, setBack] = useState({ href: "/journal", label: "Back to Journal" });
   const [trade, setTrade] = useState<TradeJournalEntry | null>(null);
   const [linkedAnalysis, setLinkedAnalysis] = useState<PreTradeAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [discipline, setDisciplineState] = useState<TradeDiscipline | undefined>(undefined);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("from") === "trade-therapist") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
+      setBack({ href: "/trade-therapist?tab=daily", label: "Back to Trade Therapist" });
+    }
+  }, []);
 
   useEffect(() => {
     getTradeById(id).then(async (t) => {
@@ -57,7 +69,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
     return (
       <div className="text-center py-20">
         <p className="text-muted-foreground text-sm">Trade not found.</p>
-        <Link href="/journal" className="text-primary text-sm hover:underline mt-2 inline-block">← Back to journal</Link>
+        <Link href={back.href} className="text-primary text-sm hover:underline mt-2 inline-block">← {back.label}</Link>
       </div>
     );
   }
@@ -100,8 +112,8 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <Link href="/journal" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Journal
+        <Link href={back.href} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
+          <ArrowLeft className="w-3.5 h-3.5" /> {back.label}
         </Link>
 
         <div className="flex items-start justify-between gap-4">
