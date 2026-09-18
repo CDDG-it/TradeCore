@@ -24,7 +24,7 @@ export default function HomePage() {
           <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-35" />
           <div className="relative mx-auto grid max-w-[1380px] grid-cols-[minmax(0,1fr)] items-center gap-14 lg:grid-cols-[0.86fr_1.14fr] lg:gap-8">
             <div className="relative z-10 min-w-0 max-w-[610px]">
-              <h1 className="font-display max-w-[720px] text-balance text-[clamp(3.6rem,6.1vw,7.2rem)] font-semibold leading-[0.98] tracking-[-0.06em]">Journal for <span className="text-[#6ad5c9]">extraordinary traders</span></h1>
+              <h1 className="font-display max-w-[720px] text-balance text-[clamp(2.55rem,11vw,3.6rem)] font-semibold leading-[0.98] tracking-[-0.06em] sm:text-[clamp(3.6rem,6.1vw,7.2rem)]">Journal for <span className="text-[#6ad5c9]">extraordinary traders</span></h1>
               <p className="mt-8 max-w-[520px] text-base leading-[1.75] text-[#b8ccd0] sm:text-lg">A journal can show what happened. TradingMC helps you write a plan, keep commitments and review the decisions that shape the next session.</p>
               <div className="mt-10 flex flex-wrap items-center gap-6">
                 <Link href="/signup" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#14b8a6] px-7 py-3 text-sm font-semibold text-[#081721] transition-colors hover:bg-[#70d9cf]">Start building your process</Link>
@@ -73,7 +73,7 @@ export default function HomePage() {
         </div>
         <div aria-hidden="true" className="marketing-light-to-dark h-28 sm:h-40" />
 
-        <section className="relative overflow-hidden bg-[#0b1120] px-6 py-32 sm:px-10 md:py-44 lg:px-12"><div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-20" /><div className="relative mx-auto max-w-[1260px]"><h2 className="font-display max-w-[1050px] text-balance text-[clamp(3.8rem,7vw,8rem)] font-semibold leading-[0.98] tracking-[-0.06em]">An ordinary journal won&apos;t build an <span className="text-[#65d4c8]">extraordinary trader.</span></h2><div className="mt-12 flex flex-wrap items-center gap-8"><Link href="/signup" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#14b8a6] px-7 py-3 text-sm font-semibold text-[#081721] transition-colors hover:bg-[#70d9cf]">Create your account</Link></div></div></section>
+        <section className="relative overflow-hidden bg-[#0b1120] px-6 py-32 sm:px-10 md:py-44 lg:px-12"><div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-20" /><div className="relative mx-auto max-w-[1260px]"><h2 className="font-display max-w-[1050px] text-balance text-[clamp(2.6rem,10vw,3.8rem)] font-semibold leading-[0.98] tracking-[-0.06em] sm:text-[clamp(3.8rem,7vw,8rem)]">An ordinary journal won&apos;t build an <span className="text-[#65d4c8]">extraordinary trader.</span></h2><div className="mt-12 flex flex-wrap items-center gap-8"><Link href="/signup" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#14b8a6] px-7 py-3 text-sm font-semibold text-[#081721] transition-colors hover:bg-[#70d9cf]">Create your account</Link></div></div></section>
       </main>
       <LandingFooter />
     </div>

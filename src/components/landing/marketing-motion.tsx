@@ -34,7 +34,6 @@ const scoreParts = [
 
 export function MindscoreAssembly() {
   const reduceMotion = useReducedMotion();
-  let start = 0;
 
   return (
     <div className="marketing-score-assembly grid items-center gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16" aria-label="MC Mindscore weighting: rule adherence 35 percent, execution 20 percent, habit consistency 20 percent, reflection work 15 percent, goal progress 10 percent">
@@ -43,8 +42,7 @@ export function MindscoreAssembly() {
         <svg className="relative w-full" viewBox="0 0 300 300" role="img" aria-label="Five weighted segments forming the MC Mindscore">
           <circle cx="150" cy="150" r="112" fill="none" stroke="#d7e8e7" strokeWidth="28" />
           {scoreParts.map((part, index) => {
-            const offset = start;
-            start += part.weight;
+            const offset = scoreParts.slice(0, index).reduce((sum, previous) => sum + previous.weight, 0);
             return (
               <motion.circle
                 key={part.name}
@@ -68,12 +66,10 @@ export function MindscoreAssembly() {
         <p className="mb-7 font-display text-2xl font-semibold tracking-[-0.04em] text-[#102b37] sm:text-3xl">A score built from the work.</p>
         <dl className="border-t border-[#bcd6d4]">
           {scoreParts.map((part, index) => (
-            <MarketingReveal key={part.name} delay={index * 0.07}>
-              <div className="flex items-center gap-4 border-b border-[#c9dfdd] py-4 sm:gap-6">
-                <span aria-hidden="true" className="h-1 w-7 shrink-0 rounded-full sm:w-10" style={{ backgroundColor: part.color }} />
-                <dt className="min-w-0 flex-1 text-sm font-medium text-[#253e48] sm:text-base">{part.name}</dt>
-                <dd className="font-display text-2xl font-semibold tabular-nums tracking-[-0.04em] text-[#102b37]">{part.weight}%</dd>
-              </div>
+            <MarketingReveal key={part.name} delay={index * 0.07} className="flex items-center gap-4 border-b border-[#c9dfdd] py-4 sm:gap-6">
+              <span aria-hidden="true" className="h-1 w-7 shrink-0 rounded-full sm:w-10" style={{ backgroundColor: part.color }} />
+              <dt className="min-w-0 flex-1 text-sm font-medium text-[#253e48] sm:text-base">{part.name}</dt>
+              <dd className="font-display text-2xl font-semibold tabular-nums tracking-[-0.04em] text-[#102b37]">{part.weight}%</dd>
             </MarketingReveal>
           ))}
         </dl>
