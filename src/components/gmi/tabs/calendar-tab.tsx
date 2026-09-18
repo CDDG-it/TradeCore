@@ -23,6 +23,7 @@ import {
 import { useGmi, toneFor } from "@/lib/gmi/client";
 import type { CalendarMonth, CalendarEvent } from "@/lib/gmi/calendar";
 import { holidaysByDate, holidayChips, type MarketHoliday } from "@/lib/gmi/holidays";
+import { fedEventsByDate } from "@/lib/gmi/fed-events";
 import { Pane, Empty, Label, Meta, Figure, a } from "../pane";
 
 const IMPORTANCE: Record<string, string> = {
@@ -30,6 +31,11 @@ const IMPORTANCE: Record<string, string> = {
   medium: "var(--warning)",
   low: "var(--muted-foreground)",
 };
+
+// Fed events ride their own colour, not the red/amber data scale: an FOMC day
+// is a different kind of event from a data print, and the cyan accent (the
+// desk's "policy / rates" colour) says so at a glance.
+const FED_COLOR = "var(--ice)";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -87,10 +93,17 @@ export function CalendarTab() {
     [grid]
   );
 
+  const fed = useMemo(
+    () => fedEventsByDate(format(grid[0], "yyyy-MM-dd"), format(grid[grid.length - 1], "yyyy-MM-dd")),
+    [grid]
+  );
+
   const events = env?.data?.events ?? [];
   const scheduled = events.filter((e) => !e.released).length;
   const selectedEvents = byDate.get(selected) ?? [];
   const selectedHolidays = holidays.get(selected) ?? [];
+  const selectedFed = fed.get(selected) ?? [];
+  const fomcCount = [...fed.values()].flat().filter((e) => e.kind === "fomc-decision" && isSameMonth(parseISO(e.date), cursor)).length;
   const closures = [...holidays.values()].flat().filter((h) => isSameMonth(parseISO(h.date), cursor)).length;
   const today = startOfDay(new Date());
   const weeks = Math.ceil(grid.length / 7);
@@ -104,7 +117,7 @@ export function CalendarTab() {
         right={
           <span className="flex items-center gap-3">
             <Label className="hidden tracking-[0.18em] md:inline">
-              {events.length} releases · {scheduled} scheduled · {closures} closure{closures === 1 ? "" : "s"}
+              {events.length} releases · {fomcCount ? `${fomcCount} FOMC · ` : ""}{scheduled} scheduled · {closures} closure{closures === 1 ? "" : "s"}
             </Label>
             <span className="flex items-center gap-1.5">
               <button
@@ -134,7 +147,7 @@ export function CalendarTab() {
           </span>
         }
         bodyClassName="flex flex-col p-0"
-        className="min-h-[420px] lg:col-span-8 xl:col-span-9"
+        className="min-h-[560px] lg:col-span-8 xl:col-span-9"
       >
         {env?.status === "unavailable" ? (
           <Empty label="FRED unavailable" />
@@ -153,6 +166,7 @@ export function CalendarTab() {
               {grid.map((day) => {
                 const key = format(day, "yyyy-MM-dd");
                 const dayEvents = byDate.get(key) ?? [];
+                const dayFed = fed.get(key) ?? [];
                 const outside = !isSameMonth(day, cursor);
                 const past = isBefore(day, today);
                 const on = key === selected;
@@ -186,7 +200,22 @@ export function CalendarTab() {
                         </span>
                       ))}
                     </span>
-                    <span className="relative flex min-h-0 flex-1 flex-col gap-[2px] overflow-hidden">
+                    <span className="relative flex min-h-0 flex-1 flex-col gap-[3px] overflow-hidden">
+                      {/* Fed events lead the cell: an FOMC day outranks any data
+                          print on it. Cyan bar, filled so it reads as its own
+                          category, with a small tag on wider screens. */}
+                      {dayFed.map((e) => (
+                        <span
+                          key={`${e.kind}-${e.date}`}
+                          className="flex h-[6px] items-center gap-1 truncate border-l-2 pl-1 text-[12px] font-semibold leading-[15px] sm:h-auto sm:py-[1px]"
+                          style={{ borderColor: FED_COLOR, background: a(FED_COLOR, e.kind === "fomc-decision" ? 18 : 10), color: FED_COLOR }}
+                          title={`${e.title} · ${e.detail}`}
+                        >
+                          <span className="hidden truncate sm:inline">
+                            {e.kind === "fomc-decision" ? "FOMC decision" : "FOMC minutes"}
+                          </span>
+                        </span>
+                      ))}
                       {dayEvents.map((e) => (
                         <span
                           key={e.id}
@@ -194,7 +223,7 @@ export function CalendarTab() {
                           // A phone cell is too narrow for the name: the entry
                           // becomes a coloured bar, and the day panel below
                           // spells out what it is.
-                          className={`h-[5px] truncate border-l-2 pl-1 text-[11px] leading-[13px] sm:h-auto ${
+                          className={`h-[6px] truncate border-l-2 pl-1 text-[12px] leading-[15px] sm:h-auto sm:py-[1px] ${
                             e.released ? "text-foreground/85" : "text-foreground/80"
                           }`}
                           style={{
@@ -215,6 +244,7 @@ export function CalendarTab() {
             <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2" style={{ background: IMPORTANCE.high }} /> high impact</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2" style={{ background: IMPORTANCE.medium }} /> medium</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-3 border-l-2" style={{ borderColor: FED_COLOR, background: a(FED_COLOR, 18) }} /> FOMC / Fed</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-3 border-l-2" style={{ borderColor: IMPORTANCE.high }} /> scheduled, no print yet</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-3 border border-border/60" style={{ background: CLOSED_HATCH }} /> exchange closed</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-3 border border-border/60" style={{ background: EARLY_HATCH }} /> half day</span>
@@ -230,11 +260,11 @@ export function CalendarTab() {
         label={isToday(parseISO(selected)) ? "Today" : format(parseISO(selected), "EEE d MMM")}
         right={
           <Label className="tracking-[0.18em]">
-            {selectedEvents.length || "no"} release{selectedEvents.length === 1 ? "" : "s"}
+            {selectedEvents.length + selectedFed.length || "no"} event{selectedEvents.length + selectedFed.length === 1 ? "" : "s"}
           </Label>
         }
         scroll
-        className="min-h-[220px] lg:col-span-4 xl:col-span-3"
+        className="min-h-[240px] lg:col-span-4 xl:col-span-3"
       >
         {selectedHolidays.length > 0 && (
           <div className="mb-3 space-y-1.5 border border-border/50 p-2.5" style={{ background: CLOSED_HATCH }}>
@@ -244,7 +274,25 @@ export function CalendarTab() {
           </div>
         )}
 
-        {selectedEvents.length === 0 ? (
+        {/* Fed events sit above the data prints: on a day the FOMC reports,
+            that is the headline the desk is reading for. */}
+        {selectedFed.length > 0 && (
+          <div className="mb-3 space-y-2.5">
+            {selectedFed.map((e) => (
+              <div key={`${e.kind}-${e.date}`} className="border-l-2 pl-2.5" style={{ borderColor: FED_COLOR }}>
+                <div className="flex items-center gap-2">
+                  <span className="shrink-0 border px-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ borderColor: a(FED_COLOR, 55), color: FED_COLOR }}>
+                    Fed
+                  </span>
+                  <p className="text-[13px] font-semibold leading-tight text-foreground">{e.title}</p>
+                </div>
+                <p className="mt-1 text-[12px] leading-snug text-foreground/70">{e.detail}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {selectedEvents.length === 0 && selectedFed.length === 0 ? (
           <Empty
             label={selectedHolidays.some((h) => h.kind === "closed") ? "Market closed" : "Nothing scheduled"}
             hint="No US macro release on this date."

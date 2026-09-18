@@ -13,6 +13,8 @@ import { computeGoalProgress } from "@/lib/goals/goals";
 import { useGmi } from "@/lib/gmi/client";
 import type { CalendarMonth, CalendarEvent } from "@/lib/gmi/calendar";
 import { holidaysByDate } from "@/lib/gmi/holidays";
+import { fedEventsByDate } from "@/lib/gmi/fed-events";
+import { alpha } from "@/lib/journal/colors";
 import { tradeR, winRateOf } from "@/lib/journal/weeks";
 import { usePrivacy } from "@/lib/use-privacy";
 import { todayKey } from "@/lib/dates";
@@ -219,21 +221,24 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         journal={<WeekStrip days={weekDays} today={today} />}
         mindScore={<MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} className="shrink-0" />}
         goals={<GoalsCard goals={goals} progress={goalProgress} className="md:min-h-0 md:flex-1" />}
-        news={<NewsHub today={today} className="md:min-h-0 md:flex-1" />}
+        news={<NewsHub today={today} className="md:min-h-0 md:flex-[1.7]" />}
       />
     </div>
   );
 }
 
-/* ── This week's news: the releases that move the tape ───────────────────
-   The week's scheduled US macro prints, straight off FRED's own release
-   calendar, plus any day the exchange is shut. A trader plans around CPI and
-   payrolls whether or not they intend to trade them, so the week's high-impact
-   dates belong on the desk rather than a click away. Past days carry what
-   actually printed; a forthcoming one carries the appointment and nothing
-   else, because what a number will be is never guessed. FRED publishes dates,
-   not clock times, so none are shown. */
+/* ── This week's news: the releases and Fed days that move the tape ───────
+   What is still to come this week: US macro prints from FRED's own release
+   calendar, the FOMC decisions and minutes from the Fed's published schedule,
+   and any day the exchange is shut. Grouped by day and counting down as the
+   week runs out: on Monday you see the whole week, by Thursday only Thursday
+   to Sunday, because a print that has already landed is no longer news to plan
+   around. A forthcoming print carries the appointment and nothing else: what a
+   number will be is never guessed, and FRED publishes dates, not clock times. */
 const NEWS_IMPORTANCE: Record<string, string> = { high: RED, medium: AMBER, low: "var(--muted-foreground)" };
+const MAX_NEWS = 9;
+
+type NewsItem = { key: string; date: string; label: string; tone: string; kind: "release" | "fed" | "closed" };
 
 function NewsHub({ today, className }: { today: string; className?: string }) {
   // Keyed on the day, so the week's bounds are stable objects between renders
@@ -252,10 +257,11 @@ function NewsHub({ today, className }: { today: string; className?: string }) {
     30 * 60_000
   );
 
-  const from = format(weekStart, "yyyy-MM-dd");
+  // The window shrinks as the week runs down: from today, never from Monday.
+  const from = today;
   const to = format(weekEnd, "yyyy-MM-dd");
 
-  const rows = useMemo(() => {
+  const { days, total } = useMemo(() => {
     // One line per release, not one per series: CPI and Core CPI land together
     // and would otherwise say the same thing twice. The headline print is the
     // one that moves the tape, so a "Core" variant never speaks for a release.
@@ -269,34 +275,38 @@ function NewsHub({ today, className }: { today: string; className?: string }) {
         byRelease.set(key, e);
       }
     }
-    const events = [...byRelease.values()];
 
-    const closures = [...holidaysByDate(weekStart, weekEnd).values()]
-      .flat()
-      .filter((h) => h.kind === "closed" && h.market === "US");
-
-    const list: { key: string; date: string; label: string; importance: string; note: string | null }[] = [
-      ...events.map((e) => ({
-        key: e.id,
-        date: e.date,
-        label: e.label,
-        importance: e.importance,
-        note: e.released && e.actual != null ? "released" : null,
+    const items: NewsItem[] = [
+      ...[...byRelease.values()].map((e) => ({
+        key: e.id, date: e.date, label: e.label,
+        tone: NEWS_IMPORTANCE[e.importance] ?? "var(--muted-foreground)", kind: "release" as const,
       })),
-      ...closures.map((h) => ({
-        key: `holiday-${h.date}`,
-        date: h.date,
-        label: `${h.name}: US market closed`,
-        importance: "closed",
-        note: null,
+      ...[...fedEventsByDate(from, to).values()].flat().map((e) => ({
+        key: `fed-${e.kind}-${e.date}`, date: e.date,
+        label: e.kind === "fomc-decision" ? "FOMC rate decision" : "FOMC minutes",
+        tone: CYAN, kind: "fed" as const,
       })),
-    ].sort((x, y) => x.date.localeCompare(y.date));
+      ...[...holidaysByDate(weekStart, weekEnd).values()].flat()
+        .filter((h) => h.kind === "closed" && h.market === "US" && h.date >= from && h.date <= to)
+        .map((h) => ({
+          key: `holiday-${h.date}`, date: h.date, label: `${h.name}: US market closed`,
+          tone: "var(--muted-foreground)", kind: "closed" as const,
+        })),
+    ];
 
-    // More than fits? The quiet ones go first, never a high-impact print.
-    const rank = (i: string) => (i === "closed" ? 0 : i === "high" ? 1 : i === "medium" ? 2 : 3);
-    if (list.length <= 5) return list;
-    return [...list].sort((x, y) => rank(x.importance) - rank(y.importance)).slice(0, 5)
-      .sort((x, y) => x.date.localeCompare(y.date));
+    // Too many for the card? Trim the quiet tail, never a Fed day or a
+    // high-impact print, then restore date order.
+    const rank = (i: NewsItem) => (i.kind === "fed" ? 0 : i.tone === RED ? 1 : i.tone === AMBER ? 2 : 3);
+    const trimmed = items.length <= MAX_NEWS
+      ? items
+      : [...items].sort((x, y) => rank(x) - rank(y)).slice(0, MAX_NEWS);
+    trimmed.sort((x, y) => x.date.localeCompare(y.date) || rank(x) - rank(y));
+
+    // Group into days, so the card reads as a countdown of the week ahead.
+    const map = new Map<string, NewsItem[]>();
+    for (const it of trimmed) (map.get(it.date) ?? map.set(it.date, []).get(it.date)!).push(it);
+    const days = [...map.entries()].sort(([x], [y]) => x.localeCompare(y)).map(([date, list]) => ({ date, list }));
+    return { days, total: items.length };
   }, [a, b, from, to, weekStart, weekEnd]);
 
   const unavailable = a?.status === "unavailable";
@@ -306,54 +316,68 @@ function NewsHub({ today, className }: { today: string; className?: string }) {
       <CardFx accent={CYAN} />
 
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">This week&apos;s news</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">The week ahead</p>
         <Link href="/news-city?tab=calendar" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">
-          Calendar
+          Full calendar →
         </Link>
       </div>
 
-      {rows.length === 0 ? (
+      {days.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-1 py-3 text-center">
-          <p className="text-xs text-muted-foreground">{unavailable ? "Calendar unavailable" : "A quiet week"}</p>
-          <p className="text-[11px] text-muted-foreground/60">
-            {unavailable ? "FRED is not answering right now." : "No major US release scheduled."}
+          <p className="text-sm text-muted-foreground">{unavailable ? "Calendar unavailable" : "Nothing left this week"}</p>
+          <p className="text-xs text-muted-foreground/60">
+            {unavailable ? "FRED is not answering right now." : "No more US macro releases scheduled."}
           </p>
         </div>
       ) : (
-        <ul className="mt-2.5 space-y-1.5 md:min-h-0 md:flex-1 md:overflow-hidden">
-          {rows.map((r) => {
-            const day = new Date(r.date + "T12:00:00");
-            const isTodayRow = r.date === today;
-            const past = r.date < today;
-            const color = NEWS_IMPORTANCE[r.importance] ?? "var(--muted-foreground)";
+        <div className="mt-3 space-y-3 md:min-h-0 md:flex-1 md:overflow-y-auto pr-0.5">
+          {days.map(({ date, list }) => {
+            const day = new Date(date + "T12:00:00");
+            const isTodayRow = date === today;
             return (
-              <li key={r.key} className={cn("flex items-baseline gap-2", past && "opacity-55")}>
-                <span
+              <div key={date}>
+                <p
                   className={cn(
-                    "w-9 shrink-0 text-[10px] font-bold uppercase tracking-wider tabular-nums",
+                    "mb-1.5 text-[11px] font-bold uppercase tracking-wider tabular-nums",
                     isTodayRow ? "text-primary" : "text-muted-foreground/70"
                   )}
                 >
-                  {isTodayRow ? "Today" : format(day, "EEE d")}
-                </span>
-                {r.importance === "closed" ? (
-                  <span aria-hidden className="mt-[3px] h-1.5 w-1.5 shrink-0 rotate-45 border border-muted-foreground/60" />
-                ) : (
-                  <span aria-hidden className="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} />
-                )}
-                <span className="min-w-0 flex-1 truncate text-[11px] text-foreground/85">{r.label}</span>
-                {r.note && <span className="shrink-0 text-[10px] text-muted-foreground/60">{r.note}</span>}
-              </li>
+                  {isTodayRow ? "Today" : format(day, "EEEE d")}
+                </p>
+                <ul className="space-y-1.5">
+                  {list.map((r) => (
+                    <li key={r.key} className="flex items-center gap-2.5">
+                      {r.kind === "closed" ? (
+                        <span aria-hidden className="h-2 w-2 shrink-0 rotate-45 border border-muted-foreground/60" />
+                      ) : (
+                        <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ background: r.tone, boxShadow: `0 0 6px ${alpha(r.tone, 45)}` }} />
+                      )}
+                      <span className="min-w-0 flex-1 truncate text-[13px] text-foreground/90">{r.label}</span>
+                      {r.kind === "fed" && (
+                        <span className="shrink-0 rounded border px-1 text-[9px] font-bold uppercase tracking-wider" style={{ borderColor: alpha(CYAN, 45), color: CYAN }}>
+                          Fed
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             );
           })}
-        </ul>
+          {total > MAX_NEWS && (
+            <p className="text-[11px] text-muted-foreground/60">+{total - MAX_NEWS} more this week</p>
+          )}
+        </div>
       )}
 
-      <p className="mt-2 border-t border-border/40 pt-2 text-[10px] text-muted-foreground/60">
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/40 pt-2 text-[10px] text-muted-foreground/60">
         <span className="inline-flex items-center gap-1.5">
           <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: RED }} /> high impact
         </span>
-        <span className="ml-3">FRED publishes dates, not times</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: CYAN }} /> Fed
+        </span>
+        <span className="ml-auto">Times ET, dates only</span>
       </p>
     </div>
   );

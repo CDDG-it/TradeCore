@@ -25,15 +25,24 @@ interface ReleaseDef {
 }
 
 const RELEASES: ReleaseDef[] = [
+  // Inflation
   { id: "CPIAUCSL", label: "CPI (all items)", unit: "index", freshness: "monthly", importance: "high" },
   { id: "CPILFESL", label: "Core CPI", unit: "index", freshness: "monthly", importance: "high" },
   { id: "PCEPI", label: "PCE Price Index", unit: "index", freshness: "monthly", importance: "high" },
   { id: "PCEPILFE", label: "Core PCE", unit: "index", freshness: "monthly", importance: "high" },
+  { id: "PPIFIS", label: "PPI (final demand)", unit: "index", freshness: "monthly", importance: "medium" },
+  // Labour
   { id: "PAYEMS", label: "Nonfarm Payrolls", unit: "kpersons", freshness: "monthly", importance: "high" },
   { id: "UNRATE", label: "Unemployment Rate", unit: "%", freshness: "monthly", importance: "high" },
-  { id: "GDPC1", label: "Real GDP", unit: "$B", freshness: "monthly", importance: "high" },
-  { id: "RSAFS", label: "Retail Sales", unit: "$M", freshness: "monthly", importance: "medium" },
   { id: "ICSA", label: "Initial Jobless Claims", unit: "count", freshness: "weekly", importance: "medium" },
+  { id: "JTSJOL", label: "JOLTS Job Openings", unit: "count", freshness: "monthly", importance: "medium" },
+  // Growth & activity
+  { id: "GDPC1", label: "Real GDP", unit: "$B", freshness: "monthly", importance: "high" },
+  { id: "RSAFS", label: "Retail Sales", unit: "$M", freshness: "monthly", importance: "high" },
+  { id: "INDPRO", label: "Industrial Production", unit: "index", freshness: "monthly", importance: "medium" },
+  { id: "DGORDER", label: "Durable Goods Orders", unit: "$M", freshness: "monthly", importance: "medium" },
+  { id: "HOUST", label: "Housing Starts", unit: "count", freshness: "monthly", importance: "low" },
+  { id: "UMCSENT", label: "U. Michigan Sentiment", unit: "index", freshness: "monthly", importance: "medium" },
 ];
 
 export interface CalendarEntry {
