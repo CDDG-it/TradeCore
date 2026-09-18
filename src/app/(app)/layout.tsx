@@ -27,6 +27,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div
       className={`${inter.variable} min-h-screen bg-background relative overflow-x-clip`}
       style={{
+        // globals.css declares the font tokens with `@theme inline`, which bakes
+        // their *values* straight into the utilities: `font-heading` compiles to
+        // `font-family: var(--font-nunito)`, not `var(--font-heading)`. So the
+        // base family vars are what has to be repointed for `font-heading` /
+        // `font-sans` headings to follow; the token overrides cover the handful
+        // of rules that read `var(--font-body)` / `var(--font-heading)` directly.
+        "--font-barlow": "var(--font-inter)",
+        "--font-nunito": "var(--font-inter)",
         "--font-body": "var(--font-inter)",
         "--font-sans": "var(--font-inter)",
         "--font-heading": "var(--font-inter)",
