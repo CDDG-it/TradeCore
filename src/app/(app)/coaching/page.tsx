@@ -10,10 +10,8 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  getTrades, getHabits, getHabitCompletions, getPlaybook,
-  generateCoachingInsights, getAvgDisciplineScore,
-} from "@/lib/supabase/queries";
+import { getTrades, getHabits, getHabitCompletions, getPlaybook } from "@/lib/supabase/queries";
+import { generateCoachingInsights, getAvgDisciplineScore } from "@/lib/coaching";
 import type { CoachingInsight, InsightType, InsightCategory } from "@/lib/types";
 
 type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;

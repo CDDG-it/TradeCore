@@ -6,6 +6,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { cachedRead, invalidateReads } from "@/lib/supabase/cache";
 import { winRateOf } from "@/lib/journal/weeks";
+import { localDayKey, subDays } from "@/lib/dates";
 import type {
   PreTradeAnalysis,
   PreTradeAnalysisInput,
@@ -65,7 +66,7 @@ export async function createAnalysis(
   id?: string
 ): Promise<PreTradeAnalysis> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("analyses");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -90,7 +91,7 @@ export async function updateAnalysis(
   input: Partial<PreTradeAnalysisInput>
 ): Promise<PreTradeAnalysis> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("analyses");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -106,7 +107,8 @@ export async function updateAnalysis(
 
 export async function deleteAnalysis(id: string): Promise<void> {
   const supabase = createClient();
-  invalidateReads();
+  // Trades linked to it lose their link (FK `on delete set null`).
+  invalidateReads("analyses", "trades");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { error } = await supabase.from("analyses").delete().eq("id", id).eq("user_id", user.id);
@@ -141,7 +143,7 @@ export async function createTrade(
   id?: string
 ): Promise<TradeJournalEntry> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("trades");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -166,7 +168,7 @@ export async function updateTrade(
   input: Partial<TradeJournalEntryInput>
 ): Promise<TradeJournalEntry> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("trades");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -182,7 +184,7 @@ export async function updateTrade(
 
 export async function deleteTrade(id: string): Promise<void> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("trades");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { error } = await supabase.from("trades").delete().eq("id", id).eq("user_id", user.id);
@@ -214,7 +216,7 @@ export async function getAccountById(id: string): Promise<FundedAccount | null> 
 
 export async function createAccount(input: FundedAccountInput): Promise<FundedAccount> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("accounts");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -238,7 +240,7 @@ export async function updateAccount(
   input: Partial<FundedAccountInput>
 ): Promise<FundedAccount> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("accounts");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -254,7 +256,7 @@ export async function updateAccount(
 
 export async function deleteAccount(id: string): Promise<void> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("accounts");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   // Cascades to payout_events via FK
@@ -277,7 +279,7 @@ export async function getPayoutsByAccountId(accountId: string): Promise<PayoutEv
 
 export async function createPayout(input: Omit<PayoutEvent, "id">): Promise<PayoutEvent> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("accounts");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -291,7 +293,7 @@ export async function createPayout(input: Omit<PayoutEvent, "id">): Promise<Payo
 
 export async function deletePayout(id: string): Promise<void> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("accounts");
   const { error } = await supabase.from("payout_events").delete().eq("id", id);
   if (error) throw error;
 }
@@ -312,7 +314,7 @@ export async function createHabit(
   input: Omit<Habit, "id" | "user_id" | "created_at" | "updated_at">
 ): Promise<Habit> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("habits", "habitCompletions");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -328,7 +330,7 @@ export async function createHabit(
 
 export async function updateHabit(id: string, input: Partial<Habit>): Promise<Habit> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("habits", "habitCompletions");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -344,7 +346,7 @@ export async function updateHabit(id: string, input: Partial<Habit>): Promise<Ha
 
 export async function deleteHabit(id: string): Promise<void> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("habits", "habitCompletions");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   await supabase.from("habit_completions").delete().eq("habit_id", id);
@@ -367,7 +369,7 @@ export async function toggleHabitCompletion(
   date: string
 ): Promise<HabitCompletion> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("habitCompletions");
   const { data: existing } = await supabase
     .from("habit_completions")
     .select("*")
@@ -407,21 +409,20 @@ export async function getHabitStreak(habitId: string): Promise<number> {
   const completedDates = (data ?? []).map((r: { date: string }) => r.date).sort((a: string, b: string) => b.localeCompare(a));
   if (!completedDates.length) return 0;
 
+  // Local calendar days, the same key the habit tick itself is written under:
+  // a UTC key here put an evening tick on tomorrow for anyone east of Greenwich.
+  const done = new Set(completedDates);
   let streak = 0;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDayKey(new Date());
   let checkDate = today;
 
   for (let i = 0; i < 365; i++) {
-    if (completedDates.includes(checkDate)) {
+    if (done.has(checkDate)) {
       streak++;
-      const d = new Date(checkDate + "T12:00:00");
-      d.setDate(d.getDate() - 1);
-      checkDate = d.toISOString().slice(0, 10);
+      checkDate = localDayKey(subDays(new Date(checkDate + "T12:00:00"), 1));
     } else {
       if (checkDate === today) {
-        const d = new Date(checkDate + "T12:00:00");
-        d.setDate(d.getDate() - 1);
-        checkDate = d.toISOString().slice(0, 10);
+        checkDate = localDayKey(subDays(new Date(checkDate + "T12:00:00"), 1));
         continue;
       }
       break;
@@ -447,7 +448,6 @@ export async function saveWeeklyReflection(
   input: Omit<WeeklyReflection, "id" | "user_id" | "created_at" | "updated_at">
 ): Promise<WeeklyReflection> {
   const supabase = createClient();
-  invalidateReads();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -497,7 +497,7 @@ export async function saveWeeklyTradeReview(
   input: WeeklyTradeReviewInput
 ): Promise<WeeklyTradeReview> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("weeklyReviews");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -545,7 +545,6 @@ export async function getMonteCarloSettings(): Promise<MonteCarloInputs | null> 
 
 export async function saveMonteCarloSettings(inputs: MonteCarloInputs): Promise<void> {
   const supabase = createClient();
-  invalidateReads();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -618,7 +617,6 @@ export async function createDailyTask(
   input: Omit<DailyTask, "id" | "user_id" | "created_at">
 ): Promise<DailyTask> {
   const supabase = createClient();
-  invalidateReads();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -632,7 +630,6 @@ export async function createDailyTask(
 
 export async function updateDailyTask(id: string, input: Partial<DailyTask>): Promise<DailyTask> {
   const supabase = createClient();
-  invalidateReads();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -648,7 +645,6 @@ export async function updateDailyTask(id: string, input: Partial<DailyTask>): Pr
 
 export async function deleteDailyTask(id: string): Promise<void> {
   const supabase = createClient();
-  invalidateReads();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { error } = await supabase.from("daily_tasks").delete().eq("id", id).eq("user_id", user.id);
@@ -672,7 +668,7 @@ async function _getPlaybook(): Promise<TraderPlaybook | null> {
 
 export async function savePlaybook(p: TraderPlaybook): Promise<void> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("playbook");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -729,7 +725,7 @@ async function _getProfile(): Promise<UserProfile | null> {
 
 export async function upsertProfile(input: UserProfileUpdate): Promise<UserProfile> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("profile");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -741,14 +737,6 @@ export async function upsertProfile(input: UserProfileUpdate): Promise<UserProfi
   if (error) throw error;
   return data as UserProfile;
 }
-
-// ── Coaching utilities (pure computation, re-exported from mock store) ─
-export {
-  generateCoachingInsights,
-  computeDisciplineScore,
-  getAvgDisciplineScore,
-  getDisciplineFieldLabel,
-} from "@/lib/mock/store";
 
 // ── Psychological Edge (psych_edge_sessions) ─────────────────────────
 // Fail-soft: if the psych_edge_sessions table has not been created yet,
@@ -770,7 +758,7 @@ export async function savePsychEdgeSession(
   input: PsychEdgeSessionInput
 ): Promise<PsychEdgeSession> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("psychSessions");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -817,7 +805,7 @@ async function _getCommitments(): Promise<Commitment[]> {
 
 export async function createCommitment(input: CommitmentInput): Promise<Commitment> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("commitments");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -831,7 +819,7 @@ export async function createCommitment(input: CommitmentInput): Promise<Commitme
 
 export async function updateCommitment(id: string, input: Partial<CommitmentInput>): Promise<Commitment> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("commitments");
   const { data, error } = await supabase
     .from("commitments")
     .update({ ...input, updated_at: now() })
@@ -857,7 +845,7 @@ async function _getPatternEvents(): Promise<PatternEvent[]> {
  *  reflects reality without duplicating on re-detection. */
 export async function upsertPatternEvent(input: PatternEventInput): Promise<PatternEvent> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("patternEvents");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -886,7 +874,7 @@ export async function createAdherenceLog(
   input: CommitmentAdherenceLogInput
 ): Promise<CommitmentAdherenceLog> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("adherenceLogs");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -900,7 +888,7 @@ export async function createAdherenceLog(
 
 export async function resolveAdherenceLog(id: string, followed: boolean): Promise<CommitmentAdherenceLog> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("adherenceLogs");
   const { data, error } = await supabase
     .from("commitment_adherence_log")
     .update({ followed })
@@ -944,7 +932,7 @@ export async function saveBestTradeOfDay(
   input: Pick<BestTradeOfDay, "date" | "taken_was_best" | "notes" | "post_market_analysis" | "screenshot_groups">
 ): Promise<BestTradeOfDay> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("bestTrade");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -976,7 +964,7 @@ export async function saveBestTradeOfDay(
 
 export async function deleteBestTradeOfDay(date: string): Promise<void> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("bestTrade");
   const { error } = await supabase.from("best_trade_of_day").delete().eq("date", date);
   if (error) throw error;
 }
@@ -1005,7 +993,6 @@ export async function savePreMarketExercise(
   input: Pick<PreMarketExercise, "date" | "loss_plans" | "win_plans" | "focus">
 ): Promise<PreMarketExercise> {
   const supabase = createClient();
-  invalidateReads();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -1068,7 +1055,7 @@ export async function createTradingGoal(
   input: Omit<TradingGoal, "id" | "user_id" | "created_at" | "updated_at">
 ): Promise<TradingGoal> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("trading_goals");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -1087,7 +1074,7 @@ export async function updateTradingGoal(
   input: Partial<TradingGoal>
 ): Promise<TradingGoal> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("trading_goals");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { data, error } = await supabase
@@ -1103,7 +1090,7 @@ export async function updateTradingGoal(
 
 export async function deleteTradingGoal(id: string): Promise<void> {
   const supabase = createClient();
-  invalidateReads();
+  invalidateReads("trading_goals");
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { error } = await supabase
