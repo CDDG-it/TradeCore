@@ -5,8 +5,8 @@
  *   • Rule adherence:    the per-trade discipline checklist (at the screen)
  *   • Execution:         the share of rated trades taken to plan and to edge
  *   • Habit consistency: daily/lifestyle habits (away from the charts)
- *   • Objectives:        the process work that compounds an edge: weekly review,
- *                        pre-trade analysis, logging the best trade of the day
+ *   • Objectives:        weekly review, pre-trade analysis, best trade and commitments
+ *   • Goals:             pace-adjusted progress against measurable active goals
  *
  * Every input is derived from data the trader already produces, so nothing is faked.
  * The score is computed over any window, so week / month / all-time all use one engine.
@@ -17,10 +17,11 @@ import {
   eachDayOfInterval, min as dfMin, subDays,
 } from "date-fns";
 import { computeTradeRulesScore, computeHabitCounts, computeExecutionScore } from "@/lib/discipline";
+import { computeGoalProgress } from "@/lib/goals/goals";
 import { isReviewOpen } from "@/lib/journal/weeks";
 import type {
   TradeJournalEntry, Habit, HabitCompletion, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, PreTradeAnalysis,
-  CommitmentAdherenceLog,
+  CommitmentAdherenceLog, TradingGoal,
 } from "@/lib/types";
 
 export type MindPeriod = "week" | "month" | "all";
@@ -28,12 +29,12 @@ export type MindPeriod = "week" | "month" | "all";
 /**
  * Nominal weights (out of 100), rescaled among the components that apply.
  *
- * Rules and execution are both "at the screen" and together carry 60: the
+ * Rules and execution are both "at the screen" and together carry 55: the
  * checklist says whether you ticked your non-negotiables, execution says
  * whether the trade was actually the one your plan and your edge called for.
  * They overlap, so execution is deliberately the smaller of the two.
  */
-export const MIND_WEIGHTS = { rules: 40, execution: 20, habits: 20, objectives: 20 } as const;
+export const MIND_WEIGHTS = { rules: 35, execution: 20, habits: 20, objectives: 15, goals: 10 } as const;
 
 export interface Objective {
   key: string;
@@ -51,7 +52,7 @@ export interface Objective {
 }
 
 export interface MindComponent {
-  key: "rules" | "execution" | "habits" | "objectives";
+  key: "rules" | "execution" | "habits" | "objectives" | "goals";
   label: string;
   /** 0..100 sub-score, or null when the component does not apply this window. */
   value: number | null;
@@ -156,6 +157,8 @@ export interface MindInputs {
   /** Commitment re-checks. Optional: callers that predate the commitment loop
    *  simply contribute no commitment objective. */
   adherenceLogs?: CommitmentAdherenceLog[];
+  /** Active goal progress contributes to the score when it is measurable. */
+  goals?: TradingGoal[];
 }
 
 /** Earliest day any tracked activity exists: the anchor for the all-time window. */
@@ -274,12 +277,35 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
     return d >= start && d <= clampEnd;
   }).length;
 
+  // Compare each live goal with the portion of its own window that has elapsed.
+  // A goal earns no points merely for being created: it needs measurable data.
+  // The current standing of active goals is the same across the three score
+  // periods, while the other components use their selected period's window.
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const goalReadings = (input.goals ?? [])
+    .filter((goal) => !goal.archived_at && goal.start_date <= today && goal.end_date >= today)
+    .map((goal) => ({ goal, progress: computeGoalProgress(goal, { trades: input.trades, habits: input.habits, completions: input.completions, now }) }))
+    .filter(({ goal, progress }) => {
+      if (progress.current == null || progress.timeElapsed <= 0) return false;
+      // Count metrics report zero even before the first trade. Setting a goal
+      // alone should not reduce the score; a traded day with zero clean days
+      // remains measurable and does count.
+      if ((goal.metric === "trades_logged" || goal.metric === "clean_days") && progress.current === 0) {
+        return input.trades.some((trade) => trade.date_time.slice(0, 10) >= goal.start_date && trade.date_time.slice(0, 10) <= today);
+      }
+      return true;
+    });
+  const goalScore = goalReadings.length
+    ? Math.round(goalReadings.reduce((sum, { progress }) => sum + Math.min(1, progress.ratio / progress.timeElapsed), 0) / goalReadings.length * 100)
+    : null;
+
   // ── Blend (rescale weights among applicable components) ───────────────
   const raw: { key: MindComponent["key"]; label: string; value: number | null; weight: number }[] = [
     { key: "rules", label: "Rule adherence", value: rules, weight: MIND_WEIGHTS.rules },
     { key: "execution", label: "Execution", value: execution.score, weight: MIND_WEIGHTS.execution },
     { key: "habits", label: "Habit consistency", value: habits, weight: MIND_WEIGHTS.habits },
     { key: "objectives", label: "Objectives", value: Math.round(objectivesScore), weight: MIND_WEIGHTS.objectives },
+    { key: "goals", label: "Goal progress", value: goalScore, weight: MIND_WEIGHTS.goals },
   ];
   const applicableWeight = raw.filter((c) => c.value != null).reduce((s, c) => s + c.weight, 0);
 

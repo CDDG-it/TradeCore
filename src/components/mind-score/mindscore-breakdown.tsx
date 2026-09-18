@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import {
   getTrades, getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getAnalyses,
-  getCommitmentAdherenceLogs,
+  getCommitmentAdherenceLogs, getTradingGoals,
 } from "@/lib/supabase/queries";
 import {
   bandColorFor, computeMindScoreAll,
@@ -25,10 +25,11 @@ const PART_META: Record<MindComponent["key"], { title: string; sub: string; acce
   execution:  { title: "Execution",            sub: "Trades you took to plan and to your edge",   accent: "var(--ice)" },
   habits:     { title: "Daily habits",         sub: "The routines you keep away from the charts", accent: "var(--ice)" },
   objectives: { title: "Doing the work",       sub: "Reviews, prep and logging your best trade",  accent: "var(--primary)" },
+  goals:      { title: "Goal progress",        sub: "Current goals measured against their own calendar", accent: "var(--ice)" },
 };
 
 /**
- * The MC Mindscore: one number, one bar, four plain-language parts.
+ * The MC Mindscore: one number, one bar, five plain-language parts.
  * Laid out to fit a single screen: no internal scrolling, no jargon.
  */
 export function MindScoreBreakdown() {
@@ -39,10 +40,10 @@ export function MindScoreBreakdown() {
     Promise.all([
       getTrades(), getHabits(), getHabitCompletions(),
       getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews(), getAnalyses(),
-      getCommitmentAdherenceLogs(),
-    ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs]) => {
-      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs });
-    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [], adherenceLogs: [] }));
+      getCommitmentAdherenceLogs(), getTradingGoals(),
+    ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs, goals]) => {
+      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs, goals });
+    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [], adherenceLogs: [], goals: [] }));
   }, []);
 
   const scores = useMemo(() => (data ? computeMindScoreAll(data) : null), [data]);
@@ -137,7 +138,7 @@ export function MindScoreBreakdown() {
         </div>
       </div>
 
-      {/* The four parts + the work that lifts the score, side by side */}
+      {/* The five parts + the work that lifts the score, side by side */}
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 md:grid-cols-2">
         <AccentPanel accent="primary" eyebrow="Breakdown" title="What makes up the score">
           <div className="mt-4 space-y-2">
@@ -161,10 +162,16 @@ export function MindScoreBreakdown() {
                   />
                 </div>
                 <p className="mt-1 text-[10px] leading-snug text-muted-foreground">{meta.sub}</p>
+                <p className="mt-1 text-[10px] tabular-nums text-muted-foreground/75">
+                  {has ? `${Math.round(comp.effectiveWeight)}% effective weight · ${comp.contribution.toFixed(1)} points` : "No measurable data · weight shared across the other parts"}
+                </p>
               </div>
             );
           })}
           </div>
+          <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
+            Goals use progress against elapsed time in each active goal window, including in the all-time view. All goal types count, including win rate and net R. Without a measurable active goal, its 10% weight is shared across the other parts.
+          </p>
         </AccentPanel>
 
         <AccentPanel

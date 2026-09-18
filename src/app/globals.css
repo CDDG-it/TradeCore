@@ -1,3 +1,4 @@
+@import url("https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -829,8 +830,34 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
 /* Public homepage typography and product compositions stay separate from the app. */
 .marketing-page {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
 }
+
+.marketing-page .font-display,
+.marketing-page main h1,
+.marketing-page main h2 {
+  font-family: "Clash Display", var(--font-inter), system-ui, sans-serif;
+}
+
+/* The public sample keeps the app's dark dashboard tokens even when the
+   visitor has selected the app's light theme. */
+.marketing-dashboard {
+  --background: #0b1120;
+  --foreground: #f8fafc;
+  --card: #131b2e;
+  --muted: #1c2740;
+  --muted-foreground: #94a3b8;
+  --border: #25324a;
+  --primary: #14b8a6;
+  --ice: #06b6d4;
+  --win: #22c55e;
+  --loss: #ef4444;
+  --be: #eab308;
+  font-family: var(--font-barlow), system-ui, sans-serif;
+  color: var(--foreground);
+}
+
+.marketing-dashboard .font-heading { font-family: var(--font-nunito), system-ui, sans-serif; }
 
 .marketing-hero {
   background:
@@ -860,6 +887,21 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   .marketing-laptop { transform: none; }
 }
 
+@media (max-width: 360px) {
+  .marketing-laptop-screen { height: 175px; }
+  .marketing-dashboard-inner { width: 690px; transform: scale(.39); transform-origin: top left; }
+}
+
+@media (min-width: 361px) and (max-width: 420px) {
+  .marketing-laptop-screen { height: 198px; }
+  .marketing-dashboard-inner { width: 690px; transform: scale(.45); transform-origin: top left; }
+}
+
+@media (min-width: 421px) and (max-width: 640px) {
+  .marketing-laptop-screen { height: 228px; }
+  .marketing-dashboard-inner { width: 690px; transform: scale(.52); transform-origin: top left; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
     .marketing-flip-card {
@@ -876,4 +918,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 @keyframes marketing-card-flip {
   from { transform: perspective(900px) rotateY(-32deg) translateY(20px); opacity: 0.72; }
   to { transform: perspective(900px) rotateY(0) translateY(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .marketing-page *, .marketing-page *::before, .marketing-page *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

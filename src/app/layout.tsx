@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Instrument_Serif, Barlow, Nunito } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif, Barlow, Nunito, Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/lib/theme-context";
@@ -37,6 +37,12 @@ const nunito = Nunito({
   display: "block",
 });
 
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 /**
  * `metadataBase` is what turns the relative OG image path into the absolute URL
  * every scraper needs. It comes from the deployment's own site URL, with the
@@ -47,7 +53,7 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tradinghub-lovat.verce
 
 const TITLE = "TradingMC: An ordinary journal won’t build an extraordinary trader";
 const DESCRIPTION =
-  "An ordinary journal records the trade. TradingMC helps futures traders examine the decision, refine their process, and prepare for what comes next.";
+  "TradingMC connects your trading plan, commitments, habits, goals and reviews. MC Mindscore reflects the work you do on and off the charts.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -93,7 +99,7 @@ export default function RootLayout({
       // scrolling on for its own scroll-to-top after a route change and every
       // navigation animates the old page sliding upward first.
       data-scroll-behavior="smooth"
-      className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} ${nunito.variable} h-full antialiased`}
+      className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} ${nunito.variable} ${inter.variable} h-full antialiased`}
     >
       <head>
         {/*

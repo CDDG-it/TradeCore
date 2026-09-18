@@ -220,7 +220,8 @@ export function computeGoalProgress(goal: TradingGoal, input: GoalInputs): GoalP
   const start = startOfDay(new Date(goal.start_date + "T12:00:00"));
   const end = endOfDay(new Date(goal.end_date + "T12:00:00"));
 
-  const current = measureMetric(goal.metric, input, start, end);
+  // A future-dated trade or completion must not advance a goal today.
+  const current = now < start ? null : measureMetric(goal.metric, input, start, now < end ? endOfDay(now) : end);
 
   // An accumulating metric never subtracts a baseline: what is already in the
   // window counts towards the target rather than against it.

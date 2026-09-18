@@ -1,10 +1,6 @@
 /**
- * The full list of pages the product offers today, in the same order and
- * with the exact same wording as the app sidebar. This is the single source
- * of truth for anything outside the authenticated app shell that needs to
- * list "the current tabs": the landing page's Features dropdown and the
- * footer's Platform column both read from here, so they stay in sync with
- * the real navigation instead of drifting into their own wording over time.
+ * The product's current destinations and labels. Keep this list aligned with
+ * the authenticated navigation when adding or renaming pages.
  */
 export interface AppTab {
   label: string;
