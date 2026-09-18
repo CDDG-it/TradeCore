@@ -21,14 +21,6 @@ export const a = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, 
 export const TURQUOISE = "var(--primary)";
 export const CYAN = "var(--ice)";
 
-/** The faint plotting grid that runs under the whole desk. */
-export const gridBackground = {
-  backgroundImage:
-    `linear-gradient(${a("var(--muted-foreground)", 5)} 1px, transparent 1px),` +
-    `linear-gradient(90deg, ${a("var(--muted-foreground)", 5)} 1px, transparent 1px)`,
-  backgroundSize: "28px 28px",
-};
-
 /** Corner ticks: the frame's registration marks. */
 export function Ticks({ inset = "0.25rem" }: { inset?: string }) {
   const common = "pointer-events-none absolute h-2 w-2 border-primary/40";

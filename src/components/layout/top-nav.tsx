@@ -90,9 +90,15 @@ export function TopNav() {
         <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
           {/* Left: logo */}
           <div className="flex-1 flex items-center min-w-0">
-            <Link href="/" aria-label="TradingMC home" className="shrink-0 hover:opacity-80 transition-opacity">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/tradingmc-app-dark.svg" alt="TradingMC" width={38} height={38} className="h-9 w-9" />
+            {/* The wordmark, in the landing page's own Clash Display, so the
+                app and the marketing site read as one brand. */}
+            <Link
+              href="/"
+              aria-label="TradingMC home"
+              className="shrink-0 text-[22px] font-semibold leading-none tracking-[-0.055em] text-foreground transition-opacity hover:opacity-80"
+              style={{ fontFamily: '"Clash Display", var(--font-inter), system-ui, sans-serif' }}
+            >
+              Trading<span style={{ color: "var(--primary)" }}>MC</span>
             </Link>
           </div>
 

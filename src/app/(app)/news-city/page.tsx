@@ -18,7 +18,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { SESSIONS, sessionState } from "@/lib/gmi/sessions";
-import { Ticks, Label, gridBackground } from "@/components/gmi/pane";
+import { Ticks, Label } from "@/components/gmi/pane";
 import { MobileSubnav } from "@/components/layout/mobile-nav";
 
 type Tab = "overview" | "markets" | "futures" | "news" | "calendar" | "flow";
@@ -133,18 +133,22 @@ export default function GlobalMarketsPage() {
     <div className="fill-phone relative flex flex-col gap-0 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
       <div
         className="relative flex min-h-0 flex-1 flex-col border border-border/60"
-        style={{ ...gridBackground, backgroundColor: a_bg }}
+        style={{ backgroundColor: TERMINAL_BG }}
       >
+        {/* A terminal reads as an instrument: a hairline of the desk's own
+            colour across the very top, flat dark ground, no decorative grid. */}
+        <span aria-hidden className="absolute inset-x-0 top-0 z-10 h-[2px]" style={{ background: "linear-gradient(90deg, var(--primary), var(--ice) 55%, transparent)" }} />
         <Ticks />
 
         {/* ── Masthead ─────────────────────────────────────────────────── */}
-        <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-border/50 px-4 py-2.5 lg:px-5">
-          <div className="flex items-baseline gap-3">
-            <h1 className="font-heading text-[15px] font-black uppercase leading-none tracking-[0.06em] text-foreground md:text-[17px]">
+        <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-border/60 px-4 py-2.5 lg:px-5" style={{ background: MAST_BG }}>
+          <div className="flex items-center gap-3">
+            <span aria-hidden className="h-4 w-[3px] rounded-full" style={{ background: "var(--primary)" }} />
+            <h1 className="font-heading text-[15px] font-black uppercase leading-none tracking-[0.08em] text-foreground md:text-[17px]">
               Global Markets
             </h1>
-            <span className="hidden text-[11px] font-semibold uppercase tracking-wider text-foreground/65 sm:inline">
-              objective research
+            <span className="hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/55 sm:inline">
+              objective research terminal
             </span>
           </div>
           <VenueClocks />
@@ -204,5 +208,8 @@ export default function GlobalMarketsPage() {
   );
 }
 
-/** The desk sits a shade below the page ground, so its frame reads as an object. */
-const a_bg = "color-mix(in oklch, var(--card) 55%, transparent)";
+/** A flat, deep terminal ground: darker than the surrounding page, no grid, so
+ *  the numbers and hairlines carry all the structure. Theme-aware via tokens. */
+const TERMINAL_BG = "color-mix(in oklch, var(--card) 60%, var(--background))";
+/** The masthead sits a shade above the ground, like a terminal's status bar. */
+const MAST_BG = "color-mix(in oklch, var(--card) 82%, var(--background))";
