@@ -273,7 +273,9 @@ export function DailyBestTrade({
                   {format(day, "d")}
                 </span>
 
-                {/* Net R: the day's outcome, or a placeholder dot when nothing was taken */}
+                {/* Net R: the day's outcome, or a "flat" marker when nothing
+                    was taken, so a quiet day reads as a deliberate no-trade and
+                    not as missing data. Future days stay blank. */}
                 {traded ? (
                   <span className="relative mt-1.5 flex items-center gap-1">
                     <span className="text-[11px] font-black leading-none tabular-nums" style={{ color: netRColor(netR) }}>
@@ -285,8 +287,13 @@ export function DailyBestTrade({
                       </span>
                     )}
                   </span>
+                ) : future ? (
+                  <span className="relative mt-2 h-1 w-1 rounded-full bg-muted-foreground/20" />
                 ) : (
-                  <span className="relative mt-2 h-1 w-1 rounded-full bg-muted-foreground/25" />
+                  <span className="relative mt-1.5 flex flex-col items-center gap-0.5" title="No trades this day">
+                    <span aria-hidden className="h-[2px] w-4 rounded-full bg-muted-foreground/30" />
+                    <span className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/45">Flat</span>
+                  </span>
                 )}
 
                 {/* Review state: a filled check once the day has been worked
@@ -337,42 +344,44 @@ export function DailyBestTrade({
           </div>
 
           <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
-            {/* Left: trades taken + post-market analysis */}
+            {/* ── LEFT: your verdict, in your own words ──────────────────────
+                The one call this tab exists to make - was the trade you took
+                the best one available - and the room to write out the setup
+                that made it so. Nothing here is evidence; it is your reasoning. */}
             <div className="flex min-h-0 flex-col gap-3">
-              <AccentPanel accent="primary" eyebrow="Execution" title="Trades taken" className="flex max-h-[38%] min-h-0 shrink-0 flex-col">
-                <div className="mt-3 min-h-0 flex-1 space-y-1.5 overflow-y-auto">
-                  {dayTrades.length === 0 ? (
-                    <p className="py-4 text-center text-xs text-muted-foreground/70">Nothing logged for this day.</p>
-                  ) : (
-                    dayTrades.map((t) => (
-                      <Link
-                        key={t.id}
-                        // `from` so the trade page sends you back here, not into
-                        // the journal, when you were only checking the trade.
-                        href={`/journal/${t.id}?from=trade-therapist`}
-                        className="group flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2 transition-colors hover:border-primary/40 hover:bg-muted/30"
-                      >
-                        {t.direction === "long"
-                          ? <TrendingUp className="w-4 h-4 shrink-0 text-success" />
-                          : <TrendingDown className="w-4 h-4 shrink-0 text-destructive" />}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold leading-none transition-colors group-hover:text-primary">{instrumentName(t.instrument)}</p>
-                          <p className="mt-1 text-[10px] capitalize text-muted-foreground leading-none">{t.session} session</p>
-                        </div>
-                        {t.execution_quality && (
-                          <span className={cn("shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
-                            t.execution_quality === "good" ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive")}>
-                            {t.execution_quality === "good" ? "Good" : "Bad"}
-                          </span>
-                        )}
-                        <span className={cn("w-10 shrink-0 text-right text-xs font-bold tabular-nums",
-                          t.result === "win" ? "text-success" : t.result === "loss" ? "text-destructive" : "text-warning")}>
-                          {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
-                        </span>
-                        <ExternalLink className="w-3.5 h-3.5 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-primary" />
-                      </Link>
-                    ))
-                  )}
+              <AccentPanel accent="primary" eyebrow="Verdict" title="Was your trade the best trade?" className="flex min-h-0 flex-1 flex-col">
+                <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
+                  {/* The toggle: a full-width bar so the day's verdict is the
+                      first thing the eye lands on, its state carried by colour. */}
+                  <label
+                    className={cn(
+                      "flex shrink-0 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors",
+                      takenWasBest ? "border-success/45 bg-success/[0.07]" : "border-border/60 bg-muted/20"
+                    )}
+                  >
+                    <span className="min-w-0">
+                      <span className={cn("block text-sm font-bold leading-tight transition-colors", takenWasBest ? "text-success" : "text-foreground/90")}>
+                        {takenWasBest ? "Yes - I took the best available trade" : "The trade I took was the best available"}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground/75">
+                        On a flat day, staying out can be the best trade too.
+                      </span>
+                    </span>
+                    <Switch checked={takenWasBest} onCheckedChange={(v) => { setTakenWasBest(v); setSaved(false); }} />
+                  </label>
+
+                  {/* The setup box: the whole point of the left column. */}
+                  <div className="flex min-h-0 flex-1 flex-col">
+                    <p className="mb-2 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                      Explain your setup
+                    </p>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => { setNotes(e.target.value); setSaved(false); }}
+                      placeholder="The level, the confluence, why it was the higher-quality play, where the real edge was..."
+                      className="min-h-[120px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+                    />
+                  </div>
                 </div>
               </AccentPanel>
 
@@ -380,51 +389,84 @@ export function DailyBestTrade({
                 accent="cyan"
                 eyebrow="Analysis"
                 title="Post-market analysis"
-                className="flex min-h-0 flex-1 flex-col"
+                className="flex max-h-[34%] min-h-0 shrink-0 flex-col"
               >
                 <textarea
                   value={postMarket}
                   onChange={(e) => { setPostMarket(e.target.value); setSaved(false); }}
                   placeholder="Range held the overnight low, first pullback into VWAP was the A+ long, chased the breakout instead..."
-                  className="mt-3 min-h-[90px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+                  className="mt-3 min-h-[70px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                 />
               </AccentPanel>
             </div>
 
-            {/* Right: best trade of the day */}
+            {/* ── RIGHT: the evidence ────────────────────────────────────────
+                Your actual trade up top - a link straight to its log, not a
+                picture - and the screenshots of the setup below it. */}
             <AccentPanel
               accent="primary"
-              eyebrow="Benchmark"
-              title="Best trade of the day"
+              eyebrow="Evidence"
+              title="Your trade"
               className="flex min-h-0 flex-col"
             >
-              {/* One scrolling column: on a short laptop screen the parts give
-                  way to a scrollbar rather than crowding into each other. */}
-              <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-              <label className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5">
-                <span className="text-xs font-medium">The trade I took was already the best available</span>
-                <Switch checked={takenWasBest} onCheckedChange={(v) => { setTakenWasBest(v); setSaved(false); }} />
-              </label>
+              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
+                {/* Top: the actual trade(s) taken, each linking to its log. */}
+                <div className="shrink-0">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                    {dayTrades.length > 1 ? "Your actual trades" : "Your actual trade"}
+                  </p>
+                  {dayTrades.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-border/60 py-3 text-center text-xs text-muted-foreground/70">
+                      No trade logged for this day.
+                    </p>
+                  ) : (
+                    <div className="max-h-[132px] space-y-1.5 overflow-y-auto pr-1">
+                      {dayTrades.map((t) => (
+                        <Link
+                          key={t.id}
+                          // `from` so the trade page sends you back here, not into
+                          // the journal, when you were only checking the trade.
+                          href={`/journal/${t.id}?from=trade-therapist`}
+                          className="group flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2 transition-colors hover:border-primary/40 hover:bg-muted/30"
+                        >
+                          {t.direction === "long"
+                            ? <TrendingUp className="w-4 h-4 shrink-0 text-success" />
+                            : <TrendingDown className="w-4 h-4 shrink-0 text-destructive" />}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold leading-none transition-colors group-hover:text-primary">{instrumentName(t.instrument)}</p>
+                            <p className="mt-1 text-[10px] capitalize text-muted-foreground leading-none">{t.session} session</p>
+                          </div>
+                          {t.execution_quality && (
+                            <span className={cn("shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
+                              t.execution_quality === "good" ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive")}>
+                              {t.execution_quality === "good" ? "Good" : "Bad"}
+                            </span>
+                          )}
+                          <span className={cn("w-10 shrink-0 text-right text-xs font-bold tabular-nums",
+                            t.result === "win" ? "text-success" : t.result === "loss" ? "text-destructive" : "text-warning")}>
+                            {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+                          </span>
+                          {/* A link to the log, deliberately not a thumbnail. */}
+                          <span className="flex shrink-0 items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 transition-colors group-hover:text-primary">
+                            Log <ExternalLink className="w-3.5 h-3.5" />
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">Why this was the better play</p>
-                <textarea
-                  value={notes}
-                  onChange={(e) => { setNotes(e.target.value); setSaved(false); }}
-                  rows={4}
-                  placeholder="Cleaner level, more room to target, aligned with the daily bias..."
-                  className="w-full resize-y rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
-                />
-              </div>
-
-              <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">Screenshots</p>
-                <ScreenshotUpload
-                  groups={groups}
-                  onChange={(g) => { setGroups(g); setSaved(false); }}
-                  storageConfig={userId ? { userId, entityType: "best-trade", entityId: date } : undefined}
-                />
-              </div>
+                {/* Below: the pictures of the trade. */}
+                <div className="flex min-h-0 flex-1 flex-col border-t border-border/40 pt-3">
+                  <p className="mb-2 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">Pictures of the trade</p>
+                  <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                    <ScreenshotUpload
+                      groups={groups}
+                      onChange={(g) => { setGroups(g); setSaved(false); }}
+                      storageConfig={userId ? { userId, entityType: "best-trade", entityId: date } : undefined}
+                    />
+                  </div>
+                </div>
               </div>
             </AccentPanel>
           </div>

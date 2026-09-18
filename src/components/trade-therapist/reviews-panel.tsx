@@ -6,8 +6,9 @@ import {
   format, startOfWeek, subWeeks, subMonths, startOfMonth, endOfMonth, isWithinInterval,
 } from "date-fns";
 import {
-  Loader2, ArrowRight, CheckCircle2, Circle, Lock, ChevronDown, ChevronUp,
+  Loader2, ArrowRight, CheckCircle2, Circle, Lock, ChevronDown, ChevronUp, Quote,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { getTrades, getWeeklyTradeReviews } from "@/lib/supabase/queries";
@@ -106,16 +107,28 @@ export function ReviewsPanel() {
       {/* LEFT: toggle + list.
           On a phone this drops below the progress: a year of week rows is a
           reference, not the thing you open the tab to see. */}
-      <AccentPanel accent="primary" className="order-2 flex min-h-0 flex-col p-0 pl-1 lg:order-none">
+      <AccentPanel accent="primary" className="order-2 flex min-h-0 flex-col p-0 lg:order-none">
+        {/* Header: a proper segmented control with a sliding active pill, and a
+            quiet expand/collapse for when the list is only a reference. */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border/40 p-3">
-          <div className="flex rounded-lg border border-border/60 overflow-hidden">
+          <div className="relative flex rounded-lg border border-border/60 bg-muted/25 p-0.5">
             {(["weekly", "monthly"] as Mode[]).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
-                className={cn("px-4 py-1.5 text-xs font-semibold capitalize transition-colors",
-                  mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
+                className={cn(
+                  "relative z-10 rounded-[7px] px-4 py-1.5 text-xs font-semibold capitalize transition-colors",
+                  mode === m ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
               >
+                {mode === m && (
+                  <motion.span
+                    layoutId="reviews-mode-pill"
+                    className="absolute inset-0 -z-10 rounded-[7px] bg-primary"
+                    style={{ boxShadow: "0 2px 10px color-mix(in oklch, var(--primary) 30%, transparent)" }}
+                    transition={{ type: "spring", stiffness: 480, damping: 36 }}
+                  />
+                )}
                 {m}
               </button>
             ))}
@@ -130,64 +143,98 @@ export function ReviewsPanel() {
         </div>
 
         {listOpen && (
-          <div className="max-h-[20rem] min-h-0 flex-1 overflow-y-auto p-3 lg:max-h-none">
+          <div className="max-h-[22rem] min-h-0 flex-1 overflow-y-auto p-2.5 lg:max-h-none">
             {mode === "weekly" ? (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {weeks.map(({ ws, group, reviewable, current, review }) => {
                   const done = written(review);
+                  // Three states, one visual language: a coloured status rail
+                  // down the left edge, a matching icon, and - for the one week
+                  // actually asking for attention - a soft warning wash.
+                  const needs = reviewable && !done;
+                  const railColor = !reviewable
+                    ? "var(--primary)"
+                    : done
+                    ? "var(--success)"
+                    : "var(--warning)";
                   return (
-                    <Link key={ws} href={`/trade-therapist/review/${ws}`}
+                    <Link
+                      key={ws}
+                      href={`/trade-therapist/review/${ws}`}
                       className={cn(
-                        "group flex items-center gap-2.5 rounded-lg border px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30",
-                        // A closed week with nothing written is the only row
-                        // that is actually asking for something.
-                        reviewable && !done ? "border-warning/35 bg-warning/[0.04]" : "border-border/60"
-                      )}>
-                      {!reviewable ? <Lock className="w-4 h-4 shrink-0 text-primary/70" />
-                        : done ? <CheckCircle2 className="w-4 h-4 shrink-0 text-success" />
-                        : <Circle className="w-4 h-4 shrink-0 text-muted-foreground/40" />}
+                        "group relative flex items-stretch gap-3 overflow-hidden rounded-xl border pl-0 pr-3 py-2.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/25",
+                        needs ? "border-warning/40 bg-warning/[0.05]" : "border-border/60"
+                      )}
+                    >
+                      {/* Status rail */}
+                      <span aria-hidden className="w-1 shrink-0 rounded-full" style={{ background: railColor }} />
+
+                      <span className="flex shrink-0 items-center pl-1.5">
+                        {!reviewable ? <Lock className="h-4 w-4 text-primary/70" />
+                          : done ? <CheckCircle2 className="h-4 w-4 text-success" />
+                          : <Circle className="h-4 w-4 text-warning/70" />}
+                      </span>
+
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold leading-none transition-colors group-hover:text-primary">
-                          Week {group.weekNum}{current && <span className="ml-1.5 font-normal text-primary">· current</span>}
+                        <p className="flex items-center gap-1.5 text-sm font-bold leading-none transition-colors group-hover:text-primary">
+                          Week {group.weekNum}
+                          {current && (
+                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+                              Current
+                            </span>
+                          )}
                         </p>
-                        <p className="mt-1 text-[10px] text-muted-foreground leading-none">{group.rangeLabel}</p>
+                        <p className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] leading-none text-muted-foreground">
+                          <span>{group.rangeLabel}</span>
+                          <span className="text-muted-foreground/40">·</span>
+                          <span className="font-semibold tabular-nums">{group.wins}W {group.losses}L</span>
+                          {group.execRate != null && (
+                            <>
+                              <span className="text-muted-foreground/40">·</span>
+                              <span
+                                title={`${group.goodExec} of ${group.goodExec + group.badExec} rated trades executed to plan`}
+                                className={cn("font-semibold tabular-nums",
+                                  group.execRate >= 70 ? "text-success"
+                                    : group.execRate >= 40 ? "text-warning"
+                                    : "text-destructive")}
+                              >
+                                {group.execRate}% exec
+                              </span>
+                            </>
+                          )}
+                        </p>
+                        {needs && (
+                          <p className="mt-1.5 text-[10px] font-semibold text-warning">Closed - not written yet</p>
+                        )}
                       </div>
-                      <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">{group.wins}W {group.losses}L</span>
-                      {/* How much of that week was traded to plan. */}
-                      <span
-                        title={
-                          group.execRate == null
-                            ? "No trade that week was rated on execution"
-                            : `${group.goodExec} of ${group.goodExec + group.badExec} rated trades executed to plan`
-                        }
-                        className={cn("w-9 shrink-0 text-right text-[11px] font-semibold tabular-nums",
-                          group.execRate == null ? "text-muted-foreground/40"
-                            : group.execRate >= 70 ? "text-success"
-                            : group.execRate >= 40 ? "text-warning"
-                            : "text-destructive")}
-                      >
-                        {group.execRate == null ? "-" : `${group.execRate}%`}
-                      </span>
-                      <span className={cn("w-12 shrink-0 text-right text-xs font-bold tabular-nums",
-                        group.totalR > 0 ? "text-success" : group.totalR < 0 ? "text-destructive" : "text-warning")}>
-                        {formatTotalR(group.totalR)}
-                      </span>
-                      <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
+
+                      <div className="flex shrink-0 flex-col items-end justify-center gap-1">
+                        <span className={cn("text-sm font-black tabular-nums",
+                          group.totalR > 0 ? "text-success" : group.totalR < 0 ? "text-destructive" : "text-warning")}>
+                          {formatTotalR(group.totalR)}
+                        </span>
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                      </div>
                     </Link>
                   );
                 })}
               </div>
             ) : (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {months.map(({ key, label, date }) => {
                   const r = (trades ?? []).filter((t) => isWithinInterval(new Date(t.date_time.slice(0, 10) + "T12:00:00"),
                     { start: startOfMonth(date), end: endOfMonth(date) })).reduce((s, t) => s + tradeR(t), 0);
+                  const railColor = r > 0 ? "var(--success)" : r < 0 ? "var(--destructive)" : "var(--muted-foreground)";
                   return (
-                    <Link key={key} href={`/trade-therapist/review/month/${key}`}
-                      className="group flex items-center gap-2 rounded-lg border border-border/60 px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30">
-                      <span className="flex-1 text-xs font-semibold transition-colors group-hover:text-primary">{label}</span>
-                      <span className={cn("text-xs font-bold tabular-nums", r > 0 ? "text-success" : r < 0 ? "text-destructive" : "text-muted-foreground")}>{formatTotalR(r)}</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
+                    <Link
+                      key={key}
+                      href={`/trade-therapist/review/month/${key}`}
+                      className="group relative flex items-stretch gap-3 overflow-hidden rounded-xl border border-border/60 py-3 pl-0 pr-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/25"
+                    >
+                      <span aria-hidden className="w-1 shrink-0 rounded-full" style={{ background: railColor }} />
+                      <span className="flex-1 self-center pl-1.5 text-sm font-semibold transition-colors group-hover:text-primary">{label}</span>
+                      <span className={cn("self-center text-sm font-black tabular-nums", r > 0 ? "text-success" : r < 0 ? "text-destructive" : "text-muted-foreground")}>{formatTotalR(r)}</span>
+                      <ArrowRight className="h-3.5 w-3.5 self-center text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
                     </Link>
                   );
                 })}
@@ -263,10 +310,12 @@ weeks done · {pct}%
         </AccentPanel>
 
         {/* The one line worth carrying into the next session, then the trail of
-            the ones before it, so repeating yourself becomes visible. */}
+            the ones before it, so repeating yourself becomes visible. Framed as
+            a note to self: a quoted instruction you set, in your own hand. */}
         <AccentPanel accent="cyan" eyebrow="Carried forward" title="What you told yourself" className="flex min-h-0 flex-1 flex-col">
           {!headline ? (
             <div className="mt-4 flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 py-8 text-center">
+              <Quote className="h-5 w-5 text-muted-foreground/40" />
               <p className="text-xs text-muted-foreground">Nothing written yet.</p>
               <p className="max-w-xs text-[11px] leading-relaxed text-muted-foreground/70">
                 Close out a week and the focus you set for the next one lands here, so you start the week with your own
@@ -283,18 +332,31 @@ weeks done · {pct}%
             </div>
           ) : (
             <div className="mt-3 flex min-h-0 flex-1 flex-col">
-              {/* The headline instruction, in your own words */}
+              {/* The headline instruction, framed as a pull-quote card in the
+                  tone of what it is: focus, fix, or what worked. */}
               <Link
                 href={`/trade-therapist/review/${latest.week_start}`}
-                className="group block shrink-0 border-l-2 pl-3 transition-colors"
-                style={{ borderColor: headline.tone }}
+                className="group relative block shrink-0 overflow-hidden rounded-xl border p-4 transition-all hover:-translate-y-0.5"
+                style={{
+                  borderColor: `color-mix(in oklch, ${headline.tone} 35%, transparent)`,
+                  background: `color-mix(in oklch, ${headline.tone} 7%, transparent)`,
+                }}
               >
-                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: headline.tone }}>
+                <Quote
+                  aria-hidden
+                  className="absolute -right-1 -top-1 h-12 w-12 opacity-[0.08]"
+                  style={{ color: headline.tone }}
+                />
+                <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: headline.tone }}>
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: headline.tone }} />
                   {headline.label}
                 </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">&ldquo;{headline.text}&rdquo;</p>
-                <p className="mt-2 text-[10px] text-muted-foreground/60 transition-colors group-hover:text-primary">
-                  Week {latestGroup!.weekNum} · {latestGroup!.rangeLabel} →
+                <p className="relative mt-2 text-[15px] font-medium leading-relaxed text-foreground/90">
+                  &ldquo;{headline.text}&rdquo;
+                </p>
+                <p className="mt-3 inline-flex items-center gap-1 text-[10px] font-semibold text-muted-foreground/60 transition-colors group-hover:text-primary">
+                  Week {latestGroup!.weekNum} · {latestGroup!.rangeLabel}
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                 </p>
               </Link>
 
@@ -303,7 +365,7 @@ weeks done · {pct}%
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                     Before that
                   </p>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {earlier.map((r) => {
                       const g = getWeekGroup(trades, r.week_start);
                       const line = r.prevention_plan || r.mistakes || r.lessons;
@@ -312,9 +374,9 @@ weeks done · {pct}%
                           key={r.week_start}
                           href={`/trade-therapist/review/${r.week_start}`}
                           title={line}
-                          className="flex items-baseline gap-2.5 rounded-md px-1 py-1 transition-colors hover:bg-muted/30"
+                          className="group flex items-baseline gap-2.5 rounded-lg border border-transparent px-2 py-1.5 transition-colors hover:border-border/50 hover:bg-muted/25"
                         >
-                          <span className="w-12 shrink-0 text-[10px] font-bold tabular-nums text-muted-foreground/70">
+                          <span className="w-10 shrink-0 text-[10px] font-bold tabular-nums text-muted-foreground/70 transition-colors group-hover:text-primary">
                             Wk {g.weekNum}
                           </span>
                           <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{line}</span>
