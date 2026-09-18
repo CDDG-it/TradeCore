@@ -1,12 +1,11 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
+// Every request that is not a static asset goes through the session check.
+// There is deliberately no environment switch that turns it off: the mock
+// "demo mode" is gone, and a public variable must never be able to open the
+// app.
 export default async function proxy(request: NextRequest) {
-  // In demo mode, skip Supabase session checks entirely and allow all routes
-  if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
-    return NextResponse.next();
-  }
-
   return await updateSession(request);
 }
 

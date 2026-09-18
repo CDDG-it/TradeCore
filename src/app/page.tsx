@@ -1,12 +1,21 @@
 import Link from "next/link";
+import { Inter } from "next/font/google";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
 import { LaptopDashboard } from "@/components/landing/dashboard-sample";
 import { MarketContextVisual, MindscoreVisual, ProcessStack, TherapistVisual } from "@/components/landing/marketing-visuals";
 
+// The landing page's own typeface. Loaded here rather than in the root layout
+// so the signed-in app never preloads a family it does not use.
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export default function HomePage() {
   return (
-    <div className="marketing-page min-h-screen overflow-x-clip bg-[#0b1120] text-white">
+    <div className={`${inter.variable} marketing-page min-h-screen overflow-x-clip bg-[#0b1120] text-white`}>
       <a href="#main" className="sr-only bg-[#14b8a6] px-4 py-2 font-semibold text-[#0b1120] focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50">Skip to content</a>
       <LandingNav />
       <main id="main">

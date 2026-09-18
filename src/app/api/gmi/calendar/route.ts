@@ -29,6 +29,13 @@ export async function GET(req: Request) {
 
   if (!apiKey) return NextResponse.json(unavailable("FRED_API_KEY not configured"));
   if (month && !MONTH_RE.test(month)) return NextResponse.json(unavailable("invalid month"));
+  // A schedule is only useful around now. Each distinct month costs a fan-out
+  // of FRED calls, so the route is not a free way to page through history.
+  if (month) {
+    const y = Number(month.slice(0, 4));
+    const thisYear = new Date().getUTCFullYear();
+    if (y < thisYear - 2 || y > thisYear + 1) return NextResponse.json(unavailable("month out of range"));
+  }
 
   try {
     if (month) {

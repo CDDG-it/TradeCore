@@ -11,6 +11,13 @@ export const revalidate = 0;
 
 const TTL_MS = 30_000; // quotes are ~15-min delayed; 30s polling is plenty
 
+// The route is public (it sits in front of a login-free API prefix), so what
+// reaches Yahoo, and what gets a cache slot, is only ever one of these: the
+// chart timeframes the futures tab offers. Anything else is answered as
+// unavailable without an upstream call.
+const INTERVALS = new Set(["5m", "15m", "60m", "1d"]);
+const RANGES = new Set(["2d", "5d", "1mo", "3mo", "1y"]);
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const symbol = searchParams.get("symbol");
@@ -19,6 +26,13 @@ export async function GET(req: Request) {
 
   // Single-instrument detail (chart timeframe) path.
   if (symbol) {
+    if (!INTERVALS.has(interval) || !RANGES.has(range) || !/^[A-Z0-9]{1,8}$/.test(symbol)) {
+      const env: DataEnvelope<Quote> = {
+        data: null, source: "Yahoo Finance", freshness: "delayed", asOf: null,
+        fetchedAt: new Date().toISOString(), status: "unavailable", error: "invalid request",
+      };
+      return NextResponse.json(env, { status: 400 });
+    }
     try {
       const { value, storedAt, stale } = await cached(
         `gmi:quote:${symbol}:${interval}:${range}`,

@@ -18,6 +18,25 @@ type Entry<T> = { value: T; storedAt: number };
 const store = new Map<string, Entry<unknown>>();
 const inflight = new Map<string, Promise<unknown>>();
 
+/**
+ * The store is bounded. Keys are built from request parameters, and the API
+ * routes are public, so without a ceiling a caller could grow it without end
+ * (a calendar month for every year since 1900, say). A Map iterates in
+ * insertion order, so trimming from the front drops the oldest entries; a
+ * refreshed key is re-inserted at the back.
+ */
+const MAX_ENTRIES = 256;
+
+function remember(key: string, entry: Entry<unknown>): void {
+  store.delete(key);
+  store.set(key, entry);
+  while (store.size > MAX_ENTRIES) {
+    const oldest = store.keys().next().value;
+    if (oldest === undefined) break;
+    store.delete(oldest);
+  }
+}
+
 export interface CachedResult<T> {
   value: T;
   /** Epoch ms the value was fetched. */
@@ -49,7 +68,7 @@ export async function cached<T>(
     (async () => {
       try {
         const value = await fn();
-        store.set(key, { value, storedAt: Date.now() });
+        remember(key, { value, storedAt: Date.now() });
         return value;
       } finally {
         inflight.delete(key);

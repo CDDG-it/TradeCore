@@ -1,45 +1,39 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Instrument_Serif, Barlow, Nunito, Inter } from "next/font/google";
+import { Geist_Mono, Barlow, Nunito } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/lib/theme-context";
 
+/**
+ * Only the families the app actually sets in globals.css are loaded here:
+ * Barlow for body copy, Nunito for headings, Geist Mono for figures. Every
+ * family declared in this file is preloaded on every page, so an unused one
+ * is not free: it is a font file ahead of the data on each load. The landing
+ * page's Inter is loaded by that page alone. Weights follow the Tailwind
+ * classes in use: `font-normal` to `font-bold` and `font-black`; nothing sets
+ * a light or an extra-bold Barlow.
+ *
+ * `swap` rather than `block`: with `block` the text is invisible until the
+ * font lands, which on a cold load is exactly the moment the trader is
+ * waiting for the numbers.
+ */
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
-
-const geist = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
   display: "swap",
 });
 
 const barlow = Barlow({
   variable: "--font-barlow",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  display: "block",
+  weight: ["400", "500", "600", "700", "900"],
+  display: "swap",
 });
 
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
   weight: ["400", "600", "700", "800", "900"],
-  display: "block",
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
   display: "swap",
 });
 
@@ -99,7 +93,7 @@ export default function RootLayout({
       // scrolling on for its own scroll-to-top after a route change and every
       // navigation animates the old page sliding upward first.
       data-scroll-behavior="smooth"
-      className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable} ${barlow.variable} ${nunito.variable} ${inter.variable} h-full antialiased`}
+      className={`${geistMono.variable} ${barlow.variable} ${nunito.variable} h-full antialiased`}
     >
       <head>
         {/*

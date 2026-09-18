@@ -1,8 +1,25 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * Whether the access token was signed with an asymmetric key (ES256/RS256).
+ * Those can be verified here without a round trip; a legacy HS256 token can
+ * only be checked by the Auth server, which is the per-request network call
+ * this middleware exists to avoid.
+ */
+function signedAsymmetrically(jwt: string): boolean {
+  try {
+    const header = JSON.parse(atob(jwt.split(".")[0].replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof header.alg === "string" && !header.alg.startsWith("HS");
+  } catch {
+    return false;
+  }
+}
+
 export async function updateSession(request: NextRequest) {
-  // If Supabase is not configured, pass through all requests (demo/mock mode)
+  // Without Supabase configured there is nothing to gate against: let the
+  // request through rather than lock every route behind a login that cannot
+  // work.
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.next({ request });
   }
@@ -30,15 +47,25 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Route gating only: read the session locally from the cookie instead of
-  // calling getUser(), which hits the Supabase Auth server on every single
-  // navigation and is the main source of slow page loads. This still refreshes
-  // an expired token (which persists via setAll above); actual data access
-  // stays protected by row-level security regardless of what the cookie claims.
+  // Route gating: read the session from the cookie rather than asking the
+  // Auth server on every navigation (the main source of slow page loads).
+  // This still refreshes an expired token, which persists via setAll above.
+  //
+  // A cookie is the caller's to forge, so the token is then verified against
+  // the project's public signing key (cached in-process after the first
+  // fetch): a made-up session no longer reaches the app shell. Projects still
+  // on the legacy shared secret have no local way to verify and keep the
+  // unverified read; data access is protected by row-level security either
+  // way, since Postgres verifies every token itself.
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  let user = session?.user ?? null;
+
+  if (session && signedAsymmetrically(session.access_token)) {
+    const { data: claims, error } = await supabase.auth.getClaims(session.access_token);
+    if (error || !claims) user = null;
+  }
 
   // Protected routes: redirect to login if not authenticated
   const isAuthPage =

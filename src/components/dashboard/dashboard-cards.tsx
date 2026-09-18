@@ -7,7 +7,8 @@ import { Loader2, Plus } from "lucide-react";
 import { bandColorFor, type MindScore } from "@/lib/mind-score/mind-score";
 import { formatGoalValue, METRIC_META, type GoalProgress } from "@/lib/goals/goals";
 import { instrumentName } from "@/lib/journal/weeks";
-import { resultColor, resultBands, netRColor, inOrder } from "@/lib/journal/colors";
+import { resultColor, resultBands, netRColor, inOrder, alpha } from "@/lib/journal/colors";
+import { habitAccent } from "@/lib/habits";
 import { mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import type { TradingGoal, TradeJournalEntry, Habit } from "@/lib/types";
@@ -17,9 +18,10 @@ const CYAN = "var(--ice)";
 const GREEN = "var(--win)";
 const RED = "var(--loss)";
 const AMBER = "var(--be)";
-const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
-const CARD_BASE = "group/card relative rounded-2xl border border-border/60 bg-card p-4 overflow-hidden shadow-[0_4px_20px_-10px_rgba(0,0,0,0.25)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-0.5 hover:border-border/90 hover:shadow-[0_10px_36px_-14px_rgba(0,0,0,0.45)]";
-function CardFx({ accent }: { accent: string }) {
+/** The desk's card shell and its ambient decoration, shared by every card on
+ *  the dashboard (the news card lives in the page and borrows them). */
+export const CARD_BASE = "group/card relative rounded-2xl border border-border/60 bg-card p-4 overflow-hidden shadow-[0_4px_20px_-10px_rgba(0,0,0,0.25)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-0.5 hover:border-border/90 hover:shadow-[0_10px_36px_-14px_rgba(0,0,0,0.45)]";
+export function CardFx({ accent }: { accent: string }) {
   return (
     <>
       <div
@@ -453,8 +455,11 @@ export function ActiveCapitalCard({ capital, count, hidden, onToggle, className 
 }
 
 /* ── Habits: check off today, and jump to the full page ──────────────── */
-export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, className }: {
-  habits: Habit[]; doneToday: Set<string>; pendingHabit: string | null; onToggle: (id: string) => void; className?: string;
+export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, className }: {
+  habits: Habit[]; doneToday: Set<string>; pendingHabit: string | null; onToggle: (id: string) => void;
+  /** A tick that did not reach the database; the row has already been put back. */
+  error?: string | null;
+  className?: string;
 }) {
   return (
     <div className={cn(CARD_BASE, "flex min-h-0 flex-col", className)}>
@@ -480,6 +485,7 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, classNam
           {habits.map((habit) => {
             const done = doneToday.has(habit.id);
             const pending = pendingHabit === habit.id;
+            const color = habitAccent(habit);
             return (
               <button
                 key={habit.id}
@@ -497,7 +503,7 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, classNam
                     "absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full transition-all duration-300",
                     done ? "opacity-90 scale-y-100" : "opacity-0 scale-y-50 group-hover/habit:opacity-70 group-hover/habit:scale-y-100"
                   )}
-                  style={{ background: habit.color }}
+                  style={{ background: color }}
                 />
                 <span
                   className={cn(
@@ -505,7 +511,7 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, classNam
                     done ? "scale-105" : "group-hover/habit:scale-110"
                   )}
                   style={done
-                    ? { background: habit.color, borderColor: habit.color, boxShadow: `0 0 10px ${alpha(habit.color, 55)}` }
+                    ? { background: color, borderColor: color, boxShadow: `0 0 10px ${alpha(color, 55)}` }
                     : { borderColor: "var(--border)" }}
                 >
                   {done && (
@@ -523,6 +529,9 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, classNam
           })}
         </div>
       )}
+      {error && (
+        <p role="alert" className="mt-1.5 shrink-0 text-[11px] text-destructive">{error}</p>
+      )}
     </div>
   );
 }
@@ -533,7 +542,12 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, classNam
    a loss reads as half amber, half red, so a mixed day can never be mistaken
    for a single result. The net R keeps its own colour. */
 
-export function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEntry[]; r: number }[] }) {
+export function WeekStrip({ days, today }: {
+  days: { date: Date; trades: TradeJournalEntry[]; r: number }[];
+  /** Today's "yyyy-MM-dd" on the reader's clock. The desk passes the key it
+   *  hydrated with, so the server and the browser agree on which day is lit. */
+  today?: string;
+}) {
   return (
     <div className={cn(CARD_BASE, "flex h-full flex-col p-3 sm:p-4")}>
       <CardFx accent={TURQUOISE} />
@@ -557,7 +571,7 @@ export function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEn
           const ordered = inOrder(dt);
           const colors = ordered.map(resultColor);
           const netColor = netRColor(r);
-          const today = isToday(date);
+          const isCurrent = today ? format(date, "yyyy-MM-dd") === today : isToday(date);
           const shown = ordered.slice(0, 3);
           return (
             <Link
@@ -568,7 +582,7 @@ export function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEn
               className={cn(
                 "group/day relative flex flex-col items-center overflow-hidden rounded-lg border px-0.5 pb-2 pt-2 sm:rounded-xl sm:px-1 sm:pb-2.5 sm:pt-3",
                 "transition-all duration-300 ease-out hover:-translate-y-1",
-                today ? "border-primary/50" : "border-border/60"
+                isCurrent ? "border-primary/50" : "border-border/60"
               )}
               style={has ? { background: resultBands(ordered, 14) } : undefined}
             >
@@ -607,8 +621,8 @@ export function WeekStrip({ days }: { days: { date: Date; trades: TradeJournalEn
                 style={{ background: has ? `radial-gradient(120% 90% at 50% 100%, ${alpha(netColor, 18)}, transparent 65%)` : undefined }}
               />
 
-              <span className={cn("relative text-[10px] font-semibold uppercase tracking-wide", today ? "text-primary" : "text-muted-foreground/60")}>{format(date, "EEE")}</span>
-              <span className={cn("relative mt-0.5 text-base font-bold tabular-nums transition-transform duration-300 group-hover/day:scale-110 sm:text-lg", today ? "text-primary" : "text-foreground/85")}>
+              <span className={cn("relative text-[10px] font-semibold uppercase tracking-wide", isCurrent ? "text-primary" : "text-muted-foreground/60")}>{format(date, "EEE")}</span>
+              <span className={cn("relative mt-0.5 text-base font-bold tabular-nums transition-transform duration-300 group-hover/day:scale-110 sm:text-lg", isCurrent ? "text-primary" : "text-foreground/85")}>
                 {format(date, "d")}
               </span>
 

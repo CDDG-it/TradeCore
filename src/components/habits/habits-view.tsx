@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { computeHabitScore } from "@/lib/discipline";
-import { frequencyApplies } from "@/lib/habits";
+import { frequencyApplies, CATEGORY_ACCENT } from "@/lib/habits";
 import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { startOfDay, startOfWeek, eachDayOfInterval } from "date-fns";
@@ -78,12 +78,12 @@ function fade(color: string, a: number): string {
 
 /** Category identity, drawn from the product palette (no orange anywhere). */
 const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label: string; Icon: IconComponent }> = {
-  mindset:  { accent: "var(--primary)", bg: "color-mix(in oklch, var(--primary) 12%, transparent)", label: "Mindset",  Icon: Brain },
-  routine:  { accent: "var(--ice)",     bg: "color-mix(in oklch, var(--ice) 12%, transparent)",     label: "Routine",  Icon: Coffee },
-  research: { accent: "var(--win)",     bg: "color-mix(in oklch, var(--win) 12%, transparent)",     label: "Research", Icon: Search },
-  health:   { accent: "var(--loss)",    bg: "color-mix(in oklch, var(--loss) 12%, transparent)",    label: "Health",   Icon: Dumbbell },
-  review:   { accent: "var(--be)",      bg: "color-mix(in oklch, var(--be) 12%, transparent)",      label: "Review",   Icon: BookOpen },
-  other:    { accent: "var(--muted-foreground)", bg: "color-mix(in oklch, var(--muted-foreground) 12%, transparent)", label: "Other", Icon: Circle },
+  mindset:  { accent: CATEGORY_ACCENT.mindset,  bg: fade(CATEGORY_ACCENT.mindset, 0.12),  label: "Mindset",  Icon: Brain },
+  routine:  { accent: CATEGORY_ACCENT.routine,  bg: fade(CATEGORY_ACCENT.routine, 0.12),  label: "Routine",  Icon: Coffee },
+  research: { accent: CATEGORY_ACCENT.research, bg: fade(CATEGORY_ACCENT.research, 0.12), label: "Research", Icon: Search },
+  health:   { accent: CATEGORY_ACCENT.health,   bg: fade(CATEGORY_ACCENT.health, 0.12),   label: "Health",   Icon: Dumbbell },
+  review:   { accent: CATEGORY_ACCENT.review,   bg: fade(CATEGORY_ACCENT.review, 0.12),   label: "Review",   Icon: BookOpen },
+  other:    { accent: CATEGORY_ACCENT.other,    bg: fade(CATEGORY_ACCENT.other, 0.12),    label: "Other",    Icon: Circle },
 };
 
 /**
