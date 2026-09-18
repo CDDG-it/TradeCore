@@ -21,58 +21,44 @@ export function ProcessStack() {
   );
 }
 
-export function TradeComparison() {
-  return (
-    <div className="grid gap-5 md:grid-cols-2" aria-label="Two profitable trades requiring different reviews">
-      <article className="marketing-flip-card border border-[#cedce0] bg-white p-7 shadow-[0_20px_50px_rgba(10,35,45,.06)] sm:p-9">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#55717b]">A planned entry</p>
-        <p className="mt-10 font-display text-6xl font-semibold tracking-[-0.05em] text-[#0b1120]">+1.8R</p>
-        <div className="mt-10 border-t border-[#dce6e9] pt-5 text-sm leading-relaxed text-[#425864]"><p>Waited for confirmation.</p><p>Risk stayed inside the plan.</p></div>
-        <p className="mt-8 text-sm font-semibold text-[#087d74]">A decision worth repeating.</p>
-      </article>
-      <article className="marketing-flip-card border border-[#b8d9d6] bg-[#e4f3f1] p-7 shadow-[0_20px_50px_rgba(10,35,45,.06)] sm:p-9">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#0d756e]">An impulsive entry</p>
-        <p className="mt-10 font-display text-6xl font-semibold tracking-[-0.05em] text-[#0b1120]">+1.8R</p>
-        <div className="mt-10 border-t border-[#b8d9d6] pt-5 text-sm leading-relaxed text-[#244c53]"><p>Entered before confirmation.</p><p>Increased risk after a loss.</p></div>
-        <p className="mt-8 text-sm font-semibold text-[#0d625e]">A result that deserves a closer look.</p>
-      </article>
-    </div>
-  );
-}
-
 const scoreParts = [
-  { name: "Rule adherence", weight: 35, width: 82 },
-  { name: "Execution", weight: 20, width: 75 },
-  { name: "Habit consistency", weight: 20, width: 67 },
-  { name: "Reflection work", weight: 15, width: 71 },
-  { name: "Goal progress", weight: 10, width: 74 },
+  { name: "Rule adherence", weight: 35, color: "bg-[#174657]" },
+  { name: "Execution", weight: 20, color: "bg-[#0d817c]" },
+  { name: "Habit consistency", weight: 20, color: "bg-[#14b8a6]" },
+  { name: "Reflection work", weight: 15, color: "bg-[#06b6d4]" },
+  { name: "Goal progress", weight: 10, color: "bg-[#91dfd5]" },
 ] as const;
 
 export function MindscoreVisual() {
   return (
-    <div className="border border-[#cbdde0] bg-white p-7 shadow-[20px_20px_0_#dcebea] sm:p-10" aria-label="MC Mindscore combines rules, execution, habits, reflection and goal progress">
-      <div className="flex items-baseline justify-between gap-4 border-b border-[#d9e5e7] pb-6"><p className="text-sm font-semibold text-[#0b1120]">MC Mindscore</p><p className="text-xs text-[#55727a]">Five measurable parts</p></div>
-      <div className="mt-7 space-y-5">{scoreParts.map((part) => <div key={part.name}><div className="flex justify-between gap-4 text-sm"><span className="font-medium text-[#152e37]">{part.name}</span><span className="tabular-nums text-[#537079]">{part.weight}% weight</span></div><div className="mt-2 h-1.5 bg-[#e2eded]"><div className="h-full bg-[#14b8a6]" style={{ width: `${part.width}%` }} /></div></div>)}</div>
-      <p className="mt-8 border-t border-[#d9e5e7] pt-5 text-sm leading-relaxed text-[#526a72]">Each part comes from the work you log. The goal portion reflects progress against the time in each active goal window.</p>
+    <div className="relative overflow-hidden rounded-[32px] border border-[#cbdedf] bg-white p-7 shadow-[0_30px_75px_rgba(24,81,86,.10)] sm:p-10" aria-label="MC Mindscore weighting: rule adherence 35 percent, execution 20 percent, habit consistency 20 percent, reflection work 15 percent, goal progress 10 percent">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#c5f5ec]/50 blur-3xl" />
+      <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-[#dce9e8] pb-6"><p className="font-display text-2xl font-semibold tracking-[-0.04em] text-[#0b1120]">MC Mindscore</p><p className="text-sm text-[#527078]">How the score is built</p></div>
+      <div className="relative grid items-center gap-9 py-9 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] sm:gap-5">
+        <div className="marketing-score-wheel mx-auto grid h-48 w-48 place-items-center rounded-full sm:h-52 sm:w-52" aria-hidden="true"><div className="grid h-[72%] w-[72%] place-items-center rounded-full bg-white text-center shadow-[0_5px_20px_rgba(19,80,87,.08)]"><span className="font-display text-3xl font-semibold leading-none tracking-[-0.06em] text-[#102a37]">MC<span className="block mt-2 text-sm font-medium tracking-normal text-[#617983]">Mindscore</span></span></div></div>
+        <dl className="space-y-4">{scoreParts.map((part) => <div key={part.name} className="flex items-center gap-3"><span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${part.color}`} /><dt className="min-w-0 flex-1 text-sm font-medium text-[#253e48]">{part.name}</dt><dd className="font-display text-xl font-semibold tabular-nums tracking-[-0.04em] text-[#122e39]">{part.weight}%</dd></div>)}</dl>
+      </div>
+      <p className="relative border-t border-[#dce9e8] pt-5 text-sm leading-relaxed text-[#536e77]">Active goals are measured against their timeline. If a part has no measurable data, its weight is shared across the others.</p>
     </div>
   );
 }
 
-const reviewCards = [
-  { title: "Before the market", body: "Revisit recent wins and losses. Write what you will repeat, prevent and focus on today." },
-  { title: "After the market", body: "Record the best available trade and analyse what the session actually offered." },
-  { title: "At the end of the week", body: "Write a review of mistakes, lessons and the plan that will prevent a repeat." },
-  { title: "Across the month", body: "Read the monthly rollup of your weekly reviews to see which patterns persisted." },
-] as const;
-
 export function TherapistVisual() {
   return (
-    <div className="grid gap-3 sm:grid-cols-2" aria-label="Trade Therapist exercise and review sequence">
-      {reviewCards.map((card, index) => <article key={card.title} className={`marketing-review-card min-h-44 border border-white/15 p-6 shadow-[0_18px_36px_rgba(0,0,0,.18)] ${index === 1 ? "bg-[#173645] sm:translate-y-8" : index === 2 ? "bg-[#153145]" : "bg-[#16263a]"}`}>
-        <div className="mb-10 h-px w-12 bg-[#57d2c6]" />
-        <h3 className="font-display text-xl font-semibold tracking-tight text-white">{card.title}</h3>
-        <p className="mt-3 text-sm leading-relaxed text-[#adc3ce]">{card.body}</p>
-      </article>)}
+    <div className="overflow-hidden rounded-[32px] bg-[#102332] text-white shadow-[0_34px_90px_rgba(13,59,68,.20)]" aria-label="Trade Therapist exercise and review sequence">
+      <div className="grid lg:grid-cols-[1.18fr_0.82fr]">
+        <div className="relative min-h-[360px] overflow-hidden bg-[radial-gradient(circle_at_20%_20%,#174f53,transparent_65%)] p-8 sm:p-12 lg:p-16">
+          <div aria-hidden="true" className="absolute bottom-[-125px] right-[-100px] h-80 w-80 rounded-full border border-[#4caaa6]/25 shadow-[0_0_0_35px_rgba(73,170,166,.05),0_0_0_80px_rgba(73,170,166,.04)]" />
+          <p className="text-sm font-medium text-[#85d9d0]">Before the market</p>
+          <blockquote className="font-display relative mt-12 max-w-[590px] text-balance text-[clamp(2rem,3.4vw,3.5rem)] font-medium leading-[1.13] tracking-[-0.045em]">“What will I repeat from my best trade, and what will I interrupt from my worst?”</blockquote>
+          <p className="relative mt-12 max-w-md border-l-2 border-[#60c9bf] pl-5 text-sm leading-relaxed text-[#b5cfd0]">Start the session with a specific focus instead of a vague intention to do better.</p>
+        </div>
+        <div className="flex flex-col divide-y divide-white/10 bg-[#142b3b]">
+          <div className="flex-1 p-8 sm:p-10"><p className="text-sm font-medium text-[#85d9d0]">After the market</p><h3 className="font-display mt-5 text-2xl font-semibold tracking-[-0.035em]">Examine the session.</h3><p className="mt-3 max-w-sm text-sm leading-relaxed text-[#bed0d5]">Record the best available trade and analyse the decisions you actually made.</p></div>
+          <div className="flex-1 p-8 sm:p-10"><p className="text-sm font-medium text-[#85d9d0]">At the end of the week</p><h3 className="font-display mt-5 text-2xl font-semibold tracking-[-0.035em]">Write the lesson down.</h3><p className="mt-3 max-w-sm text-sm leading-relaxed text-[#bed0d5]">Review mistakes, progress and the plan you will take into the next week.</p></div>
+        </div>
+      </div>
+      <div className="flex flex-col gap-4 border-t border-white/10 bg-[#d9eeeb] px-8 py-8 text-[#173744] sm:flex-row sm:items-center sm:gap-10 sm:px-12"><p className="font-display shrink-0 text-xl font-semibold tracking-[-0.035em]">Across the month</p><p className="max-w-2xl text-sm leading-relaxed text-[#3d6068]">Your weekly reviews come together in a monthly overview, making recurring patterns easier to see. The overview is a summary, not another writing exercise.</p></div>
     </div>
   );
 }
@@ -80,8 +66,7 @@ export function TherapistVisual() {
 export function MarketContextVisual() {
   return (
     <div className="border-l-2 border-[#14b8a6] pl-6 sm:pl-8" aria-label="Illustrative market event planning prompt">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#4b737a]">Before the open</p>
-      <p className="mt-5 font-display text-3xl font-semibold leading-tight tracking-[-0.04em] text-[#0b1120] sm:text-4xl">Know the event.<br />Keep your plan.</p>
+      <p className="font-display text-3xl font-semibold leading-tight tracking-[-0.04em] text-[#0b1120] sm:text-4xl">Know the event.<br />Keep your plan.</p>
       <p className="mt-5 max-w-md text-base leading-relaxed text-[#587079]">Important market releases appear alongside your trading desk, where you prepare for the session.</p>
     </div>
   );

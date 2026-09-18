@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { eachDayOfInterval, endOfWeek, format, startOfWeek } from "date-fns";
 import { DashboardDesk } from "@/components/dashboard/dashboard-desk";
 import { ActiveCapitalCard, GoalsCard, HabitsCard, MindScoreOrb, WeekStrip, WinRateCard } from "@/components/dashboard/dashboard-cards";
@@ -60,10 +61,24 @@ const weekDays = eachDayOfInterval({ start: startOfWeek(sampleNow, { weekStartsO
 });
 
 export function LaptopDashboard() {
+  const screenRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState<number | null>(null);
+
+  useEffect(() => {
+    const screen = screenRef.current;
+    if (!screen) return;
+    const measure = () => setScale(screen.clientWidth / 980);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(screen);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <figure className="marketing-laptop mx-auto w-full min-w-0 max-w-[800px]" aria-label="The TradingMC dashboard layout with local illustrative data">
-      <div className="marketing-laptop-screen marketing-dashboard overflow-hidden rounded-t-[18px] border-[8px] border-[#263646] bg-[#0b1120] shadow-[0_36px_100px_rgba(0,0,0,.6)] sm:border-[10px]">
-        <div inert className="marketing-dashboard-inner h-[405px] min-w-[690px] overflow-hidden sm:h-[505px] sm:min-w-0">
+    <figure className="marketing-laptop mx-auto w-full min-w-0 max-w-[900px]" aria-label="The TradingMC dashboard layout with local illustrative data">
+      <div className="rounded-t-[20px] border-[8px] border-[#263646] bg-[#263646] shadow-[0_36px_100px_rgba(0,0,0,.6)] sm:border-[10px]">
+        <div ref={screenRef} className="marketing-laptop-screen marketing-dashboard relative aspect-[980/650] overflow-hidden rounded-t-[10px] bg-[#0b1120]">
+        <div inert className="marketing-dashboard-inner absolute left-0 top-0 h-[650px] w-[980px] overflow-hidden" style={{ transform: `scale(${scale ?? 1})`, transformOrigin: "top left", visibility: scale === null ? "hidden" : "visible" }}>
           <div className="flex h-12 items-center justify-between border-b border-white/10 bg-[#0b1120] px-4">
             {/* Match the icon used by the authenticated top navigation. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -71,7 +86,7 @@ export function LaptopDashboard() {
             <div className="flex gap-1">{PRIMARY_NAV.map((item) => <span key={item.href} className={`rounded-md px-2 py-1 text-[10px] font-semibold ${item.href === "/dashboard" ? "bg-[#1d4c52] text-white" : "text-[#7b91a0]"}`}>{item.label}</span>)}</div>
             <span className="grid h-6 w-6 place-items-center rounded-full bg-[#173b43] text-[9px] font-semibold text-white">AL</span>
           </div>
-          <div className="h-[calc(100%-3rem)] p-3">
+          <div className="flex h-[calc(100%-3rem)] flex-col p-3">
             <p className="mb-3 text-base font-bold text-white">Good morning, Alex</p>
             <DashboardDesk
               preview
@@ -84,9 +99,9 @@ export function LaptopDashboard() {
             />
           </div>
         </div>
+        </div>
       </div>
       <div className="relative mx-auto h-3 w-[108%] -translate-x-[4%] rounded-b-[50%] bg-gradient-to-b from-[#758391] via-[#3a4652] to-[#19232f] shadow-[0_25px_42px_rgba(0,0,0,.4)]" />
-      <figcaption className="mt-6 text-center text-[11px] tracking-[0.08em] text-[#9eb9bc]">REAL DASHBOARD COMPONENTS · ILLUSTRATIVE DATA</figcaption>
     </figure>
   );
 }
