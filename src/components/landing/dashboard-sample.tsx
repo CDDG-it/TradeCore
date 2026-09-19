@@ -8,48 +8,10 @@ import { computeMindScore } from "@/lib/mind-score/mind-score";
 import { computeGoalProgress } from "@/lib/goals/goals";
 import { tradeR } from "@/lib/journal/weeks";
 import { PRIMARY_NAV } from "@/lib/nav";
-import type { Habit, HabitCompletion, TradeJournalEntry, TradingGoal } from "@/lib/types";
+import { sampleDashboardData } from "@/lib/dashboard/sample";
 
 const sampleNow = new Date("2026-09-17T12:00:00");
-const stamp = "2026-09-17T12:00:00";
-const discipline = {
-  followed_plan: true, traded_in_session: true, respected_risk: true,
-  respected_max_trades: true, matched_a_plus: true, no_impulsive_entry: true,
-  no_revenge_trade: true, respected_stop_loss: true, journal_completed: true,
-  score: 89, notes: "Waited for the planned level.",
-};
-
-function sampleTrade(id: string, day: string, result: TradeJournalEntry["result"], rr: number, quality: "good" | "bad"): TradeJournalEntry {
-  return {
-    id, user_id: "sample", date_time: day, instrument: "ES", market: "futures", session: "New York",
-    timeframe: "15m", direction: "long", confluences: ["Planned level"], rr, result,
-    screenshot_groups: [], execution_notes: "Sample journal entry", psychology_notes: "", mistakes: "", lessons: "",
-    execution_quality: quality, discipline: { ...discipline, score: quality === "good" ? 89 : 61 },
-    created_at: stamp, updated_at: stamp,
-  };
-}
-
-const trades = [
-  sampleTrade("sample-mon", "2026-09-14", "win", 1.8, "good"),
-  sampleTrade("sample-tue", "2026-09-15", "loss", 1, "bad"),
-  sampleTrade("sample-wed", "2026-09-16", "win", 2.3, "good"),
-  sampleTrade("sample-thu", "2026-09-17", "win", 1.4, "good"),
-];
-const habits: Habit[] = [
-  { id: "plan", user_id: "sample", name: "Write the session plan", category: "routine", frequency: "weekdays", target_days: 5, color: "#14b8a6", icon: "", created_at: "2026-09-01T12:00:00", updated_at: stamp },
-  { id: "review", user_id: "sample", name: "Review the last trade", category: "review", frequency: "weekdays", target_days: 5, color: "#06b6d4", icon: "", created_at: "2026-09-01T12:00:00", updated_at: stamp },
-  { id: "pause", user_id: "sample", name: "Pause after a loss", category: "mindset", frequency: "weekdays", target_days: 5, color: "#14b8a6", icon: "", created_at: "2026-09-01T12:00:00", updated_at: stamp },
-];
-const completions: HabitCompletion[] = [
-  ...["14", "15", "16", "17"].map((day) => ({ id: `plan-${day}`, habit_id: "plan", date: `2026-09-${day}`, completed: true })),
-  ...["14", "16", "17"].map((day) => ({ id: `review-${day}`, habit_id: "review", date: `2026-09-${day}`, completed: true })),
-  ...["15", "17"].map((day) => ({ id: `pause-${day}`, habit_id: "pause", date: `2026-09-${day}`, completed: true })),
-];
-const goals: TradingGoal[] = [{
-  id: "sample-goal", user_id: "sample", title: "Follow the entry plan", metric: "execution_rate",
-  baseline: 50, target: 85, start_date: "2026-09-01", end_date: "2026-09-30",
-  created_at: stamp, updated_at: stamp,
-}];
+const { trades, habits, completions, goals } = sampleDashboardData(sampleNow);
 const mindScore = computeMindScore({
   now: sampleNow, trades, habits, completions, goals,
   psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [], adherenceLogs: [],

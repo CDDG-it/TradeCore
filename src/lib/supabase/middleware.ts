@@ -80,7 +80,9 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === "/coming-soon" ||
     request.nextUrl.pathname === "/pricing" ||
     request.nextUrl.pathname.startsWith("/features/") ||
-    request.nextUrl.pathname.startsWith("/api/");
+    request.nextUrl.pathname.startsWith("/api/") ||
+    // Dev-only preview of signed-in screens with sample data (see app/(app)/preview).
+    (process.env.NODE_ENV !== "production" && request.nextUrl.pathname.startsWith("/preview/"));
 
   if (!user && !isAuthPage && !isPublicPage) {
     const url = request.nextUrl.clone();
