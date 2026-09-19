@@ -884,72 +884,66 @@ html:has(.marketing-page) { position: relative; }
 }
 
 .marketing-light-flow {
-  background:
-    radial-gradient(ellipse 65% 16% at 88% 9%, rgba(20, 184, 166, 0.08), transparent 83%),
-    radial-gradient(ellipse 70% 20% at 6% 63%, rgba(6, 182, 212, 0.055), transparent 85%),
-    linear-gradient(180deg, #f5faf9 0%, #f8fcfb 16%, #fff 30%, #f7fbfa 43%, #edf7f6 58%, #f8fbfa 76%, #eff8f6 100%);
+  background: #f7fbfa;
 }
 
-.marketing-transition {
+.marketing-gradient-bridge {
   position: relative;
-  height: clamp(320px, 44vw, 540px);
+  height: clamp(112px, 14vw, 190px);
   overflow: hidden;
-  isolation: isolate;
   pointer-events: none;
 }
 
-.marketing-transition--light {
+.marketing-gradient-bridge--light {
   background:
-    radial-gradient(ellipse 46% 58% at 74% 49%, rgba(12, 164, 160, .13), transparent 82%),
-    linear-gradient(180deg, #0b1120 0%, #111b2b 14%, #16313c 30%, #28545d 46%, #5d898a 62%, #a7c8c5 80%, #e0efec 92%, #f5faf9 100%);
+    radial-gradient(ellipse 52% 110% at 72% 32%, rgba(20, 184, 166, 0.14), transparent 72%),
+    linear-gradient(180deg, #0b1120 0%, #152734 31%, #668f90 67%, #d7e9e6 88%, #f2f8f7 100%);
 }
 
-.marketing-transition--dark {
+.marketing-gradient-bridge--dark {
   background:
-    radial-gradient(ellipse 55% 55% at 30% 53%, rgba(6, 182, 212, .11), transparent 82%),
-    linear-gradient(180deg, #eff8f6 0%, #dcecea 10%, #9fbfbd 24%, #5d898a 40%, #28545d 57%, #16313c 72%, #111b2b 86%, #0b1120 100%);
+    radial-gradient(ellipse 55% 110% at 28% 42%, rgba(6, 182, 212, 0.10), transparent 74%),
+    linear-gradient(180deg, #f2f8f7 0%, #d7e9e6 13%, #668f90 36%, #294954 61%, #152734 80%, #0b1120 100%);
 }
 
-.marketing-transition-art {
-  position: absolute;
-  top: 48%;
-  translate: 0 -50%;
-  z-index: 1;
-  mix-blend-mode: screen;
+.marketing-section {
+  position: relative;
+  isolation: isolate;
 }
 
-.marketing-transition-art--candles {
-  right: max(5%, calc((100vw - 1260px) / 2));
-  width: min(72vw, 430px);
-  aspect-ratio: 1;
-  mask-image: radial-gradient(ellipse 58% 58% at 52% 48%, black 28%, transparent 78%);
-}
-
-.marketing-transition-art--tunnel {
-  left: max(4%, calc((100vw - 1260px) / 2));
-  width: min(82vw, 610px);
-  aspect-ratio: 502 / 282;
-  mask-image: radial-gradient(ellipse 62% 58% at 45% 50%, black 25%, transparent 80%);
-}
-
-.marketing-transition-reference,
-.marketing-transition-overlay {
+.marketing-section::before {
+  content: "";
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  z-index: -1;
+  pointer-events: none;
 }
 
-.marketing-transition-reference { background-size: cover; background-position: center; }
-.marketing-transition-art--candles .marketing-transition-reference {
-  background-image: url('/marketing/candles-neon-reference.png');
-  filter: hue-rotate(-105deg) saturate(.9) contrast(1.4) brightness(.88);
-  opacity: .72;
+.marketing-section::after {
+  content: "";
+  position: absolute;
+  inset: auto max(24px, calc((100vw - 1260px) / 2)) 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(93, 137, 138, 0.32) 18%, rgba(93, 137, 138, 0.32) 82%, transparent);
 }
-.marketing-transition-art--tunnel .marketing-transition-reference {
-  background-image: url('/marketing/market-tunnel-reference.png');
-  filter: saturate(.55) contrast(1.35) brightness(.9);
-  opacity: .72;
+
+.marketing-section--mist::before {
+  background:
+    radial-gradient(ellipse 52% 38% at 86% 18%, rgba(20, 184, 166, 0.08), transparent 78%),
+    linear-gradient(180deg, #f2f8f7 0%, #f7fbfa 13%, #f7fbfa 87%, #f1f8f6 100%);
+}
+
+.marketing-section--white::before {
+  background:
+    radial-gradient(ellipse 45% 28% at 8% 78%, rgba(6, 182, 212, 0.045), transparent 82%),
+    linear-gradient(180deg, #f1f8f6 0%, #ffffff 12%, #ffffff 88%, #eef7f5 100%);
+}
+
+.marketing-section--tint::before {
+  background:
+    radial-gradient(ellipse 55% 35% at 92% 20%, rgba(20, 184, 166, 0.10), transparent 80%),
+    linear-gradient(180deg, #eef7f5 0%, #e6f3f1 14%, #e6f3f1 86%, #f2f8f7 100%);
 }
 
 .marketing-grid {

@@ -91,8 +91,9 @@ function PeriodToggle({ value, onChange, accent }: {
    the goals and the plans. */
 const METER_BARS = 22;
 
-export function MindScoreOrb({ score, period, onPeriodChange, className }: {
+export function MindScoreOrb({ score, period, onPeriodChange, className, compactNumbers = false }: {
   score: MindScore | null; period: Period; onPeriodChange: (p: Period) => void; className?: string;
+  compactNumbers?: boolean;
 }) {
   const pending = score?.pending ?? false;
   const target = score?.total ?? 0;
@@ -138,7 +139,7 @@ export function MindScoreOrb({ score, period, onPeriodChange, className }: {
         {/* On a laptop the band label moves up beside the number instead of
             sitting under it, which is most of the height this card has to find. */}
         <div className="shrink-0 short:flex short:items-baseline short:gap-2">
-          <p className="text-[40px] font-black leading-none tabular-nums short:text-[28px]" style={{ color }}>
+          <p className={cn("font-black leading-none tabular-nums", compactNumbers ? "text-[34px] short:text-[24px]" : "text-[40px] short:text-[28px]")} style={{ color }}>
             {pending ? "·" : hasData ? display : "-"}
           </p>
           <p className="mt-1 text-[11px] font-medium short:mt-0" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
@@ -196,10 +197,11 @@ const GOAL_STATE: Record<GoalProgress["state"], { color: string; word: string }>
   "no-data": { color: "var(--muted-foreground)", word: "Not started" },
 };
 
-export function GoalsCard({ goals, progress, className }: {
+export function GoalsCard({ goals, progress, className, compactNumbers = false }: {
   goals: TradingGoal[];
   progress: { goal: TradingGoal; p: GoalProgress }[];
   className?: string;
+  compactNumbers?: boolean;
 }) {
   const shown = progress.slice(0, 3);
 
@@ -242,7 +244,7 @@ export function GoalsCard({ goals, progress, className }: {
                     <span className="min-w-0 truncate text-[11px] font-semibold text-foreground/85">
                       {meta.label}
                     </span>
-                    <span className="shrink-0 text-[11px] font-bold tabular-nums" style={{ color: tone.color }}>
+                    <span className={cn("shrink-0 font-bold tabular-nums", compactNumbers ? "text-[10px]" : "text-[11px]")} style={{ color: tone.color }}>
                       {formatGoalValue(goal.metric, p.current)}
                       <span className="font-medium text-muted-foreground/60"> / {formatGoalValue(goal.metric, goal.target)}</span>
                     </span>
@@ -265,7 +267,7 @@ export function GoalsCard({ goals, progress, className }: {
                   </div>
                   <p className="mt-0.5 flex items-baseline justify-between gap-2 text-[10px] leading-tight text-muted-foreground/70">
                     <span className="min-w-0 truncate" style={{ color: tone.color }}>{tone.word}</span>
-                    <span className="shrink-0 tabular-nums">
+                    <span className={cn("shrink-0 tabular-nums", compactNumbers && "text-[9px]")}>
                       {p.closed ? "window closed" : p.daysLeft === 0 ? "last day" : `${p.daysLeft} ${p.daysLeft === 1 ? "day" : "days"} left`}
                     </span>
                   </p>
@@ -286,10 +288,11 @@ export function GoalsCard({ goals, progress, className }: {
 }
 
 /* ── Win rate: hero donut of the month's W/L/BE split + net R ─────────── */
-export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec, period, onPeriodChange, className }: {
+export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec, period, onPeriodChange, className, compactNumbers = false }: {
   winRate: number | null; wins: number; losses: number; be: number; total: number; netR: number;
   goodExec: number; badExec: number;
   period: Period; onPeriodChange: (p: Period) => void; className?: string;
+  compactNumbers?: boolean;
 }) {
   const rColor = netR > 0 ? GREEN : netR < 0 ? RED : "var(--muted-foreground)";
   const ratedExec = goodExec + badExec;
@@ -363,7 +366,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {/* Tracks the ring's own scale, so the figure never crowds a small ring. */}
-            <p className="text-[clamp(18px,2.6vh,28px)] font-black tabular-nums leading-none" style={{ color: CYAN }}>
+            <p className={cn("font-black tabular-nums leading-none", compactNumbers ? "text-[clamp(16px,2.2vh,24px)]" : "text-[clamp(18px,2.6vh,28px)]")} style={{ color: CYAN }}>
               {winRate === null ? "-" : `${display}%`}
             </p>
             <p className="text-[clamp(8px,1vh,9px)] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
@@ -384,7 +387,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
             key={s.label}
             className="group/chip relative rounded-lg border border-border/50 bg-muted/20 px-2 py-1 text-center transition-transform duration-300 hover:-translate-y-px"
           >
-            <p className="relative z-10 text-base font-black tabular-nums leading-none" style={{ color: s.color }}>{s.value}</p>
+            <p className={cn("relative z-10 font-black tabular-nums leading-none", compactNumbers ? "text-sm" : "text-base")} style={{ color: s.color }}>{s.value}</p>
             <p className="relative z-10 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">{s.label}</p>
             {/* Hover glow ring */}
             <div
@@ -402,7 +405,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
       <div className="mt-1.5 rounded-xl border border-border/60 bg-muted/25 px-3 py-1.5 space-y-1">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Net R · {PERIOD_LABEL[period]}</span>
-          <span className="text-lg font-black tabular-nums leading-none" style={{ color: rColor }}>
+          <span className={cn("font-black tabular-nums leading-none", compactNumbers ? "text-base" : "text-lg")} style={{ color: rColor }}>
             {netR > 0 ? "+" : ""}{netR.toFixed(1)}R
           </span>
         </div>
@@ -416,7 +419,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
               </>
             )}
           </div>
-          <span className="shrink-0 text-sm font-black tabular-nums" style={{ color: goodPct === null ? "var(--muted-foreground)" : GREEN }}>
+          <span className={cn("shrink-0 font-black tabular-nums", compactNumbers ? "text-xs" : "text-sm")} style={{ color: goodPct === null ? "var(--muted-foreground)" : GREEN }}>
             {goodPct === null ? "-" : `${goodPct}%`}
           </span>
           <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">{goodExec}G · {badExec}B</span>
@@ -430,8 +433,9 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
   );
 }
 
-export function ActiveCapitalCard({ capital, count, hidden, onToggle, className }: {
+export function ActiveCapitalCard({ capital, count, hidden, onToggle, className, compactNumbers = false }: {
   capital: number; count: number; hidden: boolean; onToggle: () => void; className?: string;
+  compactNumbers?: boolean;
 }) {
   return (
     <div className={cn(CARD_BASE, "flex flex-col justify-center p-3 sm:px-4 sm:py-3", className)}>
@@ -443,7 +447,7 @@ export function ActiveCapitalCard({ capital, count, hidden, onToggle, className 
           {hidden ? "Show" : "Hide"}
         </button>
       </div>
-      <p className="text-xl font-black tabular-nums leading-none mt-1.5" style={{ color: TURQUOISE }}>
+      <p className={cn("font-black tabular-nums leading-none mt-1.5", compactNumbers ? "text-lg" : "text-xl")} style={{ color: TURQUOISE }}>
         {capital > 0 ? mask(`$${capital.toLocaleString("en-US")}`, hidden) : "-"}
       </p>
       <div className="mt-1.5 flex items-center justify-between">
@@ -542,11 +546,12 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, c
    a loss reads as half amber, half red, so a mixed day can never be mistaken
    for a single result. The net R keeps its own colour. */
 
-export function WeekStrip({ days, today }: {
+export function WeekStrip({ days, today, compactNumbers = false }: {
   days: { date: Date; trades: TradeJournalEntry[]; r: number }[];
   /** Today's "yyyy-MM-dd" on the reader's clock. The desk passes the key it
    *  hydrated with, so the server and the browser agree on which day is lit. */
   today?: string;
+  compactNumbers?: boolean;
 }) {
   return (
     <div className={cn(CARD_BASE, "flex h-full flex-col p-3 sm:p-4")}>
@@ -554,7 +559,7 @@ export function WeekStrip({ days, today }: {
       <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3">
         <div className="flex min-w-0 items-baseline gap-2">
           <p className="whitespace-nowrap text-[13px] font-semibold sm:text-sm">This week</p>
-          <span className="truncate text-[11px] tabular-nums text-muted-foreground/70">
+          <span className={cn("truncate tabular-nums text-muted-foreground/70", compactNumbers ? "text-[10px]" : "text-[11px]")}>
             {format(days[0].date, "MMM d")} - {format(days[6].date, "MMM d")}
           </span>
         </div>
@@ -622,13 +627,13 @@ export function WeekStrip({ days, today }: {
               />
 
               <span className={cn("relative text-[10px] font-semibold uppercase tracking-wide", isCurrent ? "text-primary" : "text-muted-foreground/60")}>{format(date, "EEE")}</span>
-              <span className={cn("relative mt-0.5 text-base font-bold tabular-nums transition-transform duration-300 group-hover/day:scale-110 sm:text-lg", isCurrent ? "text-primary" : "text-foreground/85")}>
+              <span className={cn("relative mt-0.5 font-bold tabular-nums transition-transform duration-300 group-hover/day:scale-110", compactNumbers ? "text-sm sm:text-base" : "text-base sm:text-lg", isCurrent ? "text-primary" : "text-foreground/85")}>
                 {format(date, "d")}
               </span>
 
               {has ? (
                 <span className="relative mt-1 flex items-center gap-1">
-                  <span className="text-[13px] font-black tabular-nums transition-transform duration-300 group-hover/day:scale-105" style={{ color: netColor }}>
+                  <span className={cn("font-black tabular-nums transition-transform duration-300 group-hover/day:scale-105", compactNumbers ? "text-[11px]" : "text-[13px]")} style={{ color: netColor }}>
                     {r > 0 ? "+" : ""}{r.toFixed(1)}R
                   </span>
                   {dt.length > 1 && (
@@ -655,7 +660,7 @@ export function WeekStrip({ days, today }: {
                       >
                         <div className="flex items-baseline justify-between gap-1">
                           <p className="truncate text-[10px] font-bold text-foreground">{instrumentName(t.instrument)}</p>
-                          <p className="shrink-0 text-[10px] font-black tabular-nums" style={{ color: c }}>
+                          <p className={cn("shrink-0 font-black tabular-nums", compactNumbers ? "text-[9px]" : "text-[10px]")} style={{ color: c }}>
                             {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
                           </p>
                         </div>

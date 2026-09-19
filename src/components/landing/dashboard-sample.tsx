@@ -90,11 +90,11 @@ export function LaptopDashboard() {
             <p className="mb-3 text-base font-bold text-white">Good morning, Alex</p>
             <DashboardDesk
               preview
-              capital={<><ActiveCapitalCard capital={52840} count={2} hidden={false} onToggle={() => {}} /><HabitsCard habits={habits} doneToday={new Set(["plan", "review", "pause"])} pendingHabit={null} onToggle={() => {}} className="min-h-0 flex-1" /></>}
-              winRate={<WinRateCard winRate={75} wins={3} losses={1} be={0} total={4} netR={4.5} goodExec={3} badExec={1} period="week" onPeriodChange={() => {}} className="h-full" />}
-              journal={<WeekStrip days={weekDays} />}
-              mindScore={<MindScoreOrb score={mindScore} period="week" onPeriodChange={() => {}} className="shrink-0" />}
-              goals={<GoalsCard goals={goals} progress={goalProgress} className="min-h-0 flex-1" />}
+              capital={<><ActiveCapitalCard capital={52840} count={2} hidden={false} onToggle={() => {}} compactNumbers /><HabitsCard habits={habits} doneToday={new Set(["plan", "review", "pause"])} pendingHabit={null} onToggle={() => {}} className="min-h-0 flex-1" /></>}
+              winRate={<WinRateCard winRate={75} wins={3} losses={1} be={0} total={4} netR={4.5} goodExec={3} badExec={1} period="week" onPeriodChange={() => {}} compactNumbers className="h-full" />}
+              journal={<WeekStrip days={weekDays} compactNumbers />}
+              mindScore={<MindScoreOrb score={mindScore} period="week" onPeriodChange={() => {}} compactNumbers className="shrink-0" />}
+              goals={<GoalsCard goals={goals} progress={goalProgress} compactNumbers className="min-h-0 flex-1" />}
               news={<div className="rounded-2xl border border-white/10 bg-[#131b2e] p-4 text-[11px] text-white"><p className="font-semibold uppercase tracking-wider text-[#8198a7]">This week&apos;s news</p><p className="mt-3 font-semibold">US macro releases</p><p className="mt-1 text-[#9eb1bd]">Check the calendar before the open.</p></div>}
             />
           </div>
