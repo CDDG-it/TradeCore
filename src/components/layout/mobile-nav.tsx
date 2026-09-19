@@ -4,16 +4,20 @@ import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Brain, HeartPulse, Globe, type LucideIcon } from "lucide-react";
+import { Home, Brain, HeartPulse, Globe, Plus, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/lib/nav";
 
 /**
- * Phone navigation, built the way every app on the home screen does it:
- * a fixed tab bar pinned to the bottom of the viewport, thumb-height, with the
- * profile living top-right in the header instead of behind a hamburger.
+ * Phone navigation, the way the apps next to it on the home screen do it: a
+ * fixed bar of icons pinned to the bottom, no labels, a raised "create" pill in
+ * the middle that logs a trade. Icons carry the meaning; the selected one is
+ * drawn heavier and brighter with a dot beneath it, and the link's accessible
+ * name carries the label a screen reader needs.
  *
- * Desktop is untouched: everything here is `lg:hidden`.
+ * Switching tabs happens dozens of times a day, so it does not animate: the
+ * only motion is the press itself. Desktop is untouched: everything here is
+ * `lg:hidden`.
  */
 
 const ICONS: Record<string, LucideIcon> = {
@@ -29,7 +33,7 @@ const ICONS: Record<string, LucideIcon> = {
  * are in them rather than leaving no tab selected at all.
  */
 const ALSO_UNDER: Record<string, string[]> = {
-  "/dashboard": ["/journal", "/analysis", "/analytics", "/accounts"],
+  "/dashboard": ["/journal", "/analysis", "/analytics", "/accounts", "/preview/dashboard"],
 };
 
 const isActive = (pathname: string, href: string) =>
@@ -37,48 +41,66 @@ const isActive = (pathname: string, href: string) =>
   pathname.startsWith(href + "/") ||
   (ALSO_UNDER[href] ?? []).some((p) => pathname === p || pathname.startsWith(p + "/"));
 
+function TabIcon({ tab, active }: { tab: (typeof PRIMARY_NAV)[number]; active: boolean }) {
+  const Icon = ICONS[tab.href] ?? Home;
+  return (
+    <Link
+      href={tab.href}
+      aria-label={tab.label}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "mobile-tab relative flex h-full flex-col items-center justify-center",
+        active ? "text-foreground" : "text-foreground/55"
+      )}
+    >
+      <Icon
+        className="h-[26px] w-[26px]"
+        strokeWidth={active ? 2.4 : 1.7}
+        // The selected icon fills in, the way the home-screen apps mark their tab.
+        fill={active ? "color-mix(in oklch, var(--primary) 28%, transparent)" : "none"}
+      />
+      <span
+        aria-hidden
+        className={cn("mt-1.5 h-1 w-1 rounded-full bg-primary transition-opacity duration-150", active ? "opacity-100" : "opacity-0")}
+      />
+    </Link>
+  );
+}
+
 export function BottomNav() {
   const pathname = usePathname();
+  const [first, second, ...rest] = PRIMARY_NAV;
 
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 lg:hidden border-t border-sidebar-border"
+      className="fixed inset-x-0 bottom-0 z-40 lg:hidden border-t border-sidebar-border/60"
       style={{
         background: "var(--nav-bg)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="grid h-14 grid-cols-4">
-        {PRIMARY_NAV.map((tab) => {
-          const Icon = ICONS[tab.href] ?? Home;
-          const active = isActive(pathname, tab.href);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "relative flex flex-col items-center justify-center gap-1 transition-colors",
-                active ? "text-primary" : "text-sidebar-foreground/50"
-              )}
-            >
-              {active && (
-                <span
-                  aria-hidden
-                  className="absolute inset-x-5 top-0 h-0.5 rounded-full"
-                  style={{ background: "linear-gradient(90deg, var(--primary), var(--ice))" }}
-                />
-              )}
-              <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.4 : 1.9} />
-              <span className="text-[10px] font-semibold leading-none tracking-tight">
-                {tab.short ?? tab.label}
-              </span>
-            </Link>
-          );
-        })}
+      <div className="mx-auto grid h-14 max-w-md grid-cols-5 items-stretch px-2">
+        {[first, second].map((tab) => <TabIcon key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
+        <Link
+          href="/journal/new"
+          aria-label="Log trade"
+          className="mobile-tab mobile-tab-create flex items-center justify-center"
+        >
+          <span
+            aria-hidden
+            className="grid h-8 w-12 place-items-center rounded-xl text-white"
+            style={{
+              background: "linear-gradient(135deg, var(--primary) 0%, var(--ice) 100%)",
+              boxShadow: "0 6px 18px color-mix(in oklch, var(--primary) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.25)",
+            }}
+          >
+            <Plus className="h-5 w-5" strokeWidth={2.6} />
+          </span>
+        </Link>
+        {rest.map((tab) => <TabIcon key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
       </div>
     </nav>
   );

@@ -794,6 +794,18 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   }
 }
 
+/* Phone tab bar: the press is the only motion. The icon shrinks under the thumb
+   and springs back; the create pill presses a touch deeper. */
+.mobile-tab > * {
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.mobile-tab:active > * {
+  transform: scale(0.88);
+}
+.mobile-tab-create:active > * {
+  transform: scale(0.92);
+}
+
 /* A page that is built as a fixed desk (Global Markets) keeps that shape on a
    phone: it takes exactly what the top nav, the gutter and the bottom bars
    leave, and scrolls inside its own panes. */
