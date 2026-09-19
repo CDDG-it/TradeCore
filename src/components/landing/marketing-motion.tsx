@@ -1,7 +1,7 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
-import { motion, useReducedMotion, type Transition } from "motion/react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
+import { motion, useInView, useReducedMotion, type Transition } from "motion/react";
 
 /**
  * Shared motion vocabulary for the public page. Every reveal on the page uses
@@ -147,7 +147,11 @@ export function PinReveal({ children, className, style, delay = 0, origin = "cen
   );
 }
 
-/** Text that writes itself in, left to right. Progress is linear; nothing eases while you type. */
+/**
+ * Text that writes itself in, left to right. Progress is linear; nothing eases
+ * while you type. The clip lives on an inner box: an element clipped to nothing
+ * never intersects the viewport, so the unclipped wrapper is what gets observed.
+ */
 export function WriteIn({ children, className, delay = 0, duration = 1.1 }: {
   children: ReactNode;
   className?: string;
@@ -155,17 +159,21 @@ export function WriteIn({ children, className, delay = 0, duration = 1.1 }: {
   duration?: number;
 }) {
   const reduceMotion = useReducedMotion();
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.5 });
+  const hidden = reduceMotion ? { opacity: 0, clipPath: "inset(0 0% 0 0)" } : { opacity: 1, clipPath: "inset(0 100% 0 0)" };
 
   return (
-    <motion.span
-      className={`inline-block ${className ?? ""}`}
-      initial={{ opacity: reduceMotion ? 0 : 1, clipPath: reduceMotion ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)" }}
-      whileInView={{ opacity: 1, clipPath: "inset(0 0% 0 0)" }}
-      viewport={viewport}
-      transition={{ duration, delay, ease: "linear" }}
-    >
-      {children}
-    </motion.span>
+    <span ref={ref} className={className}>
+      <motion.span
+        className="inline-block"
+        initial={hidden}
+        animate={inView ? { opacity: 1, clipPath: "inset(0 0% 0 0)" } : hidden}
+        transition={{ duration, delay, ease: "linear" }}
+      >
+        {children}
+      </motion.span>
+    </span>
   );
 }
 

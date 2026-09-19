@@ -76,19 +76,26 @@ const bestCandles: readonly Candle[] = [
 const UP = "#22c55e";
 const DOWN = "#ef4444";
 
-function CandleChart({ candles, delay }: { candles: readonly Candle[]; delay: number }) {
+/** Maps a price to a vertical percentage so each chart fills its box, with room above and below for labels. */
+function priceScale(candles: readonly Candle[]) {
+  const low = Math.min(...candles.map((candle) => candle[2]));
+  const high = Math.max(...candles.map((candle) => candle[1]));
+  return (price: number) => 12 + ((high - price) / (high - low)) * 60;
+}
+
+function CandleChart({ candles, delay, toY }: { candles: readonly Candle[]; delay: number; toY: (price: number) => number }) {
   return (
     <div className="absolute inset-0 flex items-stretch gap-[3px] sm:gap-1" aria-hidden="true">
       {candles.map(([open, high, low, close], index) => {
         const up = close >= open;
         const color = up ? UP : DOWN;
-        const bodyTop = 100 - Math.max(open, close);
-        const bodyHeight = Math.max(Math.abs(close - open), 1.2);
+        const bodyTop = toY(Math.max(open, close));
+        const bodyHeight = Math.max(toY(Math.min(open, close)) - bodyTop, 1.5);
         return (
           <div key={index} className="relative flex-1">
             {/* Each candle pops from its own body, so the chart prints left to right. */}
-            <PinReveal delay={delay + index * 0.07} origin={`center ${100 - (open + close) / 2}%`} className="absolute inset-0">
-              <span className="absolute left-1/2 w-px -translate-x-1/2" style={{ top: `${100 - high}%`, height: `${high - low}%`, backgroundColor: color, opacity: 0.8 }} />
+            <PinReveal delay={delay + index * 0.07} origin={`center ${toY((open + close) / 2)}%`} className="absolute inset-0">
+              <span className="absolute left-1/2 w-px -translate-x-1/2" style={{ top: `${toY(high)}%`, height: `${toY(low) - toY(high)}%`, backgroundColor: color, opacity: 0.8 }} />
               <span className="absolute left-[16%] right-[16%] rounded-[2px]" style={{ top: `${bodyTop}%`, height: `${bodyHeight}%`, backgroundColor: color }} />
             </PinReveal>
           </div>
@@ -99,24 +106,24 @@ function CandleChart({ candles, delay }: { candles: readonly Candle[]; delay: nu
 }
 
 /** A horizontal price line with a label at the right edge. `price` is on the same 0-100 scale as the candles. */
-function PriceLine({ price, color, label, delay, dashed = true }: { price: number; color: string; label: string; delay: number; dashed?: boolean }) {
+function PriceLine({ y, color, label, delay, dashed = true }: { y: number; color: string; label: string; delay: number; dashed?: boolean }) {
   return (
-    <div className="absolute inset-x-0 flex items-center" style={{ top: `${100 - price}%` }} aria-hidden="true">
+    <div className="absolute inset-x-0 flex items-center" style={{ top: `${y}%` }} aria-hidden="true">
       <DrawLine axis="x" delay={delay} duration={0.6} className="block h-px flex-1" style={{ background: dashed ? `repeating-linear-gradient(90deg, ${color}bf 0 5px, transparent 5px 10px)` : `${color}bf` }} />
       <PinReveal delay={delay + 0.35} origin="left center" className="ml-2 shrink-0">
-        <span className="block rounded-md px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.1em] sm:text-[10px]" style={{ backgroundColor: `${color}22`, color }}>{label}</span>
+        <span className="block max-w-[3.5rem] rounded-md px-1.5 py-0.5 text-[9px] font-semibold leading-tight tracking-[0.08em] sm:max-w-[4rem]" style={{ backgroundColor: `${color}22`, color }}>{label}</span>
       </PinReveal>
     </div>
   );
 }
 
 /** A marker pinned to a candle, with its note above or below. `index` is the candle position. */
-function TradeMarker({ index, count, price, color, title, note, delay, side }: {
-  index: number; count: number; price: number; color: string; title: string; note: string; delay: number; side: "above" | "below";
+function TradeMarker({ index, count, y, color, title, note, delay, side }: {
+  index: number; count: number; y: number; color: string; title: string; note: string; delay: number; side: "above" | "below";
 }) {
   const left = `${((index + 0.5) / count) * 100}%`;
   return (
-    <PinReveal delay={delay} origin={side === "above" ? "center bottom" : "center top"} className={`absolute -translate-x-1/2 ${side === "above" ? "-translate-y-full" : ""}`} style={{ left, top: `${100 - price}%`, marginTop: side === "above" ? "-8px" : "8px" }}>
+    <PinReveal delay={delay} origin={side === "above" ? "center bottom" : "center top"} className={`absolute -translate-x-1/2 ${side === "above" ? "-translate-y-full" : ""}`} style={{ left, top: `${y}%`, marginTop: side === "above" ? "-6px" : "6px" }}>
       {side === "below" && <span className="mx-auto mb-1.5 block h-2.5 w-2.5 rounded-full border-2 border-[#0d1c29]" style={{ backgroundColor: color, boxShadow: `0 0 0 2px ${color}66` }} />}
       <div className="whitespace-nowrap rounded-lg border bg-[#102332] px-2.5 py-1.5 text-left shadow-[0_10px_26px_rgba(0,0,0,.4)]" style={{ borderColor: `${color}59` }}>
         <span className="block text-[9px] font-semibold tracking-[0.12em] sm:text-[10px]" style={{ color }}>{title}</span>
@@ -126,6 +133,9 @@ function TradeMarker({ index, count, price, color, title, note, delay, side }: {
     </PinReveal>
   );
 }
+
+const takenY = priceScale(takenCandles);
+const bestY = priceScale(bestCandles);
 
 export function ReviewCanvas() {
   return (
@@ -142,16 +152,16 @@ export function ReviewCanvas() {
             <p className="text-[10px] font-semibold tracking-[0.14em] text-[#f08c8c]">THE TRADE YOU TOOK</p>
             <p className="text-xs text-[#829da3]">09:42 · <span className="font-semibold tabular-nums text-[#f08c8c]">-1R</span></p>
           </div>
-          <div className="relative mt-5 h-44 pr-20 sm:h-52 sm:pr-24" aria-label="Candlestick chart of the trade taken: entered early after a loss and stopped out">
+          <div className="relative mt-5 h-56 pr-14 sm:pr-16" aria-label="Candlestick chart of the trade taken: entered early after a loss and stopped out">
             <div className="relative h-full">
-              <CandleChart candles={takenCandles} delay={0.2} />
-              <PriceLine price={55} color="#c9dadd" label="ENTRY" delay={0.75} />
-              <PriceLine price={44} color={DOWN} delay={1.0} label="STOP" dashed={false} />
-              <TradeMarker index={5} count={takenCandles.length} price={57} color="#f08c8c" title="ENTERED EARLY" note="Right after a loss, no retest" delay={0.9} side="above" />
-              <TradeMarker index={8} count={takenCandles.length} price={41} color={DOWN} title="STOPPED OUT" note="-1R at 10:05" delay={1.25} side="below" />
+              <CandleChart candles={takenCandles} delay={0.2} toY={takenY} />
+              <PriceLine y={takenY(55)} color="#c9dadd" label="ENTRY" delay={0.75} />
+              <PriceLine y={takenY(44)} color={DOWN} label="STOP · -1R" delay={1.0} dashed={false} />
+              <TradeMarker index={5} count={takenCandles.length} y={takenY(57)} color="#f08c8c" title="ENTERED EARLY · 09:42" note="Right after a loss, no retest" delay={0.9} side="above" />
+              <TradeMarker index={8} count={takenCandles.length} y={takenY(41)} color={DOWN} title="STOPPED OUT · 10:05" note="The level was never retested" delay={1.25} side="below" />
             </div>
           </div>
-          <p className="mt-4 text-xs leading-relaxed text-[#9db6bb] sm:text-sm">Entered on the first bounce after a loss. The level had not been retested yet.</p>
+          <p className="mt-6 text-xs leading-relaxed text-[#9db6bb] sm:text-sm">Entered on the first bounce after a loss. The level had not been retested yet.</p>
         </MarketingReveal>
 
         {/* The best trade on offer: waited for the level, confirmed, ran to target. */}
@@ -160,16 +170,15 @@ export function ReviewCanvas() {
             <p className="text-[10px] font-semibold tracking-[0.14em] text-[#7ee0a4]">BEST TRADE OF THE DAY</p>
             <p className="text-xs text-[#829da3]">10:35 · <span className="font-semibold tabular-nums text-[#7ee0a4]">+2.4R</span></p>
           </div>
-          <div className="relative mt-5 h-44 pr-20 sm:h-52 sm:pr-24" aria-label="Candlestick chart of the best trade on offer: entered at the planned level after confirmation and ran to target">
+          <div className="relative mt-5 h-56 pr-14 sm:pr-16" aria-label="Candlestick chart of the best trade on offer: entered at the planned level after confirmation and ran to target">
             <div className="relative h-full">
-              <CandleChart candles={bestCandles} delay={0.45} />
-              <PriceLine price={40} color="#8de0d5" label="PLANNED LEVEL" delay={0.9} />
-              <PriceLine price={78} color={UP} label="TARGET" delay={1.6} />
-              <TradeMarker index={7} count={bestCandles.length} price={44} color={UP} title="ENTERED AT 10:35" note="Level held, confirmed" delay={1.35} side="below" />
-              <TradeMarker index={13} count={bestCandles.length} price={80} color="#7ee0a4" title="TARGET HIT" note="+2.4R at 11:20" delay={1.75} side="above" />
+              <CandleChart candles={bestCandles} delay={0.45} toY={bestY} />
+              <PriceLine y={bestY(40)} color="#8de0d5" label="PLANNED LEVEL" delay={0.9} />
+              <PriceLine y={bestY(78)} color={UP} label="TARGET · +2.4R" delay={1.7} />
+              <TradeMarker index={6} count={bestCandles.length} y={bestY(40)} color={UP} title="ENTERED · 10:35" note="Level held, then confirmed" delay={1.35} side="below" />
             </div>
           </div>
-          <p className="mt-4 text-xs leading-relaxed text-[#9db6bb] sm:text-sm">Price came back to the planned level, held, and confirmed. The trade in the plan.</p>
+          <p className="mt-6 text-xs leading-relaxed text-[#9db6bb] sm:text-sm">Price came back to the planned level, held, and confirmed. The trade in the plan.</p>
         </MarketingReveal>
       </div>
 
