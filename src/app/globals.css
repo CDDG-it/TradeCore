@@ -870,6 +870,101 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   background: #14b8a6;
 }
 
+/* Site navigation: mega menus scale out of their trigger; the popup resizes
+   between panels (Base UI supplies the target size as custom properties). */
+.marketing-nav-trigger {
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.marketing-nav-chevron {
+  display: inline-flex;
+  transition: transform 200ms var(--ease-out-strong);
+}
+
+.marketing-nav-chevron[data-popup-open] {
+  transform: rotate(180deg);
+}
+
+.marketing-nav-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b8a91;
+}
+
+.marketing-nav-card {
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.marketing-nav-positioner {
+  width: var(--positioner-width);
+  height: var(--positioner-height);
+  max-width: var(--available-width);
+  transition: top 250ms var(--ease-in-out-strong), left 250ms var(--ease-in-out-strong);
+}
+
+.marketing-nav-popup {
+  position: relative;
+  width: var(--popup-width);
+  height: var(--popup-height);
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity 200ms var(--ease-out-strong),
+    transform 200ms var(--ease-out-strong),
+    width 250ms var(--ease-in-out-strong),
+    height 250ms var(--ease-in-out-strong);
+}
+
+.marketing-nav-popup[data-starting-style],
+.marketing-nav-popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.marketing-nav-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.marketing-nav-content {
+  transition: opacity 200ms var(--ease-out-strong), transform 200ms var(--ease-out-strong);
+}
+
+.marketing-nav-content[data-starting-style],
+.marketing-nav-content[data-ending-style] {
+  opacity: 0;
+}
+
+.marketing-nav-content[data-starting-style][data-activation-direction="left"],
+.marketing-nav-content[data-ending-style][data-activation-direction="right"] {
+  transform: translateX(-32px);
+}
+
+.marketing-nav-content[data-starting-style][data-activation-direction="right"],
+.marketing-nav-content[data-ending-style][data-activation-direction="left"] {
+  transform: translateX(32px);
+}
+
+/* The phone menu slides in from the header it hangs from. */
+.marketing-mobile-menu {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-out-strong), transform 200ms var(--ease-out-strong), visibility 0s 200ms;
+  visibility: hidden;
+}
+
+.marketing-mobile-menu[data-open] {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity 200ms var(--ease-out-strong), transform 200ms var(--ease-out-strong), visibility 0s;
+}
+
 /* Sticky editorial column beside a scrolling visual (large screens only). */
 @media (min-width: 1024px) {
   .marketing-sticky {
@@ -1000,13 +1095,12 @@ html:has(.marketing-page) { position: relative; }
   mask-image: linear-gradient(90deg, transparent, black 30%, black 90%, transparent);
 }
 
-.marketing-laptop {
-  transform: perspective(1200px) rotateY(-5deg) rotateX(3deg);
-  transform-origin: center;
-}
-
-.marketing-laptop-screen {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 32px 90px rgba(0, 0, 0, 0.6);
+/* The hero screenshot: a thin frame, a soft product glow, no device chrome. */
+.marketing-screen-frame {
+  box-shadow:
+    0 0 0 1px rgba(20, 184, 166, 0.12),
+    0 30px 90px rgba(0, 0, 0, 0.6),
+    0 0 120px rgba(20, 184, 166, 0.12);
 }
 
 /* The sample dashboard assembles itself on load: greeting first, then each
@@ -1055,10 +1149,6 @@ html:has(.marketing-page) { position: relative; }
   font-weight: 500;
 }
 
-@media (max-width: 640px) {
-  .marketing-laptop { transform: none; }
-}
-
 /* Reduced motion means fewer and gentler animations, not none: decorative loops
    stop, position changes are dropped in the components, colour feedback stays. */
 @media (prefers-reduced-motion: reduce) {
@@ -1068,6 +1158,9 @@ html:has(.marketing-page) { position: relative; }
     animation-iteration-count: 1 !important;
   }
   .marketing-cta:active { transform: none; }
+  .marketing-nav-popup[data-starting-style], .marketing-nav-popup[data-ending-style] { transform: none; }
+  .marketing-nav-content[data-starting-style], .marketing-nav-content[data-ending-style] { transform: none; }
+  .marketing-mobile-menu { transform: none; }
   .marketing-callout { animation: none; opacity: 1; }
   figcaption .marketing-callout:not(:first-child) { opacity: 0; }
 }

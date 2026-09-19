@@ -72,7 +72,7 @@ function calloutStyle(index: number, extra: CSSProperties = {}) {
   return { ...extra, "--callout-index": index } as CSSProperties & Record<"--callout-index", number>;
 }
 
-export function LaptopDashboard() {
+export function DashboardScreenshot() {
   const screenRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<number | null>(null);
 
@@ -87,9 +87,9 @@ export function LaptopDashboard() {
   }, []);
 
   return (
-    <figure className="marketing-laptop mx-auto w-full min-w-0 max-w-[900px]" aria-label="The TradingMC dashboard layout with local illustrative data">
-      <div className="rounded-t-[20px] border-[8px] border-[#263646] bg-[#263646] shadow-[0_36px_100px_rgba(0,0,0,.6)] sm:border-[10px]">
-        <div ref={screenRef} className="marketing-laptop-screen marketing-dashboard relative aspect-[980/650] overflow-hidden rounded-t-[10px] bg-[#0b1120]">
+    <figure className="marketing-screen mx-auto w-full min-w-0 max-w-[900px]" aria-label="The TradingMC dashboard layout with local illustrative data">
+      <div className="marketing-screen-frame rounded-[22px] border border-white/10 bg-[#0b1120] p-1.5 sm:rounded-[26px] sm:p-2">
+        <div ref={screenRef} className="marketing-dashboard relative aspect-[980/650] overflow-hidden rounded-[16px] bg-[#0b1120] sm:rounded-[18px]">
         <div inert className="marketing-dashboard-inner absolute left-0 top-0 h-[650px] w-[980px] overflow-hidden" style={{ transform: `scale(${scale ?? 1})`, transformOrigin: "top left", visibility: scale === null ? "hidden" : "visible" }}>
           <div className="flex h-12 items-center justify-between border-b border-white/10 bg-[#0b1120] px-4">
             {/* Match the icon used by the authenticated top navigation. */}
@@ -116,7 +116,6 @@ export function LaptopDashboard() {
         ))}
         </div>
       </div>
-      <div className="relative mx-auto h-3 w-[108%] -translate-x-[4%] rounded-b-[50%] bg-gradient-to-b from-[#758391] via-[#3a4652] to-[#19232f] shadow-[0_25px_42px_rgba(0,0,0,.4)]" />
       <figcaption className="relative mx-auto mt-7 h-12 max-w-[560px] text-center text-sm leading-relaxed text-[#b8ccd0] sm:h-6">
         {callouts.map((callout, index) => (
           <span key={callout.title} className="marketing-callout absolute inset-x-0 top-0 flex items-start justify-center gap-2.5" style={calloutStyle(index)}>

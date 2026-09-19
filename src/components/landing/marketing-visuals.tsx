@@ -278,36 +278,112 @@ export function TherapistVisual() {
   );
 }
 
+/* The week's releases on a Monday-to-Friday track. `at` is the position along the week in percent. */
 const marketEvents = [
-  { day: "TUE", time: "08:30", event: "CPI release", note: "No entry before data" },
-  { day: "WED", time: "14:00", event: "Rate decision", note: "Reduce exposure" },
-  { day: "THU", time: "08:30", event: "Jobless claims", note: "Wait for structure" },
+  { at: 27, day: "Tue", time: "08:30", event: "CPI", note: "No entry before the print", impact: "high" },
+  { at: 52, day: "Wed", time: "14:00", event: "Rate decision", note: "Half size into the close", impact: "high" },
+  { at: 71, day: "Thu", time: "08:30", event: "Jobless claims", note: "Wait for structure", impact: "medium" },
+] as const;
+
+const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri"] as const;
+
+/* COT positioning for the illustrative contract, as a share of open interest. */
+const positioning = [
+  { group: "Large speculators", side: "Net long", share: 62, color: "#14b8a6" },
+  { group: "Commercials", side: "Net short", share: 48, color: "#06b6d4" },
+  { group: "Small traders", side: "Net long", share: 21, color: "#91dfd5" },
+] as const;
+
+const marketTiles = [
+  { label: "US 10Y", value: "4.21%", change: "+3 bp", up: true },
+  { label: "2s10s", value: "+14 bp", change: "steeper", up: true },
+  { label: "Dollar", value: "103.4", change: "-0.3%", up: false },
+] as const;
+
+export const marketTabs = [
+  { label: "Calendar", meta: "Release schedule" },
+  { label: "Positioning", meta: "Who holds what" },
+  { label: "Markets", meta: "Yields, curve, dollar" },
+  { label: "Your plan", meta: "Unchanged" },
 ] as const;
 
 export function MarketContextVisual() {
   return (
-    <div className="overflow-hidden rounded-[32px] border border-[#193c48] bg-[#102332] text-white shadow-[0_30px_80px_rgba(18,62,71,.16)]" aria-label="Illustrative market event planning view">
-      <div className="grid lg:grid-cols-[0.42fr_0.58fr]">
-        <MarketingReveal className="relative overflow-hidden border-b border-white/10 p-8 sm:p-11 lg:border-b-0 lg:border-r lg:p-12">
-          <div aria-hidden="true" className="absolute -bottom-24 -right-20 h-64 w-64 rounded-full bg-[#14b8a6]/10 blur-3xl" />
-          <p className="text-sm font-medium text-[#8de0d5]">Market context</p>
-          <p className="font-display relative mt-7 max-w-md text-balance text-[clamp(2.2rem,4vw,4.6rem)] font-semibold leading-[1.04] tracking-[-0.05em]">Know the event. Keep your plan.</p>
-          <div className="relative mt-10 max-w-sm border-l-2 border-[#14b8a6] pl-5 text-sm leading-relaxed text-[#aac2c7]">Important releases sit beside the plan you already wrote.</div>
-        </MarketingReveal>
-        <div className="p-4 sm:p-6 lg:p-8">
-          <MarketingReveal delay={0.1} distance={10} className="flex items-center justify-between px-4 pb-5 pt-2 text-xs"><span className="font-semibold tracking-[0.14em] text-[#8aa5ab]">THIS WEEK</span><span className="text-[#65d4c8]">3 events</span></MarketingReveal>
-          <div className="divide-y divide-white/10 border-y border-white/10">
-            {marketEvents.map((item, index) => (
-              <MarketingReveal key={item.event} delay={0.18 + index * 0.08} distance={14} className="grid grid-cols-[52px_64px_1fr] items-center gap-3 px-4 py-5 sm:grid-cols-[64px_78px_1fr] sm:gap-5">
-                <span className="text-xs font-semibold tracking-[0.12em] text-[#719098]">{item.day}</span>
-                <span className="font-display text-lg font-semibold tabular-nums text-[#8de0d5]">{item.time}</span>
-                <span className="min-w-0"><span className="block font-medium">{item.event}</span><span className="mt-1 block text-xs text-[#829da3]">{item.note}</span></span>
-              </MarketingReveal>
-            ))}
-          </div>
-          <MarketingReveal delay={0.45} distance={10} className="mx-4 mt-5 flex items-center justify-between rounded-2xl bg-[#173849] px-5 py-4 text-sm"><span className="text-[#a9c0c5]">Plan status</span><span className="font-medium text-[#8de0d5]">Unchanged</span></MarketingReveal>
+    <div className="grid gap-4 lg:grid-cols-3" aria-label="Illustrative Global Markets view: the week's releases, futures positioning and rates beside the trading plan">
+      {/* Calendar: the week as a track, releases pinned where they land. */}
+      <MarketingReveal className="rounded-[28px] border border-[#193c48] bg-[#102332] p-6 text-white shadow-[0_30px_80px_rgba(18,62,71,.16)] sm:p-8 lg:col-span-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <p className="text-sm font-medium text-[#8de0d5]">Calendar</p>
+          <p className="text-xs text-[#78959c]">THIS WEEK · <span className="text-[#65d4c8]">3 releases that matter</span></p>
         </div>
-      </div>
+        <p className="font-display mt-4 max-w-[520px] text-balance text-[clamp(1.7rem,2.6vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.04em]">Know the event before it knows you.</p>
+
+        <div className="relative mt-10 h-40 sm:h-44" aria-hidden="true">
+          <div className="absolute inset-x-0 top-[62%] flex items-center">
+            <DrawLine axis="x" delay={0.2} duration={1.2} className="block h-px flex-1 bg-white/15" />
+          </div>
+          <div className="absolute inset-x-0 top-[62%] mt-4 grid grid-cols-5 text-[10px] font-semibold tracking-[0.14em] text-[#719098] sm:text-[11px]">
+            {weekDays.map((day, index) => <MarketingReveal key={day} delay={0.3 + index * 0.06} distance={6} className="text-center uppercase">{day}</MarketingReveal>)}
+          </div>
+          {marketEvents.map((item, index) => (
+            <PinReveal key={item.event} delay={0.6 + index * 0.22} origin="center bottom" className="absolute -translate-x-1/2" style={{ left: `${item.at}%`, top: 0, height: "62%" }}>
+              <div className="flex h-full flex-col items-center justify-end">
+                <div className={`mb-3 whitespace-nowrap rounded-xl border bg-[#0d1c29] px-3 py-2 text-center shadow-[0_12px_30px_rgba(0,0,0,.35)] ${item.impact === "high" ? "border-[#14b8a6]/45" : "border-white/15"}`}>
+                  <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#8de0d5]">{item.day.toUpperCase()} · {item.time}</span>
+                  <span className="mt-0.5 block text-xs font-semibold sm:text-sm">{item.event}</span>
+                  <span className="mt-0.5 hidden text-[11px] text-[#9db6bb] sm:block">{item.note}</span>
+                </div>
+                <span className="block h-4 w-px bg-[#14b8a6]/60" />
+                <span className={`block h-3 w-3 rounded-full border-2 border-[#102332] ${item.impact === "high" ? "bg-[#14b8a6] ring-2 ring-[#14b8a6]/40" : "bg-[#7ea6ab] ring-2 ring-white/15"}`} />
+              </div>
+            </PinReveal>
+          ))}
+        </div>
+      </MarketingReveal>
+
+      {/* Positioning: who holds what, from the weekly CFTC report. */}
+      <MarketingReveal delay={0.12} className="rounded-[28px] bg-[#173849] p-6 text-white shadow-[0_24px_60px_rgba(13,59,68,.16)] sm:p-8">
+        <div className="flex items-baseline justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Positioning</p><span className="text-xs text-[#78959c]">ES · COT</span></div>
+        <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">Who holds what.</p>
+        <ul className="mt-7 space-y-5">
+          {positioning.map((row, index) => (
+            <li key={row.group}>
+              <div className="flex items-baseline justify-between gap-3 text-xs"><span className="font-medium text-[#d6e4e6]">{row.group}</span><span className="tabular-nums text-[#9db6bb]">{row.side} · {row.share}%</span></div>
+              <span aria-hidden="true" className="mt-2 block h-1.5 overflow-hidden rounded-full bg-white/10">
+                <GrowBar axis="x" delay={0.4 + index * 0.1} className="block h-full rounded-full" style={{ width: `${row.share}%`, backgroundColor: row.color }} />
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-7 text-xs leading-relaxed text-[#9db6bb]">Updated every Friday from the CFTC report.</p>
+      </MarketingReveal>
+
+      {/* Markets: the rates backdrop in three numbers. */}
+      <MarketingReveal delay={0.2} className="rounded-[28px] border border-[#bfdcd7] bg-[#dcefeb] p-6 text-[#153743] sm:p-8">
+        <div className="flex items-baseline justify-between gap-4"><p className="text-sm font-medium text-[#167c79]">Markets</p><span className="text-xs text-[#6b858b]">YIELDS · CURVE · DOLLAR</span></div>
+        <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">The backdrop, in three numbers.</p>
+        <div className="mt-7 grid grid-cols-3 gap-2 sm:gap-3">
+          {marketTiles.map((tile, index) => (
+            <MarketingReveal key={tile.label} delay={0.45 + index * 0.08} distance={10} className="rounded-2xl border border-[#b7d4d1] bg-white/60 p-3 sm:p-4">
+              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#6b858b]">{tile.label.toUpperCase()}</span>
+              <span className="font-display mt-2 block text-lg font-semibold tabular-nums tracking-[-0.04em] sm:text-xl">{tile.value}</span>
+              <span className={`mt-1 block text-[11px] font-medium ${tile.up ? "text-[#15803d]" : "text-[#b91c1c]"}`}>{tile.change}</span>
+            </MarketingReveal>
+          ))}
+        </div>
+      </MarketingReveal>
+
+      {/* The plan sits beside all of it and does not move. */}
+      <MarketingReveal delay={0.28} className="flex flex-col justify-between rounded-[28px] border border-white/10 bg-[#0d1c29] p-6 text-white sm:p-8 lg:col-span-2 lg:flex-row lg:items-center lg:gap-10">
+        <div>
+          <p className="text-sm font-medium text-[#8de0d5]">Your plan</p>
+          <p className="font-display mt-3 max-w-[460px] text-balance text-[clamp(1.5rem,2.4vw,2.2rem)] font-medium leading-[1.12] tracking-[-0.04em]">Wait for price to hit my level of interest.</p>
+        </div>
+        <dl className="mt-6 grid shrink-0 grid-cols-2 gap-3 text-sm lg:mt-0 lg:min-w-[300px]">
+          <div className="rounded-2xl bg-[#173849] px-4 py-3"><dt className="text-[10px] font-semibold tracking-[0.12em] text-[#8aa9ae]">PLAN STATUS</dt><dd className="mt-1 font-medium text-[#8de0d5]">Unchanged</dd></div>
+          <div className="rounded-2xl bg-[#173849] px-4 py-3"><dt className="text-[10px] font-semibold tracking-[0.12em] text-[#8aa9ae]">RISK ON WED</dt><dd className="mt-1 font-medium text-white">Half size</dd></div>
+        </dl>
+      </MarketingReveal>
     </div>
   );
 }

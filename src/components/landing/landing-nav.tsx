@@ -1,12 +1,179 @@
+"use client";
+
+import { useEffect, useState, type ComponentType } from "react";
 import Link from "next/link";
+import { NavigationMenu } from "@base-ui/react/navigation-menu";
+import {
+  BarChart3, BookOpen, Brain, ChevronDown, Compass, Gauge, Globe2, LayoutDashboard, Menu, Repeat, Wallet, X,
+} from "lucide-react";
+import { PRODUCT_GROUPS, TRADER_LEVELS } from "@/lib/landing/nav";
+
+const featureIcons: Record<string, ComponentType<{ className?: string }>> = {
+  "trade-therapist": Brain,
+  "psychological-edge": Gauge,
+  habits: Repeat,
+  journal: BookOpen,
+  analysis: Compass,
+  analytics: BarChart3,
+  accounts: Wallet,
+  "news-city": Globe2,
+  dashboard: LayoutDashboard,
+};
+
+const triggerClass = "marketing-nav-trigger inline-flex h-10 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-medium text-[#d0dfe1] hover:bg-white/5 hover:text-white data-[popup-open]:bg-white/5 data-[popup-open]:text-white";
+
+function ProductsPanel() {
+  const [lead, ...rest] = PRODUCT_GROUPS;
+  return (
+    <div className="grid w-[min(92vw,880px)] gap-6 p-6 lg:grid-cols-[1.1fr_1fr_0.9fr]">
+      <div>
+        <p className="marketing-nav-label">{lead.title}</p>
+        <ul className="mt-3 space-y-1">
+          {lead.features.map((feature) => {
+            const Icon = featureIcons[feature.slug] ?? LayoutDashboard;
+            return (
+              <li key={feature.slug}>
+                <NavigationMenu.Link render={<Link href={`/features/${feature.slug}`} />} className="marketing-nav-card group flex gap-4 rounded-2xl border border-[#14b8a6]/25 bg-[#14b8a6]/[0.06] p-4 hover:border-[#14b8a6]/50 hover:bg-[#14b8a6]/10">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#14b8a6]/15 text-[#7be0d5]"><Icon className="h-5 w-5" /></span>
+                  <span className="min-w-0"><span className="block text-sm font-semibold text-white">{feature.name}</span><span className="mt-1 block text-xs leading-relaxed text-[#9db6bb]">{feature.tagline}</span></span>
+                </NavigationMenu.Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      {rest.map((group) => (
+        <div key={group.title}>
+          <p className="marketing-nav-label">{group.title}</p>
+          <ul className="mt-3 space-y-1">
+            {group.features.map((feature) => {
+              const Icon = featureIcons[feature.slug] ?? LayoutDashboard;
+              return (
+                <li key={feature.slug}>
+                  <NavigationMenu.Link render={<Link href={`/features/${feature.slug}`} />} className="marketing-nav-card flex gap-3.5 rounded-xl p-3 hover:bg-white/5">
+                    <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/[0.06] text-[#8de0d5]"><Icon className="h-4 w-4" /></span>
+                    <span className="min-w-0"><span className="block text-sm font-semibold text-white">{feature.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#9db6bb]">{feature.tagline}</span></span>
+                  </NavigationMenu.Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LevelsPanel() {
+  return (
+    <div className="w-[min(92vw,460px)] p-4">
+      <p className="marketing-nav-label px-3 pt-2">By trader level</p>
+      <ul className="mt-2 space-y-1">
+        {TRADER_LEVELS.map((level, index) => (
+          <li key={level.label}>
+            <NavigationMenu.Link render={<Link href={level.href} />} className="marketing-nav-card flex gap-4 rounded-xl p-3 hover:bg-white/5">
+              <span className="font-display mt-0.5 w-6 shrink-0 text-sm tabular-nums text-[#46cabc]">0{index + 1}</span>
+              <span className="min-w-0"><span className="block text-sm font-semibold text-white">{level.label}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#9db6bb]">{level.body}</span></span>
+            </NavigationMenu.Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function DesktopMenu() {
+  return (
+    <NavigationMenu.Root className="hidden lg:block" delay={80} closeDelay={120}>
+      <NavigationMenu.List className="flex items-center gap-1">
+        <NavigationMenu.Item>
+          <NavigationMenu.Trigger className={triggerClass}>Products<NavigationMenu.Icon className="marketing-nav-chevron"><ChevronDown className="h-3.5 w-3.5" /></NavigationMenu.Icon></NavigationMenu.Trigger>
+          <NavigationMenu.Content className="marketing-nav-content"><ProductsPanel /></NavigationMenu.Content>
+        </NavigationMenu.Item>
+        <NavigationMenu.Item>
+          <NavigationMenu.Trigger className={triggerClass}>For traders<NavigationMenu.Icon className="marketing-nav-chevron"><ChevronDown className="h-3.5 w-3.5" /></NavigationMenu.Icon></NavigationMenu.Trigger>
+          <NavigationMenu.Content className="marketing-nav-content"><LevelsPanel /></NavigationMenu.Content>
+        </NavigationMenu.Item>
+        <NavigationMenu.Item>
+          <NavigationMenu.Link render={<Link href="/pricing" />} className={triggerClass}>Pricing</NavigationMenu.Link>
+        </NavigationMenu.Item>
+      </NavigationMenu.List>
+
+      <NavigationMenu.Portal>
+        <NavigationMenu.Positioner className="marketing-nav-positioner z-40" sideOffset={18} collisionPadding={16}>
+          <NavigationMenu.Popup className="marketing-nav-popup rounded-[24px] border border-white/10 bg-[#0d1c29] text-white shadow-[0_30px_80px_rgba(0,0,0,.55)]">
+            <NavigationMenu.Viewport className="marketing-nav-viewport" />
+          </NavigationMenu.Popup>
+        </NavigationMenu.Positioner>
+      </NavigationMenu.Portal>
+    </NavigationMenu.Root>
+  );
+}
+
+function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <div id="marketing-mobile-menu" data-open={open || undefined} aria-hidden={!open} className="marketing-mobile-menu fixed inset-x-0 bottom-0 top-[72px] z-40 overflow-y-auto bg-[#0b1120] px-6 pb-10 pt-6 lg:hidden" {...(!open ? { inert: true } : {})}>
+      <nav aria-label="Site" className="mx-auto max-w-[560px] space-y-8">
+        {PRODUCT_GROUPS.map((group) => (
+          <div key={group.title}>
+            <p className="marketing-nav-label">{group.title}</p>
+            <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
+              {group.features.map((feature) => (
+                <li key={feature.slug}><Link href={`/features/${feature.slug}`} onClick={onClose} className="flex items-center justify-between gap-4 py-3.5 text-[15px] font-medium text-white"><span>{feature.name}</span><span className="max-w-[55%] truncate text-xs text-[#8aa5ab]">{feature.tagline}</span></Link></li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        <div>
+          <p className="marketing-nav-label">For traders</p>
+          <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
+            {TRADER_LEVELS.map((level) => (
+              <li key={level.label}><Link href={level.href} onClick={onClose} className="block py-3.5"><span className="block text-[15px] font-medium text-white">{level.label}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#8aa5ab]">{level.body}</span></Link></li>
+            ))}
+          </ul>
+        </div>
+        <Link href="/pricing" onClick={onClose} className="block border-b border-white/10 pb-4 text-[15px] font-medium text-white">Pricing</Link>
+        <div className="flex gap-3">
+          <Link href="/login" onClick={onClose} className="marketing-cta inline-flex min-h-12 flex-1 items-center justify-center rounded-2xl border border-white/20 text-sm font-medium text-[#d0dfe1]">Sign in</Link>
+          <Link href="/signup" onClick={onClose} className="marketing-cta inline-flex min-h-12 flex-1 items-center justify-center rounded-2xl bg-[#14b8a6] text-sm font-semibold text-[#081721]">Get started</Link>
+        </div>
+      </nav>
+    </div>
+  );
+}
 
 export function LandingNav() {
+  const [open, setOpen] = useState(false);
+
+  // Every link in the panel closes it on click; growing past the phone breakpoint closes it too.
+  useEffect(() => {
+    if (!open) return;
+    const query = window.matchMedia("(min-width: 1024px)");
+    const close = () => setOpen(false);
+    query.addEventListener("change", close);
+    document.body.style.overflow = "hidden";
+    return () => { query.removeEventListener("change", close); document.body.style.overflow = ""; };
+  }, [open]);
+
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0b1120]/95 px-6 backdrop-blur-xl sm:px-10 lg:px-12">
-      <div className="mx-auto flex h-[72px] max-w-[1380px] items-center justify-between gap-2 sm:gap-6">
-        <Link href="/" className="font-display shrink-0 text-lg font-semibold tracking-[-0.055em] text-white transition-opacity hover:opacity-75 sm:text-[22px]">Trading<span className="text-[#46cabc]">MC</span></Link>
-        <nav aria-label="Account" className="flex shrink-0 items-center gap-2 text-xs font-medium sm:gap-3 sm:text-[13px]"><Link href="/login" className="inline-flex min-h-10 items-center rounded-2xl border border-white/20 px-3 text-[#d0dfe1] transition-colors hover:border-white/50 hover:bg-white/5 sm:px-5">Sign in</Link><Link href="/signup" className="inline-flex min-h-10 items-center rounded-2xl bg-[#14b8a6] px-3 text-[#081721] transition-colors hover:bg-[#70d9cf] sm:px-5">Get started</Link></nav>
-      </div>
-    </header>
+    <>
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0b1120]/95 px-6 backdrop-blur-xl sm:px-10 lg:px-12">
+        <div className="mx-auto grid h-[72px] max-w-[1380px] grid-cols-[1fr_auto] items-center gap-4 lg:grid-cols-[1fr_auto_1fr]">
+          <Link href="/" className="font-display shrink-0 justify-self-start text-lg font-semibold tracking-[-0.055em] text-white transition-opacity hover:opacity-75 sm:text-[22px]">Trading<span className="text-[#46cabc]">MC</span></Link>
+          <DesktopMenu />
+          <div className="flex items-center justify-self-end gap-2 sm:gap-3">
+            <nav aria-label="Account" className="hidden items-center gap-2 text-xs font-medium sm:flex sm:gap-3 sm:text-[13px]">
+              <Link href="/login" className="marketing-cta inline-flex min-h-10 items-center rounded-2xl border border-white/20 px-3 text-[#d0dfe1] hover:border-white/50 hover:bg-white/5 sm:px-5">Sign in</Link>
+              <Link href="/signup" className="marketing-cta inline-flex min-h-10 items-center rounded-2xl bg-[#14b8a6] px-3 text-[#081721] hover:bg-[#70d9cf] sm:px-5">Get started</Link>
+            </nav>
+            <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="marketing-mobile-menu" className="marketing-cta grid h-10 w-10 place-items-center rounded-xl border border-white/15 text-white hover:bg-white/5 lg:hidden">
+              <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
+              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+      </header>
+      <MobileMenu open={open} onClose={() => setOpen(false)} />
+    </>
   );
 }

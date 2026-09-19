@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
-import { LaptopDashboard } from "@/components/landing/dashboard-sample";
-import { MarketContextVisual, ProcessCanvas, ReviewCanvas, TherapistVisual, reviewSteps, therapistCadence } from "@/components/landing/marketing-visuals";
+import { DashboardScreenshot } from "@/components/landing/dashboard-sample";
+import { MarketContextVisual, ProcessCanvas, ReviewCanvas, TherapistVisual, marketTabs, reviewSteps, therapistCadence } from "@/components/landing/marketing-visuals";
 import { MarketingReveal, MindscoreAssembly, SectionHeader } from "@/components/landing/marketing-motion";
 
 // The landing page's own typeface. Loaded here rather than in the root layout
@@ -31,7 +31,7 @@ export default function HomePage() {
                 <a href="#the-approach" className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#5a7f87] px-6 py-3 text-sm font-medium text-[#d9e8e9] transition-colors hover:border-[#a9ddd8] hover:bg-white/5 hover:text-white">See how it works</a>
               </div>
             </div>
-            <div className="relative z-10 min-w-0 lg:translate-x-5"><LaptopDashboard /></div>
+            <div className="relative z-10 min-w-0"><DashboardScreenshot /></div>
           </div>
         </section>
 
@@ -97,9 +97,22 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section id="market-context" className="marketing-section marketing-section--mist px-6 py-24 sm:px-10 md:py-32 lg:px-12">
+          <section id="market-context" className="marketing-section marketing-section--mist px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader index="05" label="Market context" title="Your process meets the market you actually trade." className="mb-14 lg:mb-18" />
+              <SectionHeader index="05" label="Global Markets" title="Your process meets the market you actually trade." className="mb-14 lg:mb-18">
+                Releases, positioning and the rates backdrop sit beside the plan you already wrote, so context informs the session without rewriting it.
+              </SectionHeader>
+              <MarketingReveal delay={0.15} distance={10} className="mb-6 hidden lg:block">
+                <ol className="flex divide-x divide-[#c2dcda] border-y border-[#c2dcda] text-sm">
+                  {marketTabs.map((tab, index) => (
+                    <li key={tab.label} className="flex flex-1 items-baseline gap-4 px-5 py-4 first:pl-0 last:pr-0">
+                      <span className="font-display tabular-nums text-[#167c79]">0{index + 1}</span>
+                      <span className="font-medium text-[#102b37]">{tab.label}</span>
+                      <span className="ml-auto text-xs font-semibold uppercase tracking-[0.12em] text-[#6b858b]">{tab.meta}</span>
+                    </li>
+                  ))}
+                </ol>
+              </MarketingReveal>
               <MarketContextVisual />
             </div>
           </section>
