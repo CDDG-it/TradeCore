@@ -4,7 +4,8 @@ import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Brain, HeartPulse, Globe, Plus, type LucideIcon } from "lucide-react";
+import { ChartCandlestick, Compass, House, NotebookPen, Plus, Target, TrendingUp, type LucideIcon } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/lib/nav";
 
@@ -21,11 +22,17 @@ import { PRIMARY_NAV } from "@/lib/nav";
  */
 
 const ICONS: Record<string, LucideIcon> = {
-  "/dashboard": Home,
-  "/psychological-edge": Brain,
-  "/trade-therapist": HeartPulse,
-  "/news-city": Globe,
+  "/dashboard": House,
+  "/psychological-edge": Target,
+  "/trade-therapist": NotebookPen,
+  "/news-city": ChartCandlestick,
 };
+
+/** What the create pill offers: the two things a trader starts from the desk. */
+const CREATE = [
+  { label: "Log trade", hint: "Add to the journal", href: "/journal/new", icon: TrendingUp },
+  { label: "New analysis", hint: "Plan before the session", href: "/analysis/new", icon: Compass },
+] as const;
 
 /**
  * Pages that live under a tab without having one of their own. The Trading
@@ -42,7 +49,7 @@ const isActive = (pathname: string, href: string) =>
   (ALSO_UNDER[href] ?? []).some((p) => pathname === p || pathname.startsWith(p + "/"));
 
 function TabIcon({ tab, active }: { tab: (typeof PRIMARY_NAV)[number]; active: boolean }) {
-  const Icon = ICONS[tab.href] ?? Home;
+  const Icon = ICONS[tab.href] ?? House;
   return (
     <Link
       href={tab.href}
@@ -84,22 +91,37 @@ export function BottomNav() {
     >
       <div className="mx-auto grid h-14 max-w-md grid-cols-5 items-stretch px-2">
         {[first, second].map((tab) => <TabIcon key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
-        <Link
-          href="/journal/new"
-          aria-label="Log trade"
-          className="mobile-tab mobile-tab-create flex items-center justify-center"
-        >
-          <span
-            aria-hidden
-            className="grid h-8 w-12 place-items-center rounded-xl text-white"
-            style={{
-              background: "linear-gradient(135deg, var(--primary) 0%, var(--ice) 100%)",
-              boxShadow: "0 6px 18px color-mix(in oklch, var(--primary) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.25)",
-            }}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            aria-label="Create"
+            className="group/create mobile-tab mobile-tab-create flex items-center justify-center outline-none"
           >
-            <Plus className="h-5 w-5" strokeWidth={2.6} />
-          </span>
-        </Link>
+            <span
+              aria-hidden
+              className="grid h-8 w-12 place-items-center rounded-xl text-white"
+              style={{
+                background: "linear-gradient(135deg, var(--primary) 0%, var(--ice) 100%)",
+                boxShadow: "0 6px 18px color-mix(in oklch, var(--primary) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.25)",
+              }}
+            >
+              <Plus className="h-5 w-5 transition-transform duration-150 ease-out group-data-[popup-open]/create:rotate-45" strokeWidth={2.6} />
+            </span>
+          </DropdownMenuTrigger>
+          {/* Opens upward out of the pill: two large rows, thumb-sized. */}
+          <DropdownMenuContent side="top" align="center" sideOffset={14} className="w-64 rounded-2xl border border-border/60 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,.45)]">
+            {CREATE.map((item) => (
+              <DropdownMenuItem key={item.href} render={<Link href={item.href} />} className="flex items-center gap-3 rounded-xl px-2.5 py-2.5">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary">
+                  <item.icon className="size-[18px]" strokeWidth={2.1} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-semibold leading-tight text-foreground">{item.label}</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{item.hint}</span>
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         {rest.map((tab) => <TabIcon key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
       </div>
     </nav>
