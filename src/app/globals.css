@@ -831,6 +831,52 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 /* Public homepage typography and product compositions stay separate from the app. */
 .marketing-page {
   font-family: var(--font-inter), system-ui, sans-serif;
+  /* Motion tokens for the public page. Strong curves: built-in easings are too weak
+     for deliberate reveals. Entering = ease-out, on-screen movement = ease-in-out. */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --duration-press: 160ms;
+}
+
+/* Press feedback for every call to action: the interface acknowledges the tap. */
+.marketing-cta {
+  transition:
+    transform var(--duration-press) var(--ease-out-strong),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.marketing-cta:active {
+  transform: scale(0.97);
+}
+
+/* Section header system: chapter index, hairline, label. */
+.marketing-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #167c79;
+}
+
+.marketing-eyebrow::before {
+  content: "";
+  width: 2rem;
+  height: 1px;
+  background: #14b8a6;
+}
+
+/* Sticky editorial column beside a scrolling visual (large screens only). */
+@media (min-width: 1024px) {
+  .marketing-sticky {
+    position: sticky;
+    top: 7rem;
+    align-self: start;
+  }
 }
 
 .marketing-page .font-display,
@@ -980,10 +1026,13 @@ html:has(.marketing-page) { position: relative; }
   .marketing-laptop { transform: none; }
 }
 
+/* Reduced motion means fewer and gentler animations, not none: decorative loops
+   stop, position changes are dropped in the components, colour feedback stays. */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .marketing-page *, .marketing-page *::before, .marketing-page *::after {
     animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
+  .marketing-cta:active { transform: none; }
 }

@@ -3,8 +3,8 @@ import { Inter } from "next/font/google";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
 import { LaptopDashboard } from "@/components/landing/dashboard-sample";
-import { MarketContextVisual, ProcessCanvas, ReviewActionVisual, TherapistVisual } from "@/components/landing/marketing-visuals";
-import { MindscoreAssembly } from "@/components/landing/marketing-motion";
+import { MarketContextVisual, ProcessCanvas, ReviewActionVisual, TherapistVisual, therapistCadence } from "@/components/landing/marketing-visuals";
+import { MarketingReveal, MindscoreAssembly, SectionHeader } from "@/components/landing/marketing-motion";
 
 // The landing page's own typeface. Loaded here rather than in the root layout
 // so the signed-in app never preloads a family it does not use.
@@ -37,42 +37,75 @@ export default function HomePage() {
 
         <div aria-hidden="true" className="marketing-gradient-bridge marketing-gradient-bridge--light" />
         <div className="marketing-light-flow text-[#0b1120]">
-          <section id="the-approach" className="marketing-section marketing-section--mist px-6 pb-16 pt-16 sm:px-10 md:pb-24 md:pt-24 lg:px-12">
+          <section id="the-approach" className="marketing-section marketing-section--mist px-6 pb-20 pt-16 sm:px-10 md:pb-28 md:pt-24 lg:px-12">
             <div className="mx-auto max-w-[1260px]">
-              <div className="mb-14 grid gap-7 lg:mb-18 lg:grid-cols-[1fr_0.58fr] lg:items-end lg:gap-20"><h2 className="font-display max-w-[900px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">Give the next session a direction.</h2><p className="max-w-[500px] text-lg leading-[1.65] text-[#4d6871]">Plan the session. Turn recurring mistakes into commitments, then track the habits and goals that support execution.</p></div>
+              <SectionHeader index="01" label="The approach" title="Give the next session a direction." className="mb-14 lg:mb-18">
+                Plan the session. Turn recurring mistakes into commitments, then track the habits and goals that support execution.
+              </SectionHeader>
               <ProcessCanvas />
             </div>
           </section>
 
-          <section id="mindscore" className="marketing-section marketing-section--white px-6 py-24 sm:px-10 md:py-36 lg:px-12">
+          <section id="mindscore" className="marketing-section marketing-section--white px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto max-w-[1260px]">
-              <h2 className="font-display max-w-[850px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">Your effort, made visible.</h2>
-              <p className="mt-8 max-w-[680px] text-lg leading-[1.65] text-[#4d6871]">MC Mindscore turns the work you log on and off the charts into one explainable view.</p>
-              <div className="mt-16 lg:mt-20"><MindscoreAssembly /></div>
+              <SectionHeader index="02" label="MC Mindscore" title="Your effort, made visible." className="mb-14 lg:mb-20">
+                MC Mindscore turns the work you log on and off the charts into one explainable view.
+              </SectionHeader>
+              <MindscoreAssembly />
             </div>
           </section>
 
-          <section id="trade-therapist" className="marketing-section marketing-section--tint px-6 py-28 sm:px-10 md:py-40 lg:px-12">
-            <div className="mx-auto max-w-[1260px]">
-              <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20"><h2 className="font-display max-w-[660px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">A practice of looking closer.</h2><p className="max-w-[520px] self-end text-lg leading-[1.65] text-[#4d6871]">Prepare before the market, analyse after it and turn each week into a lesson. Monthly rollups show what persists.</p></div>
-              <div className="mt-16"><TherapistVisual /></div>
+          <section id="trade-therapist" className="marketing-section marketing-section--tint px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
+            <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.42fr_0.58fr] lg:gap-20">
+              <div className="marketing-sticky">
+                <SectionHeader index="03" label="Trade Therapist" title="A practice of looking closer." align="stack">
+                  Prepare before the market, analyse after it and turn each week into a lesson. Monthly rollups show what persists.
+                </SectionHeader>
+                <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
+                  <ol className="divide-y divide-[#c2dcda] border-y border-[#c2dcda]">
+                    {therapistCadence.map((item, index) => (
+                      <li key={item.label} className="flex items-baseline justify-between gap-6 py-4 text-sm">
+                        <span className="flex items-baseline gap-4"><span className="font-display tabular-nums text-[#167c79]">0{index + 1}</span><span className="font-medium text-[#102b37]">{item.label}</span></span>
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#6b858b]">{item.meta}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </MarketingReveal>
+              </div>
+              <TherapistVisual />
             </div>
           </section>
 
-          <section className="marketing-section marketing-section--white px-6 py-28 sm:px-10 md:py-40 lg:px-12">
-            <div className="mx-auto grid max-w-[1260px] gap-14 lg:grid-cols-[0.68fr_1.32fr] lg:items-center lg:gap-24">
-              <div><h2 className="font-display max-w-[580px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">A review should change what you do.</h2><p className="mt-8 max-w-[450px] text-lg leading-[1.65] text-[#536b74]">Turn a recognised pattern into one response for the next session.</p></div>
+          <section id="review" className="marketing-section marketing-section--white px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
+            <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.42fr_0.58fr] lg:items-center lg:gap-24">
+              <SectionHeader index="04" label="Review" title="A review should change what you do." align="stack">
+                Turn a recognised pattern into one response for the next session.
+              </SectionHeader>
               <ReviewActionVisual />
             </div>
           </section>
 
-          <section className="marketing-section marketing-section--mist px-6 py-24 sm:px-10 md:py-32 lg:px-12">
-            <div className="mx-auto max-w-[1260px]"><h2 className="font-display max-w-[850px] text-balance text-[clamp(2.7rem,4.5vw,5rem)] font-semibold leading-[1.04] tracking-[-0.055em]">Your process meets the market you actually trade.</h2><div className="mt-14 lg:mt-18"><MarketContextVisual /></div></div>
+          <section id="market-context" className="marketing-section marketing-section--mist px-6 py-24 sm:px-10 md:py-32 lg:px-12">
+            <div className="mx-auto max-w-[1260px]">
+              <SectionHeader index="05" label="Market context" title="Your process meets the market you actually trade." className="mb-14 lg:mb-18" />
+              <MarketContextVisual />
+            </div>
           </section>
         </div>
         <div aria-hidden="true" className="marketing-gradient-bridge marketing-gradient-bridge--dark" />
 
-        <section className="relative overflow-hidden bg-[#0b1120] px-6 py-32 sm:px-10 md:py-44 lg:px-12"><div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-20" /><div className="relative mx-auto max-w-[1260px]"><h2 className="font-display max-w-[1050px] text-balance text-[clamp(2.6rem,10vw,3.8rem)] font-semibold leading-[0.98] tracking-[-0.06em] sm:text-[clamp(3.8rem,7vw,8rem)]">An ordinary journal won&apos;t build an <span className="text-[#65d4c8]">extraordinary trader.</span></h2><div className="mt-12 flex flex-wrap items-center gap-8"><Link href="/signup" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#14b8a6] px-7 py-3 text-sm font-semibold text-[#081721] transition-colors hover:bg-[#70d9cf]">Create your account</Link></div></div></section>
+        <section className="relative overflow-hidden bg-[#0b1120] px-6 py-32 sm:px-10 md:py-44 lg:px-12">
+          <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-20" />
+          <div className="relative mx-auto max-w-[1260px]">
+            <MarketingReveal>
+              <h2 className="font-display max-w-[1050px] text-balance text-[clamp(2.6rem,10vw,3.8rem)] font-semibold leading-[0.98] tracking-[-0.06em] sm:text-[clamp(3.8rem,7vw,8rem)]">An ordinary journal won&apos;t build an <span className="text-[#65d4c8]">extraordinary trader.</span></h2>
+            </MarketingReveal>
+            <MarketingReveal delay={0.15} distance={16} className="mt-12 flex flex-wrap items-center gap-6">
+              <Link href="/signup" className="marketing-cta inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#14b8a6] px-7 py-3 text-sm font-semibold text-[#081721] hover:bg-[#70d9cf]">Create your account</Link>
+              <Link href="/login" className="marketing-cta inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#5a7f87] px-6 py-3 text-sm font-medium text-[#d9e8e9] hover:border-[#a9ddd8] hover:bg-white/5 hover:text-white">Sign in</Link>
+            </MarketingReveal>
+          </div>
+        </section>
       </main>
       <LandingFooter />
     </div>
