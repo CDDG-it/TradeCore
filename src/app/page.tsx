@@ -39,7 +39,7 @@ export default function HomePage() {
         <div className="marketing-light-flow text-[#0b1120]">
           <section id="the-approach" className="marketing-section marketing-section--mist px-6 pb-16 pt-16 sm:px-10 md:pb-24 md:pt-24 lg:px-12">
             <div className="mx-auto max-w-[1260px]">
-              <div className="mb-16 lg:mb-20"><h2 className="font-display max-w-[900px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">Give the next session a direction.</h2><p className="mt-8 max-w-[720px] text-lg leading-[1.7] text-[#4d6871]">Write a trading plan that fits your edge. Turn the mistakes you recognise into commitments you can check. Build habits outside market hours and set goals against the numbers you already track.</p></div>
+              <div className="mb-14 grid gap-7 lg:mb-18 lg:grid-cols-[1fr_0.58fr] lg:items-end lg:gap-20"><h2 className="font-display max-w-[900px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">Give the next session a direction.</h2><p className="max-w-[500px] text-lg leading-[1.65] text-[#4d6871]">Plan the session. Turn recurring mistakes into commitments, then track the habits and goals that support execution.</p></div>
               <ProcessCanvas />
             </div>
           </section>
@@ -47,28 +47,27 @@ export default function HomePage() {
           <section id="mindscore" className="marketing-section marketing-section--white px-6 py-24 sm:px-10 md:py-36 lg:px-12">
             <div className="mx-auto max-w-[1260px]">
               <h2 className="font-display max-w-[850px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">Your effort, made visible.</h2>
-              <p className="mt-8 max-w-[690px] text-lg leading-[1.7] text-[#4d6871]">The MC Mindscore brings together rule adherence, execution, habits, reflection work and goal progress. It reflects what you do on and off the charts, using information you actually log.</p>
+              <p className="mt-8 max-w-[680px] text-lg leading-[1.65] text-[#4d6871]">MC Mindscore turns the work you log on and off the charts into one explainable view.</p>
               <div className="mt-16 lg:mt-20"><MindscoreAssembly /></div>
             </div>
           </section>
 
           <section id="trade-therapist" className="marketing-section marketing-section--tint px-6 py-28 sm:px-10 md:py-40 lg:px-12">
             <div className="mx-auto max-w-[1260px]">
-              <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20"><h2 className="font-display max-w-[660px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">A practice of looking closer.</h2><p className="max-w-[560px] self-end text-lg leading-[1.7] text-[#4d6871]">Trade Therapist guides you through a pre-market exercise, a post-market analysis and a written weekly review. At month end, a rollup of those reviews shows which patterns changed and which kept returning.</p></div>
+              <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20"><h2 className="font-display max-w-[660px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">A practice of looking closer.</h2><p className="max-w-[520px] self-end text-lg leading-[1.65] text-[#4d6871]">Prepare before the market, analyse after it and turn each week into a lesson. Monthly rollups show what persists.</p></div>
               <div className="mt-16"><TherapistVisual /></div>
             </div>
           </section>
 
           <section className="marketing-section marketing-section--white px-6 py-28 sm:px-10 md:py-40 lg:px-12">
-            <div className="mx-auto max-w-[1260px]">
-              <h2 className="font-display max-w-[900px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">A review should change what you do.</h2>
-              <p className="mt-8 max-w-[680px] text-lg leading-[1.7] text-[#536b74]">When a pattern appears, make it concrete. Commit to a response, check whether you followed it and carry the lesson into the next plan.</p>
-              <div className="mt-20"><ReviewActionVisual /></div>
+            <div className="mx-auto grid max-w-[1260px] gap-14 lg:grid-cols-[0.68fr_1.32fr] lg:items-center lg:gap-24">
+              <div><h2 className="font-display max-w-[580px] text-balance text-[clamp(3rem,5vw,5.7rem)] font-semibold leading-[1.02] tracking-[-0.055em]">A review should change what you do.</h2><p className="mt-8 max-w-[450px] text-lg leading-[1.65] text-[#536b74]">Turn a recognised pattern into one response for the next session.</p></div>
+              <ReviewActionVisual />
             </div>
           </section>
 
           <section className="marketing-section marketing-section--mist px-6 py-24 sm:px-10 md:py-32 lg:px-12">
-            <div className="mx-auto grid max-w-[1260px] items-center gap-14 lg:grid-cols-[1fr_0.8fr] lg:gap-24"><h2 className="font-display max-w-[650px] text-balance text-[clamp(2.7rem,4.5vw,5rem)] font-semibold leading-[1.04] tracking-[-0.055em]">Your process meets the market you actually trade.</h2><MarketContextVisual /></div>
+            <div className="mx-auto max-w-[1260px]"><h2 className="font-display max-w-[850px] text-balance text-[clamp(2.7rem,4.5vw,5rem)] font-semibold leading-[1.04] tracking-[-0.055em]">Your process meets the market you actually trade.</h2><div className="mt-14 lg:mt-18"><MarketContextVisual /></div></div>
           </section>
         </div>
         <div aria-hidden="true" className="marketing-gradient-bridge marketing-gradient-bridge--dark" />
