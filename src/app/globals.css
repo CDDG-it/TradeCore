@@ -859,26 +859,97 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
 .marketing-dashboard .font-heading { font-family: var(--font-nunito), system-ui, sans-serif; }
 
+/* Motion measures the decorative scenes against the document scroll root. */
+html:has(.marketing-page) { position: relative; }
+
 .marketing-hero {
+  isolation: isolate;
   background:
     radial-gradient(ellipse 45% 60% at 77% 47%, rgba(20, 184, 166, 0.18), transparent 75%),
     radial-gradient(ellipse 50% 55% at -10% -10%, rgba(6, 182, 212, 0.10), transparent 80%),
     #0b1120;
 }
 
-.marketing-dark-to-light {
-  background: linear-gradient(180deg, #0b1120 0%, #193c46 34%, #b9d7d5 75%, #f5faf9 100%);
+.marketing-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 170px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, #0b1120);
+}
+
+.marketing-hero .marketing-grid {
+  mask-image: linear-gradient(180deg, transparent, black 15%, black 57%, transparent);
 }
 
 .marketing-light-flow {
   background:
-    radial-gradient(ellipse 55% 15% at 88% 12%, rgba(20, 184, 166, 0.10), transparent 80%),
-    radial-gradient(ellipse 60% 18% at 6% 60%, rgba(6, 182, 212, 0.06), transparent 80%),
-    linear-gradient(180deg, #f5faf9 0%, #ffffff 28%, #eaf5f4 56%, #f8fbfa 78%, #eff8f6 100%);
+    radial-gradient(ellipse 65% 16% at 88% 9%, rgba(20, 184, 166, 0.08), transparent 83%),
+    radial-gradient(ellipse 70% 20% at 6% 63%, rgba(6, 182, 212, 0.055), transparent 85%),
+    linear-gradient(180deg, #f5faf9 0%, #f8fcfb 16%, #fff 30%, #f7fbfa 43%, #edf7f6 58%, #f8fbfa 76%, #eff8f6 100%);
 }
 
-.marketing-light-to-dark {
-  background: linear-gradient(180deg, #eff8f6 0%, #b9d7d5 24%, #193c46 70%, #0b1120 100%);
+.marketing-transition {
+  position: relative;
+  height: clamp(320px, 44vw, 540px);
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.marketing-transition--light {
+  background:
+    radial-gradient(ellipse 46% 58% at 74% 49%, rgba(12, 164, 160, .13), transparent 82%),
+    linear-gradient(180deg, #0b1120 0%, #111b2b 14%, #16313c 30%, #28545d 46%, #5d898a 62%, #a7c8c5 80%, #e0efec 92%, #f5faf9 100%);
+}
+
+.marketing-transition--dark {
+  background:
+    radial-gradient(ellipse 55% 55% at 30% 53%, rgba(6, 182, 212, .11), transparent 82%),
+    linear-gradient(180deg, #eff8f6 0%, #dcecea 10%, #9fbfbd 24%, #5d898a 40%, #28545d 57%, #16313c 72%, #111b2b 86%, #0b1120 100%);
+}
+
+.marketing-transition-art {
+  position: absolute;
+  top: 48%;
+  translate: 0 -50%;
+  z-index: 1;
+  mix-blend-mode: screen;
+}
+
+.marketing-transition-art--candles {
+  right: max(5%, calc((100vw - 1260px) / 2));
+  width: min(72vw, 430px);
+  aspect-ratio: 1;
+  mask-image: radial-gradient(ellipse 58% 58% at 52% 48%, black 28%, transparent 78%);
+}
+
+.marketing-transition-art--tunnel {
+  left: max(4%, calc((100vw - 1260px) / 2));
+  width: min(82vw, 610px);
+  aspect-ratio: 502 / 282;
+  mask-image: radial-gradient(ellipse 62% 58% at 45% 50%, black 25%, transparent 80%);
+}
+
+.marketing-transition-reference,
+.marketing-transition-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.marketing-transition-reference { background-size: cover; background-position: center; }
+.marketing-transition-art--candles .marketing-transition-reference {
+  background-image: url('/marketing/candles-neon-reference.png');
+  filter: hue-rotate(-105deg) saturate(.9) contrast(1.4) brightness(.88);
+  opacity: .72;
+}
+.marketing-transition-art--tunnel .marketing-transition-reference {
+  background-image: url('/marketing/market-tunnel-reference.png');
+  filter: saturate(.55) contrast(1.35) brightness(.9);
+  opacity: .72;
 }
 
 .marketing-grid {

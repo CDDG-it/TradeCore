@@ -10,25 +10,24 @@ const processDetails = [
 
 export function ProcessCanvas() {
   return (
-    <div className="marketing-process-canvas relative overflow-hidden rounded-[32px] bg-[#102433] text-white shadow-[0_34px_90px_rgba(13,59,68,.16)]" aria-label="A trading plan with commitments, habits and goals">
-      <div className="grid lg:grid-cols-[1.08fr_0.92fr]">
-        <MarketingReveal className="relative flex min-h-[360px] flex-col justify-between overflow-hidden bg-[radial-gradient(circle_at_10%_10%,#1d5a5c,transparent_70%)] p-8 sm:p-12 lg:min-h-[460px] lg:p-14">
-          <div aria-hidden="true" className="absolute -bottom-32 -right-24 h-80 w-80 rounded-full border border-[#75d0c5]/20 shadow-[0_0_0_42px_rgba(117,208,197,.04),0_0_0_88px_rgba(117,208,197,.03)]" />
-          <p className="relative text-sm font-medium text-[#8de0d5]">The trading plan</p>
-          <div className="relative mt-16">
-            <p className="font-display max-w-[540px] text-balance text-[clamp(2.6rem,4.5vw,5.4rem)] font-semibold leading-[1.03] tracking-[-0.055em]">Wait for the planned ES level.</p>
-            <p className="mt-7 max-w-md text-base leading-relaxed text-[#bdd3d4]">Name your setup, risk and conditions before the market tests them.</p>
-          </div>
-        </MarketingReveal>
-        <div className="flex flex-col divide-y divide-white/10 border-t border-white/10 bg-[#172d3b] lg:border-l lg:border-t-0">
-          {processDetails.map((step, index) => (
-            <MarketingReveal key={step.title} delay={0.1 + index * 0.1} className="flex flex-1 flex-col justify-center px-8 py-8 sm:px-12 lg:py-6">
-              <p className="text-sm font-medium text-[#8de0d5]">{step.title}</p>
-              <p className="font-display mt-3 text-2xl font-semibold leading-tight tracking-[-0.035em] text-white sm:text-3xl">{step.value}</p>
-              <p className="mt-3 max-w-md text-sm leading-relaxed text-[#b0c9cc]">{step.detail}</p>
-            </MarketingReveal>
-          ))}
+    <div className="marketing-process-map relative" aria-label="A trading plan leading into commitments, habits and goals">
+      <MarketingReveal className="relative grid gap-9 border-y border-[#9fc9c7] py-12 sm:py-16 lg:grid-cols-[0.28fr_0.72fr] lg:gap-20">
+        <p className="text-sm font-semibold text-[#126f70]">The trading plan</p>
+        <div>
+          <p className="font-display max-w-[890px] text-balance text-[clamp(2.6rem,5vw,5.8rem)] font-semibold leading-[1.04] tracking-[-0.055em] text-[#12313e]">Wait for price to hit my level of interest.</p>
+          <p className="mt-7 max-w-[560px] text-base leading-relaxed text-[#4d6871]">Name your setup, risk and conditions before the market tests them.</p>
         </div>
+      </MarketingReveal>
+      <div aria-hidden="true" className="mx-auto hidden h-16 w-px bg-[#86bebb] lg:block" />
+      <div className="relative ml-2 mt-12 border-l border-[#86bebb] lg:ml-0 lg:mt-0 lg:grid lg:grid-cols-3 lg:border-l-0 lg:border-t">
+        {processDetails.map((step, index) => (
+          <MarketingReveal key={step.title} delay={0.08 + index * 0.09} className="relative py-8 pl-7 pr-5 lg:py-11 lg:pl-11 lg:pr-9">
+            <span aria-hidden="true" className="absolute -left-[4px] top-10 h-[7px] w-[7px] rounded-full bg-[#14b8a6] ring-4 ring-[#edf8f6] lg:-top-[4px] lg:left-11" />
+            <p className="text-sm font-semibold text-[#127d7a]">{step.title}</p>
+            <p className="font-display mt-5 max-w-sm text-balance text-[clamp(1.6rem,2.4vw,2.6rem)] font-semibold leading-[1.14] tracking-[-0.035em] text-[#12313e]">{step.value}</p>
+            <p className="mt-5 max-w-sm text-sm leading-relaxed text-[#526c75]">{step.detail}</p>
+          </MarketingReveal>
+        ))}
       </div>
     </div>
   );
