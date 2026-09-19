@@ -1,6 +1,6 @@
 /** Read-only product compositions for the public page. All content is illustrative. */
 
-import { DrawLine, DrawPath, GrowBar, MarketingReveal, PinReveal } from "@/components/landing/marketing-motion";
+import { DrawLine, GrowBar, MarketingReveal, PinReveal, WriteIn } from "@/components/landing/marketing-motion";
 
 const processDetails = [
   { title: "Commitment", meta: "IF / THEN", value: "After a loss, wait for fresh confirmation." },
@@ -61,11 +61,71 @@ export const reviewSteps = [
   { label: "Next response", meta: "Commitment" },
 ] as const;
 
-/* The session's price path, drawn in a 640x240 box. The trade that was taken
-   enters early after a loss; the best trade on offer waits for the planned level. */
-const sessionPath = "M0,118 L30,108 L60,120 L90,98 L110,104 L130,88 L150,112 L180,104 L200,128 L225,146 L250,138 L275,160 L300,150 L330,166 L360,158 L380,150 L400,140 L420,118 L450,126 L480,96 L510,104 L540,78 L570,86 L600,60 L640,48";
-const takenPoint = { x: 180 / 6.4, y: 104 / 2.4 };
-const bestPoint = { x: 380 / 6.4, y: 150 / 2.4 };
+/* Illustrative candles as [open, high, low, close] on a 0-100 price scale. */
+type Candle = readonly [number, number, number, number];
+
+const takenCandles: readonly Candle[] = [
+  [52, 58, 50, 56], [56, 60, 54, 58], [58, 62, 55, 57], [57, 59, 48, 50], [50, 54, 47, 53], [53, 57, 51, 55], [55, 57, 49, 50],
+  [50, 52, 45, 46], [46, 48, 41, 43], [43, 47, 40, 45], [45, 49, 43, 48], [48, 51, 46, 50], [50, 54, 48, 53], [53, 58, 52, 57],
+];
+const bestCandles: readonly Candle[] = [
+  [60, 63, 56, 58], [58, 60, 52, 54], [54, 56, 48, 50], [50, 52, 44, 46], [46, 48, 40, 42], [42, 45, 39, 41], [41, 48, 40, 47],
+  [47, 52, 45, 51], [51, 56, 50, 55], [55, 58, 52, 54], [54, 62, 53, 61], [61, 68, 60, 67], [67, 74, 65, 72], [72, 80, 70, 78],
+];
+
+const UP = "#22c55e";
+const DOWN = "#ef4444";
+
+function CandleChart({ candles, delay }: { candles: readonly Candle[]; delay: number }) {
+  return (
+    <div className="absolute inset-0 flex items-stretch gap-[3px] sm:gap-1" aria-hidden="true">
+      {candles.map(([open, high, low, close], index) => {
+        const up = close >= open;
+        const color = up ? UP : DOWN;
+        const bodyTop = 100 - Math.max(open, close);
+        const bodyHeight = Math.max(Math.abs(close - open), 1.2);
+        return (
+          <div key={index} className="relative flex-1">
+            {/* Each candle pops from its own body, so the chart prints left to right. */}
+            <PinReveal delay={delay + index * 0.07} origin={`center ${100 - (open + close) / 2}%`} className="absolute inset-0">
+              <span className="absolute left-1/2 w-px -translate-x-1/2" style={{ top: `${100 - high}%`, height: `${high - low}%`, backgroundColor: color, opacity: 0.8 }} />
+              <span className="absolute left-[16%] right-[16%] rounded-[2px]" style={{ top: `${bodyTop}%`, height: `${bodyHeight}%`, backgroundColor: color }} />
+            </PinReveal>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** A horizontal price line with a label at the right edge. `price` is on the same 0-100 scale as the candles. */
+function PriceLine({ price, color, label, delay, dashed = true }: { price: number; color: string; label: string; delay: number; dashed?: boolean }) {
+  return (
+    <div className="absolute inset-x-0 flex items-center" style={{ top: `${100 - price}%` }} aria-hidden="true">
+      <DrawLine axis="x" delay={delay} duration={0.6} className="block h-px flex-1" style={{ background: dashed ? `repeating-linear-gradient(90deg, ${color}bf 0 5px, transparent 5px 10px)` : `${color}bf` }} />
+      <PinReveal delay={delay + 0.35} origin="left center" className="ml-2 shrink-0">
+        <span className="block rounded-md px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.1em] sm:text-[10px]" style={{ backgroundColor: `${color}22`, color }}>{label}</span>
+      </PinReveal>
+    </div>
+  );
+}
+
+/** A marker pinned to a candle, with its note above or below. `index` is the candle position. */
+function TradeMarker({ index, count, price, color, title, note, delay, side }: {
+  index: number; count: number; price: number; color: string; title: string; note: string; delay: number; side: "above" | "below";
+}) {
+  const left = `${((index + 0.5) / count) * 100}%`;
+  return (
+    <PinReveal delay={delay} origin={side === "above" ? "center bottom" : "center top"} className={`absolute -translate-x-1/2 ${side === "above" ? "-translate-y-full" : ""}`} style={{ left, top: `${100 - price}%`, marginTop: side === "above" ? "-8px" : "8px" }}>
+      {side === "below" && <span className="mx-auto mb-1.5 block h-2.5 w-2.5 rounded-full border-2 border-[#0d1c29]" style={{ backgroundColor: color, boxShadow: `0 0 0 2px ${color}66` }} />}
+      <div className="whitespace-nowrap rounded-lg border bg-[#102332] px-2.5 py-1.5 text-left shadow-[0_10px_26px_rgba(0,0,0,.4)]" style={{ borderColor: `${color}59` }}>
+        <span className="block text-[9px] font-semibold tracking-[0.12em] sm:text-[10px]" style={{ color }}>{title}</span>
+        <span className="mt-0.5 block text-[11px] font-medium text-white sm:text-xs">{note}</span>
+      </div>
+      {side === "above" && <span className="mx-auto mt-1.5 block h-2.5 w-2.5 rounded-full border-2 border-[#0d1c29]" style={{ backgroundColor: color, boxShadow: `0 0 0 2px ${color}66` }} />}
+    </PinReveal>
+  );
+}
 
 export function ReviewCanvas() {
   return (
@@ -75,54 +135,59 @@ export function ReviewCanvas() {
         <span className="text-[#829da3]">2 trades taken · 1 better trade on offer</span>
       </MarketingReveal>
 
-      <div className="relative px-4 pb-4 pt-8 sm:px-8 sm:pt-10">
-        <div className="relative aspect-[16/10] w-full sm:aspect-[8/3]" aria-hidden="true">
-          <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 640 240" preserveAspectRatio="none">
-            <DrawPath d={sessionPath} stroke="#59d2c6" strokeWidth={2} delay={0.1} duration={1.5} className="[vector-effect:non-scaling-stroke]" />
-          </svg>
-          {/* The planned level, drawn once price has come back to it. */}
-          <div className="absolute left-[39%] right-0 flex items-center" style={{ top: `${152 / 2.4}%` }}>
-            <DrawLine axis="x" delay={0.7} duration={0.8} className="block h-px flex-1 bg-[repeating-linear-gradient(90deg,#8de0d5_0_6px,transparent_6px_12px)] opacity-70" />
+      <div className="grid gap-3 p-4 sm:p-5 lg:grid-cols-2">
+        {/* The trade that was taken: entered early, stopped out. */}
+        <MarketingReveal distance={16} className="rounded-[24px] border border-white/10 bg-[#0d1c29] p-5 sm:p-6">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-[10px] font-semibold tracking-[0.14em] text-[#f08c8c]">THE TRADE YOU TOOK</p>
+            <p className="text-xs text-[#829da3]">09:42 · <span className="font-semibold tabular-nums text-[#f08c8c]">-1R</span></p>
           </div>
-          <PinReveal delay={1.0} origin="right center" className="absolute right-0 -translate-y-1/2" style={{ top: `${152 / 2.4}%` }}>
-            <span className="-mr-2 hidden rounded-md bg-[#173849] px-2 py-1 text-[10px] font-semibold tracking-[0.12em] text-[#8de0d5] sm:block">PLANNED LEVEL</span>
-          </PinReveal>
-
-          {/* The trade that was taken: early, after a loss. */}
-          <PinReveal delay={0.55} origin="center bottom" className="absolute -translate-x-1/2 -translate-y-full" style={{ left: `${takenPoint.x}%`, top: `${takenPoint.y}%` }}>
-            <div className="mb-2 whitespace-nowrap rounded-xl border border-[#ef4444]/35 bg-[#0d1c29] px-3 py-2 text-left shadow-[0_12px_30px_rgba(0,0,0,.35)]">
-              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#f08c8c]">TAKEN · 09:42</span>
-              <span className="mt-0.5 block text-xs font-medium sm:text-sm">Early, after a loss <span className="ml-1 tabular-nums text-[#f08c8c]">-1R</span></span>
+          <div className="relative mt-5 h-44 pr-20 sm:h-52 sm:pr-24" aria-label="Candlestick chart of the trade taken: entered early after a loss and stopped out">
+            <div className="relative h-full">
+              <CandleChart candles={takenCandles} delay={0.2} />
+              <PriceLine price={55} color="#c9dadd" label="ENTRY" delay={0.75} />
+              <PriceLine price={44} color={DOWN} delay={1.0} label="STOP" dashed={false} />
+              <TradeMarker index={5} count={takenCandles.length} price={57} color="#f08c8c" title="ENTERED EARLY" note="Right after a loss, no retest" delay={0.9} side="above" />
+              <TradeMarker index={8} count={takenCandles.length} price={41} color={DOWN} title="STOPPED OUT" note="-1R at 10:05" delay={1.25} side="below" />
             </div>
-            <span className="mx-auto block h-3 w-3 rounded-full border-2 border-[#102332] bg-[#ef4444] ring-2 ring-[#ef4444]/40" />
-          </PinReveal>
+          </div>
+          <p className="mt-4 text-xs leading-relaxed text-[#9db6bb] sm:text-sm">Entered on the first bounce after a loss. The level had not been retested yet.</p>
+        </MarketingReveal>
 
-          {/* The best trade on offer: at the level, after confirmation. */}
-          <PinReveal delay={1.35} origin="center top" className="absolute -translate-x-1/2" style={{ left: `${bestPoint.x}%`, top: `${bestPoint.y}%`, marginTop: "-6px" }}>
-            <span className="mx-auto block h-3 w-3 rounded-full border-2 border-[#102332] bg-[#22c55e] ring-2 ring-[#22c55e]/40" />
-            <div className="mt-2 whitespace-nowrap rounded-xl border border-[#22c55e]/35 bg-[#0d1c29] px-3 py-2 text-left shadow-[0_12px_30px_rgba(0,0,0,.35)]">
-              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#7ee0a4]">BEST TRADE · 10:35</span>
-              <span className="mt-0.5 block text-xs font-medium sm:text-sm">At the level, confirmed <span className="ml-1 tabular-nums text-[#7ee0a4]">+2.4R</span></span>
+        {/* The best trade on offer: waited for the level, confirmed, ran to target. */}
+        <MarketingReveal delay={0.15} distance={16} className="rounded-[24px] border border-[#14b8a6]/25 bg-[#0d1c29] p-5 sm:p-6">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-[10px] font-semibold tracking-[0.14em] text-[#7ee0a4]">BEST TRADE OF THE DAY</p>
+            <p className="text-xs text-[#829da3]">10:35 · <span className="font-semibold tabular-nums text-[#7ee0a4]">+2.4R</span></p>
+          </div>
+          <div className="relative mt-5 h-44 pr-20 sm:h-52 sm:pr-24" aria-label="Candlestick chart of the best trade on offer: entered at the planned level after confirmation and ran to target">
+            <div className="relative h-full">
+              <CandleChart candles={bestCandles} delay={0.45} />
+              <PriceLine price={40} color="#8de0d5" label="PLANNED LEVEL" delay={0.9} />
+              <PriceLine price={78} color={UP} label="TARGET" delay={1.6} />
+              <TradeMarker index={7} count={bestCandles.length} price={44} color={UP} title="ENTERED AT 10:35" note="Level held, confirmed" delay={1.35} side="below" />
+              <TradeMarker index={13} count={bestCandles.length} price={80} color="#7ee0a4" title="TARGET HIT" note="+2.4R at 11:20" delay={1.75} side="above" />
             </div>
-          </PinReveal>
-        </div>
+          </div>
+          <p className="mt-4 text-xs leading-relaxed text-[#9db6bb] sm:text-sm">Price came back to the planned level, held, and confirmed. The trade in the plan.</p>
+        </MarketingReveal>
       </div>
 
-      <div className="grid gap-3 p-4 sm:grid-cols-[1.1fr_0.9fr] sm:p-5">
-        <MarketingReveal delay={1.5} distance={16} className="rounded-[24px] border border-white/10 bg-[#0d1c29] p-6 sm:p-7">
-          <p className="text-[10px] font-semibold tracking-[0.14em] text-[#8de0d5]">BEST TRADE OF THE DAY</p>
+      <div className="grid gap-3 px-4 pb-4 sm:grid-cols-[1.1fr_0.9fr] sm:px-5 sm:pb-5">
+        <MarketingReveal delay={1.9} distance={16} className="rounded-[24px] border border-white/10 bg-[#0d1c29] p-6 sm:p-7">
+          <p className="text-[10px] font-semibold tracking-[0.14em] text-[#8de0d5]">VERDICT</p>
           <p className="font-display mt-3 text-xl font-semibold tracking-[-0.035em] sm:text-2xl">Was your trade the best trade?</p>
           <div className="mt-5 space-y-2 text-sm">
             <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 px-4 py-3 text-[#8aa5ab]"><span>Yes, I took the best available trade</span><span aria-hidden="true" className="h-4 w-4 rounded-full border border-white/20" /></div>
-            <MarketingReveal delay={1.9} distance={6} className="flex items-center justify-between gap-4 rounded-xl border border-[#14b8a6]/60 bg-[#14b8a6]/10 px-4 py-3 font-medium text-white">
+            <MarketingReveal delay={2.3} distance={6} className="flex items-center justify-between gap-4 rounded-xl border border-[#14b8a6]/60 bg-[#14b8a6]/10 px-4 py-3 font-medium text-white">
               <span>No, a better trade was on offer</span>
               <span aria-hidden="true" className="grid h-4 w-4 place-items-center rounded-full bg-[#14b8a6] text-[10px] font-bold text-[#081721]">✓</span>
             </MarketingReveal>
           </div>
-          <p className="mt-5 text-xs leading-relaxed text-[#9db6bb] sm:text-sm"><span className="font-semibold text-[#c6dcdf]">Why it was better:</span> the cleaner level, confirmation first, and room to the target.</p>
+          <p className="mt-5 text-xs leading-relaxed text-[#9db6bb] sm:text-sm"><span className="font-semibold text-[#c6dcdf]">Why it was better:</span> the level was retested, confirmation came first, and there was room to the target.</p>
         </MarketingReveal>
 
-        <MarketingReveal delay={1.7} distance={16} className="flex flex-col justify-between rounded-[24px] bg-[#173849] p-6 sm:p-7">
+        <MarketingReveal delay={2.1} distance={16} className="flex flex-col justify-between rounded-[24px] bg-[#173849] p-6 sm:p-7">
           <div>
             <p className="text-[10px] font-semibold tracking-[0.14em] text-[#8de0d5]">NEXT RESPONSE</p>
             <p className="font-display mt-3 text-balance text-[clamp(1.5rem,2.4vw,2.2rem)] font-medium leading-[1.12] tracking-[-0.04em]">Wait for my level and confirmation.</p>
@@ -135,7 +200,7 @@ export function ReviewCanvas() {
 }
 
 export const therapistCadence = [
-  { label: "Before the market", meta: "Daily" },
+  { label: "Before the market", meta: "Pre-market" },
   { label: "After the market", meta: "Session" },
   { label: "Weekly review", meta: "5 days" },
   { label: "Monthly rollup", meta: "Persistent" },
@@ -144,16 +209,38 @@ export const therapistCadence = [
 export function TherapistVisual() {
   return (
     <div className="grid gap-4 sm:grid-cols-2" aria-label="Trade Therapist reflection cadence">
-      <MarketingReveal className="relative min-h-[440px] overflow-hidden rounded-[28px] bg-[#102332] bg-[radial-gradient(circle_at_15%_12%,#1b5b5c,transparent_62%)] p-8 text-white shadow-[0_34px_90px_rgba(13,59,68,.20)] sm:col-span-2 sm:p-11">
-        <div className="flex items-baseline justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Before the market</p><span className="text-xs text-[#78959c]">DAILY</span></div>
-        <p className="font-display mt-8 max-w-[560px] text-balance text-[clamp(2.2rem,3.6vw,4.2rem)] font-medium leading-[1.08] tracking-[-0.05em]">What will you repeat? What will you interrupt?</p>
-        <div className="absolute bottom-8 left-8 right-8 rounded-[22px] border border-white/10 bg-[#0e2531]/75 p-5 backdrop-blur-sm sm:bottom-11 sm:left-11 sm:right-11 sm:p-6">
-          <div className="flex items-center justify-between text-xs"><span className="text-[#8aa9ae]">Today&apos;s focus</span><span className="text-[#8de0d5]">Saved</span></div>
-          <div className="mt-5 space-y-3">
-            <GrowBar axis="x" delay={0.35} className="block h-2 w-[88%] rounded-full bg-white/15" />
-            <GrowBar axis="x" delay={0.45} className="block h-2 w-[62%] rounded-full bg-white/10" />
-          </div>
+      <MarketingReveal className="relative overflow-hidden rounded-[28px] bg-[#102332] bg-[radial-gradient(circle_at_15%_12%,#1b5b5c,transparent_62%)] p-6 text-white shadow-[0_34px_90px_rgba(13,59,68,.20)] sm:col-span-2 sm:p-8">
+        <div className="flex items-baseline justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Before the market</p><span className="text-xs text-[#78959c]">PRE-MARKET EXERCISES</span></div>
+        <p className="font-display mt-5 max-w-[560px] text-balance text-[clamp(1.7rem,2.6vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.04em]">Look back at two losses and two wins, then write today&apos;s plan.</p>
+
+        {/* Intention: the one line the rest of the drill feeds. */}
+        <div className="mt-7 rounded-2xl border border-[#14b8a6]/30 bg-[#0e2531]/75 p-4 sm:p-5">
+          <p className="text-[10px] font-semibold tracking-[0.18em] text-[#8de0d5]">INTENTION · TODAY&apos;S ONE FOCUS</p>
+          <p className="mt-2 text-sm font-medium sm:text-base"><WriteIn delay={0.35} duration={1.3}>No entry without a confirmed level. Wait for the retest.</WriteIn></p>
         </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <MarketingReveal delay={0.5} distance={14} className="rounded-2xl border border-white/10 bg-[#0d1c29]/80 p-4 sm:p-5">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#f08c8c]">PREVENT THIS LOSS</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs"><span className="rounded-md bg-white/10 px-2 py-1 font-semibold">ES</span><span className="text-[#9db6bb]">Tue 15 Sep</span><span className="rounded-md bg-[#ef4444]/15 px-2 py-1 font-semibold tabular-nums text-[#f08c8c]">-1R</span></div>
+            <p className="mt-3 text-sm font-medium">Entered before confirmation.</p>
+            <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#78959c]">How I&apos;ll prevent this today</p>
+            <p className="mt-1.5 border-l-2 border-[#ef4444]/50 pl-3 text-sm text-[#d6e4e6]"><WriteIn delay={1.6} duration={1.0}>Wait for the retest to hold, then enter.</WriteIn></p>
+          </MarketingReveal>
+
+          <MarketingReveal delay={0.65} distance={14} className="rounded-2xl border border-white/10 bg-[#0d1c29]/80 p-4 sm:p-5">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-[#7ee0a4]">REPEAT THIS WIN</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs"><span className="rounded-md bg-white/10 px-2 py-1 font-semibold">ES</span><span className="text-[#9db6bb]">Wed 16 Sep</span><span className="rounded-md bg-[#22c55e]/15 px-2 py-1 font-semibold tabular-nums text-[#7ee0a4]">+2.3R</span></div>
+            <p className="mt-3 text-sm font-medium">Waited for the pullback into the level.</p>
+            <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#78959c]">How I&apos;ll repeat this today</p>
+            <p className="mt-1.5 border-l-2 border-[#22c55e]/50 pl-3 text-sm text-[#d6e4e6]"><WriteIn delay={2.5} duration={1.0}>Same patience: level first, then confirmation.</WriteIn></p>
+          </MarketingReveal>
+        </div>
+
+        <MarketingReveal delay={3.4} distance={8} className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <span className="flex items-center gap-2 text-[#7ee0a4]"><span aria-hidden="true" className="grid h-4 w-4 place-items-center rounded-full bg-[#22c55e]/20 text-[10px] font-bold">✓</span>Plan saved for Sep 17</span>
+          <span className="rounded-lg bg-[#14b8a6] px-3 py-1.5 font-semibold text-[#081721]">Saved</span>
+        </MarketingReveal>
       </MarketingReveal>
 
       <MarketingReveal delay={0.08} className="rounded-[28px] bg-[#173849] p-7 text-white shadow-[0_24px_60px_rgba(13,59,68,.16)] sm:p-9">

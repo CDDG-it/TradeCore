@@ -1009,6 +1009,39 @@ html:has(.marketing-page) { position: relative; }
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 32px 90px rgba(0, 0, 0, 0.6);
 }
 
+/* The sample dashboard assembles itself on load: greeting first, then each
+   desk slot in reading order. Predetermined motion, so it stays in CSS. */
+.marketing-dashboard-stage > p,
+.marketing-dashboard-stage > div > div {
+  animation: marketing-card-in 800ms var(--ease-out-strong) both;
+}
+
+.marketing-dashboard-stage > p { animation-delay: 120ms; }
+.marketing-dashboard-stage > div > div:nth-child(1) { animation-delay: 260ms; }
+.marketing-dashboard-stage > div > div:nth-child(2) { animation-delay: 360ms; }
+.marketing-dashboard-stage > div > div:nth-child(3) { animation-delay: 560ms; }
+.marketing-dashboard-stage > div > div:nth-child(4) { animation-delay: 460ms; }
+
+@keyframes marketing-card-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Callouts read the screen for the visitor. Three take turns; each holds for a
+   third of the cycle so there is always exactly one on screen. */
+.marketing-callout {
+  animation: marketing-callout-cycle 10.5s ease infinite both;
+  animation-delay: calc(1.4s + var(--callout-index) * 3.5s);
+}
+
+@keyframes marketing-callout-cycle {
+  0% { opacity: 0; transform: translateY(8px); }
+  4% { opacity: 1; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(0); }
+  34% { opacity: 0; transform: translateY(-6px); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+
 .marketing-score-center {
   font-family: "Clash Display", var(--font-inter), system-ui, sans-serif;
   font-size: 64px;
@@ -1035,4 +1068,6 @@ html:has(.marketing-page) { position: relative; }
     animation-iteration-count: 1 !important;
   }
   .marketing-cta:active { transform: none; }
+  .marketing-callout { animation: none; opacity: 1; }
+  figcaption .marketing-callout:not(:first-child) { opacity: 0; }
 }

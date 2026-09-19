@@ -46,9 +46,10 @@ export function MarketingReveal({ children, className, delay = 0, distance = 24,
 }
 
 /** A hairline that draws itself along one axis. Explains a connection between two things. */
-export function DrawLine({ axis = "x", className, delay = 0, duration = 0.7 }: {
+export function DrawLine({ axis = "x", className, style, delay = 0, duration = 0.7 }: {
   axis?: "x" | "y";
   className?: string;
+  style?: CSSProperties;
   delay?: number;
   duration?: number;
 }) {
@@ -60,7 +61,7 @@ export function DrawLine({ axis = "x", className, delay = 0, duration = 0.7 }: {
     <motion.span
       aria-hidden="true"
       className={className}
-      style={{ transformOrigin: axis === "x" ? "left center" : "center top" }}
+      style={{ transformOrigin: axis === "x" ? "left center" : "center top", ...style }}
       initial={{ opacity: reduceMotion ? 0 : 1, transform: reduceMotion ? full : collapsed }}
       whileInView={{ opacity: 1, transform: full }}
       viewport={viewport}
@@ -143,6 +144,28 @@ export function PinReveal({ children, className, style, delay = 0, origin = "cen
     >
       {children}
     </motion.div>
+  );
+}
+
+/** Text that writes itself in, left to right. Progress is linear; nothing eases while you type. */
+export function WriteIn({ children, className, delay = 0, duration = 1.1 }: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+  duration?: number;
+}) {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <motion.span
+      className={`inline-block ${className ?? ""}`}
+      initial={{ opacity: reduceMotion ? 0 : 1, clipPath: reduceMotion ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)" }}
+      whileInView={{ opacity: 1, clipPath: "inset(0 0% 0 0)" }}
+      viewport={viewport}
+      transition={{ duration, delay, ease: "linear" }}
+    >
+      {children}
+    </motion.span>
   );
 }
 

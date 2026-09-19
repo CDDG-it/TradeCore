@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { eachDayOfInterval, endOfWeek, format, startOfWeek } from "date-fns";
 import { DashboardDesk } from "@/components/dashboard/dashboard-desk";
 import { ActiveCapitalCard, GoalsCard, HabitsCard, MindScoreOrb, WeekStrip, WinRateCard } from "@/components/dashboard/dashboard-cards";
@@ -60,6 +60,18 @@ const weekDays = eachDayOfInterval({ start: startOfWeek(sampleNow, { weekStartsO
   return { date, trades: dayTrades, r: dayTrades.reduce((sum, trade) => sum + tradeR(trade), 0) };
 });
 
+/* What the visitor should notice, in reading order. Each callout rings the card
+   it explains (percentages of the screen) while its caption reads below the laptop. */
+const callouts = [
+  { title: "MC Mindscore 74", body: "one explainable score from five parts of your process.", ring: { left: "65%", top: "13.5%", width: "34%", height: "29.5%" } },
+  { title: "This week +4.5R", body: "three of four trades followed the written plan.", ring: { left: "0.5%", top: "49.5%", width: "65%", height: "48.5%" } },
+  { title: "Habits 3/3", body: "plan written, last trade reviewed, pause kept.", ring: { left: "1%", top: "31%", width: "32%", height: "19%" } },
+] as const;
+
+function calloutStyle(index: number, extra: CSSProperties = {}) {
+  return { ...extra, "--callout-index": index } as CSSProperties & Record<"--callout-index", number>;
+}
+
 export function LaptopDashboard() {
   const screenRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<number | null>(null);
@@ -86,7 +98,7 @@ export function LaptopDashboard() {
             <div className="flex gap-1">{PRIMARY_NAV.map((item) => <span key={item.href} className={`rounded-md px-2 py-1 text-[10px] font-semibold ${item.href === "/dashboard" ? "bg-[#1d4c52] text-white" : "text-[#7b91a0]"}`}>{item.label}</span>)}</div>
             <span className="grid h-6 w-6 place-items-center rounded-full bg-[#173b43] text-[9px] font-semibold text-white">AL</span>
           </div>
-          <div className="flex h-[calc(100%-3rem)] flex-col p-3">
+          <div className="marketing-dashboard-stage flex h-[calc(100%-3rem)] flex-col p-3">
             <p className="mb-3 text-base font-bold text-white">Good morning, Alex</p>
             <DashboardDesk
               preview
@@ -99,9 +111,20 @@ export function LaptopDashboard() {
             />
           </div>
         </div>
+        {callouts.map((callout, index) => (
+          <span key={callout.title} aria-hidden="true" className="marketing-callout pointer-events-none absolute rounded-[14px] border-2 border-[#14b8a6] shadow-[0_0_0_5px_rgba(20,184,166,.16),inset_0_0_0_1px_rgba(20,184,166,.25)]" style={calloutStyle(index, callout.ring)} />
+        ))}
         </div>
       </div>
       <div className="relative mx-auto h-3 w-[108%] -translate-x-[4%] rounded-b-[50%] bg-gradient-to-b from-[#758391] via-[#3a4652] to-[#19232f] shadow-[0_25px_42px_rgba(0,0,0,.4)]" />
+      <figcaption className="relative mx-auto mt-7 h-12 max-w-[560px] text-center text-sm leading-relaxed text-[#b8ccd0] sm:h-6">
+        {callouts.map((callout, index) => (
+          <span key={callout.title} className="marketing-callout absolute inset-x-0 top-0 flex items-start justify-center gap-2.5" style={calloutStyle(index)}>
+            <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#14b8a6]" />
+            <span><span className="font-semibold text-white">{callout.title}</span> <span aria-hidden="true">·</span> {callout.body}</span>
+          </span>
+        ))}
+      </figcaption>
     </figure>
   );
 }
