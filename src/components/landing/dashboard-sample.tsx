@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { eachDayOfInterval, endOfWeek, format, startOfWeek } from "date-fns";
 import { DashboardDesk } from "@/components/dashboard/dashboard-desk";
 import { ActiveCapitalCard, GoalsCard, HabitsCard, MindScoreOrb, WeekStrip, WinRateCard } from "@/components/dashboard/dashboard-cards";
@@ -23,15 +23,25 @@ const weekDays = eachDayOfInterval({ start: startOfWeek(sampleNow, { weekStartsO
 });
 
 /* What the visitor should notice, in reading order. Each callout rings the card
-   it explains (percentages of the screen) while its caption reads below the laptop. */
+   it explains while its caption reads below the frame. */
 const callouts = [
-  { title: "MC Mindscore 74", body: "one explainable score from five parts of your process.", ring: { left: "65%", top: "13.5%", width: "34%", height: "29.5%" } },
-  { title: "This week +4.5R", body: "three of four trades followed the written plan.", ring: { left: "0.5%", top: "49.5%", width: "65%", height: "48.5%" } },
-  { title: "Habits 3/3", body: "plan written, last trade reviewed, pause kept.", ring: { left: "1%", top: "31%", width: "32%", height: "19%" } },
+  { title: "MC Mindscore 74", body: "one explainable score from five parts of your process." },
+  { title: "This week +4.5R", body: "three of four trades followed the written plan." },
+  { title: "Habits 3/3", body: "plan written, last trade reviewed, pause kept." },
 ] as const;
 
-function calloutStyle(index: number, extra: CSSProperties = {}) {
-  return { ...extra, "--callout-index": index } as CSSProperties & Record<"--callout-index", number>;
+function calloutStyle(index: number) {
+  return { "--callout-index": index } as CSSProperties & Record<"--callout-index", number>;
+}
+
+/** Wraps a desk card so its ring is drawn on the card's own box: it fits at every size. */
+function Ringed({ index, className, children }: { index: number; className?: string; children: ReactNode }) {
+  return (
+    <div className={`relative ${className ?? ""}`}>
+      {children}
+      <span aria-hidden="true" className="marketing-callout pointer-events-none absolute inset-0 rounded-2xl border-2 border-[#14b8a6] shadow-[0_0_0_5px_rgba(20,184,166,.16),inset_0_0_0_1px_rgba(20,184,166,.25)]" style={calloutStyle(index)} />
+    </div>
+  );
 }
 
 export function DashboardScreenshot() {
@@ -64,18 +74,15 @@ export function DashboardScreenshot() {
             <p className="mb-3 text-base font-bold text-white">Good morning, Alex</p>
             <DashboardDesk
               preview
-              capital={<><ActiveCapitalCard capital={52840} count={2} hidden={false} onToggle={() => {}} compactNumbers /><HabitsCard habits={habits} doneToday={new Set(["plan", "review", "pause"])} pendingHabit={null} onToggle={() => {}} className="min-h-0 flex-1" /></>}
+              capital={<><ActiveCapitalCard capital={52840} count={2} hidden={false} onToggle={() => {}} compactNumbers /><Ringed index={2} className="min-h-0 flex-1"><HabitsCard habits={habits} doneToday={new Set(["plan", "review", "pause"])} pendingHabit={null} onToggle={() => {}} className="h-full" /></Ringed></>}
               winRate={<WinRateCard winRate={75} wins={3} losses={1} be={0} total={4} netR={4.5} goodExec={3} badExec={1} period="week" onPeriodChange={() => {}} compactNumbers className="h-full" />}
-              journal={<WeekStrip days={weekDays} compactNumbers />}
-              mindScore={<MindScoreOrb score={mindScore} period="week" onPeriodChange={() => {}} compactNumbers className="shrink-0" />}
+              journal={<Ringed index={1} className="h-full"><WeekStrip days={weekDays} compactNumbers /></Ringed>}
+              mindScore={<Ringed index={0} className="shrink-0"><MindScoreOrb score={mindScore} period="week" onPeriodChange={() => {}} compactNumbers /></Ringed>}
               goals={<GoalsCard goals={goals} progress={goalProgress} compactNumbers className="min-h-0 flex-1" />}
               news={<div className="rounded-2xl border border-white/10 bg-[#131b2e] p-4 text-[11px] text-white"><p className="font-semibold uppercase tracking-wider text-[#8198a7]">This week&apos;s news</p><p className="mt-3 font-semibold">US macro releases</p><p className="mt-1 text-[#9eb1bd]">Check the calendar before the open.</p></div>}
             />
           </div>
         </div>
-        {callouts.map((callout, index) => (
-          <span key={callout.title} aria-hidden="true" className="marketing-callout pointer-events-none absolute rounded-[14px] border-2 border-[#14b8a6] shadow-[0_0_0_5px_rgba(20,184,166,.16),inset_0_0_0_1px_rgba(20,184,166,.25)]" style={calloutStyle(index, callout.ring)} />
-        ))}
         </div>
       </div>
       <figcaption className="relative mx-auto mt-7 h-12 max-w-[560px] text-center text-sm leading-relaxed text-[#b8ccd0] sm:h-6">

@@ -20,7 +20,7 @@ export default function HomePage() {
       <a href="#main" className="sr-only bg-[#14b8a6] px-4 py-2 font-semibold text-[#0b1120] focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50">Skip to content</a>
       <LandingNav />
       <main id="main">
-        <section className="marketing-hero relative overflow-hidden px-6 pb-24 pt-20 sm:px-10 sm:pt-28 lg:px-12 lg:pb-32 lg:pt-32">
+        <section id="dashboard" className="marketing-hero relative overflow-hidden px-6 pb-24 pt-20 sm:px-10 sm:pt-28 lg:px-12 lg:pb-32 lg:pt-32">
           <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-35" />
           <div className="relative mx-auto grid max-w-[1380px] grid-cols-[minmax(0,1fr)] items-center gap-14 lg:grid-cols-[0.86fr_1.14fr] lg:gap-8">
             <div className="relative z-10 min-w-0 max-w-[610px]">
@@ -39,7 +39,7 @@ export default function HomePage() {
         <div className="marketing-light-flow text-[#0b1120]">
           <section id="the-approach" className="marketing-section marketing-section--mist px-6 pb-20 pt-16 sm:px-10 md:pb-28 md:pt-24 lg:px-12">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader index="01" label="The approach" title="Give the next session a direction." className="mb-14 lg:mb-18">
+              <SectionHeader index="01" label="My Edge" title="Give the next session a direction." className="mb-14 lg:mb-18">
                 Plan the session. Turn recurring mistakes into commitments, then track the habits and goals that support execution.
               </SectionHeader>
               <ProcessCanvas />
@@ -58,7 +58,7 @@ export default function HomePage() {
           <section id="trade-therapist" className="marketing-section marketing-section--tint px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.42fr_0.58fr] lg:gap-20">
               <div className="marketing-sticky">
-                <SectionHeader index="03" label="Trade Therapist" title="A practice of looking closer." align="stack">
+                <SectionHeader index="03" label="MC Trade Therapist" title="A practice of looking closer." align="stack">
                   Prepare before the market, analyse after it and turn each week into a lesson. Monthly rollups show what persists.
                 </SectionHeader>
                 <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
@@ -79,7 +79,7 @@ export default function HomePage() {
           <section id="review" className="marketing-section marketing-section--white px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.38fr_0.62fr] lg:gap-20">
               <div className="marketing-sticky">
-                <SectionHeader index="04" label="Review" title="A review should change what you do." align="stack">
+                <SectionHeader index="04" label="Best trade of the day" title="A review should change what you do." align="stack">
                   Look back at the trade you took, mark the best trade that was on offer, and turn the difference into one response for the next session.
                 </SectionHeader>
                 <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">

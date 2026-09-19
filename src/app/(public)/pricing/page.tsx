@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
 import { MarketingReveal } from "@/components/landing/marketing-motion";
-import { FEATURES } from "@/lib/landing/features";
+import { PRODUCTS } from "@/lib/landing/nav";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
 
@@ -47,12 +47,12 @@ export default function PricingPage() {
 
               <MarketingReveal delay={0.2} className="rounded-[32px] border border-white/10 bg-white/[0.03] p-8 sm:p-10">
                 <p className="text-xs font-semibold tracking-[0.14em] text-[#8aa5ab]">WHAT IS INCLUDED</p>
-                <ul className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-                  {FEATURES.map((feature, index) => (
-                    <li key={feature.slug}>
+                <ul className="mt-6 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                  {PRODUCTS.map((product, index) => (
+                    <li key={product.href}>
                       <MarketingReveal delay={0.25 + index * 0.05} distance={10} className="flex gap-3">
                         <span aria-hidden="true" className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#14b8a6]/15 text-[#7be0d5]"><Check className="h-3 w-3" /></span>
-                        <span><span className="block text-sm font-semibold text-white">{feature.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#9db6bb]">{feature.tagline}</span></span>
+                        <span><span className="block text-sm font-semibold text-white">{product.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#9db6bb]">{product.tagline}</span></span>
                       </MarketingReveal>
                     </li>
                   ))}

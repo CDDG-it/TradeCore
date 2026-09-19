@@ -3,63 +3,35 @@
 import { useEffect, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
-import {
-  BarChart3, BookOpen, Brain, ChevronDown, Compass, Gauge, Globe2, LayoutDashboard, Menu, Repeat, Wallet, X,
-} from "lucide-react";
-import { PRODUCT_GROUPS, TRADER_LEVELS } from "@/lib/landing/nav";
+import { ChartCandlestick, ChevronDown, LayoutDashboard, Menu, NotebookPen, Target, X } from "lucide-react";
+import { PRODUCTS, TRADER_LEVELS, type Product } from "@/lib/landing/nav";
 
-const featureIcons: Record<string, ComponentType<{ className?: string }>> = {
-  "trade-therapist": Brain,
-  "psychological-edge": Gauge,
-  habits: Repeat,
-  journal: BookOpen,
-  analysis: Compass,
-  analytics: BarChart3,
-  accounts: Wallet,
-  "news-city": Globe2,
+const productIcons: Record<Product["icon"], ComponentType<{ className?: string }>> = {
   dashboard: LayoutDashboard,
+  edge: Target,
+  therapist: NotebookPen,
+  markets: ChartCandlestick,
 };
 
 const triggerClass = "marketing-nav-trigger inline-flex h-10 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-medium text-[#d0dfe1] hover:bg-white/5 hover:text-white data-[popup-open]:bg-white/5 data-[popup-open]:text-white";
 
 function ProductsPanel() {
-  const [lead, ...rest] = PRODUCT_GROUPS;
   return (
-    <div className="grid w-[min(92vw,880px)] gap-6 p-6 lg:grid-cols-[1.1fr_1fr_0.9fr]">
-      <div>
-        <p className="marketing-nav-label">{lead.title}</p>
-        <ul className="mt-3 space-y-1">
-          {lead.features.map((feature) => {
-            const Icon = featureIcons[feature.slug] ?? LayoutDashboard;
-            return (
-              <li key={feature.slug}>
-                <NavigationMenu.Link render={<Link href={`/features/${feature.slug}`} />} className="marketing-nav-card group flex gap-4 rounded-2xl border border-[#14b8a6]/25 bg-[#14b8a6]/[0.06] p-4 hover:border-[#14b8a6]/50 hover:bg-[#14b8a6]/10">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#14b8a6]/15 text-[#7be0d5]"><Icon className="h-5 w-5" /></span>
-                  <span className="min-w-0"><span className="block text-sm font-semibold text-white">{feature.name}</span><span className="mt-1 block text-xs leading-relaxed text-[#9db6bb]">{feature.tagline}</span></span>
-                </NavigationMenu.Link>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-      {rest.map((group) => (
-        <div key={group.title}>
-          <p className="marketing-nav-label">{group.title}</p>
-          <ul className="mt-3 space-y-1">
-            {group.features.map((feature) => {
-              const Icon = featureIcons[feature.slug] ?? LayoutDashboard;
-              return (
-                <li key={feature.slug}>
-                  <NavigationMenu.Link render={<Link href={`/features/${feature.slug}`} />} className="marketing-nav-card flex gap-3.5 rounded-xl p-3 hover:bg-white/5">
-                    <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/[0.06] text-[#8de0d5]"><Icon className="h-4 w-4" /></span>
-                    <span className="min-w-0"><span className="block text-sm font-semibold text-white">{feature.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#9db6bb]">{feature.tagline}</span></span>
-                  </NavigationMenu.Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
+    <div className="w-[min(92vw,640px)] p-4">
+      <p className="marketing-nav-label px-3 pt-2">Four products, one process</p>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {PRODUCTS.map((product) => {
+          const Icon = productIcons[product.icon];
+          return (
+            <li key={product.href}>
+              <NavigationMenu.Link render={<Link href={product.href} />} className="marketing-nav-card flex h-full gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 hover:border-[#14b8a6]/50 hover:bg-[#14b8a6]/[0.08]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#14b8a6]/15 text-[#7be0d5]"><Icon className="h-5 w-5" /></span>
+                <span className="min-w-0"><span className="block text-sm font-semibold text-white">{product.name}</span><span className="mt-1 block text-xs leading-relaxed text-[#9db6bb]">{product.tagline}</span></span>
+              </NavigationMenu.Link>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -114,16 +86,14 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <div id="marketing-mobile-menu" data-open={open || undefined} aria-hidden={!open} className="marketing-mobile-menu fixed inset-x-0 bottom-0 top-[72px] z-40 overflow-y-auto bg-[#0b1120] px-6 pb-10 pt-6 lg:hidden" {...(!open ? { inert: true } : {})}>
       <nav aria-label="Site" className="mx-auto max-w-[560px] space-y-8">
-        {PRODUCT_GROUPS.map((group) => (
-          <div key={group.title}>
-            <p className="marketing-nav-label">{group.title}</p>
-            <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
-              {group.features.map((feature) => (
-                <li key={feature.slug}><Link href={`/features/${feature.slug}`} onClick={onClose} className="flex items-center justify-between gap-4 py-3.5 text-[15px] font-medium text-white"><span>{feature.name}</span><span className="max-w-[55%] truncate text-xs text-[#8aa5ab]">{feature.tagline}</span></Link></li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        <div>
+          <p className="marketing-nav-label">Products</p>
+          <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
+            {PRODUCTS.map((product) => (
+              <li key={product.href}><Link href={product.href} onClick={onClose} className="block py-3.5"><span className="block text-[15px] font-medium text-white">{product.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#8aa5ab]">{product.tagline}</span></Link></li>
+            ))}
+          </ul>
+        </div>
         <div>
           <p className="marketing-nav-label">For traders</p>
           <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
