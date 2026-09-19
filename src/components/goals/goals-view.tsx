@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter,
 } from "date-fns";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { CountUp, EASE_OUT } from "@/components/ui/count-up";
 import {
   getTradingGoals, createTradingGoal, updateTradingGoal, deleteTradingGoal,
   getTrades, getHabits, getHabitCompletions,
@@ -39,6 +41,10 @@ const STATE: Record<GoalProgress["state"], { color: string; word: string; short:
 const EYEBROW = "text-[10px] font-semibold uppercase tracking-[0.18em]";
 
 const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
+const indexed = (i: number) => ({ "--i": i }) as CSSProperties;
+
+/** Everything the view would otherwise read from Supabase, for the dev preview. */
+export type GoalsSeed = { goals: TradingGoal[]; data: GoalInputs };
 
 /**
  * The window, written the way a person would say it: one month name when both
@@ -65,14 +71,16 @@ function suggestTarget(metric: GoalMetric, baseline: number | null): number {
   return Math.ceil(baseline * 1.25);
 }
 
-export function GoalsView() {
-  const [goals, setGoals] = useState<TradingGoal[] | null>(null);
-  const [data, setData] = useState<GoalInputs | null>(null);
+export function GoalsView({ seed }: { seed?: GoalsSeed } = {}) {
+  const [goals, setGoals] = useState<TradingGoal[] | null>(seed?.goals ?? null);
+  const [data, setData] = useState<GoalInputs | null>(seed?.data ?? null);
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
+    if (seed) return;
     Promise.all([getTradingGoals(), getTrades(), getHabits(), getHabitCompletions()])
       .then(([g, trades, habits, completions]) => {
         setGoals(g);
@@ -82,7 +90,7 @@ export function GoalsView() {
         setGoals([]);
         setData({ trades: [], habits: [], completions: [] });
       });
-  }, []);
+  }, [seed]);
 
   const live = useMemo(() => (goals ?? []).filter((g) => !g.archived_at), [goals]);
   const archived = useMemo(() => (goals ?? []).filter((g) => g.archived_at), [goals]);
@@ -103,23 +111,24 @@ export function GoalsView() {
     });
   }, [showArchived, archived, live, data]);
 
-  /** How the live goals are standing: the one summary worth printing. */
+  /** How the live goals are standing: one chip per state that has a goal in it. */
   const tally = useMemo(() => {
-    if (!data || live.length === 0) return null;
+    if (!data || live.length === 0) return [];
     const counts: Record<GoalProgress["state"], number> = {
       "achieved": 0, "on-track": 0, "behind": 0, "missed": 0, "no-data": 0,
     };
     for (const g of live) counts[computeGoalProgress(g, data).state] += 1;
     return (Object.keys(STATE) as GoalProgress["state"][])
       .filter((k) => counts[k] > 0)
-      .map((k) => `${counts[k]} ${STATE[k].short}`)
-      .join(" · ");
+      .map((k) => ({ key: k, n: counts[k], ...STATE[k] }));
   }, [live, data]);
 
   async function add(draft: Omit<TradingGoal, "id" | "user_id" | "created_at" | "updated_at">) {
     setBusy("new");
     try {
-      const saved = await createTradingGoal(draft);
+      const saved = seed
+        ? { ...draft, id: `local-${Date.now()}`, user_id: "preview", created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+        : await createTradingGoal(draft);
       setGoals((prev) => [saved, ...(prev ?? [])]);
       setAdding(false);
     } finally {
@@ -130,9 +139,8 @@ export function GoalsView() {
   async function archive(goal: TradingGoal) {
     setBusy(goal.id);
     try {
-      const saved = await updateTradingGoal(goal.id, {
-        archived_at: goal.archived_at ? null : new Date().toISOString(),
-      });
+      const patch = { archived_at: goal.archived_at ? null : new Date().toISOString() };
+      const saved = seed ? { ...goal, ...patch } : await updateTradingGoal(goal.id, patch);
       setGoals((prev) => (prev ?? []).map((g) => (g.id === goal.id ? saved : g)));
     } finally {
       setBusy(null);
@@ -142,7 +150,7 @@ export function GoalsView() {
   async function remove(goal: TradingGoal) {
     setBusy(goal.id);
     try {
-      await deleteTradingGoal(goal.id);
+      if (!seed) await deleteTradingGoal(goal.id);
       setGoals((prev) => (prev ?? []).filter((g) => g.id !== goal.id));
     } finally {
       setBusy(null);
@@ -156,25 +164,34 @@ export function GoalsView() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-4xl">
+    <section className="mx-auto w-full max-w-5xl">
       {/* One line: where the goals stand, and the two things you can do. The
           tab above already says "My Goals", so the page does not say it twice. */}
-      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-foreground/15 pb-2.5">
-        <p className="font-heading text-[15px] font-semibold tracking-tight">
-          {showArchived
-            ? `${archived.length} archived`
-            : live.length === 0 ? "No goals set" : `${live.length} live`}
-          {!showArchived && tally && (
-            <span className="ml-2.5 text-[12px] font-normal tracking-normal text-muted-foreground">{tally}</span>
-          )}
-        </p>
+      <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-foreground/15 pb-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <p className="font-heading text-[15px] font-semibold tracking-tight">
+            {showArchived
+              ? `${archived.length} archived`
+              : live.length === 0 ? "No goals set" : `${live.length} live`}
+          </p>
+          {!showArchived && tally.map((t, i) => (
+            <span
+              key={t.key}
+              style={indexed(i)}
+              className="rise-in inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2 py-0.5 text-[11px] text-muted-foreground"
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: t.color }} />
+              <span className="font-semibold tabular-nums text-foreground">{t.n}</span> {t.short}
+            </span>
+          ))}
+        </div>
 
         <div className="flex items-center gap-4">
           {archived.length > 0 && (
             <button
               type="button"
               onClick={() => setShowArchived((v) => !v)}
-              className={cn(EYEBROW, "text-muted-foreground/75 underline-offset-4 transition-colors hover:text-foreground hover:underline")}
+              className={cn(EYEBROW, "press text-muted-foreground/75 underline-offset-4 hover:text-foreground hover:underline")}
             >
               {showArchived ? "Live" : `Archive (${archived.length})`}
             </button>
@@ -184,7 +201,7 @@ export function GoalsView() {
             onClick={() => setAdding((v) => !v)}
             className={cn(
               EYEBROW,
-              "border-b-2 pb-0.5 transition-colors",
+              "press border-b-2 pb-0.5",
               adding
                 ? "border-transparent text-muted-foreground hover:text-foreground"
                 : "border-primary text-primary hover:border-foreground hover:text-foreground"
@@ -195,22 +212,40 @@ export function GoalsView() {
         </div>
       </header>
 
-      {adding && <GoalForm data={data} busy={busy === "new"} onSave={add} />}
+      {/* The form opens like a drawer under the header: height is the one
+          property with no transform equivalent here, so it is the exception. */}
+      <AnimatePresence initial={false}>
+        {adding && (
+          <motion.div
+            key="form"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: reduce ? 0 : 0.28, ease: EASE_OUT }}
+            className="overflow-hidden"
+          >
+            <GoalForm data={data} busy={busy === "new"} onSave={add} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {visible.length === 0 && !adding ? (
         <Empty archived={showArchived} onStart={() => setAdding(true)} />
       ) : (
-        <div>
-          {visible.map((goal) => (
-            <GoalRow
-              key={goal.id}
-              goal={goal}
-              data={data}
-              busy={busy === goal.id}
-              onArchive={() => archive(goal)}
-              onDelete={() => remove(goal)}
-            />
-          ))}
+        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <AnimatePresence initial={false} mode="popLayout">
+            {visible.map((goal, i) => (
+              <GoalCard
+                key={goal.id}
+                index={i}
+                goal={goal}
+                data={data}
+                busy={busy === goal.id}
+                onArchive={() => archive(goal)}
+                onDelete={() => remove(goal)}
+              />
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </section>
@@ -233,7 +268,7 @@ function Empty({ archived, onStart }: { archived: boolean; onStart: () => void }
       <button
         type="button"
         onClick={onStart}
-        className="mt-4 border-b-2 border-primary pb-0.5 text-[13px] font-semibold text-primary transition-colors hover:border-foreground hover:text-foreground"
+        className="press mt-4 border-b-2 border-primary pb-0.5 text-[13px] font-semibold text-primary hover:border-foreground hover:text-foreground"
       >
         Set your first goal
       </button>
@@ -276,12 +311,13 @@ function verdict(goal: TradingGoal, p: GoalProgress, slipped: boolean): string {
   }
 }
 
-function GoalRow({
-  goal, data, busy, onArchive, onDelete,
+function GoalCard({
+  goal, data, busy, index, onArchive, onDelete,
 }: {
   goal: TradingGoal;
   data: GoalInputs;
   busy: boolean;
+  index: number;
   onArchive: () => void;
   onDelete: () => void;
 }) {
@@ -303,11 +339,27 @@ function GoalRow({
   const ratio = Math.round(p.ratio * 100);
   const gone = Math.round(p.timeElapsed * 100);
   const shortfall = !parked && !p.closed && gone > ratio;
+  const format_ = (n: number) => formatGoalValue(goal.metric, n);
 
   return (
-    <article className="group border-b border-border/60 py-5">
+    <motion.article
+      layout
+      initial={false}
+      exit={{ opacity: 0, transform: "scale(0.97)" }}
+      transition={{ duration: 0.2, ease: EASE_OUT }}
+      style={indexed(index)}
+      className="rise-in group relative flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card p-4 sm:p-5"
+    >
+      {/* The state, as a wash in the top corner and a spine down the left. */}
+      <span aria-hidden className="absolute inset-y-0 left-0 w-[3px]" style={{ background: tone.color }} />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full blur-2xl"
+        style={{ background: alpha(tone.color, 14) }}
+      />
+
       {/* What is being measured, and how long is left to measure it. */}
-      <div className="flex items-baseline justify-between gap-4">
+      <div className="relative flex items-baseline justify-between gap-4 pl-1">
         <span className={cn(EYEBROW, "text-muted-foreground")} title={meta.help}>{meta.label}</span>
         <span className={cn(EYEBROW, "shrink-0 tabular-nums text-muted-foreground/70")}>
           {windowLabel(start, end, new Date())}
@@ -315,66 +367,60 @@ function GoalRow({
         </span>
       </div>
 
-      {/* The reading and the target on one line, said once here and never
-          repeated further down the row. */}
-      <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <p className="font-heading text-[2rem] font-black leading-none tracking-tight tabular-nums sm:text-4xl">
-          {formatGoalValue(goal.metric, p.current)}
+      {/* The reading runs up to its value; the target sits beside it, still. */}
+      <div className="relative mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 pl-1">
+        <p className="font-heading text-[2.25rem] font-black leading-none tracking-tight tabular-nums sm:text-[2.5rem]">
+          {p.current == null ? "-" : <CountUp value={p.current} format={format_} />}
         </p>
         <p className="text-[13px] tabular-nums text-muted-foreground">
           <span aria-hidden>→ </span>
           <span className="sr-only">target </span>
-          {formatGoalValue(goal.metric, goal.target)}
+          {format_(goal.target)}
         </p>
-        {goal.title.trim() && (
-          <p className="min-w-0 text-[13px] font-medium leading-snug text-foreground/85">
-            <span aria-hidden className="mr-2 text-muted-foreground/50">·</span>
-            {goal.title.trim()}
-          </p>
-        )}
       </div>
+      {goal.title.trim() && (
+        <p className="relative mt-1.5 pl-1 text-[13px] font-medium leading-snug text-foreground/85">{goal.title.trim()}</p>
+      )}
 
       {/* The measure: a rule from where you started to where you are going.
-          The filled part is the number, the tick is the calendar, and the
-          faint stretch between them is exactly how far behind you are. */}
-      <div className="relative mt-3.5 h-2.5">
-        <span aria-hidden className="absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-foreground/12" />
+          The filled part is the number (it draws in), the tick is the calendar,
+          and the faint stretch between them is exactly how far behind you are. */}
+      <div className="relative mt-4 h-2.5 pl-1">
+        <span aria-hidden className="absolute inset-x-1 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-foreground/12" />
         {shortfall && (
           <span
             aria-hidden
             className="absolute top-1/2 h-[2px] -translate-y-1/2"
-            style={{ left: `${ratio}%`, width: `${gone - ratio}%`, background: alpha(tone.color, 25) }}
+            style={{ left: `calc(0.25rem + ${ratio}%)`, width: `${gone - ratio}%`, background: alpha(tone.color, 25) }}
           />
         )}
         <span
           aria-hidden
-          className="absolute left-0 top-1/2 h-[2px] -translate-y-1/2 rounded-full transition-[width] duration-700"
-          style={{ width: `${ratio}%`, background: tone.color }}
+          className="meter-fill absolute left-1 right-1 top-1/2 h-[2px] -translate-y-1/2 rounded-full"
+          style={{ "--fill": ratio / 100, background: tone.color } as CSSProperties}
         />
         {/* A knob at the reading, so a goal sitting at zero still shows where
-            it is rather than looking like an empty row. */}
-        <span
-          aria-hidden
-          className="absolute top-1/2 h-[7px] w-[7px] -translate-y-1/2 rounded-full transition-[left] duration-700"
-          style={{ left: `calc(${ratio}% - ${(ratio / 100) * 7}px)`, background: tone.color, boxShadow: `0 0 0 3px ${alpha(tone.color, 18)}` }}
-        />
+            it is rather than looking like an empty row. It rides the fill. */}
+        <span aria-hidden className="meter-knob absolute inset-y-0 left-1 right-1" style={{ "--fill": ratio / 100 } as CSSProperties}>
+          <span
+            className="absolute left-0 top-1/2 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{ background: tone.color, boxShadow: `0 0 0 3px ${alpha(tone.color, 18)}` }}
+          />
+        </span>
         {!parked && !p.closed && (
           <span
             aria-hidden
             title="Where the calendar has got to"
             className="absolute top-0 h-2.5 w-px bg-foreground/45"
-            style={{ left: `${gone}%` }}
+            style={{ left: `calc(0.25rem + ${gone}%)` }}
           />
         )}
       </div>
-      {/* The rule's left-hand label. Only this end is named: the target is
-          already in the headline two lines up. Printed on every row, including
-          the ones starting at zero, so all rows keep the same shape. */}
-      <p className="mt-1.5 text-[10px] tabular-nums text-muted-foreground/70">
-        from {formatGoalValue(goal.metric, floor)}
+      <p className="relative mt-1.5 pl-1 text-[10px] tabular-nums text-muted-foreground/70">
+        from {format_(floor)}
       </p>
 
-      <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5">
+      <div className="relative mt-auto flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5 pl-1 pt-3">
         <p className="text-[12px] leading-snug">
           <span className="font-semibold" style={{ color: tone.color }}>{tone.word}.</span>{" "}
           <span className="text-muted-foreground">
@@ -384,37 +430,37 @@ function GoalRow({
           </span>
         </p>
 
-        {/* On a pointer device these wait until the row is reached for:
+        {/* On a pointer device these wait until the card is reached for:
             archiving and deleting are the rarest thing anyone does here. */}
         <span className={cn(
           EYEBROW,
           "flex shrink-0 items-center gap-3 text-muted-foreground/70",
-          "sm:opacity-0 sm:transition-opacity sm:focus-within:opacity-100 sm:group-hover:opacity-100"
+          "sm:opacity-0 sm:transition-opacity sm:duration-150 sm:focus-within:opacity-100 sm:group-hover:opacity-100"
         )}>
           {busy ? (
             <span>Saving...</span>
           ) : confirming ? (
             <>
-              <button type="button" onClick={onDelete} className="text-destructive underline underline-offset-4">
+              <button type="button" onClick={onDelete} className="press text-destructive underline underline-offset-4">
                 Delete for good
               </button>
-              <button type="button" onClick={() => setConfirming(false)} className="hover:text-foreground">
+              <button type="button" onClick={() => setConfirming(false)} className="press hover:text-foreground">
                 Keep
               </button>
             </>
           ) : (
             <>
-              <button type="button" onClick={onArchive} className="underline-offset-4 hover:text-foreground hover:underline">
+              <button type="button" onClick={onArchive} className="press underline-offset-4 hover:text-foreground hover:underline">
                 {goal.archived_at ? "Restore" : "Archive"}
               </button>
-              <button type="button" onClick={() => setConfirming(true)} className="underline-offset-4 hover:text-destructive hover:underline">
+              <button type="button" onClick={() => setConfirming(true)} className="press underline-offset-4 hover:text-destructive hover:underline">
                 Delete
               </button>
             </>
           )}
         </span>
       </div>
-    </article>
+    </motion.article>
   );
 }
 
@@ -626,7 +672,7 @@ function GoalForm({
           disabled={busy}
           className={cn(
             EYEBROW,
-            "shrink-0 border-b-2 border-primary pb-0.5 text-primary transition-colors",
+            "press shrink-0 border-b-2 border-primary pb-0.5 text-primary",
             "hover:border-foreground hover:text-foreground disabled:opacity-50"
           )}
         >

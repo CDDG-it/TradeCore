@@ -54,6 +54,9 @@
   --color-card: var(--card);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-win: var(--win);
+  --color-loss: var(--loss);
+  --color-be: var(--be);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
   --color-gold: var(--gold);
@@ -740,6 +743,124 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   }
 }
 
+/* ── App motion ──────────────────────────────────────────────────────
+   One set of curves for the logged-in surfaces. Built-in easings are too
+   weak: entering = strong ease-out, on-screen movement = strong ease-in-out.
+   Everything here moves transform and opacity only, and a first paint never
+   starts from nothing (no scale(0)). */
+:root {
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --duration-press: 160ms;
+}
+
+/* Press feedback: the interface acknowledges the tap. */
+.press {
+  transition:
+    transform var(--duration-press) var(--ease-out-strong),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
+}
+.press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Staggered entrance for a list rendered on mount. `--i` is the row index.
+   Fill mode is `backwards`, not `both`: once the animation has played the
+   element's own styles apply again, so hover transforms still work. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.rise-in {
+  animation: rise-in 480ms var(--ease-out-strong) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+/* Fill meters (goal progress, kept rate). The fill is a scaleX from the left,
+   so the bar grows without ever touching layout; the reading is the CSS
+   variable set on the element. `@starting-style` gives the first paint its
+   zero, so the bar draws in on mount as well as on every later change. */
+.meter-fill {
+  transform: scaleX(var(--fill, 0));
+  transform-origin: left center;
+  transition: transform 900ms var(--ease-out-strong);
+}
+.meter-knob {
+  transform: translateX(calc(var(--fill, 0) * 100%));
+  transition: transform 900ms var(--ease-out-strong);
+}
+.arc-progress {
+  stroke-dasharray: 100;
+  stroke-dashoffset: calc(100 - var(--arc, 0));
+  transition: stroke-dashoffset 900ms var(--ease-out-strong);
+}
+@starting-style {
+  .meter-fill { transform: scaleX(0); }
+  .meter-knob { transform: translateX(0); }
+  .arc-progress { stroke-dashoffset: 100; }
+}
+
+/* Review consistency strip: each week cell rises from its baseline, oldest
+   first, after the numbers above it have landed. */
+@keyframes cell-in {
+  from { opacity: 0; transform: translateY(6px) scaleY(0.55); }
+  to   { opacity: 1; transform: none; }
+}
+.review-cell {
+  transform-origin: center bottom;
+  animation: cell-in 420ms var(--ease-out-strong) backwards;
+  animation-delay: calc(var(--i, 0) * 40ms + 150ms);
+  transition: transform var(--duration-press) var(--ease-out-strong), border-color 150ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .review-cell:hover { transform: translateY(-2px); }
+}
+/* The week still trading breathes: a soft ring, opacity only, slow. */
+@keyframes ring-breathe {
+  0%, 100% { opacity: 0; transform: scale(0.9); }
+  50%      { opacity: 0.9; transform: scale(1); }
+}
+.review-cell-open::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 6px;
+  border: 1px solid var(--primary);
+  opacity: 0;
+  animation: ring-breathe 2600ms ease-in-out infinite;
+  animation-delay: 900ms;
+  pointer-events: none;
+}
+/* The streak underline draws in from the newest week backwards. */
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.grow-x {
+  transform-origin: right center;
+  animation: grow-x 700ms var(--ease-out-strong) 650ms backwards;
+}
+/* A ledger dot that has just been answered pops in from small, not from nothing. */
+@keyframes dot-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: none; }
+}
+.dot-in {
+  animation: dot-in 320ms var(--ease-out-strong) backwards;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press:active:not(:disabled) { transform: none; }
+  .rise-in, .review-cell, .dot-in { animation-duration: 0.01ms; animation-delay: 0s; }
+  .grow-x, .review-cell-open::after { animation: none; }
+  .review-cell-open::after { opacity: 0.6; transform: none; }
+  .meter-fill, .meter-knob, .arc-progress { transition-duration: 0.01ms; }
+}
+
 /* ── MC mind score: liquid-fill wave animation ──────────────────── */
 @keyframes mc-wave {
   from { transform: translateX(0); }
@@ -1172,3 +1293,4 @@ html:has(.marketing-page) { position: relative; }
   .marketing-callout { animation: none; opacity: 1; }
   figcaption .marketing-callout:not(:first-child) { opacity: 0; }
 }
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import {
   format, startOfWeek, subWeeks, subMonths, startOfMonth, endOfMonth, isWithinInterval,
@@ -11,6 +11,7 @@ import {
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { AccentPanel } from "@/components/ui/accent-panel";
+import { ReviewConsistency } from "@/components/trade-therapist/review-consistency";
 import { getTrades, getWeeklyTradeReviews } from "@/lib/supabase/queries";
 import { getWeekGroup, formatTotalR, tradeR, isReviewOpen } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
@@ -23,15 +24,18 @@ type Mode = "weekly" | "monthly";
  * digest of exactly what you wrote. It reports only facts and your own words:
  * it makes no assumptions about your mistakes or patterns.
  */
-export function ReviewsPanel() {
-  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
-  const [reviews, setReviews] = useState<WeeklyTradeReview[]>([]);
+export type ReviewsSeed = { trades: TradeJournalEntry[]; reviews: WeeklyTradeReview[] };
+
+export function ReviewsPanel({ seed }: { seed?: ReviewsSeed } = {}) {
+  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(seed?.trades ?? null);
+  const [reviews, setReviews] = useState<WeeklyTradeReview[]>(seed?.reviews ?? []);
   const [mode, setMode] = useState<Mode>("weekly");
   const [listOpen, setListOpen] = useState(true);
 
   useEffect(() => {
+    if (seed) return;
     Promise.all([getTrades(), getWeeklyTradeReviews()]).then(([t, r]) => { setTrades(t); setReviews(r); });
-  }, []);
+  }, [seed]);
 
   const reviewByWeek = useMemo(() => new Map(reviews.map((r) => [r.week_start, r])), [reviews]);
   const written = (r?: WeeklyTradeReview) => Boolean(r && (r.lessons || r.mistakes || r.prevention_plan));
@@ -70,7 +74,6 @@ export function ReviewsPanel() {
 
   const finishedWeeks = weeks.filter((w) => w.reviewable);
   const doneCount = finishedWeeks.filter((w) => written(w.review)).length;
-  const pct = finishedWeeks.length ? Math.round((doneCount / finishedWeeks.length) * 100) : 0;
   // Current streak of consecutive closed weeks with a written review (newest →
   // back). The week that has only just closed is still yours to write, so an
   // empty one there does not break the streak: the same way today never
@@ -146,7 +149,7 @@ export function ReviewsPanel() {
           <div className="max-h-[22rem] min-h-0 flex-1 overflow-y-auto p-2.5 lg:max-h-none">
             {mode === "weekly" ? (
               <div className="space-y-2">
-                {weeks.map(({ ws, group, reviewable, current, review }) => {
+                {weeks.map(({ ws, group, reviewable, current, review }, i) => {
                   const done = written(review);
                   // Three states, one visual language: a coloured status rail
                   // down the left edge, a matching icon, and - for the one week
@@ -161,8 +164,9 @@ export function ReviewsPanel() {
                     <Link
                       key={ws}
                       href={`/trade-therapist/review/${ws}`}
+                      style={{ "--i": i } as CSSProperties}
                       className={cn(
-                        "group relative flex items-stretch gap-3 overflow-hidden rounded-xl border pl-0 pr-3 py-2.5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/25",
+                        "rise-in press group relative flex items-stretch gap-3 overflow-hidden rounded-xl border pl-0 pr-3 py-2.5 hover:border-primary/40 hover:bg-muted/25",
                         needs ? "border-warning/40 bg-warning/[0.05]" : "border-border/60"
                       )}
                     >
@@ -221,7 +225,7 @@ export function ReviewsPanel() {
               </div>
             ) : (
               <div className="space-y-2">
-                {months.map(({ key, label, date }) => {
+                {months.map(({ key, label, date }, i) => {
                   const r = (trades ?? []).filter((t) => isWithinInterval(new Date(t.date_time.slice(0, 10) + "T12:00:00"),
                     { start: startOfMonth(date), end: endOfMonth(date) })).reduce((s, t) => s + tradeR(t), 0);
                   const railColor = r > 0 ? "var(--success)" : r < 0 ? "var(--destructive)" : "var(--muted-foreground)";
@@ -229,7 +233,8 @@ export function ReviewsPanel() {
                     <Link
                       key={key}
                       href={`/trade-therapist/review/month/${key}`}
-                      className="group relative flex items-stretch gap-3 overflow-hidden rounded-xl border border-border/60 py-3 pl-0 pr-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-muted/25"
+                      style={{ "--i": i } as CSSProperties}
+                      className="rise-in press group relative flex items-stretch gap-3 overflow-hidden rounded-xl border border-border/60 py-3 pl-0 pr-3 hover:border-primary/40 hover:bg-muted/25"
                     >
                       <span aria-hidden className="w-1 shrink-0 rounded-full" style={{ background: railColor }} />
                       <span className="flex-1 self-center pl-1.5 text-sm font-semibold transition-colors group-hover:text-primary">{label}</span>
@@ -246,68 +251,17 @@ export function ReviewsPanel() {
 
       {/* RIGHT: how the habit is holding, and the line you set for yourself */}
       <div className="order-1 flex min-h-0 flex-col gap-3 lg:order-none">
-        {/* Progress you cannot miss: the streak in full size, the ratio beside
-            it, and every tracked week as its own cell. */}
-        <AccentPanel accent="primary" eyebrow="Consistency" title="Reviews kept" className="shrink-0">
-          <div className="mt-3 flex items-end justify-between gap-4">
-            <div className="flex items-baseline gap-2">
-              <span className="text-[40px] font-black leading-none tabular-nums" style={{ color: streak > 0 ? "var(--primary)" : "var(--muted-foreground)" }}>
-                {streak}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                week{streak === 1 ? "" : "s"} in a row
-              </span>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-black leading-none tabular-nums text-foreground">
-                {doneCount}<span className="text-muted-foreground/50">/{finishedWeeks.length}</span>
-              </p>
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-weeks done · {pct}%
-              </p>
-            </div>
-          </div>
-
-          {/* One cell per week, oldest first: written, missed, or still open. */}
-          <div className="mt-4 flex items-end gap-[3px]">
-            {strip.map(({ ws, group, reviewable, current, review }) => {
-              const done = written(review);
-              const state = !reviewable ? "open" : done ? "done" : "missed";
-              return (
-                <Link
-                  key={ws}
-                  href={`/trade-therapist/review/${ws}`}
-                  title={
-                    `Week ${group.weekNum} · ${group.rangeLabel}: ` +
-                    (state === "open" ? "still trading: review opens Friday" : state === "done" ? "reviewed" : "not written")
-                  }
-                  className={cn(
-                    "group/cell h-9 flex-1 rounded-[3px] border transition-all duration-200 hover:-translate-y-0.5",
-                    state === "done" && "border-transparent",
-                    // A missed week still has to read as a week, not a gap.
-                    state === "missed" && "border-border bg-muted-foreground/[0.09]",
-                    state === "open" && "border-dashed border-primary/50 bg-primary/5"
-                  )}
-                  style={state === "done" ? { background: "var(--primary)", boxShadow: "0 0 10px color-mix(in oklch, var(--primary) 35%, transparent)" } : undefined}
-                >
-                  <span className="sr-only">Week {group.weekNum}</span>
-                  {current && <span aria-hidden className="mx-auto mt-1 block h-1 w-1 rounded-full bg-primary" />}
-                </Link>
-              );
-            })}
-          </div>
-          {/* The two end dates are the first thing to go when the row cannot
-              hold the legend as well. */}
-          <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[10px] text-muted-foreground/60">
-            <span className="hidden sm:inline">{format(new Date(strip[0].ws + "T12:00:00"), "MMM d")}</span>
-            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px]" style={{ background: "var(--primary)" }} /> written</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-border bg-muted-foreground/[0.09]" /> missed</span>
-              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-[2px] border border-dashed border-primary/50" /> still trading</span>
-            </span>
-            <span className="hidden sm:inline">this week</span>
-          </div>
-        </AccentPanel>
+        <ReviewConsistency
+          className="shrink-0"
+          streak={streak}
+          done={doneCount}
+          closed={finishedWeeks.length}
+          nextToWrite={nextToWrite ? { ws: nextToWrite.ws, weekNum: nextToWrite.group.weekNum } : null}
+          cells={strip.map(({ ws, group, reviewable, current, review }) => ({
+            ws, weekNum: group.weekNum, rangeLabel: group.rangeLabel, current,
+            state: !reviewable ? "open" : written(review) ? "done" : "missed",
+          }))}
+        />
 
         {/* The one line worth carrying into the next session, then the trail of
             the ones before it, so repeating yourself becomes visible. Framed as

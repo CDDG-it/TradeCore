@@ -14,17 +14,20 @@
  * recurred, so the check is raised and the answer is asked for, never guessed.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { AnimatePresence, motion } from "motion/react";
 import { Check, X, Loader2, Plus, ExternalLink, Archive } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { AccentPanel } from "@/components/ui/accent-panel";
+import { CountUp, EASE_OUT } from "@/components/ui/count-up";
 import {
   getCommitments, createCommitment, updateCommitment,
   getCommitmentAdherenceLogs, createAdherenceLog, resolveAdherenceLog,
   getTrades, getAnalyses,
 } from "@/lib/supabase/queries";
-import { detectPatterns, PATTERN_LABELS } from "@/lib/psych-edge/patterns";
+import { detectPatterns, PATTERN_LABELS, PATTERN_DESCRIPTIONS } from "@/lib/psych-edge/patterns";
 import { instrumentName } from "@/lib/journal/weeks";
 import type {
   Commitment, CommitmentAdherenceLog, PatternType,
@@ -36,12 +39,56 @@ const PATTERN_OPTIONS = Object.entries(PATTERN_LABELS) as [PatternType, string][
 /** The day a commitment came into force: checks only count trades after it. */
 const inForceFrom = (c: Commitment) => c.created_at.slice(0, 10);
 
-export function CommitmentsPanel() {
-  const [commitments, setCommitments] = useState<Commitment[]>([]);
-  const [logs, setLogs] = useState<CommitmentAdherenceLog[]>([]);
-  const [trades, setTrades] = useState<TradeJournalEntry[]>([]);
-  const [analyses, setAnalyses] = useState<PreTradeAnalysis[]>([]);
-  const [loading, setLoading] = useState(true);
+const rateTone = (rate: number) => (rate >= 70 ? "var(--win)" : rate >= 40 ? "var(--primary)" : "var(--loss)");
+const indexed = (i: number) => ({ "--i": i }) as CSSProperties;
+
+/** Enter from just below, leave upwards: an answered check moves on, it does not vanish. */
+const cardMotion = {
+  layout: true,
+  initial: { opacity: 0, transform: "translateY(8px)" },
+  animate: { opacity: 1, transform: "translateY(0px)" },
+  exit: { opacity: 0, transform: "translateY(-8px)" },
+  transition: { duration: 0.22, ease: EASE_OUT },
+} as const;
+
+/** Everything the panel would otherwise read from Supabase, for the dev preview. */
+export type CommitmentsSeed = {
+  commitments: Commitment[];
+  logs: CommitmentAdherenceLog[];
+  trades: TradeJournalEntry[];
+  analyses: PreTradeAnalysis[];
+};
+
+/** The last checks on one commitment as a row of dots, oldest first: the
+ *  kept rate, but readable as a run rather than a number. */
+function Ledger({ logs }: { logs: CommitmentAdherenceLog[] }) {
+  const recent = [...logs].sort((a, b) => a.date.localeCompare(b.date)).slice(-12);
+  if (!recent.length) return null;
+  return (
+    <span className="inline-flex items-center gap-1" aria-label={`${recent.length} recent checks`}>
+      {recent.map((l, i) => (
+        <span
+          key={l.id}
+          title={`${format(new Date(l.date + "T12:00:00"), "MMM d")}: ${l.followed === null ? "waiting for your answer" : l.followed ? "kept" : "not kept"}`}
+          style={indexed(i)}
+          className={cn(
+            "dot-in h-2 w-2 rounded-full",
+            l.followed === true && "bg-win",
+            l.followed === false && "bg-loss",
+            l.followed === null && "border border-dashed border-primary/60"
+          )}
+        />
+      ))}
+    </span>
+  );
+}
+
+export function CommitmentsPanel({ seed }: { seed?: CommitmentsSeed } = {}) {
+  const [commitments, setCommitments] = useState<Commitment[]>(seed?.commitments ?? []);
+  const [logs, setLogs] = useState<CommitmentAdherenceLog[]>(seed?.logs ?? []);
+  const [trades, setTrades] = useState<TradeJournalEntry[]>(seed?.trades ?? []);
+  const [analyses, setAnalyses] = useState<PreTradeAnalysis[]>(seed?.analyses ?? []);
+  const [loading, setLoading] = useState(!seed);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,11 +99,12 @@ export function CommitmentsPanel() {
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
+    if (seed) return;
     Promise.all([getCommitments(), getCommitmentAdherenceLogs(), getTrades(), getAnalyses()])
       .then(([c, l, t, a]) => { setCommitments(c); setLogs(l); setTrades(t); setAnalyses(a); })
       .catch(() => setError("Could not load commitments. Run trade_therapist.sql in Supabase."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [seed]);
 
   const events = useMemo(() => detectPatterns(trades, analyses), [trades, analyses]);
   const tradeById = useMemo(
@@ -71,7 +119,7 @@ export function CommitmentsPanel() {
    * trade is skipped, since that is the occurrence that prompted it.
    */
   useEffect(() => {
-    if (loading || !commitments.length || !events.length) return;
+    if (seed || loading || !commitments.length || !events.length) return;
 
     const have = new Set(logs.map((l) => `${l.commitment_id}|${l.trade_id ?? ""}`));
     const missing: { commitment_id: string; trade_id: string; date: string }[] = [];
@@ -106,7 +154,7 @@ export function CommitmentsPanel() {
       if (live && created.length) setLogs((prev) => [...prev, ...created]);
     })();
     return () => { live = false; };
-  }, [loading, commitments, events, logs]);
+  }, [seed, loading, commitments, events, logs]);
 
   const byId = useMemo(() => new Map(commitments.map((c) => [c.id, c])), [commitments]);
   const open = logs.filter((l) => l.followed === null && byId.get(l.commitment_id)?.active);
@@ -131,7 +179,9 @@ export function CommitmentsPanel() {
   async function resolve(id: string, followed: boolean) {
     setBusy(id); setError(null);
     try {
-      const row = await resolveAdherenceLog(id, followed);
+      const row = seed
+        ? { ...logs.find((l) => l.id === id)!, followed }
+        : await resolveAdherenceLog(id, followed);
       setLogs((prev) => prev.map((l) => (l.id === id ? row : l)));
     } catch {
       setError("Could not save that answer.");
@@ -143,14 +193,17 @@ export function CommitmentsPanel() {
   async function add() {
     if (!trigger.trim() || !action.trim()) return;
     setAdding(true); setError(null);
+    const draft = {
+      trade_id: null,
+      pattern_type: pattern || null,
+      trigger_text: trigger.trim(),
+      action_text: action.trim(),
+      active: true,
+    };
     try {
-      const c = await createCommitment({
-        trade_id: null,
-        pattern_type: pattern || null,
-        trigger_text: trigger.trim(),
-        action_text: action.trim(),
-        active: true,
-      });
+      const c = seed
+        ? { ...draft, id: `local-${Date.now()}`, user_id: "preview", created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+        : await createCommitment(draft);
       setCommitments((prev) => [c, ...prev]);
       setTrigger(""); setAction(""); setPattern("");
     } catch {
@@ -163,7 +216,7 @@ export function CommitmentsPanel() {
   async function retire(id: string) {
     setBusy(id); setError(null);
     try {
-      const c = await updateCommitment(id, { active: false });
+      const c = seed ? { ...byId.get(id)!, active: false } : await updateCommitment(id, { active: false });
       setCommitments((prev) => prev.map((x) => (x.id === id ? c : x)));
     } catch {
       setError("Could not retire that commitment.");
@@ -182,28 +235,49 @@ export function CommitmentsPanel() {
 
   const active = commitments.filter((c) => c.active);
   const retired = commitments.filter((c) => !c.active);
+  const canAdd = Boolean(trigger.trim() && action.trim());
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
+      {/* The header carries the three numbers that matter, and the kept rate
+          gets a meter so a run of good answers is visible as a bar filling. */}
       <AccentPanel
         accent="primary"
         className="shrink-0 py-3.5"
         eyebrow="Commitments"
         title="Does the reflection actually carry?"
         headerRight={
-          keptRate !== null ? (
-            <div className="text-right">
+          <div className="flex items-end gap-5 text-right sm:gap-7">
+            <div className="hidden sm:block">
+              <p className="font-heading text-2xl font-black tabular-nums leading-none" style={{ color: open.length ? "var(--loss)" : "var(--muted-foreground)" }}>
+                <CountUp value={open.length} />
+              </p>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">to answer</p>
+            </div>
+            <div className="hidden sm:block">
+              <p className="font-heading text-2xl font-black tabular-nums leading-none text-foreground">
+                <CountUp value={active.length} />
+              </p>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">in force</p>
+            </div>
+            <div className="min-w-[88px]">
               <p
                 className="font-heading text-2xl font-black tabular-nums leading-none"
-                style={{ color: keptRate >= 70 ? "var(--win)" : keptRate >= 40 ? "var(--primary)" : "var(--loss)" }}
+                style={{ color: keptRate === null ? "var(--muted-foreground)" : rateTone(keptRate) }}
               >
-                {keptRate}%
+                {keptRate === null ? "–" : <><CountUp value={keptRate} />%</>}
               </p>
               <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                kept · {resolved.length} checks
+                kept · {resolved.length} check{resolved.length === 1 ? "" : "s"}
               </p>
+              <span className="mt-1.5 block h-[3px] w-full overflow-hidden rounded-full bg-foreground/10">
+                <span
+                  className="meter-fill block h-full w-full rounded-full"
+                  style={{ "--fill": (keptRate ?? 0) / 100, background: keptRate === null ? "transparent" : rateTone(keptRate) } as CSSProperties}
+                />
+              </span>
             </div>
-          ) : undefined
+          </div>
         }
       />
 
@@ -216,201 +290,245 @@ export function CommitmentsPanel() {
       {/* The working area: what needs answering and what already stands, beside
           the form for writing the next one. Columns scroll, the page does not. */}
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-      <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
-      {/* Open checks: the ask */}
-      <section className="space-y-3">
-        <h3 className="font-heading text-sm font-bold uppercase tracking-[0.14em] text-destructive/80">
-          Needs an answer{open.length > 0 && ` · ${open.length}`}
-        </h3>
+        <div className="flex min-h-0 flex-col gap-5 overflow-y-auto pr-1">
+          {/* Open checks: the ask */}
+          <section className="space-y-2.5">
+            <h3 className="font-heading text-[11px] font-bold uppercase tracking-[0.16em] text-loss/80">
+              Needs an answer{open.length > 0 && ` · ${open.length}`}
+            </h3>
 
-        {open.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border/60 bg-card px-4 py-8 text-center text-xs text-muted-foreground">
-            Nothing to check. A check appears here when a commitment&apos;s pattern shows up again on a later trade.
-          </p>
-        ) : (
-          open.map((l) => {
-            const c = byId.get(l.commitment_id)!;
-            const t = l.trade_id ? tradeById.get(l.trade_id) : undefined;
-            const ev = events.find((e) => e.tradeId === l.trade_id && e.type === c.pattern_type);
-            return (
-              <AccentPanel key={l.id} accent="destructive">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
-                  You committed
-                </p>
-                <p className="mt-2 text-sm leading-relaxed">
-                  <span className="text-muted-foreground">When</span>{" "}
-                  <span className="font-semibold">{c.trigger_text}</span>
-                  <span className="text-muted-foreground">, then </span>
-                  <span className="font-semibold">{c.action_text}</span>
-                </p>
-
-                <div className="mt-3 rounded-lg border border-border/50 bg-background/40 px-3 py-2.5">
-                  <p className="text-[11px] text-muted-foreground">
-                    {c.pattern_type && (
-                      <span className="font-semibold text-foreground/80">
-                        {PATTERN_LABELS[c.pattern_type]}
-                      </span>
-                    )}
-                    {t && (
-                      <>
-                        {" "}on{" "}
-                        <Link href={`/journal/${t.id}`} className="font-semibold text-primary hover:underline">
-                          {instrumentName(t.instrument)}
-                          <ExternalLink className="ml-1 inline h-3 w-3" />
-                        </Link>{" "}
-                        · {format(new Date(l.date + "T12:00:00"), "MMM d")}
-                      </>
-                    )}
-                  </p>
-                  {ev && <p className="mt-1.5 text-[12px] leading-snug text-foreground/75">{ev.detail}</p>}
-                </div>
-
-                <div className="mt-4 flex items-center gap-2 border-t border-border/40 pt-3.5">
-                  <p className="mr-auto text-xs font-semibold text-muted-foreground">Did you hold it?</p>
-                  <button
-                    type="button"
-                    onClick={() => resolve(l.id, true)}
-                    disabled={busy === l.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-success/40 bg-success/10 px-3 py-1.5 text-xs font-bold text-success transition-colors hover:bg-success/15 disabled:opacity-50"
-                  >
-                    <Check className="h-3.5 w-3.5" strokeWidth={3} /> Yes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => resolve(l.id, false)}
-                    disabled={busy === l.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive transition-colors hover:bg-destructive/15 disabled:opacity-50"
-                  >
-                    <X className="h-3.5 w-3.5" strokeWidth={3} /> No
-                  </button>
-                </div>
-              </AccentPanel>
-            );
-          })
-        )}
-      </section>
-
-      {/* Standing commitments */}
-      <section className="space-y-3">
-        <h3 className="font-heading text-sm font-bold uppercase tracking-[0.14em] text-primary/80">
-          In force{active.length > 0 && ` · ${active.length}`}
-        </h3>
-
-        {active.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border/60 bg-card px-4 py-8 text-center text-xs text-muted-foreground">
-            No commitments yet. Write one below, or finish a 5R session and turn its reconstruction into one.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {active.map((c) => {
-              const r = rateFor(c.id);
-              return (
-                <div key={c.id} className="rounded-xl border border-border/50 bg-card px-4 py-3">
-                  <div className="flex items-start gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm leading-relaxed">
-                        <span className="text-muted-foreground">When</span>{" "}
-                        <span className="font-semibold">{c.trigger_text}</span>
-                        <span className="text-muted-foreground">, then </span>
-                        <span className="font-semibold">{c.action_text}</span>
-                      </p>
-                      <p className="mt-1.5 text-[11px] text-muted-foreground">
-                        {c.pattern_type ? (
-                          <>Auto-checked on {PATTERN_LABELS[c.pattern_type]}</>
-                        ) : (
-                          <>No pattern attached: this one is not checked automatically</>
-                        )}
-                        {" · in force since "}
-                        {format(new Date(c.created_at), "MMM d")}
-                      </p>
-                    </div>
-
-                    {r && (
-                      <div className="shrink-0 text-right">
-                        <p
-                          className="text-sm font-black tabular-nums leading-none"
-                          style={{ color: r.rate >= 70 ? "var(--win)" : r.rate >= 40 ? "var(--primary)" : "var(--loss)" }}
-                        >
-                          {r.rate}%
+            <AnimatePresence initial={false} mode="popLayout">
+              {open.length === 0 ? (
+                <motion.p
+                  key="none"
+                  {...cardMotion}
+                  className="rounded-2xl border border-dashed border-border/60 bg-card px-4 py-7 text-center text-xs text-muted-foreground"
+                >
+                  Nothing to check. A check appears here when a commitment&apos;s pattern shows up again on a later trade.
+                </motion.p>
+              ) : (
+                open.map((l) => {
+                  const c = byId.get(l.commitment_id)!;
+                  const t = l.trade_id ? tradeById.get(l.trade_id) : undefined;
+                  const ev = events.find((e) => e.tradeId === l.trade_id && e.type === c.pattern_type);
+                  return (
+                    <motion.div key={l.id} {...cardMotion}>
+                      <AccentPanel accent="destructive" className="py-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                          You committed
                         </p>
-                        <p className="mt-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
-                          {r.n} check{r.n !== 1 ? "s" : ""}
+                        <p className="mt-2 font-heading text-[15px] leading-snug tracking-tight">
+                          <span className="text-muted-foreground">When</span>{" "}
+                          <span className="font-semibold">{c.trigger_text}</span>
+                          <span className="text-muted-foreground">, then </span>
+                          <span className="font-semibold">{c.action_text}</span>
                         </p>
-                      </div>
-                    )}
 
-                    <button
-                      type="button"
-                      onClick={() => retire(c.id)}
-                      disabled={busy === c.id}
-                      title="Retire: keeps the history, stops new checks"
-                      aria-label="Retire commitment"
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+                        <div className="mt-3 rounded-lg border border-border/50 bg-background/40 px-3 py-2.5">
+                          <p className="text-[11px] text-muted-foreground">
+                            {c.pattern_type && (
+                              <span className="font-semibold text-foreground/80">
+                                {PATTERN_LABELS[c.pattern_type]}
+                              </span>
+                            )}
+                            {t && (
+                              <>
+                                {" "}on{" "}
+                                <Link href={`/journal/${t.id}`} className="font-semibold text-primary hover:underline">
+                                  {instrumentName(t.instrument)}
+                                  <ExternalLink className="ml-1 inline h-3 w-3" />
+                                </Link>{" "}
+                                · {format(new Date(l.date + "T12:00:00"), "MMM d")}
+                              </>
+                            )}
+                          </p>
+                          {ev && <p className="mt-1.5 text-[12px] leading-snug text-foreground/75">{ev.detail}</p>}
+                        </div>
+
+                        <div className="mt-3.5 flex items-center gap-2 border-t border-border/40 pt-3">
+                          <p className="mr-auto text-xs font-semibold text-muted-foreground">Did you hold it?</p>
+                          <button
+                            type="button"
+                            onClick={() => resolve(l.id, true)}
+                            disabled={busy === l.id}
+                            className="press inline-flex items-center gap-1.5 rounded-lg border border-win/40 bg-win/10 px-3.5 py-1.5 text-xs font-bold text-win hover:bg-win/20 disabled:opacity-50"
+                          >
+                            <Check className="h-3.5 w-3.5" strokeWidth={3} /> Yes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => resolve(l.id, false)}
+                            disabled={busy === l.id}
+                            className="press inline-flex items-center gap-1.5 rounded-lg border border-loss/40 bg-loss/10 px-3.5 py-1.5 text-xs font-bold text-loss hover:bg-loss/20 disabled:opacity-50"
+                          >
+                            <X className="h-3.5 w-3.5" strokeWidth={3} /> No
+                          </button>
+                        </div>
+                      </AccentPanel>
+                    </motion.div>
+                  );
+                })
+              )}
+            </AnimatePresence>
+          </section>
+
+          {/* Standing commitments */}
+          <section className="space-y-2.5">
+            <h3 className="font-heading text-[11px] font-bold uppercase tracking-[0.16em] text-primary/80">
+              In force{active.length > 0 && ` · ${active.length}`}
+            </h3>
+
+            <AnimatePresence initial={false} mode="popLayout">
+              {active.length === 0 ? (
+                <motion.p
+                  key="none"
+                  {...cardMotion}
+                  className="rounded-2xl border border-dashed border-border/60 bg-card px-4 py-7 text-center text-xs text-muted-foreground"
+                >
+                  No commitments yet. Write one beside this, or finish a 5R session and turn its reconstruction into one.
+                </motion.p>
+              ) : (
+                active.map((c, i) => {
+                  const r = rateFor(c.id);
+                  const mine = logs.filter((l) => l.commitment_id === c.id);
+                  return (
+                    <motion.div
+                      key={c.id}
+                      {...cardMotion}
+                      style={indexed(i)}
+                      className="rise-in group/commit relative overflow-hidden rounded-xl border border-border/50 bg-card px-4 py-3.5"
                     >
-                      <Archive className="h-3.5 w-3.5" />
+                      {/* A spine in the commitment's own kept tone, so a row of
+                          cards reads as a row of verdicts. */}
+                      <span
+                        aria-hidden
+                        className="absolute inset-y-0 left-0 w-[3px]"
+                        style={{ background: r ? rateTone(r.rate) : "color-mix(in oklch, var(--primary) 40%, transparent)" }}
+                      />
+                      <div className="flex items-start gap-3 pl-1.5">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-heading text-[15px] leading-snug tracking-tight">
+                            <span className="text-muted-foreground">When</span>{" "}
+                            <span className="font-semibold">{c.trigger_text}</span>
+                            <span className="text-muted-foreground">, then </span>
+                            <span className="font-semibold">{c.action_text}</span>
+                          </p>
+                          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                            <span>
+                              {c.pattern_type ? (
+                                <>Checked on <span className="font-semibold text-foreground/75">{PATTERN_LABELS[c.pattern_type]}</span></>
+                              ) : (
+                                <>Not checked automatically</>
+                              )}
+                              {" · since "}
+                              {format(new Date(c.created_at), "MMM d")}
+                            </span>
+                            <Ledger logs={mine} />
+                          </p>
+                        </div>
+
+                        {r && (
+                          <div className="shrink-0 text-right">
+                            <p className="text-base font-black tabular-nums leading-none" style={{ color: rateTone(r.rate) }}>
+                              <CountUp value={r.rate} />%
+                            </p>
+                            <p className="mt-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
+                              {r.n} check{r.n !== 1 ? "s" : ""}
+                            </p>
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => retire(c.id)}
+                          disabled={busy === c.id}
+                          title="Retire: keeps the history, stops new checks"
+                          aria-label="Retire commitment"
+                          className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+                        >
+                          <Archive className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
+            </AnimatePresence>
+          </section>
+        </div>
+
+        {/* Write one: the sentence you are about to commit to, with the two
+            blanks in it, and the pattern it should be checked against as a
+            row of chips rather than a dropdown. */}
+        <AccentPanel accent="cyan" eyebrow="New" title="Write a commitment" className="min-h-0 overflow-y-auto">
+          <div className="mt-4 space-y-4">
+            <label className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-baseline gap-3">
+              <span className="font-heading text-lg text-muted-foreground">When</span>
+              <input
+                value={trigger}
+                onChange={(e) => setTrigger(e.target.value)}
+                placeholder="I take a full stop-out"
+                className="w-full border-b-2 border-border/70 bg-transparent pb-1.5 font-heading text-lg tracking-tight text-foreground outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/40 focus:border-primary"
+              />
+            </label>
+            <label className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-baseline gap-3">
+              <span className="font-heading text-lg text-muted-foreground">then</span>
+              <input
+                value={action}
+                onChange={(e) => setAction(e.target.value)}
+                placeholder="I step away for fifteen minutes"
+                className="w-full border-b-2 border-border/70 bg-transparent pb-1.5 font-heading text-lg tracking-tight text-foreground outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/40 focus:border-primary"
+              />
+            </label>
+
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Check it against
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5" role="radiogroup" aria-label="Pattern to check against">
+                {([["", "No automatic check"], ...PATTERN_OPTIONS] as [PatternType | "", string][]).map(([value, label]) => {
+                  const on = pattern === value;
+                  return (
+                    <button
+                      key={value || "none"}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      title={value ? PATTERN_DESCRIPTIONS[value] : "Keep the commitment without automatic checks"}
+                      onClick={() => setPattern(value)}
+                      className={cn(
+                        "press rounded-full border px-3 py-1.5 text-[11px] font-semibold",
+                        on
+                          ? "border-primary/60 bg-primary/15 text-primary"
+                          : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                      )}
+                    >
+                      {label}
                     </button>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground/80">
+                {pattern
+                  ? `A check is raised whenever ${PATTERN_LABELS[pattern].toLowerCase()} shows up on a later trade.`
+                  : "Without a pattern the commitment stands, but nothing checks it for you."}
+              </p>
+            </div>
           </div>
-        )}
-      </section>
 
-      </div>
-
-      {/* Write one */}
-      <AccentPanel accent="cyan" eyebrow="New" title="Write a commitment" className="min-h-0 overflow-y-auto">
-        <div className="mt-4 space-y-2.5">
-          <label className="block">
-            <span className="text-[11px] font-semibold text-muted-foreground">When... (the trigger)</span>
-            <input
-              value={trigger}
-              onChange={(e) => setTrigger(e.target.value)}
-              placeholder="I take a full stop-out"
-              className="mt-1.5 w-full rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
-            />
-          </label>
-          <label className="block">
-            <span className="text-[11px] font-semibold text-muted-foreground">...then (the action)</span>
-            <input
-              value={action}
-              onChange={(e) => setAction(e.target.value)}
-              placeholder="I step away from the screen for fifteen minutes"
-              className="mt-1.5 w-full rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
-            />
-          </label>
-          <label className="block">
-            <span className="text-[11px] font-semibold text-muted-foreground">
-              Check it against (optional: needed for automatic checks)
-            </span>
-            <select
-              value={pattern}
-              onChange={(e) => setPattern(e.target.value as PatternType | "")}
-              className="mt-1.5 w-full rounded-lg border border-border/60 bg-background/40 px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary/50"
+          <div className="mt-5 flex justify-end">
+            <button
+              type="button"
+              onClick={add}
+              disabled={adding || !canAdd}
+              className="press inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+              style={{ background: "var(--primary)", boxShadow: "0 2px 12px color-mix(in oklch, var(--primary) 26%, transparent)" }}
             >
-              <option value="">No automatic check</option>
-              {PATTERN_OPTIONS.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={add}
-            disabled={adding || !trigger.trim() || !action.trim()}
-            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
-            style={{ background: "var(--primary)", boxShadow: "0 2px 12px color-mix(in oklch, var(--primary) 26%, transparent)" }}
-          >
-            {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Commit to it
-          </button>
-        </div>
-      </AccentPanel>
-
+              {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Commit to it
+            </button>
+          </div>
+        </AccentPanel>
       </div>
 
       {retired.length > 0 && (
