@@ -94,6 +94,58 @@ export function GrowBar({ axis = "y", className, style, delay = 0, duration = 0.
   );
 }
 
+/** An SVG path that draws itself from start to end. Explains a sequence in time (a session's price path). */
+export function DrawPath({ d, className, delay = 0, duration = 1.4, stroke, strokeWidth = 2 }: {
+  d: string;
+  className?: string;
+  delay?: number;
+  duration?: number;
+  stroke: string;
+  strokeWidth?: number;
+}) {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <motion.path
+      d={d}
+      className={className}
+      fill="none"
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      initial={{ opacity: reduceMotion ? 0 : 1, pathLength: reduceMotion ? 1 : 0 }}
+      whileInView={{ opacity: 1, pathLength: 1 }}
+      viewport={viewport}
+      transition={{ duration, delay, ease: EASE_OUT }}
+    />
+  );
+}
+
+/** A marker that pins itself onto a point: scales in from its anchor, never from nothing. */
+export function PinReveal({ children, className, style, delay = 0, origin = "center bottom" }: {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+  delay?: number;
+  origin?: string;
+}) {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <motion.div
+      className={className}
+      style={{ transformOrigin: origin, ...style }}
+      initial={{ opacity: 0, transform: reduceMotion ? "scale(1)" : "scale(0.9)" }}
+      whileInView={{ opacity: 1, transform: "scale(1)" }}
+      viewport={viewport}
+      transition={revealTransition(delay, 0.45)}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 /** Chapter index, heading and standfirst. Shared by every section between the hero and the close. */
 export function SectionHeader({ index, label, title, children, align = "split", className, id }: {
   index: string;

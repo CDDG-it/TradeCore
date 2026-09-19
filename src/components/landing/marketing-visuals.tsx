@@ -1,6 +1,6 @@
 /** Read-only product compositions for the public page. All content is illustrative. */
 
-import { DrawLine, GrowBar, MarketingReveal } from "@/components/landing/marketing-motion";
+import { DrawLine, DrawPath, GrowBar, MarketingReveal, PinReveal } from "@/components/landing/marketing-motion";
 
 const processDetails = [
   { title: "Commitment", meta: "IF / THEN", value: "After a loss, wait for fresh confirmation." },
@@ -55,21 +55,81 @@ export function ProcessCanvas() {
   );
 }
 
-export function ReviewActionVisual() {
+export const reviewSteps = [
+  { label: "Pattern seen", meta: "Journal" },
+  { label: "Best trade of the day", meta: "Verdict" },
+  { label: "Next response", meta: "Commitment" },
+] as const;
+
+/* The session's price path, drawn in a 640x240 box. The trade that was taken
+   enters early after a loss; the best trade on offer waits for the planned level. */
+const sessionPath = "M0,118 L30,108 L60,120 L90,98 L110,104 L130,88 L150,112 L180,104 L200,128 L225,146 L250,138 L275,160 L300,150 L330,166 L360,158 L380,150 L400,140 L420,118 L450,126 L480,96 L510,104 L540,78 L570,86 L600,60 L640,48";
+const takenPoint = { x: 180 / 6.4, y: 104 / 2.4 };
+const bestPoint = { x: 380 / 6.4, y: 150 / 2.4 };
+
+export function ReviewCanvas() {
   return (
-    <div className="relative" aria-label="An example reflection becoming a commitment for the next session">
-      <MarketingReveal className="relative mr-5 rounded-[28px] border border-[#b7d4d1] bg-[#e9f5f3] p-7 sm:mr-14 sm:p-10">
-        <p className="text-xs font-semibold tracking-[0.12em] text-[#4e7b82]">PATTERN SEEN</p>
-        <blockquote className="font-display mt-7 text-balance text-[clamp(2rem,3.4vw,3.7rem)] font-medium leading-[1.08] tracking-[-0.045em] text-[#102b37]">“I entered early after a loss.”</blockquote>
-        <div aria-hidden="true" className="mt-9 flex items-center gap-3"><DrawLine axis="x" delay={0.3} className="block h-px flex-1 bg-[#a8cbc8]" /><span className="h-2 w-2 rounded-full bg-[#14b8a6]" /></div>
+    <div className="overflow-hidden rounded-[32px] border border-[#193c48] bg-[#102332] text-white shadow-[0_30px_80px_rgba(18,62,71,.18)]" aria-label="A session review: the trade taken, the best trade that was on offer, and the response for the next session">
+      <MarketingReveal distance={12} className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-6 py-4 text-xs sm:px-8">
+        <span className="flex items-center gap-3"><span className="font-semibold tracking-[0.14em] text-[#8aa5ab]">SESSION REVIEW</span><span className="text-[#65d4c8]">Tue 16 Sep</span></span>
+        <span className="text-[#829da3]">2 trades taken · 1 better trade on offer</span>
       </MarketingReveal>
-      {/* The connector draws downward before the response appears: the second card comes from the first. */}
-      <DrawLine axis="y" delay={0.35} duration={0.5} className="ml-auto mr-12 block h-12 w-px bg-[#14b8a6] sm:mr-24 sm:h-16" />
-      <MarketingReveal delay={0.55} className="relative ml-5 rounded-[28px] bg-[#102d3c] p-7 text-white shadow-[0_25px_60px_rgba(13,59,68,.18)] sm:ml-14 sm:p-10">
-        <p className="text-xs font-semibold tracking-[0.12em] text-[#8de0d5]">NEXT RESPONSE</p>
-        <p className="font-display mt-6 text-balance text-[clamp(1.75rem,3vw,3.25rem)] font-medium leading-[1.12] tracking-[-0.04em]">Wait for my level and confirmation.</p>
-        <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-5 text-sm"><span className="text-[#91aeb4]">Next session</span><span className="font-medium text-[#8de0d5]">Committed</span></div>
-      </MarketingReveal>
+
+      <div className="relative px-4 pb-4 pt-8 sm:px-8 sm:pt-10">
+        <div className="relative aspect-[16/10] w-full sm:aspect-[8/3]" aria-hidden="true">
+          <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 640 240" preserveAspectRatio="none">
+            <DrawPath d={sessionPath} stroke="#59d2c6" strokeWidth={2} delay={0.1} duration={1.5} className="[vector-effect:non-scaling-stroke]" />
+          </svg>
+          {/* The planned level, drawn once price has come back to it. */}
+          <div className="absolute left-[39%] right-0 flex items-center" style={{ top: `${152 / 2.4}%` }}>
+            <DrawLine axis="x" delay={0.7} duration={0.8} className="block h-px flex-1 bg-[repeating-linear-gradient(90deg,#8de0d5_0_6px,transparent_6px_12px)] opacity-70" />
+          </div>
+          <PinReveal delay={1.0} origin="right center" className="absolute right-0 -translate-y-1/2" style={{ top: `${152 / 2.4}%` }}>
+            <span className="-mr-2 hidden rounded-md bg-[#173849] px-2 py-1 text-[10px] font-semibold tracking-[0.12em] text-[#8de0d5] sm:block">PLANNED LEVEL</span>
+          </PinReveal>
+
+          {/* The trade that was taken: early, after a loss. */}
+          <PinReveal delay={0.55} origin="center bottom" className="absolute -translate-x-1/2 -translate-y-full" style={{ left: `${takenPoint.x}%`, top: `${takenPoint.y}%` }}>
+            <div className="mb-2 whitespace-nowrap rounded-xl border border-[#ef4444]/35 bg-[#0d1c29] px-3 py-2 text-left shadow-[0_12px_30px_rgba(0,0,0,.35)]">
+              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#f08c8c]">TAKEN · 09:42</span>
+              <span className="mt-0.5 block text-xs font-medium sm:text-sm">Early, after a loss <span className="ml-1 tabular-nums text-[#f08c8c]">-1R</span></span>
+            </div>
+            <span className="mx-auto block h-3 w-3 rounded-full border-2 border-[#102332] bg-[#ef4444] ring-2 ring-[#ef4444]/40" />
+          </PinReveal>
+
+          {/* The best trade on offer: at the level, after confirmation. */}
+          <PinReveal delay={1.35} origin="center top" className="absolute -translate-x-1/2" style={{ left: `${bestPoint.x}%`, top: `${bestPoint.y}%`, marginTop: "-6px" }}>
+            <span className="mx-auto block h-3 w-3 rounded-full border-2 border-[#102332] bg-[#22c55e] ring-2 ring-[#22c55e]/40" />
+            <div className="mt-2 whitespace-nowrap rounded-xl border border-[#22c55e]/35 bg-[#0d1c29] px-3 py-2 text-left shadow-[0_12px_30px_rgba(0,0,0,.35)]">
+              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#7ee0a4]">BEST TRADE · 10:35</span>
+              <span className="mt-0.5 block text-xs font-medium sm:text-sm">At the level, confirmed <span className="ml-1 tabular-nums text-[#7ee0a4]">+2.4R</span></span>
+            </div>
+          </PinReveal>
+        </div>
+      </div>
+
+      <div className="grid gap-3 p-4 sm:grid-cols-[1.1fr_0.9fr] sm:p-5">
+        <MarketingReveal delay={1.5} distance={16} className="rounded-[24px] border border-white/10 bg-[#0d1c29] p-6 sm:p-7">
+          <p className="text-[10px] font-semibold tracking-[0.14em] text-[#8de0d5]">BEST TRADE OF THE DAY</p>
+          <p className="font-display mt-3 text-xl font-semibold tracking-[-0.035em] sm:text-2xl">Was your trade the best trade?</p>
+          <div className="mt-5 space-y-2 text-sm">
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 px-4 py-3 text-[#8aa5ab]"><span>Yes, I took the best available trade</span><span aria-hidden="true" className="h-4 w-4 rounded-full border border-white/20" /></div>
+            <MarketingReveal delay={1.9} distance={6} className="flex items-center justify-between gap-4 rounded-xl border border-[#14b8a6]/60 bg-[#14b8a6]/10 px-4 py-3 font-medium text-white">
+              <span>No, a better trade was on offer</span>
+              <span aria-hidden="true" className="grid h-4 w-4 place-items-center rounded-full bg-[#14b8a6] text-[10px] font-bold text-[#081721]">✓</span>
+            </MarketingReveal>
+          </div>
+          <p className="mt-5 text-xs leading-relaxed text-[#9db6bb] sm:text-sm"><span className="font-semibold text-[#c6dcdf]">Why it was better:</span> the cleaner level, confirmation first, and room to the target.</p>
+        </MarketingReveal>
+
+        <MarketingReveal delay={1.7} distance={16} className="flex flex-col justify-between rounded-[24px] bg-[#173849] p-6 sm:p-7">
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.14em] text-[#8de0d5]">NEXT RESPONSE</p>
+            <p className="font-display mt-3 text-balance text-[clamp(1.5rem,2.4vw,2.2rem)] font-medium leading-[1.12] tracking-[-0.04em]">Wait for my level and confirmation.</p>
+          </div>
+          <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-4 text-sm"><span className="text-[#91aeb4]">Next session</span><span className="font-medium text-[#8de0d5]">Committed</span></div>
+        </MarketingReveal>
+      </div>
     </div>
   );
 }

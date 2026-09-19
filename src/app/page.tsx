@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
 import { LaptopDashboard } from "@/components/landing/dashboard-sample";
-import { MarketContextVisual, ProcessCanvas, ReviewActionVisual, TherapistVisual, therapistCadence } from "@/components/landing/marketing-visuals";
+import { MarketContextVisual, ProcessCanvas, ReviewCanvas, TherapistVisual, reviewSteps, therapistCadence } from "@/components/landing/marketing-visuals";
 import { MarketingReveal, MindscoreAssembly, SectionHeader } from "@/components/landing/marketing-motion";
 
 // The landing page's own typeface. Loaded here rather than in the root layout
@@ -77,11 +77,23 @@ export default function HomePage() {
           </section>
 
           <section id="review" className="marketing-section marketing-section--white px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
-            <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.42fr_0.58fr] lg:items-center lg:gap-24">
-              <SectionHeader index="04" label="Review" title="A review should change what you do." align="stack">
-                Turn a recognised pattern into one response for the next session.
-              </SectionHeader>
-              <ReviewActionVisual />
+            <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.38fr_0.62fr] lg:gap-20">
+              <div className="marketing-sticky">
+                <SectionHeader index="04" label="Review" title="A review should change what you do." align="stack">
+                  Look back at the trade you took, mark the best trade that was on offer, and turn the difference into one response for the next session.
+                </SectionHeader>
+                <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
+                  <ol className="divide-y divide-[#c2dcda] border-y border-[#c2dcda]">
+                    {reviewSteps.map((item, index) => (
+                      <li key={item.label} className="flex items-baseline justify-between gap-6 py-4 text-sm">
+                        <span className="flex items-baseline gap-4"><span className="font-display tabular-nums text-[#167c79]">0{index + 1}</span><span className="font-medium text-[#102b37]">{item.label}</span></span>
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#6b858b]">{item.meta}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </MarketingReveal>
+              </div>
+              <ReviewCanvas />
             </div>
           </section>
 
