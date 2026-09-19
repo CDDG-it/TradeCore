@@ -6,7 +6,7 @@ import {
   format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isToday, isFuture,
 } from "date-fns";
 import {
-  ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Loader2, Check,
+  ChevronLeft, ChevronRight, Loader2, Check,
   ExternalLink,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -28,9 +28,20 @@ const TURQUOISE = "var(--primary)";
 /** Whether a best-trade entry holds anything worth marking. */
 function hasEntry(b: BestTradeOfDay | undefined): boolean {
   if (!b) return false;
-  return b.taken_was_best || Boolean((b.post_market_analysis ?? "").trim()) ||
+  return b.taken_was_best ||
     Boolean((b.notes ?? "").trim()) || (b.screenshot_groups ?? []).some((g) => g.urls.length > 0);
 }
+
+/** The two chart slots the best-trade of the day is framed around: the higher
+ *  timeframe read and the entry you should have taken. Fresh arrays each call
+ *  so state is never shared across days. */
+function defaultShotGroups(): ScreenshotGroup[] {
+  return [{ label: "HTF", urls: [] }, { label: "Entry", urls: [] }];
+}
+
+/** Only the groups that actually hold a chart: what counts as content and what
+ *  the "done" marker keys off, so empty HTF/Entry slots never read as filled. */
+const withCharts = (g: ScreenshotGroup[]) => g.filter((x) => x.urls.length > 0);
 
 /**
  * Daily / best trade of the day: a week calendar of results across the top,
@@ -52,9 +63,8 @@ export function DailyBestTrade({
   const [error, setError] = useState<string | null>(null);
 
   const [takenWasBest, setTakenWasBest] = useState(false);
-  const [postMarket, setPostMarket] = useState("");
   const [notes, setNotes] = useState("");
-  const [groups, setGroups] = useState<ScreenshotGroup[]>([]);
+  const [groups, setGroups] = useState<ScreenshotGroup[]>(defaultShotGroups());
   const [loaded, setLoaded] = useState<BestTradeOfDay | null>(null);
   const [bestByDay, setBestByDay] = useState<Record<string, BestTradeOfDay>>({});
 
@@ -86,9 +96,8 @@ export function DailyBestTrade({
       .then((entry) => {
         setLoaded(entry);
         setTakenWasBest(entry?.taken_was_best ?? false);
-        setPostMarket(entry?.post_market_analysis ?? "");
         setNotes(entry?.notes ?? "");
-        setGroups(entry?.screenshot_groups ?? []);
+        setGroups(entry?.screenshot_groups?.length ? entry.screenshot_groups : defaultShotGroups());
       })
       .finally(() => setLoading(false));
   }, [date]);
@@ -113,19 +122,21 @@ export function DailyBestTrade({
     return { tradedDays: traded, reviewedDays: reviewed };
   }, [weekDays, tradesByDay, bestByDay]);
 
+  // Empty HTF/Entry slots never count as a change, so seeding them does not
+  // arm the save button on a fresh day.
   const dirty =
     takenWasBest !== (loaded?.taken_was_best ?? false) ||
-    postMarket !== (loaded?.post_market_analysis ?? "") ||
     notes !== (loaded?.notes ?? "") ||
-    JSON.stringify(groups) !== JSON.stringify(loaded?.screenshot_groups ?? []);
-  const hasContent = takenWasBest || postMarket.trim() || notes.trim() || groups.some((g) => g.urls.length > 0);
+    JSON.stringify(withCharts(groups)) !== JSON.stringify(withCharts(loaded?.screenshot_groups ?? []));
+  const hasContent = takenWasBest || notes.trim() || groups.some((g) => g.urls.length > 0);
 
   async function save() {
     setSaving(true); setError(null);
     try {
       const entry = await saveBestTradeOfDay({
         date, taken_was_best: takenWasBest, notes: notes.trim(),
-        post_market_analysis: postMarket.trim(), screenshot_groups: groups,
+        // Post-market analysis was removed from this tab; clear any stored value.
+        post_market_analysis: "", screenshot_groups: groups,
       });
       setLoaded(entry);
       setBestByDay((prev) => ({ ...prev, [date]: entry }));
@@ -133,7 +144,7 @@ export function DailyBestTrade({
       onSaved?.(date, entry);
       setTimeout(() => setSaved(false), 2500);
     } catch {
-      setError("Could not save. Run the post_market_analysis migration in Supabase.");
+      setError("Could not save. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -145,7 +156,7 @@ export function DailyBestTrade({
       await deleteBestTradeOfDay(date);
       setLoaded(null);
       setBestByDay((prev) => { const n = { ...prev }; delete n[date]; return n; });
-      setTakenWasBest(false); setPostMarket(""); setNotes(""); setGroups([]);
+      setTakenWasBest(false); setNotes(""); setGroups(defaultShotGroups());
       onSaved?.(date, null);
     } catch {
       setError("Could not clear this day.");
@@ -344,128 +355,93 @@ export function DailyBestTrade({
           </div>
 
           <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
-            {/* ── LEFT: your verdict, in your own words ──────────────────────
+            {/* ── LEFT: your verdict + why the better trade was better ───────
                 The one call this tab exists to make - was the trade you took
-                the best one available - and the room to write out the setup
-                that made it so. Nothing here is evidence; it is your reasoning. */}
-            <div className="flex min-h-0 flex-col gap-3">
-              <AccentPanel accent="primary" eyebrow="Verdict" title="Was your trade the best trade?" className="flex min-h-0 flex-1 flex-col">
-                <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
-                  {/* The toggle: a full-width bar so the day's verdict is the
-                      first thing the eye lands on, its state carried by colour. */}
-                  <label
-                    className={cn(
-                      "flex shrink-0 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors",
-                      takenWasBest ? "border-success/45 bg-success/[0.07]" : "border-border/60 bg-muted/20"
-                    )}
-                  >
-                    <span className="min-w-0">
-                      <span className={cn("block text-sm font-bold leading-tight transition-colors", takenWasBest ? "text-success" : "text-foreground/90")}>
-                        {takenWasBest ? "Yes - I took the best available trade" : "The trade I took was the best available"}
-                      </span>
-                      <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground/75">
-                        On a flat day, staying out can be the best trade too.
-                      </span>
+                the best one available - and, when it was not, the room to write
+                out why the trade you should have taken was the better one. */}
+            <AccentPanel accent="primary" eyebrow="Verdict" title="Was your trade the best trade?" className="flex min-h-0 flex-col">
+              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
+                {/* The toggle: a full-width bar so the day's verdict is the
+                    first thing the eye lands on, its state carried by colour. */}
+                <label
+                  className={cn(
+                    "flex shrink-0 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors",
+                    takenWasBest ? "border-success/45 bg-success/[0.07]" : "border-border/60 bg-muted/20"
+                  )}
+                >
+                  <span className="min-w-0">
+                    <span className={cn("block text-sm font-bold leading-tight transition-colors", takenWasBest ? "text-success" : "text-foreground/90")}>
+                      {takenWasBest ? "Yes - I took the best available trade" : "The trade I took was the best available"}
                     </span>
-                    <Switch checked={takenWasBest} onCheckedChange={(v) => { setTakenWasBest(v); setSaved(false); }} />
-                  </label>
+                    <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground/75">
+                      On a flat day, staying out can be the best trade too.
+                    </span>
+                  </span>
+                  <Switch checked={takenWasBest} onCheckedChange={(v) => { setTakenWasBest(v); setSaved(false); }} />
+                </label>
 
-                  {/* The setup box: the whole point of the left column. */}
-                  <div className="flex min-h-0 flex-1 flex-col">
-                    <p className="mb-2 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
-                      Explain your setup
-                    </p>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => { setNotes(e.target.value); setSaved(false); }}
-                      placeholder="The level, the confluence, why it was the higher-quality play, where the real edge was..."
-                      className="min-h-[120px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
-                    />
-                  </div>
+                {/* The explanation: why the better trade was the better one to
+                    take. Only really needed when your trade was not the best. */}
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <p className="mb-2 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                    {takenWasBest ? "Why this was the best trade" : "Why the better trade was the better one"}
+                  </p>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => { setNotes(e.target.value); setSaved(false); }}
+                    placeholder={takenWasBest
+                      ? "What made your trade the highest-quality play on the board..."
+                      : "The cleaner level, more room to target, aligned with the daily bias - why the trade you should have taken beat the one you did..."}
+                    className="min-h-[140px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+                  />
                 </div>
-              </AccentPanel>
+              </div>
+            </AccentPanel>
 
-              <AccentPanel
-                accent="cyan"
-                eyebrow="Analysis"
-                title="Post-market analysis"
-                className="flex max-h-[34%] min-h-0 shrink-0 flex-col"
-              >
-                <textarea
-                  value={postMarket}
-                  onChange={(e) => { setPostMarket(e.target.value); setSaved(false); }}
-                  placeholder="Range held the overnight low, first pullback into VWAP was the A+ long, chased the breakout instead..."
-                  className="mt-3 min-h-[70px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
-                />
-              </AccentPanel>
-            </div>
-
-            {/* ── RIGHT: the evidence ────────────────────────────────────────
-                Your actual trade up top - a link straight to its log, not a
-                picture - and the screenshots of the setup below it. */}
+            {/* ── RIGHT: the trade you should have taken ─────────────────────
+                The HTF read and the entry of the better trade, uploaded into
+                two fixed slots. A small link to your actual trade's log sits on
+                top for reference - the chart of what should have happened is the
+                point, not a thumbnail of what did. */}
             <AccentPanel
               accent="primary"
-              eyebrow="Evidence"
-              title="Your trade"
+              eyebrow="The better trade"
+              title="Screenshots you should have taken"
               className="flex min-h-0 flex-col"
             >
               <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
-                {/* Top: the actual trade(s) taken, each linking to its log. */}
-                <div className="shrink-0">
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
-                    {dayTrades.length > 1 ? "Your actual trades" : "Your actual trade"}
-                  </p>
-                  {dayTrades.length === 0 ? (
-                    <p className="rounded-lg border border-dashed border-border/60 py-3 text-center text-xs text-muted-foreground/70">
-                      No trade logged for this day.
-                    </p>
-                  ) : (
-                    <div className="max-h-[132px] space-y-1.5 overflow-y-auto pr-1">
-                      {dayTrades.map((t) => (
-                        <Link
-                          key={t.id}
-                          // `from` so the trade page sends you back here, not into
-                          // the journal, when you were only checking the trade.
-                          href={`/journal/${t.id}?from=trade-therapist`}
-                          className="group flex items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2 transition-colors hover:border-primary/40 hover:bg-muted/30"
-                        >
-                          {t.direction === "long"
-                            ? <TrendingUp className="w-4 h-4 shrink-0 text-success" />
-                            : <TrendingDown className="w-4 h-4 shrink-0 text-destructive" />}
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold leading-none transition-colors group-hover:text-primary">{instrumentName(t.instrument)}</p>
-                            <p className="mt-1 text-[10px] capitalize text-muted-foreground leading-none">{t.session} session</p>
-                          </div>
-                          {t.execution_quality && (
-                            <span className={cn("shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
-                              t.execution_quality === "good" ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive")}>
-                              {t.execution_quality === "good" ? "Good" : "Bad"}
-                            </span>
-                          )}
-                          <span className={cn("w-10 shrink-0 text-right text-xs font-bold tabular-nums",
-                            t.result === "win" ? "text-success" : t.result === "loss" ? "text-destructive" : "text-warning")}>
-                            {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
-                          </span>
-                          {/* A link to the log, deliberately not a thumbnail. */}
-                          <span className="flex shrink-0 items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 transition-colors group-hover:text-primary">
-                            Log <ExternalLink className="w-3.5 h-3.5" />
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Below: the pictures of the trade. */}
-                <div className="flex min-h-0 flex-1 flex-col border-t border-border/40 pt-3">
-                  <p className="mb-2 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">Pictures of the trade</p>
-                  <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-                    <ScreenshotUpload
-                      groups={groups}
-                      onChange={(g) => { setGroups(g); setSaved(false); }}
-                      storageConfig={userId ? { userId, entityType: "best-trade", entityId: date } : undefined}
-                    />
+                {/* Reference link to the actual trade log - not a picture. */}
+                {dayTrades.length > 0 && (
+                  <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border/40 pb-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/60">
+                      Your actual {dayTrades.length > 1 ? "trades" : "trade"}
+                    </span>
+                    {dayTrades.map((t) => (
+                      <Link
+                        key={t.id}
+                        // `from` so the trade page sends you back here, not into
+                        // the journal, when you were only checking the trade.
+                        href={`/journal/${t.id}?from=trade-therapist`}
+                        className="group inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-1 text-xs font-semibold transition-colors hover:border-primary/40 hover:bg-muted/30 hover:text-primary"
+                      >
+                        {instrumentName(t.instrument)}
+                        <span className={cn("tabular-nums",
+                          t.result === "win" ? "text-success" : t.result === "loss" ? "text-destructive" : "text-warning")}>
+                          {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
+                        </span>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground/40 transition-colors group-hover:text-primary" />
+                      </Link>
+                    ))}
                   </div>
+                )}
+
+                {/* The HTF + entry charts of the trade you should have taken. */}
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                  <ScreenshotUpload
+                    groups={groups}
+                    onChange={(g) => { setGroups(g); setSaved(false); }}
+                    storageConfig={userId ? { userId, entityType: "best-trade", entityId: date } : undefined}
+                  />
                 </div>
               </div>
             </AccentPanel>
