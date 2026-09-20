@@ -754,6 +754,25 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   --duration-press: 160ms;
 }
 
+/* The signed-in top bar: translucent over the page, and it lifts once the
+   page has scrolled. Colour and shadow only, so it never touches layout. */
+.app-topbar {
+  background: var(--nav-bg);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transition: background-color 200ms ease, box-shadow 200ms ease;
+}
+.app-topbar::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--primary) 30%, var(--sidebar-border)) 50%, transparent);
+}
+.app-topbar[data-scrolled] {
+  background: color-mix(in oklch, var(--sidebar) 92%, transparent);
+  box-shadow: 0 12px 32px -16px rgba(0, 0, 0, 0.6);
+}
+
 /* Press feedback: the interface acknowledges the tap. */
 .press {
   transition:
@@ -1293,4 +1312,5 @@ html:has(.marketing-page) { position: relative; }
   .marketing-callout { animation: none; opacity: 1; }
   figcaption .marketing-callout:not(:first-child) { opacity: 0; }
 }
+
 

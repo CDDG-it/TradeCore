@@ -21,7 +21,7 @@ import { PRIMARY_NAV } from "@/lib/nav";
  * `lg:hidden`.
  */
 
-const ICONS: Record<string, LucideIcon> = {
+export const NAV_ICONS: Record<string, LucideIcon> = {
   "/dashboard": House,
   "/psychological-edge": Target,
   "/trade-therapist": NotebookPen,
@@ -29,7 +29,7 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 /** What the create pill offers: the two things a trader starts from the desk. */
-const CREATE = [
+export const CREATE = [
   { label: "Log trade", hint: "Add to the journal", href: "/journal/new", icon: TrendingUp },
   { label: "New analysis", hint: "Plan before the session", href: "/analysis/new", icon: Compass },
 ] as const;
@@ -43,13 +43,13 @@ const ALSO_UNDER: Record<string, string[]> = {
   "/dashboard": ["/journal", "/analysis", "/analytics", "/accounts", "/preview/dashboard"],
 };
 
-const isActive = (pathname: string, href: string) =>
+export const isActive = (pathname: string, href: string) =>
   pathname === href ||
   pathname.startsWith(href + "/") ||
   (ALSO_UNDER[href] ?? []).some((p) => pathname === p || pathname.startsWith(p + "/"));
 
 function TabIcon({ tab, active }: { tab: (typeof PRIMARY_NAV)[number]; active: boolean }) {
-  const Icon = ICONS[tab.href] ?? House;
+  const Icon = NAV_ICONS[tab.href] ?? House;
   return (
     <Link
       href={tab.href}

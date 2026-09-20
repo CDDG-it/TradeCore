@@ -3,7 +3,7 @@
 /**
  * Commitments: the loop that carries a 5R session into the next trade.
  *
- * A commitment is an if/then the trader wrote themselves: when <trigger>, then
+ * A commitment is an if/then the trader wrote themselves: if <trigger>, then
  * <action>. The pattern engine already detects the behaviours those are meant
  * to counter, so when the same pattern fires on a later trade this raises a
  * check: "you committed to this: did you hold it?" The trader answers, and the
@@ -80,6 +80,30 @@ function Ledger({ logs }: { logs: CommitmentAdherenceLog[] }) {
         />
       ))}
     </span>
+  );
+}
+
+/**
+ * One half of the sentence: the leading word fixed in the margin, a blank
+ * that grows with what is written, and a hint beneath instead of an example
+ * inside it. The blank's underline picks up the accent on focus.
+ */
+function IfThenField({ word, value, onChange, label, hint }: {
+  word: string; value: string; onChange: (v: string) => void; label: string; hint: string;
+}) {
+  return (
+    <label className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-3">
+      <span className="pt-1 font-heading text-lg text-muted-foreground">{word}</span>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={label}
+        rows={2}
+        onInput={(e) => { const t = e.currentTarget; t.style.height = "auto"; t.style.height = `${t.scrollHeight}px`; }}
+        className="w-full resize-none border-b-2 border-border/70 bg-transparent pb-1.5 font-heading text-lg leading-snug tracking-tight text-foreground outline-none transition-colors focus:border-primary focus-visible:outline-none"
+      />
+      <span className="col-start-2 mt-1.5 text-[11px] text-muted-foreground/70">{hint}</span>
+    </label>
   );
 }
 
@@ -318,7 +342,7 @@ export function CommitmentsPanel({ seed }: { seed?: CommitmentsSeed } = {}) {
                           You committed
                         </p>
                         <p className="mt-2 font-heading text-[15px] leading-snug tracking-tight">
-                          <span className="text-muted-foreground">When</span>{" "}
+                          <span className="text-muted-foreground">If</span>{" "}
                           <span className="font-semibold">{c.trigger_text}</span>
                           <span className="text-muted-foreground">, then </span>
                           <span className="font-semibold">{c.action_text}</span>
@@ -408,7 +432,7 @@ export function CommitmentsPanel({ seed }: { seed?: CommitmentsSeed } = {}) {
                       <div className="flex items-start gap-3 pl-1.5">
                         <div className="min-w-0 flex-1">
                           <p className="font-heading text-[15px] leading-snug tracking-tight">
-                            <span className="text-muted-foreground">When</span>{" "}
+                            <span className="text-muted-foreground">If</span>{" "}
                             <span className="font-semibold">{c.trigger_text}</span>
                             <span className="text-muted-foreground">, then </span>
                             <span className="font-semibold">{c.action_text}</span>
@@ -457,63 +481,68 @@ export function CommitmentsPanel({ seed }: { seed?: CommitmentsSeed } = {}) {
           </section>
         </div>
 
-        {/* Write one: the sentence you are about to commit to, with the two
-            blanks in it, and the pattern it should be checked against as a
-            row of chips rather than a dropdown. */}
-        <AccentPanel accent="cyan" eyebrow="New" title="Write a commitment" className="min-h-0 overflow-y-auto">
-          <div className="mt-4 space-y-4">
-            <label className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-baseline gap-3">
-              <span className="font-heading text-lg text-muted-foreground">When</span>
-              <input
-                value={trigger}
-                onChange={(e) => setTrigger(e.target.value)}
-                placeholder="I take a full stop-out"
-                className="w-full border-b-2 border-border/70 bg-transparent pb-1.5 font-heading text-lg tracking-tight text-foreground outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/40 focus:border-primary"
-              />
-            </label>
-            <label className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-baseline gap-3">
-              <span className="font-heading text-lg text-muted-foreground">then</span>
-              <input
-                value={action}
-                onChange={(e) => setAction(e.target.value)}
-                placeholder="I step away for fifteen minutes"
-                className="w-full border-b-2 border-border/70 bg-transparent pb-1.5 font-heading text-lg tracking-tight text-foreground outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground/40 focus:border-primary"
-              />
-            </label>
+        {/* Write one: an if/then the trader writes in their own words. No
+            example text in the blanks: the sentence has to be theirs. Once
+            both halves exist it is read back as one line before committing. */}
+        <AccentPanel accent="cyan" eyebrow="Write it yourself" title="If ___, then ___." className="min-h-0 overflow-y-auto">
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            A commitment is one situation and one response. Write both as they actually happen to you, not as advice.
+          </p>
+          <div className="mt-5 space-y-5">
+            <IfThenField word="If" value={trigger} onChange={setTrigger} label="The situation" hint="The situation, exactly as it happens to you." />
+            <IfThenField word="then" value={action} onChange={setAction} label="The response" hint="What you will do instead, the moment it happens." />
+          </div>
 
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Check it against
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1.5" role="radiogroup" aria-label="Pattern to check against">
-                {([["", "No automatic check"], ...PATTERN_OPTIONS] as [PatternType | "", string][]).map(([value, label]) => {
-                  const on = pattern === value;
-                  return (
-                    <button
-                      key={value || "none"}
-                      type="button"
-                      role="radio"
-                      aria-checked={on}
-                      title={value ? PATTERN_DESCRIPTIONS[value] : "Keep the commitment without automatic checks"}
-                      onClick={() => setPattern(value)}
-                      className={cn(
-                        "press rounded-full border px-3 py-1.5 text-[11px] font-semibold",
-                        on
-                          ? "border-primary/60 bg-primary/15 text-primary"
-                          : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground/80">
-                {pattern
-                  ? `A check is raised whenever ${PATTERN_LABELS[pattern].toLowerCase()} shows up on a later trade.`
-                  : "Without a pattern the commitment stands, but nothing checks it for you."}
-              </p>
+          <AnimatePresence initial={false}>
+            {canAdd && (
+              <motion.blockquote
+                key="preview"
+                initial={{ opacity: 0, transform: "translateY(6px)" }}
+                animate={{ opacity: 1, transform: "translateY(0px)" }}
+                exit={{ opacity: 0, transform: "translateY(6px)" }}
+                transition={{ duration: 0.2, ease: EASE_OUT }}
+                className="mt-5 rounded-xl border border-primary/30 bg-primary/[0.06] px-4 py-3"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary/80">Reads as</p>
+                <p className="mt-1.5 font-heading text-[15px] leading-snug tracking-tight text-foreground">
+                  If {trigger.trim().replace(/[.!]+$/, "")}, then {action.trim().replace(/[.!]+$/, "")}.
+                </p>
+              </motion.blockquote>
+            )}
+          </AnimatePresence>
+
+          <div className="mt-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Optionally, check it against a pattern
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5" role="radiogroup" aria-label="Pattern to check against">
+              {([["", "No automatic check"], ...PATTERN_OPTIONS] as [PatternType | "", string][]).map(([value, label]) => {
+                const on = pattern === value;
+                return (
+                  <button
+                    key={value || "none"}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    title={value ? PATTERN_DESCRIPTIONS[value] : "Keep the commitment without automatic checks"}
+                    onClick={() => setPattern(value)}
+                    className={cn(
+                      "press rounded-full border px-3 py-1.5 text-[11px] font-semibold",
+                      on
+                        ? "border-primary/60 bg-primary/15 text-primary"
+                        : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground/80">
+              {pattern
+                ? `A check is raised whenever ${PATTERN_LABELS[pattern].toLowerCase()} shows up on a later trade.`
+                : "Without a pattern the commitment stands, but nothing checks it for you."}
+            </p>
           </div>
 
           <div className="mt-5 flex justify-end">

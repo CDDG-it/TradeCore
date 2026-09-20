@@ -1,6 +1,6 @@
 /** Read-only product compositions for the public page. All content is illustrative. */
 
-import { DrawLine, GrowBar, MarketingReveal, PinReveal, WriteIn } from "@/components/landing/marketing-motion";
+import { DrawLine, DrawPath, GrowBar, MarketingReveal, PinReveal, WriteIn } from "@/components/landing/marketing-motion";
 
 const processDetails = [
   { title: "Commitment", meta: "IF / THEN", value: "After a loss, wait for fresh confirmation." },
@@ -252,31 +252,129 @@ export function TherapistVisual() {
         </MarketingReveal>
       </MarketingReveal>
 
-      <MarketingReveal delay={0.08} className="rounded-[28px] bg-[#173849] p-7 text-white shadow-[0_24px_60px_rgba(13,59,68,.16)] sm:p-9">
-        <div className="flex items-baseline justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">After the market</p><span className="text-xs text-[#78959c]">SESSION</span></div>
-        <p className="font-display mt-5 text-2xl font-semibold tracking-[-0.035em]">Examine the decisions.</p>
-        <div aria-hidden="true" className="mt-8 flex h-20 items-end gap-2">
-          {[38, 68, 48, 82, 62, 92].map((height, index) => <span key={height} className="flex-1" style={{ height: `${height}%`, opacity: 0.28 + index * 0.1 }}><GrowBar delay={0.25 + index * 0.06} className="block h-full w-full rounded-t-sm bg-[#61d0c5]" /></span>)}
+      {/* After the market: the session read back as decisions, not a chart. */}
+      <MarketingReveal delay={0.08} className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#173849] bg-[radial-gradient(circle_at_85%_0%,#1f6a68,transparent_58%)] p-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_24px_60px_rgba(13,59,68,.16)] sm:p-8">
+        <CardEyebrow index="02" label="After the market" meta="Session" />
+        <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">Examine the decisions.</p>
+        <ol className="mt-6" aria-label="The session's trades and their verdicts">
+          {sessionLedger.map((row, index) => (
+            <li key={row.time} className="relative">
+              <MarketingReveal delay={0.3 + index * 0.08} distance={8} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-3 text-sm">
+                <span className="w-11 shrink-0 tabular-nums text-[#9db6bb]">{row.time}</span>
+                <span className="rounded-md bg-white/10 px-1.5 py-0.5 text-[11px] font-semibold">ES</span>
+                <span className={`w-12 shrink-0 font-semibold tabular-nums ${row.r < 0 ? "text-[#f08c8c]" : "text-[#7ee0a4]"}`}>{row.r > 0 ? "+" : ""}{row.r}R</span>
+                <span className="order-last basis-full text-[13px] leading-snug text-[#d6e4e6] sm:order-none sm:min-w-0 sm:flex-1 sm:basis-auto">{row.note}</span>
+                <span className={`ml-auto shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold tracking-[0.1em] ${row.onPlan ? "bg-[#22c55e]/15 text-[#7ee0a4]" : "bg-[#ef4444]/15 text-[#f08c8c]"}`}>{row.onPlan ? "ON PLAN" : "EARLY"}</span>
+              </MarketingReveal>
+              <DrawLine delay={0.36 + index * 0.08} className="block h-px w-full bg-white/10" />
+            </li>
+          ))}
+        </ol>
+        <MarketingReveal delay={0.7} distance={8} className="mt-4 flex items-center gap-2 text-xs text-[#7ee0a4]">
+          <span aria-hidden="true" className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-[#22c55e]/20 text-[10px] font-bold">✓</span>
+          <span>Best trade of the day: 10:42, the retest you waited for.</span>
+        </MarketingReveal>
+      </MarketingReveal>
+
+      {/* Weekly review: the week's days, then the lesson in the trader's own words. */}
+      <MarketingReveal delay={0.16} className="relative overflow-hidden rounded-[28px] border border-[#bfdcd7] bg-[#dcefeb] bg-[radial-gradient(circle_at_85%_0%,#ffffff,transparent_55%)] p-6 text-[#153743] shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_24px_60px_rgba(13,59,68,.10)] sm:p-8">
+        <CardEyebrow index="03" label="Weekly review" meta="5 days" light />
+        <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">Write the lesson down.</p>
+        <div aria-hidden="true" className="mt-6 grid grid-cols-5 gap-2">
+          {reviewWeek.map((day, index) => (
+            <MarketingReveal key={day.day} delay={0.3 + index * 0.06} distance={10} className={`rounded-xl border px-2 py-2.5 text-center ${day.missed ? "border-dashed border-[#9fc4bf] bg-white/30" : "border-[#9fd0c9] bg-[#b9e3dd]/80"}`}>
+              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#4f7a7f]">{day.day}</span>
+              <span className={`mt-1 block text-sm font-semibold tabular-nums ${day.missed ? "text-[#8aa5ab]" : day.r < 0 ? "text-[#c0392b]" : "text-[#157a4b]"}`}>{day.missed ? "–" : `${day.r > 0 ? "+" : ""}${day.r}R`}</span>
+              <svg viewBox="0 0 16 16" className="mx-auto mt-1.5 h-4 w-4">
+                {!day.missed && <DrawPath d="M3 8.5 L6.5 12 L13 4.5" stroke="#167c79" strokeWidth={2} delay={0.55 + index * 0.08} duration={0.5} />}
+              </svg>
+            </MarketingReveal>
+          ))}
+        </div>
+        <div className="mt-6 border-l-2 border-[#167c79]/60 pl-4">
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-[#167c79]">LESSON · WEEK 38</p>
+          <p className="mt-1.5 text-sm font-medium"><WriteIn delay={0.9} duration={1.1}>Both losses came from entering before the retest.</WriteIn></p>
+          <p className="mt-3 text-[10px] font-semibold tracking-[0.16em] text-[#167c79]">FOCUS FOR NEXT WEEK</p>
+          <p className="mt-1.5 text-sm font-medium"><WriteIn delay={1.9} duration={0.9}>Level first, then confirmation.</WriteIn></p>
         </div>
       </MarketingReveal>
 
-      <MarketingReveal delay={0.16} className="rounded-[28px] border border-[#bfdcd7] bg-[#dcefeb] p-7 text-[#153743] sm:p-9">
-        <div className="flex items-baseline justify-between gap-4"><p className="text-sm font-medium text-[#167c79]">Weekly review</p><span className="text-xs text-[#6b858b]">5 DAYS</span></div>
-        <p className="font-display mt-5 text-2xl font-semibold tracking-[-0.035em]">Write the lesson down.</p>
-        <div aria-hidden="true" className="mt-8 grid grid-cols-5 gap-2">
-          {[true, true, false, true, true].map((complete, index) => <MarketingReveal key={index} delay={0.3 + index * 0.06} distance={10} className={`h-11 rounded-lg border ${complete ? "border-[#78c4bd] bg-[#b9e3dd]" : "border-[#bdd3d0] bg-white/35"}`}><span className="sr-only">{complete ? "Reviewed" : "Missed"}</span></MarketingReveal>)}
+      {/* Monthly rollup: which patterns keep coming back, week by week. */}
+      <MarketingReveal delay={0.24} className="relative grid gap-6 overflow-hidden rounded-[28px] border border-white/10 bg-[#0d1c29] bg-[radial-gradient(circle_at_0%_100%,#173849,transparent_55%)] p-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_24px_60px_rgba(13,59,68,.16)] sm:col-span-2 sm:grid-cols-[0.36fr_0.64fr] sm:items-center sm:p-8">
+        <div>
+          <CardEyebrow index="04" label="Monthly rollup" meta="Persistent" />
+          <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">See what persists.</p>
+          <p className="mt-3 max-w-[300px] text-sm leading-relaxed text-[#9db6bb]">Weekly lessons roll up into one view, so a pattern that survives the month is named, not sensed.</p>
         </div>
-      </MarketingReveal>
-
-      <MarketingReveal delay={0.24} className="grid gap-5 rounded-[28px] border border-white/10 bg-[#0d1c29] px-7 py-7 text-white sm:col-span-2 sm:grid-cols-[0.35fr_0.65fr] sm:items-center sm:px-10">
-        <div><p className="text-sm font-medium text-[#8de0d5]">Monthly rollup</p><p className="font-display mt-2 text-xl font-semibold tracking-[-0.035em]">See what persists.</p></div>
-        <div aria-hidden="true" className="grid grid-cols-4 gap-3">
-          {[72, 46, 84, 58].map((width, index) => <div key={width} className="rounded-xl border border-white/10 p-3"><span className="text-[10px] text-[#78959c]">W{index + 1}</span><span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-white/10"><GrowBar axis="x" delay={0.4 + index * 0.08} className="block h-full rounded-full bg-[#59c9be]" style={{ width: `${width}%` }} /></span></div>)}
+        <div className="min-w-0" aria-label="Patterns by week">
+          <div className="grid grid-cols-[minmax(0,1fr)_repeat(4,2rem)_auto] items-center gap-x-2 text-[10px] font-semibold tracking-[0.12em] text-[#78959c] sm:grid-cols-[minmax(0,1fr)_repeat(4,2.5rem)_auto]">
+            <span />
+            {["W1", "W2", "W3", "W4"].map((w) => <span key={w} className="text-center">{w}</span>)}
+            <span className="w-16" />
+          </div>
+          {persistence.map((row, rowIndex) => {
+            const hits = row.weeks.filter(Boolean).length;
+            const persists = hits >= 3;
+            return (
+              <div key={row.label} className="relative grid grid-cols-[minmax(0,1fr)_repeat(4,2rem)_auto] items-center gap-x-2 border-t border-white/10 py-3 sm:grid-cols-[minmax(0,1fr)_repeat(4,2.5rem)_auto]">
+                <span className={`truncate text-sm ${persists ? "font-medium text-white" : "text-[#9db6bb]"}`}>{row.label}</span>
+                {row.weeks.map((hit, weekIndex) => (
+                  <span key={weekIndex} className="relative flex h-6 items-center justify-center">
+                    {persists && weekIndex > 0 && row.weeks[weekIndex - 1] && hit && (
+                      <DrawLine delay={0.9 + weekIndex * 0.1} duration={0.4} className="absolute right-1/2 top-1/2 h-px w-[calc(100%+0.5rem)] -translate-y-1/2 bg-[#59c9be]/60" />
+                    )}
+                    <MarketingReveal delay={0.45 + rowIndex * 0.12 + weekIndex * 0.06} distance={6} className={`relative h-2.5 w-2.5 rounded-full ${hit ? (persists ? "bg-[#59c9be] shadow-[0_0_10px_rgba(89,201,190,.6)]" : "bg-[#59c9be]/45") : "border border-white/15"}`}>
+                      <span className="sr-only">{hit ? "seen" : "clear"}</span>
+                    </MarketingReveal>
+                  </span>
+                ))}
+                <MarketingReveal delay={1.1 + rowIndex * 0.1} distance={4} className={`w-16 rounded-md px-2 py-1 text-center text-[10px] font-semibold tabular-nums ${persists ? "bg-[#14b8a6]/15 text-[#8de0d5]" : "bg-white/5 text-[#78959c]"}`}>
+                  {hits} of 4
+                </MarketingReveal>
+              </div>
+            );
+          })}
         </div>
       </MarketingReveal>
     </div>
   );
 }
+
+/** Eyebrow row shared by the cadence cards: label, chapter index, meta chip. */
+function CardEyebrow({ index, label, meta, light = false }: { index: string; label: string; meta: string; light?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="flex items-baseline gap-2.5">
+        <span className={`font-display text-xs tabular-nums ${light ? "text-[#167c79]/70" : "text-[#59c9be]/70"}`}>{index}</span>
+        <span className={`text-sm font-medium ${light ? "text-[#167c79]" : "text-[#8de0d5]"}`}>{label}</span>
+      </span>
+      <span className={`rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${light ? "bg-[#167c79]/10 text-[#4f7a7f]" : "bg-white/10 text-[#9db6bb]"}`}>{meta}</span>
+    </div>
+  );
+}
+
+/* One session read back as decisions: time, result, what happened, verdict. */
+const sessionLedger = [
+  { time: "10:04", r: -1, note: "Entered before confirmation", onPlan: false },
+  { time: "10:42", r: 2.3, note: "Waited for the retest to hold", onPlan: true },
+  { time: "13:15", r: 0.6, note: "Planned level, took partials", onPlan: true },
+] as const;
+
+/* The reviewed week, Monday to Friday. */
+const reviewWeek = [
+  { day: "MON", r: 1.8, missed: false },
+  { day: "TUE", r: -1, missed: false },
+  { day: "WED", r: 0, missed: true },
+  { day: "THU", r: 2.3, missed: false },
+  { day: "FRI", r: 0.6, missed: false },
+] as const;
+
+/* Which patterns showed up in which week of the month. */
+const persistence = [
+  { label: "Early entry", weeks: [true, true, false, true] },
+  { label: "Size up after a loss", weeks: [true, false, false, false] },
+  { label: "Skipped the plan", weeks: [false, true, false, false] },
+] as const;
 
 /* The week's releases on a Monday-to-Friday track. `at` is the position along the week in percent. */
 const marketEvents = [
