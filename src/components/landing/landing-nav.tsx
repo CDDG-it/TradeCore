@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ComponentType } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
 import { ChartCandlestick, ChevronDown, LayoutDashboard, Menu, NotebookPen, Target, X } from "lucide-react";
@@ -129,7 +130,9 @@ export function LandingNav() {
     <>
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0b1120]/95 px-6 backdrop-blur-xl sm:px-10 lg:px-12">
         <div className="mx-auto grid h-[72px] max-w-[1380px] grid-cols-[1fr_auto] items-center gap-4 lg:grid-cols-[1fr_auto_1fr]">
-          <Link href="/" className="font-display shrink-0 justify-self-start text-lg font-semibold tracking-[-0.055em] text-white transition-opacity hover:opacity-75 sm:text-[22px]">Trading<span className="text-[#46cabc]">MC</span></Link>
+          <Link href="/" aria-label="TradingMC home" className="shrink-0 justify-self-start transition-opacity hover:opacity-75">
+            <Image src="/tradingmc-logo.png" alt="TradingMC" width={979} height={500} priority className="h-7 w-auto sm:h-8" />
+          </Link>
           <DesktopMenu />
           <div className="flex items-center justify-self-end gap-2 sm:gap-3">
             <nav aria-label="Account" className="hidden items-center gap-2 text-xs font-medium sm:flex sm:gap-3 sm:text-[13px]">

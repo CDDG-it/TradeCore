@@ -20,11 +20,11 @@ export default function HomePage() {
       <a href="#main" className="sr-only bg-[#14b8a6] px-4 py-2 font-semibold text-[#0b1120] focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50">Skip to content</a>
       <LandingNav />
       <main id="main">
-        <section id="dashboard" className="marketing-hero relative overflow-hidden px-6 pb-24 pt-20 sm:px-10 sm:pt-28 lg:px-12 lg:pb-32 lg:pt-32">
+        <section id="dashboard" className="marketing-hero relative flex min-h-[calc(100svh-72px)] flex-col justify-center overflow-hidden px-6 py-16 sm:px-10 sm:py-20 lg:px-12 lg:py-24">
           <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-35" />
-          <div className="relative mx-auto grid max-w-[1380px] grid-cols-[minmax(0,1fr)] items-center gap-14 lg:grid-cols-[0.86fr_1.14fr] lg:gap-8">
-            <div className="relative z-10 min-w-0 max-w-[610px]">
-              <h1 className="font-display max-w-[720px] text-balance text-[clamp(2.55rem,11vw,3.6rem)] font-semibold leading-[0.98] tracking-[-0.06em] sm:text-[clamp(3.6rem,6.1vw,7.2rem)]">Journal for <span className="text-[#6ad5c9]">extraordinary traders</span></h1>
+          <div className="relative mx-auto grid w-full max-w-[1380px] grid-cols-[minmax(0,1fr)] items-center gap-14 lg:grid-cols-[0.98fr_1.02fr] lg:gap-14">
+            <div className="relative z-10 min-w-0 max-w-[660px]">
+              <h1 className="font-display max-w-[660px] text-balance text-[clamp(2.4rem,10vw,3.4rem)] font-semibold leading-[0.98] tracking-[-0.06em] sm:text-[clamp(3.4rem,5vw,5.1rem)]">Journal for <span className="text-[#6ad5c9]">extraordinary traders</span></h1>
               <p className="mt-8 max-w-[520px] text-base leading-[1.75] text-[#b8ccd0] sm:text-lg">A journal can show what happened. TradingMC helps you write a plan, keep commitments and review the decisions that shape the next session.</p>
               <div className="mt-10 flex flex-wrap items-center gap-6">
                 <Link href="/signup" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#14b8a6] px-7 py-3 text-sm font-semibold text-[#081721] transition-colors hover:bg-[#70d9cf]">Start building your process</Link>
