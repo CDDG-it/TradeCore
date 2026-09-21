@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -109,15 +110,14 @@ export function TopNav() {
             (logo) and right (actions) slots share equal flex width. */}
         <div className="flex h-[60px] items-center gap-3 px-4 lg:px-6">
           <div className="flex min-w-0 flex-1 items-center">
-            {/* The wordmark, in the landing page's own Clash Display, so the
-                app and the marketing site read as one brand. */}
+            {/* The brand mark, doubling as the home link, so the app and the
+                marketing site read as one brand. */}
             <Link
               href="/"
               aria-label="TradingMC home"
-              className="press shrink-0 text-[22px] font-semibold leading-none tracking-[-0.055em] text-foreground hover:opacity-80"
-              style={{ fontFamily: '"Clash Display", var(--font-inter), system-ui, sans-serif' }}
+              className="press shrink-0 hover:opacity-80"
             >
-              Trading<span style={{ color: "var(--primary)" }}>MC</span>
+              <Image src="/tradingmc-logo.png" alt="TradingMC" width={979} height={500} priority className="h-7 w-auto" />
             </Link>
           </div>
 
