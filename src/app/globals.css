@@ -1033,8 +1033,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   to { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 
-/* "extraordinary": italic, with a turquoise→cyan sheen that drifts across it. */
+/* "extraordinary": italic, with a turquoise→cyan sheen that drifts across it.
+   inline-block plus a sliver of right padding gives the italic "y" room so
+   background-clip: text does not shear off its tail. */
 .marketing-hero-word {
+  display: inline-block;
+  padding-right: 0.14em;
+  margin-right: -0.08em;
   font-style: italic;
   background: linear-gradient(100deg, #14b8a6 0%, #6ad5c9 25%, #dffaf6 45%, #6ad5c9 65%, #06b6d4 100%);
   background-size: 260% 100%;

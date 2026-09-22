@@ -14,7 +14,8 @@ const productIcons: Record<Product["icon"], ComponentType<{ className?: string }
   markets: ChartCandlestick,
 };
 
-const triggerClass = "marketing-nav-trigger inline-flex h-10 items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-medium text-[#d0dfe1] hover:bg-white/5 hover:text-white data-[popup-open]:bg-white/5 data-[popup-open]:text-white";
+// Matches the signed-in app's top-nav rail items: a pill inside a glass rail.
+const triggerClass = "marketing-nav-trigger inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-[#d0dfe1] hover:bg-white/[0.06] hover:text-white data-[popup-open]:bg-white/[0.06] data-[popup-open]:text-white";
 
 function ProductsPanel() {
   return (
@@ -58,7 +59,7 @@ function LevelsPanel() {
 function DesktopMenu() {
   return (
     <NavigationMenu.Root className="hidden lg:block" delay={80} closeDelay={120}>
-      <NavigationMenu.List className="flex items-center gap-1">
+      <NavigationMenu.List className="flex items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
         <NavigationMenu.Item>
           <NavigationMenu.Trigger className={triggerClass}>Products<NavigationMenu.Icon className="marketing-nav-chevron"><ChevronDown className="h-3.5 w-3.5" /></NavigationMenu.Icon></NavigationMenu.Trigger>
           <NavigationMenu.Content className="marketing-nav-content"><ProductsPanel /></NavigationMenu.Content>
