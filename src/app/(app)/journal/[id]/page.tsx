@@ -110,7 +110,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
     : "oklch(0.65 0.22 25)";
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="mx-auto w-full max-w-[1500px] space-y-5">
       <div>
         <Link href={back.href} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="w-3.5 h-3.5" /> {back.label}
@@ -183,164 +183,164 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      {/* Discipline Check */}
-      {discipline && (
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Target className="w-4 h-4" style={{ color: "var(--primary)" }} />
-              Discipline Check
-              <span className="ml-auto text-sm font-bold" style={{ color: scoreColor }}>
-                {hasCustomChecks ? `${disciplineScore}%` : "-"}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {hasCustomChecks ? (
-              <div className="space-y-1.5">
-                {customChecks.map((check, idx) => (
-                  <button
-                    key={`custom-${idx}`}
-                    onClick={() => toggleCustomCheck(idx)}
-                    className={cn(
-                      "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-xs transition-all text-left",
-                      check.passed
-                        ? "bg-success/8 border-success/25 hover:bg-success/12"
-                        : "bg-secondary border-border hover:border-primary/30 hover:bg-muted"
-                    )}
-                  >
-                    <span className={cn(
-                      "w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all border-2",
-                      check.passed
-                        ? "bg-success border-success"
-                        : "bg-transparent border-muted-foreground/30"
-                    )}>
-                      {check.passed && <Check className="w-3 h-3 text-white" />}
-                    </span>
-                    <span className={cn(
-                      "flex-1 transition-colors",
-                      check.passed ? "text-foreground/80" : "text-muted-foreground"
-                    )}>
-                      {check.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground/60 text-center py-3">
-                No discipline rules on this trade.{" "}
-                <Link href={`/journal/${id}/edit`} className="text-primary hover:underline">Edit</Link> to add rules.
-              </p>
-            )}
-            {discipline.notes && (
-              <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border leading-relaxed">
-                {discipline.notes}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* One screen: the chart evidence on the left, the read on the right. */}
+      <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+        {/* Left: the screenshots, with the confluences that set the trade up. */}
+        <div className="space-y-4">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold">Screenshots</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {groups.some((g) => g.urls.length > 0) ? (
+                <ScreenshotUpload groups={groups} onChange={() => {}} readOnly />
+              ) : (
+                <p className="text-xs text-muted-foreground/60 text-center py-8">No screenshots on this trade.</p>
+              )}
+            </CardContent>
+          </Card>
 
-      {/* Confluences */}
-      {trade.confluences.length > 0 && (
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-success" /> Confluences
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {trade.confluences.map((c) => (
-                <span key={c} className="text-sm bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg border border-border">
-                  {c}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-success" /> Confluences
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {trade.confluences.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {trade.confluences.map((c) => (
+                    <span key={c} className="text-sm bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg border border-border">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/60 py-1">No confluences logged.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {linkedAnalysis && (
+            <Card className="bg-primary/5 border-primary/20 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <LinkIcon className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold text-primary">Linked Analysis</span>
+                  </div>
+                  <Link href={`/analysis/${linkedAnalysis.id}`} className="text-xs text-primary hover:text-primary/70 transition-colors">
+                    View analysis →
+                  </Link>
+                </div>
+                <p className="text-sm mt-2 text-foreground/80">{linkedAnalysis.title}</p>
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{linkedAnalysis.thesis}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Right: the rules kept, then the four reads of the trade. */}
+        <div className="space-y-4">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Target className="w-4 h-4" style={{ color: "var(--primary)" }} />
+                Discipline Check
+                <span className="ml-auto text-sm font-bold" style={{ color: scoreColor }}>
+                  {hasCustomChecks ? `${disciplineScore}%` : "-"}
                 </span>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Screenshots */}
-      {groups.some((g) => g.urls.length > 0) && (
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold">Screenshots</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScreenshotUpload groups={groups} onChange={() => {}} readOnly />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Execution + Psychology */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-primary" /> Execution Notes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm leading-relaxed text-foreground/80">{trade.execution_notes || "-"}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Brain className="w-4 h-4 text-gold" /> Psychology
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm leading-relaxed text-foreground/80">{trade.psychology_notes || "-"}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid sm:grid-cols-2 gap-4">
-        {trade.mistakes && trade.mistakes !== "None" && (
-          <Card className="bg-destructive/5 border-destructive/20 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-destructive">
-                <AlertCircle className="w-4 h-4" /> Mistakes
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm leading-relaxed text-foreground/80">{trade.mistakes}</p>
+              {hasCustomChecks ? (
+                <div className="space-y-1.5">
+                  {customChecks.map((check, idx) => (
+                    <button
+                      key={`custom-${idx}`}
+                      onClick={() => toggleCustomCheck(idx)}
+                      className={cn(
+                        "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-xs transition-all text-left",
+                        check.passed
+                          ? "bg-success/8 border-success/25 hover:bg-success/12"
+                          : "bg-secondary border-border hover:border-primary/30 hover:bg-muted"
+                      )}
+                    >
+                      <span className={cn(
+                        "w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all border-2",
+                        check.passed
+                          ? "bg-success border-success"
+                          : "bg-transparent border-muted-foreground/30"
+                      )}>
+                        {check.passed && <Check className="w-3 h-3 text-white" />}
+                      </span>
+                      <span className={cn(
+                        "flex-1 transition-colors",
+                        check.passed ? "text-foreground/80" : "text-muted-foreground"
+                      )}>
+                        {check.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/60 text-center py-3">
+                  No discipline rules on this trade.{" "}
+                  <Link href={`/journal/${id}/edit`} className="text-primary hover:underline">Edit</Link> to add rules.
+                </p>
+              )}
+              {discipline?.notes && (
+                <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border leading-relaxed">
+                  {discipline.notes}
+                </p>
+              )}
             </CardContent>
           </Card>
-        )}
-        {trade.lessons && (
-          <Card className="bg-gold/5 border-gold/20 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-gold">
-                <Lightbulb className="w-4 h-4" /> Lessons
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm leading-relaxed text-foreground/80">{trade.lessons}</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
 
-      {linkedAnalysis && (
-        <Card className="bg-primary/5 border-primary/20 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <LinkIcon className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-primary">Linked Analysis</span>
-              </div>
-              <Link href={`/analysis/${linkedAnalysis.id}`} className="text-xs text-primary hover:text-primary/70 transition-colors">
-                View analysis →
-              </Link>
-            </div>
-            <p className="text-sm mt-2 text-foreground/80">{linkedAnalysis.title}</p>
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{linkedAnalysis.thesis}</p>
-          </CardContent>
-        </Card>
-      )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary" /> Execution Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed text-foreground/80">{trade.execution_notes || "-"}</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-gold" /> Psychology
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed text-foreground/80">{trade.psychology_notes || "-"}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-destructive/5 border-destructive/20 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-destructive">
+                  <AlertCircle className="w-4 h-4" /> Mistakes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed text-foreground/80">{trade.mistakes && trade.mistakes !== "None" ? trade.mistakes : "-"}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gold/5 border-gold/20 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-gold">
+                  <Lightbulb className="w-4 h-4" /> Lessons
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed text-foreground/80">{trade.lessons || "-"}</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

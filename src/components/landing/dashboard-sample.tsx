@@ -59,7 +59,10 @@ export function DashboardScreenshot() {
   }, []);
 
   return (
-    <figure className="marketing-screen mx-auto w-full min-w-0 max-w-[1020px]" aria-label="The TradingMC dashboard layout with local illustrative data">
+    <figure className="marketing-screen marketing-laptop mx-auto w-full min-w-0 max-w-[1020px]" aria-label="The TradingMC dashboard layout with local illustrative data">
+      <div className="marketing-laptop-device">
+      <div className="marketing-laptop-lid">
+      <span aria-hidden="true" className="marketing-laptop-cam" />
       <div className="marketing-screen-frame rounded-[22px] border border-white/10 bg-[#0b1120] p-1.5 sm:rounded-[26px] sm:p-2">
         <div ref={screenRef} className="marketing-dashboard relative aspect-[980/650] overflow-hidden rounded-[16px] bg-[#0b1120] sm:rounded-[18px]">
         <div inert className="marketing-dashboard-inner absolute left-0 top-0 h-[650px] w-[980px] overflow-hidden" style={{ transform: `scale(${scale ?? 1})`, transformOrigin: "top left", visibility: scale === null ? "hidden" : "visible" }}>
@@ -84,6 +87,9 @@ export function DashboardScreenshot() {
           </div>
         </div>
         </div>
+      </div>
+      </div>
+      <div aria-hidden="true" className="marketing-laptop-base" />
       </div>
       <figcaption className="relative mx-auto mt-7 h-12 max-w-[560px] text-center text-sm leading-relaxed text-[#b8ccd0] sm:h-6">
         {callouts.map((callout, index) => (

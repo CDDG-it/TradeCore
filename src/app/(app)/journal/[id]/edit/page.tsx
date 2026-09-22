@@ -241,35 +241,44 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     </div>
   );
 
+  const analyses = allAnalyses.filter((a) => a.date === form.date_time);
+
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-4">
-      {/* Sticky action bar: the whole edit fits the screen, so Save and Cancel
-          stay in reach without scrolling to the end of a long form. */}
-      <div className="sticky top-[60px] z-20 -mx-3 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-background/85 px-3 py-2.5 backdrop-blur-xl sm:-mx-6 sm:px-6">
-        <div className="min-w-0">
-          <Link href={`/journal/${id}`} className="press inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Trade
+    <div className="space-y-4">
+      {/* Same compact header as Log Trade: actions in view, no scroll to submit. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href={`/journal/${id}`} aria-label="Back to Trade"
+            className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+            <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div className="flex items-baseline gap-2.5">
-            <h1 className="text-lg font-bold tracking-tight">Edit Trade</h1>
-            <p className="truncate text-sm text-muted-foreground">{tradeInfo.instrument} · {tradeInfo.session} session</p>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight leading-none">Edit Trade</h1>
+            <p className="truncate text-xs text-muted-foreground mt-1">{tradeInfo.instrument} · {tradeInfo.session} session</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Link href={`/journal/${id}`}><Button type="button" variant="outline">Cancel</Button></Link>
-          <Button type="submit" form="edit-trade-form" disabled={saving}>{saving ? "Saving..." : "Save changes"}</Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link href={`/journal/${id}`}><Button type="button" variant="outline" size="sm">Cancel</Button></Link>
+          <Button type="submit" form="edit-trade-form" size="sm" disabled={saving}>{saving ? "Saving..." : "Save changes"}</Button>
         </div>
       </div>
 
       {restored && <DraftBanner onDismiss={dismiss} label="Draft restored: you have unsaved edits from before." />}
 
-      {/* One-screen layout: the cards pack into balanced columns instead of one
-          tall stack, so the whole trade reads at a glance. */}
-      <form id="edit-trade-form" onSubmit={handleSubmit} className="columns-1 gap-4 md:columns-2 xl:columns-3 [&>*]:mb-4 [&>*]:break-inside-avoid">
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Trade Details</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
+      {error && (
+        <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      <form id="edit-trade-form" onSubmit={handleSubmit}>
+        <div className="grid lg:grid-cols-2 gap-4 items-start">
+        {/* ── LEFT: trade details + notes ─────────────────────────── */}
+        <div className="space-y-4 min-w-0">
+        {/* Trade Details */}
+        <Card className="bg-card border-border/50 shadow-sm">
+          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Trade Details</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Instrument *</Label>
@@ -277,7 +286,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                   {INSTRUMENTS.map((inst) => (
                     <button key={inst} type="button" onClick={() => set("instrument", inst)}
                       className={cn("flex-1 py-1.5 rounded-lg text-sm font-medium transition-all font-mono",
-                        form.instrument === inst ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                        form.instrument === inst ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
                       {inst}
                     </button>
                   ))}
@@ -288,7 +297,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Date</Label>
+                <Label className="text-xs">Date *</Label>
                 <DateField
                   value={form.date_time}
                   onChange={(v) => { set("date_time", v); set("linked_analysis_id", undefined); }}
@@ -305,7 +314,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                     <button key={d} type="button" onClick={() => set("direction", d)}
                       className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize",
                         form.direction === d
-                          ? d === "long" ? "bg-success text-success-foreground" : "bg-destructive text-white"
+                          ? d === "long" ? "bg-success text-success-foreground shadow-sm" : "bg-destructive text-white shadow-sm"
                           : "bg-muted text-muted-foreground hover:text-foreground")}>
                       {d}
                     </button>
@@ -319,9 +328,9 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                     <button key={r} type="button" onClick={() => set("result", r)}
                       className={cn("flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
                         form.result === r
-                          ? r === "win" ? "bg-success text-success-foreground"
-                            : r === "loss" ? "bg-destructive text-white"
-                            : "bg-warning text-warning-foreground"
+                          ? r === "win" ? "bg-success text-success-foreground shadow-sm"
+                            : r === "loss" ? "bg-destructive text-white shadow-sm"
+                            : "bg-warning text-warning-foreground shadow-sm"
                           : "bg-muted text-muted-foreground hover:text-foreground")}>
                       {r === "break-even" ? "B/E" : r}
                     </button>
@@ -343,7 +352,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                   {SESSIONS.map((s) => (
                     <button key={s} type="button" onClick={() => set("session", s)}
                       className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                        form.session === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                        form.session === s ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
                       {s}
                     </button>
                   ))}
@@ -362,14 +371,14 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                       }}
                       className={cn("px-2.5 py-1 rounded-lg text-xs font-medium transition-all font-mono",
                         form.timeframe?.split(" / ").includes(tf)
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-primary text-primary-foreground shadow-sm"
                           : "bg-muted text-muted-foreground hover:text-foreground")}>
                       {tf}
                     </button>
                   ))}
                   <button type="button" onClick={() => setShowCustomTF((v) => !v)}
                     className={cn("px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
-                      showCustomTF ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                      showCustomTF ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
                     Custom
                   </button>
                 </div>
@@ -397,8 +406,8 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
               <div className="space-y-1.5">
                 {/* Only a win is scored off R:R: a loss is -1R and a scratch 0R
                     whatever is typed here, so it is asked for, not demanded. */}
-                <Label className="text-xs">R:R{form.result === "win" ? " *" : ""}</Label>
-                <RRField value={form.rr > 0 ? form.rr : null} onChange={(v) => set("rr", v ?? 0)} />
+                <Label htmlFor="rr" className="text-xs">R:R{form.result === "win" ? " *" : ""}</Label>
+                <RRField id="rr" value={form.rr > 0 ? form.rr : null} onChange={(v) => set("rr", v ?? 0)} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Entry Time</Label>
@@ -422,39 +431,82 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           </CardContent>
         </Card>
 
+        {/* Notes: execution, psychology, mistakes & lessons in one compact block */}
+        <Card className="bg-card border-border/50 shadow-sm">
+          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Notes</CardTitle></CardHeader>
+          <CardContent className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Execution</Label>
+              <Textarea
+                value={form.execution_notes}
+                onChange={(e) => set("execution_notes", e.target.value)}
+                placeholder="Entry timing, management, exit..."
+                className="min-h-[68px] text-sm bg-background/50 resize-none"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Psychology</Label>
+              <Textarea
+                value={form.psychology_notes}
+                onChange={(e) => set("psychology_notes", e.target.value)}
+                placeholder="Emotions, mindset, discipline..."
+                className="min-h-[68px] text-sm bg-background/50 resize-none"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Mistakes</Label>
+              <Textarea
+                value={form.mistakes}
+                onChange={(e) => set("mistakes", e.target.value)}
+                placeholder="What could have been better?"
+                className="min-h-[68px] text-sm bg-background/50 resize-none"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Lessons</Label>
+              <Textarea
+                value={form.lessons}
+                onChange={(e) => set("lessons", e.target.value)}
+                placeholder="What did you learn?"
+                className="min-h-[68px] text-sm bg-background/50 resize-none"
+              />
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+
+        {/* ── RIGHT: analysis, confluences, discipline & screenshots ── */}
+        <div className="space-y-4 min-w-0">
         {/* Link to Analysis */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
+        <Card className="bg-card border-border/50 shadow-sm">
+          <CardHeader className="pb-2.5">
             <CardTitle className="text-sm font-semibold">Analysis: {form.date_time}</CardTitle>
           </CardHeader>
           <CardContent>
-            {(() => {
-              const analyses = allAnalyses.filter((a) => a.date === form.date_time);
-              return analyses.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No analysis found for this date.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => set("linked_analysis_id", undefined)}
-                    className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                      !form.linked_analysis_id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                    None
+            {analyses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No analysis found for this date.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => set("linked_analysis_id", undefined)}
+                  className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                    !form.linked_analysis_id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                  None
+                </button>
+                {analyses.map((a) => (
+                  <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
+                    className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all max-w-xs truncate",
+                      form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                    {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}...` : a.title}
                   </button>
-                  {analyses.map((a) => (
-                    <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
-                      className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all max-w-xs truncate",
-                        form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}...` : a.title}
-                    </button>
-                  ))}
-                </div>
-              );
-            })()}
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Confluences */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Confluences</CardTitle></CardHeader>
+        <Card className="bg-card border-border/50 shadow-sm">
+          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Confluences</CardTitle></CardHeader>
           <CardContent>
             {savedConfluences.length > 0 && (
               <div className="mb-3">
@@ -485,8 +537,11 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
             <div className="flex gap-2 mb-3">
               <Input value={confluenceInput} onChange={(e) => setConfluenceInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addConfluence())}
-                placeholder="Add confluence..." className="h-9 text-sm" />
-              <Button type="button" variant="outline" size="sm" onClick={addConfluence}><Plus className="w-3.5 h-3.5" /></Button>
+                placeholder="e.g. Demand zone, Session momentum, Structure break..."
+                className="h-9 text-sm bg-background/50" />
+              <Button type="button" variant="outline" size="sm" onClick={addConfluence} className="shrink-0">
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
             </div>
             {form.confluences.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -494,7 +549,9 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
                   <span key={c} className="inline-flex items-center gap-1 text-xs bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg border border-border/50">
                     {c}
                     <button type="button" onClick={() => set("confluences", form.confluences.filter((x) => x !== c))}
-                      className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+                      className="hover:text-destructive transition-colors ml-0.5">
+                      <X className="w-3 h-3" />
+                    </button>
                   </span>
                 ))}
               </div>
@@ -503,7 +560,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         </Card>
 
         {/* Discipline Check */}
-        <Card className="shadow-sm">
+        <Card className="bg-card border-border/50 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -584,57 +641,9 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           )}
         </Card>
 
-        {/* Execution & Psychology */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Execution Notes</CardTitle></CardHeader>
-          <CardContent>
-            <Textarea
-              value={form.execution_notes}
-              onChange={(e) => set("execution_notes", e.target.value)}
-              placeholder="How did you execute the trade? Entry timing, management, exit..."
-              className="min-h-24 text-sm resize-none"
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Psychology</CardTitle></CardHeader>
-          <CardContent>
-            <Textarea
-              value={form.psychology_notes}
-              onChange={(e) => set("psychology_notes", e.target.value)}
-              placeholder="How did you feel? Emotions, mindset, discipline during this trade..."
-              className="min-h-24 text-sm resize-none"
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Mistakes</CardTitle></CardHeader>
-          <CardContent>
-            <Textarea
-              value={form.mistakes}
-              onChange={(e) => set("mistakes", e.target.value)}
-              placeholder="What went wrong or could have been better?"
-              className="min-h-20 text-sm resize-none"
-            />
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Lessons</CardTitle></CardHeader>
-          <CardContent>
-            <Textarea
-              value={form.lessons}
-              onChange={(e) => set("lessons", e.target.value)}
-              placeholder="What did you learn from this trade?"
-              className="min-h-20 text-sm resize-none"
-            />
-          </CardContent>
-        </Card>
-
         {/* Screenshots */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Screenshots</CardTitle></CardHeader>
+        <Card className="bg-card border-border/50 shadow-sm">
+          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Screenshots</CardTitle></CardHeader>
           <CardContent>
             <ScreenshotUpload
               groups={form.screenshot_groups}
@@ -643,7 +652,8 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
             />
           </CardContent>
         </Card>
-
+        </div>
+        </div>
       </form>
     </div>
   );

@@ -24,18 +24,14 @@ export default function HomePage() {
           <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-35" />
           <div className="relative mx-auto grid w-full max-w-[1500px] grid-cols-[minmax(0,1fr)] items-center gap-14 lg:grid-cols-[0.94fr_1.06fr] lg:gap-16">
             <div className="marketing-hero-copy relative z-10 min-w-0 max-w-[720px]">
-              <p className="marketing-hero-eyebrow">Where self-improvement meets trading</p>
-              <h1 className="font-display mt-6 max-w-[720px] text-balance text-[clamp(2.6rem,11vw,3.7rem)] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[clamp(3.9rem,5.7vw,6rem)]">Journal for <span className="text-[#6ad5c9]">extraordinary</span> traders</h1>
+              <h1 className="font-display max-w-[720px] text-balance text-[clamp(2.6rem,11vw,3.7rem)] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[clamp(3.9rem,5.7vw,6rem)]">Journal for <span className="marketing-hero-word italic">extraordinary</span> traders</h1>
               <p className="mt-8 max-w-[500px] text-lg leading-[1.65] text-[#b8ccd0] sm:text-xl">A journal shows what happened. TradingMC helps you shape what happens next: write the plan, keep the commitments and review the decisions behind every session.</p>
-              <div className="mt-11 flex flex-col items-start gap-7">
-                <div className="flex flex-wrap items-center gap-4">
-                  <Link href="/signup" className="marketing-cta group inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#14b8a6] px-9 py-4 text-base font-semibold text-[#081721] hover:bg-[#70d9cf]">
-                    Start building your process
-                    <span aria-hidden="true" className="transition-transform duration-200 ease-out group-hover:translate-x-0.5">&#8594;</span>
-                  </Link>
-                  <a href="#the-approach" className="marketing-cta inline-flex min-h-14 items-center justify-center rounded-2xl border border-[#5a7f87] px-8 py-4 text-base font-medium text-[#d9e8e9] hover:border-[#a9ddd8] hover:bg-white/5 hover:text-white">See how it works</a>
-                </div>
-                <p className="marketing-hero-loop"><span>Plan</span><i></i><span>Commit</span><i></i><span>Review</span></p>
+              <div className="mt-11 flex flex-wrap items-center gap-4">
+                <Link href="/signup" className="marketing-cta group inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#14b8a6] px-9 py-4 text-base font-semibold text-[#081721] hover:bg-[#70d9cf]">
+                  Start building your process
+                  <span aria-hidden="true" className="transition-transform duration-200 ease-out group-hover:translate-x-0.5">&#8594;</span>
+                </Link>
+                <a href="#the-approach" className="marketing-cta inline-flex min-h-14 items-center justify-center rounded-2xl border border-[#5a7f87] px-8 py-4 text-base font-medium text-[#d9e8e9] hover:border-[#a9ddd8] hover:bg-white/5 hover:text-white">See how it works</a>
               </div>
             </div>
             <div className="relative z-10 min-w-0"><DashboardScreenshot /></div>
