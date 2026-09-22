@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { motion } from "motion/react";
-import { cn } from "@/lib/utils";
 import { PageWrapper } from "@/components/ui/page-wrapper";
+import { SectionNav } from "@/components/layout/section-nav";
 import { getProfile, getTrades } from "@/lib/supabase/queries";
 import { DailyBestTrade } from "@/components/trade-therapist/daily-best-trade";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
@@ -33,49 +32,6 @@ const TABS: { key: TherapistTab; label: string; short?: string }[] = [
   { key: "reviews", label: "Reviews" },
 ];
 
-/** Glassy, animated segmented toggle: the active pill slides between tabs. */
-function GlassToggle({ tab, onChange }: { tab: TherapistTab; onChange: (t: TherapistTab) => void }) {
-  return (
-    <div
-      className="relative hidden w-full sm:w-fit items-center gap-1 rounded-xl border border-border/50 p-1 lg:flex"
-      style={{
-        background: "color-mix(in oklch, var(--card) 70%, transparent)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
-      }}
-    >
-      {TABS.map(({ key, label }) => {
-        const active = tab === key;
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onChange(key)}
-            className={cn(
-              "relative flex-1 sm:flex-none rounded-lg px-4 sm:px-6 py-2 text-sm font-semibold transition-colors duration-200",
-              active ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {active && (
-              <motion.span
-                layoutId="therapist-tab-pill"
-                className="absolute inset-0 rounded-lg"
-                style={{
-                  background: "linear-gradient(160deg, var(--primary), color-mix(in oklch, var(--primary) 88%, black) 60%, color-mix(in oklch, var(--primary) 76%, black))",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 18px color-mix(in oklch, var(--primary) 30%, transparent)",
-                }}
-                transition={{ type: "spring", stiffness: 460, damping: 34 }}
-              />
-            )}
-            <span className="relative z-10">{label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function TradeTherapistPage() {
   const [tab, setTab] = useState<TherapistTab>("daily");
   const [dailyDate, setDailyDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -102,7 +58,7 @@ export default function TradeTherapistPage() {
         <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
           MC Trade Therapist
         </h1>
-        <GlassToggle tab={tab} onChange={setTab} />
+        <SectionNav id="therapist" items={TABS} value={tab} onChange={setTab} />
       </div>
 
       {/* Phone: the same tabs, docked above the bottom bar. */}

@@ -242,18 +242,31 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   );
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <Link href={`/journal/${id}`} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Trade
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Edit Trade</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{tradeInfo.instrument} · {tradeInfo.session} session</p>
+    <div className="mx-auto w-full max-w-[1600px] space-y-4">
+      {/* Sticky action bar: the whole edit fits the screen, so Save and Cancel
+          stay in reach without scrolling to the end of a long form. */}
+      <div className="sticky top-[60px] z-20 -mx-3 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-background/85 px-3 py-2.5 backdrop-blur-xl sm:-mx-6 sm:px-6">
+        <div className="min-w-0">
+          <Link href={`/journal/${id}`} className="press inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Trade
+          </Link>
+          <div className="flex items-baseline gap-2.5">
+            <h1 className="text-lg font-bold tracking-tight">Edit Trade</h1>
+            <p className="truncate text-sm text-muted-foreground">{tradeInfo.instrument} · {tradeInfo.session} session</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <Link href={`/journal/${id}`}><Button type="button" variant="outline">Cancel</Button></Link>
+          <Button type="submit" form="edit-trade-form" disabled={saving}>{saving ? "Saving..." : "Save changes"}</Button>
+        </div>
       </div>
 
       {restored && <DraftBanner onDismiss={dismiss} label="Draft restored: you have unsaved edits from before." />}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      {/* One-screen layout: the cards pack into balanced columns instead of one
+          tall stack, so the whole trade reads at a glance. */}
+      <form id="edit-trade-form" onSubmit={handleSubmit} className="columns-1 gap-4 md:columns-2 xl:columns-3 [&>*]:mb-4 [&>*]:break-inside-avoid">
         <Card className="shadow-sm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Trade Details</CardTitle></CardHeader>
           <CardContent className="space-y-4">
@@ -596,30 +609,28 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           </CardContent>
         </Card>
 
-        <div className="grid sm:grid-cols-2 gap-5">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Mistakes</CardTitle></CardHeader>
-            <CardContent>
-              <Textarea
-                value={form.mistakes}
-                onChange={(e) => set("mistakes", e.target.value)}
-                placeholder="What went wrong or could have been better?"
-                className="min-h-20 text-sm resize-none"
-              />
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm">
-            <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Lessons</CardTitle></CardHeader>
-            <CardContent>
-              <Textarea
-                value={form.lessons}
-                onChange={(e) => set("lessons", e.target.value)}
-                placeholder="What did you learn from this trade?"
-                className="min-h-20 text-sm resize-none"
-              />
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Mistakes</CardTitle></CardHeader>
+          <CardContent>
+            <Textarea
+              value={form.mistakes}
+              onChange={(e) => set("mistakes", e.target.value)}
+              placeholder="What went wrong or could have been better?"
+              className="min-h-20 text-sm resize-none"
+            />
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Lessons</CardTitle></CardHeader>
+          <CardContent>
+            <Textarea
+              value={form.lessons}
+              onChange={(e) => set("lessons", e.target.value)}
+              placeholder="What did you learn from this trade?"
+              className="min-h-20 text-sm resize-none"
+            />
+          </CardContent>
+        </Card>
 
         {/* Screenshots */}
         <Card className="shadow-sm">
@@ -633,11 +644,6 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
           </CardContent>
         </Card>
 
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          {error && <p className="mr-auto text-sm text-destructive">{error}</p>}
-          <Link href={`/journal/${id}`}><Button type="button" variant="outline">Cancel</Button></Link>
-          <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save changes"}</Button>
-        </div>
       </form>
     </div>
   );

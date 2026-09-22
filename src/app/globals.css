@@ -1018,6 +1018,54 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   color: #167c79;
 }
 
+/* Hero copy (on navy): a kicker, the headline, one line, the actions. The block
+   settles in on load in reading order, each part a beat behind the last, from a
+   visible resting state; reduced motion collapses it to the final frame. */
+.marketing-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6ad5c9;
+}
+.marketing-hero-eyebrow::before {
+  content: "";
+  width: 1.85rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #14b8a6);
+}
+
+.marketing-hero-copy > * {
+  animation: marketing-copy-in 720ms var(--ease-out-strong) both;
+}
+.marketing-hero-copy > *:nth-child(1) { animation-delay: 40ms; }
+.marketing-hero-copy > *:nth-child(2) { animation-delay: 120ms; }
+.marketing-hero-copy > *:nth-child(3) { animation-delay: 210ms; }
+.marketing-hero-copy > *:nth-child(4) { animation-delay: 300ms; }
+
+@keyframes marketing-copy-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* The loop microcopy: three beats of the product, hairline-separated. */
+.marketing-hero-loop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #8fb0b4;
+}
+.marketing-hero-loop span { color: #d9e8e9; font-weight: 600; }
+.marketing-hero-loop i {
+  width: 3px; height: 3px; border-radius: 999px; background: #3f6b70; font-style: normal;
+}
+
 /* Site navigation: mega menus scale out of their trigger; the popup resizes
    between panels (Base UI supplies the target size as custom properties). */
 .marketing-nav-trigger {

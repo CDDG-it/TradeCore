@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { SESSIONS, sessionState } from "@/lib/gmi/sessions";
 import { Ticks, Label } from "@/components/gmi/pane";
 import { MobileSubnav } from "@/components/layout/mobile-nav";
+import { SectionNav } from "@/components/layout/section-nav";
 
 type Tab = "overview" | "markets" | "futures" | "news" | "calendar" | "flow";
 
@@ -155,40 +156,15 @@ export default function GlobalMarketsPage() {
         </header>
 
         {/* ── Index ────────────────────────────────────────────────────────
-            Words and numbers, no icons: the section you are in is the one
-            whose number is lit and whose name is underscored. */}
-        <nav className="scrollbar-none hidden shrink-0 items-stretch overflow-x-auto border-b border-border/50 lg:flex">
-          {TABS.map((t) => {
-            const on = t.key === tab;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={cn(
-                  "group relative flex shrink-0 items-baseline gap-2 border-r border-border/40 px-4 py-2 text-left transition-colors",
-                  on ? "bg-primary/[0.07]" : "hover:bg-muted/20"
-                )}
-              >
-                <span className={cn("text-[11px] tabular-nums transition-colors", on ? "text-primary" : "text-foreground/65")}>
-                  {t.num}
-                </span>
-                <span
-                  className={cn(
-                    "font-heading text-[13px] font-bold uppercase tracking-[0.1em] transition-colors",
-                    on ? "text-foreground" : "text-foreground/75 group-hover:text-foreground/80"
-                  )}
-                >
-                  {t.label}
-                </span>
-                {on && <span aria-hidden className="absolute inset-x-0 -bottom-px h-[2px] bg-primary" />}
-              </button>
-            );
-          })}
+            The same section rail the rest of the app uses, docked in the desk
+            frame so the terminal still reads as one held-still screen. */}
+        <div className="hidden shrink-0 items-center justify-between gap-4 border-b border-border/50 px-3 py-2 lg:flex">
+          <SectionNav id="markets" items={TABS} value={tab} onChange={setTab} />
           {/* What the live section is for, spelled out once: clarity without a tooltip. */}
-          <span className="ml-auto hidden shrink-0 items-center px-4 xl:flex">
+          <span className="hidden shrink-0 items-center px-2 xl:flex">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/65">{active.note}</span>
           </span>
-        </nav>
+        </div>
 
         {/* Phone: the same index, docked above the bottom tab bar. */}
         <MobileSubnav items={TABS} value={tab} onChange={setTab} label="Global Markets sections" scrollRef={deskRef} />

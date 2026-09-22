@@ -4,7 +4,7 @@ import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChartCandlestick, Compass, House, NotebookPen, Plus, Target, TrendingUp, type LucideIcon } from "lucide-react";
+import { Brain, Compass, Globe, HeartPulse, House, Plus, TrendingUp, type LucideIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/lib/nav";
@@ -23,9 +23,9 @@ import { PRIMARY_NAV } from "@/lib/nav";
 
 export const NAV_ICONS: Record<string, LucideIcon> = {
   "/dashboard": House,
-  "/psychological-edge": Target,
-  "/trade-therapist": NotebookPen,
-  "/news-city": ChartCandlestick,
+  "/psychological-edge": Brain,
+  "/trade-therapist": HeartPulse,
+  "/news-city": Globe,
 };
 
 /** What the create pill offers: the two things a trader starts from the desk. */
