@@ -6,16 +6,17 @@ import Link from "next/link";
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { PRODUCTS, TRADER_LEVELS, type Product } from "@/lib/landing/nav";
+import { NAV_ICON_ASSETS } from "@/lib/nav-icons";
 
-const productIcons: Record<Product["icon"], string> = {
-  dashboard: "/product-icons/dashboard.png",
-  edge: "/product-icons/brain.png",
-  therapist: "/product-icons/therapist.png",
-  markets: "/product-icons/markets.png",
+const PRODUCT_ICON_ASSETS: Record<Product["icon"], string> = {
+  dashboard: NAV_ICON_ASSETS["/dashboard"],
+  edge: NAV_ICON_ASSETS["/psychological-edge"],
+  therapist: NAV_ICON_ASSETS["/trade-therapist"],
+  markets: NAV_ICON_ASSETS["/news-city"],
 };
 
 function ProductIcon({ icon, className }: { icon: Product["icon"]; className?: string }) {
-  return <Image src={productIcons[icon]} alt="" width={72} height={72} className={className} />;
+  return <Image src={PRODUCT_ICON_ASSETS[icon]} alt="" width={72} height={72} className={className} />;
 }
 
 // Matches the signed-in app's top-nav rail items: a pill inside a glass rail.

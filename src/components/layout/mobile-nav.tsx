@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, House, Plus, TrendingUp } from "lucide-react";
+import { Compass, Plus, TrendingUp } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/lib/nav";
-import { NAV_ICONS } from "@/lib/nav-icons";
-export { NAV_ICONS } from "@/lib/nav-icons";
+import { NAV_ICON_ASSETS } from "@/lib/nav-icons";
+export { NAV_ICON_ASSETS } from "@/lib/nav-icons";
 
 /**
  * Phone navigation, the way the apps next to it on the home screen do it: a
@@ -44,7 +45,7 @@ export const isActive = (pathname: string, href: string) =>
   (ALSO_UNDER[href] ?? []).some((p) => pathname === p || pathname.startsWith(p + "/"));
 
 function TabIcon({ tab, active }: { tab: (typeof PRIMARY_NAV)[number]; active: boolean }) {
-  const Icon = NAV_ICONS[tab.href] ?? House;
+  const iconSrc = NAV_ICON_ASSETS[tab.href];
   return (
     <Link
       href={tab.href}
@@ -55,12 +56,12 @@ function TabIcon({ tab, active }: { tab: (typeof PRIMARY_NAV)[number]; active: b
         active ? "text-foreground" : "text-foreground/55"
       )}
     >
-      <Icon
-        className="h-[26px] w-[26px]"
-        strokeWidth={active ? 2.4 : 1.7}
-        // The selected icon fills in, the way the home-screen apps mark their tab.
-        fill={active ? "color-mix(in oklch, var(--primary) 28%, transparent)" : "none"}
-      />
+      <span className={cn(
+        "relative h-[30px] w-[30px] transition-[filter,opacity,transform] duration-150",
+        active ? "scale-105 opacity-100" : "opacity-55 grayscale-[35%]"
+      )}>
+        <Image src={iconSrc} alt="" fill sizes="30px" className="object-contain" />
+      </span>
       <span
         aria-hidden
         className={cn("mt-1.5 h-1 w-1 rounded-full bg-primary transition-opacity duration-150", active ? "opacity-100" : "opacity-0")}

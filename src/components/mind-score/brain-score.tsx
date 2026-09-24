@@ -9,7 +9,7 @@ export function BrainScore({ score, color, className }: {
 }) {
   const amount = Math.max(0, Math.min(100, score ?? 0));
   // Keep the sculpted shading while shifting the blue asset into the score band.
-  const hueShift = amount < 20 ? -220 : amount < 60 ? -160 : amount < 80 ? -45 : -85;
+  const hueShift = amount < 20 ? 185 : amount < 40 ? 225 : amount < 60 ? 245 : amount < 80 ? 0 : -35;
   return (
     <div
       className={cn("relative aspect-square shrink-0", className)}
@@ -17,9 +17,9 @@ export function BrainScore({ score, color, className }: {
       aria-label={score === null ? "Mindscore has no reading yet" : `Brain filled to reflect a Mindscore of ${score}`}
     >
       <div className="pointer-events-none absolute inset-[20%] rounded-full blur-2xl" style={{ background: `color-mix(in oklch, ${color} 24%, transparent)` }} />
-      <Image src="/product-icons/brain.png" alt="" fill sizes="(max-width: 640px) 128px, 180px" loading="eager" className="object-contain grayscale opacity-30" />
+      <Image src="/product-icons/brain-teal.png" alt="" fill sizes="(max-width: 640px) 128px, 180px" loading="eager" className="object-contain grayscale opacity-30" />
       <div className="absolute inset-0 transition-[clip-path] duration-700 ease-out" style={{ clipPath: `inset(${100 - amount}% 0 0 0)` }} aria-hidden="true">
-        <Image src="/product-icons/brain.png" alt="" fill sizes="(max-width: 640px) 128px, 180px" loading="eager" className="object-contain transition-[filter] duration-700" style={{ filter: `hue-rotate(${hueShift}deg)` }} />
+        <Image src="/product-icons/brain-teal.png" alt="" fill sizes="(max-width: 640px) 128px, 180px" loading="eager" className="object-contain transition-[filter] duration-700" style={{ filter: `hue-rotate(${hueShift}deg)` }} />
       </div>
     </div>
   );

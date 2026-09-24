@@ -5,11 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { X, Settings, User as UserIcon, LogOut, ChevronDown, Plus, House } from "lucide-react";
+import { X, Settings, User as UserIcon, LogOut, ChevronDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { PRIMARY_NAV } from "@/lib/nav";
-import { CREATE, NAV_ICONS, isActive } from "@/components/layout/mobile-nav";
+import { CREATE, NAV_ICON_ASSETS, isActive } from "@/components/layout/mobile-nav";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 /**
@@ -38,7 +38,7 @@ function SoonBadge() {
 }
 
 function RailItem({ href, label, active, soon, instant }: { href: string; label: string; active: boolean; soon?: boolean; instant: boolean }) {
-  const Icon = NAV_ICONS[href] ?? House;
+  const iconSrc = NAV_ICON_ASSETS[href];
   if (soon) {
     return (
       <span aria-disabled title="Coming soon" className="relative flex h-9 cursor-default items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-semibold text-sidebar-foreground/35">
@@ -70,7 +70,12 @@ function RailItem({ href, label, active, soon, instant }: { href: string; label:
           />
         </motion.span>
       )}
-      <Icon className={cn("relative z-10 size-[15px]", active ? "text-primary" : "text-sidebar-foreground/45")} strokeWidth={active ? 2.3 : 2} />
+      <span className={cn(
+        "relative z-10 h-[22px] w-[22px] transition-[filter,opacity,transform] duration-150",
+        active ? "scale-105 opacity-100" : "opacity-55 grayscale-[35%]"
+      )}>
+        <Image src={iconSrc} alt="" fill sizes="22px" className="object-contain" />
+      </span>
       <span className="relative z-10">{label}</span>
     </Link>
   );
