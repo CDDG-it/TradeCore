@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 // page says exactly that instead of dressing up tiers that do not exist.
 const questions = [
   { q: "Do I need a card to start?", a: "No. Create an account and the full product is yours. Nothing is charged." },
-  { q: "Will it stay free?", a: "Early access is free while the product is being finished. Paid plans, when they arrive, will be announced here first and to every existing account by email." },
+  { q: "Will it stay free?", a: "Early access is free while the product is being finished. If paid plans arrive later, we will announce them clearly and give existing members notice first." },
   { q: "Is my data mine?", a: "Yes. Every trade, plan, review and screenshot is scoped to your account, and only your account can read it." },
 ] as const;
 
@@ -33,7 +33,7 @@ export default function PricingPage() {
             <MarketingReveal>
               <p className="marketing-eyebrow" style={{ color: "#7be0d5" }}>Early access</p>
               <h1 className="font-display mt-6 max-w-[820px] text-balance text-[clamp(2.6rem,9vw,3.6rem)] font-semibold leading-[0.98] tracking-[-0.06em] sm:text-[clamp(3.6rem,6vw,6.4rem)]">Everything included. <span className="text-[#6ad5c9]">Free while we build.</span></h1>
-              <p className="mt-8 max-w-[560px] text-base leading-[1.75] text-[#b8ccd0] sm:text-lg">One product, one price: none. Every feature is open to every account during early access, with no card and no trial clock.</p>
+              <p className="mt-8 max-w-[560px] text-base leading-[1.75] text-[#b8ccd0] sm:text-lg">One workspace for the decisions around the trade. Every feature is open during early access, with no card and no trial clock.</p>
             </MarketingReveal>
 
             <div className="mt-14 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
@@ -41,7 +41,7 @@ export default function PricingPage() {
                 <p className="text-xs font-semibold tracking-[0.14em] text-[#8de0d5]">EARLY ACCESS</p>
                 <p className="font-display mt-6 flex items-baseline gap-2 text-6xl font-semibold tracking-[-0.06em]">€0<span className="text-base font-medium tracking-normal text-[#8aa5ab]">/ month</span></p>
                 <p className="mt-4 text-sm leading-relaxed text-[#aac2c7]">The full product. Unlimited trades, accounts, plans and reviews.</p>
-                <Link href="/signup" className="marketing-cta mt-8 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#14b8a6] px-7 text-sm font-semibold text-[#081721] hover:bg-[#70d9cf]">Create your account</Link>
+                <Link href="/signup" className="marketing-cta mt-8 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#14b8a6] px-7 text-sm font-semibold text-[#081721] hover:bg-[#70d9cf]">Join early access</Link>
                 <p className="mt-4 text-center text-xs text-[#7f9aa1]">No card required. Already a member? <Link href="/login" className="text-[#8de0d5] underline-offset-4 hover:underline">Sign in</Link></p>
               </MarketingReveal>
 
@@ -62,6 +62,15 @@ export default function PricingPage() {
           </div>
         </section>
 
+        <div className="marketing-gradient-bridge marketing-gradient-bridge--dark" />
+        <section className="marketing-section marketing-section--dark px-6 py-20 sm:px-10 md:py-28 lg:px-12">
+          <div className="mx-auto max-w-[1260px]">
+            <MarketingReveal><p className="marketing-eyebrow" style={{ color: "#7be0d5" }}>Built around the real work</p><h2 className="mt-5 max-w-3xl font-display text-balance text-[clamp(2.2rem,5vw,4.8rem)] font-semibold leading-[1.02] tracking-[-.055em]">Less scattered information. More deliberate decisions.</h2></MarketingReveal>
+            <div className="mt-12 grid gap-px overflow-hidden rounded-[28px] border border-white/10 bg-white/10 md:grid-cols-3">
+              {[{ title: "When the plan lives in your head", body: "Write the setup, rules and commitments down before the market asks you to improvise." }, { title: "When execution drifts", body: "Track the habits and rule adherence that shape your process, not just the P&L." }, { title: "When a trade needs an honest review", body: "Use reviews, context and MC Mindscore to turn one session into a better next decision." }].map((item, index) => <MarketingReveal key={item.title} delay={index * .08} className="bg-[#0d1c29] p-7 sm:p-9"><span className="text-xs font-semibold tabular-nums text-[#67d5c9]">0{index + 1}</span><h3 className="mt-12 text-lg font-semibold text-white">{item.title}</h3><p className="mt-3 text-sm leading-relaxed text-[#9db6bb]">{item.body}</p></MarketingReveal>)}
+            </div>
+          </div>
+        </section>
         <div aria-hidden="true" className="marketing-gradient-bridge marketing-gradient-bridge--light" />
         <div className="marketing-light-flow text-[#0b1120]">
           <section className="marketing-section marketing-section--mist px-6 py-20 sm:px-10 md:py-28 lg:px-12">
