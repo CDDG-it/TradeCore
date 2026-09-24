@@ -118,26 +118,26 @@ export function MindScoreOrb({ score, period, onPeriodChange, className, compact
 
   const color = pending ? TURQUOISE : hasData ? bandColorFor(target) : "var(--muted-foreground)";
   return (
-    <div className={cn(CARD_BASE, "group flex h-[clamp(172px,22vh,206px)] flex-col isolate", className)}>
+    <div className={cn(CARD_BASE, "group flex h-[clamp(172px,22vh,206px)] flex-col", className)}>
       <CardFx accent={color} />
-      <BrainScore
-        score={hasData ? Math.round(prog * 100) : null}
-        color={color}
-        className="pointer-events-none absolute inset-1 z-0 m-auto size-[calc(100%_-_0.5rem)] max-h-[196px] max-w-[196px] opacity-90 transition-transform duration-700 ease-out group-hover:scale-[1.025]"
-      />
-      <div aria-hidden className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(circle_at_center,transparent_22%,color-mix(in_oklch,var(--card)_12%,transparent)_54%,color-mix(in_oklch,var(--card)_82%,transparent)_100%)]" />
-
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
         <PeriodToggle value={period} onChange={onPeriodChange} accent={TURQUOISE} />
       </div>
 
-      <div className="relative z-10 flex min-h-0 grow items-center justify-center text-center">
-        <div className="rounded-2xl bg-card/38 px-3 py-2 backdrop-blur-[2px]">
-          <p className={cn("font-black leading-none tracking-[-.055em] tabular-nums drop-shadow-[0_2px_12px_rgba(0,0,0,.55)]", compactNumbers ? "text-[38px] short:text-[28px]" : "text-[48px] short:text-[34px]")} style={{ color }}>
+      <div className="relative z-10 grid min-h-0 grow grid-cols-[minmax(92px,.92fr)_minmax(0,1.08fr)] items-center gap-2 short:grid-cols-[78px_minmax(0,1fr)]">
+        <div className="flex min-w-0 items-center justify-center overflow-hidden">
+          <BrainScore
+            score={hasData ? Math.round(prog * 100) : null}
+            color={color}
+            className="size-[clamp(94px,8.5vw,128px)] max-w-full transition-transform duration-700 ease-out group-hover:scale-[1.035] short:size-[78px]"
+          />
+        </div>
+        <div className="min-w-0 border-l border-border/45 pl-3">
+          <p className={cn("font-black leading-none tracking-[-.055em] tabular-nums", compactNumbers ? "text-[36px] short:text-[26px]" : "text-[46px] short:text-[32px]")} style={{ color }}>
             {pending ? "·" : hasData ? display : "-"}
           </p>
-          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
+          <p className="mt-1.5 truncate text-[10px] font-semibold uppercase tracking-[.1em]" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
             {pending ? (period === "week" ? "New week" : "New month") : hasData ? score!.band.label : "No data yet"}
           </p>
         </div>
@@ -151,7 +151,7 @@ export function MindScoreOrb({ score, period, onPeriodChange, className, compact
 
       <Link
         href="/psychological-edge?tab=mindscore"
-        className="relative z-10 mt-2 flex items-center justify-between gap-2 border-t border-border/60 bg-card/38 pt-2.5 text-[11px] font-medium text-muted-foreground/75 backdrop-blur-[2px] transition-colors hover:text-primary"
+        className="relative z-10 mt-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2.5 text-[11px] font-medium text-muted-foreground/75 transition-colors hover:text-primary"
       >
         <span>What this is made of</span>
         <span aria-hidden>Breakdown →</span>
