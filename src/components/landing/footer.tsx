@@ -42,7 +42,6 @@ export function LandingFooter() {
             <p className="footer-line font-display text-[clamp(3rem,8vw,7.5rem)] font-semibold leading-[.91] tracking-[-.065em] text-white">won&apos;t build an</p>
             <p className="footer-line flex flex-wrap items-center gap-x-[.18em] font-display text-[clamp(3rem,8vw,7.5rem)] font-semibold leading-[.91] tracking-[-.065em] text-[#65d4c8]">
               <span>extraordinary</span>
-              <span className="relative top-[.02em] inline-flex h-[.58em] w-[1.05em] items-center justify-center overflow-hidden rounded-full border border-[#65d4c8]/25 bg-[#65d4c8]/10 align-middle"><Image src="/product-icons/edge-glass-v2.png" alt="" width={96} height={96} className="h-[1.05em] w-[1.05em] object-contain brightness-75 saturate-75" /></span>
               <span>trader.</span>
             </p>
             <div className="footer-line mt-12 flex flex-wrap items-center gap-4">
