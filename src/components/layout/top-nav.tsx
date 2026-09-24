@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -95,6 +95,7 @@ export function TopNav() {
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
 
   return (
     <>
@@ -127,12 +128,12 @@ export function TopNav() {
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
             <div className="hidden shrink-0 items-center gap-2 lg:flex">
-              <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} onSignOut={signOut} />
+              <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} avatarUrl={avatarUrl} onSignOut={signOut} />
             </div>
             {/* Phone: the profile lives top-right, the way every app does it:
                 navigation itself has moved to the bottom tab bar. */}
             <button type="button" onClick={() => setOpen(true)} aria-label="Open profile menu" className="press inline-flex items-center justify-center rounded-full lg:hidden">
-              <AvatarChip initials={initials} size={34} />
+              <AvatarChip initials={initials} avatarUrl={avatarUrl} size={34} />
             </button>
           </div>
         </div>
@@ -162,7 +163,7 @@ export function TopNav() {
               className="absolute right-3 top-3 w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-border p-3 shadow-2xl"
             >
               <div className="flex items-center gap-3 px-1 pb-3">
-                <AvatarChip initials={initials} size={42} />
+                <AvatarChip initials={initials} avatarUrl={avatarUrl} size={42} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold leading-tight">{displayName}</p>
                   <p className="truncate text-xs leading-tight text-muted-foreground">{user?.email}</p>
@@ -192,35 +193,54 @@ export function TopNav() {
 }
 
 /** Avatar chip: initials on a turquoise→cyan gradient ring, over the nav bg. */
-function AvatarChip({ initials, size }: { initials: string; size: number }) {
+function AvatarChip({ initials, avatarUrl, size }: { initials: string; avatarUrl?: string; size: number }) {
   return (
     <span
       className="flex shrink-0 items-center justify-center rounded-full p-[1.5px]"
       style={{ width: size, height: size, background: "linear-gradient(135deg, var(--primary) 0%, var(--ice) 100%)" }}
     >
-      <span className="flex h-full w-full items-center justify-center rounded-full" style={{ background: "var(--sidebar)" }}>
-        <span className="font-bold text-sidebar-foreground" style={{ fontSize: size * 0.36 }}>{initials}</span>
+      <span
+        className="flex h-full w-full items-center justify-center rounded-full bg-cover bg-center"
+        style={{ backgroundColor: "var(--sidebar)", backgroundImage: avatarUrl ? `url(${avatarUrl})` : undefined }}
+      >
+        {!avatarUrl && <span className="font-bold text-sidebar-foreground" style={{ fontSize: size * 0.36 }}>{initials}</span>}
       </span>
     </span>
   );
 }
 
 /** Profile chip and its menu: Profile, Settings, Sign out. */
-function ProfileMenu({ displayName, email, initials, onSignOut }: { displayName: string; email: string; initials: string; onSignOut: () => void }) {
+function ProfileMenu({ displayName, email, initials, avatarUrl, onSignOut }: { displayName: string; email: string; initials: string; avatarUrl?: string; onSignOut: () => void }) {
+  const [open, setOpen] = useState(false);
+  const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelTimers = () => {
+    if (openTimer.current) clearTimeout(openTimer.current);
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+  };
+  const enter = () => {
+    cancelTimers();
+    openTimer.current = setTimeout(() => setOpen(true), 120);
+  };
+  const leave = () => {
+    cancelTimers();
+    closeTimer.current = setTimeout(() => setOpen(false), 180);
+  };
+  useEffect(() => cancelTimers, []);
   const links = [
     { label: "Profile", href: "/profile", icon: UserIcon },
     { label: "Settings", href: "/settings", icon: Settings },
   ];
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="press group/profile flex h-9 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] pl-1 pr-2.5 hover:border-white/15 hover:bg-white/[0.06] data-[popup-open]:border-white/15 data-[popup-open]:bg-white/[0.06]">
-        <AvatarChip initials={initials} size={28} />
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger onMouseEnter={enter} onMouseLeave={leave} className="press group/profile flex h-9 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] pl-1 pr-2.5 hover:border-primary/35 hover:bg-white/[0.07] data-[popup-open]:border-primary/35 data-[popup-open]:bg-white/[0.07]">
+        <AvatarChip initials={initials} avatarUrl={avatarUrl} size={28} />
         <span className="max-w-[120px] truncate text-[13px] font-semibold text-sidebar-foreground/85">{displayName}</span>
         <ChevronDown className="size-3.5 text-sidebar-foreground/40 transition-transform duration-150 ease-out group-data-[popup-open]/profile:rotate-180" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="bottom" align="end" sideOffset={10} className={cn("w-64", MENU_SURFACE, MENU_MOTION)}>
+      <DropdownMenuContent onMouseEnter={enter} onMouseLeave={leave} side="bottom" align="end" sideOffset={10} className={cn("w-64", MENU_SURFACE, MENU_MOTION)}>
         <div className="flex items-center gap-3 px-2 py-2">
-          <AvatarChip initials={initials} size={40} />
+          <AvatarChip initials={initials} avatarUrl={avatarUrl} size={40} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold leading-tight">{displayName}</p>
             <p className="truncate text-xs leading-tight text-muted-foreground">{email}</p>

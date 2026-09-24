@@ -6,6 +6,29 @@
 import { createClient } from "@/lib/supabase/client";
 
 const BUCKET = "trade-screenshots";
+const AVATAR_BUCKET = "avatars";
+
+/** Replace the signed-in user's public profile image and return its URL. */
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const supabase = createClient();
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+  const path = `${userId}/avatar.${ext}`;
+  const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, file, {
+    cacheControl: "3600",
+    contentType: file.type,
+    upsert: true,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+  return `${data.publicUrl}?v=${Date.now()}`;
+}
+
+export async function deleteAvatar(userId: string, avatarUrl?: string): Promise<void> {
+  const supabase = createClient();
+  const extension = avatarUrl?.split("?")[0].split(".").pop() ?? "jpg";
+  const { error } = await supabase.storage.from(AVATAR_BUCKET).remove([`${userId}/avatar.${extension}`]);
+  if (error) throw error;
+}
 
 /** Upload a file and return its storage path (not a public URL). */
 export async function uploadScreenshot(

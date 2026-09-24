@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  Camera, Mail, User, Calendar, CheckCircle2, AlertCircle, Loader2,
+  Camera, Mail, User, Calendar, CheckCircle2, AlertCircle, Loader2, Trash2, Upload,
 } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { format } from "date-fns";
@@ -16,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/lib/auth-context";
 import { getProfile, upsertProfile } from "@/lib/supabase/queries";
 import { createClient } from "@/lib/supabase/client";
+import { deleteAvatar, uploadAvatar } from "@/lib/supabase/storage";
 
 const SESSIONS = ["London", "New York", "Asia", "London + New York overlap", "Other"] as const;
 const INSTRUMENTS = ["NQ", "ES", "XAUUSD", "EURUSD", "GBPUSD", "BTC", "CL", "Other"] as const;
@@ -32,10 +34,15 @@ const TIMEZONES = [
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const reduceMotion = useReducedMotion();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profileLoading, setProfileLoading] = useState(true);
   const [saveState, setSaveState] = useState<"idle" | "loading" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(() => user?.user_metadata?.avatar_url);
+  const [avatarState, setAvatarState] = useState<"idle" | "uploading" | "removing" | "error">("idle");
+  const [avatarError, setAvatarError] = useState("");
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
 
@@ -99,43 +106,80 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleAvatar(file?: File) {
+    if (!file || !user) return;
+    setAvatarError("");
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setAvatarError("Choose a JPG, PNG or WebP image smaller than 5 MB.");
+      setAvatarState("error");
+      return;
+    }
+    setAvatarState("uploading");
+    try {
+      const url = await uploadAvatar(user.id, file);
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({ data: { avatar_url: url } });
+      if (error) throw error;
+      setAvatarUrl(url);
+      setAvatarState("idle");
+    } catch {
+      setAvatarError("Profile photo could not be uploaded. Run the avatar migration if needed.");
+      setAvatarState("error");
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    if (!user || !avatarUrl) return;
+    setAvatarState("removing");
+    setAvatarError("");
+    try {
+      await deleteAvatar(user.id, avatarUrl);
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({ data: { avatar_url: null } });
+      if (error) throw error;
+      setAvatarUrl(undefined);
+      setAvatarState("idle");
+    } catch {
+      setAvatarError("Profile photo could not be removed.");
+      setAvatarState("error");
+    }
+  }
+
   const memberSince = user?.created_at
     ? format(new Date(user.created_at), "MMMM yyyy")
     : "-";
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader badge="Account" title="Profile" subtitle="Your trader profile" />
-      <PageWrapper>
+      <PageWrapper className="grid items-start gap-5 lg:grid-cols-[18rem_minmax(0,1fr)] lg:space-y-0">
         {/* Avatar + name */}
-        <Card className="bg-card border-border/50">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-5">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-2xl bg-primary/15 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-primary">{initials}</span>
-                </div>
-                <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                  <Camera className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+        <Card className="overflow-hidden border-border/50 bg-card lg:sticky lg:top-20">
+          <div className="h-20 bg-[radial-gradient(circle_at_25%_0%,color-mix(in_oklch,var(--primary)_35%,transparent),transparent_72%)]" />
+          <CardContent className="-mt-10 p-6 pt-0">
+            <div className="relative h-24 w-24">
+              <div className="h-full w-full rounded-3xl border-4 border-card bg-primary/15 bg-cover bg-center shadow-xl" style={{ backgroundImage: avatarUrl ? `url(${avatarUrl})` : undefined }}>
+                {!avatarUrl && <span className="flex h-full items-center justify-center text-2xl font-bold text-primary">{initials}</span>}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xl font-bold">{form.full_name}</p>
-                <p className="text-sm text-muted-foreground">{form.email}</p>
-                <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    Member since {memberSince}
-                  </span>
-                </div>
-              </div>
+              <button type="button" onClick={() => fileInputRef.current?.click()} aria-label="Upload profile photo" disabled={avatarState === "uploading"} className="press absolute -bottom-1 -right-1 grid h-9 w-9 place-items-center rounded-full border border-border bg-card text-muted-foreground shadow-lg hover:border-primary/40 hover:text-primary disabled:opacity-60">
+                {avatarState === "uploading" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => { void handleAvatar(event.target.files?.[0]); event.currentTarget.value = ""; }} />
             </div>
+            <p className="mt-4 truncate text-xl font-bold">{form.full_name}</p>
+            <p className="truncate text-sm text-muted-foreground">{form.email}</p>
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground"><Calendar className="h-3.5 w-3.5" />Member since {memberSince}</p>
+            <div className="mt-6 space-y-2 border-t border-border/50 pt-5">
+              <Button type="button" variant="outline" className="w-full justify-start" onClick={() => fileInputRef.current?.click()} disabled={avatarState === "uploading"}><Upload className="h-4 w-4" />{avatarUrl ? "Replace photo" : "Upload photo"}</Button>
+              {avatarUrl && <Button type="button" variant="ghost" className="w-full justify-start text-destructive hover:text-destructive" onClick={handleRemoveAvatar} disabled={avatarState === "removing"}>{avatarState === "removing" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}Remove photo</Button>}
+            </div>
+            {avatarError && <p className="mt-3 text-xs leading-relaxed text-destructive">{avatarError}</p>}
           </CardContent>
         </Card>
 
         {/* Edit profile form */}
         {profileLoading ? (
-          <div className="flex items-center justify-center py-10">
+          <div className="flex min-h-72 items-center justify-center rounded-2xl border border-border/50 bg-card">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
@@ -243,18 +287,20 @@ export default function ProfilePage() {
             </Card>
 
             {/* Save feedback */}
+            <AnimatePresence mode="wait">
             {saveError && (
-              <div className="flex items-center gap-2 text-xs text-destructive">
+              <motion.div key="error" initial={{ opacity: 0, y: reduceMotion ? 0 : -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: .16 }} className="flex items-center gap-2 text-xs text-destructive">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 {saveError}
-              </div>
+              </motion.div>
             )}
             {saveState === "saved" && (
-              <div className="flex items-center gap-2 text-xs text-success">
+              <motion.div key="saved" initial={{ opacity: 0, y: reduceMotion ? 0 : -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: .16 }} className="flex items-center gap-2 text-xs text-success">
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                 Profile saved successfully.
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
 
             <div className="flex justify-end">
               <Button type="submit" disabled={saveState === "loading" || saveState === "saved"}>

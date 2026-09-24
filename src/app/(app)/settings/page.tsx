@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getProfile, upsertProfile } from "@/lib/supabase/queries";
 import { useTheme, type ThemePreference } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
+import { motion, useReducedMotion } from "motion/react";
 
 const PREFERRED_INSTRUMENTS = ["NQ", "ES", "Gold"] as const;
 
@@ -23,6 +24,7 @@ const THEME_OPTIONS: { key: ThemePreference; label: string; Icon: typeof Moon }[
 ];
 
 export default function SettingsPage() {
+  const reduceMotion = useReducedMotion();
   const { theme, preference, setPreference } = useTheme();
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [showCurrent, setShowCurrent] = useState(false);
@@ -86,16 +88,17 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader badge="Account" title="Settings" subtitle="Security and account configuration" />
-      <PageWrapper>
+      <PageWrapper className="grid items-start gap-5 lg:grid-cols-2 lg:space-y-0">
         {/* Appearance */}
-        <Card className="bg-card border-border/50">
-          <CardHeader className="pb-3">
+        <Card className="overflow-hidden border-border/50 bg-card">
+          <CardHeader className="border-b border-border/40 bg-muted/10 pb-4">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Palette className="w-4 h-4 text-primary" />
               Appearance
             </CardTitle>
+            <p className="text-xs leading-relaxed text-muted-foreground">Choose how TradingMC looks across this device.</p>
           </CardHeader>
           <CardContent>
             <Label className="text-xs mb-2 block">Theme</Label>
@@ -107,14 +110,15 @@ export default function SettingsPage() {
                   onClick={() => setPreference(key)}
                   aria-pressed={preference === key}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all",
+                    "relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-lg py-2 text-sm font-semibold transition-colors",
                     preference === key
-                      ? "bg-primary text-primary-foreground shadow-sm"
+                      ? "text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
                   )}
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  {label}
+                  {preference === key && <motion.span layoutId="settings-theme-pill" className="absolute inset-0 bg-primary shadow-sm" transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 480, damping: 38 }} />}
+                  <Icon className="relative z-10 w-3.5 h-3.5" />
+                  <span className="relative z-10">{label}</span>
                 </button>
               ))}
             </div>
@@ -127,12 +131,13 @@ export default function SettingsPage() {
         </Card>
 
         {/* Trading Preferences */}
-        <Card className="bg-card border-border/50">
-          <CardHeader className="pb-3">
+        <Card className="overflow-hidden border-border/50 bg-card">
+          <CardHeader className="border-b border-border/40 bg-muted/10 pb-4">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-primary" />
               Trading Preferences
             </CardTitle>
+            <p className="text-xs leading-relaxed text-muted-foreground">Set the market context used throughout your workspace.</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -144,13 +149,14 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => handleSaveInstrument(inst)}
                     className={cn(
-                      "flex-1 py-2 rounded-lg text-sm font-semibold font-mono transition-all",
+                      "relative flex-1 overflow-hidden rounded-lg py-2 text-sm font-semibold font-mono transition-colors",
                       prefInstrument === inst
-                        ? "bg-primary text-primary-foreground shadow-sm"
+                        ? "text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
                     )}
                   >
-                    {inst}
+                    {prefInstrument === inst && <motion.span layoutId="settings-instrument-pill" className="absolute inset-0 bg-primary shadow-sm" transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 480, damping: 38 }} />}
+                    <span className="relative z-10">{inst}</span>
                   </button>
                 ))}
               </div>
@@ -168,14 +174,15 @@ export default function SettingsPage() {
         </Card>
 
         {/* Security */}
-        <Card className="bg-card border-border/50">
-          <CardHeader className="pb-3">
+        <Card className="overflow-hidden border-border/50 bg-card lg:col-span-2">
+          <CardHeader className="border-b border-border/40 bg-muted/10 pb-4">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Shield className="w-4 h-4 text-primary" />
               Security
             </CardTitle>
+            <p className="text-xs leading-relaxed text-muted-foreground">Manage your password and account protection.</p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="grid gap-8 pt-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
             {/* Change password */}
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -266,10 +273,8 @@ export default function SettingsPage() {
               </form>
             </div>
 
-            <div className="border-t border-border/40" />
-
             {/* 2FA: coming soon */}
-            <div>
+            <div className="rounded-2xl border border-border/50 bg-muted/15 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <KeyRound className="w-3.5 h-3.5 text-muted-foreground" />
                 <p className="text-sm font-medium">Two-Factor Authentication</p>
