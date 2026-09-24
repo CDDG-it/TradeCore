@@ -2,7 +2,8 @@
 
 /**
  * The Global Markets desk: its own visual language, deliberately unlike the
- * card-grid dashboards everywhere else.
+ * card-grid dashboards everywhere else. The refreshed desk keeps the same
+ * dense information language inside a softer, premium panel system.
  *
  * The page is one instrument: a single frame ruled into panes by hairlines,
  * labels set small and letterspaced in the corner of each pane, every number in
@@ -99,11 +100,11 @@ export function Pane({
   children: React.ReactNode;
 }) {
   return (
-    <section className={cn("relative flex min-h-0 min-w-0 flex-col border border-border/45 bg-card/35", className)}>
+    <section className={cn("relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-border/55 bg-card/65 shadow-[0_14px_36px_-28px_rgba(0,0,0,.85),inset_0_1px_0_rgba(255,255,255,.025)]", className)}>
       {(label || right) && (
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/40 px-3 py-[7px]">
           <span className="flex min-w-0 items-baseline gap-2">
-            {index && <span className="text-[11px] font-bold tabular-nums text-primary/85">{index}</span>}
+            {index && <span className="sr-only">Panel {index}</span>}
             {label && <Label className="truncate">{label}</Label>}
           </span>
           {right}

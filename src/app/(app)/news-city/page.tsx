@@ -16,25 +16,27 @@
  */
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
+import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { SESSIONS, sessionState } from "@/lib/gmi/sessions";
 import { Ticks, Label } from "@/components/gmi/pane";
 import { MobileSubnav } from "@/components/layout/mobile-nav";
 import { SectionNav } from "@/components/layout/section-nav";
 
-type Tab = "overview" | "markets" | "futures" | "news" | "calendar" | "flow";
+type Tab = "briefing" | "markets" | "positioning";
 
-const TABS: { key: Tab; num: string; label: string; note: string }[] = [
-  { key: "overview", num: "01", label: "Overview", note: "the day so far" },
-  { key: "markets", num: "02", label: "Markets", note: "yields, curve, dollar" },
-  { key: "futures", num: "03", label: "Futures", note: "charts & co-movement" },
-  { key: "news", num: "04", label: "News", note: "the wire" },
-  { key: "calendar", num: "05", label: "Calendar", note: "release schedule" },
-  { key: "flow", num: "06", label: "Positioning", note: "who holds what" },
+const TABS: { key: Tab; label: string; note: string }[] = [
+  { key: "briefing", label: "Briefing", note: "news, prints and the week ahead" },
+  { key: "markets", label: "Markets", note: "futures, yields and cross-asset context" },
+  { key: "positioning", label: "Positioning", note: "CFTC participation and crowding" },
 ];
 
 /** Old ?tab= values that should still land somewhere sensible. */
-const TAB_ALIASES: Record<string, Tab> = { "option-flow": "flow", options: "flow" };
+const TAB_ALIASES: Record<string, Tab> = {
+  overview: "briefing", news: "briefing", calendar: "briefing",
+  futures: "markets",
+  flow: "positioning", "option-flow": "positioning", options: "positioning",
+};
 
 const tabLoading = () => (
   <div className="flex h-full items-center justify-center">
@@ -44,11 +46,8 @@ const tabLoading = () => (
 
 // Code-split each section so the first paint stays light (three.js and recharts
 // only arrive with the section that draws them).
-const OverviewTab = dynamic(() => import("@/components/gmi/tabs/overview-tab").then((m) => m.OverviewTab), { loading: tabLoading });
-const MarketsTab = dynamic(() => import("@/components/gmi/tabs/markets-tab").then((m) => m.MarketsTab), { loading: tabLoading });
-const FuturesTab = dynamic(() => import("@/components/gmi/tabs/futures-tab").then((m) => m.FuturesTab), { loading: tabLoading });
-const NewsTab = dynamic(() => import("@/components/gmi/tabs/news-tab").then((m) => m.NewsTab), { loading: tabLoading });
-const CalendarTab = dynamic(() => import("@/components/gmi/tabs/calendar-tab").then((m) => m.CalendarTab), { loading: tabLoading });
+const BriefingTab = dynamic(() => import("@/components/gmi/tabs/briefing-tab").then((m) => m.BriefingTab), { loading: tabLoading });
+const CombinedMarketsTab = dynamic(() => import("@/components/gmi/tabs/combined-markets-tab").then((m) => m.CombinedMarketsTab), { loading: tabLoading });
 const FlowOptionsTab = dynamic(() => import("@/components/gmi/tabs/flow-options-tab").then((m) => m.FlowOptionsTab), { loading: tabLoading });
 
 /* ── Venue clocks ──────────────────────────────────────────────────────────
@@ -100,8 +99,9 @@ function VenueClocks() {
 }
 
 export default function GlobalMarketsPage() {
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<Tab>("briefing");
   const deskRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
 
   // Deep-linking, e.g. the /option-flow route redirects in here. Read after
   // mount rather than during render: the page is prerendered, so seeding state
@@ -118,12 +118,9 @@ export default function GlobalMarketsPage() {
 
   const content = useMemo(() => {
     switch (tab) {
-      case "overview": return <OverviewTab />;
-      case "markets": return <MarketsTab />;
-      case "futures": return <FuturesTab />;
-      case "news": return <NewsTab />;
-      case "calendar": return <CalendarTab />;
-      case "flow": return <FlowOptionsTab />;
+      case "briefing": return <BriefingTab />;
+      case "markets": return <CombinedMarketsTab />;
+      case "positioning": return <FlowOptionsTab />;
     }
   }, [tab]);
 
@@ -133,7 +130,7 @@ export default function GlobalMarketsPage() {
     // the page gutter above and below it) does the same on laptops and up.
     <div className="fill-phone relative flex flex-col gap-0 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
       <div
-        className="relative flex min-h-0 flex-1 flex-col border border-border/60"
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[26px] border border-border/60 shadow-[0_28px_80px_-42px_rgba(0,0,0,.95),0_0_42px_-32px_color-mix(in_oklch,var(--primary)_55%,transparent)]"
         style={{ backgroundColor: TERMINAL_BG }}
       >
         {/* A terminal reads as an instrument: a hairline of the desk's own
@@ -142,14 +139,14 @@ export default function GlobalMarketsPage() {
         <Ticks />
 
         {/* ── Masthead ─────────────────────────────────────────────────── */}
-        <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-border/60 px-4 py-2.5 lg:px-5" style={{ background: MAST_BG }}>
+        <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-border/60 px-4 py-3 lg:px-5" style={{ background: MAST_BG }}>
           <div className="flex items-center gap-3">
             <span aria-hidden className="h-4 w-[3px] rounded-full" style={{ background: "var(--primary)" }} />
             <h1 className="font-heading text-[15px] font-black uppercase leading-none tracking-[0.08em] text-foreground md:text-[17px]">
               Global Markets
             </h1>
             <span className="hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/55 sm:inline">
-              objective research terminal
+              research desk
             </span>
           </div>
           <VenueClocks />
@@ -158,7 +155,7 @@ export default function GlobalMarketsPage() {
         {/* ── Index ────────────────────────────────────────────────────────
             The same section rail the rest of the app uses, docked in the desk
             frame so the terminal still reads as one held-still screen. */}
-        <div className="hidden shrink-0 items-center justify-between gap-4 border-b border-border/50 px-3 py-2 lg:flex">
+        <div className="hidden shrink-0 items-center justify-between gap-4 border-b border-border/50 bg-background/15 px-3 py-2 lg:flex">
           <SectionNav id="markets" items={TABS} value={tab} onChange={setTab} />
           {/* What the live section is for, spelled out once: clarity without a tooltip. */}
           <span className="hidden shrink-0 items-center px-2 xl:flex">
@@ -177,7 +174,15 @@ export default function GlobalMarketsPage() {
           ref={deskRef}
           className="min-h-0 flex-1 overscroll-contain overflow-y-auto p-1.5 sm:p-2 lg:overflow-hidden lg:p-2.5"
         >
-          {content}
+          <motion.div
+            key={tab}
+            className="h-full min-h-0"
+            initial={{ opacity: 0, y: reduceMotion ? 0 : 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: reduceMotion ? 0.08 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+          >
+            {content}
+          </motion.div>
         </div>
       </div>
     </div>
