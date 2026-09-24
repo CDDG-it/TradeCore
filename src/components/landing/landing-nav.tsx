@@ -1,18 +1,24 @@
 "use client";
 
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
-import { ChartCandlestick, ChevronDown, LayoutDashboard, Menu, NotebookPen, Target, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { PRODUCTS, TRADER_LEVELS, type Product } from "@/lib/landing/nav";
+import { NAV_ICONS } from "@/lib/nav-icons";
 
-const productIcons: Record<Product["icon"], ComponentType<{ className?: string }>> = {
-  dashboard: LayoutDashboard,
-  edge: Target,
-  therapist: NotebookPen,
-  markets: ChartCandlestick,
+const productIcons: Record<Product["icon"], keyof typeof NAV_ICONS> = {
+  dashboard: "/dashboard",
+  edge: "/psychological-edge",
+  therapist: "/trade-therapist",
+  markets: "/news-city",
 };
+
+function ProductIcon({ icon, className }: { icon: Product["icon"]; className?: string }) {
+  const Icon = NAV_ICONS[productIcons[icon]];
+  return <Icon className={className} strokeWidth={1.8} />;
+}
 
 // Matches the signed-in app's top-nav rail items: a pill inside a glass rail.
 const triggerClass = "marketing-nav-trigger inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-[#d0dfe1] hover:bg-white/[0.06] hover:text-white data-[popup-open]:bg-white/[0.06] data-[popup-open]:text-white";
@@ -22,17 +28,14 @@ function ProductsPanel() {
     <div className="w-[min(92vw,640px)] p-4">
       <p className="marketing-nav-label px-3 pt-2">Four products, one process</p>
       <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-        {PRODUCTS.map((product) => {
-          const Icon = productIcons[product.icon];
-          return (
+        {PRODUCTS.map((product) => (
             <li key={product.href}>
               <NavigationMenu.Link render={<Link href={product.href} />} className="marketing-nav-card flex h-full gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 hover:border-[#14b8a6]/50 hover:bg-[#14b8a6]/[0.08]">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#14b8a6]/15 text-[#7be0d5]"><Icon className="h-5 w-5" /></span>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#14b8a6]/15 text-[#7be0d5]"><ProductIcon icon={product.icon} className="size-5" /></span>
                 <span className="min-w-0"><span className="block text-sm font-semibold text-white">{product.name}</span><span className="mt-1 block text-xs leading-relaxed text-[#9db6bb]">{product.tagline}</span></span>
               </NavigationMenu.Link>
             </li>
-          );
-        })}
+        ))}
       </ul>
     </div>
   );
@@ -92,7 +95,7 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
           <p className="marketing-nav-label">Products</p>
           <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
             {PRODUCTS.map((product) => (
-              <li key={product.href}><Link href={product.href} onClick={onClose} className="block py-3.5"><span className="block text-[15px] font-medium text-white">{product.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#8aa5ab]">{product.tagline}</span></Link></li>
+              <li key={product.href}><Link href={product.href} onClick={onClose} className="flex items-center gap-3 py-3.5"><span className="grid size-9 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-[#7be0d5]"><ProductIcon icon={product.icon} className="size-[18px]" /></span><span><span className="block text-[15px] font-medium text-white">{product.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#8aa5ab]">{product.tagline}</span></span></Link></li>
             ))}
           </ul>
         </div>

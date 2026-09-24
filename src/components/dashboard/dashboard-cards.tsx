@@ -83,14 +83,12 @@ function PeriodToggle({ value, onChange, accent }: {
 }
 
 /* ── MC mind score: the readiness number, and nothing else ───────────────
-   One figure, its band, and a rising "signal-strength" meter. What the score is
+   One figure, its band, and a calibrated 0–100 scale. What the score is
    made of (rules, execution, habits, objectives) is a study in its own right,
    not something to scan past on a dashboard, so it lives one click away on the
    breakdown page together with the calculation and the week / month / all-time
    scores. Keeping the card to the headline is what makes room beneath it for
    the goals and the plans. */
-const METER_BARS = 22;
-
 export function MindScoreOrb({ score, period, onPeriodChange, className, compactNumbers = false }: {
   score: MindScore | null; period: Period; onPeriodChange: (p: Period) => void; className?: string;
   compactNumbers?: boolean;
@@ -118,9 +116,6 @@ export function MindScoreOrb({ score, period, onPeriodChange, className, compact
   }, [target]);
 
   const color = pending ? TURQUOISE : hasData ? bandColorFor(target) : "var(--muted-foreground)";
-  const filled = Math.round(prog * METER_BARS);
-
-
   return (
     <div className={cn(CARD_BASE, "group flex flex-col", className)}>
       <CardFx accent={color} />
@@ -129,42 +124,22 @@ export function MindScoreOrb({ score, period, onPeriodChange, className, compact
         <PeriodToggle value={period} onChange={onPeriodChange} accent={TURQUOISE} />
       </div>
 
-      {/* Score + signal meter. The meter takes whatever height the card has
-          spare, so the card fills rather than leaving a hole in the middle. */}
-      {/* Grow, but never shrink. The row is bottom-aligned, so squeezing it
-          pushes the score up over the title instead of just making it smaller.
-          On a screen too short for the whole card the objectives strip below
-          gives way, which is a far kinder way to run out of room. */}
-      <div className="mt-2.5 flex shrink-0 grow items-end gap-3 short:mt-1.5">
-        {/* On a laptop the band label moves up beside the number instead of
-            sitting under it, which is most of the height this card has to find. */}
-        <div className="shrink-0 short:flex short:items-baseline short:gap-2">
-          <p className={cn("font-black leading-none tabular-nums", compactNumbers ? "text-[34px] short:text-[24px]" : "text-[40px] short:text-[28px]")} style={{ color }}>
+      <div className="mt-3 flex shrink-0 grow items-end justify-between gap-3 short:mt-1.5">
+        <div className="flex items-baseline gap-2.5">
+          <p className={cn("font-black leading-none tracking-tight tabular-nums", compactNumbers ? "text-[34px] short:text-[24px]" : "text-[40px] short:text-[28px]")} style={{ color }}>
             {pending ? "·" : hasData ? display : "-"}
           </p>
-          <p className="mt-1 text-[11px] font-medium short:mt-0" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
+          <p className="text-[11px] font-medium" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
             {pending ? (period === "week" ? "New week" : "New month") : hasData ? score!.band.label : "No data yet"}
           </p>
         </div>
-        <div className="group/meter flex h-full min-h-[52px] flex-1 items-end gap-[3px] pb-0.5 short:min-h-[26px]" aria-hidden>
-          {Array.from({ length: METER_BARS }).map((_, i) => {
-            const on = i < filled;
-            const h = 30 + (i / (METER_BARS - 1)) * 70; // 30%..100% rising profile
-            return (
-              <div
-                key={i}
-                className="flex-1 rounded-[2px] origin-bottom transition-[background,box-shadow,transform,filter] duration-300 group-hover/meter:scale-y-105"
-                style={{
-                  height: `${h}%`,
-                  background: on ? color : alpha("var(--muted-foreground)", 14),
-                  boxShadow: on ? `0 0 6px ${alpha(color, 35)}` : "none",
-                  transitionDelay: `${i * 18}ms`,
-                }}
-              />
-            );
-          })}
-        </div>
+        <span className="pb-0.5 text-[10px] font-medium tabular-nums text-muted-foreground/70">/ 100</span>
       </div>
+      <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-muted-foreground/15 short:mt-2" role="progressbar" aria-label="MC Mindscore" aria-valuemin={0} aria-valuemax={100} aria-valuenow={hasData ? target : undefined}>
+        <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${hasData ? prog * 100 : 0}%`, background: color }} />
+        {[20, 40, 60, 80].map((tick) => <span key={tick} aria-hidden className="absolute inset-y-0 w-px bg-card/80" style={{ left: `${tick}%` }} />)}
+      </div>
+      <div className="mt-1 flex justify-between text-[9px] font-medium tabular-nums text-muted-foreground/60"><span>0</span><span>50</span><span>100</span></div>
 
       {pending && (
         <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
@@ -316,7 +291,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
     return () => cancelAnimationFrame(raf.current);
   }, [targetWr]);
 
-  // Donut geometry: a full ring split into W / BE / L arcs by share of trades.
+  // A measured ring split into W / BE / L arcs by share of trades.
   const R = 46, SW = 11, C = 2 * Math.PI * R;
   const segs = [
     { v: wins, c: GREEN },
@@ -338,35 +313,30 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
           instead of one that crowds out the legend. The floor keeps it a proper
           ring (not a dot) on phones, where the column is not height-capped. */}
       <div className="flex-1 flex items-center justify-center py-1 min-h-[clamp(72px,8vh,96px)]">
-        <div className="group/donut relative aspect-square h-full max-h-[clamp(76px,10.5vh,112px)] w-auto transition-transform duration-500 ease-out hover:scale-[1.03]">
+        <div className="relative aspect-square h-full max-h-[clamp(76px,10.5vh,112px)] w-auto">
           <svg viewBox="0 0 116 116" className="block h-full w-full">
             {/* Track */}
             <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
-            {/* Segments: arcs draw in on mount and brighten on hover */}
+            {/* Small gaps separate the outcomes without changing their proportions. */}
             {total > 0 && segs.map((s, i) => {
               if (s.v === 0) return null;
               const frac = s.v / total;
-              const dash = frac * C;
-              const rot = acc * 360 - 90; // start at top, then walk clockwise
+              const gap = segs.filter((segment) => segment.v > 0).length > 1 ? Math.min(3, frac * C * 0.25) : 0;
+              const dash = Math.max(0, frac * C - gap);
+              const rot = (acc + gap / (2 * C)) * 360 - 90;
               acc += frac;
               return (
                 <circle key={i} cx={58} cy={58} r={R} fill="none" stroke={s.c} strokeWidth={SW}
-                  strokeLinecap="round"
+                  strokeLinecap="butt"
                   strokeDasharray={`${dash} ${C - dash}`}
                   transform={`rotate(${rot} 58 58)`}
-                  className="transition-[filter,stroke-width] duration-300 group-hover/donut:[stroke-width:12]"
-                  style={{ filter: `drop-shadow(0 0 4px ${alpha(s.c, 40)})` }} />
+                />
               );
             })}
           </svg>
-          {/* Subtle inner glow that intensifies on hover */}
-          <div
-            className="pointer-events-none absolute inset-4 rounded-full opacity-60 transition-opacity duration-500 group-hover/donut:opacity-100"
-            style={{ background: `radial-gradient(circle, ${alpha(CYAN, 12)}, transparent 65%)` }}
-          />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {/* Tracks the ring's own scale, so the figure never crowds a small ring. */}
-            <p className={cn("font-black tabular-nums leading-none", compactNumbers ? "text-[clamp(16px,2.2vh,24px)]" : "text-[clamp(18px,2.6vh,28px)]")} style={{ color: CYAN }}>
+            <p className={cn("font-black tabular-nums leading-none tracking-tight", compactNumbers ? "text-[clamp(16px,2.2vh,24px)]" : "text-[clamp(18px,2.6vh,28px)]")}>
               {winRate === null ? "-" : `${display}%`}
             </p>
             <p className="text-[clamp(8px,1vh,9px)] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
@@ -376,7 +346,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
         </div>
       </div>
 
-      {/* W / L / BE legend: chips light up on hover */}
+      {/* The outcome counts remain visible beside the rate. */}
       <div className="grid grid-cols-3 gap-2 mt-0.5">
         {[
           { label: "Win", value: wins, color: GREEN },

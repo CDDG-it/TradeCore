@@ -6,10 +6,13 @@ import { cn } from "@/lib/utils";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
 import { CommitmentsPanel } from "@/components/trade-therapist/commitments-panel";
 import { GoalsView } from "@/components/goals/goals-view";
+import { MindScoreBreakdown } from "@/components/mind-score/mindscore-breakdown";
 import { sampleDashboardData } from "@/lib/dashboard/sample";
 import type { Commitment, CommitmentAdherenceLog, TradeJournalEntry, TradingGoal, WeeklyTradeReview } from "@/lib/types";
+import type { MindInputs } from "@/lib/mind-score/mind-score";
 
-type Tab = "reviews" | "commitments" | "goals";
+type Tab = "reviews" | "commitments" | "goals" | "mindscore";
+type MindScenario = "sample" | "empty" | "new-week";
 
 /** Twelve weeks of sample history: a trade a week, most weeks reviewed. */
 function useSeed() {
@@ -66,14 +69,28 @@ function useSeed() {
 
 export function PreviewEdge() {
   const [tab, setTab] = useState<Tab>("reviews");
+  const [mindScenario, setMindScenario] = useState<MindScenario>("sample");
   const seed = useSeed();
+  const mindSeed = useMemo<MindInputs>(() => {
+    const now = mindScenario === "new-week" ? addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 7) : new Date();
+    if (mindScenario === "empty") return {
+      now, trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [],
+      weeklyReviews: [], analyses: [], adherenceLogs: [], goals: [],
+    };
+    return {
+      now, trades: seed.reviews.trades, habits: seed.goals.data.habits,
+      completions: seed.goals.data.completions, psychSessions: [], bestTrades: [],
+      weeklyReviews: seed.reviews.reviews, analyses: [], adherenceLogs: seed.commitments.logs,
+      goals: seed.goals.goals,
+    };
+  }, [seed, mindScenario]);
   return (
     <div className="flex flex-col gap-4 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
-      <div className="flex shrink-0 items-center justify-between gap-4">
+      <div className="flex shrink-0 flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <h1 className="font-heading text-lg font-bold tracking-tight md:text-xl">Preview: edge surfaces</h1>
-        <div className="flex gap-1 rounded-xl border border-border/50 p-1">
-          {(["reviews", "commitments", "goals"] as Tab[]).map((t) => (
-            <button key={t} type="button" onClick={() => setTab(t)} className={cn("press rounded-lg px-4 py-2 text-sm font-semibold capitalize", tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
+        <div className="flex max-w-full flex-wrap gap-1 rounded-xl border border-border/50 p-1">
+          {(["reviews", "commitments", "goals", "mindscore"] as Tab[]).map((t) => (
+            <button key={t} type="button" onClick={() => setTab(t)} className={cn("press rounded-lg px-2.5 py-2 text-xs font-semibold capitalize sm:px-4 sm:text-sm", tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
               {t}
             </button>
           ))}
@@ -83,6 +100,14 @@ export function PreviewEdge() {
         {tab === "reviews" && <ReviewsPanel seed={seed.reviews} />}
         {tab === "commitments" && <CommitmentsPanel seed={seed.commitments} />}
         {tab === "goals" && <GoalsView seed={seed.goals} />}
+        {tab === "mindscore" && <div>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {(["sample", "empty", "new-week"] as MindScenario[]).map((scenario) => (
+              <button key={scenario} type="button" onClick={() => setMindScenario(scenario)} className={cn("rounded-md border px-2.5 py-1 text-xs font-medium", mindScenario === scenario ? "border-primary text-primary" : "border-border text-muted-foreground")}>{scenario}</button>
+            ))}
+          </div>
+          <MindScoreBreakdown key={mindScenario} seed={mindSeed} />
+        </div>}
       </div>
     </div>
   );

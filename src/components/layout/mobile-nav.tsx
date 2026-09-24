@@ -4,10 +4,12 @@ import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Brain, Compass, Globe, HeartPulse, House, Plus, TrendingUp, type LucideIcon } from "lucide-react";
+import { Compass, House, Plus, TrendingUp } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/lib/nav";
+import { NAV_ICONS } from "@/lib/nav-icons";
+export { NAV_ICONS } from "@/lib/nav-icons";
 
 /**
  * Phone navigation, the way the apps next to it on the home screen do it: a
@@ -20,13 +22,6 @@ import { PRIMARY_NAV } from "@/lib/nav";
  * only motion is the press itself. Desktop is untouched: everything here is
  * `lg:hidden`.
  */
-
-export const NAV_ICONS: Record<string, LucideIcon> = {
-  "/dashboard": House,
-  "/psychological-edge": Brain,
-  "/trade-therapist": HeartPulse,
-  "/news-city": Globe,
-};
 
 /** What the create pill offers: the two things a trader starts from the desk. */
 export const CREATE = [

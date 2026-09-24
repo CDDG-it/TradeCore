@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AccentPanel } from "@/components/ui/accent-panel";
+import { MindscoreTrend } from "@/components/mind-score/mindscore-trend";
+import { computeMindScoreTrend } from "@/lib/mind-score/trend";
 import {
   getTrades, getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getAnalyses,
   getCommitmentAdherenceLogs, getTradingGoals,
@@ -29,14 +31,15 @@ const PART_META: Record<MindComponent["key"], { title: string; sub: string; acce
 };
 
 /**
- * The MC Mindscore: one number, one bar, five plain-language parts.
+ * The MC Mindscore: one number, its history, five plain-language parts.
  * Laid out to fit a single screen: no internal scrolling, no jargon.
  */
-export function MindScoreBreakdown() {
-  const [data, setData] = useState<MindInputs | null>(null);
+export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
+  const [data, setData] = useState<MindInputs | null>(seed ?? null);
   const [period, setPeriod] = useState<MindPeriod>("month");
 
   useEffect(() => {
+    if (seed) return;
     Promise.all([
       getTrades(), getHabits(), getHabitCompletions(),
       getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews(), getAnalyses(),
@@ -44,10 +47,11 @@ export function MindScoreBreakdown() {
     ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs, goals]) => {
       setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs, goals });
     }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [], adherenceLogs: [], goals: [] }));
-  }, []);
+  }, [seed]);
 
   const scores = useMemo(() => (data ? computeMindScoreAll(data) : null), [data]);
   const score = scores?.[period] ?? null;
+  const trend = useMemo(() => (data && score ? computeMindScoreTrend(data, period, score) : []), [data, period, score]);
 
   if (!scores || !score) {
     return (
@@ -86,8 +90,7 @@ export function MindScoreBreakdown() {
         })}
       </div>
 
-      {/* Hero: the score, or a friendly "just getting started" note.
-          The spine takes the band colour, so the panel reads at a glance. */}
+      {/* The score and the reconstructed readings for the selected window. */}
       <div
         className="relative overflow-hidden rounded-2xl border p-5 pl-6"
         style={{
@@ -121,20 +124,15 @@ export function MindScoreBreakdown() {
                 ? "Your score is still being calculated: it builds up as you log trades, tick your habits and do the work."
                 : score.band.description}
             </p>
-            {/* One simple bar, 0 → 100 */}
-            {!score.pending && score.total != null && (
-              <div className="mt-2">
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted-foreground/12">
-                  <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${score.total}%`, background: c }} />
-                </div>
-                <div className="mt-1 flex justify-between text-[9px] font-medium text-muted-foreground/70">
-                  <span>0</span>
-                  <span>Higher is better</span>
-                  <span>100</span>
-                </div>
-              </div>
-            )}
           </div>
+        </div>
+        <div className="relative mt-5 border-t border-border/60 pt-4">
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Score over time</p>
+            <p className="text-[10px] text-muted-foreground">{PERIOD_LABEL[period]}</p>
+          </div>
+          <MindscoreTrend points={trend} color={c} />
+          {!trend.some((point) => point.value !== null) && <p className="mt-1 text-xs text-muted-foreground">Your curve appears as you log activity.</p>}
         </div>
       </div>
 

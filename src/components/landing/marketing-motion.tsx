@@ -2,6 +2,7 @@
 
 import { useRef, type CSSProperties, type ReactNode } from "react";
 import { motion, useInView, useReducedMotion, type Transition } from "motion/react";
+import { MindscoreTrend } from "@/components/mind-score/mindscore-trend";
 
 /**
  * Shared motion vocabulary for the public page. Every reveal on the page uses
@@ -213,36 +214,27 @@ const scoreParts = [
 ] as const;
 
 export function MindscoreAssembly() {
-  const reduceMotion = useReducedMotion();
+  const illustrativeTrend = [52, 57, 54, 62, 61, 66, 64, 70, 68, 74].map((value, index) => ({
+    date: `2026-09-${String(index + 1).padStart(2, "0")}`,
+    value,
+  }));
 
   return (
     <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-14" aria-label="MC Mindscore weighting: rule adherence 35 percent, execution 20 percent, habit consistency 20 percent, reflection work 15 percent, goal progress 10 percent">
-      <MarketingReveal className="relative grid min-h-[420px] place-items-center overflow-hidden rounded-[32px] border border-[#c2dcda] bg-[#edf7f5] p-8 shadow-[0_28px_75px_rgba(27,88,92,.10)] sm:min-h-[500px] lg:p-12">
-        <div aria-hidden="true" className="absolute inset-[14%] rounded-full bg-[#8edbd2]/30 blur-3xl" />
-        <div aria-hidden="true" className="absolute -bottom-24 -left-20 h-72 w-72 rounded-full border border-[#5fbab3]/20 shadow-[0_0_0_38px_rgba(95,186,179,.04),0_0_0_80px_rgba(95,186,179,.03)]" />
-        <svg className="relative w-full max-w-[380px]" viewBox="0 0 300 300" role="img" aria-label="Five weighted segments forming the MC Mindscore">
-          <circle cx="150" cy="150" r="112" fill="none" stroke="#d7e8e7" strokeWidth="28" />
-          {scoreParts.map((part, index) => {
-            const offset = scoreParts.slice(0, index).reduce((sum, previous) => sum + previous.weight, 0) / 100;
-            const length = part.weight / 100;
-            return (
-              <motion.circle
-                key={part.name}
-                cx="150" cy="150" r="112"
-                fill="none" stroke={part.color} strokeWidth="28"
-                transform="rotate(-90 150 150)"
-                // pathSpacing stays at a full lap so only one dash exists while it draws.
-                initial={{ opacity: reduceMotion ? 0 : 1, pathLength: reduceMotion ? length : 0, pathSpacing: 1, pathOffset: offset }}
-                whileInView={{ opacity: 1, pathLength: length, pathSpacing: 1, pathOffset: offset }}
-                viewport={{ once: true, amount: 0.5 }}
-                transition={{ duration: 0.8, delay: 0.15 + index * 0.14, ease: EASE_OUT }}
-              />
-            );
-          })}
-          <text x="150" y="144" textAnchor="middle" className="marketing-score-center" fill="#102b37">MC</text>
-          <text x="150" y="170" textAnchor="middle" className="marketing-score-caption" fill="#5b7780">Mindscore</text>
-        </svg>
-        <div className="absolute left-7 top-7 flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-[#68848b] sm:left-9 sm:top-9"><span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#14b8a6]" />EXPLAINABLE</div>
+      <MarketingReveal className="relative flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[32px] border border-[#c2dcda] bg-[#edf7f5] p-7 shadow-[0_28px_75px_rgba(27,88,92,.10)] sm:min-h-[500px] sm:p-10 lg:p-12">
+        <div className="flex items-start justify-between gap-4 border-b border-[#c2dcda] pb-5">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#54737b]">MC Mindscore</span>
+          <span className="rounded-full border border-[#a8cfcb] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#167c79]">Illustrative data</span>
+        </div>
+        <div className="my-7 flex items-end gap-5">
+          <span className="font-display text-[clamp(5rem,13vw,8rem)] font-semibold leading-[0.85] tracking-[-0.09em] tabular-nums text-[#102b37]">74</span>
+          <span className="mb-1 border-l border-[#a8cfcb] pl-5 text-sm font-semibold text-[#167c79]">Solid<br /><span className="font-normal text-[#68848b]">out of 100</span></span>
+        </div>
+        <div>
+          <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.12em] text-[#54737b]"><span>Score over time</span><span>Example period</span></div>
+          <MindscoreTrend points={illustrativeTrend} color="#0d817c" light />
+          <p className="mt-5 text-xs leading-relaxed text-[#5b7780]">One score shaped by the work behind every session. The curve above is illustrative.</p>
+        </div>
       </MarketingReveal>
 
       <div className="min-w-0">

@@ -1386,19 +1386,6 @@ html:has(.marketing-page) { position: relative; }
   100% { opacity: 0; transform: translateY(-6px); }
 }
 
-.marketing-score-center {
-  font-family: "Clash Display", var(--font-inter), system-ui, sans-serif;
-  font-size: 64px;
-  font-weight: 600;
-  letter-spacing: -0.06em;
-}
-
-.marketing-score-caption {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-}
-
 /* Reduced motion means fewer and gentler animations, not none: decorative loops
    stop, position changes are dropped in the components, colour feedback stays. */
 @media (prefers-reduced-motion: reduce) {
@@ -1414,4 +1401,3 @@ html:has(.marketing-page) { position: relative; }
   .marketing-callout { animation: none; opacity: 1; }
   figcaption .marketing-callout:not(:first-child) { opacity: 0; }
 }
-
