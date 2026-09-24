@@ -9,7 +9,7 @@ import { X, Settings, User as UserIcon, LogOut, ChevronDown, Plus } from "lucide
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { PRIMARY_NAV } from "@/lib/nav";
-import { CREATE, NAV_ICON_ASSETS, isActive } from "@/components/layout/mobile-nav";
+import { CREATE, isActive } from "@/components/layout/mobile-nav";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 /**
@@ -38,7 +38,6 @@ function SoonBadge() {
 }
 
 function RailItem({ href, label, active, soon, instant }: { href: string; label: string; active: boolean; soon?: boolean; instant: boolean }) {
-  const iconSrc = NAV_ICON_ASSETS[href];
   if (soon) {
     return (
       <span aria-disabled title="Coming soon" className="relative flex h-9 cursor-default items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-semibold text-sidebar-foreground/35">
@@ -52,7 +51,7 @@ function RailItem({ href, label, active, soon, instant }: { href: string; label:
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "press relative flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[13px] font-semibold",
+        "press relative flex h-9 items-center whitespace-nowrap rounded-full px-4 text-[13px] font-semibold",
         active ? "text-foreground" : "text-sidebar-foreground/60 hover:bg-white/[0.04] hover:text-sidebar-foreground"
       )}
     >
@@ -70,12 +69,6 @@ function RailItem({ href, label, active, soon, instant }: { href: string; label:
           />
         </motion.span>
       )}
-      <span className={cn(
-        "relative z-10 h-[22px] w-[22px] transition-[filter,opacity,transform] duration-150",
-        active ? "scale-105 opacity-100" : "opacity-55 grayscale-[35%]"
-      )}>
-        <Image src={iconSrc} alt="" fill sizes="22px" className="object-contain" />
-      </span>
       <span className="relative z-10">{label}</span>
     </Link>
   );

@@ -84,7 +84,7 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
             <span className="text-[10px] font-medium text-muted-foreground">{PERIOD_LABEL[period]}</span>
           </div>
           <div className="relative">
-            <MindscoreTrend points={trend} color={color} />
+            <MindscoreTrend points={trend} color={color} interactive />
             {!trend.some((point) => point.value !== null) && <p className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-xs text-muted-foreground">The curve appears when this period has activity.</p>}
           </div>
         </div>
