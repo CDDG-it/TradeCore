@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
+import { BrokerEquityChart, type HistoryLoader } from "./broker-equity-chart";
 import type { AccountSnapshot, BrokerAccountsResponse, BrokerConnectionView } from "@/lib/broker/types";
 
 /**
@@ -51,10 +52,12 @@ async function send(url: string, method: "POST" | "PATCH" | "DELETE", body?: unk
 export function LiveBrokerPanel({
   hidden,
   load,
+  loadHistory,
 }: {
   hidden: boolean;
   /** Overridden by the development preview to render sample accounts. */
   load?: () => Promise<BrokerAccountsResponse>;
+  loadHistory?: HistoryLoader;
 }) {
   const [data, setData] = useState<BrokerAccountsResponse | null>(null);
   const [lastGood, setLastGood] = useState<Record<string, AccountSnapshot>>({});
@@ -63,6 +66,8 @@ export function LiveBrokerPanel({
   const [connectOpen, setConnectOpen] = useState(false);
   const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null);
   const [passwordFor, setPasswordFor] = useState<BrokerConnectionView | null>(null);
+  // Which account's equity curve is open. Clicking its card toggles it.
+  const [chartFor, setChartFor] = useState<string | null>(null);
   const inFlight = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -240,11 +245,15 @@ export function LiveBrokerPanel({
             {accounts.map(({ live, shown }) => {
               const stale = !shown.last_update_ts || now - Date.parse(shown.last_update_ts) >= STALE_MS;
               return (
-                <div
+                <button
                   key={live.account_id}
+                  type="button"
+                  onClick={() => setChartFor((c) => (c === live.account_id ? null : live.account_id))}
+                  aria-expanded={chartFor === live.account_id}
                   className={cn(
-                    "rounded-2xl border bg-card p-4 transition-opacity",
-                    stale ? "border-border/40 opacity-55" : "border-success/30"
+                    "rounded-2xl border bg-card p-4 text-left transition-all hover:-translate-y-px",
+                    stale ? "border-border/40 opacity-55" : "border-success/30",
+                    chartFor === live.account_id && "ring-2 ring-primary/40"
                   )}
                 >
                   <div className="mb-3 flex items-start justify-between gap-2">
@@ -280,10 +289,19 @@ export function LiveBrokerPanel({
                       {live.error && stale ? live.error : `Updated ${ago(shown.last_update_ts, now)}`}
                     </span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
+
+          {chartFor && (
+            <BrokerEquityChart
+              accountId={chartFor}
+              label={accounts.find(({ live }) => live.account_id === chartFor)?.shown.label ?? "Account"}
+              hidden={hidden}
+              load={loadHistory}
+            />
+          )}
         </>
       )}
 

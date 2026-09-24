@@ -96,3 +96,21 @@ export function sampleBrokerData(now = Date.now()): BrokerAccountsResponse {
     ],
   };
 }
+
+/** A believable equity curve for the preview chart: one point per 5 minutes. */
+export function sampleHistory(accountId: string, from: string, to: string) {
+  const start = Date.parse(from);
+  const end = Date.parse(to);
+  const step = 5 * 60_000;
+  const seed = accountId.charCodeAt(accountId.length - 1);
+  // Anchored to the same account's balance in sampleBrokerData, so the curve
+  // and the card above it tell the same story.
+  const base = sampleBrokerData().accounts.find((a) => a.account_id === accountId)?.balance ?? 100_000;
+  const points = [];
+  for (let t = start, i = 0; t <= end; t += step, i++) {
+    const drift = Math.sin(i / 9 + seed) * (base / 260) + (i * base) / 60_000;
+    const equity = Math.round((base + drift) * 100) / 100;
+    points.push({ bucket: new Date(t).toISOString(), balance: equity, equity, day_pl: Math.round(drift * 100) / 100 });
+  }
+  return points;
+}
