@@ -122,18 +122,6 @@ export default function HomePage() {
         </div>
         <div aria-hidden="true" className="marketing-gradient-bridge marketing-gradient-bridge--dark" />
 
-        <section className="relative overflow-hidden bg-[#0b1120] px-6 py-32 sm:px-10 md:py-44 lg:px-12">
-          <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-20" />
-          <div className="relative mx-auto max-w-[1260px]">
-            <MarketingReveal>
-              <h2 className="font-display max-w-[1050px] text-balance text-[clamp(2.6rem,10vw,3.8rem)] font-semibold leading-[0.98] tracking-[-0.06em] sm:text-[clamp(3.8rem,7vw,8rem)]">An ordinary journal won&apos;t build an <span className="text-[#65d4c8]">extraordinary trader.</span></h2>
-            </MarketingReveal>
-            <MarketingReveal delay={0.15} distance={16} className="mt-12 flex flex-wrap items-center gap-6">
-              <Link href="/signup" className="marketing-cta inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#14b8a6] px-7 py-3 text-sm font-semibold text-[#081721] hover:bg-[#70d9cf]">Create your account</Link>
-              <Link href="/login" className="marketing-cta inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#5a7f87] px-6 py-3 text-sm font-medium text-[#d9e8e9] hover:border-[#a9ddd8] hover:bg-white/5 hover:text-white">Sign in</Link>
-            </MarketingReveal>
-          </div>
-        </section>
       </main>
       <LandingFooter />
     </div>

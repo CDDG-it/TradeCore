@@ -1398,6 +1398,16 @@ html:has(.marketing-page) { position: relative; }
   animation-play-state: paused;
 }
 
+@keyframes footer-marquee {
+  to { transform: translateX(calc(-50% - 1.25rem)); }
+}
+.footer-marquee {
+  animation: footer-marquee 30s linear infinite;
+}
+.footer-marquee:hover {
+  animation-play-state: paused;
+}
+
 /* Reduced motion means fewer and gentler animations, not none: decorative loops
    stop, position changes are dropped in the components, colour feedback stays. */
 @media (prefers-reduced-motion: reduce) {
@@ -1412,5 +1422,6 @@ html:has(.marketing-page) { position: relative; }
   .marketing-mobile-menu { transform: none; }
   .marketing-callout { animation: none; opacity: 1; }
   .gmi-marquee-track { animation: none; }
+  .footer-marquee { animation: none; }
   figcaption .marketing-callout:not(:first-child) { opacity: 0; }
 }
