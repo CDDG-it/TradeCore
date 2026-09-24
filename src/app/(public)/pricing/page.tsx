@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Check, Gift, Infinity as InfinityIcon, Layers3 } from "lucide-react";
+import { Check, Infinity as InfinityIcon, Layers3 } from "lucide-react";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
 import { MarketingReveal } from "@/components/landing/marketing-motion";
@@ -32,20 +32,18 @@ export default function PricingPage() {
   return <div className={`${inter.variable} marketing-page min-h-screen overflow-x-clip bg-[#0b1120] text-white`}>
     <LandingNav />
     <main id="main">
-      <section className="marketing-hero relative overflow-hidden px-5 pb-24 pt-16 sm:px-10 sm:pt-24 lg:px-12 lg:pb-32">
+      <section className="marketing-hero relative overflow-hidden px-5 pb-16 pt-10 sm:px-10 sm:pt-14 lg:min-h-[calc(100svh-72px)] lg:px-12 lg:pb-10">
         <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-30" />
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-280px] h-[620px] w-[900px] -translate-x-1/2 rounded-full bg-[#0b67c9]/20 blur-[110px]" />
         <div className="relative mx-auto max-w-[1180px]">
-          <MarketingReveal className="mx-auto max-w-3xl text-center">
-            <p className="marketing-eyebrow" style={{ color: "#7be0d5" }}>Simple, transparent pricing</p>
-            <h1 className="font-display mt-6 text-balance text-[clamp(2.8rem,8vw,5.8rem)] font-semibold leading-[.98] tracking-[-.06em]">A plan that grows with <span className="text-[#6ad5c9]">your edge.</span></h1>
-            <p className="mx-auto mt-7 max-w-2xl text-base leading-[1.75] text-[#b8ccd0] sm:text-lg">From your first structured journal to a complete performance system. Choose the depth you need and move up when your trading does.</p>
+          <MarketingReveal className="mx-auto max-w-5xl text-center">
+            <h1 className="font-display text-balance text-[clamp(2.7rem,5vw,4.8rem)] font-semibold leading-[.98] tracking-[-.06em]">A plan that grows with <span className="text-[#6ad5c9]">your edge.</span></h1>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-[1.65] text-[#b8ccd0] sm:text-base">From your first structured journal to a complete performance system. Choose the depth you need and move up when your trading does.</p>
           </MarketingReveal>
-          <MarketingReveal delay={0.08} className="mx-auto mt-9 flex max-w-2xl items-start gap-3 rounded-2xl border border-[#14b8a6]/30 bg-[#14b8a6]/10 px-5 py-4 text-left sm:items-center">
-            <Gift className="mt-0.5 size-5 shrink-0 text-[#7be0d5] sm:mt-0" />
-            <p className="text-sm leading-relaxed text-[#cce6e3]"><strong className="text-white">Launch access is free.</strong> Every plan and feature is open right now. No credit card, no automatic charge.</p>
+          <MarketingReveal delay={0.08} className="mx-auto mt-5 max-w-2xl rounded-full border border-[#14b8a6]/25 bg-[#14b8a6]/[.08] px-5 py-2.5 text-center">
+            <p className="text-xs leading-relaxed text-[#cce6e3]"><strong className="text-white">Launch access is free.</strong> Every feature is open now. No card, no automatic charge.</p>
           </MarketingReveal>
-          <MarketingReveal delay={0.14} className="mt-10"><PricingPlans /></MarketingReveal>
+          <MarketingReveal delay={0.14} className="mt-5"><PricingPlans /></MarketingReveal>
         </div>
       </section>
 

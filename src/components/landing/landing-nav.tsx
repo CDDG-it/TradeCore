@@ -107,9 +107,9 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
           </ul>
         </div>
         <Link href="/pricing" onClick={onClose} className="block border-b border-white/10 pb-4 text-[15px] font-medium text-white">Pricing</Link>
-        <div className="flex gap-3">
-          <Link href="/login" onClick={onClose} className="marketing-cta inline-flex min-h-12 flex-1 items-center justify-center rounded-2xl border border-white/20 text-sm font-medium text-[#d0dfe1]">Sign in</Link>
-          <Link href="/signup" onClick={onClose} className="marketing-cta inline-flex min-h-12 flex-1 items-center justify-center rounded-2xl bg-[#14b8a6] text-sm font-semibold text-[#081721]">Get started</Link>
+        <div className="flex gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+          <Link href="/login" onClick={onClose} className="marketing-cta inline-flex min-h-11 flex-1 items-center justify-center rounded-full text-sm font-medium text-[#d0dfe1] hover:bg-white/[0.06]">Sign in</Link>
+          <Link href="/signup" onClick={onClose} className="marketing-cta inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-white/10 bg-white/[0.07] text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.10)] hover:bg-white/[0.12]">Get started</Link>
         </div>
       </nav>
     </div>
@@ -138,9 +138,9 @@ export function LandingNav() {
           </Link>
           <DesktopMenu />
           <div className="flex items-center justify-self-end gap-2 sm:gap-3">
-            <nav aria-label="Account" className="hidden items-center gap-2 text-xs font-medium sm:flex sm:gap-3 sm:text-[13px]">
-              <Link href="/login" className="marketing-cta inline-flex min-h-10 items-center rounded-2xl border border-white/20 px-3 text-[#d0dfe1] hover:border-white/50 hover:bg-white/5 sm:px-5">Sign in</Link>
-              <Link href="/signup" className="marketing-cta inline-flex min-h-10 items-center rounded-2xl bg-[#14b8a6] px-3 text-[#081721] hover:bg-[#70d9cf] sm:px-5">Get started</Link>
+            <nav aria-label="Account" className="hidden items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 text-[13px] font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:flex">
+              <Link href="/login" className="marketing-cta inline-flex h-9 items-center rounded-full px-4 text-[#d0dfe1] hover:bg-white/[0.06] hover:text-white">Sign in</Link>
+              <Link href="/signup" className="marketing-cta inline-flex h-9 items-center rounded-full border border-white/10 bg-white/[0.07] px-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.10)] hover:bg-white/[0.12]">Get started</Link>
             </nav>
             <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="marketing-mobile-menu" className="marketing-cta grid h-10 w-10 place-items-center rounded-xl border border-white/15 text-white hover:bg-white/5 lg:hidden">
               <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
