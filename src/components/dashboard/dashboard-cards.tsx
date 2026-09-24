@@ -656,12 +656,6 @@ export function WeekStrip({ days, today, compactNumbers = false }: {
             session gets planned, so both ways in sit right under it. */}
         <span className="ml-auto flex items-center gap-2">
           <Link
-            href="/analysis/new"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 px-2.5 py-1.5 text-[11px] font-semibold text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
-          >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> New analysis
-          </Link>
-          <Link
             href="/journal/new"
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white transition-transform duration-200 hover:-translate-y-px"
             style={{ background: TURQUOISE, boxShadow: `0 2px 12px ${alpha(TURQUOISE, 26)}` }}

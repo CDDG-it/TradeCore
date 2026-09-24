@@ -15,7 +15,7 @@ export function LandingFooter() {
           <div>
             <Link href="/" aria-label="TradingMC home" className="inline-block transition-opacity hover:opacity-80"><Image src="/tradingmc-logo.png" alt="TradingMC" width={979} height={500} className="h-9 w-auto sm:h-11" /></Link>
             <p className="mt-7 max-w-md text-base leading-[1.75] text-[#aec3c8]">The workspace for traders who want a process they can trust before, during and after the session.</p>
-            <Link href="/signup" className="mt-8 inline-flex min-h-11 items-center rounded-full bg-[#b5e5f2] px-6 text-sm font-semibold text-[#081721] transition-transform hover:-translate-y-0.5 hover:bg-white">Create account</Link>
+            <Link href="/signup" className="mt-8 inline-flex min-h-11 items-center rounded-full bg-[#14b8a6] px-6 text-sm font-semibold text-[#081721] shadow-[0_6px_22px_rgba(20,184,166,.22)] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#70d9cf]">Create account</Link>
           </div>
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">{groups.map((group) => <nav key={group.title} aria-label={group.title}><h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7be0d5]">{group.title}</h2><ul className="mt-6 space-y-3.5">{group.links.map((link) => <li key={link.href}><Link href={link.href} className="text-sm font-medium text-[#d4e3e5] transition-colors hover:text-[#aee9e2]">{link.label}</Link></li>)}</ul></nav>)}</div>
         </div>

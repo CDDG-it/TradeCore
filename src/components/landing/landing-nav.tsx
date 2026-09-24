@@ -16,13 +16,13 @@ const PRODUCT_ICONS: Record<Product["icon"], string> = {
 };
 
 function ProductIcon({ icon, className }: { icon: Product["icon"]; className?: string }) {
-  return <Image src={PRODUCT_ICONS[icon]} alt="" width={128} height={128} className={className} />;
+  return <Image src={PRODUCT_ICONS[icon]} alt="" width={128} height={128} className={className} style={{ filter: "brightness(.72) saturate(.9)" }} />;
 }
 
 function AccountCta({ onClick, className }: { onClick?: () => void; className?: string }) {
   const reduceMotion = useReducedMotion();
   return <motion.div className={className} whileHover={reduceMotion ? undefined : { y: -1, scale: 1.015 }} whileTap={reduceMotion ? undefined : { scale: .97 }}>
-    <Link href="/signup" onClick={onClick} className="marketing-cta group relative flex h-full min-h-9 w-full items-center justify-center overflow-hidden rounded-full bg-[#b5e5f2] px-4 text-sm font-semibold text-[#081721] shadow-[0_6px_22px_rgba(181,229,242,.18),inset_0_1px_0_rgba(255,255,255,.55)]">
+    <Link href="/signup" onClick={onClick} className="marketing-cta group relative flex h-full min-h-9 w-full items-center justify-center overflow-hidden rounded-full bg-[#14b8a6] px-4 text-sm font-semibold text-[#081721] shadow-[0_6px_22px_rgba(20,184,166,.28),inset_0_1px_0_rgba(255,255,255,.42)] transition-colors hover:bg-[#70d9cf]">
       {!reduceMotion && <motion.span aria-hidden className="absolute inset-y-0 w-16 -skew-x-12 bg-white/55 blur-sm" initial={{ x: -100 }} animate={{ x: 240 }} transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 2.6, ease: "easeInOut" }} />}
       <span className="relative">Create account</span>
     </Link>

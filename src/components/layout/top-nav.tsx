@@ -5,11 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { X, Settings, User as UserIcon, LogOut, ChevronDown, Plus } from "lucide-react";
+import { X, Settings, User as UserIcon, LogOut, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { PRIMARY_NAV } from "@/lib/nav";
-import { CREATE, isActive } from "@/components/layout/mobile-nav";
+import { isActive } from "@/components/layout/mobile-nav";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 /**
@@ -127,7 +127,6 @@ export function TopNav() {
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
             <div className="hidden shrink-0 items-center gap-2 lg:flex">
-              <CreateMenu />
               <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} onSignOut={signOut} />
             </div>
             {/* Phone: the profile lives top-right, the way every app does it:
@@ -203,38 +202,6 @@ function AvatarChip({ initials, size }: { initials: string; size: number }) {
         <span className="font-bold text-sidebar-foreground" style={{ fontSize: size * 0.36 }}>{initials}</span>
       </span>
     </span>
-  );
-}
-
-/** The two things a trader starts from anywhere: log a trade, plan a session. */
-function CreateMenu() {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="Create"
-        className="press group/create inline-flex h-9 items-center gap-1.5 rounded-full pl-2.5 pr-3.5 text-[13px] font-semibold text-white"
-        style={{
-          background: "linear-gradient(135deg, var(--primary) 0%, var(--ice) 100%)",
-          boxShadow: "0 6px 18px color-mix(in oklch, var(--primary) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.25)",
-        }}
-      >
-        <Plus className="size-4 transition-transform duration-150 ease-out group-data-[popup-open]/create:rotate-45" strokeWidth={2.6} />
-        New
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="bottom" align="end" sideOffset={10} className={cn("w-64", MENU_SURFACE, MENU_MOTION)}>
-        {CREATE.map((item) => (
-          <DropdownMenuItem key={item.href} render={<Link href={item.href} />} className="flex items-center gap-3 rounded-xl px-2.5 py-2.5">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary">
-              <item.icon className="size-[18px]" strokeWidth={2.1} />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[14px] font-semibold leading-tight text-foreground">{item.label}</span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">{item.hint}</span>
-            </span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
 
