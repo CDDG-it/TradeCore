@@ -2,16 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ChartCandlestick, LayoutDashboard, NotebookPen, Target, type LucideIcon } from "lucide-react";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
-import { MarketingReveal, SectionHeader } from "@/components/landing/marketing-motion";
+import { MarketingReveal } from "@/components/landing/marketing-motion";
 import { TRADER_LEVELS } from "@/lib/landing/nav";
 import { TRADER_LEVEL_BY_SLUG, TRADER_LEVEL_PAGES } from "@/lib/landing/traders";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
-
-const icons: Record<string, LucideIcon> = { dashboard: LayoutDashboard, edge: Target, therapist: NotebookPen, markets: ChartCandlestick };
 
 export function generateStaticParams() {
   return TRADER_LEVEL_PAGES.map((level) => ({ level: level.slug }));
@@ -48,11 +45,11 @@ export default async function TraderLevelPage({ params }: { params: Promise<{ le
             </MarketingReveal>
             <MarketingReveal delay={0.15} className="rounded-[28px] border border-white/10 bg-white/[0.03] p-7 sm:p-8">
               <p className="text-xs font-semibold tracking-[0.14em] text-[#8aa5ab]">WHAT THIS STAGE NEEDS</p>
-              <ol className="mt-5 space-y-4">
-                {page.needs.map((need, index) => (
-                  <li key={need} className="flex gap-4 text-sm leading-relaxed text-[#d6e4e6] sm:text-base"><span className="font-display shrink-0 tabular-nums text-[#46cabc]">0{index + 1}</span>{need}</li>
+              <ul className="mt-5 space-y-4">
+                {page.needs.map((need) => (
+                  <li key={need} className="border-l border-[#14b8a6]/50 pl-4 text-sm leading-relaxed text-[#d6e4e6] sm:text-base">{need}</li>
                 ))}
-              </ol>
+              </ul>
             </MarketingReveal>
           </div>
         </section>
@@ -61,16 +58,13 @@ export default async function TraderLevelPage({ params }: { params: Promise<{ le
         <div className="marketing-light-flow text-[#0b1120]">
           <section className="marketing-section marketing-section--mist px-6 py-20 sm:px-10 md:py-28 lg:px-12 lg:py-36">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader index="01" label="What you get" title="Four products, in the order they matter here." className="mb-14 lg:mb-18">
-                Every product is the same TradingMC. What changes by stage is what you lean on first.
-              </SectionHeader>
-              <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
+              <MarketingReveal className="mb-12 max-w-3xl"><p className="marketing-eyebrow text-[#0d817c]">What you get</p><h2 className="font-display mt-5 text-balance text-[clamp(2.2rem,5vw,4.4rem)] font-semibold leading-[1.02] tracking-[-.055em]">Four products, in the order they matter here.</h2><p className="mt-5 max-w-2xl text-base leading-relaxed text-[#4d6871]">Every product is the same TradingMC. What changes by stage is what you lean on first.</p></MarketingReveal>
+              <div className="grid grid-flow-dense gap-5 lg:grid-cols-2 lg:gap-6">
                 {page.products.map((product, index) => {
-                  const Icon = icons[product.icon];
                   return (
                     <MarketingReveal key={product.name} delay={index * 0.08} className="flex flex-col rounded-[28px] border border-[#c2dcda] bg-white/70 p-7 shadow-[0_24px_60px_rgba(27,88,92,.08)] sm:p-9">
                       <div className="flex items-center gap-4">
-                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#14b8a6]/15 text-[#0d817c]"><Icon className="h-5 w-5" /></span>
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-[#14b8a6] shadow-[0_0_0_6px_rgba(20,184,166,.12)]" aria-hidden="true" />
                         <p className="font-display text-xl font-semibold tracking-[-0.035em] text-[#102b37] sm:text-2xl">{product.name}</p>
                       </div>
                       <p className="mt-5 text-base leading-[1.65] text-[#4d6871]">{product.body}</p>
@@ -89,7 +83,7 @@ export default async function TraderLevelPage({ params }: { params: Promise<{ le
 
           <section className="marketing-section marketing-section--white px-6 py-20 sm:px-10 md:py-28 lg:px-12">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader index="02" label="Other stages" title="Not where you are?" align="stack" className="mb-10" />
+              <MarketingReveal className="mb-10"><p className="marketing-eyebrow text-[#0d817c]">Other stages</p><h2 className="font-display mt-4 text-[clamp(2rem,4vw,3.5rem)] font-semibold leading-none tracking-[-.05em]">Not where you are?</h2></MarketingReveal>
               <ul className="grid gap-4 sm:grid-cols-3">
                 {others.map((item, index) => (
                   <li key={item.slug}>

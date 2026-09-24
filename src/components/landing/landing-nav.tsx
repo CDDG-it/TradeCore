@@ -4,19 +4,19 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { BarChart3, Brain, ChevronDown, LayoutDashboard, Menu, NotebookPen, X, type LucideIcon } from "lucide-react";
 import { PRODUCTS, TRADER_LEVELS, type Product } from "@/lib/landing/nav";
-import { NAV_ICON_ASSETS } from "@/lib/nav-icons";
 
-const PRODUCT_ICON_ASSETS: Record<Product["icon"], string> = {
-  dashboard: NAV_ICON_ASSETS["/dashboard"],
-  edge: NAV_ICON_ASSETS["/psychological-edge"],
-  therapist: NAV_ICON_ASSETS["/trade-therapist"],
-  markets: NAV_ICON_ASSETS["/news-city"],
+const PRODUCT_ICONS: Record<Product["icon"], LucideIcon> = {
+  dashboard: LayoutDashboard,
+  edge: Brain,
+  therapist: NotebookPen,
+  markets: BarChart3,
 };
 
 function ProductIcon({ icon, className }: { icon: Product["icon"]; className?: string }) {
-  return <Image src={PRODUCT_ICON_ASSETS[icon]} alt="" width={72} height={72} className={className} />;
+  const Icon = PRODUCT_ICONS[icon];
+  return <Icon aria-hidden className={className} strokeWidth={1.5} />;
 }
 
 // Matches the signed-in app's top-nav rail items: a pill inside a glass rail.
@@ -109,7 +109,7 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
         <Link href="/pricing" onClick={onClose} className="block border-b border-white/10 pb-4 text-[15px] font-medium text-white">Pricing</Link>
         <div className="flex gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <Link href="/login" onClick={onClose} className="marketing-cta inline-flex min-h-11 flex-1 items-center justify-center rounded-full text-sm font-medium text-[#d0dfe1] hover:bg-white/[0.06]">Sign in</Link>
-          <Link href="/signup" onClick={onClose} className="marketing-cta inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-white/10 bg-white/[0.07] text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,.10)] hover:bg-white/[0.12]">Get started</Link>
+          <Link href="/signup" onClick={onClose} className="marketing-cta inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-[#b5e5f2] text-sm font-semibold text-[#081721] shadow-[inset_0_1px_0_rgba(255,255,255,.45)] hover:bg-white">Create account</Link>
         </div>
       </nav>
     </div>
@@ -140,7 +140,7 @@ export function LandingNav() {
           <div className="flex items-center justify-self-end gap-2 sm:gap-3">
             <nav aria-label="Account" className="hidden items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 text-[13px] font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:flex">
               <Link href="/login" className="marketing-cta inline-flex h-9 items-center rounded-full px-4 text-[#d0dfe1] hover:bg-white/[0.06] hover:text-white">Sign in</Link>
-              <Link href="/signup" className="marketing-cta inline-flex h-9 items-center rounded-full border border-white/10 bg-white/[0.07] px-4 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.10)] hover:bg-white/[0.12]">Get started</Link>
+              <Link href="/signup" className="marketing-cta inline-flex h-9 items-center rounded-full bg-[#b5e5f2] px-4 text-[#081721] shadow-[inset_0_1px_0_rgba(255,255,255,.45)] hover:bg-white">Create account</Link>
             </nav>
             <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="marketing-mobile-menu" className="marketing-cta grid h-10 w-10 place-items-center rounded-xl border border-white/15 text-white hover:bg-white/5 lg:hidden">
               <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>

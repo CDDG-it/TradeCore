@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const questions = [
   { q: "Why is TradingMC free right now?", a: "We are opening every feature during launch so traders can use the full product and help shape what comes next. No card is required." },
   { q: "When will billing begin?", a: "There is no billing date yet. We will announce paid access clearly before anything changes; you will never be charged automatically for joining now." },
-  { q: "How does annual billing work?", a: "Annual plans include two months free: $100 for Basic, $250 for Plus and $450 for Pro, billed once per year." },
+  { q: "How does annual billing work?", a: "Annual plans include three months free: $100 for Basic, $180 for Plus and $315 for Pro, billed once per year." },
   { q: "Can I change plans later?", a: "Yes. Once billing launches, you will be able to upgrade or downgrade as your accounts and workflow change." },
   { q: "Is my data mine?", a: "Yes. Your trades, plans, reviews and screenshots remain scoped to your account and are protected by row-level access controls." },
 ] as const;
