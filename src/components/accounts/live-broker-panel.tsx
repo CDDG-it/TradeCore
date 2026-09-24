@@ -48,7 +48,14 @@ async function send(url: string, method: "POST" | "PATCH" | "DELETE", body?: unk
   return typeof data.error === "string" ? data.error : "Something went wrong. Try again.";
 }
 
-export function LiveBrokerPanel({ hidden }: { hidden: boolean }) {
+export function LiveBrokerPanel({
+  hidden,
+  load,
+}: {
+  hidden: boolean;
+  /** Overridden by the development preview to render sample accounts. */
+  load?: () => Promise<BrokerAccountsResponse>;
+}) {
   const [data, setData] = useState<BrokerAccountsResponse | null>(null);
   const [lastGood, setLastGood] = useState<Record<string, AccountSnapshot>>({});
   const [loadError, setLoadError] = useState(false);
@@ -62,9 +69,14 @@ export function LiveBrokerPanel({ hidden }: { hidden: boolean }) {
     if (inFlight.current) return;
     inFlight.current = true;
     try {
-      const res = await fetch("/api/broker/accounts", { cache: "no-store" });
-      if (!res.ok) throw new Error(String(res.status));
-      const next = (await res.json()) as BrokerAccountsResponse;
+      let next: BrokerAccountsResponse;
+      if (load) {
+        next = await load();
+      } else {
+        const res = await fetch("/api/broker/accounts", { cache: "no-store" });
+        if (!res.ok) throw new Error(String(res.status));
+        next = (await res.json()) as BrokerAccountsResponse;
+      }
       setData(next);
       setLoadError(false);
       setLastGood((prev) => {
@@ -97,7 +109,7 @@ export function LiveBrokerPanel({ hidden }: { hidden: boolean }) {
     params.delete("reason");
     const rest = params.toString();
     window.history.replaceState({}, "", window.location.pathname + (rest ? `?${rest}` : ""));
-  }, []);
+  }, [load]);
 
   useEffect(() => {
     refresh();
