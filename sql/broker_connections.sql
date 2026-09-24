@@ -19,7 +19,7 @@
 -- One login (username/password) at Tradovate. One login can hold several
 -- accounts (eval, funded, sim).
 create table if not exists broker_connections (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null references auth.users(id) on delete cascade,
   -- 'tradovate' for real logins; 'mock' only exists in local development.
   broker        text not null default 'tradovate' check (broker in ('tradovate', 'mock')),
@@ -57,7 +57,7 @@ create policy "Users manage own broker credentials" on broker_credentials
 
 -- Accounts discovered under a connection.
 create table if not exists broker_accounts (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   connection_id uuid not null references broker_connections(id) on delete cascade,
   user_id       uuid not null references auth.users(id) on delete cascade,
   environment   text not null check (environment in ('live', 'demo')),
