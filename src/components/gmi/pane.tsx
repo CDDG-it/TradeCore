@@ -100,7 +100,7 @@ export function Pane({
   children: React.ReactNode;
 }) {
   return (
-    <section className={cn("relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-border/55 bg-card/65 shadow-[0_14px_36px_-28px_rgba(0,0,0,.85),inset_0_1px_0_rgba(255,255,255,.025)]", className)}>
+    <section className={cn("gmi-pane relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[22px] border border-white/[.07] bg-[linear-gradient(145deg,color-mix(in_oklch,var(--card)_88%,transparent),color-mix(in_oklch,var(--background)_78%,transparent))] shadow-[0_18px_48px_-30px_rgba(0,0,0,.9),inset_0_1px_0_rgba(255,255,255,.035)]", className)}>
       {(label || right) && (
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/40 px-3 py-[7px]">
           <span className="flex min-w-0 items-baseline gap-2">

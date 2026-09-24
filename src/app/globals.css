@@ -1386,6 +1386,18 @@ html:has(.marketing-page) { position: relative; }
   100% { opacity: 0; transform: translateY(-6px); }
 }
 
+/* Global Markets context ribbon: deliberately slow so it reads as ambient
+   orientation, not a live-price ticker. */
+@keyframes gmi-marquee {
+  to { transform: translateX(calc(-50% - 1rem)); }
+}
+.gmi-marquee-track {
+  animation: gmi-marquee 28s linear infinite;
+}
+.gmi-marquee:hover .gmi-marquee-track {
+  animation-play-state: paused;
+}
+
 /* Reduced motion means fewer and gentler animations, not none: decorative loops
    stop, position changes are dropped in the components, colour feedback stays. */
 @media (prefers-reduced-motion: reduce) {
@@ -1399,5 +1411,6 @@ html:has(.marketing-page) { position: relative; }
   .marketing-nav-content[data-starting-style], .marketing-nav-content[data-ending-style] { transform: none; }
   .marketing-mobile-menu { transform: none; }
   .marketing-callout { animation: none; opacity: 1; }
+  .gmi-marquee-track { animation: none; }
   figcaption .marketing-callout:not(:first-child) { opacity: 0; }
 }
