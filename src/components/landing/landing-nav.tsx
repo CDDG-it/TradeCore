@@ -6,18 +6,16 @@ import Link from "next/link";
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { PRODUCTS, TRADER_LEVELS, type Product } from "@/lib/landing/nav";
-import { NAV_ICONS } from "@/lib/nav-icons";
 
-const productIcons: Record<Product["icon"], keyof typeof NAV_ICONS> = {
-  dashboard: "/dashboard",
-  edge: "/psychological-edge",
-  therapist: "/trade-therapist",
-  markets: "/news-city",
+const productIcons: Record<Product["icon"], string> = {
+  dashboard: "/product-icons/dashboard.png",
+  edge: "/product-icons/brain.png",
+  therapist: "/product-icons/therapist.png",
+  markets: "/product-icons/markets.png",
 };
 
 function ProductIcon({ icon, className }: { icon: Product["icon"]; className?: string }) {
-  const Icon = NAV_ICONS[productIcons[icon]];
-  return <Icon className={className} strokeWidth={1.8} />;
+  return <Image src={productIcons[icon]} alt="" width={72} height={72} className={className} />;
 }
 
 // Matches the signed-in app's top-nav rail items: a pill inside a glass rail.
@@ -31,7 +29,7 @@ function ProductsPanel() {
         {PRODUCTS.map((product) => (
             <li key={product.href}>
               <NavigationMenu.Link render={<Link href={product.href} />} className="marketing-nav-card flex h-full gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 hover:border-[#14b8a6]/50 hover:bg-[#14b8a6]/[0.08]">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#14b8a6]/15 text-[#7be0d5]"><ProductIcon icon={product.icon} className="size-5" /></span>
+                <span className="grid size-[72px] shrink-0 place-items-center"><ProductIcon icon={product.icon} className="size-[72px] object-contain" /></span>
                 <span className="min-w-0"><span className="block text-sm font-semibold text-white">{product.name}</span><span className="mt-1 block text-xs leading-relaxed text-[#9db6bb]">{product.tagline}</span></span>
               </NavigationMenu.Link>
             </li>
@@ -95,7 +93,7 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
           <p className="marketing-nav-label">Products</p>
           <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
             {PRODUCTS.map((product) => (
-              <li key={product.href}><Link href={product.href} onClick={onClose} className="flex items-center gap-3 py-3.5"><span className="grid size-9 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-[#7be0d5]"><ProductIcon icon={product.icon} className="size-[18px]" /></span><span><span className="block text-[15px] font-medium text-white">{product.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#8aa5ab]">{product.tagline}</span></span></Link></li>
+              <li key={product.href}><Link href={product.href} onClick={onClose} className="flex items-center gap-3 py-3.5"><span className="grid size-14 shrink-0 place-items-center"><ProductIcon icon={product.icon} className="size-14 object-contain" /></span><span><span className="block text-[15px] font-medium text-white">{product.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#8aa5ab]">{product.tagline}</span></span></Link></li>
             ))}
           </ul>
         </div>

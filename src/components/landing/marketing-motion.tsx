@@ -3,6 +3,7 @@
 import { useRef, type CSSProperties, type ReactNode } from "react";
 import { motion, useInView, useReducedMotion, type Transition } from "motion/react";
 import { MindscoreTrend } from "@/components/mind-score/mindscore-trend";
+import { BrainScore } from "@/components/mind-score/brain-score";
 
 /**
  * Shared motion vocabulary for the public page. Every reveal on the page uses
@@ -226,9 +227,9 @@ export function MindscoreAssembly() {
           <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#54737b]">MC Mindscore</span>
           <span className="rounded-full border border-[#a8cfcb] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#167c79]">Illustrative data</span>
         </div>
-        <div className="my-7 flex items-end gap-5">
-          <span className="font-display text-[clamp(5rem,13vw,8rem)] font-semibold leading-[0.85] tracking-[-0.09em] tabular-nums text-[#102b37]">74</span>
-          <span className="mb-1 border-l border-[#a8cfcb] pl-5 text-sm font-semibold text-[#167c79]">Solid<br /><span className="font-normal text-[#68848b]">out of 100</span></span>
+        <div className="my-7 flex items-center gap-4 sm:gap-6">
+          <BrainScore score={74} color="#0d817c" className="size-[120px] sm:size-[150px]" />
+          <div><span className="font-display text-[clamp(4rem,10vw,7rem)] font-semibold leading-[0.85] tracking-[-0.09em] tabular-nums text-[#102b37]">74</span><span className="mt-2 block text-sm font-semibold text-[#167c79]">Solid</span></div>
         </div>
         <div>
           <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.12em] text-[#54737b]"><span>Score over time</span><span>Example period</span></div>

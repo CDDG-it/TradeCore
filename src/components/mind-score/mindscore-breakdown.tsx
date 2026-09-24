@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AccentPanel } from "@/components/ui/accent-panel";
+import { BrainScore } from "@/components/mind-score/brain-score";
 import { MindscoreTrend } from "@/components/mind-score/mindscore-trend";
 import { computeMindScoreTrend } from "@/lib/mind-score/trend";
 import {
@@ -16,24 +16,12 @@ import {
   type MindPeriod, type MindInputs, type MindComponent,
 } from "@/lib/mind-score/mind-score";
 
-const TURQUOISE = "var(--primary)";
-const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
-
-const PERIOD_LABEL: Record<MindPeriod, string> = { week: "This week", month: "This month", all: "All time" };
-
-/** Plain-language identity for each part of the score. */
-const PART_META: Record<MindComponent["key"], { title: string; sub: string; accent: string }> = {
-  rules:      { title: "Following your rules", sub: "Sticking to your plan on every trade",      accent: "var(--primary)" },
-  execution:  { title: "Execution",            sub: "Trades you took to plan and to your edge",   accent: "var(--ice)" },
-  habits:     { title: "Daily habits",         sub: "The routines you keep away from the charts", accent: "var(--ice)" },
-  objectives: { title: "Doing the work",       sub: "Reviews, prep and logging your best trade",  accent: "var(--primary)" },
-  goals:      { title: "Goal progress",        sub: "Current goals measured against their own calendar", accent: "var(--ice)" },
+const PERIOD_LABEL: Record<MindPeriod, string> = { week: "Week", month: "Month", all: "All time" };
+const PART_META: Record<MindComponent["key"], string> = {
+  rules: "Rule adherence", execution: "Execution", habits: "Daily habits",
+  objectives: "Reflection work", goals: "Goal progress",
 };
 
-/**
- * The MC Mindscore: one number, its history, five plain-language parts.
- * Laid out to fit a single screen: no internal scrolling, no jargon.
- */
 export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
   const [data, setData] = useState<MindInputs | null>(seed ?? null);
   const [period, setPeriod] = useState<MindPeriod>("month");
@@ -53,158 +41,88 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
   const score = scores?.[period] ?? null;
   const trend = useMemo(() => (data && score ? computeMindScoreTrend(data, period, score) : []), [data, period, score]);
 
-  if (!scores || !score) {
-    return (
-      <div className="flex items-center justify-center h-56">
-        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  if (!score) return <div className="flex h-56 items-center justify-center"><Loader2 className="size-5 animate-spin text-muted-foreground" /></div>;
 
-  const c = score.pending ? TURQUOISE : bandColorFor(score.total);
+  const current = score.pending ? null : score.total;
+  const color = current === null ? "var(--primary)" : bandColorFor(current);
 
   return (
-    <div className="space-y-3">
-      {/* Period switch: each shows its own score */}
-      <div className="grid grid-cols-3 gap-2">
-        {(["week", "month", "all"] as MindPeriod[]).map((p) => {
-          const s = scores[p];
-          const active = period === p;
-          const pc = s.pending ? TURQUOISE : bandColorFor(s.total);
-          return (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPeriod(p)}
-              className={cn(
-                "flex items-baseline justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-left transition-colors",
-                active ? "border-primary/50 bg-primary/5" : "border-border hover:border-primary/30 hover:bg-muted/30"
-              )}
-            >
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{PERIOD_LABEL[p]}</span>
-              <span className="text-lg font-black tabular-nums leading-none" style={{ color: pc }}>
-                {s.pending ? "·" : s.total == null ? "-" : s.total}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* The score and the reconstructed readings for the selected window. */}
-      <div
-        className="relative overflow-hidden rounded-2xl border p-5 pl-6"
-        style={{
-          borderColor: alpha(c, 30),
-          background: alpha(c, 6),
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 32px -18px rgba(0,0,0,0.8)",
-        }}
-      >
-        <span
-          aria-hidden
-          className="absolute inset-y-0 left-0 w-1"
-          style={{ background: `linear-gradient(180deg, ${c}, ${alpha(c, 12)})` }}
-        />
-        <div className="relative flex items-center gap-3.5">
-          <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border"
-            style={{ borderColor: alpha(c, 40), background: alpha(c, 12) }}
-          >
-            <span className="text-2xl font-black tabular-nums leading-none" style={{ color: c }}>
-              {score.pending ? "·" : score.total == null ? "-" : score.total}
-            </span>
+    <div className="grid gap-3 lg:h-[calc(100dvh-14rem)] lg:min-h-[500px] lg:grid-cols-[minmax(0,1.12fr)_minmax(0,.88fr)]">
+      <section className="relative flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card p-4 shadow-[0_8px_30px_-18px_rgba(0,0,0,.5)] sm:p-5" aria-label="MC Mindscore trend">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">MC Mindscore</p>
+          <div className="flex items-center gap-1 rounded-full border border-border/70 bg-muted/25 p-1" role="group" aria-label="Mindscore period">
+            {(["week", "month", "all"] as MindPeriod[]).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setPeriod(option)}
+                aria-pressed={period === option}
+                className={cn("rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors", period === option ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+              >{PERIOD_LABEL[option]}</button>
+            ))}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold" style={{ color: c }}>
-              {score.pending
-                ? `A fresh ${period === "week" ? "week" : period === "month" ? "month" : "period"}`
-                : score.total == null ? "No data yet" : score.band.label}
-            </p>
-            <p className="text-[11px] leading-snug text-muted-foreground">
-              {score.pending
-                ? "Your score is still being calculated: it builds up as you log trades, tick your habits and do the work."
-                : score.band.description}
+        </div>
+
+        <div className="flex items-center gap-4 border-b border-border/60 py-4 sm:gap-6">
+          <BrainScore score={current} color={color} className="size-28 sm:size-32 lg:size-[clamp(120px,18vh,170px)]" />
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2">
+              <span className="font-heading text-[clamp(3.5rem,7vw,6rem)] font-black leading-none tracking-[-0.07em] tabular-nums" style={{ color }}>{current ?? "·"}</span>
+              {current !== null && <span className="text-xs font-semibold text-muted-foreground">MC</span>}
+            </div>
+            <p className="mt-1 text-sm font-semibold" style={{ color }}>{score.pending ? "A fresh period" : current === null ? "No data yet" : score.band.label}</p>
+            <p className="mt-1 max-w-[270px] text-xs leading-relaxed text-muted-foreground">
+              {score.pending ? "Your score builds as you log trades, habits and reviews." : current === null ? "Start logging to see your process take shape." : score.band.description}
             </p>
           </div>
         </div>
-        <div className="relative mt-5 border-t border-border/60 pt-4">
-          <div className="mb-2 flex items-baseline justify-between gap-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Score over time</p>
-            <p className="text-[10px] text-muted-foreground">{PERIOD_LABEL[period]}</p>
+
+        <div className="mt-auto min-h-0 pt-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold text-foreground">Your score over time</p>
+            <span className="text-[10px] font-medium text-muted-foreground">{PERIOD_LABEL[period]}</span>
           </div>
-          <MindscoreTrend points={trend} color={c} />
-          {!trend.some((point) => point.value !== null) && <p className="mt-1 text-xs text-muted-foreground">Your curve appears as you log activity.</p>}
+          <div className="relative">
+            <MindscoreTrend points={trend} color={color} />
+            {!trend.some((point) => point.value !== null) && <p className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-xs text-muted-foreground">The curve appears when this period has activity.</p>}
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* The five parts + the work that lifts the score, side by side */}
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 md:grid-cols-2">
-        <AccentPanel accent="primary" eyebrow="Breakdown" title="What makes up the score">
-          <div className="mt-4 space-y-2">
-          {score.components.map((comp) => {
-            const meta = PART_META[comp.key];
-            const has = comp.applicable && comp.value != null;
-            const value = comp.value ?? 0;
-            const accent = score.pending || !has ? "var(--muted-foreground)" : meta.accent;
-            return (
-              <div key={comp.key} className="rounded-lg border border-border bg-card px-3 py-2">
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-xs font-semibold truncate">{meta.title}</p>
-                  <span className="text-xs font-black tabular-nums shrink-0" style={{ color: accent }}>
-                    {has ? `${value}%` : "-"}
-                  </span>
-                </div>
-                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted-foreground/12">
-                  <div
-                    className="h-full rounded-full transition-[width] duration-700"
-                    style={{ width: `${has ? value : 0}%`, background: accent }}
-                  />
-                </div>
-                <p className="mt-1 text-[10px] leading-snug text-muted-foreground">{meta.sub}</p>
-                <p className="mt-1 text-[10px] tabular-nums text-muted-foreground/75">
-                  {has ? `${Math.round(comp.effectiveWeight)}% effective weight · ${comp.contribution.toFixed(1)} points` : "No measurable data · weight shared across the other parts"}
-                </p>
-              </div>
-            );
-          })}
+      <div className="grid min-h-0 gap-3 lg:grid-rows-[minmax(0,1.12fr)_minmax(0,.88fr)]">
+        <section className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card p-4" aria-label="Mindscore breakdown">
+          <div className="flex items-baseline justify-between gap-3">
+            <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">Breakdown</p><h2 className="mt-1 text-base font-semibold tracking-tight">What makes up your score</h2></div>
+            <span className="text-[10px] text-muted-foreground">5 signals</span>
           </div>
-          <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
-            Goals use progress against elapsed time in each active goal window, including in the all-time view. All goal types count, including win rate and net R. Without a measurable active goal, its 10% weight is shared across the other parts.
-          </p>
-        </AccentPanel>
-
-        <AccentPanel
-          accent="cyan"
-          eyebrow="Next steps"
-          title="What lifts your score"
-        >
-          <div className="mt-4 space-y-1.5">
-            {score.objectives.map((o) => {
-              const done = o.rate >= 1;
-              const capped = Math.min(o.progress, o.target);
-              const pct = Math.round(o.rate * 100);
-              return (
-                <Link
-                  key={o.key}
-                  href={o.href}
-                  className="block rounded-md border border-border/70 px-2.5 py-1.5 transition-colors hover:border-primary/30 hover:bg-muted/30"
-                >
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[11px] font-medium truncate">{o.label}</span>
-                    <span className={cn("text-[10px] font-bold tabular-nums shrink-0", done ? "text-success" : "text-muted-foreground")}>
-                      {capped}/{o.target}
-                    </span>
-                  </div>
-                  <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted-foreground/12">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct}%`, background: done ? "var(--color-success)" : TURQUOISE }}
-                    />
-                  </div>
-                </Link>
-              );
+          <div className="mt-2 flex-1 divide-y divide-border/60">
+            {score.components.map((part) => {
+              const value = part.applicable && !score.pending ? part.value : null;
+              return <div key={part.key} className="py-1.5 first:pt-0 last:pb-0">
+                <div className="flex items-center justify-between gap-3 text-xs"><span className="truncate font-medium text-foreground/85">{PART_META[part.key]}</span><span className="shrink-0 font-bold tabular-nums" style={{ color: value === null ? "var(--muted-foreground)" : color }}>{value === null ? "—" : `${value}%`}</span></div>
+                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted-foreground/15"><div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${value ?? 0}%`, background: color }} /></div>
+              </div>;
             })}
           </div>
-        </AccentPanel>
+          <p className="mt-2 text-[10px] leading-snug text-muted-foreground">Each part is weighted by the work you can measure in this period.</p>
+        </section>
+
+        <section className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card p-4 sm:p-5" aria-label="Mindscore next steps">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ice">Next steps</p>
+          <h2 className="mt-1 text-base font-semibold tracking-tight">What lifts your score</h2>
+          <div className="mt-3 divide-y divide-border/60">
+            {score.objectives.map((objective) => {
+              const done = objective.rate >= 1;
+              const progress = Math.min(objective.progress, objective.target);
+              return <Link key={objective.key} href={objective.href} className="group flex items-center justify-between gap-3 py-2 text-xs transition-colors hover:text-primary first:pt-0 last:pb-0">
+                <span className="min-w-0 truncate font-medium">{objective.label}</span>
+                <span className={cn("shrink-0 font-bold tabular-nums", done ? "text-success" : "text-muted-foreground")}>{progress}/{objective.target}<span aria-hidden="true" className="ml-2 font-normal text-muted-foreground/50 group-hover:text-primary">↗</span></span>
+              </Link>;
+            })}
+          </div>
+          {score.objectives.length === 0 && <p className="mt-3 text-xs text-muted-foreground">Your next steps appear as you begin logging.</p>}
+        </section>
       </div>
     </div>
   );

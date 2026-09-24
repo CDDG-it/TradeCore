@@ -11,6 +11,7 @@ import { resultColor, resultBands, netRColor, inOrder, alpha } from "@/lib/journ
 import { habitAccent } from "@/lib/habits";
 import { mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
+import { BrainScore } from "@/components/mind-score/brain-score";
 import type { TradingGoal, TradeJournalEntry, Habit } from "@/lib/types";
 
 const TURQUOISE = "var(--primary)";
@@ -83,7 +84,7 @@ function PeriodToggle({ value, onChange, accent }: {
 }
 
 /* ── MC mind score: the readiness number, and nothing else ───────────────
-   One figure, its band, and a calibrated 0–100 scale. What the score is
+   One figure, its band, and a brain that fills with the score. What the score is
    made of (rules, execution, habits, objectives) is a study in its own right,
    not something to scan past on a dashboard, so it lives one click away on the
    breakdown page together with the calculation and the week / month / all-time
@@ -117,34 +118,28 @@ export function MindScoreOrb({ score, period, onPeriodChange, className, compact
 
   const color = pending ? TURQUOISE : hasData ? bandColorFor(target) : "var(--muted-foreground)";
   return (
-    <div className={cn(CARD_BASE, "group flex flex-col", className)}>
+    <div className={cn(CARD_BASE, "group flex h-[clamp(172px,22vh,206px)] flex-col", className)}>
       <CardFx accent={color} />
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
         <PeriodToggle value={period} onChange={onPeriodChange} accent={TURQUOISE} />
       </div>
 
-      <div className="mt-3 flex shrink-0 grow items-end justify-between gap-3 short:mt-1.5">
-        <div className="flex items-baseline gap-2.5">
+      <div className="flex min-h-0 grow items-center gap-2">
+        <BrainScore score={hasData ? Math.round(prog * 100) : null} color={color} className="size-[88px] short:size-[72px]" />
+        <div className="min-w-0">
           <p className={cn("font-black leading-none tracking-tight tabular-nums", compactNumbers ? "text-[34px] short:text-[24px]" : "text-[40px] short:text-[28px]")} style={{ color }}>
             {pending ? "·" : hasData ? display : "-"}
           </p>
-          <p className="text-[11px] font-medium" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
+          <p className="mt-1 text-[11px] font-medium" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
             {pending ? (period === "week" ? "New week" : "New month") : hasData ? score!.band.label : "No data yet"}
           </p>
         </div>
-        <span className="pb-0.5 text-[10px] font-medium tabular-nums text-muted-foreground/70">/ 100</span>
       </div>
-      <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-muted-foreground/15 short:mt-2" role="progressbar" aria-label="MC Mindscore" aria-valuemin={0} aria-valuemax={100} aria-valuenow={hasData ? target : undefined}>
-        <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${hasData ? prog * 100 : 0}%`, background: color }} />
-        {[20, 40, 60, 80].map((tick) => <span key={tick} aria-hidden className="absolute inset-y-0 w-px bg-card/80" style={{ left: `${tick}%` }} />)}
-      </div>
-      <div className="mt-1 flex justify-between text-[9px] font-medium tabular-nums text-muted-foreground/60"><span>0</span><span>50</span><span>100</span></div>
 
       {pending && (
-        <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
-          Your score for this {period} is still being calculated: it builds as you
-          log trades, tick habits and do the work.
+        <p className="text-[10px] leading-snug text-muted-foreground">
+          Builds as you log trades, habits and reviews.
         </p>
       )}
 
