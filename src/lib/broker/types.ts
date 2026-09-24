@@ -5,9 +5,13 @@ export type BrokerKind = "tradovate" | "mock";
 export type BrokerEnvironment = "live" | "demo";
 export type ConnectionState = "connected" | "auth_failed" | "error";
 
+export type AuthMethod = "password" | "oauth";
+
 export interface BrokerConnectionView {
   id: string;
   broker: BrokerKind;
+  /** "oauth" connections never stored a password. */
+  auth_method: AuthMethod;
   label: string;
   username_hint: string;
   state: ConnectionState;
@@ -39,6 +43,8 @@ export type BrokerSetupIssue = "missing_tables" | "missing_key" | "not_configure
 
 export interface BrokerAccountsResponse {
   setup: BrokerSetupIssue | null;
+  /** True when the Tradovate OAuth flow is available, so the UI offers it. */
+  oauth_available: boolean;
   connections: BrokerConnectionView[];
   accounts: AccountSnapshot[];
 }

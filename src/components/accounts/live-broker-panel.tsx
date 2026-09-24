@@ -54,6 +54,7 @@ export function LiveBrokerPanel({ hidden }: { hidden: boolean }) {
   const [loadError, setLoadError] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [connectOpen, setConnectOpen] = useState(false);
+  const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null);
   const [passwordFor, setPasswordFor] = useState<BrokerConnectionView | null>(null);
   const inFlight = useRef(false);
 
@@ -78,6 +79,24 @@ export function LiveBrokerPanel({ hidden }: { hidden: boolean }) {
     } finally {
       inFlight.current = false;
     }
+  }, []);
+
+  // The OAuth callback returns here with its result in the address bar.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("broker");
+    if (!result) return;
+    setOutcome(
+      result === "connected"
+        ? { ok: true, text: "Tradovate connected. Your accounts are loading." }
+        : result === "cancelled"
+        ? { ok: false, text: "Authorisation cancelled." }
+        : { ok: false, text: params.get("reason") || "The authorisation did not complete." }
+    );
+    params.delete("broker");
+    params.delete("reason");
+    const rest = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (rest ? `?${rest}` : ""));
   }, []);
 
   useEffect(() => {
@@ -107,6 +126,7 @@ export function LiveBrokerPanel({ hidden }: { hidden: boolean }) {
       : null;
 
   const setup = data?.setup ?? null;
+  const oauthAvailable = data?.oauth_available ?? false;
   const canConnect = data !== null && setup === null;
 
   return (
@@ -135,7 +155,12 @@ export function LiveBrokerPanel({ hidden }: { hidden: boolean }) {
           )}
           <button
             type="button"
-            onClick={() => setConnectOpen(true)}
+            onClick={() => {
+              // OAuth leaves the app: the trader signs in at Tradovate itself
+              // and we never see the password.
+              if (oauthAvailable) window.location.href = "/api/broker/oauth/start";
+              else setConnectOpen(true);
+            }}
             disabled={!canConnect}
             className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-all hover:-translate-y-px hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
           >
@@ -143,6 +168,20 @@ export function LiveBrokerPanel({ hidden }: { hidden: boolean }) {
           </button>
         </div>
       </div>
+
+      {outcome && (
+        <div
+          className={cn(
+            "flex items-start justify-between gap-3 rounded-xl border p-3 text-xs",
+            outcome.ok ? "border-success/40 bg-success/5 text-success" : "border-destructive/40 bg-destructive/5 text-destructive"
+          )}
+        >
+          <span>{outcome.text}</span>
+          <button type="button" onClick={() => setOutcome(null)} className="shrink-0 opacity-60 hover:opacity-100">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {data === null && !loadError && (
         <div className="flex h-24 items-center justify-center rounded-xl border border-border/50 bg-card">
@@ -163,7 +202,9 @@ export function LiveBrokerPanel({ hidden }: { hidden: boolean }) {
           <ShieldCheck className="mx-auto mb-2 size-5 text-primary" />
           <p className="text-sm font-medium">See every prop account live, in one place</p>
           <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
-            Connect the Tradovate login your firm gave you. Balances, equity and P&L update every 15 seconds. Read-only: nothing here can place or change an order.
+            {oauthAvailable
+              ? "You sign in at Tradovate itself and authorise TradingMC there, so your password never reaches us. Balances, equity and P&L update every 15 seconds. Read-only: nothing here can place or change an order."
+              : "Connect the Tradovate login your firm gave you. Balances, equity and P&L update every 15 seconds. Read-only: nothing here can place or change an order."}
           </p>
         </div>
       )}
@@ -306,6 +347,11 @@ function ConnectionList({
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">
                   {c.label} <span className="font-mono text-xs text-muted-foreground">{c.username_hint}</span>
+                  {c.auth_method === "oauth" && (
+                    <span className="ml-2 rounded-full bg-success/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-success">
+                      no password stored
+                    </span>
+                  )}
                   {c.broker === "mock" && <span className="ml-2 text-[10px] uppercase text-muted-foreground">dev mock</span>}
                 </p>
                 <p className="text-[11px]">
@@ -324,9 +370,19 @@ function ConnectionList({
                   </>
                 ) : (
                   <>
-                    <Button size="xs" variant={c.state === "auth_failed" ? "default" : "ghost"} onClick={() => onPassword(c)}>
-                      <KeyRound /> {c.state === "auth_failed" ? "Re-enter password" : "Password"}
-                    </Button>
+                    {c.auth_method === "oauth" ? (
+                      <Button
+                        size="xs"
+                        variant={c.state === "auth_failed" ? "default" : "ghost"}
+                        onClick={() => (window.location.href = "/api/broker/oauth/start")}
+                      >
+                        <ShieldCheck /> Reauthorise
+                      </Button>
+                    ) : (
+                      <Button size="xs" variant={c.state === "auth_failed" ? "default" : "ghost"} onClick={() => onPassword(c)}>
+                        <KeyRound /> {c.state === "auth_failed" ? "Re-enter password" : "Password"}
+                      </Button>
+                    )}
                     <Button size="icon-xs" variant="ghost" onClick={() => setConfirming(c.id)} aria-label={`Remove ${c.label}`}>
                       <Trash2 />
                     </Button>
