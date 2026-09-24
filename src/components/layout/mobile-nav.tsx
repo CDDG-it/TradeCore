@@ -60,7 +60,14 @@ function TabIcon({ tab, active }: { tab: (typeof PRIMARY_NAV)[number]; active: b
         "relative h-[30px] w-[30px] transition-[filter,opacity,transform] duration-150",
         active ? "scale-105 opacity-100" : "opacity-55 grayscale-[35%]"
       )}>
-        <Image src={iconSrc} alt="" fill sizes="30px" className="object-contain" />
+        <Image
+          src={iconSrc}
+          alt=""
+          fill
+          sizes="30px"
+          className="object-contain"
+          style={{ filter: active ? "brightness(.72) saturate(.9)" : "brightness(.55) saturate(.65) grayscale(.2)" }}
+        />
       </span>
       <span
         aria-hidden
