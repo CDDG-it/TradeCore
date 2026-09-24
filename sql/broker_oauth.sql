@@ -30,3 +30,21 @@ alter table broker_credentials add column if not exists refresh_token text;
 
 -- A password connection always has a secret; an OAuth one never does.
 alter table broker_credentials alter column secret drop not null;
+
+-- ── One account belongs to one trader, once ──────────────────────────
+-- A trader with accounts at several prop firms has several Tradovate logins,
+-- so several connections, which is fine. But reconnecting the same firm used
+-- to create a second copy of the same accounts, and the totals counted them
+-- twice. Uniqueness therefore belongs to the trader, not the connection: a
+-- reconnect now moves the existing accounts to the new connection instead of
+-- duplicating them.
+alter table broker_accounts drop constraint if exists broker_accounts_connection_id_environment_external_id_key;
+
+do $$
+begin
+  alter table broker_accounts
+    add constraint broker_accounts_user_env_external_key
+    unique (user_id, environment, external_id);
+exception
+  when duplicate_table or duplicate_object then null;
+end $$;

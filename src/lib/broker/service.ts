@@ -139,9 +139,27 @@ async function discoverAccounts(
       external_id: a.id,
       name: a.name,
     })),
-    { onConflict: "connection_id,environment,external_id" }
+    // Keyed on the trader, not the connection: reconnecting a firm moves its
+    // accounts to the new connection rather than duplicating them.
+    { onConflict: "user_id,environment,external_id" }
   );
   if (error) throw new BrokerError("Could not save the discovered accounts", 500);
+  await dropEmptyConnections(supabase, connectionId);
+}
+
+/**
+ * Removes connections that no longer hold any account. That happens when a
+ * trader reconnects a firm: the accounts move to the fresh connection and the
+ * superseded one is left empty. The connection just used is never touched,
+ * since its accounts may still be loading.
+ */
+async function dropEmptyConnections(supabase: SupabaseClient, keepId: string) {
+  const { data: conns } = await supabase.from("broker_connections").select("id");
+  const { data: accts } = await supabase.from("broker_accounts").select("connection_id");
+  if (!conns || !accts) return;
+  const inUse = new Set(accts.map((a) => a.connection_id));
+  const stale = conns.map((c) => c.id).filter((id) => id !== keepId && !inUse.has(id));
+  if (stale.length > 0) await supabase.from("broker_connections").delete().in("id", stale);
 }
 
 export async function createConnection(
