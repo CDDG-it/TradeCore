@@ -300,7 +300,7 @@ function Figure({ label, value, color }: { label: string; value: string; color?:
 
 function SetupNotice({ issue }: { issue: NonNullable<BrokerAccountsResponse["setup"]> }) {
   const text = {
-    missing_tables: "Live accounts need their database tables. Run sql/broker_connections.sql in the Supabase SQL editor once.",
+    missing_tables: "Live accounts need a database update. Run broker_connections.sql, broker_hardening.sql and broker_oauth.sql from the sql folder in the Supabase SQL editor.",
     missing_key: "Secure credential storage is not configured on the server yet (BROKER_ENCRYPTION_KEY).",
     not_configured: "The Tradovate app credentials are not configured on the server yet.",
   }[issue];

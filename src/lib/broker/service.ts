@@ -78,6 +78,11 @@ function isMissingTable(error: { code?: string; message?: string } | null): bool
   return !!error && (error.code === "42P01" || error.code === "PGRST205" || /does not exist|could not find the table/i.test(error.message ?? ""));
 }
 
+/** A column the code needs but the database has not been migrated for yet. */
+function isMissingColumn(error: { code?: string } | null): boolean {
+  return error?.code === "42703";
+}
+
 /* ── Login rate limit ──────────────────────────────────────────────────
    Each connect / password update is a real Tradovate login. Capping them per
    user protects the trader's Tradovate account from lockout and stops this
@@ -105,8 +110,17 @@ async function takeLoginAttempt(supabase: SupabaseClient) {
 
 export async function setupIssue(supabase: SupabaseClient): Promise<BrokerSetupIssue | null> {
   if (!hasEncryptionKey()) return "missing_key";
-  const { error } = await supabase.from("broker_connections").select("id").limit(1);
-  if (isMissingTable(error)) return "missing_tables";
+  // Probe every table and column this code reads. A half-applied migration
+  // would otherwise surface as a failed load with nothing to act on; this way
+  // the panel says which file still has to be run.
+  const [connections, credentials, audit] = await Promise.all([
+    supabase.from("broker_connections").select("id, auth_method").limit(1),
+    supabase.from("broker_credentials").select("connection_id, refresh_token, wrapped_key").limit(1),
+    supabase.from("broker_audit_log").select("id").limit(1),
+  ]);
+  for (const { error } of [connections, credentials, audit]) {
+    if (isMissingTable(error) || isMissingColumn(error)) return "missing_tables";
+  }
   if (!newConnectionBroker() && !oauthAvailable()) return "not_configured";
   return null;
 }
