@@ -15,6 +15,7 @@ import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import type { FundedAccount, PayoutEvent } from "@/lib/types";
 import { PerformanceOverview } from "@/components/accounts/performance-overview";
+import { LiveBrokerPanel } from "@/components/accounts/live-broker-panel";
 
 type StatusFilter = "all" | "active" | "inactive";
 type PhaseFilter = "all" | "evaluation" | "funded";
@@ -170,6 +171,9 @@ export default function AccountsPage() {
         onOpenChange={setPerfOpen}
       />
       <PageWrapper>
+        {/* ── Live balances from connected Tradovate logins ── */}
+        <LiveBrokerPanel hidden={hidden} />
+
         {/* ── Filters: always visible when accounts exist ── */}
         {accounts.length > 0 && (
           <div className="flex flex-wrap items-center gap-3">
