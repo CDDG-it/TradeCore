@@ -66,9 +66,9 @@ export default function HomePage() {
                 </SectionHeader>
                 <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
                   <ol className="divide-y divide-[#c2dcda] border-y border-[#c2dcda]">
-                    {therapistCadence.map((item, index) => (
+                    {therapistCadence.map((item) => (
                       <li key={item.label} className="flex items-baseline justify-between gap-6 py-4 text-sm">
-                        <span className="flex items-baseline gap-4"><span className="font-display tabular-nums text-[#167c79]">0{index + 1}</span><span className="font-medium text-[#102b37]">{item.label}</span></span>
+                        <span className="flex items-baseline gap-4"><span className="font-medium text-[#102b37]">{item.label}</span></span>
                         <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#6b858b]">{item.meta}</span>
                       </li>
                     ))}
@@ -87,9 +87,9 @@ export default function HomePage() {
                 </SectionHeader>
                 <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
                   <ol className="divide-y divide-[#c2dcda] border-y border-[#c2dcda]">
-                    {reviewSteps.map((item, index) => (
+                    {reviewSteps.map((item) => (
                       <li key={item.label} className="flex items-baseline justify-between gap-6 py-4 text-sm">
-                        <span className="flex items-baseline gap-4"><span className="font-display tabular-nums text-[#167c79]">0{index + 1}</span><span className="font-medium text-[#102b37]">{item.label}</span></span>
+                        <span className="flex items-baseline gap-4"><span className="font-medium text-[#102b37]">{item.label}</span></span>
                         <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#6b858b]">{item.meta}</span>
                       </li>
                     ))}

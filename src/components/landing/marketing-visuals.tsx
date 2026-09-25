@@ -252,7 +252,7 @@ export function TherapistVisual() {
 
       {/* After the market: the session read back as decisions, not a chart. */}
       <MarketingReveal delay={0.08} className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#173849] bg-[radial-gradient(circle_at_85%_0%,#1f6a68,transparent_58%)] p-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_24px_60px_rgba(13,59,68,.16)] sm:p-8">
-        <CardEyebrow index="02" label="After the market" meta="Session" />
+        <CardEyebrow label="After the market" meta="Session" />
         <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">Examine the decisions.</p>
         <ol className="mt-6" aria-label="The session's trades and their verdicts">
           {sessionLedger.map((row, index) => (
@@ -276,7 +276,7 @@ export function TherapistVisual() {
 
       {/* Weekly review: the week's days, then the lesson in the trader's own words. */}
       <MarketingReveal delay={0.16} className="relative overflow-hidden rounded-[28px] border border-[#bfdcd7] bg-[#dcefeb] bg-[radial-gradient(circle_at_85%_0%,#ffffff,transparent_55%)] p-6 text-[#153743] shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_24px_60px_rgba(13,59,68,.10)] sm:p-8">
-        <CardEyebrow index="03" label="Weekly review" meta="5 days" light />
+        <CardEyebrow label="Weekly review" meta="5 days" light />
         <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">Write the lesson down.</p>
         <div aria-hidden="true" className="mt-6 grid grid-cols-5 gap-2">
           {reviewWeek.map((day, index) => (
@@ -300,7 +300,7 @@ export function TherapistVisual() {
       {/* Monthly rollup: which patterns keep coming back, week by week. */}
       <MarketingReveal delay={0.24} className="relative grid gap-6 overflow-hidden rounded-[28px] border border-white/10 bg-[#0d1c29] bg-[radial-gradient(circle_at_0%_100%,#173849,transparent_55%)] p-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_24px_60px_rgba(13,59,68,.16)] sm:col-span-2 sm:grid-cols-[0.36fr_0.64fr] sm:items-center sm:p-8">
         <div>
-          <CardEyebrow index="04" label="Monthly rollup" meta="Persistent" />
+          <CardEyebrow label="Monthly rollup" meta="Persistent" />
           <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">See what persists.</p>
           <p className="mt-3 max-w-[300px] text-sm leading-relaxed text-[#9db6bb]">Weekly lessons roll up into one view, so a pattern that survives the month is named, not sensed.</p>
         </div>
@@ -339,11 +339,10 @@ export function TherapistVisual() {
 }
 
 /** Eyebrow row shared by the cadence cards: label, chapter index, meta chip. */
-function CardEyebrow({ index, label, meta, light = false }: { index: string; label: string; meta: string; light?: boolean }) {
+function CardEyebrow({ label, meta, light = false }: { label: string; meta: string; light?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="flex items-baseline gap-2.5">
-        <span className={`font-display text-xs tabular-nums ${light ? "text-[#167c79]/70" : "text-[#59c9be]/70"}`}>{index}</span>
         <span className={`text-sm font-medium ${light ? "text-[#167c79]" : "text-[#8de0d5]"}`}>{label}</span>
       </span>
       <span className={`rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${light ? "bg-[#167c79]/10 text-[#4f7a7f]" : "bg-white/10 text-[#9db6bb]"}`}>{meta}</span>
