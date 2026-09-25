@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getTradeById, updateTrade, getAnalyses, getProfile } from "@/lib/supabase/queries";
+import { invalidateReads } from "@/lib/supabase/cache";
 import type { PreTradeAnalysis } from "@/lib/types";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
@@ -76,6 +77,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const baselineRef = useRef<typeof DEFAULT_FORM | null>(null);
 
   useEffect(() => {
+    invalidateReads("analyses", "profile");
     Promise.all([getTradeById(id), getAnalyses(), getProfile()]).then(([trade, analyses, profile]) => {
       setAllAnalyses(analyses);
       if (profile?.id) setUserId(profile.id);
@@ -241,7 +243,8 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     </div>
   );
 
-  const analyses = allAnalyses.filter((a) => a.date === form.date_time);
+  const analysesForTradeDate = allAnalyses.filter((a) => a.date === form.date_time);
+  const otherAnalyses = allAnalyses.filter((a) => a.date !== form.date_time);
 
   return (
     <div className="space-y-4">
@@ -480,25 +483,39 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
         {/* Link to Analysis */}
         <Card className="bg-card border-border/50 shadow-sm">
           <CardHeader className="pb-2.5">
-            <CardTitle className="text-sm font-semibold">Analysis: {form.date_time}</CardTitle>
+            <CardTitle className="text-sm font-semibold">Link analysis</CardTitle>
           </CardHeader>
           <CardContent>
-            {analyses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No analysis found for this date.</p>
+            {allAnalyses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No analyses yet. Create one before your next session, then link it here.</p>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Analyses for {form.date_time} are shown first. You can also link an analysis from another date.</p>
+                <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => set("linked_analysis_id", undefined)}
                   className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                     !form.linked_analysis_id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
                   None
                 </button>
-                {analyses.map((a) => (
+                {analysesForTradeDate.map((a) => (
                   <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
                     className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all max-w-xs truncate",
                       form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
                     {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}...` : a.title}
                   </button>
                 ))}
+                </div>
+                {otherAnalyses.length > 0 && (
+                  <div className="flex flex-wrap gap-2 border-t border-border/50 pt-3">
+                    {otherAnalyses.map((a) => (
+                      <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
+                        className={cn("max-w-xs truncate rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+                          form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
+                        {a.date} · {a.instrument} · {a.title.length > 24 ? `${a.title.slice(0, 24)}...` : a.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
