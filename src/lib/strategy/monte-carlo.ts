@@ -108,7 +108,7 @@ export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): Monte
   // A fixed, small checkpoint set keeps the percentile chart exact enough for
   // every run while capping memory even at 10,000 simulations.
   const checkpointCount = Math.min(72, maxTrades) + 1;
-  const checkpoints = [...new Set(Array.from({ length: checkpointCount }, (_, i) => Math.round((i * maxTrades) / (checkpointCount - 1)))];
+  const checkpoints = [...new Set(Array.from({ length: checkpointCount }, (_, i) => Math.round((i * maxTrades) / (checkpointCount - 1))))];
   const checkpointBalances = checkpoints.map(() => [] as number[]);
 
   let pass = 0, fail = 0, timeout = 0;
