@@ -42,7 +42,7 @@ export default function HomePage() {
         <div className="marketing-light-flow text-[#0b1120]">
           <section id="the-approach" className="marketing-section marketing-section--mist px-6 pb-20 pt-16 sm:px-10 md:pb-28 md:pt-24 lg:px-12">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader index="01" label="My Edge" title="Give the next session a direction." className="mb-14 lg:mb-18">
+              <SectionHeader label="My Edge" title="Give the next session a direction." className="mb-14 lg:mb-18">
                 Plan the session. Turn recurring mistakes into commitments, then track the habits and goals that support execution.
               </SectionHeader>
               <ProcessCanvas />

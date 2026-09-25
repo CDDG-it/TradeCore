@@ -12,44 +12,42 @@ const processTrack = [["Plan", "Written"], ["Commit", "Specific"], ["Repeat", "T
 
 export function ProcessCanvas() {
   return (
-    <div className="relative overflow-hidden rounded-[32px] bg-[#102b37] text-white shadow-[0_34px_90px_rgba(13,59,68,.18)]" aria-label="A trading plan connected to a commitment, habits and a goal">
-      <div aria-hidden="true" className="absolute -left-28 bottom-[-170px] h-[440px] w-[440px] rounded-full border border-[#55c7bd]/20 shadow-[0_0_0_46px_rgba(85,199,189,.035),0_0_0_96px_rgba(85,199,189,.025)]" />
-      <div className="relative grid lg:grid-cols-[1.08fr_0.92fr]">
-        <MarketingReveal className="flex min-h-[430px] flex-col justify-between border-b border-white/10 p-8 sm:p-12 lg:border-b-0 lg:border-r lg:p-14">
-          <div>
-            <p className="text-sm font-medium text-[#80d9cf]">The trading plan</p>
-            <p className="font-display mt-9 max-w-[690px] text-balance text-[clamp(2.5rem,4.8vw,5.4rem)] font-semibold leading-[1.02] tracking-[-0.055em]">Wait for price to hit my level of interest.</p>
+    <div className="group relative overflow-hidden rounded-[36px] bg-[#0b2430] p-3 text-white shadow-[0_34px_90px_rgba(13,59,68,.2)] sm:p-4" aria-label="A trading plan connected to a commitment, habits and a goal">
+      <div aria-hidden className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#38c9ba]/10 blur-[90px]" />
+      <div className="relative grid grid-flow-dense gap-3 lg:grid-cols-12">
+        <MarketingReveal className="relative flex min-h-[480px] flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 bg-[#102f3c] p-7 transition-transform duration-700 ease-out group-hover:scale-[1.006] sm:p-10 lg:col-span-7 lg:p-12">
+          <div aria-hidden className="absolute inset-x-0 bottom-0 h-[58%] opacity-70">
+            <svg viewBox="0 0 700 250" className="h-full w-full" preserveAspectRatio="none">
+              <defs><linearGradient id="edge-area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#65d4c8" stopOpacity=".22" /><stop offset="1" stopColor="#65d4c8" stopOpacity="0" /></linearGradient></defs>
+              <path d="M0 205 C80 185 120 215 190 170 S315 100 375 145 S500 195 700 60 L700 250 L0 250 Z" fill="url(#edge-area)" />
+              <DrawPath d="M0 205 C80 185 120 215 190 170 S315 100 375 145 S500 195 700 60" stroke="#65d4c8" strokeWidth={2} duration={1.8} delay={0.25} />
+              <DrawPath d="M0 132 H700" stroke="#8de0d5" strokeWidth={1} className="[stroke-dasharray:7_8]" duration={1.2} delay={0.55} />
+            </svg>
+            <PinReveal delay={1.3} className="absolute right-[8%] top-[19%]"><span className="block h-3 w-3 rounded-full bg-[#65d4c8] shadow-[0_0_0_8px_rgba(101,212,200,.12),0_0_24px_rgba(101,212,200,.7)]" /></PinReveal>
           </div>
-          <div className="mt-12 grid max-w-xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 text-sm">
-            <div className="bg-[#102b37]/90 p-4"><span className="block text-[#7e9ea5]">Setup</span><span className="mt-1 block font-medium">Planned pullback</span></div>
-            <div className="bg-[#102b37]/90 p-4"><span className="block text-[#7e9ea5]">Risk</span><span className="mt-1 block font-medium">Defined before entry</span></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Your session plan</p><span className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#75949c]">Before entry</span></div>
+            <p className="font-display mt-8 max-w-3xl text-balance text-[clamp(2.4rem,4.3vw,4.8rem)] font-semibold leading-[.98] tracking-[-.055em]">Wait for price to reach the level. Let confirmation do the rest.</p>
+          </div>
+          <div className="relative z-10 mt-24 grid max-w-2xl grid-cols-2 gap-2 text-sm sm:grid-cols-3">
+            {[['Setup', 'Planned pullback'], ['Risk', 'Defined first'], ['Trigger', 'Fresh confirmation']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/10 bg-[#0b2430]/75 p-3 backdrop-blur-md"><span className="block text-[10px] uppercase tracking-[.14em] text-[#75949c]">{label}</span><span className="mt-1 block font-medium text-[#e7f5f4]">{value}</span></div>)}
           </div>
         </MarketingReveal>
 
-        <div className="relative p-8 sm:p-12 lg:p-14">
-          <DrawLine axis="y" delay={0.2} duration={1.1} className="absolute bottom-16 left-[3.65rem] top-16 block w-px bg-gradient-to-b from-[#59d2c6]/10 via-[#59d2c6]/65 to-[#59d2c6]/10" />
-          <div className="space-y-7">
-            {processDetails.map((step, index) => (
-              <MarketingReveal key={step.title} delay={0.12 + index * 0.1} distance={18} className="relative grid grid-cols-[42px_1fr] gap-5">
-                <span aria-hidden="true" className="relative mt-1 grid h-9 w-9 place-items-center rounded-full border border-[#65d4c8]/45 bg-[#173b47] shadow-[0_0_0_7px_#102b37]"><span className="h-2 w-2 rounded-full bg-[#65d4c8]" /></span>
-                <div className="border-b border-white/10 pb-7">
-                  <div className="flex flex-wrap items-baseline justify-between gap-3"><p className="text-sm font-medium text-[#8de0d5]">{step.title}</p><p className="text-[10px] font-semibold tracking-[0.16em] text-[#719098]">{step.meta}</p></div>
-                  <p className="font-display mt-4 max-w-md text-balance text-[clamp(1.45rem,2.2vw,2.25rem)] font-medium leading-[1.15] tracking-[-0.035em]">{step.value}</p>
-                </div>
-              </MarketingReveal>
-            ))}
-          </div>
+        <div className="grid gap-3 lg:col-span-5 lg:grid-rows-3">
+          {processDetails.map((step, index) => (
+            <MarketingReveal key={step.title} delay={0.12 + index * 0.1} distance={20} className="group/edge relative overflow-hidden rounded-[24px] border border-white/10 bg-[#143541] p-6 transition-[transform,border-color,background-color] duration-500 ease-out hover:-translate-x-1 hover:border-[#65d4c8]/35 hover:bg-[#173e4a] sm:p-7">
+              <div className="flex items-center justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">{step.title}</p><p className="text-[10px] font-semibold tracking-[.16em] text-[#719098]">{step.meta}</p></div>
+              <p className="font-display mt-3 max-w-md text-balance text-[clamp(1.3rem,2vw,2rem)] font-medium leading-[1.1] tracking-[-.035em]">{step.value}</p>
+              <span aria-hidden className="absolute inset-x-6 bottom-0 h-px bg-white/10"><GrowBar axis="x" delay={0.5 + index * 0.12} className="block h-px origin-left bg-[#65d4c8]" style={{ width: `${72 + index * 11}%` }} /></span>
+            </MarketingReveal>
+          ))}
         </div>
       </div>
 
-      <div className="relative grid grid-cols-4 border-t border-white/10 bg-[#dff2ef] px-5 py-6 text-center text-[11px] font-semibold text-[#365a63] sm:px-10 sm:text-xs">
-        <DrawLine axis="x" delay={0.1} duration={1.2} className="absolute left-[12.5%] right-[12.5%] top-[30px] block h-px bg-[#84bdb8]" />
-        {processTrack.map(([label, state], index) => (
-          <MarketingReveal key={label} delay={0.15 + index * 0.18} distance={8} className="relative">
-            <span aria-hidden="true" className="relative mx-auto mb-3 block h-3 w-3 rounded-full border-2 border-[#dff2ef] bg-[#148f87] ring-1 ring-[#148f87]" />
-            <span className="block text-[#153b46]">{label}</span><span className="mt-1 block font-normal text-[#638087]">{state}</span>
-          </MarketingReveal>
-        ))}
+      <div className="relative mt-3 grid grid-cols-4 overflow-hidden rounded-[24px] bg-[#dff2ef] px-4 py-5 text-center text-[11px] font-semibold text-[#365a63] sm:px-8 sm:text-xs">
+        <DrawLine axis="x" delay={0.15} duration={1.2} className="absolute left-[12.5%] right-[12.5%] top-[25px] block h-px bg-[#84bdb8]" />
+        {processTrack.map(([label, state], index) => <MarketingReveal key={label} delay={0.2 + index * 0.14} distance={7} className="relative"><span aria-hidden className="relative mx-auto mb-3 block h-3 w-3 rounded-full border-2 border-[#dff2ef] bg-[#148f87] ring-1 ring-[#148f87]" /><span className="block text-[#153b46]">{label}</span><span className="mt-1 block font-normal text-[#638087]">{state}</span></MarketingReveal>)}
       </div>
     </div>
   );

@@ -50,19 +50,21 @@ export function LandingFooter() {
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="overflow-hidden border-y border-white/10 py-4" aria-label="TradingMC process">
+        <div className="relative w-full overflow-hidden border-y border-white/10 py-4" aria-label="TradingMC process">
           <div className="footer-marquee flex w-max items-center gap-10 whitespace-nowrap">
             {[0, 1].map((copy) => <div key={copy} className="flex items-center gap-10">{marquee.map((item) => <span key={`${copy}-${item}`} className="flex items-center gap-10 text-[11px] font-semibold uppercase tracking-[.2em] text-[#89a8ad]"><span>{item}</span><span className="h-1 w-1 rounded-full bg-[#14b8a6]" /></span>)}</div>)}
           </div>
         </div>
 
-        <div className="footer-directory grid grid-flow-dense grid-cols-1 gap-4 py-16 lg:grid-cols-12 lg:py-20">
-          <div className="footer-link-panel rounded-[24px] border border-white/[.07] bg-white/[.025] p-6 lg:col-span-6">
-            <Link href="/" aria-label="TradingMC home" className="inline-block transition-opacity hover:opacity-75"><Image src="/tradingmc-logo.png" alt="TradingMC" width={979} height={500} className="h-10 w-auto" /></Link>
-            <p className="mt-7 max-w-md text-sm leading-[1.75] text-[#9fb7bc]">The workspace for traders who want a process they can trust before, during and after the session.</p>
+      <div className="relative mx-auto max-w-[1080px] px-6 sm:px-10 lg:px-12">
+        <div className="footer-directory grid grid-flow-dense grid-cols-1 gap-4 py-16 text-center lg:grid-cols-12 lg:py-20">
+          <div className="footer-link-panel flex flex-col items-center py-5 lg:col-span-12 lg:pb-10">
+            <Link href="/" aria-label="TradingMC home" className="inline-block transition-opacity hover:opacity-75"><Image src="/tradingmc-logo.png" alt="TradingMC" width={979} height={500} className="h-11 w-auto" /></Link>
+            <p className="mt-7 max-w-xl text-sm leading-[1.75] text-[#9fb7bc]">The workspace for traders who want a process they can trust before, during and after the session.</p>
           </div>
-          {groups.map((group) => <nav key={group.title} aria-label={group.title} className="footer-link-panel group rounded-[24px] border border-white/[.07] bg-white/[.025] p-6 transition-[transform,background-color,border-color] duration-500 ease-out hover:-translate-y-1 hover:border-[#14b8a6]/25 hover:bg-[#14b8a6]/[.045] lg:col-span-2"><h2 className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#65d4c8]">{group.title}</h2><ul className="mt-6 space-y-3.5">{group.links.map((link) => <li key={link.href}><Link href={link.href} className="text-sm font-medium text-[#d4e3e5] transition-colors hover:text-white">{link.label}</Link></li>)}</ul></nav>)}
+          {groups.map((group) => <nav key={group.title} aria-label={group.title} className="footer-link-panel group rounded-[24px] border border-white/[.07] bg-white/[.025] p-7 transition-[transform,background-color,border-color] duration-500 ease-out hover:-translate-y-1 hover:border-[#14b8a6]/25 hover:bg-[#14b8a6]/[.045] lg:col-span-4"><h2 className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#65d4c8]">{group.title}</h2><ul className="mt-6 space-y-3.5">{group.links.map((link) => <li key={link.href}><Link href={link.href} className="text-sm font-medium text-[#d4e3e5] transition-colors hover:text-white">{link.label}</Link></li>)}</ul></nav>)}
         </div>
 
         <div className="flex flex-col justify-between gap-3 border-t border-white/10 py-7 text-xs text-[#78939c] sm:flex-row"><p>© {new Date().getFullYear()} TradingMC</p><p>An ordinary journal won&apos;t build an extraordinary trader.</p></div>
