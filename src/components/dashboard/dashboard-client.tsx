@@ -197,7 +197,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     // the stacked cards aren't squeezed into a single viewport height.
     // 7.5rem = the top nav (3.5rem) plus the page gutter above and below it:
     // anything less and the page keeps a stray scrollbar.
-    <div className="flex flex-col gap-3 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
+    <div className="flex flex-col gap-3 short:gap-2 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}

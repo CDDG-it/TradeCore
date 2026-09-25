@@ -21,7 +21,7 @@ const RED = "var(--loss)";
 const AMBER = "var(--be)";
 /** The desk's card shell and its ambient decoration, shared by every card on
  *  the dashboard (the news card lives in the page and borrows them). */
-export const CARD_BASE = "group/card relative rounded-2xl border border-border/60 bg-card p-4 overflow-hidden shadow-[0_4px_20px_-10px_rgba(0,0,0,0.25)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-0.5 hover:border-border/90 hover:shadow-[0_10px_36px_-14px_rgba(0,0,0,0.45)]";
+export const CARD_BASE = "group/card relative rounded-2xl border border-border/60 bg-card p-4 short:p-3 overflow-hidden shadow-[0_4px_20px_-10px_rgba(0,0,0,0.25)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-0.5 hover:border-border/90 hover:shadow-[0_10px_36px_-14px_rgba(0,0,0,0.45)]";
 export function CardFx({ accent }: { accent: string }) {
   return (
     <>
@@ -313,8 +313,8 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
           card space, so a short laptop viewport gets a proportionate ring
           instead of one that crowds out the legend. The floor keeps it a proper
           ring (not a dot) on phones, where the column is not height-capped. */}
-      <div className="flex-1 flex items-center justify-center py-1 min-h-[clamp(72px,8vh,96px)]">
-        <div className="relative aspect-square h-full max-h-[clamp(76px,10.5vh,112px)] w-auto">
+      <div className="flex min-h-[clamp(72px,8vh,96px)] flex-1 items-center justify-center py-1 short:min-h-[58px] short:py-0">
+        <div className="relative aspect-square h-full max-h-[clamp(76px,10.5vh,112px)] w-auto short:max-h-[64px]">
           <svg viewBox="0 0 116 116" className="block h-full w-full">
             {/* Track */}
             <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
@@ -348,7 +348,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
       </div>
 
       {/* The outcome counts remain visible beside the rate. */}
-      <div className="grid grid-cols-3 gap-2 mt-0.5">
+      <div className="mt-0.5 grid grid-cols-3 gap-2 short:gap-1.5">
         {[
           { label: "Win", value: wins, color: GREEN },
           { label: "Loss", value: losses, color: RED },
@@ -356,7 +356,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
         ].map((s) => (
           <div
             key={s.label}
-            className="group/chip relative rounded-lg border border-border/50 bg-muted/20 px-2 py-1 text-center transition-transform duration-300 hover:-translate-y-px"
+            className="group/chip relative rounded-lg border border-border/50 bg-muted/20 px-2 py-1 text-center transition-transform duration-300 hover:-translate-y-px short:py-0.5"
           >
             <p className={cn("relative z-10 font-black tabular-nums leading-none", compactNumbers ? "text-sm" : "text-base")} style={{ color: s.color }}>{s.value}</p>
             <p className="relative z-10 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">{s.label}</p>
@@ -373,7 +373,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
       </div>
 
       {/* Net R + execution quality: one compact block keeps the ring roomy on laptops */}
-      <div className="mt-1.5 rounded-xl border border-border/60 bg-muted/25 px-3 py-1.5 space-y-1">
+      <div className="mt-1.5 space-y-1 rounded-xl border border-border/60 bg-muted/25 px-3 py-1.5 short:mt-1 short:py-1">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Net R · {PERIOD_LABEL[period]}</span>
           <span className={cn("font-black tabular-nums leading-none", compactNumbers ? "text-base" : "text-lg")} style={{ color: rColor }}>
@@ -397,7 +397,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
         </div>
       </div>
 
-      <Link href="/analytics" className="mt-1.5 text-[11px] font-semibold text-primary hover:underline">
+      <Link href="/analytics" className="mt-1.5 text-[11px] font-semibold text-primary hover:underline short:mt-1">
         View full analytics →
       </Link>
     </div>
@@ -439,7 +439,7 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, c
   return (
     <div className={cn(CARD_BASE, "flex min-h-0 flex-col", className)}>
       <CardFx accent={TURQUOISE} />
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="mb-2 flex items-center justify-between gap-2 short:mb-1.5">
         {/* Half a phone screen has no room for the full title. */}
         <p className="whitespace-nowrap text-[13px] font-semibold sm:text-sm">
           <span className="sm:hidden">Habits</span>
@@ -456,7 +456,7 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, c
           <Link href="/habits" className="text-xs font-semibold text-primary hover:underline">Add habits</Link>
         </div>
       ) : (
-        <div className="space-y-0.5 flex-1 overflow-y-auto pr-0.5 min-h-0">
+        <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-0.5 short:space-y-0">
           {habits.map((habit) => {
             const done = doneToday.has(habit.id);
             const pending = pendingHabit === habit.id;
@@ -468,7 +468,7 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, c
                 onClick={() => onToggle(habit.id)}
                 disabled={pending}
                 className={cn(
-                  "group/habit relative w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-all duration-300 disabled:opacity-60",
+                  "group/habit relative w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-all duration-300 disabled:opacity-60 short:gap-2 short:py-1",
                   done ? "bg-success/8" : "hover:bg-muted/50 hover:translate-x-0.5"
                 )}
               >
@@ -482,7 +482,7 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, c
                 />
                 <span
                   className={cn(
-                    "h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-all duration-300",
+                    "h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-all duration-300 short:h-3.5 short:w-3.5",
                     done ? "scale-105" : "group-hover/habit:scale-110"
                   )}
                   style={done
@@ -495,7 +495,7 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, c
                     </svg>
                   )}
                 </span>
-                <span className={cn("line-clamp-2 flex-1 text-[13px] transition-colors", done ? "text-foreground" : "text-muted-foreground group-hover/habit:text-foreground")}>
+                <span className={cn("line-clamp-2 flex-1 text-[13px] transition-colors short:text-xs", done ? "text-foreground" : "text-muted-foreground group-hover/habit:text-foreground")}>
                   {habit.name}
                 </span>
                 {pending && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground/60 shrink-0" />}
@@ -525,7 +525,7 @@ export function WeekStrip({ days, today, compactNumbers = false }: {
   compactNumbers?: boolean;
 }) {
   return (
-    <div className={cn(CARD_BASE, "flex h-full flex-col p-3 sm:p-4")}>
+    <div className={cn(CARD_BASE, "flex h-full flex-col p-3 sm:p-4 short:p-3")}>
       <CardFx accent={TURQUOISE} />
       <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3">
         <div className="flex min-w-0 items-baseline gap-2">
@@ -540,7 +540,7 @@ export function WeekStrip({ days, today, compactNumbers = false }: {
         </Link>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-7 gap-1 sm:gap-2">
+      <div className="grid min-h-0 flex-1 grid-cols-7 gap-1 sm:gap-2 short:gap-1">
         {days.map(({ date, trades: dt, r }) => {
           const has = dt.length > 0;
           // Chronological, so the bands run in the order the day actually went.
@@ -556,7 +556,7 @@ export function WeekStrip({ days, today, compactNumbers = false }: {
               // to its entry and offers a picker when the day holds several.
               href={has ? `/journal?day=${format(date, "yyyy-MM-dd")}` : "/journal"}
               className={cn(
-                "group/day relative flex flex-col items-center overflow-hidden rounded-lg border px-0.5 pb-2 pt-2 sm:rounded-xl sm:px-1 sm:pb-2.5 sm:pt-3",
+                "group/day relative flex flex-col items-center overflow-hidden rounded-lg border px-0.5 pb-2 pt-2 sm:rounded-xl sm:px-1 sm:pb-2.5 sm:pt-3 short:pb-1.5 short:pt-2",
                 "transition-all duration-300 ease-out hover:-translate-y-1",
                 isCurrent ? "border-primary/50" : "border-border/60"
               )}
@@ -620,7 +620,7 @@ export function WeekStrip({ days, today, compactNumbers = false }: {
               {/* Per trade: pair, its R, and how cleanly it was run: each on the
                   rail of its own result colour. */}
               {has && (
-                <div className="relative mt-2 hidden w-full space-y-1.5 overflow-hidden px-0.5 sm:block">
+                <div className="relative mt-2 hidden w-full space-y-1.5 overflow-hidden px-0.5 sm:block short:mt-1.5 short:space-y-1">
                   {shown.map((t) => {
                     const c = resultColor(t);
                     return (
