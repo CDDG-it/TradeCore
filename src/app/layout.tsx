@@ -56,6 +56,13 @@ export const metadata: Metadata = {
   title: { default: TITLE, template: "%s · TradingMC" },
   description: DESCRIPTION,
   applicationName: "TradingMC",
+  icons: {
+    icon: [
+      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   openGraph: {
     type: "website",
     siteName: "TradingMC",
