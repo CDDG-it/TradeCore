@@ -61,6 +61,8 @@ export interface MonteCarloResult {
   curves: { outcome: Outcome; balance: number[] }[];
   /** Distribution of ending balances, bucketed for a histogram. */
   histogram: { label: string; from: number; to: number; count: number }[];
+  /** Downsampled balance percentiles across the still-running attempts. */
+  equityEnvelope: { trade: number; p10: number; p25: number; p50: number; p75: number; p90: number; active: number }[];
 }
 
 /** Mulberry32: a tiny, fast, seedable PRNG so runs are reproducible. */
@@ -81,6 +83,14 @@ function median(sorted: number[]): number {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  const index = (sorted.length - 1) * p;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  return lower === upper ? sorted[lower] : sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
+}
+
 export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): MonteCarloResult {
   const {
     accountSize, profitTarget, maxDrawdown, drawdownMode, dailyLossLimit,
@@ -95,6 +105,11 @@ export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): Monte
   const maxTrades = dayCap * perDay;
 
   const sampleCount = Math.min(input.sampleCurves ?? 24, simulations);
+  // A fixed, small checkpoint set keeps the percentile chart exact enough for
+  // every run while capping memory even at 10,000 simulations.
+  const checkpointCount = Math.min(72, maxTrades) + 1;
+  const checkpoints = [...new Set(Array.from({ length: checkpointCount }, (_, i) => Math.round((i * maxTrades) / (checkpointCount - 1)))];
+  const checkpointBalances = checkpoints.map(() => [] as number[]);
 
   let pass = 0, fail = 0, timeout = 0;
   const daysToPass: number[] = [];
@@ -109,6 +124,8 @@ export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): Monte
     // keep it simply trailing the peak, which is the stricter, common case.
     const keepCurve = s < sampleCount;
     const curve: number[] = keepCurve ? [balance] : [];
+    let checkpointIndex = 0;
+    checkpointBalances[checkpointIndex++].push(balance);
 
     let outcome: Outcome = "timeout";
     let day = 0;
@@ -117,10 +134,15 @@ export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): Monte
     for (day = 0; day < dayCap && !resolved; day++) {
       const dayStart = balance;
       for (let i = 0; i < perDay; i++) {
+        const tradeIndex = day * perDay + i + 1;
         const win = rng() < winRate;
         balance += win ? winAmount : -riskPerTrade;
         if (balance > peak) peak = balance;
         if (keepCurve) curve.push(balance);
+
+        while (checkpointIndex < checkpoints.length && checkpoints[checkpointIndex] <= tradeIndex) {
+          checkpointBalances[checkpointIndex++].push(balance);
+        }
 
         const floor = drawdownMode === "trailing" ? peak - maxDrawdown : accountSize - maxDrawdown;
 
@@ -129,6 +151,7 @@ export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): Monte
         if (balance <= floor) { outcome = "fail"; resolved = true; break; }
         if (dailyLossLimit > 0 && balance <= dayStart - dailyLossLimit) { outcome = "fail"; resolved = true; break; }
         if (balance >= target) { outcome = "pass"; resolved = true; daysToPass.push(day + 1); break; }
+
       }
     }
 
@@ -164,6 +187,18 @@ export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): Monte
   }
 
   const expectancyR = winRate * rewardRisk - (1 - winRate);
+  const equityEnvelope = checkpointBalances.map((balances, index) => {
+    const sorted = [...balances].sort((a, b) => a - b);
+    return {
+      trade: checkpoints[index],
+      p10: percentile(sorted, 0.1),
+      p25: percentile(sorted, 0.25),
+      p50: percentile(sorted, 0.5),
+      p75: percentile(sorted, 0.75),
+      p90: percentile(sorted, 0.9),
+      active: sorted.length,
+    };
+  });
 
   return {
     passRate: pass / simulations,
@@ -177,5 +212,6 @@ export function runMonteCarlo(input: MonteCarloInputs, seed = 0x9e3779b9): Monte
     worstEndBalance: lo,
     curves,
     histogram,
+    equityEnvelope,
   };
 }

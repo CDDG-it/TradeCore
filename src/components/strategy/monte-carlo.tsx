@@ -2,106 +2,93 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, ReferenceLine,
-  BarChart, Bar, Cell,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, ReferenceLine,
+  ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { Check, Loader2, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { runMonteCarlo, type MonteCarloInputs, type DrawdownMode } from "@/lib/strategy/monte-carlo";
-import { getTrades, getMonteCarloSettings, saveMonteCarloSettings } from "@/lib/supabase/queries";
+import { runMonteCarlo, type DrawdownMode, type MonteCarloInputs } from "@/lib/strategy/monte-carlo";
+import { getMonteCarloSettings, getTrades, saveMonteCarloSettings } from "@/lib/supabase/queries";
+import type { TradeJournalEntry } from "@/lib/types";
 
-const GREEN = "var(--win)";
-const RED = "var(--loss)";
-const AMBER = "var(--be)";
+const PRIMARY = "var(--primary)";
 const CYAN = "var(--ice)";
-
-/** Representative prop-firm setups. Numbers are typical, round starting points:
- *  every field stays editable, so a trader dials in their own firm's exact rules. */
-interface Preset extends Omit<MonteCarloInputs, "winRate" | "rewardRisk" | "tradesPerDay" | "simulations" | "sampleCurves"> {
-  key: string;
-  label: string;
-}
-
-const PRESETS: Preset[] = [
-  { key: "eval-50", label: "50K Eval", accountSize: 50000, profitTarget: 3000, maxDrawdown: 2000, drawdownMode: "trailing", dailyLossLimit: 1000, riskPerTrade: 300, maxDays: 20 },
-  { key: "eval-100", label: "100K Eval", accountSize: 100000, profitTarget: 6000, maxDrawdown: 3000, drawdownMode: "trailing", dailyLossLimit: 2000, riskPerTrade: 500, maxDays: 20 },
-  { key: "eval-150", label: "150K Eval", accountSize: 150000, profitTarget: 9000, maxDrawdown: 4500, drawdownMode: "trailing", dailyLossLimit: 3000, riskPerTrade: 750, maxDays: 20 },
-];
+const SLATE = "var(--muted-foreground)";
 
 const DEFAULTS: MonteCarloInputs = {
-  ...PRESETS[0],
-  winRate: 0.45,
-  rewardRisk: 2,
-  tradesPerDay: 3,
-  simulations: 3000,
-  sampleCurves: 14,
+  accountSize: 50000, profitTarget: 3000, maxDrawdown: 2000, drawdownMode: "trailing",
+  dailyLossLimit: 1000, riskPerTrade: 300, winRate: 0.45, rewardRisk: 2,
+  tradesPerDay: 3, maxDays: 20, simulations: 3000, sampleCurves: 14,
 };
 
-function pct(n: number) {
-  return `${(n * 100).toFixed(1)}%`;
-}
+type JournalStats = { winRate: number; avgRR: number; decisive: number; total: number; pace: number; activeDays: number };
 
-function money(n: number) {
-  return `$${Math.round(n).toLocaleString()}`;
-}
+function pct(value: number) { return `${(value * 100).toFixed(1)}%`; }
+function money(value: number) { return `$${Math.round(value).toLocaleString()}`; }
+function dayKey(trade: TradeJournalEntry) { return trade.date_time.slice(0, 10); }
 
-/** Downsample a curve to at most `max` points so the chart stays crisp. */
-function thin<T>(arr: T[], max: number): T[] {
-  if (arr.length <= max) return arr;
-  const step = arr.length / max;
-  const out: T[] = [];
-  for (let i = 0; i < max; i++) out.push(arr[Math.floor(i * step)]);
-  out.push(arr[arr.length - 1]);
-  return out;
+function journalStats(trades: TradeJournalEntry[], from: string, to: string): JournalStats | null {
+  const scoped = trades.filter((trade) => (!from || dayKey(trade) >= from) && (!to || dayKey(trade) <= to));
+  const wins = scoped.filter((trade) => trade.result === "win");
+  const losses = scoped.filter((trade) => trade.result === "loss");
+  const decisive = wins.length + losses.length;
+  if (scoped.length === 0 || decisive === 0) return null;
+  const activeDays = new Set(scoped.map(dayKey)).size;
+  return {
+    winRate: wins.length / decisive,
+    avgRR: wins.length ? wins.reduce((sum, trade) => sum + trade.rr, 0) / wins.length : 0,
+    decisive,
+    total: scoped.length,
+    pace: activeDays ? scoped.length / activeDays : 0,
+    activeDays,
+  };
 }
-
-/** Win rate + reward:risk pulled from the trader's real journal: the same
- *  figures the Analytics page reports, measured over decisive (win/loss) trades. */
-interface RealStats { winRate: number; avgRR: number; decisive: number; total: number }
 
 export function MonteCarloSimulator() {
   const [input, setInput] = useState<MonteCarloInputs>(DEFAULTS);
-  const [activePreset, setActivePreset] = useState<string>(PRESETS[0].key);
-  const [realStats, setRealStats] = useState<RealStats | null>(null);
+  const [trades, setTrades] = useState<TradeJournalEntry[]>([]);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [appliedStats, setAppliedStats] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  // Load any saved setup and compute the trader's real edge from their journal.
   useEffect(() => {
-    let active = true;
-    (async () => {
-      const [saved, trades] = await Promise.all([getMonteCarloSettings(), getTrades()]);
-      if (!active) return;
-      if (saved) setInput((prev) => ({ ...prev, ...saved }));
-      const wins = trades.filter((t) => t.result === "win");
-      const losses = trades.filter((t) => t.result === "loss");
-      const decisive = wins.length + losses.length;
-      if (decisive > 0) {
-        const avgRR = wins.length > 0 ? Math.round((wins.reduce((s, t) => s + t.rr, 0) / wins.length) * 100) / 100 : 0;
-        setRealStats({ winRate: wins.length / decisive, avgRR, decisive, total: trades.length });
-      }
-    })();
-    return () => { active = false; };
+    let alive = true;
+    Promise.all([getMonteCarloSettings(), getTrades()]).then(([saved, journal]) => {
+      if (!alive) return;
+      if (saved) setInput((current) => ({ ...current, ...saved }));
+      setTrades(journal);
+    });
+    return () => { alive = false; };
   }, []);
 
+  const stats = useMemo(() => journalStats(trades, from, to), [trades, from, to]);
+  const rangeInvalid = !!from && !!to && from > to;
   const result = useMemo(() => runMonteCarlo(input), [input]);
+  const target = input.accountSize + input.profitTarget;
+  const floor = input.accountSize - input.maxDrawdown;
+  const edgePositive = result.expectancyR >= 0;
+  const envelopeData = useMemo(() => result.equityEnvelope.map((point) => ({
+    ...point,
+    outerBand: point.p90 - point.p10,
+    innerBand: point.p75 - point.p25,
+  })), [result.equityEnvelope]);
 
   function set<K extends keyof MonteCarloInputs>(key: K, value: MonteCarloInputs[K]) {
-    setInput((prev) => ({ ...prev, [key]: value }));
+    setInput((current) => ({ ...current, [key]: value }));
+    setAppliedStats(false);
     setSaveState("idle");
-    if (key === "winRate" || key === "rewardRisk") setAppliedStats(false);
   }
 
-  /** Fill win rate + reward:risk from the real journal stats. */
-  function applyRealStats() {
-    if (!realStats) return;
-    setInput((prev) => ({
-      ...prev,
-      winRate: Math.min(0.9, Math.max(0.1, realStats.winRate)),
-      rewardRisk: realStats.avgRR > 0 ? realStats.avgRR : prev.rewardRisk,
+  function applyJournalStats() {
+    if (!stats) return;
+    setInput((current) => ({
+      ...current,
+      winRate: Math.min(0.9, Math.max(0.1, stats.winRate)),
+      rewardRisk: stats.avgRR > 0 ? Math.round(stats.avgRR * 100) / 100 : current.rewardRisk,
+      tradesPerDay: Math.max(1, Math.round(stats.pace)),
     }));
     setAppliedStats(true);
-    setSaveState("idle");
   }
 
   async function save() {
@@ -109,347 +96,81 @@ export function MonteCarloSimulator() {
     try {
       await saveMonteCarloSettings(input);
       setSaveState("saved");
-      setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 2500);
+      window.setTimeout(() => setSaveState((current) => current === "saved" ? "idle" : current), 2500);
     } catch {
       setSaveState("error");
     }
   }
 
-  function applyPreset(p: Preset) {
-    setActivePreset(p.key);
-    setSaveState("idle");
-    setInput((prev) => ({
-      ...prev,
-      accountSize: p.accountSize,
-      profitTarget: p.profitTarget,
-      maxDrawdown: p.maxDrawdown,
-      drawdownMode: p.drawdownMode,
-      dailyLossLimit: p.dailyLossLimit,
-      riskPerTrade: p.riskPerTrade,
-      maxDays: p.maxDays,
-    }));
-  }
-
   function reset() {
     setInput(DEFAULTS);
-    setActivePreset(PRESETS[0].key);
-    setSaveState("idle");
     setAppliedStats(false);
+    setSaveState("idle");
   }
 
-  // Build aligned chart data for the sample equity curves.
-  const curveData = useMemo(() => {
-    const thinned = result.curves.map((c) => ({ outcome: c.outcome, balance: thin(c.balance, 120) }));
-    const maxLen = thinned.reduce((m, c) => Math.max(m, c.balance.length), 0);
-    const rows: Record<string, number | null>[] = [];
-    for (let i = 0; i < maxLen; i++) {
-      const row: Record<string, number | null> = { t: i };
-      thinned.forEach((c, idx) => { row[`c${idx}`] = i < c.balance.length ? c.balance[i] : null; });
-      rows.push(row);
-    }
-    return { rows, meta: thinned.map((c) => c.outcome) };
-  }, [result.curves]);
-
-  const target = input.accountSize + input.profitTarget;
-  const floor = input.accountSize - input.maxDrawdown;
-  const edgePositive = result.expectancyR > 0;
-
   return (
-    // One screen, no page scroll on a laptop: a compact toolbar over a fixed
-    // controls / results split, and the two charts share the height that is
-    // left rather than stacking off the bottom of the page.
-    <div className="flex flex-col gap-3 lg:h-[calc(100dvh-13rem)] lg:overflow-hidden">
-      {/* ── Toolbar: title, presets, real edge, save ─────────────────────── */}
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
-        <h2 className="mr-1 text-sm font-semibold">MC Pass Simulation</h2>
-        {PRESETS.map((p) => (
-          <button
-            key={p.key}
-            type="button"
-            onClick={() => applyPreset(p)}
-            className={cn(
-              "rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors",
-              activePreset === p.key
-                ? "border-primary/50 bg-primary/10 text-primary"
-                : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={reset}
-          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Reset
-        </button>
-
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={applyRealStats}
-            disabled={!realStats}
-            title={realStats ? "Fill win rate & reward:risk from your journal" : "No decisive trades logged yet"}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40",
-              appliedStats ? "border-primary/50 bg-primary/10 text-primary"
-                : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-            )}
-          >
-            {realStats
-              ? <>Use my stats · <span className="tabular-nums text-foreground">{pct(realStats.winRate)}</span>{realStats.avgRR > 0 && <> · <span className="tabular-nums text-foreground">{realStats.avgRR}R</span></>}</>
-              : "Use my stats"}
-          </button>
-          <button
-            type="button"
-            onClick={save}
-            disabled={saveState === "saving"}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60",
-              saveState === "saved" ? "border-success/50 bg-success/10 text-success"
-                : saveState === "error" ? "border-destructive/50 bg-destructive/10 text-destructive"
-                : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-            )}
-          >
-            {saveState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : saveState === "saved" ? <Check className="h-3.5 w-3.5" />
-              : <Save className="h-3.5 w-3.5" />}
-            {saveState === "saving" ? "Saving" : saveState === "saved" ? "Saved" : saveState === "error" ? "Run the SQL" : "Save setup"}
+    <div className="flex w-full max-w-full flex-col gap-3 overflow-x-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div><h2 className="text-lg font-semibold tracking-tight">Monte Carlo simulation</h2><p className="mt-0.5 text-sm text-muted-foreground">Pressure-test your current edge against your evaluation rules.</p></div>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={reset} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground">Reset</button>
+          <button type="button" onClick={save} disabled={saveState === "saving"} className="inline-flex items-center gap-1.5 rounded-lg border border-primary/35 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 disabled:opacity-60">
+            {saveState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saveState === "saved" ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
+            {saveState === "saving" ? "Saving" : saveState === "saved" ? "Saved" : saveState === "error" ? "Save failed" : "Save setup"}
           </button>
         </div>
       </div>
 
-      {/* ── Controls | Results ───────────────────────────────────────────── */}
-      <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
-        {/* Controls: scroll inside their own column if a short viewport asks. */}
-        <div className="space-y-3 overflow-y-auto rounded-2xl border border-border/60 bg-card p-3 lg:min-h-0">
-          <FieldGroup title="Your edge">
-            <SliderField label="Win rate" value={input.winRate * 100} min={10} max={90} step={1} unit="%"
-              onChange={(v) => set("winRate", v / 100)} />
-            <SliderField label="Reward : risk" value={input.rewardRisk} min={0.5} max={5} step={0.1} unit="R"
-              onChange={(v) => set("rewardRisk", v)} />
-            <div className="flex items-center justify-between pt-0.5 text-xs">
-              <span className="text-muted-foreground">Expectancy</span>
-              <span className={cn("font-semibold tabular-nums", edgePositive ? "text-success" : "text-destructive")}>
-                {result.expectancyR >= 0 ? "+" : ""}{result.expectancyR.toFixed(2)}R · {money(result.expectancyMoney)}
-              </span>
-            </div>
+      <div className="grid items-start gap-3 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="space-y-4 rounded-2xl border border-border/60 bg-card p-4">
+          <FieldGroup title="Journal data">
+            <div className="grid grid-cols-2 gap-2"><DateInput label="From" value={from} onChange={setFrom} /><DateInput label="To" value={to} onChange={setTo} /></div>
+            <button type="button" onClick={() => { setFrom(""); setTo(""); }} className="text-xs font-semibold text-primary hover:underline">Use all-time stats</button>
+            {rangeInvalid ? <p className="text-xs text-destructive">The start date must come before the end date.</p> : stats ? <div className="rounded-xl border border-border/60 bg-muted/20 p-3 text-xs"><div className="flex items-baseline justify-between gap-2"><span className="text-muted-foreground">Journal sample</span><span className="font-bold tabular-nums text-foreground">{stats.total} trades</span></div><div className="mt-2 grid grid-cols-2 gap-y-1.5 text-muted-foreground"><span>Win rate</span><span className="text-right font-semibold text-foreground">{pct(stats.winRate)}</span><span>Avg winning R</span><span className="text-right font-semibold text-foreground">{stats.avgRR.toFixed(2)}R</span><span>Trades / day</span><span className="text-right font-semibold text-foreground">{stats.pace.toFixed(1)}</span><span>Active days</span><span className="text-right font-semibold text-foreground">{stats.activeDays}</span></div></div> : <p className="text-xs leading-relaxed text-muted-foreground">{trades.length === 0 ? "Log decisive trades to use journal stats." : "This range has no decisive trades to calculate an edge."}</p>}
+            <button type="button" disabled={!stats || rangeInvalid} onClick={applyJournalStats} className={cn("w-full rounded-lg border px-3 py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45", appliedStats ? "border-primary/45 bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/35 hover:text-foreground")}>{appliedStats ? "Journal stats applied" : "Use these stats"}</button>
           </FieldGroup>
 
-          <FieldGroup title="Risk & pace">
-            <NumberField label="Risk per trade" value={input.riskPerTrade} unit="$" step={50}
-              onChange={(v) => set("riskPerTrade", v)} />
-            <NumberField label="Trades per day" value={input.tradesPerDay} step={1}
-              onChange={(v) => set("tradesPerDay", Math.max(1, Math.round(v)))} />
-          </FieldGroup>
+          <FieldGroup title="Your edge"><SliderField label="Win rate" value={input.winRate * 100} min={10} max={90} step={1} unit="%" onChange={(value) => set("winRate", value / 100)} /><SliderField label="Reward : risk" value={input.rewardRisk} min={0.5} max={5} step={0.1} unit="R" onChange={(value) => set("rewardRisk", value)} /><MetricLine label="Expectancy" value={`${result.expectancyR >= 0 ? "+" : ""}${result.expectancyR.toFixed(2)}R · ${money(result.expectancyMoney)}`} emphasis={edgePositive} /></FieldGroup>
+          <FieldGroup title="Risk & pace"><NumberField label="Risk per trade" value={input.riskPerTrade} unit="$" step={50} onChange={(value) => set("riskPerTrade", value)} /><NumberField label="Trades per day" value={input.tradesPerDay} step={1} onChange={(value) => set("tradesPerDay", Math.max(1, Math.round(value)))} /></FieldGroup>
+          <FieldGroup title="Account rules"><NumberField label="Account size" value={input.accountSize} unit="$" step={5000} onChange={(value) => set("accountSize", value)} /><NumberField label="Profit target" value={input.profitTarget} unit="$" step={500} onChange={(value) => set("profitTarget", value)} /><NumberField label="Max drawdown" value={input.maxDrawdown} unit="$" step={250} onChange={(value) => set("maxDrawdown", value)} /><ToggleField value={input.drawdownMode} onChange={(value) => set("drawdownMode", value)} /><NumberField label="Daily loss limit" value={input.dailyLossLimit} unit="$" step={250} hint="0 = off" onChange={(value) => set("dailyLossLimit", Math.max(0, value))} /><NumberField label="Deadline" value={input.maxDays} unit="days" step={1} hint="0 = no limit" onChange={(value) => set("maxDays", Math.max(0, Math.round(value))} /></FieldGroup>
+          <FieldGroup title="Simulation"><SliderField label="Runs" value={input.simulations} min={500} max={10000} step={500} onChange={(value) => set("simulations", Math.round(value))} /></FieldGroup>
+        </aside>
 
-          <FieldGroup title="Account rules">
-            <NumberField label="Account size" value={input.accountSize} unit="$" step={5000}
-              onChange={(v) => set("accountSize", v)} />
-            <NumberField label="Profit target" value={input.profitTarget} unit="$" step={500}
-              onChange={(v) => set("profitTarget", v)} />
-            <NumberField label="Max drawdown" value={input.maxDrawdown} unit="$" step={250}
-              onChange={(v) => set("maxDrawdown", v)} />
-            <div className="space-y-1.5">
-              <span className="text-xs text-muted-foreground">Drawdown type</span>
-              <div className="flex overflow-hidden rounded-lg border border-border">
-                {(["trailing", "static"] as DrawdownMode[]).map((m) => (
-                  <button key={m} type="button" onClick={() => set("drawdownMode", m)}
-                    className={cn("flex-1 px-3 py-1.5 text-xs font-semibold capitalize transition-colors",
-                      input.drawdownMode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
-                    {m}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <NumberField label="Daily loss limit" value={input.dailyLossLimit} unit="$" step={250} hint="0 = off"
-              onChange={(v) => set("dailyLossLimit", Math.max(0, v))} />
-            <NumberField label="Deadline (days)" value={input.maxDays} step={1} hint="0 = no limit"
-              onChange={(v) => set("maxDays", Math.max(0, Math.round(v)))} />
-          </FieldGroup>
+        <section className="min-w-0 space-y-3">
+          <div className="rounded-2xl border border-primary/25 bg-[radial-gradient(circle_at_82%_0%,color-mix(in_oklch,var(--ice)_14%,transparent),transparent_34%),color-mix(in_oklch,var(--primary)_6%,var(--card))] p-4">
+            <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Probability of passing</p><p className="mt-1 text-[clamp(2.5rem,5vw,4.25rem)] font-black leading-none tracking-[-.07em] text-primary tabular-nums">{pct(result.passRate)}</p></div><div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs"><Stat label="Median pass" value={result.medianDaysToPass === null ? "—" : `${result.medianDaysToPass} days`} /><Stat label="Median finish" value={money(result.medianEndBalance)} /><Stat label="Non-pass" value={pct(result.failRate + result.timeoutRate)} /><Stat label="Attempts" value={input.simulations.toLocaleString()} /></div></div>
+            <div className="mt-4 flex h-2.5 overflow-hidden rounded-full bg-muted/50"><span style={{ width: pct(result.passRate), background: PRIMARY }} /><span style={{ width: pct(result.timeoutRate), background: CYAN, opacity: 0.8 }} /><span style={{ width: pct(result.failRate), background: SLATE, opacity: 0.45 }} /></div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground"><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-primary" />Pass {pct(result.passRate)}</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-[var(--ice)]" />Timed out {pct(result.timeoutRate)}</span><span><i className="mr-1 inline-block h-2 w-2 rounded-full bg-muted-foreground/50" />Rule breach {pct(result.failRate)}</span></div>
+          </div>
 
-          <FieldGroup title="Simulation">
-            <SliderField label="Runs" value={input.simulations} min={500} max={10000} step={500}
-              onChange={(v) => set("simulations", Math.round(v))} />
-          </FieldGroup>
-        </div>
-
-        {/* Results: a compact odds strip over the two charts, which fill the rest. */}
-        <div className="flex min-h-0 flex-col gap-3">
-          {/* Odds strip: the whole read on the pass, in one shrink-0 band. */}
-          <div className="shrink-0 rounded-2xl border border-primary/25 bg-primary/[0.06] p-3">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Pass</span>
-                <span className="text-3xl font-black leading-none tabular-nums" style={{ color: GREEN }}>{pct(result.passRate)}</span>
-              </div>
-              <MiniStat label="Fail" value={pct(result.failRate)} color={RED} />
-              <MiniStat label="Timed out" value={pct(result.timeoutRate)} color={AMBER} />
-              <MiniStat label="Median pass" value={result.medianDaysToPass !== null ? `${result.medianDaysToPass}d` : "-"} />
-              <MiniStat label="Expectancy" value={`${result.expectancyR >= 0 ? "+" : ""}${result.expectancyR.toFixed(2)}R`}
-                color={edgePositive ? GREEN : RED} />
-              <p className="w-full text-xs leading-snug text-foreground/80">
-                Out of <span className="font-semibold tabular-nums">{input.simulations.toLocaleString()}</span> attempts you passed
-                {" "}<span className="font-bold" style={{ color: GREEN }}>{pct(result.passRate)}</span> of the time:
-                roughly <span className="font-semibold tabular-nums">{Math.round(result.passRate * 100)} out of 100</span> tries clear this evaluation
-                {!edgePositive && <span className="text-destructive"> · negative expectancy loses over a large sample</span>}.
-              </p>
-            </div>
-            {/* Outcome bar */}
-            <div className="mt-2.5 flex h-2.5 w-full overflow-hidden rounded-full bg-border/60">
-              <div className="h-full" style={{ width: pct(result.passRate), background: GREEN }} />
-              <div className="h-full" style={{ width: pct(result.timeoutRate), background: AMBER }} />
-              <div className="h-full" style={{ width: pct(result.failRate), background: RED }} />
+          <div className="rounded-2xl border border-border/60 bg-card p-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2"><div><h3 className="text-sm font-semibold">Projected equity range</h3><p className="mt-0.5 text-xs text-muted-foreground">The central line is the median attempt; bands show the spread across active simulations.</p></div><span className="text-xs font-semibold text-primary">{input.simulations.toLocaleString()} simulations</span></div>
+            <div className="mt-4 h-[clamp(250px,37vh,410px)] min-h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%"><AreaChart data={envelopeData} margin={{ top: 10, right: 12, left: 4, bottom: 0 }}><defs><linearGradient id="mcOuter" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--ice)" stopOpacity=".18" /><stop offset="1" stopColor="var(--ice)" stopOpacity=".02" /></linearGradient><linearGradient id="mcInner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--primary)" stopOpacity=".28" /><stop offset="1" stopColor="var(--primary)" stopOpacity=".06" /></linearGradient></defs><CartesianGrid stroke="color-mix(in oklch,var(--border) 65%,transparent)" strokeDasharray="3 4" vertical={false} /><XAxis dataKey="trade" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} tickFormatter={(value) => `T${value}`} /><YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={48} tickFormatter={(value) => `${Math.round(value / 1000)}k`} domain={["dataMin", "dataMax"]} /><Tooltip content={<EnvelopeTooltip />} /><ReferenceLine y={target} stroke="var(--primary)" strokeDasharray="5 4" label={{ value: "Target", fill: "var(--primary)", fontSize: 10, position: "insideTopRight" }} /><ReferenceLine y={floor} stroke="var(--ice)" strokeOpacity={.7} strokeDasharray="5 4" label={{ value: "Drawdown", fill: "var(--ice)", fontSize: 10, position: "insideBottomRight" }} /><ReferenceLine y={input.accountSize} stroke="var(--muted-foreground)" strokeOpacity={.45} strokeDasharray="2 4" /><Area dataKey="p10" stackId="outer" stroke="none" fill="transparent" isAnimationActive={false} /><Area dataKey="outerBand" stackId="outer" stroke="none" fill="url(#mcOuter)" isAnimationActive={false} /><Area dataKey="p25" stackId="inner" stroke="none" fill="transparent" isAnimationActive={false} /><Area dataKey="innerBand" stackId="inner" stroke="none" fill="url(#mcInner)" isAnimationActive={false} /><Line type="monotone" dataKey="p50" stroke="var(--primary)" strokeWidth={2.5} dot={false} isAnimationActive={false} /></AreaChart></ResponsiveContainer>
             </div>
           </div>
 
-          {/* The two charts share the leftover height, side by side from xl. */}
-          <div className="grid min-h-0 flex-1 gap-3 xl:grid-cols-2">
-            {/* Equity curves */}
-            <div className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card p-3">
-              <div className="flex shrink-0 items-baseline justify-between gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sample equity paths</p>
-                <span className="text-[10px] text-muted-foreground/70">{curveData.meta.length} of {input.simulations.toLocaleString()}</span>
-              </div>
-              <div className="-ml-2 min-h-0 flex-1">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={curveData.rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.3 0.01 252 / 0.3)" vertical={false} />
-                    <XAxis dataKey="t" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false}
-                      domain={["dataMin", "dataMax"]} width={40}
-                      tickFormatter={(v: number) => `${Math.round(v / 1000)}k`} />
-                    <ReferenceLine y={target} stroke={GREEN} strokeDasharray="4 3" strokeWidth={1.5} />
-                    <ReferenceLine y={floor} stroke={RED} strokeDasharray="4 3" strokeWidth={1.5} />
-                    <ReferenceLine y={input.accountSize} stroke="var(--border)" strokeDasharray="2 2" />
-                    {curveData.meta.map((outcome, idx) => (
-                      <Line key={idx} type="monotone" dataKey={`c${idx}`} dot={false} isAnimationActive={false}
-                        connectNulls={false} strokeWidth={1.1}
-                        stroke={outcome === "pass" ? GREEN : outcome === "fail" ? RED : AMBER}
-                        strokeOpacity={0.55} />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex shrink-0 items-center gap-4 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1"><span className="h-px w-3" style={{ background: GREEN }} /> Target {money(target)}</span>
-                <span className="flex items-center gap-1"><span className="h-px w-3" style={{ background: RED }} /> Floor {money(floor)}</span>
-                <span className="ml-auto hidden sm:inline">each line = one attempt, same edge</span>
-              </div>
-            </div>
-
-            {/* Ending balance distribution */}
-            <div className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card p-3">
-              <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ending balance</p>
-                <div className="flex items-center gap-3 text-[11px] tabular-nums">
-                  <span className="text-muted-foreground">Median <span className="font-semibold text-foreground">{money(result.medianEndBalance)}</span></span>
-                  <span className="text-success">Best {money(result.bestEndBalance)}</span>
-                  <span className="text-destructive">Worst {money(result.worstEndBalance)}</span>
-                </div>
-              </div>
-              <div className="-ml-2 min-h-0 flex-1">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={result.histogram} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.3 0.01 252 / 0.3)" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false}
-                      interval={2} tickFormatter={(v: string) => `${Math.round(Number(v) / 1000)}k`} />
-                    <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={28} />
-                    <Bar dataKey="count" radius={[2, 2, 0, 0]}>
-                      {result.histogram.map((h, i) => {
-                        const mid = (h.from + h.to) / 2;
-                        const c = mid >= target ? GREEN : mid <= floor ? RED : CYAN;
-                        return <Cell key={i} fill={c} fillOpacity={0.85} />;
-                      })}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="shrink-0 text-[10px] leading-snug text-muted-foreground">
-                Where every run finished:<span style={{ color: GREEN }}> green</span> cleared the target,
-                <span style={{ color: RED }}> red</span> fell below the floor.
-              </p>
-            </div>
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(260px,.75fr)]">
+            <div className="rounded-2xl border border-border/60 bg-card p-4"><div className="flex flex-wrap items-baseline justify-between gap-2"><div><h3 className="text-sm font-semibold">Where attempts finish</h3><p className="mt-0.5 text-xs text-muted-foreground">Ending balance distribution across the full simulation.</p></div><span className="text-xs text-muted-foreground">Range {money(result.worstEndBalance)} — {money(result.bestEndBalance)}</span></div><div className="mt-3 h-44"><ResponsiveContainer width="100%" height="100%"><BarChart data={result.histogram} margin={{ top: 8, right: 6, left: -10, bottom: 0 }}><CartesianGrid stroke="color-mix(in oklch,var(--border) 65%,transparent)" strokeDasharray="3 4" vertical={false} /><XAxis dataKey="label" tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} interval={2} tickFormatter={(value) => `${Math.round(Number(value) / 1000)}k`} /><YAxis tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={28} /><ReferenceLine x={result.histogram.find((bucket) => target >= bucket.from && target <= bucket.to)?.label} stroke="var(--primary)" strokeDasharray="4 3" /><Bar dataKey="count" radius={[3, 3, 0, 0]}>{result.histogram.map((bucket, index) => <Cell key={index} fill={bucket.to >= target ? PRIMARY : CYAN} fillOpacity={bucket.to >= target ? .9 : .48} />)}</Bar></BarChart></ResponsiveContainer></div></div>
+            <div className="rounded-2xl border border-border/60 bg-card p-4"><h3 className="text-sm font-semibold">Simulation read</h3><div className="mt-4 space-y-4"><Insight label="Expected value" value={`${result.expectancyR >= 0 ? "+" : ""}${result.expectancyR.toFixed(2)}R`} detail={`${money(result.expectancyMoney)} per trade`} accent={edgePositive ? PRIMARY : CYAN} /><Insight label="Risk window" value={`${money(input.maxDrawdown)}`} detail={input.drawdownMode === "trailing" ? "Trailing drawdown" : "Static drawdown"} accent={CYAN} /><Insight label="Target distance" value={`${(input.profitTarget / input.riskPerTrade).toFixed(1)}R`} detail={`${money(input.profitTarget)} to pass`} accent={PRIMARY} /></div></div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );
 }
 
-/* ── Small building blocks ─────────────────────────────────────── */
-
-function MiniStat({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div className="flex items-baseline gap-1.5">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="text-base font-black leading-none tabular-nums" style={{ color: color ?? "var(--foreground)" }}>{value}</span>
-    </div>
-  );
+function EnvelopeTooltip({ active, payload }: { active?: boolean; payload?: { payload: { trade: number; p10: number; p25: number; p50: number; p75: number; p90: number; active: number } }[] }) {
+  if (!active || !payload?.[0]) return null;
+  const point = payload[0].payload;
+  return <div className="rounded-xl border border-border/70 bg-card/95 p-3 text-xs shadow-xl backdrop-blur"><p className="font-semibold text-foreground">Trade {point.trade}</p><div className="mt-2 grid grid-cols-2 gap-x-5 gap-y-1 text-muted-foreground"><span>Median</span><span className="text-right font-semibold text-foreground">{money(point.p50)}</span><span>P10 — P90</span><span className="text-right font-semibold text-foreground">{money(point.p10)} — {money(point.p90)}</span><span>Active paths</span><span className="text-right font-semibold text-foreground">{point.active.toLocaleString()}</span></div></div>;
 }
 
-function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-2 sm:space-y-2.5">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{title}</p>
-      {children}
-    </div>
-  );
-}
-
-function NumberField({
-  label, value, onChange, unit, step = 1, hint,
-}: {
-  label: string; value: number; onChange: (v: number) => void; unit?: string; step?: number; hint?: string;
-}) {
-  return (
-    <label className="flex items-center justify-between gap-3">
-      <span className="text-xs text-muted-foreground min-w-0">
-        {label}
-        {hint && <span className="text-muted-foreground/50 ml-1">({hint})</span>}
-      </span>
-      <span className="relative shrink-0">
-        {unit && <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/60 pointer-events-none">{unit}</span>}
-        <input
-          type="number"
-          value={value}
-          step={step}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className={cn(
-            "w-28 rounded-lg border border-border bg-input py-1.5 text-sm text-foreground text-right outline-none transition-colors tabular-nums",
-            "focus:border-primary/50 focus:ring-2 focus:ring-primary/15",
-            unit ? "pl-6 pr-2.5" : "px-2.5"
-          )}
-        />
-      </span>
-    </label>
-  );
-}
-
-function SliderField({
-  label, value, min, max, step, unit, onChange,
-}: {
-  label: string; value: number; min: number; max: number; step: number; unit?: string; onChange: (v: number) => void;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="text-sm font-semibold tabular-nums text-foreground">
-          {step < 1 ? value.toFixed(step < 0.1 ? 2 : 1) : value.toLocaleString()}{unit}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="mc-range w-full"
-      />
-    </div>
-  );
-}
-
+function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) { return <div className="space-y-2.5"><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{title}</p>{children}</div>; }
+function MetricLine({ label, value, emphasis }: { label: string; value: string; emphasis: boolean }) { return <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">{label}</span><span className={cn("font-semibold tabular-nums", emphasis ? "text-primary" : "text-foreground")}>{value}</span></div>; }
+function Stat({ label, value }: { label: string; value: string }) { return <div><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p><p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">{value}</p></div>; }
+function Insight({ label, value, detail, accent }: { label: string; value: string; detail: string; accent: string }) { return <div className="border-l-2 pl-3" style={{ borderColor: accent }}><p className="text-xs text-muted-foreground">{label}</p><p className="mt-0.5 text-xl font-black leading-none tabular-nums" style={{ color: accent }}>{value}</p><p className="mt-1 text-[11px] text-muted-foreground">{detail}</p></div>; }
+function DateInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="space-y-1"><span className="block text-[11px] text-muted-foreground">{label}</span><input type="date" value={value} onChange={(event) => onChange(event.target.value)} className="h-9 w-full rounded-lg border border-border bg-input px-2 text-xs text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15" /></label>; }
+function ToggleField({ value, onChange }: { value: DrawdownMode; onChange: (value: DrawdownMode) => void }) { return <div className="space-y-1.5"><span className="text-xs text-muted-foreground">Drawdown type</span><div className="flex overflow-hidden rounded-lg border border-border">{(["trailing", "static"] as DrawdownMode[]).map((option) => <button key={option} type="button" onClick={() => onChange(option)} className={cn("flex-1 px-3 py-1.5 text-xs font-semibold capitalize transition-colors", value === option ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>{option}</button>)}</div></div>; }
+function NumberField({ label, value, onChange, unit, step = 1, hint }: { label: string; value: number; onChange: (value: number) => void; unit?: string; step?: number; hint?: string }) { return <label className="flex items-center justify-between gap-3"><span className="min-w-0 text-xs text-muted-foreground">{label}{hint && <span className="ml-1 text-muted-foreground/50">({hint})</span>}</span><span className="relative shrink-0">{unit && <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground/60">{unit === "days" ? "" : unit}</span>}<input type="number" value={value} step={step} onChange={(event) => onChange(Number(event.target.value))} className={cn("w-28 rounded-lg border border-border bg-input py-1.5 text-right text-sm text-foreground outline-none transition-colors tabular-nums focus:border-primary/50 focus:ring-2 focus:ring-primary/15", unit === "$" ? "pl-6 pr-2.5" : "px-2.5")} /></span></label>; }
+function SliderField({ label, value, min, max, step, unit = "", onChange }: { label: string; value: number; min: number; max: number; step: number; unit?: string; onChange: (value: number) => void }) { return <div className="space-y-1.5"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">{label}</span><span className="text-sm font-semibold tabular-nums text-foreground">{step < 1 ? value.toFixed(1) : value.toLocaleString()}{unit}</span></div><input type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} className="mc-range w-full" /></div>; }
