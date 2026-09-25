@@ -65,7 +65,7 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
         </div>
 
         <div className="flex items-center gap-4 border-b border-border/60 py-4 sm:gap-6">
-          <BrainScore score={current} color={color} className="size-28 sm:size-32 lg:size-[clamp(120px,18vh,170px)]" />
+          <BrainScore score={current} className="size-28 sm:size-32 lg:size-[clamp(120px,18vh,170px)]" />
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
               <span className="font-heading text-[clamp(3.5rem,7vw,6rem)] font-black leading-none tracking-[-0.07em] tabular-nums" style={{ color }}>{current ?? "·"}</span>

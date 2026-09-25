@@ -129,7 +129,6 @@ export function MindScoreOrb({ score, period, onPeriodChange, className, compact
         <div className="flex min-w-0 items-center justify-center overflow-hidden">
           <BrainScore
             score={hasData ? Math.round(prog * 100) : null}
-            color={color}
             className="size-[clamp(94px,8.5vw,128px)] max-w-full transition-transform duration-700 ease-out group-hover:scale-[1.035] short:size-[78px]"
           />
         </div>

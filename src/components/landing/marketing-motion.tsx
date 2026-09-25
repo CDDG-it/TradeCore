@@ -228,7 +228,7 @@ export function MindscoreAssembly() {
           <span className="rounded-full border border-[#a8cfcb] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#167c79]">Illustrative data</span>
         </div>
         <div className="my-7 flex items-center gap-4 sm:gap-6">
-          <BrainScore score={74} color="#0d817c" className="size-[120px] sm:size-[150px]" />
+          <BrainScore score={74} className="size-[120px] sm:size-[150px]" />
           <div><span className="font-display text-[clamp(4rem,10vw,7rem)] font-semibold leading-[0.85] tracking-[-0.09em] tabular-nums text-[#102b37]">74</span><span className="mt-2 block text-sm font-semibold text-[#167c79]">Solid</span></div>
         </div>
         <div>
