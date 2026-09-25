@@ -63,11 +63,16 @@ export async function uploadScreenshot(
  */
 export type ScreenshotSize = "thumb" | "preview" | "full";
 
+/* Quality is set high on purpose. A trading screenshot is mostly flat colour
+   with thin lines and small text, which is exactly what aggressive compression
+   ruins first, and Supabase serves WebP, which handles that content cheaply.
+   Measured on this account: originals average ~106 KB, so there is no reason
+   to trade away legibility for a few kilobytes. */
 const TRANSFORMS: Record<Exclude<ScreenshotSize, "full">, { width: number; quality: number }> = {
   // Calendar tiles and small cards; generous enough for a high-density screen.
-  thumb: { width: 640, quality: 60 },
-  // The grid inside the journal and the upload dialog.
-  preview: { width: 1400, quality: 70 },
+  thumb: { width: 640, quality: 82 },
+  // The grid inside the journal and the upload dialog, where charts are read.
+  preview: { width: 1600, quality: 88 },
 };
 
 /**
