@@ -179,9 +179,8 @@ export function WriteIn({ children, className, delay = 0, duration = 1.1 }: {
   );
 }
 
-/** Chapter index, heading and standfirst. Shared by every section between the hero and the close. */
-export function SectionHeader({ index, label, title, children, align = "split", className, id }: {
-  index?: string;
+/** Eyebrow, heading and standfirst. Shared by every section between the hero and the close. */
+export function SectionHeader({ label, title, children, align = "split", className, id }: {
   label: string;
   title: ReactNode;
   children?: ReactNode;
@@ -194,7 +193,7 @@ export function SectionHeader({ index, label, title, children, align = "split", 
   return (
     <div className={`${split ? "grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.52fr)] lg:items-end lg:gap-20" : ""} ${className ?? ""}`}>
       <MarketingReveal>
-        <p className="marketing-eyebrow">{index && <span className="tabular-nums">{index}</span>}{label}</p>
+        <p className="marketing-eyebrow">{label}</p>
         <h2 id={id} className="font-display mt-6 max-w-[860px] text-balance text-[clamp(2.6rem,4.8vw,5.4rem)] font-semibold leading-[1.02] tracking-[-0.055em]">{title}</h2>
       </MarketingReveal>
       {children && (

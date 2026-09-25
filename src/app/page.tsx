@@ -51,7 +51,7 @@ export default function HomePage() {
 
           <section id="mindscore" className="marketing-section marketing-section--white px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader index="02" label="MC Mindscore" title="Your effort, made visible." className="mb-14 lg:mb-20">
+              <SectionHeader label="MC Mindscore" title="Your effort, made visible." className="mb-14 lg:mb-20">
                 MC Mindscore turns the work you log on and off the charts into one explainable view.
               </SectionHeader>
               <MindscoreAssembly />
@@ -61,7 +61,7 @@ export default function HomePage() {
           <section id="trade-therapist" className="marketing-section marketing-section--tint px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.42fr_0.58fr] lg:gap-20">
               <div className="marketing-sticky">
-                <SectionHeader index="03" label="MC Trade Therapist" title="A practice of looking closer." align="stack">
+                <SectionHeader label="MC Trade Therapist" title="A practice of looking closer." align="stack">
                   Prepare before the market, analyse after it and turn each week into a lesson. Monthly rollups show what persists.
                 </SectionHeader>
                 <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
@@ -82,7 +82,7 @@ export default function HomePage() {
           <section id="review" className="marketing-section marketing-section--white px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.38fr_0.62fr] lg:gap-20">
               <div className="marketing-sticky">
-                <SectionHeader index="04" label="Best trade of the day" title="A review should change what you do." align="stack">
+                <SectionHeader label="Best trade of the day" title="A review should change what you do." align="stack">
                   Look back at the trade you took, mark the best trade that was on offer, and turn the difference into one response for the next session.
                 </SectionHeader>
                 <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
@@ -102,7 +102,7 @@ export default function HomePage() {
 
           <section id="market-context" className="marketing-section marketing-section--mist px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader index="05" label="Global Markets" title="Your process meets the market you actually trade." className="mb-14 lg:mb-18">
+              <SectionHeader label="Global Markets" title="Your process meets the market you actually trade." className="mb-14 lg:mb-18">
                 Releases, positioning and the rates backdrop sit beside the plan you already wrote, so context informs the session without rewriting it.
               </SectionHeader>
               <MarketingReveal delay={0.15} distance={10} className="mb-6 hidden lg:block">
