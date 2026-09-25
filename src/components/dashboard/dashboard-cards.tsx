@@ -313,8 +313,8 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
           card space, so a short laptop viewport gets a proportionate ring
           instead of one that crowds out the legend. The floor keeps it a proper
           ring (not a dot) on phones, where the column is not height-capped. */}
-      <div className="flex min-h-[clamp(72px,8vh,96px)] flex-1 items-center justify-center py-1 short:min-h-[58px] short:py-0">
-        <div className="relative aspect-square h-full max-h-[clamp(76px,10.5vh,112px)] w-auto short:max-h-[64px]">
+      <div className="flex min-h-[clamp(72px,8vh,96px)] flex-1 items-center justify-center gap-4 py-1 short:min-h-[58px] short:gap-3 short:py-0">
+        <div className="relative aspect-square h-full max-h-[clamp(76px,10.5vh,112px)] w-auto shrink-0 short:max-h-[64px]">
           <svg viewBox="0 0 116 116" className="block h-full w-full">
             {/* Track */}
             <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
@@ -335,15 +335,14 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
               );
             })}
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            {/* Tracks the ring's own scale, so the figure never crowds a small ring. */}
-            <p className={cn("font-black tabular-nums leading-none tracking-tight", compactNumbers ? "text-[clamp(16px,2.2vh,24px)]" : "text-[clamp(18px,2.6vh,28px)]")}>
-              {winRate === null ? "-" : `${display}%`}
-            </p>
-            <p className="text-[clamp(8px,1vh,9px)] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">
-              {total > 0 ? `${total} trade${total !== 1 ? "s" : ""}` : "no trades"}
-            </p>
-          </div>
+        </div>
+        <div className="min-w-0 border-l border-border/50 pl-4 short:pl-3">
+          <p className={cn("font-black tabular-nums leading-none tracking-[-.055em] text-foreground", compactNumbers ? "text-[26px] short:text-[22px]" : "text-[36px] short:text-[28px]")}>
+            {winRate === null ? "-" : `${display}%`}
+          </p>
+          <p className="mt-1 whitespace-nowrap text-[11px] font-semibold text-muted-foreground short:text-[10px]">
+            {total > 0 ? `${total} trade${total !== 1 ? "s" : ""}` : "No trades yet"}
+          </p>
         </div>
       </div>
 
