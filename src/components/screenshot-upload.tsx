@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { ImagePlus, X, ZoomIn, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScreenshotGroup } from "@/lib/types";
-import { uploadScreenshot, deleteScreenshot, getScreenshotUrls } from "@/lib/supabase/storage";
+import { uploadScreenshot, deleteScreenshot, getScreenshotUrl, getScreenshotUrls } from "@/lib/supabase/storage";
 
 interface StorageConfig {
   userId: string;
@@ -63,6 +63,20 @@ export function ScreenshotUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [lightbox, setLightbox] = useState<string | null>(null);
+
+  /* The grid holds preview-sized URLs. Opening the lightbox is the one moment
+     the original is worth fetching, so it is signed on demand. */
+  async function openFullSize(url: string) {
+    if (url.startsWith("data:") || url.startsWith("http")) {
+      setLightbox(url);
+      return;
+    }
+    try {
+      setLightbox(await getScreenshotUrl(url, 3600, "full"));
+    } catch {
+      setLightbox(display(url));
+    }
+  }
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [addingGroup, setAddingGroup] = useState(false);
@@ -91,7 +105,7 @@ export function ScreenshotUpload({
     if (!paths.length) return;
     const unresolved = paths.filter((p) => !resolvedUrls.has(p));
     if (!unresolved.length) return;
-    getScreenshotUrls(unresolved).then((signed) => {
+    getScreenshotUrls(unresolved, "preview").then((signed) => {
       setResolvedUrls((prev) => {
         const next = new Map(prev);
         unresolved.forEach((p, i) => next.set(p, signed[i]));
@@ -222,7 +236,7 @@ export function ScreenshotUpload({
                 <button
                   key={i}
                   type="button"
-                  onClick={() => setLightbox(display(url))}
+                  onClick={() => openFullSize(url)}
                   className="group relative block w-full overflow-hidden rounded-xl border border-border/60 transition-all hover:border-primary/40 hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)]"
                   style={{ background: "#0b1120" }}
                   title="View full size"
@@ -411,7 +425,7 @@ export function ScreenshotUpload({
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                     <button
                       type="button"
-                      onClick={() => setLightbox(display(url))}
+                      onClick={() => openFullSize(url)}
                       className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center text-foreground hover:bg-white transition-colors"
                       title="View full size"
                     >

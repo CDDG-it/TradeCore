@@ -116,9 +116,10 @@ function Field({ label, htmlFor, hint, children }: { label: string; htmlFor: str
 function InteractivePanel({ children, className }: { children: React.ReactNode; className?: string }) {
   const panel = useRef<HTMLDivElement>(null);
   const glow = useRef<HTMLDivElement>(null);
+  const hasFocusWithin = useRef(false);
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    if (!panel.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!panel.current || hasFocusWithin.current || event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const bounds = panel.current.getBoundingClientRect();
     const x = (event.clientX - bounds.left) / bounds.width;
     const y = (event.clientY - bounds.top) / bounds.height;
@@ -128,11 +129,24 @@ function InteractivePanel({ children, className }: { children: React.ReactNode; 
 
   function resetPanel() {
     if (!panel.current) return;
-    gsap.to(panel.current, { rotateX: 0, rotateY: 0, y: 0, duration: 0.7, ease: "elastic.out(1, .55)" });
-    if (glow.current) gsap.to(glow.current, { opacity: 0.28, duration: 0.5 });
+    gsap.killTweensOf(panel.current);
+    gsap.to(panel.current, { rotateX: 0, rotateY: 0, y: 0, duration: 0.2, ease: "power3.out" });
+    if (glow.current) {
+      gsap.killTweensOf(glow.current);
+      gsap.to(glow.current, { opacity: 0.28, duration: 0.2, ease: "power3.out" });
+    }
   }
 
-  return <div className="[perspective:1100px]"><div ref={panel} onPointerMove={handlePointerMove} onPointerLeave={resetPanel} className={`group relative overflow-hidden rounded-[30px] border border-white/[.11] bg-[#0d1c29]/95 shadow-[0_36px_100px_rgba(0,0,0,.48)] backdrop-blur-xl transition-[border-color,box-shadow] duration-500 focus-within:border-[#65d4c8]/35 focus-within:shadow-[0_40px_110px_rgba(0,0,0,.5),0_0_0_1px_rgba(101,212,200,.08)] ${className ?? ""}`}><div ref={glow} aria-hidden className="pointer-events-none absolute -left-1/2 -top-1/2 h-full w-full rounded-full bg-[#14b8a6]/20 opacity-30 blur-[70px]" /><div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,.055),transparent_38%,rgba(20,184,166,.035))]" />{children}</div></div>;
+  function handleFocus() {
+    hasFocusWithin.current = true;
+    resetPanel();
+  }
+
+  function handleBlur(event: React.FocusEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) hasFocusWithin.current = false;
+  }
+
+  return <div className="[perspective:1100px]"><div ref={panel} onPointerMove={handlePointerMove} onPointerLeave={resetPanel} onFocusCapture={handleFocus} onBlurCapture={handleBlur} className={`group relative overflow-hidden rounded-[30px] border border-white/[.11] bg-[#0d1c29]/95 shadow-[0_36px_100px_rgba(0,0,0,.48)] backdrop-blur-xl transition-[border-color,box-shadow] duration-500 focus-within:border-[#65d4c8]/35 focus-within:shadow-[0_40px_110px_rgba(0,0,0,.5),0_0_0_1px_rgba(101,212,200,.08)] ${className ?? ""}`}><div ref={glow} aria-hidden className="pointer-events-none absolute -left-1/2 -top-1/2 h-full w-full rounded-full bg-[#14b8a6]/20 opacity-30 blur-[70px]" /><div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,.055),transparent_38%,rgba(20,184,166,.035))]" />{children}</div></div>;
 }
 
 function AuthShell({ children }: { children: React.ReactNode }) {

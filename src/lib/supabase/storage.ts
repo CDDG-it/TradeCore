@@ -51,27 +51,51 @@ export async function uploadScreenshot(
 }
 
 /**
+ * How large a screenshot should come back.
+ *
+ * Supabase resizes and re-encodes at the source, so a "preview" costs a
+ * fraction of the original on the wire. A trading screenshot is often several
+ * megabytes; the grid never shows it larger than a dialog, so asking for the
+ * original there was paying for pixels nobody sees.
+ *
+ * "full" is the untouched file, for the lightbox, where the trader is
+ * deliberately looking at detail.
+ */
+export type ScreenshotSize = "thumb" | "preview" | "full";
+
+const TRANSFORMS: Record<Exclude<ScreenshotSize, "full">, { width: number; quality: number }> = {
+  // Calendar tiles and small cards; generous enough for a high-density screen.
+  thumb: { width: 640, quality: 60 },
+  // The grid inside the journal and the upload dialog.
+  preview: { width: 1400, quality: 70 },
+};
+
+/**
  * Generate a signed URL for a private screenshot path.
  * Expires in 1 hour (3600s). Call this when rendering, not in storage.
  */
-export async function getScreenshotUrl(path: string, expiresIn = 3600): Promise<string> {
+export async function getScreenshotUrl(
+  path: string,
+  expiresIn = 3600,
+  size: ScreenshotSize = "full"
+): Promise<string> {
   // If the path is already a data URL or http URL (legacy base64 content), return as-is
   if (path.startsWith("data:") || path.startsWith("http")) return path;
 
   const supabase = createClient();
+  const transform = size === "full" ? undefined : TRANSFORMS[size];
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .createSignedUrl(path, expiresIn);
+    .createSignedUrl(path, expiresIn, transform ? { transform } : undefined);
   if (error) throw error;
   return data.signedUrl;
 }
 
-/** Generate multiple signed URLs in one batch. */
-export async function getScreenshotUrls(paths: string[]): Promise<string[]> {
+/** Generate multiple signed URLs in one batch, all at the same size. */
+export async function getScreenshotUrls(paths: string[], size: ScreenshotSize = "full"): Promise<string[]> {
   if (!paths.length) return [];
   // Split: data URLs pass through, storage paths get signed
-  const results = await Promise.all(paths.map((p) => getScreenshotUrl(p)));
-  return results;
+  return Promise.all(paths.map((p) => getScreenshotUrl(p, 3600, size)));
 }
 
 /** Delete a screenshot from storage. */

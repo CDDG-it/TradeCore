@@ -16,6 +16,25 @@ function signedAsymmetrically(jwt: string): boolean {
   }
 }
 
+/**
+ * Private testing: only these accounts reach the signed-in app. Everyone else
+ * can still register, and lands on /waitlist once signed in.
+ *
+ * Kept in an environment variable rather than a table on purpose: this runs on
+ * every request, and a database read here would cost a query per navigation.
+ * An unset or empty list means the gate is off, so a missing variable can
+ * never lock the owner out of their own app.
+ */
+function allowlist(): Set<string> | null {
+  const raw = process.env.ALLOWED_EMAILS?.trim();
+  if (!raw) return null;
+  const emails = raw
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return emails.length ? new Set(emails) : null;
+}
+
 export async function updateSession(request: NextRequest) {
   // Without Supabase configured there is nothing to gate against: let the
   // request through rather than lock every route behind a login that cannot
@@ -78,6 +97,7 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === "/privacy" ||
     request.nextUrl.pathname === "/terms" ||
     request.nextUrl.pathname === "/pricing" ||
+    request.nextUrl.pathname === "/waitlist" ||
     request.nextUrl.pathname.startsWith("/traders/") ||
     request.nextUrl.pathname.startsWith("/api/") ||
     // Dev-only preview of signed-in screens with sample data (see app/(app)/preview).
@@ -87,6 +107,18 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  // Private testing gate. Applied after the login check, so an outsider sees
+  // the waiting page rather than a login loop, and only on the app's own
+  // routes: the public site and the auth pages stay reachable.
+  const allowed = allowlist();
+  if (user && allowed && !allowed.has(user.email?.toLowerCase() ?? "")) {
+    if (!isPublicPage && !isAuthPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/waitlist";
+      return NextResponse.redirect(url);
+    }
   }
 
   // Redirect authenticated users away from auth pages, but NOT from
