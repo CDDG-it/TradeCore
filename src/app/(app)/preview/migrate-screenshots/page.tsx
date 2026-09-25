@@ -78,9 +78,17 @@ export default function MigrateScreenshotsPage() {
         </p>
       </header>
 
+      {/* Without a session, row-level security returns no rows and a scan would
+          report "nothing to migrate" for data that is really there. Scanning
+          stays disabled until there is a user to scope it to. */}
       {!userId && (
-        <p className="rounded-xl border border-warning/40 bg-warning/5 p-3 text-sm text-warning">
-          Not signed in. Log in first, otherwise row-level security returns no rows and the scan looks empty.
+        <p className="rounded-xl border border-warning/40 bg-warning/5 p-3 text-sm leading-relaxed text-warning">
+          Not signed in, so scanning is disabled: without a session this page can only ever report an empty
+          result, whether or not you have screenshots.{" "}
+          <a href="/login" className="font-semibold underline underline-offset-2">
+            Log in first
+          </a>
+          , then come back to this page.
         </p>
       )}
 
@@ -88,7 +96,7 @@ export default function MigrateScreenshotsPage() {
         <button
           type="button"
           onClick={doScan}
-          disabled={scanning || running}
+          disabled={scanning || running || !userId}
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium transition-colors hover:border-primary/40 disabled:opacity-50"
         >
           {scanning ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
@@ -116,7 +124,7 @@ export default function MigrateScreenshotsPage() {
       {scan && (
         <div className="rounded-xl border border-border/60 bg-card p-4">
           <p className="mb-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Found</p>
-          {scan.images === 0 ? (
+          {scan.images === 0 && userId ? (
             <p className="flex items-center gap-2 text-sm text-success">
               <CheckCircle2 className="size-4" />
               No base64 screenshots left. Nothing to migrate.
