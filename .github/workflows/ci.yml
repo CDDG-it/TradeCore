@@ -1,0 +1,51 @@
+# Catches a broken build before Vercel does.
+#
+# Pushes to main deploy automatically, and a failed Vercel build is silent:
+# the old version keeps serving and nothing says the new code never shipped.
+# That happened on 2026-09-25, when a type error in the landing footer failed
+# two deploys in a row unnoticed.
+#
+# This runs the same checks Vercel runs. GitHub emails the commit author when
+# a workflow fails, so a push that cannot build now tells you so directly.
+name: Build check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A newer push makes an in-flight run pointless: only the latest commit matters.
+concurrency:
+  group: build-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # Next runs its own type check too, but the step above fails faster and
+      # names the file, which is what you want in the failure email.
+      - name: Build
+        run: npm run build
+        env:
+          # Present so the build does not take the "Supabase not configured"
+          # path. These are placeholders: nothing here reaches a real project,
+          # and no route is called at build time.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
