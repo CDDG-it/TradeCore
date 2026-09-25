@@ -7,7 +7,6 @@ import {
   startOfMonth, endOfMonth, isWithinInterval,
 } from "date-fns";
 import { motion } from "motion/react";
-import { Plus } from "lucide-react";
 import { toggleHabitCompletion } from "@/lib/supabase/queries";
 import { computeMindScore } from "@/lib/mind-score/mind-score";
 import { computeGoalProgress } from "@/lib/goals/goals";
@@ -208,13 +207,6 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
           {greeting ? `${greeting}${firstName ? `, ${firstName}` : ""}` : "Dashboard"}
         </h1>
-        <Link
-          href="/analysis/new"
-          className="press inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-[0_8px_24px_color-mix(in_oklch,var(--primary)_24%,transparent)] transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[0_12px_30px_color-mix(in_oklch,var(--primary)_32%,transparent)] active:translate-y-0 active:scale-[.98]"
-        >
-          <Plus className="h-4 w-4" strokeWidth={2.5} />
-          Add analysis
-        </Link>
       </motion.div>
 
       <DashboardDesk

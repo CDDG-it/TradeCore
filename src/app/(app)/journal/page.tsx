@@ -12,6 +12,7 @@ import {
 import { Plus, ChevronLeft, ChevronRight, LayoutGrid, ImageIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getTrades } from "@/lib/supabase/queries";
+import { getScreenshotUrls } from "@/lib/supabase/storage";
 import { MonthAnalytics } from "@/components/journal/month-analytics";
 import { DayTradesDialog } from "@/components/journal/day-trades-dialog";
 import type { TradeJournalEntry } from "@/lib/types";
@@ -55,9 +56,32 @@ export default function JournalPage() {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [calendarView, setCalendarView] = useState<CalendarView>("results");
 
+  /* Calendar thumbnails. A screenshot is a storage path, which is not a URL a
+     browser can load, so each one is signed before it is rendered. They are
+     asked for at thumbnail size: the tile is never larger than a few hundred
+     pixels, and the original is often several megabytes. Legacy base64 entries
+     pass through untouched. */
+  const [shotUrls, setShotUrls] = useState<Map<string, string>>(new Map());
+
   useEffect(() => {
     getTrades().then(setAllTrades).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    const paths = [...new Set(allTrades.flatMap((t) => (t.screenshot_groups ?? []).flatMap((g) => g.urls ?? [])))]
+      .filter((u) => u && !u.startsWith("data:") && !u.startsWith("http"));
+    if (!paths.length) return;
+    let cancelled = false;
+    getScreenshotUrls(paths, "thumb")
+      .then((signed) => {
+        if (cancelled) return;
+        setShotUrls(new Map(paths.map((p, i) => [p, signed[i]])));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [allTrades]);
 
   // Deep link from the dashboard: /journal?day=YYYY-MM-DD jumps straight to that
   // day's log: through to the entry when the day holds one trade, to the day
@@ -176,7 +200,14 @@ export default function JournalPage() {
     const today = isToday(day);
     const verdict = dayVerdict(dayR, has);
     const screens = calendarView === "screens";
-    const shot = screens ? firstShot(dayTrades) : undefined;
+    const rawShot = screens ? firstShot(dayTrades) : undefined;
+    /* A storage path only becomes usable once signed. Until then the day
+       renders as an ordinary tile rather than a broken image. */
+    const shot = !rawShot
+      ? undefined
+      : rawShot.startsWith("data:") || rawShot.startsWith("http")
+      ? rawShot
+      : shotUrls.get(rawShot);
 
     const tileClass = cn(
       "group/day relative flex flex-col overflow-hidden rounded-xl border text-left transition-all duration-300 ease-out",
