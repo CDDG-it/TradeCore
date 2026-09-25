@@ -9,12 +9,15 @@ import { useGSAP } from "@gsap/react";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const socialLinks = [
+/* shortLabel is optional: a name that is already short, like X, just uses its
+   label. Typed explicitly rather than `as const`, so the absent field stays a
+   legal absence instead of a type error. */
+const socialLinks: { label: string; shortLabel?: string; href: string }[] = [
   { label: "X", href: "https://x.com/tradingmc" },
   { label: "Instagram", shortLabel: "IG", href: "https://instagram.com/tradingmc" },
   { label: "TikTok", shortLabel: "TT", href: "https://tiktok.com/@tradingmc" },
   { label: "LinkedIn", shortLabel: "in", href: "https://linkedin.com/company/tradingmc" },
-] as const;
+];
 
 export function LandingFooter() {
   const root = useRef<HTMLElement>(null);
