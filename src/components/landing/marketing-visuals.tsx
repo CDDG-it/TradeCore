@@ -27,7 +27,7 @@ export function ProcessCanvas() {
           </div>
           <div className="relative z-10">
             <div className="flex items-center justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Your session plan</p><span className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#75949c]">Before entry</span></div>
-            <p className="font-display mt-8 max-w-3xl text-balance text-[clamp(2.4rem,4.3vw,4.8rem)] font-semibold leading-[.98] tracking-[-.055em]">Wait for price to reach the level. Let confirmation do the rest.</p>
+            <p className="font-display mt-8 max-w-3xl text-balance text-[clamp(2.4rem,4.3vw,4.8rem)] font-semibold leading-[.98] tracking-[-.055em]">Turn a clear plan into consistent execution.</p>
           </div>
           <div className="relative z-10 mt-24 grid max-w-2xl grid-cols-2 gap-2 text-sm sm:grid-cols-3">
             {[['Setup', 'Planned pullback'], ['Risk', 'Defined first'], ['Trigger', 'Fresh confirmation']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/10 bg-[#0b2430]/75 p-3 backdrop-blur-md"><span className="block text-[10px] uppercase tracking-[.14em] text-[#75949c]">{label}</span><span className="mt-1 block font-medium text-[#e7f5f4]">{value}</span></div>)}

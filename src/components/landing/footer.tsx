@@ -9,13 +9,12 @@ import { useGSAP } from "@gsap/react";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const groups = [
-  { title: "Product", links: [{ label: "Products", href: "/#products" }, { label: "For traders", href: "/traders/developing" }, { label: "Pricing", href: "/pricing" }] },
-  { title: "Account", links: [{ label: "Sign in", href: "/login" }, { label: "Create account", href: "/signup" }, { label: "Reset password", href: "/reset-password" }] },
-  { title: "Legal", links: [{ label: "Terms of service", href: "/terms" }, { label: "Privacy policy", href: "/privacy" }] },
+const socialLinks = [
+  { label: "X", href: "https://x.com/tradingmc" },
+  { label: "Instagram", shortLabel: "IG", href: "https://instagram.com/tradingmc" },
+  { label: "TikTok", shortLabel: "TT", href: "https://tiktok.com/@tradingmc" },
+  { label: "LinkedIn", shortLabel: "in", href: "https://linkedin.com/company/tradingmc" },
 ] as const;
-
-const marquee = ["Plan with intent", "Execute with discipline", "Review without bias", "Build your edge"];
 
 export function LandingFooter() {
   const root = useRef<HTMLElement>(null);
@@ -24,7 +23,7 @@ export function LandingFooter() {
   useGSAP(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     gsap.from(".footer-line", { opacity: 0.08, y: 32, stagger: 0.09, duration: 0.9, ease: "power3.out", scrollTrigger: { trigger: statement.current, start: "top 78%", once: true } });
-    gsap.from(".footer-link-panel", { opacity: 0, y: 28, stagger: 0.08, duration: 0.65, ease: "power3.out", scrollTrigger: { trigger: ".footer-directory", start: "top 88%", once: true } });
+    gsap.from(".footer-link-panel", { opacity: 0, y: 20, duration: 0.65, ease: "power3.out", scrollTrigger: { trigger: ".footer-directory", start: "top 88%", once: true } });
     ScrollTrigger.matchMedia({
       "(min-width: 1024px) and (min-height: 720px)": () => ScrollTrigger.create({ trigger: statement.current, start: "top top+=96", end: "+=120", pin: statement.current, pinSpacing: true }),
     });
@@ -52,19 +51,18 @@ export function LandingFooter() {
         </div>
       </div>
 
-        <div className="relative w-full overflow-hidden border-y border-white/10 py-4" aria-label="TradingMC process">
-          <div className="footer-marquee flex w-max items-center gap-10 whitespace-nowrap">
-            {[0, 1].map((copy) => <div key={copy} className="flex items-center gap-10">{marquee.map((item) => <span key={`${copy}-${item}`} className="flex items-center gap-10 text-[11px] font-semibold uppercase tracking-[.2em] text-[#89a8ad]"><span>{item}</span><span className="h-1 w-1 rounded-full bg-[#14b8a6]" /></span>)}</div>)}
-          </div>
-        </div>
-
       <div className="relative mx-auto max-w-[1080px] px-6 sm:px-10 lg:px-12">
-        <div className="footer-directory grid grid-flow-dense grid-cols-1 gap-4 py-16 text-center lg:grid-cols-12 lg:py-20">
-          <div className="footer-link-panel flex flex-col items-center py-5 lg:col-span-12 lg:pb-10">
+        <div className="footer-directory flex flex-col gap-10 border-t border-white/10 py-14 sm:py-16 lg:flex-row lg:items-end lg:justify-between">
+          <div className="footer-link-panel max-w-md">
             <Link href="/" aria-label="TradingMC home" className="inline-block transition-opacity hover:opacity-75"><Image src="/tradingmc-logo.png" alt="TradingMC" width={979} height={500} className="h-11 w-auto" /></Link>
-            <p className="mt-7 max-w-xl text-sm leading-[1.75] text-[#9fb7bc]">The workspace for traders who want a process they can trust before, during and after the session.</p>
+            <p className="mt-6 max-w-sm text-sm leading-[1.75] text-[#9fb7bc]">The workspace for traders who want a process they can trust before, during and after the session.</p>
           </div>
-          {groups.map((group) => <nav key={group.title} aria-label={group.title} className="footer-link-panel group rounded-[24px] border border-white/[.07] bg-white/[.025] p-7 transition-[transform,background-color,border-color] duration-500 ease-out hover:-translate-y-1 hover:border-[#14b8a6]/25 hover:bg-[#14b8a6]/[.045] lg:col-span-4"><h2 className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#65d4c8]">{group.title}</h2><ul className="mt-6 space-y-3.5">{group.links.map((link) => <li key={link.href}><Link href={link.href} className="text-sm font-medium text-[#d4e3e5] transition-colors hover:text-white">{link.label}</Link></li>)}</ul></nav>)}
+          <nav className="footer-link-panel" aria-label="Social media">
+            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[.2em] text-[#65d4c8]">Follow TradingMC</p>
+            <ul className="flex flex-wrap gap-2.5">
+              {socialLinks.map((link) => <li key={link.href}><a href={link.href} target="_blank" rel="noreferrer" aria-label={link.label} className="inline-flex h-10 min-w-10 items-center justify-center rounded-full border border-white/10 px-3 text-xs font-semibold text-[#d4e3e5] transition-[border-color,background-color,color,transform] duration-300 hover:-translate-y-0.5 hover:border-[#14b8a6]/60 hover:bg-[#14b8a6]/10 hover:text-white">{link.shortLabel ?? link.label}</a></li>)}
+            </ul>
+          </nav>
         </div>
 
         <div className="flex flex-col justify-between gap-3 border-t border-white/10 py-7 text-xs text-[#78939c] sm:flex-row"><p>© {new Date().getFullYear()} TradingMC</p><p>An ordinary journal won&apos;t build an extraordinary trader.</p></div>
