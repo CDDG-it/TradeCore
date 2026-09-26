@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, ReferenceLine,
-  ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from "recharts";
+import { Area, AreaChart, CartesianGrid, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Check, Loader2, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { runMonteCarlo, type DrawdownMode, type MonteCarloInputs } from "@/lib/strategy/monte-carlo";
@@ -47,8 +44,7 @@ function journalStats(trades: TradeJournalEntry[], from: string, to: string): Jo
 export function MonteCarloSimulator() {
   const [input, setInput] = useState<MonteCarloInputs>(DEFAULTS);
   const [trades, setTrades] = useState<TradeJournalEntry[]>([]);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [journalPeriod, setJournalPeriod] = useState("all");
   const [appliedStats, setAppliedStats] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -62,8 +58,10 @@ export function MonteCarloSimulator() {
     return () => { alive = false; };
   }, []);
 
-  const stats = useMemo(() => journalStats(trades, from, to), [trades, from, to]);
-  const rangeInvalid = !!from && !!to && from > to;
+  const monthOptions = useMemo(() => [...new Set(trades.map((trade) => dayKey(trade).slice(0, 7)))].sort().reverse(), [trades]);
+  const periodFrom = journalPeriod === "all" ? "" : `${journalPeriod}-01`;
+  const periodTo = journalPeriod === "all" ? "" : `${journalPeriod}-31`;
+  const stats = useMemo(() => journalStats(trades, periodFrom, periodTo), [trades, periodFrom, periodTo]);
   const result = useMemo(() => runMonteCarlo(input), [input]);
   const target = input.accountSize + input.profitTarget;
   const floor = input.accountSize - input.maxDrawdown;
@@ -126,10 +124,12 @@ export function MonteCarloSimulator() {
       <div className="grid min-h-0 flex-1 items-start gap-2 xl:grid-cols-[252px_minmax(0,1fr)]">
         <aside className="space-y-1.5 rounded-2xl border border-border/60 bg-card p-2.5 xl:h-full">
           <FieldGroup title="Journal data">
-            <div className="grid grid-cols-2 gap-1.5"><DateInput label="From" value={from} onChange={setFrom} /><DateInput label="To" value={to} onChange={setTo} /></div>
-            <button type="button" onClick={() => { setFrom(""); setTo(""); }} className="text-[10px] font-semibold text-primary hover:underline">Use all-time stats</button>
-            {rangeInvalid ? <p className="text-[10px] text-destructive">Start must come before end.</p> : stats ? <div className="grid grid-cols-4 gap-1 rounded-lg border border-border/60 bg-muted/20 p-1.5 text-[9px]">{[["Trades", stats.total], ["Win", pct(stats.winRate)], ["Avg R", `${stats.avgRR.toFixed(2)}R`], ["Pace", stats.pace.toFixed(1)]].map(([label, value]) => <div key={label} className="min-w-0"><p className="truncate text-muted-foreground">{label}</p><p className="truncate font-bold tabular-nums text-foreground">{value}</p></div>)}</div> : <p className="text-[10px] leading-snug text-muted-foreground">{trades.length === 0 ? "Log decisive trades to use journal stats." : "No decisive trades in this range."}</p>}
-            <button type="button" disabled={!stats || rangeInvalid} onClick={applyJournalStats} className={cn("w-full rounded-lg border px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45", appliedStats ? "border-primary/45 bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/35 hover:text-foreground")}>{appliedStats ? "Journal stats applied" : "Use these stats"}</button>
+            <select value={journalPeriod} onChange={(event) => { setJournalPeriod(event.target.value); setAppliedStats(false); }} className="h-8 w-full rounded-lg border border-border bg-input px-2 text-[11px] font-semibold text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15">
+              <option value="all">All-time stats</option>
+              {monthOptions.map((month) => <option key={month} value={month}>{new Intl.DateTimeFormat("en", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${month}-01T00:00:00Z`))}</option>)}
+            </select>
+            {stats ? <div className="grid grid-cols-4 gap-1 rounded-lg border border-border/60 bg-muted/20 p-1.5 text-[9px]">{[["Trades", stats.total], ["Win", pct(stats.winRate)], ["Avg R", `${stats.avgRR.toFixed(2)}R`], ["Pace", stats.pace.toFixed(1)]].map(([label, value]) => <div key={label} className="min-w-0"><p className="truncate text-muted-foreground">{label}</p><p className="truncate font-bold tabular-nums text-foreground">{value}</p></div>)}</div> : <p className="text-[10px] leading-snug text-muted-foreground">{trades.length === 0 ? "Log decisive trades to use journal stats." : "No decisive trades in this month."}</p>}
+            <button type="button" disabled={!stats} onClick={applyJournalStats} className={cn("w-full rounded-lg border px-3 py-1 text-[10px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45", appliedStats ? "border-primary/45 bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/35 hover:text-foreground")}>{appliedStats ? "Stats applied" : "Use these stats"}</button>
           </FieldGroup>
 
           <FieldGroup title="Your edge"><SliderField label="Win rate" value={input.winRate * 100} min={10} max={90} step={1} unit="%" onChange={(value) => set("winRate", value / 100)} /><SliderField label="Reward : risk" value={input.rewardRisk} min={0.5} max={5} step={0.1} unit="R" onChange={(value) => set("rewardRisk", value)} /><MetricLine label="Expectancy" value={`${result.expectancyR >= 0 ? "+" : ""}${result.expectancyR.toFixed(2)}R · ${money(result.expectancyMoney)}`} emphasis={edgePositive} /></FieldGroup>
@@ -138,24 +138,23 @@ export function MonteCarloSimulator() {
           <FieldGroup title="Simulation"><SliderField label="Runs" value={input.simulations} min={500} max={10000} step={500} onChange={(value) => set("simulations", Math.round(value))} /></FieldGroup>
         </aside>
 
-        <section className="min-w-0 space-y-2 xl:grid xl:h-full xl:min-h-0 xl:grid-rows-[auto_minmax(250px,1fr)_145px] xl:space-y-0 xl:gap-2">
-          <div className="rounded-2xl border border-primary/25 bg-[radial-gradient(circle_at_82%_0%,color-mix(in_oklch,var(--ice)_14%,transparent),transparent_34%),color-mix(in_oklch,var(--primary)_6%,var(--card))] p-3">
-            <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Probability of passing</p><p className="mt-0.5 text-[clamp(2.25rem,4vw,3.5rem)] font-black leading-none tracking-[-.07em] text-primary tabular-nums">{pct(result.passRate)}</p></div><div className="grid grid-cols-2 gap-x-6 gap-y-1.5"><Stat label="Median pass" value={result.medianDaysToPass === null ? "—" : `${result.medianDaysToPass} days`} /><Stat label="Median finish" value={money(result.medianEndBalance)} /><Stat label="Non-pass" value={pct(result.failRate + result.timeoutRate)} /><Stat label="Attempts" value={input.simulations.toLocaleString()} /></div></div>
-            <div className="mt-2.5 flex h-2 overflow-hidden rounded-full bg-muted/50"><span style={{ width: pct(result.passRate), background: PRIMARY }} /><span style={{ width: pct(result.timeoutRate), background: CYAN, opacity: 0.8 }} /><span style={{ width: pct(result.failRate), background: SLATE, opacity: 0.45 }} /></div>
-            <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground"><span><i className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-primary" />Pass {pct(result.passRate)}</span><span><i className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-[var(--ice)]" />Timed out {pct(result.timeoutRate)}</span><span><i className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />Rule breach {pct(result.failRate)}</span></div>
+        <section className="min-w-0 space-y-2 xl:grid xl:h-full xl:min-h-0 xl:grid-rows-[auto_minmax(260px,1fr)] xl:space-y-0 xl:gap-2">
+          <div className="grid gap-2 lg:grid-cols-[minmax(0,1.45fr)_minmax(330px,.55fr)]">
+            <div className="rounded-2xl border border-primary/25 bg-[radial-gradient(circle_at_82%_0%,color-mix(in_oklch,var(--ice)_14%,transparent),transparent_34%),color-mix(in_oklch,var(--primary)_6%,var(--card))] p-3">
+              <div className="flex items-center justify-between gap-4"><div><p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Probability of passing</p><p className="mt-0.5 text-4xl font-black leading-none tracking-[-.06em] text-primary tabular-nums">{pct(result.passRate)}</p></div><div className="grid grid-cols-4 gap-4"><Stat label="Pass time" value={result.medianDaysToPass === null ? "—" : `${result.medianDaysToPass}d`} /><Stat label="Finish" value={money(result.medianEndBalance)} /><Stat label="Non-pass" value={pct(result.failRate + result.timeoutRate)} /><Stat label="Runs" value={input.simulations.toLocaleString()} /></div></div>
+              <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-muted/50"><span style={{ width: pct(result.passRate), background: PRIMARY }} /><span style={{ width: pct(result.timeoutRate), background: CYAN, opacity: 0.8 }} /><span style={{ width: pct(result.failRate), background: SLATE, opacity: 0.45 }} /></div>
+              <div className="mt-1 flex flex-wrap gap-x-3 text-[9px] text-muted-foreground"><span>Pass {pct(result.passRate)}</span><span>Timeout {pct(result.timeoutRate)}</span><span>Breach {pct(result.failRate)}</span></div>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-card p-3"><div className="grid h-full grid-cols-3 items-center gap-3"><Insight label="Expected value" value={`${result.expectancyR >= 0 ? "+" : ""}${result.expectancyR.toFixed(2)}R`} detail={`${money(result.expectancyMoney)} / trade`} accent={edgePositive ? PRIMARY : CYAN} /><Insight label="Risk window" value={money(input.maxDrawdown)} detail={input.drawdownMode === "trailing" ? "Trailing" : "Static"} accent={CYAN} /><Insight label="Target" value={`${(input.profitTarget / input.riskPerTrade).toFixed(1)}R`} detail={money(input.profitTarget)} accent={PRIMARY} /></div></div>
           </div>
 
           <div className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card p-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2"><div><h3 className="text-sm font-semibold">Projected equity range</h3><p className="mt-0.5 text-xs text-muted-foreground">The central line is the median attempt; bands show the spread across active simulations.</p></div><span className="text-xs font-semibold text-primary">{input.simulations.toLocaleString()} simulations</span></div>
-            <div className="mt-2 h-60 min-h-0 w-full xl:h-auto xl:flex-1">
+            <div className="mt-2 h-52 min-h-0 w-full xl:h-auto xl:flex-1">
               <ResponsiveContainer width="100%" height="100%"><AreaChart data={envelopeData} margin={{ top: 10, right: 12, left: 4, bottom: 0 }}><defs><linearGradient id="mcOuter" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--ice)" stopOpacity=".18" /><stop offset="1" stopColor="var(--ice)" stopOpacity=".02" /></linearGradient><linearGradient id="mcInner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--primary)" stopOpacity=".28" /><stop offset="1" stopColor="var(--primary)" stopOpacity=".06" /></linearGradient></defs><CartesianGrid stroke="color-mix(in oklch,var(--border) 65%,transparent)" strokeDasharray="3 4" vertical={false} /><XAxis dataKey="trade" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} tickFormatter={(value) => `T${value}`} /><YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={48} tickFormatter={(value) => `${Math.round(value / 1000)}k`} domain={["dataMin", "dataMax"]} /><Tooltip content={<EnvelopeTooltip />} /><ReferenceLine y={target} stroke="var(--primary)" strokeDasharray="5 4" label={{ value: "Target", fill: "var(--primary)", fontSize: 10, position: "insideTopRight" }} /><ReferenceLine y={floor} stroke="var(--ice)" strokeOpacity={.7} strokeDasharray="5 4" label={{ value: "Drawdown", fill: "var(--ice)", fontSize: 10, position: "insideBottomRight" }} /><ReferenceLine y={input.accountSize} stroke="var(--muted-foreground)" strokeOpacity={.45} strokeDasharray="2 4" /><Area dataKey="p10" stackId="outer" stroke="none" fill="transparent" isAnimationActive={false} /><Area dataKey="outerBand" stackId="outer" stroke="none" fill="url(#mcOuter)" isAnimationActive={false} /><Area dataKey="p25" stackId="inner" stroke="none" fill="transparent" isAnimationActive={false} /><Area dataKey="innerBand" stackId="inner" stroke="none" fill="url(#mcInner)" isAnimationActive={false} /><Line type="monotone" dataKey="p50" stroke="var(--primary)" strokeWidth={2.5} dot={false} isAnimationActive={false} /></AreaChart></ResponsiveContainer>
             </div>
           </div>
 
-          <div className="grid min-h-0 gap-2.5 lg:grid-cols-[minmax(0,1.25fr)_minmax(260px,.75fr)]">
-            <div className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card p-3"><div className="flex flex-wrap items-baseline justify-between gap-2"><div><h3 className="text-sm font-semibold">Where attempts finish</h3><p className="mt-0.5 text-[11px] text-muted-foreground">Ending balance distribution.</p></div><span className="text-[10px] text-muted-foreground">{money(result.worstEndBalance)} — {money(result.bestEndBalance)}</span></div><div className="mt-1.5 min-h-0 flex-1"><ResponsiveContainer width="100%" height="100%"><BarChart data={result.histogram} margin={{ top: 4, right: 6, left: -10, bottom: 0 }}><CartesianGrid stroke="color-mix(in oklch,var(--border) 65%,transparent)" strokeDasharray="3 4" vertical={false} /><XAxis dataKey="label" tick={{ fontSize: 8, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} interval={2} tickFormatter={(value) => `${Math.round(Number(value) / 1000)}k`} /><YAxis tick={{ fontSize: 8, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={24} /><ReferenceLine x={result.histogram.find((bucket) => target >= bucket.from && target <= bucket.to)?.label} stroke="var(--primary)" strokeDasharray="4 3" /><Bar dataKey="count" radius={[3, 3, 0, 0]}>{result.histogram.map((bucket, index) => <Cell key={index} fill={bucket.to >= target ? PRIMARY : CYAN} fillOpacity={bucket.to >= target ? .9 : .48} />)}</Bar></BarChart></ResponsiveContainer></div></div>
-            <div className="rounded-2xl border border-border/60 bg-card p-3"><h3 className="text-sm font-semibold">Simulation read</h3><div className="mt-2.5 grid grid-cols-3 gap-3 lg:grid-cols-1 lg:gap-2.5"><Insight label="Expected value" value={`${result.expectancyR >= 0 ? "+" : ""}${result.expectancyR.toFixed(2)}R`} detail={`${money(result.expectancyMoney)} per trade`} accent={edgePositive ? PRIMARY : CYAN} /><Insight label="Risk window" value={`${money(input.maxDrawdown)}`} detail={input.drawdownMode === "trailing" ? "Trailing drawdown" : "Static drawdown"} accent={CYAN} /><Insight label="Target distance" value={`${(input.profitTarget / input.riskPerTrade).toFixed(1)}R`} detail={`${money(input.profitTarget)} to pass`} accent={PRIMARY} /></div></div>
-          </div>
         </section>
       </div>
     </div>
