@@ -52,6 +52,23 @@ function compressImage(file: File, maxWidth = 2400): Promise<string> {
   });
 }
 
+/**
+ * Holds a screenshot's place while its signed URL is on the way.
+ *
+ * Rendering nothing would be simpler, but the surrounding box has no height of
+ * its own, so the grid would collapse and then jump as each image lands. A
+ * chart is wider than it is tall, so a 16:9 box is close enough to keep the
+ * layout still.
+ */
+function PendingShot() {
+  return (
+    <div
+      aria-hidden
+      className="aspect-video w-full animate-pulse rounded-xl bg-white/[0.04]"
+    />
+  );
+}
+
 export function ScreenshotUpload({
   groups,
   onChange,
@@ -74,7 +91,10 @@ export function ScreenshotUpload({
     try {
       setLightbox(await getScreenshotUrl(url, 3600, "full"));
     } catch {
-      setLightbox(display(url));
+      // Fall back to the preview-sized URL, but only if we have one: opening
+      // the lightbox on nothing would show an empty black sheet.
+      const preview = display(url);
+      if (preview) setLightbox(preview);
     }
   }
   const [dragging, setDragging] = useState(false);
@@ -115,10 +135,21 @@ export function ScreenshotUpload({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups]);
 
-  /** Returns a displayable URL: signed URL for storage paths, passthrough for base64/http */
-  function display(url: string): string {
+  /**
+   * A displayable URL, or null while a storage path is still being signed.
+   *
+   * It used to fall back to the raw path. A path is not a URL, so the browser
+   * resolved it against the current page and fetched something that cannot
+   * exist: one 404 per screenshot on every page load, and a red line in the
+   * console that makes a real failure harder to notice. Returning null lets the
+   * caller show that the image is coming instead of pretending it is here.
+   *
+   * `data:` is a legacy branch. Every screenshot now lives in Storage, so it
+   * only matters for a row written before that migration.
+   */
+  function display(url: string): string | null {
     if (url.startsWith("data:") || url.startsWith("http")) return url;
-    return resolvedUrls.get(url) ?? url;
+    return resolvedUrls.get(url) ?? null;
   }
 
   // Paste (Ctrl+V / Cmd+V): only active in edit mode when a group exists
@@ -232,7 +263,9 @@ export function ScreenshotUpload({
             </div>
             {/* Full charts, never cropped: one per row on the widest layouts */}
             <div className={cn("grid gap-4", group.urls.length > 1 && "lg:grid-cols-2")}>
-              {group.urls.map((url, i) => (
+              {group.urls.map((url, i) => {
+                const src = display(url);
+                return (
                 <button
                   key={i}
                   type="button"
@@ -241,17 +274,22 @@ export function ScreenshotUpload({
                   style={{ background: "#0b1120" }}
                   title="View full size"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={display(url)}
-                    alt={`${group.label} ${i + 1}`}
-                    className="w-full h-auto max-h-[540px] object-contain"
-                  />
+                  {src ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={src}
+                      alt={`${group.label} ${i + 1}`}
+                      className="w-full h-auto max-h-[540px] object-contain"
+                    />
+                  ) : (
+                    <PendingShot />
+                  )}
                   <span className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-lg bg-black/50 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
                     <ZoomIn className="w-3.5 h-3.5" />
                   </span>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}
@@ -410,18 +448,24 @@ export function ScreenshotUpload({
           {/* Thumbnails: full charts, never cropped */}
           {currentGroup.urls.length > 0 && (
             <div className="grid gap-3 sm:grid-cols-2">
-              {currentGroup.urls.map((url, i) => (
+              {currentGroup.urls.map((url, i) => {
+                const src = display(url);
+                return (
                 <div
                   key={i}
                   className="relative group overflow-hidden rounded-xl border border-border/60"
                   style={{ background: "#0b1120" }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={display(url)}
-                    alt={`${currentGroup.label} ${i + 1}`}
-                    className="w-full h-auto max-h-[320px] object-contain"
-                  />
+                  {src ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={src}
+                      alt={`${currentGroup.label} ${i + 1}`}
+                      className="w-full h-auto max-h-[320px] object-contain"
+                    />
+                  ) : (
+                    <PendingShot />
+                  )}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                     <button
                       type="button"
@@ -441,7 +485,8 @@ export function ScreenshotUpload({
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
