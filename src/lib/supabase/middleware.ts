@@ -2,10 +2,15 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Whether the access token was signed with an asymmetric key (ES256/RS256).
- * Those can be verified here without a round trip; a legacy HS256 token can
- * only be checked by the Auth server, which is the per-request network call
- * this middleware exists to avoid.
+ * Whether the access token claims an asymmetric signature (ES256/RS256).
+ *
+ * Only those can be checked here: the project publishes the public half of the
+ * pair, so this runs against a key fetched once and then held, with no call per
+ * navigation. A legacy HS256 token is signed with a secret only the Auth server
+ * holds, so nothing local can tell a real one from a forged one.
+ *
+ * An unreadable header counts as no. The answer decides whether a token is
+ * trusted, so anything we cannot read is something we cannot vouch for.
  */
 function signedAsymmetrically(jwt: string): boolean {
   try {
@@ -78,20 +83,33 @@ export async function updateSession(request: NextRequest) {
   // Auth server on every navigation (the main source of slow page loads).
   // This still refreshes an expired token, which persists via setAll above.
   //
-  // A cookie is the caller's to forge, so the token is then verified against
-  // the project's public signing key (cached in-process after the first
-  // fetch): a made-up session no longer reaches the app shell. Projects still
-  // on the legacy shared secret have no local way to verify and keep the
-  // unverified read; data access is protected by row-level security either
-  // way, since Postgres verifies every token itself.
+  // A cookie is the caller's to forge, so the token is verified against the
+  // project's public signing key, cached in-process after the first fetch.
+  //
+  // A token this cannot verify is treated as no session at all, rather than
+  // waved through unverified. That closes the hole the softer rule left: a
+  // forged HS256 token was exempt from the check precisely because it was
+  // unverifiable, which let it past the gate that decides who reaches the app
+  // and who is held on the waiting page. It would still have seen no data,
+  // because Postgres verifies every token itself before applying row-level
+  // security, but the gate is a door and a door should be shut.
+  //
+  // The cost of being strict is that a project signing with the legacy shared
+  // secret would refuse every session here. That is the correct answer rather
+  // than a regression: such a project cannot verify anything locally, and a
+  // gate that cannot tell a real token from a made-up one is not a gate.
   const {
     data: { session },
   } = await supabase.auth.getSession();
   let user = session?.user ?? null;
 
-  if (session && signedAsymmetrically(session.access_token)) {
-    const { data: claims, error } = await supabase.auth.getClaims(session.access_token);
-    if (error || !claims) user = null;
+  if (session) {
+    if (!signedAsymmetrically(session.access_token)) {
+      user = null;
+    } else {
+      const { data: claims, error } = await supabase.auth.getClaims(session.access_token);
+      if (error || !claims) user = null;
+    }
   }
 
   const path = request.nextUrl.pathname;
