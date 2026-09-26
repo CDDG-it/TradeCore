@@ -52,6 +52,29 @@ export function clearDraft(key: string): void {
   }
 }
 
+/**
+ * Drop every stored draft.
+ *
+ * A draft holds what the trader was writing: the trade notes, the reasoning,
+ * the mistakes. On a shared machine that must not outlive the session, so
+ * signing out clears the lot. Anything else under a different prefix (the
+ * theme, the hide-numbers toggle) is a device preference and is left alone.
+ */
+export function clearAllDrafts(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const doomed: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key?.startsWith(PREFIX)) doomed.push(key);
+    }
+    // Collected first: removing while iterating shifts the indices.
+    doomed.forEach((key) => window.localStorage.removeItem(key));
+  } catch {
+    /* storage unavailable: nothing was stored either */
+  }
+}
+
 export interface UseFormDraftOptions<T> {
   /** Stable storage key, e.g. "trade:new" or `trade:edit:${id}`. */
   key: string;

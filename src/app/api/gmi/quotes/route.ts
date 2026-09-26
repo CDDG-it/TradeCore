@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { rateLimit, tooManyRequests } from "@/lib/security/rate-limit";
+import { NO_STORE, publicCache, upstreamFailure } from "@/lib/security/public-api";
 import { cached } from "@/lib/gmi/cache";
 import { fetchAllQuotes, fetchQuoteSeries } from "@/lib/gmi/quotes";
 import type { DataEnvelope, Quote } from "@/lib/gmi/types";
@@ -11,6 +13,10 @@ export const revalidate = 0;
 
 const TTL_MS = 30_000; // quotes are ~15-min delayed; 30s polling is plenty
 
+// The same delayed quotes for every reader: the shared cache collapses a
+// whole desk of pollers onto one upstream call per window.
+const CACHE = publicCache(30, 120);
+
 // The route is public (it sits in front of a login-free API prefix), so what
 // reaches Yahoo, and what gets a cache slot, is only ever one of these: the
 // chart timeframes the futures tab offers. Anything else is answered as
@@ -19,6 +25,11 @@ const INTERVALS = new Set(["5m", "15m", "60m", "1d"]);
 const RANGES = new Set(["2d", "5d", "1mo", "3mo", "1y"]);
 
 export async function GET(req: Request) {
+  // The futures tab polls this and the ticker reads it too, so the ceiling has
+  // to sit above a busy page while still stopping a script.
+  const limit = rateLimit(req, "gmi:quotes", 120, 60_000);
+  if (!limit.ok) return tooManyRequests(limit);
+
   const { searchParams } = new URL(req.url);
   const symbol = searchParams.get("symbol");
   const interval = searchParams.get("interval") ?? "5m";
@@ -31,7 +42,7 @@ export async function GET(req: Request) {
         data: null, source: "Yahoo Finance", freshness: "delayed", asOf: null,
         fetchedAt: new Date().toISOString(), status: "unavailable", error: "invalid request",
       };
-      return NextResponse.json(env, { status: 400 });
+      return NextResponse.json(env, { status: 400, headers: { "Cache-Control": NO_STORE } });
     }
     try {
       const { value, storedAt, stale } = await cached(
@@ -51,7 +62,7 @@ export async function GET(req: Request) {
         fetchedAt: new Date(storedAt).toISOString(),
         status: stale ? "stale" : "ok",
       };
-      return NextResponse.json(env);
+      return NextResponse.json(env, { headers: { "Cache-Control": stale ? NO_STORE : CACHE } });
     } catch (err) {
       const env: DataEnvelope<Quote> = {
         data: null,
@@ -60,9 +71,9 @@ export async function GET(req: Request) {
         asOf: null,
         fetchedAt: new Date().toISOString(),
         status: "unavailable",
-        error: err instanceof Error ? err.message : "unknown",
+        error: upstreamFailure("gmi:quotes", err),
       };
-      return NextResponse.json(env);
+      return NextResponse.json(env, { headers: { "Cache-Control": NO_STORE } });
     }
   }
 
@@ -81,7 +92,7 @@ export async function GET(req: Request) {
       fetchedAt: new Date(storedAt).toISOString(),
       status: stale ? "stale" : "ok",
     };
-    return NextResponse.json(env);
+    return NextResponse.json(env, { headers: { "Cache-Control": stale ? NO_STORE : CACHE } });
   } catch (err) {
     const env: DataEnvelope<Quote[]> = {
       data: null,
@@ -90,8 +101,8 @@ export async function GET(req: Request) {
       asOf: null,
       fetchedAt: new Date().toISOString(),
       status: "unavailable",
-      error: err instanceof Error ? err.message : "unknown",
+      error: upstreamFailure("gmi:quotes", err),
     };
-    return NextResponse.json(env);
+    return NextResponse.json(env, { headers: { "Cache-Control": NO_STORE } });
   }
 }

@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
+import { rateLimit, tooManyRequests } from "@/lib/security/rate-limit";
+import { NO_STORE, publicCache, upstreamFailure } from "@/lib/security/public-api";
 
 // Live futures quotes for the dashboard price box. Fetched server-side to avoid
 // browser CORS against Yahoo, with a last-good cache so a transient upstream
 // hiccup doesn't blank the box.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+// Every reader gets the same three quotes, so the shared cache answers almost
+// all of them: one upstream round of three Yahoo calls per half minute instead
+// of three per reader per poll.
+const CACHE = publicCache(30, 120);
 
 type Quote = { symbol: string; label: string; price: number; change: number; changePct: number; spark: number[] };
 
@@ -47,23 +54,43 @@ async function fetchQuote(y: { yahoo: string; symbol: string; label: string }): 
   return { symbol: y.symbol, label: y.label, price, change, changePct, spark };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  // A dashboard polls this every few seconds; 120 a minute is far above any
+  // honest client and well below what would cost us a Yahoo rate limit.
+  const limit = rateLimit(req, "prices", 120, 60_000);
+  if (!limit.ok) return tooManyRequests(limit);
+
   try {
     const results = await Promise.all(SYMBOLS.map(fetchQuote));
     const prices = results.filter((q): q is Quote => q !== null);
     if (prices.length === SYMBOLS.length) {
       _lastGood = prices;
-      return NextResponse.json({ prices, live: true });
+      return NextResponse.json({ prices, live: true }, { headers: { "Cache-Control": CACHE } });
     }
     // Partial failure: merge fresh values over the last good snapshot.
     if (_lastGood) {
       const merged = _lastGood.map((old) => prices.find((p) => p.symbol === old.symbol) ?? old);
-      return NextResponse.json({ prices: merged, live: true, stale: true });
+      // A partial answer is not worth holding for half a minute.
+      return NextResponse.json(
+        { prices: merged, live: true, stale: true },
+        { headers: { "Cache-Control": NO_STORE } }
+      );
     }
-    return NextResponse.json({ prices, live: prices.length > 0 });
+    return NextResponse.json(
+      { prices, live: prices.length > 0 },
+      { headers: { "Cache-Control": NO_STORE } }
+    );
   } catch (err) {
-    console.error("[prices] fetch failed:", err);
-    if (_lastGood) return NextResponse.json({ prices: _lastGood, live: true, stale: true });
-    return NextResponse.json({ prices: [], live: false, error: err instanceof Error ? err.message : "unknown" });
+    const error = upstreamFailure("prices", err);
+    if (_lastGood) {
+      return NextResponse.json(
+        { prices: _lastGood, live: true, stale: true },
+        { headers: { "Cache-Control": NO_STORE } }
+      );
+    }
+    return NextResponse.json(
+      { prices: [], live: false, error },
+      { headers: { "Cache-Control": NO_STORE } }
+    );
   }
 }

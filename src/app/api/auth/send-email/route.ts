@@ -45,18 +45,39 @@ function getEmailContent(type: string, confirmUrl: string): { subject: string; h
   };
 }
 
+/**
+ * Constant-time comparison of two secrets of any length.
+ *
+ * `timingSafeEqual` throws outright when the two buffers differ in length, so
+ * comparing the raw strings turns a wrong-length guess into an unhandled
+ * exception instead of a 401. Hashing first makes both sides a fixed 32 bytes,
+ * which is what the function expects, and the digest of a wrong secret tells an
+ * attacker nothing about the right one.
+ */
+function secretMatches(given: string, expected: string): boolean {
+  const a = crypto.createHash("sha256").update(given).digest();
+  const b = crypto.createHash("sha256").update(expected).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
 export async function POST(request: NextRequest) {
-  // Security: verify a shared secret passed as a query param in the hook URL.
-  // This is more reliable than Supabase JWT signing, which doesn't always send headers.
-  // The hook URL in Supabase is: /api/auth/send-email?secret=<HOOK_ENDPOINT_SECRET>
+  // Security: a shared secret, which Supabase sends with the hook call. This is
+  // more reliable than Supabase's JWT signing, which doesn't always send
+  // headers.
+  //
+  // A header is preferred over the query string: a URL is written to access
+  // logs by every proxy it passes, so a secret in one leaks into logs nobody
+  // meant to hold it. The query parameter is still accepted so an existing hook
+  // keeps working, and can be retired once the hook is reconfigured to send
+  // `x-hook-secret` instead.
   const endpointSecret = process.env.HOOK_ENDPOINT_SECRET;
   if (!endpointSecret) {
     console.error("[send-email] HOOK_ENDPOINT_SECRET not configured");
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
   const { searchParams } = new URL(request.url);
-  const incomingSecret = searchParams.get("secret");
-  if (!incomingSecret || !crypto.timingSafeEqual(Buffer.from(incomingSecret), Buffer.from(endpointSecret))) {
+  const incomingSecret = request.headers.get("x-hook-secret") ?? searchParams.get("secret");
+  if (!incomingSecret || !secretMatches(incomingSecret, endpointSecret)) {
     console.error("[send-email] Invalid or missing endpoint secret");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -108,5 +129,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   }
 
-  return NextResponse.json({});
+  return NextResponse.json({}, { headers: { "Cache-Control": "no-store" } });
 }

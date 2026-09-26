@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { rateLimit, tooManyRequests } from "@/lib/security/rate-limit";
+import { upstreamFailure } from "@/lib/security/public-api";
 import { cached } from "@/lib/gmi/cache";
 import { fetchNews } from "@/lib/gmi/news";
 import type { DataEnvelope, NewsArticle } from "@/lib/gmi/types";
@@ -28,7 +30,12 @@ const CACHE_OK = "public, max-age=0, s-maxage=900, stale-while-revalidate=3600";
 // A failure must never be the thing that gets cached for fifteen minutes.
 const CACHE_FAIL = "no-store";
 
-export async function GET() {
+export async function GET(req: Request) {
+  // The tightest ceiling on the site: a miss here spends four of a hundred
+  // Marketaux requests a day, so an unguarded route is a day's wire gone.
+  const limit = rateLimit(req, "gmi:news", 30, 60_000);
+  if (!limit.ok) return tooManyRequests(limit);
+
   const apiKey = process.env.MARKETAUX_API_KEY;
   if (!apiKey) {
     const env: DataEnvelope<NewsArticle[]> = {
@@ -64,7 +71,7 @@ export async function GET() {
       asOf: null,
       fetchedAt: new Date().toISOString(),
       status: "unavailable",
-      error: err instanceof Error ? err.message : "unknown",
+      error: upstreamFailure("gmi:news", err),
     };
     return NextResponse.json(env, { headers: { "Cache-Control": CACHE_FAIL } });
   }

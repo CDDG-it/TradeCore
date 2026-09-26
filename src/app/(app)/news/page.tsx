@@ -8,7 +8,7 @@ import { Search, Zap, TrendingUp, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { getNews, getFeaturedNews } from "@/lib/mock/store";
+import { getNews, getFeaturedNews } from "@/lib/news/articles";
 import { cn } from "@/lib/utils";
 import type { ImpactLevel } from "@/lib/types";
 

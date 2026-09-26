@@ -35,6 +35,14 @@ function allowlist(): Set<string> | null {
   return emails.length ? new Set(emails) : null;
 }
 
+/** A refusal an API caller can actually parse, and that nothing may cache. */
+function deny(status: number, message: string): NextResponse {
+  return NextResponse.json(
+    { error: message },
+    { status, headers: { "Cache-Control": "no-store, max-age=0" } }
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   // Without Supabase configured there is nothing to gate against: let the
   // request through rather than lock every route behind a login that cannot
@@ -86,24 +94,39 @@ export async function updateSession(request: NextRequest) {
     if (error || !claims) user = null;
   }
 
+  const path = request.nextUrl.pathname;
+  const isApi = path.startsWith("/api/");
+
   // Protected routes: redirect to login if not authenticated
   const isAuthPage =
-    request.nextUrl.pathname === "/login" ||
-    request.nextUrl.pathname === "/signup" ||
-    request.nextUrl.pathname === "/reset-password" ||
-    request.nextUrl.pathname.startsWith("/auth/");
+    path === "/login" ||
+    path === "/signup" ||
+    path === "/reset-password" ||
+    path.startsWith("/auth/");
+  // Market data that is the same for everyone, plus the Supabase email hook,
+  // which authenticates itself with its own shared secret. Everything else
+  // under /api is the signed-in product and is gated like the pages are.
+  const isOpenApi =
+    path.startsWith("/api/gmi/") ||
+    path === "/api/prices" ||
+    path === "/api/cot" ||
+    path === "/api/bonds" ||
+    path === "/api/auth/send-email";
+
   const isPublicPage =
-    request.nextUrl.pathname === "/" ||
-    request.nextUrl.pathname === "/privacy" ||
-    request.nextUrl.pathname === "/terms" ||
-    request.nextUrl.pathname === "/pricing" ||
-    request.nextUrl.pathname === "/waitlist" ||
-    request.nextUrl.pathname.startsWith("/traders/") ||
-    request.nextUrl.pathname.startsWith("/api/") ||
+    path === "/" ||
+    path === "/privacy" ||
+    path === "/terms" ||
+    path === "/pricing" ||
+    path === "/waitlist" ||
+    path.startsWith("/traders/") ||
+    isOpenApi ||
     // Dev-only preview of signed-in screens with sample data (see app/(app)/preview).
-    (process.env.NODE_ENV !== "production" && request.nextUrl.pathname.startsWith("/preview/"));
+    (process.env.NODE_ENV !== "production" && path.startsWith("/preview/"));
 
   if (!user && !isAuthPage && !isPublicPage) {
+    // A fetch wants an answer it can read, not the HTML of the login page.
+    if (isApi) return deny(401, "Not signed in");
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -115,6 +138,10 @@ export async function updateSession(request: NextRequest) {
   const allowed = allowlist();
   if (user && allowed && !allowed.has(user.email?.toLowerCase() ?? "")) {
     if (!isPublicPage && !isAuthPage) {
+      // The API is gated here as well. Without this an account that is held on
+      // the waiting page could still drive the product straight through
+      // /api/broker/*, which is the whole thing the gate exists to prevent.
+      if (isApi) return deny(403, "This account is not enabled yet");
       const url = request.nextUrl.clone();
       url.pathname = "/waitlist";
       return NextResponse.redirect(url);
@@ -123,7 +150,7 @@ export async function updateSession(request: NextRequest) {
 
   // Redirect authenticated users away from auth pages, but NOT from
   // /auth/update-password, which requires an active session to work.
-  if (user && isAuthPage && request.nextUrl.pathname !== "/auth/update-password") {
+  if (user && isAuthPage && path !== "/auth/update-password") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
