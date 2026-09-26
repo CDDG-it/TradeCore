@@ -12,7 +12,7 @@ import { habitAccent } from "@/lib/habits";
 import { mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import { BrainScore } from "@/components/mind-score/brain-score";
-import type { TradingGoal, TradeJournalEntry, TradeSummary, Habit } from "@/lib/types";
+import type { TradingGoal, TradeSummary, Habit } from "@/lib/types";
 
 const TURQUOISE = "var(--primary)";
 const CYAN = "var(--ice)";

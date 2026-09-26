@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { SectionNav } from "@/components/layout/section-nav";
-import { getProfile, getTrades } from "@/lib/supabase/queries";
+import { getTrades } from "@/lib/supabase/queries";
 import { DailyBestTrade } from "@/components/trade-therapist/daily-best-trade";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
 import { PreMarketExercises } from "@/components/trade-therapist/pre-market-exercises";
@@ -35,7 +35,6 @@ const TABS: { key: TherapistTab; label: string; short?: string }[] = [
 export default function TradeTherapistPage() {
   const [tab, setTab] = useState<TherapistTab>("daily");
   const [dailyDate, setDailyDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [userId, setUserId] = useState<string | null>(null);
   const [trades, setTrades] = useState<TradeJournalEntry[]>([]);
 
   // Read the deep-linked tab after mount rather than during render: the page is
@@ -45,7 +44,6 @@ export default function TradeTherapistPage() {
     const t = new URLSearchParams(window.location.search).get("tab");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
     if (TABS.some((x) => x.key === t)) setTab(t as TherapistTab);
-    getProfile().then((p) => { if (p?.id) setUserId(p.id); });
     getTrades().then(setTrades).catch(() => {});
   }, []);
 
@@ -70,7 +68,6 @@ export default function TradeTherapistPage() {
             date={dailyDate}
             trades={trades}
             onDateChange={setDailyDate}
-            userId={userId}
           />
         )}
         {tab === "premarket" && <PreMarketExercises trades={trades} date={dailyDate} />}

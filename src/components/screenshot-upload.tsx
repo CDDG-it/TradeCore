@@ -6,9 +6,19 @@ import { ImagePlus, X, ZoomIn, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScreenshotGroup } from "@/lib/types";
 import { uploadScreenshot, deleteScreenshot, getScreenshotUrl, getScreenshotUrls } from "@/lib/supabase/storage";
+import { createClient } from "@/lib/supabase/client";
 
+/**
+ * Where an upload belongs. The account is not part of this on purpose: the
+ * component asks the session who is signed in.
+ *
+ * It used to be a prop, and every caller wrote `userId ? {...} : undefined`,
+ * so a screenshot pasted in the second before the account resolved found no
+ * config and was quietly written into the database as base64 instead. That is
+ * the thing this whole storage path exists to prevent, and it failed silently
+ * at exactly the moment a fast trader is most likely to paste.
+ */
 interface StorageConfig {
-  userId: string;
   entityType: "trades" | "analyses" | "best-trade";
   entityId: string;
 }
@@ -19,38 +29,11 @@ interface Props {
   maxFilesPerGroup?: number;
   className?: string;
   readOnly?: boolean;
-  /** When provided, images are uploaded to Supabase Storage instead of stored as base64 */
+  /** Where uploads are filed. Required unless `readOnly`. */
   storageConfig?: StorageConfig;
 }
 
 const PRESET_LABELS = ["HTF", "LTF", "Trade-entry"];
-
-/** Resize and compress an image file to a max width, returning a base64 data URL */
-function compressImage(file: File, maxWidth = 2400): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const scale = img.width > maxWidth ? maxWidth / img.width : 1;
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d", { alpha: false })!;
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.93));
-      };
-      img.onerror = reject;
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 /**
  * Holds a screenshot's place while its signed URL is on the way.
@@ -99,6 +82,7 @@ export function ScreenshotUpload({
   }
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [addingGroup, setAddingGroup] = useState(false);
   const [customLabel, setCustomLabel] = useState("");
   // Maps storage paths → temporary signed URLs for display
@@ -201,24 +185,25 @@ export function ScreenshotUpload({
       .filter((f) => f.type.startsWith("image/"))
       .slice(0, remaining);
     if (!toAdd.length) return;
+    if (!storageConfig) return;
     setLoading(true);
+    setUploadError(null);
     try {
-      let newUrls: string[];
-      if (storageConfig) {
-        // Upload directly to Supabase Storage: returns storage path
-        newUrls = await Promise.all(
-          toAdd.map((f) =>
-            uploadScreenshot(storageConfig.userId, storageConfig.entityType, storageConfig.entityId, f)
-          )
-        );
-      } else {
-        // Fallback: compress to base64 (no storage config available yet)
-        newUrls = await Promise.all(toAdd.map((f) => compressImage(f)));
-      }
+      const { data: { user } } = await createClient().auth.getUser();
+      if (!user) throw new Error("not signed in");
+      // Storage only. There is deliberately no fallback that writes the image
+      // into the row: that is how a database ends up holding megabytes of
+      // pictures, and a failure the trader can see and retry is better than one
+      // that works today and bills them later.
+      const newUrls = await Promise.all(
+        toAdd.map((f) => uploadScreenshot(user.id, storageConfig.entityType, storageConfig.entityId, f))
+      );
       const newGroups = groups.map((g, i) =>
         i === safeTab ? { ...g, urls: [...g.urls, ...newUrls] } : g
       );
       onChange(newGroups);
+    } catch {
+      setUploadError("Upload failed. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -531,6 +516,12 @@ export function ScreenshotUpload({
                 </>
               )}
             </button>
+          )}
+
+          {/* An upload that failed has to say so: silently dropping the chart
+              the trader just pasted is worse than asking them to try again. */}
+          {uploadError && (
+            <p className="mt-2 text-xs text-destructive">{uploadError}</p>
           )}
         </>
       )}

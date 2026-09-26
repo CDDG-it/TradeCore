@@ -64,12 +64,11 @@ const withCharts = (g: ScreenshotGroup[]) => g.filter((x) => x.urls.length > 0);
  * any day in the week to work through it.
  */
 export function DailyBestTrade({
-  date, trades, onDateChange, userId, onSaved,
+  date, trades, onDateChange, onSaved,
 }: {
   date: string; // yyyy-MM-dd
   trades: TradeJournalEntry[];
   onDateChange: (date: string) => void;
-  userId: string | null;
   onSaved?: (date: string, entry: BestTradeOfDay | null) => void;
 }) {
   const [loading, setLoading] = useState(true);
@@ -455,7 +454,7 @@ export function DailyBestTrade({
                   <ScreenshotUpload
                     groups={groups}
                     onChange={(g) => { setGroups(g); setSaved(false); }}
-                    storageConfig={userId ? { userId, entityType: "best-trade", entityId: date } : undefined}
+                    storageConfig={{ entityType: "best-trade", entityId: date }}
                   />
                 </div>
               </div>

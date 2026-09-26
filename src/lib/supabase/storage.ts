@@ -30,7 +30,57 @@ export async function deleteAvatar(userId: string, avatarUrl?: string): Promise<
   if (error) throw error;
 }
 
-/** Upload a file and return its storage path (not a public URL). */
+/**
+ * Above this, a screenshot is re-encoded before it is stored. Below it, the
+ * file goes up untouched.
+ *
+ * The threshold exists so the common case keeps its exact pixels: a normal
+ * chart capture is a few hundred kilobytes and re-encoding it would only lose
+ * detail in the thin lines and small text that make a chart readable. What it
+ * catches is the pathological case, a lossless 4K PNG of several megabytes,
+ * where the file is large because of how it was saved rather than what it
+ * shows.
+ */
+const RECOMPRESS_ABOVE_BYTES = 1_500_000;
+const MAX_STORED_WIDTH = 2560;
+
+/**
+ * Re-encode an oversized image, or hand back the original.
+ *
+ * Never throws: if a browser cannot do the work, storing the file as it came
+ * is a worse outcome than storing nothing, so the original is returned.
+ */
+async function shrinkIfHuge(file: File): Promise<Blob> {
+  if (file.size <= RECOMPRESS_ABOVE_BYTES || typeof document === "undefined") return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = bitmap.width > MAX_STORED_WIDTH ? MAX_STORED_WIDTH / bitmap.width : 1;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return file;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.92)
+    );
+    // Only take the re-encode if it actually helped.
+    return blob && blob.size < file.size ? blob : file;
+  } catch {
+    return file;
+  }
+}
+
+/**
+ * Upload a file and return its storage path (not a public URL).
+ *
+ * This is the only way an image is stored. Nothing writes a picture into a
+ * database row: a row holds this path, and the bytes live in Storage where
+ * they can be resized on the way out.
+ */
 export async function uploadScreenshot(
   userId: string,
   entityType: "trades" | "analyses" | "best-trade",
@@ -38,12 +88,16 @@ export async function uploadScreenshot(
   file: File
 ): Promise<string> {
   const supabase = createClient();
-  const ext = file.name.split(".").pop() ?? "jpg";
+  const body = await shrinkIfHuge(file);
+  // A re-encoded file is a JPEG whatever it started as, so the extension has
+  // to follow the bytes rather than the original name.
+  const ext = body === file ? file.name.split(".").pop() ?? "jpg" : "jpg";
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
   const path = `${userId}/${entityType}/${entityId}/${filename}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const { error } = await supabase.storage.from(BUCKET).upload(path, body, {
     cacheControl: "3600",
+    contentType: body.type || file.type || "image/jpeg",
     upsert: false,
   });
   if (error) throw error;
@@ -96,10 +150,17 @@ export async function getScreenshotUrl(
   return data.signedUrl;
 }
 
-/** Generate multiple signed URLs in one batch, all at the same size. */
+/**
+ * Sign several screenshots at once, all at the same size.
+ *
+ * One request per path, not one request for all of them. Supabase's batch
+ * signing exists but cannot attach a transform, and asking for a resized
+ * rendition is worth far more than saving a handful of small round trips: the
+ * transform is the difference between sending a thumbnail and sending the
+ * original. If batch signing ever learns transforms, this should use it.
+ */
 export async function getScreenshotUrls(paths: string[], size: ScreenshotSize = "full"): Promise<string[]> {
   if (!paths.length) return [];
-  // Split: data URLs pass through, storage paths get signed
   return Promise.all(paths.map((p) => getScreenshotUrl(p, 3600, size)));
 }
 

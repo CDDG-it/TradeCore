@@ -69,7 +69,6 @@ export default function NewTradePage() {
   const [savedConfluences, setSavedConfluences] = useState<string[]>([]);
   // Pre-generate entity ID so screenshots can be uploaded before the trade is saved
   const [entityId] = useState(() => crypto.randomUUID());
-  const [userId, setUserId] = useState<string | null>(null);
 
   const [form, setForm] = useState<TradeJournalEntryInput>({
     date_time: new Date().toISOString().split("T")[0],
@@ -104,7 +103,6 @@ export default function NewTradePage() {
     invalidateReads("analyses", "profile");
     Promise.all([getAnalyses(), getProfile()]).then(([analyses, profile]) => {
       setAllAnalyses(analyses);
-      if (profile?.id) setUserId(profile.id);
       // Quick-select confluences are the saved library from Trading Behaviour.
       if (profile?.confluence_options) {
         setSavedConfluences(
@@ -609,7 +607,7 @@ export default function NewTradePage() {
             <ScreenshotUpload
               groups={form.screenshot_groups}
               onChange={(g) => set("screenshot_groups", g)}
-              storageConfig={userId ? { userId, entityType: "trades", entityId } : undefined}
+              storageConfig={{ entityType: "trades", entityId }}
             />
           </CardContent>
         </Card>

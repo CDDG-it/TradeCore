@@ -66,7 +66,6 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
   const [customTF, setCustomTF] = useState("");
   const [showCustomTF, setShowCustomTF] = useState(false);
   const [tradeInfo, setTradeInfo] = useState<{ instrument: string; session: string }>({ instrument: "", session: "" });
-  const [userId, setUserId] = useState<string | null>(null);
   const [savedConfluences, setSavedConfluences] = useState<string[]>([]);
   const [recordUpdatedAt, setRecordUpdatedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +79,6 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
     invalidateReads("analyses", "profile");
     Promise.all([getTradeById(id), getAnalyses(), getProfile()]).then(([trade, analyses, profile]) => {
       setAllAnalyses(analyses);
-      if (profile?.id) setUserId(profile.id);
       // Quick-select confluences are the saved library from Trading Behaviour.
       if (profile?.confluence_options) {
         setSavedConfluences(
@@ -637,7 +635,7 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
             <ScreenshotUpload
               groups={form.screenshot_groups}
               onChange={(g) => set("screenshot_groups", g)}
-              storageConfig={userId ? { userId, entityType: "trades", entityId: id } : undefined}
+              storageConfig={{ entityType: "trades", entityId: id }}
             />
           </CardContent>
         </Card>

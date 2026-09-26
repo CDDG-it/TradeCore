@@ -21,13 +21,11 @@ import type { BestTradeOfDay, ScreenshotGroup } from "@/lib/types";
  */
 export function BestTradeDayDialog({
   date,
-  userId,
   open,
   onOpenChange,
   onSaved,
 }: {
   date: string; // yyyy-MM-dd
-  userId: string | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSaved?: (entry: BestTradeOfDay | null) => void;
@@ -148,11 +146,8 @@ export function BestTradeDayDialog({
               <ScreenshotUpload
                 groups={groups}
                 onChange={setGroups}
-                storageConfig={userId ? { userId, entityType: "best-trade", entityId: date } : undefined}
+                storageConfig={{ entityType: "best-trade", entityId: date }}
               />
-              {!userId && (
-                <p className="text-[11px] text-muted-foreground/70 mt-1.5">Loading your account...</p>
-              )}
             </div>
 
             {/* Notes */}
