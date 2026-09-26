@@ -38,7 +38,7 @@ export function SectionNav<T extends string>({
     <nav
       aria-label="Sections"
       className={cn(
-        "hidden max-w-full items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:flex",
+        "hidden max-w-full items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.03] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:flex",
         className
       )}
     >
@@ -52,7 +52,7 @@ export function SectionNav<T extends string>({
             aria-current={active ? "page" : undefined}
             onClick={() => onChange(item.key)}
             className={cn(
-              "press relative flex h-9 items-center gap-2 whitespace-nowrap rounded-full px-4 text-[13px] font-semibold",
+              "press relative flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-semibold",
               active ? "text-foreground" : "text-sidebar-foreground/60 hover:bg-white/[0.04] hover:text-sidebar-foreground"
             )}
           >
@@ -70,7 +70,7 @@ export function SectionNav<T extends string>({
                 />
               </motion.span>
             )}
-            {Icon && <Icon className={cn("relative z-10 size-[15px]", active ? "text-primary" : "text-sidebar-foreground/45")} strokeWidth={active ? 2.3 : 2} />}
+            {Icon && <Icon className={cn("relative z-10 size-3.5", active ? "text-primary" : "text-sidebar-foreground/45")} strokeWidth={active ? 2.3 : 2} />}
             <span className="relative z-10">{item.label}</span>
           </button>
         );

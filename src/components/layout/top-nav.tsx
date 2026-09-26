@@ -40,7 +40,7 @@ function SoonBadge() {
 function RailItem({ href, label, active, soon, instant }: { href: string; label: string; active: boolean; soon?: boolean; instant: boolean }) {
   if (soon) {
     return (
-      <span aria-disabled title="Coming soon" className="relative flex h-9 cursor-default items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-semibold text-sidebar-foreground/35">
+      <span aria-disabled title="Coming soon" className="relative flex h-8 cursor-default items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-semibold text-sidebar-foreground/35">
         {label}
         <SoonBadge />
       </span>
@@ -51,7 +51,7 @@ function RailItem({ href, label, active, soon, instant }: { href: string; label:
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "press relative flex h-9 items-center whitespace-nowrap rounded-full px-4 text-[13px] font-semibold",
+        "press relative flex h-8 items-center whitespace-nowrap rounded-full px-3.5 text-xs font-semibold",
         active ? "text-foreground" : "text-sidebar-foreground/60 hover:bg-white/[0.04] hover:text-sidebar-foreground"
       )}
     >
@@ -107,7 +107,7 @@ export function TopNav() {
       >
         {/* Three balanced regions so the rail sits screen-centred: the left
             (logo) and right (actions) slots share equal flex width. */}
-        <div className="flex h-[60px] items-center gap-3 px-4 lg:px-6">
+        <div className="flex h-[52px] items-center gap-3 px-4 lg:px-6">
           <div className="flex min-w-0 flex-1 items-center">
             {/* The brand mark, doubling as the home link, so the app and the
                 marketing site read as one brand. */}
@@ -116,7 +116,7 @@ export function TopNav() {
               aria-label="TradingMC home"
               className="press shrink-0 hover:opacity-80"
             >
-              <Image src="/tradingmc-logo.png" alt="TradingMC" width={979} height={500} priority className="h-7 w-auto" />
+              <Image src="/tradingmc-logo.png" alt="TradingMC" width={979} height={500} priority className="h-6 w-auto" />
             </Link>
           </div>
 
@@ -233,9 +233,9 @@ function ProfileMenu({ displayName, email, initials, avatarUrl, onSignOut }: { d
   ];
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger onMouseEnter={enter} onMouseLeave={leave} className="press group/profile flex h-9 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] pl-1 pr-2.5 hover:border-primary/35 hover:bg-white/[0.07] data-[popup-open]:border-primary/35 data-[popup-open]:bg-white/[0.07]">
-        <AvatarChip initials={initials} avatarUrl={avatarUrl} size={28} />
-        <span className="max-w-[120px] truncate text-[13px] font-semibold text-sidebar-foreground/85">{displayName}</span>
+      <DropdownMenuTrigger onMouseEnter={enter} onMouseLeave={leave} className="press group/profile flex h-8 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] pl-1 pr-2.5 hover:border-primary/35 hover:bg-white/[0.07] data-[popup-open]:border-primary/35 data-[popup-open]:bg-white/[0.07]">
+        <AvatarChip initials={initials} avatarUrl={avatarUrl} size={26} />
+        <span className="max-w-[120px] truncate text-xs font-semibold text-sidebar-foreground/85">{displayName}</span>
         <ChevronDown className="size-3.5 text-sidebar-foreground/40 transition-transform duration-150 ease-out group-data-[popup-open]/profile:rotate-180" />
       </DropdownMenuTrigger>
       <DropdownMenuContent onMouseEnter={enter} onMouseLeave={leave} side="bottom" align="end" sideOffset={10} className={cn("w-64", MENU_SURFACE, MENU_MOTION)}>
