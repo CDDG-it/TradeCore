@@ -156,6 +156,11 @@ async function _getTrades(): Promise<TradeJournalEntry[]> {
   const { data, error } = await supabase
     .from("trades")
     .select("*")
+        // A ceiling, not a window: this is still the whole journal, every column.
+    // Narrowing it means splitting a read that fifteen screens share, which is
+    // its own job. 5000 is about twenty years at a trade a day, so nobody meets
+    // it by trading; anything that does is a runaway.
+    .limit(5000)
     .order("date_time", { ascending: false });
   if (error) throw error;
   return (data ?? []) as TradeJournalEntry[];
@@ -232,6 +237,10 @@ async function _getAccounts(): Promise<FundedAccount[]> {
   const { data, error } = await supabase
     .from("funded_accounts")
     .select("*")
+        // Nobody runs two hundred funded accounts. A row count near this means
+    // something upstream is wrong, and a ceiling turns that into a capped read
+    // rather than an unbounded one.
+    .limit(200)
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as FundedAccount[];
@@ -339,6 +348,8 @@ async function _getHabits(): Promise<Habit[]> {
   const { data, error } = await supabase
     .from("habits")
     .select("*")
+        // Same order of magnitude as the accounts above.
+    .limit(200)
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as Habit[];
@@ -893,6 +904,8 @@ async function _getCommitments(): Promise<Commitment[]> {
   const { data, error } = await supabase
     .from("commitments")
     .select("*")
+    // Commitments are written by hand, so this is far above any real number.
+    .limit(500)
     .order("created_at", { ascending: false });
   if (error) return [];
   return (data ?? []) as Commitment[];
@@ -930,6 +943,9 @@ async function _getPatternEvents(): Promise<PatternEvent[]> {
   const { data, error } = await supabase
     .from("pattern_events")
     .select("*")
+    // Nothing reads this table yet. The ceiling is here so that whoever wires
+    // it up does not inherit an unbounded read by default.
+    .limit(20000)
     .order("date", { ascending: true });
   if (error) return [];
   return (data ?? []) as PatternEvent[];
@@ -960,6 +976,9 @@ async function _getCommitmentAdherenceLogs(): Promise<CommitmentAdherenceLog[]> 
   const { data, error } = await supabase
     .from("commitment_adherence_log")
     .select("*")
+    // One row per commitment checked against a trade, so this grows with
+    // activity rather than with intent. Roughly a decade of daily checks.
+    .limit(20000)
     .order("date", { ascending: true });
   if (error) return [];
   return (data ?? []) as CommitmentAdherenceLog[];
@@ -1168,6 +1187,8 @@ async function _getTradingGoals(): Promise<TradingGoal[]> {
   const { data, error } = await supabase
     .from("trading_goals")
     .select("*")
+    // Goals are written by hand; archived ones accumulate, this caps them.
+    .limit(500)
     .order("end_date", { ascending: false });
   if (error) throw error;
   return (data ?? []) as TradingGoal[];
