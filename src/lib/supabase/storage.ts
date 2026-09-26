@@ -8,7 +8,15 @@ import { createClient } from "@/lib/supabase/client";
 const BUCKET = "trade-screenshots";
 const AVATAR_BUCKET = "avatars";
 
-/** Replace the signed-in user's public profile image and return its URL. */
+/**
+ * Replace the signed-in user's profile image and return its storage path.
+ *
+ * A path, not a URL. The avatars bucket used to be world-readable and this
+ * returned a public link that was then saved on the account, which meant
+ * anyone holding a user's id could fetch their face. The bucket is private
+ * now, so what is stored is the path and the link is signed at the moment it
+ * is shown.
+ */
 export async function uploadAvatar(userId: string, file: File): Promise<string> {
   const supabase = createClient();
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
@@ -19,13 +27,40 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
     upsert: true,
   });
   if (error) throw error;
-  const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
-  return `${data.publicUrl}?v=${Date.now()}`;
+  return path;
 }
 
-export async function deleteAvatar(userId: string, avatarUrl?: string): Promise<void> {
+/**
+ * The storage path inside an `avatar_url` that may be either.
+ *
+ * Accounts written before the bucket was closed hold a full public URL. Those
+ * links no longer resolve, but the path is still in them, so the old value is
+ * read rather than discarded and the trader keeps the photo they uploaded.
+ */
+function avatarPath(stored: string): string {
+  const clean = stored.split("?")[0];
+  const marker = `/${AVATAR_BUCKET}/`;
+  const i = clean.indexOf(marker);
+  return i === -1 ? clean : clean.slice(i + marker.length);
+}
+
+/**
+ * A link the browser can load for a stored avatar, or null if there is none.
+ * Signed for an hour, which outlives any page a profile photo appears on.
+ */
+export async function getAvatarUrl(stored?: string | null): Promise<string | null> {
+  if (!stored) return null;
   const supabase = createClient();
-  const extension = avatarUrl?.split("?")[0].split(".").pop() ?? "jpg";
+  const { data, error } = await supabase.storage
+    .from(AVATAR_BUCKET)
+    .createSignedUrl(avatarPath(stored), 3600);
+  return error ? null : data.signedUrl;
+}
+
+export async function deleteAvatar(userId: string, storedAvatar?: string): Promise<void> {
+  const supabase = createClient();
+  // Derive the extension from whatever is stored, path or legacy URL alike.
+  const extension = storedAvatar ? avatarPath(storedAvatar).split(".").pop() ?? "jpg" : "jpg";
   const { error } = await supabase.storage.from(AVATAR_BUCKET).remove([`${userId}/avatar.${extension}`]);
   if (error) throw error;
 }

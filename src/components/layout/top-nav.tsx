@@ -88,14 +88,14 @@ function useScrolled() {
 
 export function TopNav() {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user, signOut, avatarUrl } = useAuth();
+  const avatar = avatarUrl ?? undefined;
   const [open, setOpen] = useState(false);
   const reduce = useReducedMotion();
   const scrolled = useScrolled();
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
-  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
 
   return (
     <>
@@ -128,12 +128,12 @@ export function TopNav() {
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
             <div className="hidden shrink-0 items-center gap-2 lg:flex">
-              <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} avatarUrl={avatarUrl} onSignOut={signOut} />
+              <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} avatarUrl={avatar} onSignOut={signOut} />
             </div>
             {/* Phone: the profile lives top-right, the way every app does it:
                 navigation itself has moved to the bottom tab bar. */}
             <button type="button" onClick={() => setOpen(true)} aria-label="Open profile menu" className="press inline-flex items-center justify-center rounded-full lg:hidden">
-              <AvatarChip initials={initials} avatarUrl={avatarUrl} size={34} />
+              <AvatarChip initials={initials} avatarUrl={avatar} size={34} />
             </button>
           </div>
         </div>
@@ -163,7 +163,7 @@ export function TopNav() {
               className="absolute right-3 top-3 w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-border p-3 shadow-2xl"
             >
               <div className="flex items-center gap-3 px-1 pb-3">
-                <AvatarChip initials={initials} avatarUrl={avatarUrl} size={42} />
+                <AvatarChip initials={initials} avatarUrl={avatar} size={42} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold leading-tight">{displayName}</p>
                   <p className="truncate text-xs leading-tight text-muted-foreground">{user?.email}</p>

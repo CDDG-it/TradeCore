@@ -4,12 +4,22 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { createClient } from "@/lib/supabase/client";
 import { invalidateReads } from "@/lib/supabase/cache";
 import { clearAllDrafts } from "@/lib/drafts";
+import { getAvatarUrl } from "@/lib/supabase/storage";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  /**
+   * A link the browser can load for the account's profile photo.
+   *
+   * The account stores a storage path, not a URL: the avatars bucket is
+   * private, so the link has to be signed. It is signed once here rather than
+   * in each place a photo appears, and re-signed whenever the account changes
+   * or the photo is replaced.
+   */
+  avatarUrl: string | null;
   signOut: () => Promise<void>;
 }
 
@@ -17,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   isLoading: true,
+  avatarUrl: null,
   signOut: async () => {},
 });
 
@@ -34,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * next.
    */
   const ownerRef = useRef<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -70,6 +82,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Sign the stored avatar whenever it changes. `updateUser` fires an auth
+  // state change, so replacing the photo re-runs this on its own.
+  const storedAvatar = (user?.user_metadata?.avatar_url as string | null | undefined) ?? null;
+  useEffect(() => {
+    if (!storedAvatar) {
+      setAvatarUrl(null);
+      return;
+    }
+    let cancelled = false;
+    getAvatarUrl(storedAvatar)
+      .then((url) => {
+        if (!cancelled) setAvatarUrl(url);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [storedAvatar]);
+
   const signOut = async () => {
     const supabase = createClient();
     // Clear what is ours before the network call, so a failed sign-out still
@@ -86,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signOut }}>
+    <AuthContext.Provider value={{ user, session, isLoading, avatarUrl, signOut }}>
       {children}
     </AuthContext.Provider>
   );

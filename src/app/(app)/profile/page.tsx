@@ -33,14 +33,21 @@ const TIMEZONES = [
 ] as const;
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, avatarUrl: signedAvatar } = useAuth();
   const reduceMotion = useReducedMotion();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profileLoading, setProfileLoading] = useState(true);
   const [saveState, setSaveState] = useState<"idle" | "loading" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(() => user?.user_metadata?.avatar_url);
+  /* What is stored on the account: a storage path. `signedAvatar` is what the
+     browser can actually load, signed centrally in the auth context. */
+  const [storedAvatar, setStoredAvatar] = useState<string | undefined>(
+    () => user?.user_metadata?.avatar_url
+  );
+  const [uploadedPreview, setUploadedPreview] = useState<string | undefined>();
+  // The freshly signed link wins right after an upload; otherwise the context's.
+  const avatarUrl = uploadedPreview ?? signedAvatar ?? undefined;
   const [avatarState, setAvatarState] = useState<"idle" | "uploading" | "removing" | "error">("idle");
   const [avatarError, setAvatarError] = useState("");
 
@@ -116,11 +123,14 @@ export default function ProfilePage() {
     }
     setAvatarState("uploading");
     try {
-      const url = await uploadAvatar(user.id, file);
+      const path = await uploadAvatar(user.id, file);
       const supabase = createClient();
-      const { error } = await supabase.auth.updateUser({ data: { avatar_url: url } });
+      const { error } = await supabase.auth.updateUser({ data: { avatar_url: path } });
       if (error) throw error;
-      setAvatarUrl(url);
+      setStoredAvatar(path);
+      // Show it at once from the local file rather than waiting for the signed
+      // link to come back; the context replaces it a moment later.
+      setUploadedPreview(URL.createObjectURL(file));
       setAvatarState("idle");
     } catch {
       setAvatarError("Profile photo could not be uploaded. Run the avatar migration if needed.");
@@ -129,15 +139,16 @@ export default function ProfilePage() {
   }
 
   async function handleRemoveAvatar() {
-    if (!user || !avatarUrl) return;
+    if (!user || !storedAvatar) return;
     setAvatarState("removing");
     setAvatarError("");
     try {
-      await deleteAvatar(user.id, avatarUrl);
+      await deleteAvatar(user.id, storedAvatar);
       const supabase = createClient();
       const { error } = await supabase.auth.updateUser({ data: { avatar_url: null } });
       if (error) throw error;
-      setAvatarUrl(undefined);
+      setStoredAvatar(undefined);
+      setUploadedPreview(undefined);
       setAvatarState("idle");
     } catch {
       setAvatarError("Profile photo could not be removed.");
