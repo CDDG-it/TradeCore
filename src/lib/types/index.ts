@@ -186,6 +186,35 @@ export interface TradeJournalEntry {
   updated_at: string;
 }
 
+/**
+ * A trade without its writing.
+ *
+ * Everything that scores, charts or lists a trade works from these fields:
+ * when it happened, how it went, and whether the plan was followed. The four
+ * prose fields and the screenshot groups are only ever needed when one trade is
+ * opened, so a read that serves a list has no reason to carry them.
+ *
+ * Written as an `Omit` rather than a `Pick` on purpose: the rule is "everything
+ * except the writing", so a column added to the trade later joins this type by
+ * default. Only a new prose or blob field needs a decision, and that decision
+ * is made here, in one place.
+ *
+ * Functions that take this rather than the full entry accept both, since a
+ * complete `TradeJournalEntry` satisfies it. The point is the other direction:
+ * a narrowed read can feed them, and removing a column from that read becomes a
+ * compile error here instead of an `undefined` at render time.
+ */
+export type TradeSummary = Omit<
+  TradeJournalEntry,
+  | "execution_notes"
+  | "psychology_notes"
+  | "mistakes"
+  | "lessons"
+  | "screenshot_groups"
+  | "market_context"
+  | "updated_at"
+>;
+
 export interface FundedAccount {
   id: string;
   user_id: string;

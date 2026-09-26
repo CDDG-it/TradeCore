@@ -24,15 +24,40 @@ import type { ScreenshotGroup } from "@/lib/types";
  *  - Re-running is safe: anything that is not a `data:` URL is skipped.
  */
 
-type Table = "trades" | "analyses";
-const TABLES: Table[] = ["trades", "analyses"];
+export type Table = "trades" | "analyses" | "best_trade_of_day";
+export const TABLES: Table[] = ["trades", "analyses", "best_trade_of_day"];
 
-/** Storage groups entity folders by table name; "analyses" matches already. */
-const ENTITY: Record<Table, "trades" | "analyses"> = { trades: "trades", analyses: "analyses" };
+/**
+ * Which Storage folder each table's images belong in. Two of the names line up
+ * with the table; the best-trade one does not, and its live uploads already
+ * write to "best-trade", so a migrated image has to land in the same place.
+ *
+ * Typed off `uploadScreenshot` rather than repeating its union, so this cannot
+ * drift away from what Storage actually accepts.
+ */
+const ENTITY: Record<Table, Parameters<typeof uploadScreenshot>[1]> = {
+  trades: "trades",
+  analyses: "analyses",
+  best_trade_of_day: "best-trade",
+};
 
 interface Row {
   id: string;
+  /** Best-trade rows are filed by day, not by row id. Absent on the others. */
+  date?: string | null;
   screenshot_groups: ScreenshotGroup[] | null;
+}
+
+/**
+ * The folder segment an image is stored under.
+ *
+ * This differs per table and getting it wrong is invisible: the upload
+ * succeeds, the path is stored as returned, and the picture still renders. But
+ * a migrated image and a later one from the same day would sit in different
+ * folders, which makes every future cleanup wrong.
+ */
+function entityId(table: Table, row: Row): string {
+  return table === "best_trade_of_day" ? (row.date ?? row.id) : row.id;
 }
 
 export interface ScanResult {
@@ -66,9 +91,11 @@ function payloadBytes(dataUrl: string): number {
 
 async function readRows(table: Table): Promise<Row[]> {
   const supabase = createClient();
-  const { data, error } = await supabase.from(table).select("id, screenshot_groups");
+  const cols =
+    table === "best_trade_of_day" ? "id, date, screenshot_groups" : "id, screenshot_groups";
+  const { data, error } = await supabase.from(table).select(cols);
   if (error) throw new Error(`${table}: ${error.message}`);
-  return (data ?? []) as Row[];
+  return (data ?? []) as unknown as Row[];
 }
 
 function base64Urls(row: Row): string[] {
@@ -77,10 +104,11 @@ function base64Urls(row: Row): string[] {
 
 /** Looks, changes nothing. */
 export async function scanBase64Screenshots(): Promise<ScanResult> {
-  const perTable = {
-    trades: { rows: 0, images: 0, bytes: 0 },
-    analyses: { rows: 0, images: 0, bytes: 0 },
-  } as ScanResult["perTable"];
+  // Built from TABLES rather than written out: a table added to the list above
+  // and forgotten here would be scanned but silently left out of the totals.
+  const perTable = Object.fromEntries(
+    TABLES.map((t) => [t, { rows: 0, images: 0, bytes: 0 }])
+  ) as ScanResult["perTable"];
 
   for (const table of TABLES) {
     for (const row of await readRows(table)) {
@@ -92,10 +120,13 @@ export async function scanBase64Screenshots(): Promise<ScanResult> {
     }
   }
 
+  const total = (key: "rows" | "images" | "bytes") =>
+    TABLES.reduce((sum, t) => sum + perTable[t][key], 0);
+
   return {
-    rows: perTable.trades.rows + perTable.analyses.rows,
-    images: perTable.trades.images + perTable.analyses.images,
-    bytes: perTable.trades.bytes + perTable.analyses.bytes,
+    rows: total("rows"),
+    images: total("images"),
+    bytes: total("bytes"),
     perTable,
   };
 }
@@ -148,7 +179,7 @@ export async function migrateBase64Screenshots(
             continue;
           }
           const file = await toFile(url, index++);
-          urls.push(await uploadScreenshot(userId, ENTITY[table], row.id, file));
+          urls.push(await uploadScreenshot(userId, ENTITY[table], entityId(table, row), file));
           result.migrated += 1;
         }
         groups.push({ ...group, urls });

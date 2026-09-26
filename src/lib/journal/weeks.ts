@@ -2,7 +2,7 @@ import {
   format, startOfISOWeek, endOfISOWeek, eachDayOfInterval,
   getISOWeek, getISOWeekYear, addDays, startOfDay,
 } from "date-fns";
-import type { TradeJournalEntry } from "@/lib/types";
+import type { TradeSummary } from "@/lib/types";
 
 // Expand short tickers to the names traders recognise at a glance.
 export const INSTRUMENT_NAMES: Record<string, string> = {
@@ -16,7 +16,7 @@ export const instrumentName = (s: string) => INSTRUMENT_NAMES[(s ?? "").toUpperC
 export const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 /** R contribution of a single trade. */
-export function tradeR(t: TradeJournalEntry): number {
+export function tradeR(t: TradeSummary): number {
   if (t.result === "win") return t.rr;
   if (t.result === "loss") return -1;
   return 0;
@@ -34,7 +34,7 @@ export function winRateOf(wins: number, losses: number): number | null {
 }
 
 /** Win rate of a set of trades: wins / (wins + losses), break-even excluded. */
-export function tradesWinRate(trades: TradeJournalEntry[]): number | null {
+export function tradesWinRate(trades: TradeSummary[]): number | null {
   return winRateOf(
     trades.filter((t) => t.result === "win").length,
     trades.filter((t) => t.result === "loss").length,
@@ -46,8 +46,8 @@ export type WeekGroup = {
   weekNum: number;
   year: number;
   rangeLabel: string;       // "Jun 8 - Jun 12, 2026" (Mon-Fri)
-  days: { date: string; trades: TradeJournalEntry[] }[]; // Mon-Fri
-  trades: TradeJournalEntry[];
+  days: { date: string; trades: TradeSummary[] }[]; // Mon-Fri
+  trades: TradeSummary[];
   wins: number;
   losses: number;
   bes: number;
@@ -62,7 +62,7 @@ export type WeekGroup = {
 };
 
 /** Build a single week group (Mon-Fri) for a given Monday date string. */
-export function getWeekGroup(trades: TradeJournalEntry[], weekStart: string): WeekGroup {
+export function getWeekGroup(trades: TradeSummary[], weekStart: string): WeekGroup {
   const start = new Date(weekStart + "T12:00:00");
   const end = endOfISOWeek(start);
   // Mon-Fri only (drop the weekend)
@@ -91,7 +91,7 @@ export function getWeekGroup(trades: TradeJournalEntry[], weekStart: string): We
 }
 
 /** Execution counts and rate for a set of trades. */
-function execOf(trades: TradeJournalEntry[]) {
+function execOf(trades: TradeSummary[]) {
   const goodExec = trades.filter((t) => t.execution_quality === "good").length;
   const badExec = trades.filter((t) => t.execution_quality === "bad").length;
   const rated = goodExec + badExec;
@@ -99,7 +99,7 @@ function execOf(trades: TradeJournalEntry[]) {
 }
 
 /** Group all trades into weeks (Mon-Fri), newest first. */
-export function buildWeekGroups(trades: TradeJournalEntry[]): WeekGroup[] {
+export function buildWeekGroups(trades: TradeSummary[]): WeekGroup[] {
   const weekStarts = new Set<string>();
   trades.forEach((t) => {
     const d = new Date(t.date_time.slice(0, 10) + "T12:00:00");

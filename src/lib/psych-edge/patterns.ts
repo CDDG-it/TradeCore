@@ -30,7 +30,7 @@
  */
 import { format, parse } from "date-fns";
 import { tradeR, instrumentName } from "@/lib/journal/weeks";
-import type { PatternType, PreTradeAnalysis, TradeJournalEntry } from "@/lib/types";
+import type { PatternType, PreTradeAnalysis, TradeSummary } from "@/lib/types";
 
 // ── Fixed thresholds: the whole engine's tunable surface, in one place ──
 export const PATTERN_THRESHOLDS = {
@@ -82,7 +82,7 @@ export interface DetectedPattern {
 // date_time is date-only; execution_time ("HH:MM") orders within a day. Trades
 // missing an entry time sort to the end of their day, then by created_at.
 interface Ordered {
-  trade: TradeJournalEntry;
+  trade: TradeSummary;
   day: string;
   /** Minutes-since-midnight of the entry, or null when no entry time is logged. */
   entryMin: number | null;
@@ -101,7 +101,7 @@ function minutesOfDay(hhmm?: string): number | null {
   return h * 60 + min;
 }
 
-function order(trades: TradeJournalEntry[]): Ordered[] {
+function order(trades: TradeSummary[]): Ordered[] {
   return trades
     .map((trade) => ({
       trade,
@@ -125,13 +125,13 @@ const fmtR = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)}R`;
 const fmtDay = (iso: string) => format(parse(iso, "yyyy-MM-dd", new Date()), "MMM d");
 
 /** Whether any custom discipline rule was marked not-followed on a trade. */
-function brokeARule(t: TradeJournalEntry): boolean {
+function brokeARule(t: TradeSummary): boolean {
   return (t.discipline?.custom_checks ?? []).some((c) => !c.passed);
 }
 
 /** Trader's average R target (rr) across all trades: the baseline the revenge
  *  "aggressive size" proxy compares against. */
-function avgRrTarget(trades: TradeJournalEntry[]): number {
+function avgRrTarget(trades: TradeSummary[]): number {
   const rrs = trades.map((t) => t.rr).filter((n) => Number.isFinite(n) && n > 0);
   if (rrs.length === 0) return 0;
   return rrs.reduce((s, n) => s + n, 0) / rrs.length;
@@ -224,7 +224,7 @@ interface DailyNorm {
   ready: boolean;
 }
 
-export function dailyTradeNorm(trades: TradeJournalEntry[]): DailyNorm {
+export function dailyTradeNorm(trades: TradeSummary[]): DailyNorm {
   const countByDay = new Map<string, number>();
   for (const t of trades) {
     const day = t.date_time.slice(0, 10);
@@ -262,7 +262,7 @@ function overtradingFor(cur: Ordered, norm: DailyNorm): DetectedPattern | null {
 // trade's direction contradicts the linked analysis's bias.
 function planDeviationFor(
   cur: Ordered,
-  analysisById: Map<string, PreTradeAnalysis>,
+  analysisById: Map<string, AnalysisRef>,
   analysisDays: Set<string>
 ): DetectedPattern | null {
   const t = cur.trade;
@@ -297,14 +297,22 @@ function planDeviationFor(
   return null;
 }
 
+/**
+ * All this module needs of an analysis: its id, the day it was written for and
+ * which way it leaned. Typed as the minimum rather than the whole row so the
+ * narrowed list read can feed it directly; a complete `PreTradeAnalysis` is
+ * still accepted, since a wider object satisfies a narrower shape.
+ */
+export type AnalysisRef = Pick<PreTradeAnalysis, "id" | "date" | "bias">;
+
 // ── Full-history detection ──────────────────────────────────────────────
 /**
  * Every pattern occurrence across the trade history, in chronological order.
  * Deterministic and recomputable: nothing here depends on stored state.
  */
 export function detectPatterns(
-  trades: TradeJournalEntry[],
-  analyses: PreTradeAnalysis[]
+  trades: TradeSummary[],
+  analyses: AnalysisRef[]
 ): DetectedPattern[] {
   if (trades.length === 0) return [];
   const ord = order(trades);
@@ -331,8 +339,8 @@ export function detectPatterns(
 /** All patterns that fired on one specific trade. */
 export function patternsForTrade(
   tradeId: string,
-  trades: TradeJournalEntry[],
-  analyses: PreTradeAnalysis[]
+  trades: TradeSummary[],
+  analyses: AnalysisRef[]
 ): DetectedPattern[] {
   return detectPatterns(trades, analyses).filter((p) => p.tradeId === tradeId);
 }

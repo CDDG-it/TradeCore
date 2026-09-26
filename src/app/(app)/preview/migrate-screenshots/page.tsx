@@ -7,8 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 import {
   migrateBase64Screenshots,
   scanBase64Screenshots,
+  TABLES,
   type MigrateResult,
   type ScanResult,
+  type Table,
 } from "@/lib/migrate/screenshots";
 
 /**
@@ -18,6 +20,13 @@ import {
  */
 
 const mb = (bytes: number) => `${(bytes / 1_048_576).toFixed(1)} MB`;
+
+/** Table names as a person would say them. */
+const LABELS: Record<Table, string> = {
+  trades: "Trades",
+  analyses: "Analyses",
+  best_trade_of_day: "Best trade of day",
+};
 
 export default function MigrateScreenshotsPage() {
   if (process.env.NODE_ENV === "production") notFound();
@@ -137,9 +146,9 @@ export default function MigrateScreenshotsPage() {
                 {scan.rows === 1 ? "" : "s"}, pulled on every read.
               </p>
               <ul className="mt-3 space-y-1 border-t border-border/40 pt-3 text-xs text-muted-foreground">
-                {(["trades", "analyses"] as const).map((t) => (
+                {TABLES.map((t) => (
                   <li key={t} className="flex justify-between">
-                    <span className="capitalize">{t}</span>
+                    <span>{LABELS[t]}</span>
                     <span className="font-mono">
                       {scan.perTable[t].images} images · {mb(scan.perTable[t].bytes)}
                     </span>

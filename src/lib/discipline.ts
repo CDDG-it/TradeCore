@@ -1,5 +1,5 @@
 import { eachDayOfInterval, startOfDay, min as minDate } from "date-fns";
-import type { TradeJournalEntry, Habit, HabitCompletion } from "@/lib/types";
+import type { TradeJournalEntry, TradeSummary, Habit, HabitCompletion } from "@/lib/types";
 
 /**
  * Discipline blends the two things a trader actually controls:
@@ -35,7 +35,7 @@ export interface DisciplineBreakdown {
   habitExpected: number;
 }
 
-const tradeDate = (t: TradeJournalEntry) => new Date(t.date_time.slice(0, 10) + "T12:00:00");
+const tradeDate = (t: Pick<TradeJournalEntry, "date_time">) => new Date(t.date_time.slice(0, 10) + "T12:00:00");
 
 /** Whether a habit with the given frequency is expected on a specific weekday. */
 function frequencyAppliesOn(freq: Habit["frequency"], weekday: number): boolean {
@@ -54,7 +54,7 @@ function frequencyAppliesOn(freq: Habit["frequency"], weekday: number): boolean 
  * win-rate denominator instead of being scored as losses.
  */
 export function computeExecutionScore(
-  trades: TradeJournalEntry[],
+  trades: TradeSummary[],
   start: Date,
   end: Date
 ): { score: number | null; good: number; bad: number } {
@@ -73,7 +73,7 @@ export function computeExecutionScore(
 
 /** Average per-trade discipline score for trades inside [start, end]. */
 export function computeTradeRulesScore(
-  trades: TradeJournalEntry[],
+  trades: TradeSummary[],
   start: Date,
   end: Date
 ): number | null {

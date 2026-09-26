@@ -5,6 +5,7 @@
  */
 import { createClient } from "@/lib/supabase/client";
 import { cachedRead, invalidateReads } from "@/lib/supabase/cache";
+import { columns } from "@/lib/supabase/columns";
 import { winRateOf } from "@/lib/journal/weeks";
 import { localDayKey, subDays } from "@/lib/dates";
 import type {
@@ -40,14 +41,47 @@ function now() {
 
 // ── Pre-Trade Analysis ───────────────────────────────────────────────
 
-async function _getAnalyses(): Promise<PreTradeAnalysis[]> {
+/**
+ * The analysis list: enough to pick one, group it by day and badge it.
+ *
+ * `long_scenario`, `short_scenario`, `notes` and `screenshot_groups` are
+ * deliberately absent. They are read only on the detail and edit screens, which
+ * go through `getAnalysisById` and still fetch the whole row. This list is the
+ * single most expensive read in the app, because the app shell warms it for
+ * every signed-in session whether or not the analysis screen is ever opened.
+ *
+ * `thesis` stays because the list renders it as a two-line clamp.
+ */
+const ANALYSIS_LIST = columns<PreTradeAnalysis>()(
+  "id",
+  "user_id",
+  "date",
+  "title",
+  "instrument",
+  "market",
+  "session",
+  "bias",
+  "used_for_trade",
+  "thesis",
+  "created_at",
+);
+
+/** One analysis as every list, widget and score sees it. */
+export type AnalysisListRow = typeof ANALYSIS_LIST.row;
+
+async function _getAnalyses(): Promise<AnalysisListRow[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("analyses")
-    .select("*")
+    .select(ANALYSIS_LIST.select)
+    // No date floor: the mind score resolves a trade's linked analysis against
+    // this whole map, and its all-time window reaches back to the first entry.
+    // The limit is a runaway guard, not a window: 2000 is about eight years at
+    // one analysis a trading day.
+    .limit(2000)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as PreTradeAnalysis[];
+  return (data ?? []) as unknown as AnalysisListRow[];
 }
 
 export async function getAnalysisById(id: string): Promise<PreTradeAnalysis | null> {
@@ -354,14 +388,31 @@ export async function deleteHabit(id: string): Promise<void> {
   if (error) throw error;
 }
 
-async function _getHabitCompletions(habitId?: string, date?: string): Promise<HabitCompletion[]> {
+/**
+ * A habit tick. `notes` is the only column dropped; nothing reads it.
+ *
+ * This is the fastest-growing table in the app: rows are habits x days, so a
+ * trader with six habits is adding six rows every day, forever.
+ */
+const HABIT_COMPLETION_LIST = columns<HabitCompletion>()("id", "habit_id", "date", "completed");
+
+export type HabitCompletionRow = typeof HABIT_COMPLETION_LIST.row;
+
+async function _getHabitCompletions(habitId?: string, date?: string): Promise<HabitCompletionRow[]> {
   const supabase = createClient();
-  let query = supabase.from("habit_completions").select("*");
+  // No date floor, on purpose. The Discipline widget's "all" scope, a goal's
+  // own start date and the all-time mind score each reach back arbitrarily far,
+  // so a floor here would quietly change three numbers the trader reads. The
+  // limit is a runaway guard only: 20000 is roughly nine years of six habits.
+  let query = supabase
+    .from("habit_completions")
+    .select(HABIT_COMPLETION_LIST.select)
+    .limit(20000);
   if (habitId) query = query.eq("habit_id", habitId);
   if (date) query = query.eq("date", date);
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as HabitCompletion[];
+  return (data ?? []) as unknown as HabitCompletionRow[];
 }
 
 export async function toggleHabitCompletion(
@@ -481,16 +532,45 @@ export async function saveWeeklyReflection(
 // Fail-soft: if the weekly_trade_reviews table has not been created yet,
 // reads return empty so the Weekly Review tab still renders its derived stats.
 
+/**
+ * Every column, spelled out rather than starred.
+ *
+ * Nothing is dropped here: all three prose fields are displayed, and
+ * `best_trade_days` must be fetched because the weekly review writes it back on
+ * every save. Omitting it would silently overwrite the real map with an empty
+ * one, which is data loss rather than a display bug.
+ *
+ * The value of listing them anyway is that a fat column added to this table
+ * later cannot join this payload without someone deciding it should.
+ */
+const WEEKLY_REVIEW_LIST = columns<WeeklyTradeReview>()(
+  "id",
+  "user_id",
+  "week_start",
+  "mistakes",
+  "lessons",
+  "prevention_plan",
+  "best_trade_days",
+  "created_at",
+  "updated_at",
+);
+
 async function _getWeeklyTradeReviews(): Promise<WeeklyTradeReview[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("weekly_trade_reviews")
-    .select("*");
+    .select(WEEKLY_REVIEW_LIST.select)
+    // About six years at one review a week.
+    .limit(300)
+    .order("week_start", { ascending: false });
   if (error) return [];
-  return (data ?? []).map((r) => ({
+  // The column list is a runtime string, so the client cannot infer the row
+  // shape and widens `data`. The cast is to the type the list itself derives.
+  const rows = (data ?? []) as unknown as WeeklyTradeReview[];
+  return rows.map((r) => ({
     ...r,
     best_trade_days: (r.best_trade_days ?? {}) as Record<string, boolean>,
-  })) as WeeklyTradeReview[];
+  }));
 }
 
 export async function saveWeeklyTradeReview(
@@ -744,14 +824,29 @@ export async function upsertProfile(input: UserProfileUpdate): Promise<UserProfi
 // it just can't persist history or check prior commitments until the
 // migration runs.
 
-async function _getPsychEdgeSessions(): Promise<PsychEdgeSession[]> {
+/**
+ * The widest prose row in the schema, read for two dates.
+ *
+ * Its only consumer is the mind-score breakdown, which uses `date` and
+ * `created_at` and nothing else. The ten free-text columns (`report`, `relate`,
+ * `reason`, `reminder`, `success_metric`, `reasoning_answer`, `mistake_cost`,
+ * `commitment_statement`, `reconstruction_note`, `recurring_pattern_label`)
+ * were being downloaded in full to compute a number.
+ */
+const PSYCH_SESSION_LIST = columns<PsychEdgeSession>()("id", "date", "created_at");
+
+export type PsychEdgeSessionRow = typeof PSYCH_SESSION_LIST.row;
+
+async function _getPsychEdgeSessions(): Promise<PsychEdgeSessionRow[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("psych_edge_sessions")
-    .select("*")
+    .select(PSYCH_SESSION_LIST.select)
+    // No date floor: the all-time score anchors on the earliest session.
+    .limit(2000)
     .order("date", { ascending: false });
   if (error) return [];
-  return (data ?? []) as PsychEdgeSession[];
+  return (data ?? []) as unknown as PsychEdgeSessionRow[];
 }
 
 export async function savePsychEdgeSession(
@@ -903,18 +998,49 @@ export async function resolveAdherenceLog(id: string, followed: boolean): Promis
 // Fail-soft: if the best_trade_of_day table hasn't been created yet, reads
 // return empty/null so the Journal still renders.
 
-async function _getBestTradesOfDay(): Promise<BestTradeOfDay[]> {
+/**
+ * The best-trade list: which days have an entry, and enough of it to say so.
+ *
+ * Only `screenshot_groups` is dropped, and it is the one that matters: this
+ * table was never covered by the base64-to-Storage migration, so that column
+ * may still hold whole images inline. Leaving it out is what stops every chart
+ * of every reviewed day from being downloaded each time a week strip renders.
+ * `_getBestTradeOfDay` fetches the full row when one day is actually opened.
+ *
+ * `post_market_analysis` deliberately stays. It is bounded prose rather than
+ * image data, and the week strips use it to decide whether a day counts as
+ * reviewed: dropping it would quietly mark a day where the trader wrote a full
+ * session recap, but left the notes field empty, as not reviewed. Changing a
+ * number the trader reads is not worth the handful of kilobytes.
+ *
+ * The one case that does change: a day holding charts and nothing else now
+ * reads as not reviewed. See `hasEntry` in daily-best-trade.tsx.
+ */
+const BEST_TRADE_LIST = columns<BestTradeOfDay>()(
+  "id",
+  "user_id",
+  "date",
+  "taken_was_best",
+  "notes",
+  "post_market_analysis",
+  "created_at",
+  "updated_at",
+);
+
+/** One best-trade day as the week strips and the mind score see it. */
+export type BestTradeListRow = typeof BEST_TRADE_LIST.row;
+
+async function _getBestTradesOfDay(): Promise<BestTradeListRow[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("best_trade_of_day")
-    .select("*")
+    .select(BEST_TRADE_LIST.select)
+    // No date floor: the all-time mind score anchors on the earliest row.
+    // About six years at one entry a calendar day.
+    .limit(1500)
     .order("date", { ascending: false });
   if (error) return [];
-  return (data ?? []).map((r) => ({
-    ...r,
-    post_market_analysis: r.post_market_analysis ?? "",
-    screenshot_groups: (r.screenshot_groups ?? []) as BestTradeOfDay["screenshot_groups"],
-  })) as BestTradeOfDay[];
+  return (data ?? []) as unknown as BestTradeListRow[];
 }
 
 async function _getBestTradeOfDay(date: string): Promise<BestTradeOfDay | null> {
@@ -1105,11 +1231,11 @@ export function getHabits(): Promise<Habit[]> {
   return cachedRead("habits", _getHabits);
 }
 
-export function getAnalyses(): Promise<PreTradeAnalysis[]> {
+export function getAnalyses(): Promise<AnalysisListRow[]> {
   return cachedRead("analyses", _getAnalyses);
 }
 
-export function getBestTradesOfDay(): Promise<BestTradeOfDay[]> {
+export function getBestTradesOfDay(): Promise<BestTradeListRow[]> {
   return cachedRead("bestTrades", _getBestTradesOfDay);
 }
 
@@ -1117,7 +1243,7 @@ export function getWeeklyTradeReviews(): Promise<WeeklyTradeReview[]> {
   return cachedRead("weeklyReviews", _getWeeklyTradeReviews);
 }
 
-export function getPsychEdgeSessions(): Promise<PsychEdgeSession[]> {
+export function getPsychEdgeSessions(): Promise<PsychEdgeSessionRow[]> {
   return cachedRead("psychSessions", _getPsychEdgeSessions);
 }
 

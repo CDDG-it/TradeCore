@@ -15,9 +15,9 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getAnalyses } from "@/lib/supabase/queries";
+import { getAnalyses, type AnalysisListRow } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
-import type { Bias, PreTradeAnalysis } from "@/lib/types";
+import type { Bias } from "@/lib/types";
 
 function BiasBadge({ bias }: { bias: Bias }) {
   if (bias === "bullish")
@@ -42,7 +42,7 @@ function BiasBadge({ bias }: { bias: Bias }) {
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function AnalysisPage() {
-  const [allAnalyses, setAllAnalyses] = useState<PreTradeAnalysis[]>([]);
+  const [allAnalyses, setAllAnalyses] = useState<AnalysisListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [listWeekDate, setListWeekDate] = useState(new Date());
 
@@ -65,7 +65,7 @@ export default function AnalysisPage() {
 
   // Day map: used by the week navigation indicators and the day groups
   const analysesByDay = useMemo(() => {
-    const map: Record<string, PreTradeAnalysis[]> = {};
+    const map: Record<string, AnalysisListRow[]> = {};
     allAnalyses.forEach((a) => {
       if (!map[a.date]) map[a.date] = [];
       map[a.date].push(a);

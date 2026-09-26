@@ -17,28 +17,57 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { startOfMonth, startOfWeek, subDays } from "date-fns";
 import { localDayKey } from "@/lib/dates";
+import { columns } from "@/lib/supabase/columns";
 import type {
   TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis,
   BestTradeOfDay, WeeklyTradeReview, CommitmentAdherenceLog, TradingGoal,
 } from "@/lib/types";
 
-/** The trade columns the desk reads: outcome, timing, the discipline checklist
- *  and the analysis link. Notes and screenshots stay in the journal. */
-const TRADE_COLUMNS =
-  "id,user_id,date_time,instrument,rr,result,execution_time,execution_quality,linked_analysis_id,discipline,created_at";
+/* Each list below is declared through `columns<T>()`, which derives the row
+   type from the column names. Before, these were plain strings cast to the
+   full domain type, so the result claimed every field while carrying a third
+   of them: a component reading `execution_notes` off a dashboard trade
+   compiled happily and found `undefined` at runtime. Now the omission is
+   checked.
+
+   `created_at` rides along on the three date-keyed lists. It is eight bytes and
+   it is what the mind score needs to place a row in time, so fetching it is
+   cheaper than maintaining a second set of types for rows without it. */
+
+/** Every trade column except the writing: this is exactly `TradeSummary`, so
+ *  the desk's rows and the app's shared trade type are the same shape. The
+ *  fields left out are the four prose ones, the screenshots and the market
+ *  context, which together are nearly all of a trade row's weight. */
+const TRADES = columns<TradeJournalEntry>()(
+  "id", "user_id", "date_time", "instrument", "market", "session", "timeframe",
+  "direction", "confluences", "rr", "result", "execution_time", "execution_end_time",
+  "execution_quality", "linked_analysis_id", "discipline", "created_at",
+);
+const COMPLETIONS = columns<HabitCompletion>()("id", "habit_id", "date", "completed");
+const ANALYSES = columns<PreTradeAnalysis>()("id", "date", "created_at");
+const BEST_TRADES = columns<BestTradeOfDay>()("id", "date", "created_at");
+const WEEKLY_REVIEWS = columns<WeeklyTradeReview>()("id", "week_start", "created_at");
+const ADHERENCE = columns<CommitmentAdherenceLog>()("id", "date", "followed", "created_at");
+
+export type DashboardTradeRow = typeof TRADES.row;
+export type DashboardCompletionRow = typeof COMPLETIONS.row;
+export type DashboardAnalysisRow = typeof ANALYSES.row;
+export type DashboardBestTradeRow = typeof BEST_TRADES.row;
+export type DashboardWeeklyReviewRow = typeof WEEKLY_REVIEWS.row;
+export type DashboardAdherenceRow = typeof ADHERENCE.row;
 
 export interface DashboardData {
   /** Trades from `from` onward, newest first. Text and screenshot fields are absent. */
-  trades: TradeJournalEntry[];
+  trades: DashboardTradeRow[];
   accounts: FundedAccount[];
   habits: Habit[];
   /** Completions from `from` onward. */
-  completions: HabitCompletion[];
+  completions: DashboardCompletionRow[];
   /** Every analysis, id and date only. */
-  analyses: PreTradeAnalysis[];
-  bestTrades: BestTradeOfDay[];
-  weeklyReviews: WeeklyTradeReview[];
-  adherenceLogs: CommitmentAdherenceLog[];
+  analyses: DashboardAnalysisRow[];
+  bestTrades: DashboardBestTradeRow[];
+  weeklyReviews: DashboardWeeklyReviewRow[];
+  adherenceLogs: DashboardAdherenceRow[];
   goals: TradingGoal[];
   firstName: string | null;
   /** The first day (yyyy-MM-dd) the trades and completions cover. */
@@ -79,20 +108,20 @@ export async function readDashboard(supabase: SupabaseClient, now: Date = new Da
   const from = localDayKey(subDays(new Date(floors.sort()[0] + "T12:00:00"), 1));
 
   const [trades, completions, analyses, bestTrades, weeklyReviews, adherenceLogs] = await Promise.all([
-    strict<TradeJournalEntry>(
-      supabase.from("trades").select(TRADE_COLUMNS).gte("date_time", from).order("date_time", { ascending: false })
+    strict<DashboardTradeRow>(
+      supabase.from("trades").select(TRADES.select).gte("date_time", from).order("date_time", { ascending: false })
     ),
     // Scoped through the habits the user owns, so the filter is on habit ids.
     habits.length === 0
-      ? Promise.resolve([] as HabitCompletion[])
-      : strict<HabitCompletion>(
-          supabase.from("habit_completions").select("id,habit_id,date,completed")
+      ? Promise.resolve([] as DashboardCompletionRow[])
+      : strict<DashboardCompletionRow>(
+          supabase.from("habit_completions").select(COMPLETIONS.select)
             .in("habit_id", habits.map((h) => h.id)).gte("date", from)
         ),
-    strict<PreTradeAnalysis>(supabase.from("analyses").select("id,date")),
-    soft<BestTradeOfDay>(supabase.from("best_trade_of_day").select("id,date").gte("date", from)),
-    soft<WeeklyTradeReview>(supabase.from("weekly_trade_reviews").select("id,week_start").gte("week_start", from)),
-    soft<CommitmentAdherenceLog>(supabase.from("commitment_adherence_log").select("id,date,followed").gte("date", from)),
+    strict<DashboardAnalysisRow>(supabase.from("analyses").select(ANALYSES.select)),
+    soft<DashboardBestTradeRow>(supabase.from("best_trade_of_day").select(BEST_TRADES.select).gte("date", from)),
+    soft<DashboardWeeklyReviewRow>(supabase.from("weekly_trade_reviews").select(WEEKLY_REVIEWS.select).gte("week_start", from)),
+    soft<DashboardAdherenceRow>(supabase.from("commitment_adherence_log").select(ADHERENCE.select).gte("date", from)),
   ]);
 
   const fullName = (profile.data as { full_name?: string | null } | null)?.full_name ?? null;

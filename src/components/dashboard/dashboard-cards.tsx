@@ -12,7 +12,7 @@ import { habitAccent } from "@/lib/habits";
 import { mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import { BrainScore } from "@/components/mind-score/brain-score";
-import type { TradingGoal, TradeJournalEntry, Habit } from "@/lib/types";
+import type { TradingGoal, TradeJournalEntry, TradeSummary, Habit } from "@/lib/types";
 
 const TURQUOISE = "var(--primary)";
 const CYAN = "var(--ice)";
@@ -516,7 +516,7 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, c
    for a single result. The net R keeps its own colour. */
 
 export function WeekStrip({ days, today, compactNumbers = false }: {
-  days: { date: Date; trades: TradeJournalEntry[]; r: number }[];
+  days: { date: Date; trades: TradeSummary[]; r: number }[];
   /** Today's "yyyy-MM-dd" on the reader's clock. The desk passes the key it
    *  hydrated with, so the server and the browser agree on which day is lit. */
   today?: string;

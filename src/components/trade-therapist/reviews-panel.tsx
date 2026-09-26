@@ -14,7 +14,7 @@ import { AccentPanel } from "@/components/ui/accent-panel";
 import { ReviewConsistency } from "@/components/trade-therapist/review-consistency";
 import { getTrades, getWeeklyTradeReviews } from "@/lib/supabase/queries";
 import { getWeekGroup, formatTotalR, tradeR, isReviewOpen } from "@/lib/journal/weeks";
-import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
+import type { TradeSummary, WeeklyTradeReview } from "@/lib/types";
 
 type Mode = "weekly" | "monthly";
 
@@ -24,10 +24,10 @@ type Mode = "weekly" | "monthly";
  * digest of exactly what you wrote. It reports only facts and your own words:
  * it makes no assumptions about your mistakes or patterns.
  */
-export type ReviewsSeed = { trades: TradeJournalEntry[]; reviews: WeeklyTradeReview[] };
+export type ReviewsSeed = { trades: TradeSummary[]; reviews: WeeklyTradeReview[] };
 
 export function ReviewsPanel({ seed }: { seed?: ReviewsSeed } = {}) {
-  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(seed?.trades ?? null);
+  const [trades, setTrades] = useState<TradeSummary[] | null>(seed?.trades ?? null);
   const [reviews, setReviews] = useState<WeeklyTradeReview[]>(seed?.reviews ?? []);
   const [mode, setMode] = useState<Mode>("weekly");
   const [listOpen, setListOpen] = useState(true);

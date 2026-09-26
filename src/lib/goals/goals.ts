@@ -11,7 +11,7 @@ import {
   computeExecutionScore, computeTradeRulesScore, computeHabitScore,
 } from "@/lib/discipline";
 import { tradeR } from "@/lib/journal/weeks";
-import type { GoalMetric, TradingGoal, TradeJournalEntry, Habit, HabitCompletion } from "@/lib/types";
+import type { GoalMetric, TradingGoal, TradeSummary, Habit, HabitCompletion } from "@/lib/types";
 
 export interface GoalMetricMeta {
   key: GoalMetric;
@@ -120,7 +120,7 @@ export function formatGoalValue(metric: GoalMetric, value: number | null): strin
 }
 
 export interface GoalInputs {
-  trades: TradeJournalEntry[];
+  trades: TradeSummary[];
   habits: Habit[];
   completions: HabitCompletion[];
   now?: Date;
@@ -142,7 +142,7 @@ export interface GoalProgress {
   closed: boolean;
 }
 
-const dayOf = (t: TradeJournalEntry) => t.date_time.slice(0, 10);
+const dayOf = (t: TradeSummary) => t.date_time.slice(0, 10);
 
 /**
  * Days that were traded and hold no badly executed trade.
@@ -151,8 +151,8 @@ const dayOf = (t: TradeJournalEntry) => t.date_time.slice(0, 10);
  * good execution, and an unrated day is an absence of evidence rather than
  * evidence of a clean day.
  */
-function cleanDays(trades: TradeJournalEntry[]): number {
-  const byDay = new Map<string, TradeJournalEntry[]>();
+function cleanDays(trades: TradeSummary[]): number {
+  const byDay = new Map<string, TradeSummary[]>();
   for (const t of trades) {
     const k = dayOf(t);
     const list = byDay.get(k);

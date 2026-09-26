@@ -11,9 +11,9 @@ import {
   ChevronDown, ChevronUp, Trophy, History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, saveWeeklyTradeReview } from "@/lib/supabase/queries";
+import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, saveWeeklyTradeReview, type BestTradeListRow } from "@/lib/supabase/queries";
 import { getWeekGroup, tradeR, formatTotalR, reviewOpensOn, isReviewOpen } from "@/lib/journal/weeks";
-import type { TradeJournalEntry, WeeklyTradeReview, BestTradeOfDay } from "@/lib/types";
+import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
 
 const TURQUOISE = "var(--primary)";
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -30,7 +30,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
   const [review, setReview] = useState<WeeklyTradeReview | null>(null);
   const [prevReview, setPrevReview] = useState<WeeklyTradeReview | null>(null);
-  const [bestByDay, setBestByDay] = useState<Record<string, BestTradeOfDay>>({});
+  const [bestByDay, setBestByDay] = useState<Record<string, BestTradeListRow>>({});
 
   const [wentWell, setWentWell] = useState("");
   const [toImprove, setToImprove] = useState("");
@@ -182,8 +182,11 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
             const outcome = !has ? null : r > 0 ? "win" : r < 0 ? "loss" : "be";
             const best = bestByDay[d.date];
             const bestTaken = best?.taken_was_best;
+            // Charts are not part of this test: the list read leaves
+            // `screenshot_groups` behind so a week strip never pulls every
+            // reviewed day's images. Words still count, as they did.
             const bestLogged = best && !bestTaken && (
-              (best.post_market_analysis ?? "").trim() || (best.notes ?? "").trim() || (best.screenshot_groups ?? []).some((g) => g.urls.length > 0)
+              (best.post_market_analysis ?? "").trim() || (best.notes ?? "").trim()
             );
             return (
               <div key={d.date} className={cn("rounded-xl border p-3 flex flex-col items-center gap-2",

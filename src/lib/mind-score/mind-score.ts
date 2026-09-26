@@ -20,8 +20,8 @@ import { computeTradeRulesScore, computeHabitCounts, computeExecutionScore } fro
 import { computeGoalProgress } from "@/lib/goals/goals";
 import { isReviewOpen } from "@/lib/journal/weeks";
 import type {
-  TradeJournalEntry, Habit, HabitCompletion, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, PreTradeAnalysis,
-  CommitmentAdherenceLog, TradingGoal,
+  Habit, HabitCompletion, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, PreTradeAnalysis,
+  CommitmentAdherenceLog, TradingGoal, TradeSummary,
 } from "@/lib/types";
 
 export type MindPeriod = "week" | "month" | "all";
@@ -147,16 +147,21 @@ function mondayKey(d: Date): string {
 
 export interface MindInputs {
   now?: Date;
-  trades: TradeJournalEntry[];
+  trades: TradeSummary[];
   habits: Habit[];
   completions: HabitCompletion[];
-  psychSessions: PsychEdgeSession[];
-  bestTrades: BestTradeOfDay[];
-  weeklyReviews: WeeklyTradeReview[];
-  analyses: PreTradeAnalysis[];
+  /* The four below are declared as the minimum this module actually reads,
+     not as the full row. A `Pick` accepts a complete object just as happily,
+     so nothing that already passes whole rows breaks; what it buys is that the
+     list reads feeding this can stay narrow without the types quietly claiming
+     fields that were never fetched. */
+  psychSessions: Pick<PsychEdgeSession, "date" | "created_at">[];
+  bestTrades: Pick<BestTradeOfDay, "date" | "created_at">[];
+  weeklyReviews: Pick<WeeklyTradeReview, "week_start" | "created_at">[];
+  analyses: Pick<PreTradeAnalysis, "id" | "date" | "created_at">[];
   /** Commitment re-checks. Optional: callers that predate the commitment loop
    *  simply contribute no commitment objective. */
-  adherenceLogs?: CommitmentAdherenceLog[];
+  adherenceLogs?: Pick<CommitmentAdherenceLog, "date" | "followed" | "created_at">[];
   /** Active goal progress contributes to the score when it is measurable. */
   goals?: TradingGoal[];
 }

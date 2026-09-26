@@ -14,6 +14,7 @@ import {
 import {
   getTrades, getAccounts, getHabits, getHabitCompletions, getHabitStreak, getProfile,
   toggleHabitCompletion, getAnalyses,
+  type AnalysisListRow,
 } from "@/lib/supabase/queries";
 import { NEWS_CITY_DATA } from "@/lib/news-city/data";
 import { SENTIMENT_META, RISK_META } from "@/lib/news-city/ui";
@@ -30,7 +31,7 @@ import {
   WIDGET_MAP, WIDGET_CONTROLS, DEFAULT_WIDGET_OPTIONS, WIDGET_SIZE_LABEL, WIDGET_SIZE_CARD_CLASSES,
   type WidgetId, type WidgetOptions, type WidgetScope, type WidgetSessionFilter, type WidgetSize,
 } from "@/lib/home/widgets";
-import type { TradeJournalEntry, Habit, HabitCompletion, PreTradeAnalysis } from "@/lib/types";
+import type { TradeJournalEntry, Habit, HabitCompletion } from "@/lib/types";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
@@ -391,7 +392,7 @@ const BIAS_COLOR: Record<string, string> = {
   bullish: "var(--win)", bearish: "var(--loss)", choppy: "var(--be)",
 };
 function PreMarketAnalysisWidget({ options }: { options: WidgetOptions }) {
-  const [analyses, setAnalyses] = useState<PreTradeAnalysis[] | null>(null);
+  const [analyses, setAnalyses] = useState<AnalysisListRow[] | null>(null);
   useEffect(() => { getAnalyses().then(setAnalyses); }, []);
   if (!analyses) return <Loading />;
   if (analyses.length === 0)

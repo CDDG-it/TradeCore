@@ -8,7 +8,7 @@ import { CommitmentsPanel } from "@/components/trade-therapist/commitments-panel
 import { GoalsView } from "@/components/goals/goals-view";
 import { MindScoreBreakdown } from "@/components/mind-score/mindscore-breakdown";
 import { sampleDashboardData } from "@/lib/dashboard/sample";
-import type { Commitment, CommitmentAdherenceLog, TradeJournalEntry, TradingGoal, WeeklyTradeReview } from "@/lib/types";
+import type { Commitment, CommitmentAdherenceLog, TradeSummary, TradingGoal, WeeklyTradeReview } from "@/lib/types";
 import type { MindInputs } from "@/lib/mind-score/mind-score";
 
 type Tab = "reviews" | "commitments" | "goals" | "mindscore";
@@ -22,14 +22,16 @@ function useSeed() {
     const monday = startOfWeek(now, { weekStartsOn: 1 });
     const stamp = (d: Date) => format(d, "yyyy-MM-dd") + "T12:00:00";
 
-    const trades: TradeJournalEntry[] = [...base.trades];
+    // The sample dashboard data is already narrowed, so the seed is too: this
+    // preview only ever feeds scores and charts, never a trade detail view.
+    const trades: TradeSummary[] = [...base.trades];
     const reviews: WeeklyTradeReview[] = [];
     const reviewed = [1, 2, 3, 5, 6, 7, 8, 10, 11]; // week 4 and 9 missed, week 0 open
     for (let i = 1; i <= 11; i++) {
       const wk = subWeeks(monday, i);
       const ws = format(wk, "yyyy-MM-dd");
       const t = base.trades[i % base.trades.length];
-      trades.push({ ...t, id: `hist-${i}`, date_time: format(addDays(wk, 2), "yyyy-MM-dd"), created_at: stamp(wk), updated_at: stamp(wk) });
+      trades.push({ ...t, id: `hist-${i}`, date_time: format(addDays(wk, 2), "yyyy-MM-dd"), created_at: stamp(wk) });
       if (reviewed.includes(i)) {
         reviews.push({
           id: `rev-${i}`, user_id: "sample", week_start: ws,

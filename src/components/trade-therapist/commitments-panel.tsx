@@ -27,11 +27,10 @@ import {
   getCommitmentAdherenceLogs, createAdherenceLog, resolveAdherenceLog,
   getTrades, getAnalyses,
 } from "@/lib/supabase/queries";
-import { detectPatterns, PATTERN_LABELS, PATTERN_DESCRIPTIONS } from "@/lib/psych-edge/patterns";
+import { detectPatterns, PATTERN_LABELS, PATTERN_DESCRIPTIONS, type AnalysisRef } from "@/lib/psych-edge/patterns";
 import { instrumentName } from "@/lib/journal/weeks";
 import type {
-  Commitment, CommitmentAdherenceLog, PatternType,
-  TradeJournalEntry, PreTradeAnalysis,
+  Commitment, CommitmentAdherenceLog, PatternType, TradeSummary,
 } from "@/lib/types";
 
 const PATTERN_OPTIONS = Object.entries(PATTERN_LABELS) as [PatternType, string][];
@@ -55,8 +54,8 @@ const cardMotion = {
 export type CommitmentsSeed = {
   commitments: Commitment[];
   logs: CommitmentAdherenceLog[];
-  trades: TradeJournalEntry[];
-  analyses: PreTradeAnalysis[];
+  trades: TradeSummary[];
+  analyses: AnalysisRef[];
 };
 
 /** The last checks on one commitment as a row of dots, oldest first: the
@@ -110,8 +109,8 @@ function IfThenField({ word, value, onChange, label, hint }: {
 export function CommitmentsPanel({ seed }: { seed?: CommitmentsSeed } = {}) {
   const [commitments, setCommitments] = useState<Commitment[]>(seed?.commitments ?? []);
   const [logs, setLogs] = useState<CommitmentAdherenceLog[]>(seed?.logs ?? []);
-  const [trades, setTrades] = useState<TradeJournalEntry[]>(seed?.trades ?? []);
-  const [analyses, setAnalyses] = useState<PreTradeAnalysis[]>(seed?.analyses ?? []);
+  const [trades, setTrades] = useState<TradeSummary[]>(seed?.trades ?? []);
+  const [analyses, setAnalyses] = useState<AnalysisRef[]>(seed?.analyses ?? []);
   const [loading, setLoading] = useState(!seed);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

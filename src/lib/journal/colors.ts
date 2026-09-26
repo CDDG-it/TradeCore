@@ -23,7 +23,7 @@ export const BE_COLOR = "var(--be)";
 export const alpha = (c: string, pct: number) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
 
 /** The colour that stands for a trade's outcome. */
-export function resultColor(t: TradeJournalEntry): string {
+export function resultColor(t: Pick<TradeJournalEntry, "result">): string {
   return t.result === "win" ? WIN_COLOR : t.result === "loss" ? LOSS_COLOR : BE_COLOR;
 }
 
@@ -41,11 +41,15 @@ export function netRColor(r: number): string {
  * database returned them. Trades without a logged time sort after the timed
  * ones, oldest row first, since that is the only ordering we actually know.
  */
-function orderKey(t: TradeJournalEntry): string {
+function orderKey(t: Pick<TradeJournalEntry, "date_time" | "execution_time" | "created_at">): string {
   return `${t.date_time.slice(0, 10)}T${t.execution_time || "99:99"}|${t.created_at ?? ""}`;
 }
 
-export function inOrder(trades: TradeJournalEntry[]): TradeJournalEntry[] {
+/* Generic on purpose: a caller holding narrowed rows gets narrowed rows back,
+   rather than having them silently widened into a claim of completeness. */
+export function inOrder<T extends Pick<TradeJournalEntry, "date_time" | "execution_time" | "created_at">>(
+  trades: T[]
+): T[] {
   return [...trades].sort((a, b) => orderKey(a).localeCompare(orderKey(b)));
 }
 
@@ -54,7 +58,10 @@ export function inOrder(trades: TradeJournalEntry[]): TradeJournalEntry[] {
  * a break-even and a loss reads as half amber, half red: a mixed day can never
  * be mistaken for a single outcome.
  */
-export function resultBands(trades: TradeJournalEntry[], pct: number): string | undefined {
+export function resultBands(
+  trades: Pick<TradeJournalEntry, "result" | "date_time" | "execution_time" | "created_at">[],
+  pct: number
+): string | undefined {
   if (trades.length === 0) return undefined;
   const stops = inOrder(trades).flatMap((t, i) => {
     const c = alpha(resultColor(t), pct);

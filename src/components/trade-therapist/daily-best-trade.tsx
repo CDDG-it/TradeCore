@@ -15,6 +15,7 @@ import { ScreenshotUpload } from "@/components/screenshot-upload";
 import { cn } from "@/lib/utils";
 import {
   getBestTradeOfDay, getBestTradesOfDay, saveBestTradeOfDay, deleteBestTradeOfDay,
+  type BestTradeListRow,
 } from "@/lib/supabase/queries";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
 import {
@@ -25,11 +26,25 @@ import type { TradeJournalEntry, BestTradeOfDay, ScreenshotGroup } from "@/lib/t
 
 const TURQUOISE = "var(--primary)";
 
-/** Whether a best-trade entry holds anything worth marking. */
-function hasEntry(b: BestTradeOfDay | undefined): boolean {
+/**
+ * Whether a best-trade entry holds anything worth marking.
+ *
+ * Charts are no longer part of the test. The list read leaves
+ * `screenshot_groups` behind because that column may still hold whole images
+ * inline, and pulling every reviewed day's charts to render a row of dots was
+ * costing more than the dots are worth. A day holding charts and no words at
+ * all therefore reads as not reviewed; a day with either the notes or the
+ * post-market recap filled in still counts, as before.
+ */
+function hasEntry(
+  b: Pick<BestTradeOfDay, "taken_was_best" | "notes" | "post_market_analysis"> | undefined
+): boolean {
   if (!b) return false;
-  return b.taken_was_best ||
-    Boolean((b.notes ?? "").trim()) || (b.screenshot_groups ?? []).some((g) => g.urls.length > 0);
+  return (
+    b.taken_was_best ||
+    Boolean((b.notes ?? "").trim()) ||
+    Boolean((b.post_market_analysis ?? "").trim())
+  );
 }
 
 /** The two chart slots the best-trade of the day is framed around: the higher
@@ -66,7 +81,7 @@ export function DailyBestTrade({
   const [notes, setNotes] = useState("");
   const [groups, setGroups] = useState<ScreenshotGroup[]>(defaultShotGroups());
   const [loaded, setLoaded] = useState<BestTradeOfDay | null>(null);
-  const [bestByDay, setBestByDay] = useState<Record<string, BestTradeOfDay>>({});
+  const [bestByDay, setBestByDay] = useState<Record<string, BestTradeListRow>>({});
 
   const d = useMemo(() => new Date(date + "T12:00:00"), [date]);
   const weekStart = useMemo(() => startOfWeek(d, { weekStartsOn: 1 }), [d]);
