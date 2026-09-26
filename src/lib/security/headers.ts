@@ -28,7 +28,23 @@ function supabaseOrigins(): string[] {
 
 export function contentSecurityPolicy(dev: boolean): string {
   const supabase = supabaseOrigins();
-  const connect = ["'self'", ...supabase];
+  /* `data:` and `blob:` are not network destinations: a script can only fetch
+     one it is already holding, so allowing them here lets nothing out. The app
+     needs both, because it turns a pasted screenshot into a file by fetching
+     its own data URL, and the screenshot migration does the same to move a
+     base64 image into Storage. Without them that work fails with a policy
+     violation rather than an error anyone would recognise. */
+  const connect = [
+    "'self'",
+    "data:",
+    "blob:",
+    ...supabase,
+    /* Development only: the dev server pushes rebuilds over a websocket, and
+       `'self'` does not cover a different scheme, so without this every edit
+       stops reaching the browser and the page has to be reloaded by hand.
+       `ws:` is unencrypted by definition and has no business in production. */
+    ...(dev ? ["ws:"] : []),
+  ];
   const img = ["'self'", "data:", "blob:", ...supabase.filter((o) => o.startsWith("https:"))];
 
   const directives: Record<string, string[] | null> = {

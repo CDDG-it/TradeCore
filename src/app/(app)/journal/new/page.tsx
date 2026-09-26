@@ -15,6 +15,7 @@ import { invalidateReads } from "@/lib/supabase/cache";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { AnalysisPicker } from "@/components/journal/analysis-picker";
 import { TIMEFRAMES, normalizeTimeframe } from "@/lib/timeframes";
 import { useFormDraft } from "@/lib/drafts";
 import { DraftBanner } from "@/components/ui/draft-banner";
@@ -129,8 +130,6 @@ export default function NewTradePage() {
     });
   }, []);
 
-  const analysesForTradeDate = allAnalyses.filter((a) => a.date === form.date_time);
-  const otherAnalyses = allAnalyses.filter((a) => a.date !== form.date_time);
 
   // Auto-save / restore unsaved input so an accidental "back" never loses work.
   const { restored, clear: clearDraft, dismiss } = useFormDraft<TradeJournalEntryInput>({
@@ -457,38 +456,12 @@ export default function NewTradePage() {
             <CardTitle className="text-sm font-semibold">Link analysis</CardTitle>
           </CardHeader>
           <CardContent>
-            {allAnalyses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No analyses yet. Create one before your next session, then link it here.</p>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">Analyses for {form.date_time} are shown first. You can also link an analysis from another date.</p>
-                <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => set("linked_analysis_id", undefined)}
-                  className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                    !form.linked_analysis_id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                  None
-                </button>
-                {analysesForTradeDate.map((a) => (
-                  <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
-                    className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all max-w-xs truncate",
-                      form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                    {a.instrument} · {a.title.length > 30 ? `${a.title.slice(0, 30)}...` : a.title}
-                  </button>
-                ))}
-                </div>
-                {otherAnalyses.length > 0 && (
-                  <div className="flex flex-wrap gap-2 border-t border-border/50 pt-3">
-                    {otherAnalyses.map((a) => (
-                      <button key={a.id} type="button" onClick={() => set("linked_analysis_id", a.id)}
-                        className={cn("max-w-xs truncate rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
-                          form.linked_analysis_id === a.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                        {a.date} · {a.instrument} · {a.title.length > 24 ? `${a.title.slice(0, 24)}...` : a.title}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            <AnalysisPicker
+              analyses={allAnalyses}
+              date={form.date_time}
+              value={form.linked_analysis_id}
+              onChange={(id) => set("linked_analysis_id", id)}
+            />
           </CardContent>
         </Card>
 
