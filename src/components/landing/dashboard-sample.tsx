@@ -67,9 +67,9 @@ export function DashboardScreenshot() {
         <div ref={screenRef} className="marketing-dashboard relative aspect-[980/650] overflow-hidden rounded-[16px] bg-[#0b1120] sm:rounded-[18px]">
         <div inert className="marketing-dashboard-inner absolute left-0 top-0 h-[650px] w-[980px] overflow-hidden" style={{ transform: `scale(${scale ?? 1})`, transformOrigin: "top left", visibility: scale === null ? "hidden" : "visible" }}>
           <div className="flex h-12 items-center justify-between border-b border-white/10 bg-[#0b1120] px-4">
-            {/* Match the icon used by the authenticated top navigation. */}
+            {/* Match the current TradingMC mark used by the authenticated navigation. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tradingmc-app-dark.svg" alt="" width={28} height={28} className="h-7 w-7" />
+            <img src="/tradingmc-logo.png" alt="" width={55} height={28} className="h-7 w-auto object-contain" />
             <div className="flex gap-1">{PRIMARY_NAV.map((item) => <span key={item.href} className={`rounded-md px-2 py-1 text-[10px] font-semibold ${item.href === "/dashboard" ? "bg-[#1d4c52] text-white" : "text-[#7b91a0]"}`}>{item.label}</span>)}</div>
             <span className="grid h-6 w-6 place-items-center rounded-full bg-[#173b43] text-[9px] font-semibold text-white">AL</span>
           </div>
