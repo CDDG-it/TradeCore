@@ -27,7 +27,12 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
     upsert: true,
   });
   if (error) throw error;
-  return path;
+  /* The path carries a version marker. Replacing a photo with another of the
+     same type writes to the same key, so without one the stored value would be
+     byte-for-byte what it already was: nothing downstream would notice a
+     change, no new link would be signed, and the browser would go on showing
+     the picture it had cached. The marker is stripped before signing. */
+  return `${path}?v=${Date.now()}`;
 }
 
 /**

@@ -45,17 +45,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * next.
    */
   const ownerRef = useRef<string | null>(null);
+  /**
+   * Whether the user we are holding came from the Auth server rather than the
+   * cookie. A cookie carries whatever profile data was current when it was
+   * written, so it can be behind: change your name or your photo and the
+   * cookie keeps the old one until it is next rewritten. Letting a cookie
+   * overwrite a verified user is how a freshly uploaded avatar disappears
+   * again a moment after it is set.
+   */
+  const verifiedRef = useRef(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
 
-    const adopt = (next: User | null) => {
-      if (ownerRef.current !== null && ownerRef.current !== (next?.id ?? null)) {
+    const adopt = (next: User | null, authoritative: boolean) => {
+      const nextId = next?.id ?? null;
+      if (ownerRef.current !== null && ownerRef.current !== nextId) {
         invalidateReads();
         clearAllDrafts();
       }
-      ownerRef.current = next?.id ?? null;
+      // Same account, and what we already have was verified: keep it. The
+      // cookie's copy may be older, and downgrading loses profile changes.
+      if (!authoritative && verifiedRef.current && ownerRef.current === nextId) {
+        return;
+      }
+      verifiedRef.current = authoritative;
+      ownerRef.current = nextId;
       setUser(next);
     };
 
@@ -65,16 +81,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.auth.getUser(),
       supabase.auth.getSession(),
     ]).then(([{ data: { user } }, { data: { session } }]) => {
-      adopt(user);
+      adopt(user, true);
       setSession(session);
       setIsLoading(false);
     });
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
-        adopt(session?.user ?? null);
+        if (event === "USER_UPDATED" && session) {
+          // The profile just changed. Ask the server what it now says rather
+          // than trusting the copy in the cookie, which is what we changed.
+          supabase.auth
+            .getUser()
+            .then(({ data: { user } }) => adopt(user, true))
+            .catch(() => adopt(session.user, false));
+        } else {
+          adopt(session?.user ?? null, false);
+        }
         setIsLoading(false);
       }
     );
