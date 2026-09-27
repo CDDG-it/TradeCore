@@ -3,8 +3,47 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 import { getEmailContent } from "@/lib/email/templates";
 
-const SENDER_EMAIL = "collinalmelo@gmail.com";
 const SENDER_NAME = "TradingMC";
+
+/**
+ * Who the account emails come from, and over which relay.
+ *
+ * Resend once `RESEND_API_KEY` is set, and the old Gmail relay until then.
+ *
+ * The fallback is not indecision, it is the shape of a live migration: this
+ * route sends the mail people need to create an account or get back into one,
+ * so there must be no window where the code has moved and the credentials have
+ * not. When the key lands in the environment the sender switches by itself,
+ * and the Gmail branch can then be deleted.
+ *
+ * Resend's SMTP takes the literal username "resend" with the API key as the
+ * password, so it needs one variable rather than a pair.
+ */
+function mailer() {
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) {
+    return {
+      from: `"${SENDER_NAME}" <${process.env.MAIL_FROM ?? "no-reply@tradingmc.com"}>`,
+      transport: {
+        host: "smtp.resend.com",
+        port: 587,
+        secure: false,
+        auth: { user: "resend", pass: resendKey },
+      },
+    };
+  }
+  // Legacy: a personal Gmail account. Worse for trust and for deliverability,
+  // and the variable names say Brevo for historical reasons only.
+  return {
+    from: `"${SENDER_NAME}" <${process.env.LEGACY_SMTP_FROM ?? "collinalmelo@gmail.com"}>`,
+    transport: {
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: { user: process.env.BREVO_SMTP_USER, pass: process.env.BREVO_SMTP_KEY },
+    },
+  };
+}
 
 function buildConfirmUrl(siteUrl: string, tokenHash: string, type: string, redirectTo?: string): string {
   const base = `${siteUrl}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(type)}`;
@@ -74,19 +113,12 @@ export async function POST(request: NextRequest) {
   const confirmUrl = buildConfirmUrl(appUrl, token_hash, email_action_type, finalRedirect);
   const { subject, html } = getEmailContent(email_action_type, confirmUrl);
 
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.BREVO_SMTP_USER,
-      pass: process.env.BREVO_SMTP_KEY,
-    },
-  });
+  const { from, transport } = mailer();
+  const transporter = nodemailer.createTransport(transport);
 
   try {
     await transporter.sendMail({
-      from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+      from,
       to: user.email,
       subject,
       html,
