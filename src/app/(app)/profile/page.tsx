@@ -40,14 +40,25 @@ export default function ProfilePage() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [saveState, setSaveState] = useState<"idle" | "loading" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState("");
-  /* What is stored on the account: a storage path. `signedAvatar` is what the
-     browser can actually load, signed centrally in the auth context. */
-  const [storedAvatar, setStoredAvatar] = useState<string | undefined>(
-    () => user?.user_metadata?.avatar_url
-  );
+  /* What the account says its photo is: a storage path, read from the account
+     itself rather than copied into state. Copying it was the bug: this
+     component renders once before the account has loaded, so a copy taken then
+     is empty forever, and "Remove photo" quietly did nothing because it had
+     nothing to remove.
+
+     `pendingAvatar` is the local override for the moment between an upload or
+     a removal and the account catching up: a path when one was just set, null
+     when it was just cleared, undefined when there is nothing local to say. */
+  const [pendingAvatar, setPendingAvatar] = useState<string | null | undefined>();
+  const storedAvatar =
+    pendingAvatar === undefined
+      ? (user?.user_metadata?.avatar_url as string | undefined)
+      : pendingAvatar ?? undefined;
+
   const [uploadedPreview, setUploadedPreview] = useState<string | undefined>();
-  // The freshly signed link wins right after an upload; otherwise the context's.
-  const avatarUrl = uploadedPreview ?? signedAvatar ?? undefined;
+  /* The local file wins for the instant after an upload, then the signed link
+     from the context takes over. A removal clears both. */
+  const avatarUrl = storedAvatar ? uploadedPreview ?? signedAvatar ?? undefined : undefined;
   const [avatarState, setAvatarState] = useState<"idle" | "uploading" | "removing" | "error">("idle");
   const [avatarError, setAvatarError] = useState("");
 
@@ -127,7 +138,7 @@ export default function ProfilePage() {
       const supabase = createClient();
       const { error } = await supabase.auth.updateUser({ data: { avatar_url: path } });
       if (error) throw error;
-      setStoredAvatar(path);
+      setPendingAvatar(path);
       // Show it at once from the local file rather than waiting for the signed
       // link to come back; the context replaces it a moment later.
       setUploadedPreview(URL.createObjectURL(file));
@@ -147,7 +158,7 @@ export default function ProfilePage() {
       const supabase = createClient();
       const { error } = await supabase.auth.updateUser({ data: { avatar_url: null } });
       if (error) throw error;
-      setStoredAvatar(undefined);
+      setPendingAvatar(null);
       setUploadedPreview(undefined);
       setAvatarState("idle");
     } catch {
