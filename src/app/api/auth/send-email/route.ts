@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { getEmailContent } from "@/lib/email/templates";
 
 const SENDER_EMAIL = "collinalmelo@gmail.com";
 const SENDER_NAME = "TradingMC";
@@ -9,40 +10,6 @@ function buildConfirmUrl(siteUrl: string, tokenHash: string, type: string, redir
   const base = `${siteUrl}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(type)}`;
   if (redirectTo) return `${base}&next=${encodeURIComponent(redirectTo)}`;
   return base;
-}
-
-function getEmailContent(type: string, confirmUrl: string): { subject: string; html: string } {
-  const header = `
-    <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;padding:40px 24px;background:#fff;">
-      <div style="margin-bottom:32px;">
-        <span style="font-size:20px;font-weight:900;letter-spacing:-0.5px;">
-          <span style="color:#111;">Trading</span><span style="color:#14B8A6;">MC</span>
-        </span>
-      </div>
-  `;
-  const footer = `
-      <p style="margin-top:32px;font-size:12px;color:#999;">If you didn't request this, you can safely ignore this email.</p>
-    </div>
-  `;
-  const btn = `<a href="${confirmUrl}" style="display:inline-block;background:#14B8A6;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px;">`;
-  const link = `<p style="margin-top:20px;font-size:13px;color:#999;">Or copy this link: <a href="${confirmUrl}" style="color:#14B8A6;">${confirmUrl}</a></p>`;
-
-  if (type === "signup") {
-    return {
-      subject: "Verify your TradingMC account",
-      html: `${header}<h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111;">Verify your email</h2><p style="color:#555;margin-bottom:24px;">Click the button below to activate your TradingMC account.</p>${btn}Verify email</a>${link}${footer}`,
-    };
-  }
-  if (type === "recovery") {
-    return {
-      subject: "Reset your TradingMC password",
-      html: `${header}<h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111;">Reset your password</h2><p style="color:#555;margin-bottom:24px;">Click the button below to choose a new password.</p>${btn}Reset password</a>${link}${footer}`,
-    };
-  }
-  return {
-    subject: "Action required: TradingMC",
-    html: `${header}<h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111;">Action required</h2><p style="color:#555;margin-bottom:24px;">Click the button below to continue.</p>${btn}Continue</a>${footer}`,
-  };
 }
 
 /**
