@@ -154,16 +154,27 @@ export async function updateSession(request: NextRequest) {
   // the waiting page rather than a login loop, and only on the app's own
   // routes: the public site and the auth pages stay reachable.
   const allowed = allowlist();
-  if (user && allowed && !allowed.has(user.email?.toLowerCase() ?? "")) {
-    if (!isPublicPage && !isAuthPage) {
-      // The API is gated here as well. Without this an account that is held on
-      // the waiting page could still drive the product straight through
-      // /api/broker/*, which is the whole thing the gate exists to prevent.
-      if (isApi) return deny(403, "This account is not enabled yet");
-      const url = request.nextUrl.clone();
-      url.pathname = "/waitlist";
-      return NextResponse.redirect(url);
-    }
+  const heldBack = Boolean(user && allowed && !allowed.has(user.email?.toLowerCase() ?? ""));
+  if (heldBack && !isPublicPage && !isAuthPage) {
+    // The API is gated here as well. Without this an account that is held on
+    // the waiting page could still drive the product straight through
+    // /api/broker/*, which is the whole thing the gate exists to prevent.
+    if (isApi) return deny(403, "This account is not enabled yet");
+    const url = request.nextUrl.clone();
+    url.pathname = "/waitlist";
+    return NextResponse.redirect(url);
+  }
+
+  // The waiting page is for accounts the gate is holding, and no one else. An
+  // account that has since been switched on refreshes and lands in the app,
+  // instead of being stranded on a page that nothing redirects away from.
+  //
+  // Guarded on heldBack rather than on the gate being off, so an account that
+  // is still held cannot bounce between here and the redirect above.
+  if (user && !heldBack && path === "/waitlist") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
   }
 
   // Redirect authenticated users away from auth pages, but NOT from
