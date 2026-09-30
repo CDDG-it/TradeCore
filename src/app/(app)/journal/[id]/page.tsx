@@ -22,18 +22,9 @@ import {
   saveTradeRuleChecks,
   type RuleCheckDraft,
 } from "@/lib/supabase/queries";
+import { RuleChecksEditor } from "@/components/journal/rule-checks-editor";
 import { cn } from "@/lib/utils";
-import type { TradeDiscipline, TradeMarketContext, TradeJournalEntry, PreTradeAnalysis, RuleCheckStatus } from "@/lib/types";
-
-const RULE_OPTIONS: { value: RuleCheckStatus; label: string }[] = [
-  { value: "kept", label: "Kept" },
-  { value: "broken", label: "Broken" },
-  { value: "not_applicable", label: "N/A" },
-];
-const RULE_GROUPS = [
-  { type: "commitment" as const, title: "Today's commitment" },
-  { type: "standing_rule" as const, title: "Standing rules" },
-];
+import type { TradeDiscipline, TradeMarketContext, TradeJournalEntry, PreTradeAnalysis } from "@/lib/types";
 
 export default function TradeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -118,8 +109,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
    * row, so the wording of a rule is frozen at the moment it was judged. The
    * card below writes straight through, the same as the legacy checkboxes did.
    */
-  async function setRuleStatus(sourceId: string, status: RuleCheckStatus) {
-    const next = ruleChecks.map((check) => check.source_id === sourceId ? { ...check, status } : check);
+  async function saveRuleChecks(next: RuleCheckDraft[]) {
     setRuleChecks(next);
     await saveTradeRuleChecks(id, next);
   }
@@ -288,46 +278,11 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
             </CardHeader>
             <CardContent>
               {hasRuleChecks ? (
-                <div className="space-y-2">
-                  {RULE_GROUPS.map((group) => {
-                    const rows = ruleChecks.filter((check) => check.source_type === group.type);
-                    if (rows.length === 0) return null;
-                    return (
-                      <section key={group.type} className="space-y-1.5">
-                        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{group.title}</h3>
-                        {rows.map((check) => (
-                          <div key={`${check.source_type}-${check.source_id}`} className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
-                            <p className="text-xs leading-snug">{check.source_text_snapshot}</p>
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {RULE_OPTIONS.map((option) => (
-                                <button
-                                  key={option.value}
-                                  type="button"
-                                  onClick={() => setRuleStatus(check.source_id, option.value)}
-                                  className={cn(
-                                    "rounded-md border px-2.5 py-1 text-[11px] font-semibold transition-colors",
-                                    check.status === option.value
-                                      ? option.value === "kept"
-                                        ? "border-success/40 bg-success/10 text-success"
-                                        : option.value === "broken"
-                                        ? "border-destructive/40 bg-destructive/10 text-destructive"
-                                        : "border-primary/40 bg-primary/10 text-primary"
-                                      : "border-border text-muted-foreground hover:text-foreground"
-                                  )}
-                                >
-                                  {option.label}
-                                </button>
-                              ))}
-                            </div>
-                            {check.note?.trim() && (
-                              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">{check.note}</p>
-                            )}
-                          </div>
-                        ))}
-                      </section>
-                    );
-                  })}
-                </div>
+                <RuleChecksEditor
+                  checks={ruleChecks}
+                  onChange={saveRuleChecks}
+                  showScore={false}
+                />
               ) : hasCustomChecks ? (
                 <div className="space-y-1.5">
                   {customChecks.map((check, idx) => (

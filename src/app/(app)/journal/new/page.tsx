@@ -482,9 +482,9 @@ export default function NewTradePage() {
           </CardContent>
         </Card>
 
-        {/* Commitment and standing-rule checks */}
+        {/* Discipline checklist: the day's commitment and the standing rules */}
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Commitment & rules</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Discipline Check</CardTitle></CardHeader>
           <CardContent><RuleChecksEditor checks={ruleChecks} onChange={setRuleChecks} /></CardContent>
         </Card>
 
