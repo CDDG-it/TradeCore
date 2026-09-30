@@ -12,6 +12,9 @@ export type VolatilityLevel = "low" | "medium" | "high" | "extreme";
 export type TraderType = "scalper" | "day_trader" | "swing" | "position" | "custom";
 export type InsightType = "strength" | "weakness" | "pattern" | "suggestion" | "blind_spot";
 export type InsightCategory = "performance" | "discipline" | "psychology" | "market" | "habits";
+export type CommitmentFormat = "if_then" | "scope" | "rule";
+export type ExerciseTypeId = "loss_win_review" | "mental_contrasting" | "post_loss_reset";
+export type RuleCheckStatus = "kept" | "broken" | "not_applicable";
 
 export interface User {
   id: string;
@@ -57,6 +60,11 @@ export interface PreMarketExercise {
   win_plans: Record<string, string>;
   /** The single most important intention for today's session. */
   focus: string;
+  exercise_type: ExerciseTypeId;
+  inputs: Record<string, unknown>;
+  commitment_text: string;
+  commitment_format: CommitmentFormat | null;
+  completed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -156,6 +164,7 @@ export interface TradeJournalEntry {
   id: string;
   user_id: string;
   linked_analysis_id?: string;
+  funded_account_id?: string | null;
   /** ISO date string (date only, e.g. "2026-04-09") */
   date_time: string;
   instrument: string;
@@ -182,6 +191,31 @@ export interface TradeJournalEntry {
   discipline?: TradeDiscipline;
   /** Optional structured market context at time of trade */
   market_context?: TradeMarketContext;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StandingRule {
+  id: string;
+  user_id: string;
+  text: string;
+  sort_order: number;
+  active: boolean;
+  active_from: string;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TradeRuleCheck {
+  id: string;
+  user_id: string;
+  trade_id: string;
+  source_type: "commitment" | "standing_rule";
+  source_id: string;
+  source_text_snapshot: string;
+  status: RuleCheckStatus;
+  note: string;
   created_at: string;
   updated_at: string;
 }

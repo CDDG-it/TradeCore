@@ -31,6 +31,8 @@ export function computeMindScoreTrend(input: MindInputs, period: MindPeriod, cur
       weeklyReviews: input.weeklyReviews.filter((item) => recorded(item.created_at)),
       analyses: input.analyses.filter((item) => occurred(item.date) && recorded(item.created_at)),
       adherenceLogs: (input.adherenceLogs ?? []).filter((item) => occurred(item.date) && recorded(item.created_at)),
+      ruleChecks: (input.ruleChecks ?? []).filter((item) => recorded(item.created_at)),
+      preMarketExercises: (input.preMarketExercises ?? []).filter((item) => occurred(item.date) && recorded(item.created_at)),
       goals: (input.goals ?? []).filter((item) => recorded(item.created_at)).map((item) => ({
         ...item, archived_at: item.archived_at && recorded(item.archived_at) ? item.archived_at : null,
       })),
@@ -39,7 +41,8 @@ export function computeMindScoreTrend(input: MindInputs, period: MindPeriod, cur
       historical.completions.some((item) => item.completed) ||
       historical.psychSessions.length > 0 || historical.bestTrades.length > 0 ||
       historical.weeklyReviews.length > 0 || historical.analyses.length > 0 ||
-      (historical.adherenceLogs?.length ?? 0) > 0;
+      (historical.adherenceLogs?.length ?? 0) > 0 || (historical.ruleChecks?.length ?? 0) > 0 ||
+      (historical.preMarketExercises?.length ?? 0) > 0;
     if (!hasActivity) return { date: key, value: null };
     const score = computeMindScore(historical, period);
     return { date: key, value: score.pending ? null : score.total };

@@ -25,6 +25,8 @@ import { cn } from "@/lib/utils";
 import { SESSIONS, sessionState } from "@/lib/gmi/sessions";
 import { Ticks, Label } from "@/components/gmi/pane";
 import { MobileSubnav } from "@/components/layout/mobile-nav";
+import { useAccess } from "@/components/access/access-provider";
+import Link from "next/link";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -104,6 +106,7 @@ function VenueClocks() {
 }
 
 export default function GlobalMarketsPage() {
+  const { entitlements } = useAccess();
   const [tab, setTab] = useState<Tab>("briefing");
   const deskRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
@@ -142,12 +145,15 @@ export default function GlobalMarketsPage() {
   }, { scope: deskRef, dependencies: [tab], revertOnUpdate: true });
 
   const content = useMemo(() => {
+    const rank = { calendar: 0, markets: 1, full: 2 } as const;
+    const required = tab === "positioning" ? 2 : tab === "markets" ? 1 : 0;
+    if (rank[entitlements.globalMarkets] < required) return <div className="flex h-full items-center justify-center rounded-2xl border border-border/60 bg-card/50 text-center"><div><p className="font-heading text-lg font-bold">{tab === "positioning" ? "Pro" : "Plus"} unlocks this market view</p><p className="mt-1 text-xs text-muted-foreground">Your calendar remains available on Basic.</p><Link href="/pricing" className="mt-3 inline-flex rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground">Compare plans</Link></div></div>;
     switch (tab) {
-      case "briefing": return <BriefingTab />;
+      case "briefing": return <BriefingTab calendarOnly={entitlements.globalMarkets === "calendar"} />;
       case "markets": return <CombinedMarketsTab />;
       case "positioning": return <FlowOptionsTab />;
     }
-  }, [tab]);
+  }, [tab, entitlements.globalMarkets]);
 
   return (
     // The desk fills the viewport at every size: `fill-phone` (globals.css)

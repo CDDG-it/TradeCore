@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, Pencil, Check, X, CheckCircle2, AlertCircle, Loader2, GripVertical } from "lucide-react";
-import { getProfile, upsertProfile } from "@/lib/supabase/queries";
+import { getStandingRules, replaceStandingRules } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
 
 /** Move an item to another index, without mutating the original array. */
@@ -47,12 +47,8 @@ export function TradingRulesEditor() {
   const focusAfterMove = useRef<number | null>(null);
 
   useEffect(() => {
-    getProfile()
-      .then((p) => {
-        if (p?.discipline_rules) {
-          setRules(p.discipline_rules.split("\n").map((l) => l.trim()).filter(Boolean));
-        }
-      })
+    getStandingRules()
+      .then((rows) => setRules(rows.map((rule) => rule.text)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -140,7 +136,7 @@ export function TradingRulesEditor() {
   async function persist() {
     setSaveState("saving");
     try {
-      await upsertProfile({ discipline_rules: rules.join("\n") });
+      await replaceStandingRules(rules);
       setSaveState("saved");
       setDirty(false);
       setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 2500);

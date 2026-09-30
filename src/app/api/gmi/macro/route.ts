@@ -4,6 +4,7 @@ import { NO_STORE, publicCache, upstreamFailure } from "@/lib/security/public-ap
 import { cached } from "@/lib/gmi/cache";
 import { fetchMacro } from "@/lib/gmi/macro";
 import type { DataEnvelope, MacroSeries } from "@/lib/gmi/types";
+import { requireGlobalMarkets } from "@/lib/access/server";
 
 // FRED macro series (rates, real yields, spreads, Fed & liquidity, money).
 // Rates are daily and liquidity weekly, so a 10-minute cache is ample and keeps
@@ -18,6 +19,7 @@ const TTL_MS = 10 * 60_000;
 const CACHE = publicCache(600, 3600);
 
 export async function GET(req: Request) {
+  const denied = await requireGlobalMarkets("markets"); if (denied) return denied;
   const limit = rateLimit(req, "gmi:macro", 60, 60_000);
   if (!limit.ok) return tooManyRequests(limit);
 

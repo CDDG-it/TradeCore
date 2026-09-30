@@ -4,6 +4,8 @@ import { TopNav } from "@/components/layout/top-nav";
 import { BottomNav } from "@/components/layout/mobile-nav";
 import { WarmReads } from "@/components/layout/warm-reads";
 import { TransitionLayout } from "@/components/layout/transition-layout";
+import { AccessProvider } from "@/components/access/access-provider";
+import { resolveAccess } from "@/lib/access/server";
 
 /**
  * The whole signed-in app wears the homepage typeface. Inter is the public
@@ -18,7 +20,8 @@ const inter = Inter({
   display: "swap",
 });
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const access = await resolveAccess();
   return (
     // `overflow-x-clip` rather than `-hidden`: hidden turns this wrapper into a
     // scroll container, which silently breaks every `position: sticky` inside it
@@ -41,6 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         fontFamily: "var(--font-inter), system-ui, sans-serif",
       } as CSSProperties}
     >
+      <AccessProvider value={access}>
       {/* Full-width top navigation: no fixed left sidebar */}
       <TopNav />
       <WarmReads />
@@ -57,6 +61,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Phone-only tab bar; desktop keeps the top nav it already has. */}
       <BottomNav />
+      </AccessProvider>
     </div>
   );
 }

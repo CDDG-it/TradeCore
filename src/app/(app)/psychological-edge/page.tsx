@@ -10,6 +10,7 @@ import { TradingRulesEditor } from "@/components/habits/trading-rules";
 import { ConfluencesEditor } from "@/components/habits/confluences-editor";
 import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
 import { MobileSubnav } from "@/components/layout/mobile-nav";
+import { FeatureGate } from "@/components/access/access-provider";
 
 /**
  * My Edge: everything the trader controls away from the chart, in one place.
@@ -91,15 +92,15 @@ export default function MyEdgePage() {
 
       <PageWrapper>
         {tab === "habits" && <HabitsView />}
-        {tab === "goals" && <GoalsView />}
+        {tab === "goals" && <FeatureGate feature="goals"><GoalsView /></FeatureGate>}
         {tab === "mindscore" && <MindScoreBreakdown />}
-        {tab === "rules" && (
+        {tab === "rules" && <FeatureGate feature="standingRules">
           <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 sm:gap-6 lg:grid-cols-2">
             <TradingRulesEditor />
             <ConfluencesEditor />
           </div>
-        )}
-        {tab === "simulator" && <MonteCarloSimulator />}
+        </FeatureGate>}
+        {tab === "simulator" && <FeatureGate feature="monteCarlo"><MonteCarloSimulator /></FeatureGate>}
       </PageWrapper>
     </div>
   );

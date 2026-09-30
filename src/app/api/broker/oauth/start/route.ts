@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { authorizeUrl, newState, oauthConfig } from "@/lib/broker/tradovate-oauth";
 import { json, requireUser } from "@/lib/broker/route-utils";
+import { TRADOVATE_STATE_COOKIE } from "@/lib/broker/oauth-constants";
 
 // Sends the trader to Tradovate's own site to authorise this app. Nothing is
 // stored until they come back through the callback.
 export const dynamic = "force-dynamic";
-
-export const STATE_COOKIE = "tradovate_oauth_state";
 
 export async function GET() {
   const auth = await requireUser();
@@ -19,7 +18,7 @@ export async function GET() {
   // carries no matching cookie and is rejected.
   const state = newState();
   const res = NextResponse.redirect(authorizeUrl(config, state));
-  res.cookies.set(STATE_COOKIE, state, {
+  res.cookies.set(TRADOVATE_STATE_COOKIE, state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

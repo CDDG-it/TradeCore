@@ -4,6 +4,7 @@ import { NO_STORE, publicCache, upstreamFailure } from "@/lib/security/public-ap
 import { cached } from "@/lib/gmi/cache";
 import { fetchCalendar, fetchCalendarMonth, type CalendarEntry, type CalendarMonth } from "@/lib/gmi/calendar";
 import type { DataEnvelope } from "@/lib/gmi/types";
+import { requireGlobalMarkets } from "@/lib/access/server";
 
 // US economic releases from FRED. Two modes:
 //   • no params:      the most recent prints (actual + prior + trend).
@@ -36,6 +37,7 @@ function fail(error: string) {
 }
 
 export async function GET(req: Request) {
+  const denied = await requireGlobalMarkets("calendar"); if (denied) return denied;
   // Each distinct month is a fan-out of FRED calls, so this one is worth a
   // tighter ceiling than the single-payload routes.
   const limit = rateLimit(req, "gmi:calendar", 40, 60_000);

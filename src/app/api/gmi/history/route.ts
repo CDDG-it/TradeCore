@@ -4,6 +4,7 @@ import { NO_STORE, publicCache, upstreamFailure } from "@/lib/security/public-ap
 import { cached } from "@/lib/gmi/cache";
 import { fetchCrossHistory, type HistoryPayload } from "@/lib/gmi/history";
 import type { DataEnvelope } from "@/lib/gmi/types";
+import { requireGlobalMarkets } from "@/lib/access/server";
 
 // Date-aligned daily closes for the cross-asset set (Yahoo). Used for normalised
 // performance and the correlation matrix. Cached per range.
@@ -17,6 +18,7 @@ const TTL_MS = 30 * 60_000;
 const CACHE = publicCache(1_800, 7_200);
 
 export async function GET(req: Request) {
+  const denied = await requireGlobalMarkets("markets"); if (denied) return denied;
   const { searchParams } = new URL(req.url);
   const limit = rateLimit(req, "gmi:history", 60, 60_000);
   if (!limit.ok) return tooManyRequests(limit);

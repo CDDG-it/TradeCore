@@ -3,6 +3,7 @@ import { rateLimit, tooManyRequests } from "@/lib/security/rate-limit";
 import { NO_STORE, publicCache, upstreamFailure } from "@/lib/security/public-api";
 import { fetchBondSnapshot } from "@/lib/bonds/live";
 import type { BondSnapshot } from "@/lib/bonds/types";
+import { requireGlobalMarkets } from "@/lib/access/server";
 
 // On-demand: live Treasury fetches. The route keeps its own last-good snapshot
 // so a transient upstream failure still serves real, last-known-good yields:
@@ -17,6 +18,7 @@ const CACHE = publicCache(900, 3600);
 let _lastGood: BondSnapshot | null = null;
 
 export async function GET(req: Request) {
+  const denied = await requireGlobalMarkets("markets"); if (denied) return denied;
   const limit = rateLimit(req, "bonds", 30, 60_000);
   if (!limit.ok) return tooManyRequests(limit);
 

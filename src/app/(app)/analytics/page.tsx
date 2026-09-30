@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { computeConfluenceStats, CONFLUENCE_MIN_SAMPLE } from "@/lib/journal/confluence-stats";
 import { computeRuleStats, RULE_MIN_SAMPLE } from "@/lib/journal/rule-stats";
 import { winRateOf, tradesWinRate } from "@/lib/journal/weeks";
+import { FeatureGate } from "@/components/access/access-provider";
 
 type Period = "all" | "day" | "week" | "month";
 type DayFilter = "all" | "Mon" | "Tue" | "Wed" | "Thu" | "Fri";
@@ -59,7 +60,7 @@ function ChartTooltip({
 
 const DAY_MAP: Record<number, DayFilter> = { 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri" };
 
-export default function AnalyticsPage() {
+function AnalyticsContent() {
   const [period, setPeriod] = useState<Period>("all");
   // How many periods back from now (0 = current). Only meaningful for day/week/month.
   const [offset, setOffset] = useState(0);
@@ -834,6 +835,10 @@ export default function AnalyticsPage() {
       </PageWrapper>
     </div>
   );
+}
+
+export default function AnalyticsPage() {
+  return <FeatureGate feature="advancedAnalytics"><AnalyticsContent /></FeatureGate>;
 }
 
 /* ── Week journal & reflection ─────────────────────────────────────────────

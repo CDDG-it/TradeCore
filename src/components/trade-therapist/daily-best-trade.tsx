@@ -15,14 +15,15 @@ import { ScreenshotUpload } from "@/components/screenshot-upload";
 import { cn } from "@/lib/utils";
 import {
   getBestTradeOfDay, getBestTradesOfDay, saveBestTradeOfDay, deleteBestTradeOfDay,
-  type BestTradeListRow,
+  getTradeRuleChecks, type BestTradeListRow,
 } from "@/lib/supabase/queries";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
 import {
   resultColor, resultBands, netRColor, inOrder, alpha,
   WIN_COLOR, LOSS_COLOR, BE_COLOR,
 } from "@/lib/journal/colors";
-import type { TradeJournalEntry, BestTradeOfDay, ScreenshotGroup } from "@/lib/types";
+import type { TradeJournalEntry, BestTradeOfDay, ScreenshotGroup, TradeRuleCheck } from "@/lib/types";
+import { useAccess } from "@/components/access/access-provider";
 
 const TURQUOISE = "var(--primary)";
 
@@ -71,6 +72,8 @@ export function DailyBestTrade({
   onDateChange: (date: string) => void;
   onSaved?: (date: string, entry: BestTradeOfDay | null) => void;
 }) {
+  const { entitlements } = useAccess();
+  const bestTradeEnabled = entitlements.bestTrade;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -78,6 +81,8 @@ export function DailyBestTrade({
 
   const [takenWasBest, setTakenWasBest] = useState(false);
   const [notes, setNotes] = useState("");
+  const [postMarketAnalysis, setPostMarketAnalysis] = useState("");
+  const [ruleChecks, setRuleChecks] = useState<TradeRuleCheck[]>([]);
   const [groups, setGroups] = useState<ScreenshotGroup[]>(defaultShotGroups());
   const [loaded, setLoaded] = useState<BestTradeOfDay | null>(null);
   const [bestByDay, setBestByDay] = useState<Record<string, BestTradeListRow>>({});
@@ -111,6 +116,7 @@ export function DailyBestTrade({
         setLoaded(entry);
         setTakenWasBest(entry?.taken_was_best ?? false);
         setNotes(entry?.notes ?? "");
+        setPostMarketAnalysis(entry?.post_market_analysis ?? "");
         setGroups(entry?.screenshot_groups?.length ? entry.screenshot_groups : defaultShotGroups());
       })
       .finally(() => setLoading(false));
@@ -120,6 +126,9 @@ export function DailyBestTrade({
     () => inOrder(tradesByDay[date] ?? []),
     [tradesByDay, date]
   );
+  useEffect(() => {
+    Promise.all(dayTrades.map((trade) => getTradeRuleChecks(trade.id))).then((rows) => setRuleChecks(rows.flat())).catch(() => setRuleChecks([]));
+  }, [dayTrades]);
   const dayR = dayTrades.reduce((s, t) => s + tradeR(t), 0);
 
   // Week-level review progress: only days that were actually traded can be
@@ -139,18 +148,19 @@ export function DailyBestTrade({
   // Empty HTF/Entry slots never count as a change, so seeding them does not
   // arm the save button on a fresh day.
   const dirty =
-    takenWasBest !== (loaded?.taken_was_best ?? false) ||
-    notes !== (loaded?.notes ?? "") ||
-    JSON.stringify(withCharts(groups)) !== JSON.stringify(withCharts(loaded?.screenshot_groups ?? []));
-  const hasContent = takenWasBest || notes.trim() || groups.some((g) => g.urls.length > 0);
+    (bestTradeEnabled && takenWasBest !== (loaded?.taken_was_best ?? false)) ||
+    (bestTradeEnabled && notes !== (loaded?.notes ?? "")) ||
+    postMarketAnalysis !== (loaded?.post_market_analysis ?? "") ||
+    (bestTradeEnabled && JSON.stringify(withCharts(groups)) !== JSON.stringify(withCharts(loaded?.screenshot_groups ?? [])));
+  const hasContent = postMarketAnalysis.trim() || (bestTradeEnabled && (takenWasBest || notes.trim() || groups.some((g) => g.urls.length > 0)));
 
   async function save() {
     setSaving(true); setError(null);
     try {
       const entry = await saveBestTradeOfDay({
-        date, taken_was_best: takenWasBest, notes: notes.trim(),
-        // Post-market analysis was removed from this tab; clear any stored value.
-        post_market_analysis: "", screenshot_groups: groups,
+        date, taken_was_best: bestTradeEnabled ? takenWasBest : loaded?.taken_was_best ?? false,
+        notes: bestTradeEnabled ? notes.trim() : loaded?.notes ?? "",
+        post_market_analysis: postMarketAnalysis.trim(), screenshot_groups: groups,
       });
       setLoaded(entry);
       setBestByDay((prev) => ({ ...prev, [date]: entry }));
@@ -170,7 +180,7 @@ export function DailyBestTrade({
       await deleteBestTradeOfDay(date);
       setLoaded(null);
       setBestByDay((prev) => { const n = { ...prev }; delete n[date]; return n; });
-      setTakenWasBest(false); setNotes(""); setGroups(defaultShotGroups());
+      setTakenWasBest(false); setNotes(""); setPostMarketAnalysis(""); setGroups(defaultShotGroups());
       onSaved?.(date, null);
     } catch {
       setError("Could not clear this day.");
@@ -368,7 +378,12 @@ export function DailyBestTrade({
             </p>
           </div>
 
-          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
+          <div className="grid shrink-0 gap-2 rounded-xl border border-border/60 bg-card/70 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <textarea value={postMarketAnalysis} onChange={(event) => { setPostMarketAnalysis(event.target.value); setSaved(false); }} rows={2} placeholder="Session reflection: what did the market offer, and how did you respond?" className="w-full resize-none rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-xs outline-none focus:border-primary/50" />
+            <div className="max-h-20 overflow-y-auto text-xs">{ruleChecks.length === 0 ? <p className="text-muted-foreground">No commitment or standing-rule checks for these trades.</p> : ruleChecks.map((check) => <div key={check.id} className="flex items-start justify-between gap-2 border-b border-border/40 py-1 last:border-0"><span className="line-clamp-1">{check.source_text_snapshot}</span><span className={cn("shrink-0 font-semibold", check.status === "kept" ? "text-success" : check.status === "broken" ? "text-destructive" : "text-muted-foreground")}>{check.status === "not_applicable" ? "N/A" : check.status}</span></div>)}</div>
+          </div>
+
+          {bestTradeEnabled ? <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
             {/* ── LEFT: your verdict + why the better trade was better ───────
                 The one call this tab exists to make - was the trade you took
                 the best one available - and, when it was not, the room to write
@@ -459,7 +474,7 @@ export function DailyBestTrade({
                 </div>
               </div>
             </AccentPanel>
-          </div>
+          </div> : <div className="flex min-h-0 flex-1 items-center justify-center rounded-2xl border border-border/60 bg-card px-6 text-center"><div><p className="text-sm font-semibold">Session review saved on every plan</p><p className="mt-1 text-xs text-muted-foreground">Plus adds Best Trade analysis and review screenshots.</p><Link href="/pricing" className="mt-3 inline-flex text-xs font-semibold text-primary hover:underline">Compare plans</Link></div></div>}
 
           {/* Save bar */}
           <div className="flex shrink-0 items-center justify-between gap-3">

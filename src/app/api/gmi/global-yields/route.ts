@@ -4,6 +4,7 @@ import { NO_STORE, publicCache, upstreamFailure } from "@/lib/security/public-ap
 import { cached } from "@/lib/gmi/cache";
 import { fetchGlobalYields, type GlobalYield } from "@/lib/gmi/global-yields";
 import type { DataEnvelope } from "@/lib/gmi/types";
+import { requireGlobalMarkets } from "@/lib/access/server";
 
 // Global 10Y government bond yields (FRED / OECD, monthly). Cached 6h: these
 // series update monthly, so nothing is gained by fetching more often.
@@ -16,6 +17,7 @@ const TTL_MS = 6 * 60 * 60_000;
 const CACHE = publicCache(21_600, 86_400);
 
 export async function GET(req: Request) {
+  const denied = await requireGlobalMarkets("markets"); if (denied) return denied;
   const limit = rateLimit(req, "gmi:global-yields", 60, 60_000);
   if (!limit.ok) return tooManyRequests(limit);
 

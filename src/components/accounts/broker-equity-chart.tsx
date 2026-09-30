@@ -77,7 +77,8 @@ export function BrokerEquityChart({
   }, [accountId, range, loader]);
 
   useEffect(() => {
-    read();
+    const timer = window.setTimeout(() => void read(), 0);
+    return () => window.clearTimeout(timer);
   }, [read]);
 
   const usable = (points ?? []).filter((p) => p.equity !== null);

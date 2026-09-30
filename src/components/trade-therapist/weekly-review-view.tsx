@@ -11,9 +11,10 @@ import {
   ChevronDown, ChevronUp, Trophy, History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, saveWeeklyTradeReview, type BestTradeListRow } from "@/lib/supabase/queries";
+import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, getAllTradeRuleChecks, saveWeeklyTradeReview, type BestTradeListRow } from "@/lib/supabase/queries";
 import { getWeekGroup, tradeR, formatTotalR, reviewOpensOn, isReviewOpen } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
+import { mostBrokenItem } from "@/lib/reviews/rule-patterns";
 
 const TURQUOISE = "var(--primary)";
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -31,6 +32,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const [review, setReview] = useState<WeeklyTradeReview | null>(null);
   const [prevReview, setPrevReview] = useState<WeeklyTradeReview | null>(null);
   const [bestByDay, setBestByDay] = useState<Record<string, BestTradeListRow>>({});
+  const [ruleChecks, setRuleChecks] = useState<Awaited<ReturnType<typeof getAllTradeRuleChecks>>>([]);
 
   const [wentWell, setWentWell] = useState("");
   const [toImprove, setToImprove] = useState("");
@@ -45,7 +47,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const prevWeekKey = useMemo(() => format(subWeeks(monday, 1), "yyyy-MM-dd"), [monday]);
 
   useEffect(() => {
-    Promise.all([getTrades(), getWeeklyTradeReviews(), getBestTradesOfDay()]).then(([t, reviews, best]) => {
+    Promise.all([getTrades(), getWeeklyTradeReviews(), getBestTradesOfDay(), getAllTradeRuleChecks()]).then(([t, reviews, best, checks]) => {
       setTrades(t);
       const r = reviews.find((rev) => rev.week_start === weekStart) ?? null;
       setReview(r);
@@ -54,6 +56,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
       setToImprove(r?.mistakes ?? "");
       setFocus(r?.prevention_plan ?? "");
       setBestByDay(Object.fromEntries(best.map((b) => [b.date.slice(0, 10), b])));
+      setRuleChecks(checks);
     });
   }, [weekStart, prevWeekKey]);
 
@@ -63,6 +66,11 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const open = useMemo(() => isReviewOpen(weekStart), [weekStart]);
 
   const group = useMemo(() => (trades ? getWeekGroup(trades, weekStart) : null), [trades, weekStart]);
+  const mostBroken = useMemo(() => {
+    if (!group) return null;
+    const dateByTrade = new Map(group.days.flatMap((day) => day.trades.map((trade) => [trade.id, day.date] as const)));
+    return mostBrokenItem(ruleChecks.filter((check) => dateByTrade.has(check.trade_id)).map((check) => ({ ...check, date: dateByTrade.get(check.trade_id)! })));
+  }, [group, ruleChecks]);
 
   const dirty =
     wentWell !== (review?.lessons ?? "") ||
@@ -171,6 +179,8 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
             : <>This week is still trading. The review unlocks on {format(opensOn, "EEEE d MMMM")}, once the week&apos;s last session is behind you. It counts toward your MC Mindscore from then.</>}
         </p>
       </div>
+
+      {mostBroken && <div className="rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-destructive">Most broken this week · {mostBroken.count}×</p><p className="mt-1 text-sm font-medium">{mostBroken.text}</p></div>}
 
       {/* Day by day: result + whether the best trade was taken */}
       <div className="rounded-2xl border border-border/60 bg-card p-4">

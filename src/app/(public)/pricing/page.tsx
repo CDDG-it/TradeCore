@@ -1,13 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { Check, Infinity as InfinityIcon, Layers3 } from "lucide-react";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
 import { MarketingReveal } from "@/components/landing/marketing-motion";
-import { PricingPlans } from "@/components/landing/pricing-plans";
-
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
+import { PricingComparisonTable, PricingPlans } from "@/components/landing/pricing-plans";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -17,19 +14,19 @@ export const metadata: Metadata = {
 const questions = [
   { q: "Why is TradingMC free right now?", a: "We are opening every feature during launch so traders can use the full product and help shape what comes next. No card is required." },
   { q: "When will billing begin?", a: "There is no billing date yet. We will announce paid access clearly before anything changes; you will never be charged automatically for joining now." },
-  { q: "How does annual billing work?", a: "Basic includes two months free at $100/year. Plus and Pro include three months free at $180 and $315/year." },
+  { q: "How does annual billing work?", a: "Every annual plan costs 10 months: Basic is $90/year, Plus is $190/year and Pro is $290/year." },
   { q: "Can I change plans later?", a: "Yes. Once billing launches, you will be able to upgrade or downgrade as your accounts and workflow change." },
   { q: "Is my data mine?", a: "Yes. Your trades, plans, reviews and screenshots remain scoped to your account and are protected by row-level access controls." },
 ] as const;
 
 const comparison = [
   { icon: Layers3, title: "Accounts grow with you", body: "Start with one account, move to five with Plus, or manage an unlimited account book with Pro." },
-  { icon: InfinityIcon, title: "Practice without friction", body: "Basic includes five pre-market exercises each month. Plus and Pro remove that limit." },
+  { icon: InfinityIcon, title: "Scale when your process grows", body: "Every plan keeps the full daily practice loop. Higher tiers expand account scale, history retention and analytical depth." },
   { icon: Check, title: "Depth where you need it", body: "Every tier journals trades. Higher tiers add Mindscore, deeper reviews, simulation and market context." },
 ] as const;
 
 export default function PricingPage() {
-  return <div className={`${inter.variable} marketing-page min-h-screen overflow-x-clip bg-[#0b1120] text-white`}>
+  return <div className="marketing-page min-h-screen overflow-x-clip bg-[#0b1120] text-white [--font-inter:var(--font-nunito)]">
     <LandingNav />
     <main id="main">
       <section className="marketing-hero relative overflow-hidden px-5 pb-16 pt-10 sm:px-10 sm:pt-14 lg:min-h-[calc(100svh-72px)] lg:px-12 lg:pb-10">
@@ -55,6 +52,7 @@ export default function PricingPage() {
             <div className="mt-12 grid gap-px overflow-hidden rounded-[28px] border border-[#c2dcda] bg-[#c2dcda] md:grid-cols-3">
               {comparison.map(({ icon: Icon, title, body }, index) => <MarketingReveal key={title} delay={index * .08} className="bg-[#edf7f5] p-7 sm:p-9"><Icon className="size-5 text-[#0d817c]" /><h3 className="mt-10 text-lg font-semibold text-[#102b37]">{title}</h3><p className="mt-3 text-sm leading-relaxed text-[#4d6871]">{body}</p></MarketingReveal>)}
             </div>
+            <MarketingReveal delay={0.18} className="mt-12"><PricingComparisonTable /></MarketingReveal>
           </div>
         </section>
         <section className="marketing-section bg-white px-6 py-20 sm:px-10 md:py-28 lg:px-12">

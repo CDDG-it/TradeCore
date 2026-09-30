@@ -4,14 +4,13 @@ import { useMemo, useState } from "react";
 import { addDays, format, startOfWeek, subWeeks } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
-import { CommitmentsPanel } from "@/components/trade-therapist/commitments-panel";
 import { GoalsView } from "@/components/goals/goals-view";
 import { MindScoreBreakdown } from "@/components/mind-score/mindscore-breakdown";
 import { sampleDashboardData } from "@/lib/dashboard/sample";
-import type { Commitment, CommitmentAdherenceLog, TradeSummary, TradingGoal, WeeklyTradeReview } from "@/lib/types";
+import type { TradeSummary, TradingGoal, WeeklyTradeReview } from "@/lib/types";
 import type { MindInputs } from "@/lib/mind-score/mind-score";
 
-type Tab = "reviews" | "commitments" | "goals" | "mindscore";
+type Tab = "reviews" | "goals" | "mindscore";
 type MindScenario = "sample" | "empty" | "new-week";
 
 /** Twelve weeks of sample history: a trade a week, most weeks reviewed. */
@@ -43,18 +42,6 @@ function useSeed() {
       }
     }
 
-    const commitments: Commitment[] = [
-      { id: "c1", user_id: "sample", trade_id: null, pattern_type: "revenge", trigger_text: "I take a full stop-out", action_text: "I step away for fifteen minutes", active: true, created_at: stamp(subWeeks(monday, 6)), updated_at: stamp(monday) },
-      { id: "c2", user_id: "sample", trade_id: null, pattern_type: "size-escalation", trigger_text: "I am down two in a row", action_text: "the next trade is half size or nothing", active: true, created_at: stamp(subWeeks(monday, 4)), updated_at: stamp(monday) },
-      { id: "c3", user_id: "sample", trade_id: null, pattern_type: null, trigger_text: "the plan says no trade before the print", action_text: "the chart stays closed until the print", active: true, created_at: stamp(subWeeks(monday, 2)), updated_at: stamp(monday) },
-    ];
-    const logs: CommitmentAdherenceLog[] = [
-      ...[5, 4, 3, 2].map((w, i) => ({ id: `l1-${i}`, user_id: "sample", commitment_id: "c1", trade_id: `hist-${w}`, date: format(subWeeks(monday, w), "yyyy-MM-dd"), matched: true, followed: i !== 1, created_at: stamp(monday) })),
-      { id: "l1-open", user_id: "sample", commitment_id: "c1", trade_id: base.trades[1].id, date: base.trades[1].date_time, matched: true, followed: null, created_at: stamp(monday) },
-      ...[3, 2, 1].map((w, i) => ({ id: `l2-${i}`, user_id: "sample", commitment_id: "c2", trade_id: `hist-${w}`, date: format(subWeeks(monday, w), "yyyy-MM-dd"), matched: true, followed: i === 0, created_at: stamp(monday) })),
-      { id: "l2-open", user_id: "sample", commitment_id: "c2", trade_id: base.trades[3].id, date: base.trades[3].date_time, matched: true, followed: null, created_at: stamp(monday) },
-    ];
-
     const goals: TradingGoal[] = [
       ...base.goals,
       { id: "g2", user_id: "sample", title: "Fifteen clean days", metric: "clean_days", target: 15, baseline: null, start_date: format(addDays(monday, -14), "yyyy-MM-dd"), end_date: format(addDays(monday, 16), "yyyy-MM-dd"), created_at: stamp(monday), updated_at: stamp(monday) },
@@ -63,7 +50,6 @@ function useSeed() {
 
     return {
       reviews: { trades, reviews },
-      commitments: { commitments, logs, trades, analyses: [] },
       goals: { goals, data: { trades, habits: base.habits, completions: base.completions } },
     };
   }, []);
@@ -82,7 +68,7 @@ export function PreviewEdge() {
     return {
       now, trades: seed.reviews.trades, habits: seed.goals.data.habits,
       completions: seed.goals.data.completions, psychSessions: [], bestTrades: [],
-      weeklyReviews: seed.reviews.reviews, analyses: [], adherenceLogs: seed.commitments.logs,
+      weeklyReviews: seed.reviews.reviews, analyses: [], adherenceLogs: [],
       goals: seed.goals.goals,
     };
   }, [seed, mindScenario]);
@@ -91,7 +77,7 @@ export function PreviewEdge() {
       <div className="flex shrink-0 flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <h1 className="font-heading text-lg font-bold tracking-tight md:text-xl">Preview: edge surfaces</h1>
         <div className="flex max-w-full flex-wrap gap-1 rounded-xl border border-border/50 p-1">
-          {(["reviews", "commitments", "goals", "mindscore"] as Tab[]).map((t) => (
+          {(["reviews", "goals", "mindscore"] as Tab[]).map((t) => (
             <button key={t} type="button" onClick={() => setTab(t)} className={cn("press rounded-lg px-2.5 py-2 text-xs font-semibold capitalize sm:px-4 sm:text-sm", tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
               {t}
             </button>
@@ -100,7 +86,6 @@ export function PreviewEdge() {
       </div>
       <div className="min-h-0 flex-1">
         {tab === "reviews" && <ReviewsPanel seed={seed.reviews} />}
-        {tab === "commitments" && <CommitmentsPanel seed={seed.commitments} />}
         {tab === "goals" && <GoalsView seed={seed.goals} />}
         {tab === "mindscore" && <div>
           <div className="mb-3 flex flex-wrap gap-1.5">

@@ -4,6 +4,7 @@ import { NO_STORE, publicCache, upstreamFailure } from "@/lib/security/public-ap
 import { cached } from "@/lib/gmi/cache";
 import { fetchAllQuotes, fetchQuoteSeries } from "@/lib/gmi/quotes";
 import type { DataEnvelope, Quote } from "@/lib/gmi/types";
+import { requireGlobalMarkets } from "@/lib/access/server";
 
 // Delayed market quotes from Yahoo. Server-side (CORS) with a short TTL cache so
 // many polling clients collapse onto one upstream call. Never mock: on failure
@@ -25,6 +26,7 @@ const INTERVALS = new Set(["5m", "15m", "60m", "1d"]);
 const RANGES = new Set(["2d", "5d", "1mo", "3mo", "1y"]);
 
 export async function GET(req: Request) {
+  const denied = await requireGlobalMarkets("markets"); if (denied) return denied;
   // The futures tab polls this and the ticker reads it too, so the ceiling has
   // to sit above a busy page while still stopping a script.
   const limit = rateLimit(req, "gmi:quotes", 120, 60_000);

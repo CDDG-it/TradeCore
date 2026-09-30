@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Minus, Plus, Layers } from "lucide-react";
 import Link from "next/link";
@@ -10,19 +10,26 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createAccount } from "@/lib/supabase/queries";
+import { createAccount, getAccounts } from "@/lib/supabase/queries";
 import type { FundedAccountInput } from "@/lib/types";
 import { PROP_FIRMS, ACCOUNT_SIZE_PRESETS } from "@/lib/accounts-constants";
 import { cn } from "@/lib/utils";
+import { useAccess } from "@/components/access/access-provider";
+import { decideLimit, PLANS } from "@/lib/plans";
 
 const MAX_QUANTITY = 20;
 
 export default function NewAccountPage() {
   const router = useRouter();
+  const access = useAccess();
   const [saving, setSaving] = useState(false);
   const [customSize, setCustomSize] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [savedCount, setSavedCount] = useState(0);
+  const [existingCount, setExistingCount] = useState(0);
+  const [limitError, setLimitError] = useState<string | null>(null);
+
+  useEffect(() => { getAccounts().then((rows) => setExistingCount(rows.length)).catch(() => {}); }, []);
 
   const [form, setForm] = useState<FundedAccountInput>({
     firm_name: "",
@@ -66,6 +73,13 @@ export default function NewAccountPage() {
     e.preventDefault();
     if (!form.firm_name) return;
     const qty = Math.max(1, Math.min(MAX_QUANTITY, Math.round(quantity || 1)));
+    const limit = access.entitlements.accounts;
+    if (limit !== "unlimited" && existingCount + qty > limit) {
+      const decision = decideLimit(access.effectivePlan, "accounts", existingCount + qty - 1);
+      setLimitError(`${PLANS[access.effectivePlan].name} supports ${limit} account${limit === 1 ? "" : "s"}. ${decision.requiredPlan ? `${PLANS[decision.requiredPlan].name} lifts this limit.` : "Reduce the quantity."}`);
+      return;
+    }
+    setLimitError(null);
     setSaving(true);
     setSavedCount(0);
     try {
@@ -107,6 +121,7 @@ export default function NewAccountPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {limitError && <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{limitError} <Link href="/pricing" className="ml-1 font-semibold underline">Compare plans</Link></div>}
         <Card className="shadow-sm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Account Info</CardTitle></CardHeader>
           <CardContent className="space-y-4">

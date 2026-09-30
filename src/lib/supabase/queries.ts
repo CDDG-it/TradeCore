@@ -26,13 +26,14 @@ import type {
   BestTradeOfDay,
   PreMarketExercise,
   DashboardStats,
-  Commitment,
-  CommitmentInput,
   PatternEvent,
   PatternEventInput,
   CommitmentAdherenceLog,
-  CommitmentAdherenceLogInput,
   TradingGoal,
+  StandingRule,
+  TradeRuleCheck,
+  RuleCheckStatus,
+  ExerciseTypeId,
 } from "@/lib/types";
 
 function now() {
@@ -899,45 +900,6 @@ export async function savePsychEdgeSession(
 // All fail-soft: until trade_therapist.sql is run, reads return empty and
 // writes throw a caught error, so the pages still render the computed content.
 
-async function _getCommitments(): Promise<Commitment[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("commitments")
-    .select("*")
-    // Commitments are written by hand, so this is far above any real number.
-    .limit(500)
-    .order("created_at", { ascending: false });
-  if (error) return [];
-  return (data ?? []) as Commitment[];
-}
-
-export async function createCommitment(input: CommitmentInput): Promise<Commitment> {
-  const supabase = createClient();
-  invalidateReads("commitments");
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  const { data, error } = await supabase
-    .from("commitments")
-    .insert({ ...input, user_id: user.id, created_at: now(), updated_at: now() })
-    .select()
-    .single();
-  if (error) throw error;
-  return data as Commitment;
-}
-
-export async function updateCommitment(id: string, input: Partial<CommitmentInput>): Promise<Commitment> {
-  const supabase = createClient();
-  invalidateReads("commitments");
-  const { data, error } = await supabase
-    .from("commitments")
-    .update({ ...input, updated_at: now() })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data as Commitment;
-}
-
 async function _getPatternEvents(): Promise<PatternEvent[]> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -982,35 +944,6 @@ async function _getCommitmentAdherenceLogs(): Promise<CommitmentAdherenceLog[]> 
     .order("date", { ascending: true });
   if (error) return [];
   return (data ?? []) as CommitmentAdherenceLog[];
-}
-
-export async function createAdherenceLog(
-  input: CommitmentAdherenceLogInput
-): Promise<CommitmentAdherenceLog> {
-  const supabase = createClient();
-  invalidateReads("adherenceLogs");
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  const { data, error } = await supabase
-    .from("commitment_adherence_log")
-    .insert({ ...input, user_id: user.id, created_at: now() })
-    .select()
-    .single();
-  if (error) throw error;
-  return data as CommitmentAdherenceLog;
-}
-
-export async function resolveAdherenceLog(id: string, followed: boolean): Promise<CommitmentAdherenceLog> {
-  const supabase = createClient();
-  invalidateReads("adherenceLogs");
-  const { data, error } = await supabase
-    .from("commitment_adherence_log")
-    .update({ followed })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data as CommitmentAdherenceLog;
 }
 
 // ── Best Trade of the Day ────────────────────────────────────────────
@@ -1131,11 +1064,16 @@ export async function getPreMarketExercise(date: string): Promise<PreMarketExerc
     loss_plans: (data.loss_plans ?? {}) as Record<string, string>,
     win_plans: (data.win_plans ?? {}) as Record<string, string>,
     focus: data.focus ?? "",
+    exercise_type: data.exercise_type ?? "loss_win_review",
+    inputs: (data.inputs ?? { loss_plans: data.loss_plans ?? {}, win_plans: data.win_plans ?? {} }) as Record<string, unknown>,
+    commitment_text: data.commitment_text ?? "",
+    commitment_format: data.commitment_format ?? null,
+    completed_at: data.completed_at ?? null,
   } as PreMarketExercise;
 }
 
 export async function savePreMarketExercise(
-  input: Pick<PreMarketExercise, "date" | "loss_plans" | "win_plans" | "focus">
+  input: Pick<PreMarketExercise, "date" | "exercise_type" | "inputs" | "focus" | "commitment_text" | "commitment_format">
 ): Promise<PreMarketExercise> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -1148,9 +1086,10 @@ export async function savePreMarketExercise(
     .maybeSingle();
 
   if (existing) {
+    const complete = input.focus.trim() && input.commitment_text.trim() ? now() : null;
     const { data, error } = await supabase
       .from("pre_market_exercise")
-      .update({ ...input, updated_at: now() })
+      .update({ ...input, completed_at: complete, updated_at: now() })
       .eq("id", existing.id)
       .select()
       .single();
@@ -1160,11 +1099,109 @@ export async function savePreMarketExercise(
 
   const { data, error } = await supabase
     .from("pre_market_exercise")
-    .insert({ ...input, user_id: user.id, created_at: now(), updated_at: now() })
+    .insert({ ...input, completed_at: input.focus.trim() && input.commitment_text.trim() ? now() : null, user_id: user.id, created_at: now(), updated_at: now() })
     .select()
     .single();
   if (error) throw error;
   return data as PreMarketExercise;
+}
+
+export async function getRecentPreMarketExerciseTypes(limit = 10): Promise<ExerciseTypeId[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("pre_market_exercise")
+    .select("exercise_type").not("completed_at", "is", null)
+    .order("date", { ascending: false }).limit(limit);
+  if (error) return [];
+  return (data ?? []).map((row) => row.exercise_type as ExerciseTypeId);
+}
+
+export async function getStandingRules(includeArchived = false): Promise<StandingRule[]> {
+  const supabase = createClient();
+  let query = supabase.from("standing_rules").select("*").order("sort_order");
+  if (!includeArchived) query = query.eq("active", true);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as StandingRule[];
+}
+
+export async function replaceStandingRules(texts: string[]): Promise<StandingRule[]> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { data: existing, error: readError } = await supabase.from("standing_rules").select("*").eq("user_id", user.id);
+  if (readError) throw readError;
+  const normalized = texts.map((text) => text.trim()).filter(Boolean);
+  const wanted = new Set(normalized.map((text) => text.toLocaleLowerCase()));
+  const timestamp = now();
+  const retire = (existing ?? []).filter((rule) => !wanted.has(String(rule.text).trim().toLocaleLowerCase())).map((rule) => rule.id);
+  if (retire.length) {
+    const { error } = await supabase.from("standing_rules").update({ active: false, archived_at: timestamp, updated_at: timestamp }).in("id", retire);
+    if (error) throw error;
+  }
+  for (const [sort_order, text] of normalized.entries()) {
+    const found = (existing ?? []).find((rule) => String(rule.text).trim().toLocaleLowerCase() === text.toLocaleLowerCase());
+    if (found) {
+      const { error } = await supabase.from("standing_rules").update({ text, sort_order, active: true, archived_at: null, updated_at: timestamp }).eq("id", found.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from("standing_rules").insert({ user_id: user.id, text, sort_order, active: true, active_from: timestamp.slice(0, 10) });
+      if (error) throw error;
+    }
+  }
+  return getStandingRules();
+}
+
+export type RuleCheckDraft = Pick<TradeRuleCheck, "source_type" | "source_id" | "source_text_snapshot" | "status" | "note">;
+
+export async function getRuleSourcesForDate(date: string): Promise<RuleCheckDraft[]> {
+  const supabase = createClient();
+  const [{ data: exercise, error: exerciseError }, { data: rules, error: rulesError }] = await Promise.all([
+    supabase.from("pre_market_exercise").select("id, commitment_text, completed_at").eq("date", date).maybeSingle(),
+    supabase.from("standing_rules").select("id, text, active_from, archived_at").lte("active_from", date).order("sort_order"),
+  ]);
+  if (exerciseError || rulesError) throw exerciseError ?? rulesError;
+  const result: RuleCheckDraft[] = [];
+  if (exercise?.completed_at && exercise.commitment_text?.trim()) result.push({ source_type: "commitment", source_id: exercise.id, source_text_snapshot: exercise.commitment_text.trim(), status: "not_applicable", note: "" });
+  for (const rule of rules ?? []) {
+    if (rule.archived_at && String(rule.archived_at).slice(0, 10) <= date) continue;
+    result.push({ source_type: "standing_rule", source_id: rule.id, source_text_snapshot: rule.text, status: "not_applicable", note: "" });
+  }
+  return result;
+}
+
+export async function getTradeRuleChecks(tradeId: string): Promise<TradeRuleCheck[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("trade_rule_checks").select("*").eq("trade_id", tradeId).order("source_type");
+  if (error) throw error;
+  return (data ?? []) as TradeRuleCheck[];
+}
+
+export async function getAllTradeRuleChecks(): Promise<TradeRuleCheck[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("trade_rule_checks").select("*").order("created_at", { ascending: false }).limit(10000);
+  if (error) return [];
+  return (data ?? []) as TradeRuleCheck[];
+}
+
+export async function getPreMarketExercises(): Promise<PreMarketExercise[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("pre_market_exercise").select("*").order("date", { ascending: false }).limit(2000);
+  if (error) return [];
+  return (data ?? []).map((row) => ({ ...row, exercise_type: row.exercise_type ?? "loss_win_review", inputs: row.inputs ?? {}, commitment_text: row.commitment_text ?? "", commitment_format: row.commitment_format ?? null, completed_at: row.completed_at ?? null })) as PreMarketExercise[];
+}
+
+export async function saveTradeRuleChecks(tradeId: string, checks: RuleCheckDraft[]): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  if (!checks.length) return;
+  const rows = checks.map((check) => ({ ...check, trade_id: tradeId, user_id: user.id, updated_at: now() }));
+  const { error } = await supabase.from("trade_rule_checks").upsert(rows, { onConflict: "trade_id,source_type,source_id" });
+  if (error) throw error;
+}
+
+export function updateRuleCheck(checks: RuleCheckDraft[], sourceId: string, status: RuleCheckStatus, note?: string): RuleCheckDraft[] {
+  return checks.map((check) => check.source_id === sourceId ? { ...check, status, ...(note === undefined ? {} : { note }) } : check);
 }
 
 // ── Cached wrappers for the hot, cross-page reads ─────────────────────
@@ -1270,10 +1307,6 @@ export function getPsychEdgeSessions(): Promise<PsychEdgeSessionRow[]> {
 
 export function getPlaybook(): Promise<TraderPlaybook | null> {
   return cachedRead("playbook", _getPlaybook);
-}
-
-export function getCommitments(): Promise<Commitment[]> {
-  return cachedRead("commitments", _getCommitments);
 }
 
 export function getPatternEvents(): Promise<PatternEvent[]> {

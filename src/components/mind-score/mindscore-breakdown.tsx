@@ -9,12 +9,13 @@ import { MindscoreTrend } from "@/components/mind-score/mindscore-trend";
 import { computeMindScoreTrend } from "@/lib/mind-score/trend";
 import {
   getTrades, getHabits, getHabitCompletions, getPsychEdgeSessions, getBestTradesOfDay, getWeeklyTradeReviews, getAnalyses,
-  getCommitmentAdherenceLogs, getTradingGoals,
+  getCommitmentAdherenceLogs, getTradingGoals, getAllTradeRuleChecks, getPreMarketExercises,
 } from "@/lib/supabase/queries";
 import {
   bandColorFor, computeMindScoreAll,
   type MindPeriod, type MindInputs, type MindComponent,
 } from "@/lib/mind-score/mind-score";
+import { useAccess } from "@/components/access/access-provider";
 
 const PERIOD_LABEL: Record<MindPeriod, string> = { week: "Week", month: "Month", all: "All time" };
 const PART_META: Record<MindComponent["key"], string> = {
@@ -23,6 +24,7 @@ const PART_META: Record<MindComponent["key"], string> = {
 };
 
 export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
+  const { entitlements } = useAccess();
   const [data, setData] = useState<MindInputs | null>(seed ?? null);
   const [period, setPeriod] = useState<MindPeriod>("month");
 
@@ -31,10 +33,10 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
     Promise.all([
       getTrades(), getHabits(), getHabitCompletions(),
       getPsychEdgeSessions(), getBestTradesOfDay(), getWeeklyTradeReviews(), getAnalyses(),
-      getCommitmentAdherenceLogs(), getTradingGoals(),
-    ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs, goals]) => {
-      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs, goals });
-    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [], adherenceLogs: [], goals: [] }));
+      getCommitmentAdherenceLogs(), getTradingGoals(), getAllTradeRuleChecks(), getPreMarketExercises(),
+    ]).then(([trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs, goals, ruleChecks, preMarketExercises]) => {
+      setData({ trades, habits, completions, psychSessions, bestTrades, weeklyReviews, analyses, adherenceLogs, goals, ruleChecks, preMarketExercises });
+    }).catch(() => setData({ trades: [], habits: [], completions: [], psychSessions: [], bestTrades: [], weeklyReviews: [], analyses: [], adherenceLogs: [], goals: [], ruleChecks: [], preMarketExercises: [] }));
   }, [seed]);
 
   const scores = useMemo(() => (data ? computeMindScoreAll(data) : null), [data]);
@@ -45,6 +47,8 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
 
   const current = score.pending ? null : score.total;
   const color = current === null ? "var(--primary)" : bandColorFor(current);
+
+  if (entitlements.mindscore === "score") return <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-border/60 bg-card p-8 text-center"><div><BrainScore score={current} className="mx-auto size-40" /><p className="mt-4 font-heading text-xl font-bold" style={{ color }}>{score.pending ? "A fresh period" : score.band.label}</p><p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">Basic includes your MC Mindscore. Plus unlocks the full breakdown and trend.</p><Link href="/pricing" className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">See Plus</Link></div></div>;
 
   return (
     <div className="grid gap-3 lg:h-[calc(100dvh-14rem)] lg:min-h-[500px] lg:grid-cols-[minmax(0,1.12fr)_minmax(0,.88fr)]">

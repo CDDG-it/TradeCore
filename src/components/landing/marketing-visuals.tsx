@@ -3,7 +3,7 @@
 import { DrawLine, DrawPath, GrowBar, MarketingReveal, PinReveal, WriteIn } from "@/components/landing/marketing-motion";
 
 const processDetails = [
-  { title: "Commitment", meta: "IF / THEN", value: "After a loss, wait for fresh confirmation." },
+  { title: "Daily commitment", meta: "PRE-MARKET", value: "Max three trades. Wait for fresh confirmation after a loss." },
   { title: "Habits", meta: "REPEAT", value: "Plan · Review · Reset" },
   { title: "Goal", meta: "MEASURE", value: "Execution 75% → 85%" },
 ] as const;

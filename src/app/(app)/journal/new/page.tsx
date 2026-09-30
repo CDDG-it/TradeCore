@@ -10,16 +10,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { createTrade, getAnalyses, getProfile, type AnalysisListRow } from "@/lib/supabase/queries";
+import { createTrade, getAnalyses, getProfile, getAccounts, getRuleSourcesForDate, saveTradeRuleChecks, type AnalysisListRow, type RuleCheckDraft } from "@/lib/supabase/queries";
 import { invalidateReads } from "@/lib/supabase/cache";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
-import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry } from "@/lib/types";
+import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry, FundedAccount } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AnalysisPicker } from "@/components/journal/analysis-picker";
 import { TIMEFRAMES, normalizeTimeframe } from "@/lib/timeframes";
 import { useFormDraft } from "@/lib/drafts";
 import { DraftBanner } from "@/components/ui/draft-banner";
 import { ExecutionQualityField } from "@/components/journal/execution-quality-field";
+import { RuleChecksEditor } from "@/components/journal/rule-checks-editor";
+import { useAccess } from "@/components/access/access-provider";
 
 // A draft is only worth keeping once the trader has entered something real:
 // keeps pristine, untouched forms from persisting an empty draft.
@@ -58,12 +60,13 @@ const EMPTY_DISCIPLINE: TradeDiscipline = {
 
 export default function NewTradePage() {
   const router = useRouter();
+  const { entitlements } = useAccess();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confluenceInput, setConfluenceInput] = useState("");
-  const [showDiscipline, setShowDiscipline] = useState(true);
-  const [newCustomLabel, setNewCustomLabel] = useState("");
+  const [ruleChecks, setRuleChecks] = useState<RuleCheckDraft[]>([]);
   const [allAnalyses, setAllAnalyses] = useState<AnalysisListRow[]>([]);
+  const [accounts, setAccounts] = useState<FundedAccount[]>([]);
   const [customTF, setCustomTF] = useState("");
   const [showCustomTF, setShowCustomTF] = useState(false);
   const [savedConfluences, setSavedConfluences] = useState<string[]>([]);
@@ -89,6 +92,7 @@ export default function NewTradePage() {
     mistakes: "",
     lessons: "",
     linked_analysis_id: undefined,
+    funded_account_id: null,
     discipline: { ...EMPTY_DISCIPLINE },
     market_context: undefined,
     execution_time: "",
@@ -101,32 +105,21 @@ export default function NewTradePage() {
     // Start a new trade from their current saved state rather than a short-lived
     // client cache from a previous screen.
     invalidateReads("analyses", "profile");
-    Promise.all([getAnalyses(), getProfile()]).then(([analyses, profile]) => {
+    Promise.all([getAnalyses(), getProfile(), getAccounts()]).then(([analyses, profile, accountRows]) => {
       setAllAnalyses(analyses);
+      setAccounts(accountRows);
       // Quick-select confluences are the saved library from Trading Behaviour.
       if (profile?.confluence_options) {
         setSavedConfluences(
           profile.confluence_options.split("\n").map((l) => l.trim()).filter(Boolean)
         );
       }
-      if (profile?.discipline_rules) {
-        const checks = profile.discipline_rules
-          .split("\n")
-          .map((l) => l.trim())
-          .filter(Boolean)
-          .map((label) => ({ label, passed: false }));
-        if (checks.length > 0) {
-          const score = 0;
-          setForm((prev) =>
-            // Don't overwrite checks a restored draft already brought back.
-            (prev.discipline?.custom_checks?.length ?? 0) > 0
-              ? prev
-              : { ...prev, discipline: { ...prev.discipline!, custom_checks: checks, score } }
-          );
-        }
-      }
     });
   }, []);
+
+  useEffect(() => {
+    getRuleSourcesForDate(form.date_time).then(setRuleChecks).catch(() => setRuleChecks([]));
+  }, [form.date_time]);
 
 
   // Auto-save / restore unsaved input so an accidental "back" never loses work.
@@ -139,39 +132,6 @@ export default function NewTradePage() {
 
   function set<K extends keyof TradeJournalEntryInput>(key: K, value: TradeJournalEntryInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function calcScore(custom: { label: string; passed: boolean }[]): number {
-    if (custom.length === 0) return 0;
-    return Math.round((custom.filter((c) => c.passed).length / custom.length) * 100);
-  }
-
-  function toggleCustomCheck(idx: number) {
-    setForm((prev) => {
-      const custom = [...(prev.discipline?.custom_checks ?? [])];
-      custom[idx] = { ...custom[idx], passed: !custom[idx].passed };
-      const score = calcScore(custom);
-      return { ...prev, discipline: { ...prev.discipline!, custom_checks: custom, score } };
-    });
-  }
-
-  function addCustomCheck() {
-    const label = newCustomLabel.trim();
-    if (!label) return;
-    setForm((prev) => {
-      const custom = [...(prev.discipline?.custom_checks ?? []), { label, passed: false }];
-      const score = calcScore(custom);
-      return { ...prev, discipline: { ...prev.discipline!, custom_checks: custom, score } };
-    });
-    setNewCustomLabel("");
-  }
-
-  function removeCustomCheck(idx: number) {
-    setForm((prev) => {
-      const custom = (prev.discipline?.custom_checks ?? []).filter((_, i) => i !== idx);
-      const score = calcScore(custom);
-      return { ...prev, discipline: { ...prev.discipline!, custom_checks: custom, score } };
-    });
   }
 
   function addConfluence() {
@@ -207,6 +167,7 @@ export default function NewTradePage() {
     setSaving(true);
     try {
       const created = await createTrade(form, entityId);
+      await saveTradeRuleChecks(created.id, ruleChecks);
       clearDraft(); // saved for real: drop the draft so it can't resurrect
       router.push(`/journal/${created.id}`);
     } catch (err) {
@@ -217,9 +178,6 @@ export default function NewTradePage() {
       setSaving(false);
     }
   }
-
-  const customChecks = form.discipline?.custom_checks ?? [];
-  const disciplineScore = form.discipline?.score ?? 0;
 
   return (
     <div className="space-y-4">
@@ -274,6 +232,12 @@ export default function NewTradePage() {
                   onChange={(v) => { set("date_time", v); set("linked_analysis_id", undefined); }}
                   required
                 />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Account</Label>
+                <select value={form.funded_account_id ?? ""} onChange={(event) => set("funded_account_id", event.target.value || null)} className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm">
+                  <option value="">No account selected</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.firm_name} · {account.account_name}</option>)}
+                </select>
               </div>
             </div>
 
@@ -518,90 +482,14 @@ export default function NewTradePage() {
           </CardContent>
         </Card>
 
-        {/* Discipline Check */}
+        {/* Commitment and standing-rule checks */}
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <CardTitle className="text-sm font-semibold shrink-0">Discipline Check</CardTitle>
-                {customChecks.length > 0 && (
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className="flex-1 h-1.5 rounded-full overflow-hidden max-w-28" style={{ background: "oklch(0.18 0.005 28)" }}>
-                      <div className="h-full rounded-full transition-all duration-300"
-                        style={{
-                          width: `${disciplineScore}%`,
-                          background: disciplineScore >= 80 ? "var(--win)"
-                            : disciplineScore >= 60 ? "var(--be)" : "var(--loss)",
-                        }} />
-                    </div>
-                    <span className="text-xs font-bold tabular-nums shrink-0"
-                      style={{
-                        color: disciplineScore >= 80 ? "var(--win)"
-                          : disciplineScore >= 60 ? "var(--be)" : "var(--loss)",
-                      }}>
-                      {disciplineScore}%
-                    </span>
-                  </div>
-                )}
-              </div>
-              <button type="button" onClick={() => setShowDiscipline(!showDiscipline)}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors ml-3 shrink-0">
-                {showDiscipline ? "Collapse" : "Expand"}
-              </button>
-            </div>
-          </CardHeader>
-          {showDiscipline && (
-            <CardContent className="space-y-3">
-              {customChecks.length === 0 && (
-                <p className="text-xs text-muted-foreground/60 text-center py-2">
-                  No rules yet: add your personal discipline rules below.
-                </p>
-              )}
-              <div className="space-y-1.5">
-                {customChecks.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2 group/check">
-                    <button type="button" onClick={() => toggleCustomCheck(idx)}
-                      className={cn("flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left border",
-                        item.passed
-                          ? "bg-success/8 border-success/25"
-                          : "bg-secondary border-border hover:border-primary/30 hover:bg-muted"
-                      )}>
-                      <div className={cn("w-5 h-5 rounded-md shrink-0 flex items-center justify-center transition-all border-2",
-                        item.passed ? "bg-success border-success" : "bg-transparent border-muted-foreground/30"
-                      )}>
-                        {item.passed && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                      <span className={cn("text-sm flex-1 text-left transition-colors",
-                        item.passed ? "text-foreground" : "text-muted-foreground")}>
-                        {item.label}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeCustomCheck(idx)}
-                      className="opacity-0 group-hover/check:opacity-100 transition-opacity p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <Input value={newCustomLabel} onChange={(e) => setNewCustomLabel(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomCheck())}
-                  placeholder="Add discipline rule..."
-                  className="h-8 text-xs" />
-                <Button type="button" variant="outline" size="sm" onClick={addCustomCheck} className="h-8 shrink-0">
-                  <Plus className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </CardContent>
-          )}
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Commitment & rules</CardTitle></CardHeader>
+          <CardContent><RuleChecksEditor checks={ruleChecks} onChange={setRuleChecks} /></CardContent>
         </Card>
 
         {/* Screenshots */}
-        <Card className="bg-card border-border/50 shadow-sm">
+        {entitlements.screenshots ? <Card className="bg-card border-border/50 shadow-sm">
           <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Screenshots</CardTitle></CardHeader>
           <CardContent>
             <ScreenshotUpload
@@ -610,7 +498,7 @@ export default function NewTradePage() {
               storageConfig={{ entityType: "trades", entityId }}
             />
           </CardContent>
-        </Card>
+        </Card> : <Card className="border-border/50 bg-card"><CardContent className="flex items-center justify-between gap-4 p-4"><div><p className="text-sm font-semibold">Trade screenshots</p><p className="mt-0.5 text-xs text-muted-foreground">Plus unlocks screenshots and advanced analytics.</p></div><Link href="/pricing" className="shrink-0 text-xs font-semibold text-primary hover:underline">Compare plans</Link></CardContent></Card>}
         </div>
         </div>
       </form>

@@ -21,8 +21,9 @@ import { computeGoalProgress } from "@/lib/goals/goals";
 import { isReviewOpen } from "@/lib/journal/weeks";
 import type {
   Habit, HabitCompletion, PsychEdgeSession, BestTradeOfDay, WeeklyTradeReview, PreTradeAnalysis,
-  CommitmentAdherenceLog, TradingGoal, TradeSummary,
+  CommitmentAdherenceLog, TradingGoal, TradeSummary, TradeRuleCheck, PreMarketExercise,
 } from "@/lib/types";
+import { redistributeWeights, ruleAdherenceScore } from "@/lib/mind-score/rule-adherence";
 
 export type MindPeriod = "week" | "month" | "all";
 
@@ -164,6 +165,8 @@ export interface MindInputs {
   adherenceLogs?: Pick<CommitmentAdherenceLog, "date" | "followed" | "created_at">[];
   /** Active goal progress contributes to the score when it is measurable. */
   goals?: TradingGoal[];
+  ruleChecks?: Pick<TradeRuleCheck, "trade_id" | "status" | "created_at">[];
+  preMarketExercises?: Pick<PreMarketExercise, "date" | "completed_at" | "created_at">[];
 }
 
 /** Earliest day any tracked activity exists: the anchor for the all-time window. */
@@ -227,14 +230,6 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   const analysisTarget = tradedDays.size; // nothing required on non-trading days
   const analysisRate = analysisTarget === 0 ? 1 : Math.min(1, analysedDays.size / analysisTarget);
 
-  // ── Commitments: did the reflection carry into the next trade? ────────
-  // Counts every check raised in the window, not only the answered ones:
-  // confirming the check is part of the work, so ignoring them cannot score.
-  // Never kept is never guessed: an unanswered check simply is not a kept one.
-  const windowLogs = (input.adherenceLogs ?? []).filter((l) => inRange(l.date));
-  const checksRaised = windowLogs.length;
-  const checksKept = windowLogs.filter((l) => l.followed === true).length;
-
   const rawObjectives: Omit<Objective, "contribution">[] = [
     {
       key: "weekly-review", label: "Weekly review", description: "Complete each week's review once the trading week is over: from Friday",
@@ -253,26 +248,36 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
     },
   ];
 
-  // Only an objective once a commitment has actually been tested: otherwise it
-  // would contribute a free full score and dilute the others.
-  if (checksRaised > 0) {
-    rawObjectives.push({
-      key: "commitments-kept",
-      label: "Commitments kept",
-      description: "Hold the if/then commitments you wrote, and confirm each check",
-      href: "/trade-therapist?tab=commitments",
-      progress: checksKept,
-      target: checksRaised,
-      rate: Math.min(1, checksKept / checksRaised),
-    });
-  }
+  const rollout = new Date("2026-09-30T00:00:00");
+  const exerciseDates = (input.preMarketExercises ?? [])
+    .map((exercise) => new Date(`${dayKey(exercise.date)}T12:00:00`))
+    .filter((date) => Number.isFinite(date.getTime()));
+  const earliestExercise = exerciseDates.length
+    ? new Date(Math.min(...exerciseDates.map((date) => date.getTime())))
+    : null;
+  // Do not backfill a new obligation into a user's history. Once scoring has
+  // started, a deliberately skipped exercise remains a valid, incomplete day.
+  const adoptionStart = earliestExercise && earliestExercise > rollout ? earliestExercise : rollout;
+  const scoringStart = start > adoptionStart ? start : adoptionStart;
+  const completedExercises = (input.preMarketExercises ?? []).filter((exercise) => {
+    if (!exercise.completed_at || !inRange(exercise.date)) return false;
+    return new Date(`${dayKey(exercise.date)}T12:00:00`) >= scoringStart;
+  });
+  const dueExerciseDays = days.filter((day) => isWeekday(day) && day >= scoringStart).map((day) => dayKey(day.toISOString()));
+  if (dueExerciseDays.length > 0) rawObjectives.push({
+    key: "pre-market-exercise", label: "Pre-market exercise", description: "Complete one focused exercise every weekday",
+    href: "/trade-therapist?tab=premarket", progress: completedExercises.length, target: dueExerciseDays.length,
+    rate: Math.min(1, completedExercises.length / dueExerciseDays.length),
+  });
 
   const share = 100 / rawObjectives.length;
   const objectives: Objective[] = rawObjectives.map((o) => ({ ...o, contribution: o.rate * share }));
   const objectivesScore = objectives.reduce((s, o) => s + o.contribution, 0);
 
   // ── Rules & habits over the same window ───────────────────────────────
-  const rules = computeTradeRulesScore(input.trades, start, clampEnd);
+  const inWindowTradeIds = new Set(input.trades.filter((trade) => inRange(trade.date_time)).map((trade) => trade.id));
+  const windowRuleChecks = (input.ruleChecks ?? []).filter((check) => inWindowTradeIds.has(check.trade_id));
+  const rules = input.ruleChecks ? ruleAdherenceScore(windowRuleChecks) : computeTradeRulesScore(input.trades, start, clampEnd);
   const execution = computeExecutionScore(input.trades, start, clampEnd);
   const { completed: habitCompleted, expected: habitExpected } = computeHabitCounts(input.habits, input.completions, start, clampEnd);
   const habits = habitExpected === 0 ? null : Math.round((habitCompleted / habitExpected) * 100);
@@ -312,14 +317,8 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
     { key: "objectives", label: "Objectives", value: Math.round(objectivesScore), weight: MIND_WEIGHTS.objectives },
     { key: "goals", label: "Goal progress", value: goalScore, weight: MIND_WEIGHTS.goals },
   ];
-  const applicableWeight = raw.filter((c) => c.value != null).reduce((s, c) => s + c.weight, 0);
-
-  const components: MindComponent[] = raw.map((c) => {
-    const applicable = c.value != null;
-    const effectiveWeight = applicable && applicableWeight > 0 ? (c.weight / applicableWeight) * 100 : 0;
-    const contribution = applicable ? (c.value! * effectiveWeight) / 100 : 0;
-    return { key: c.key, label: c.label, value: c.value, weight: c.weight, effectiveWeight, contribution, applicable };
-  });
+  const components: MindComponent[] = redistributeWeights(raw);
+  const applicableWeight = components.reduce((sum, component) => sum + (component.applicable ? component.weight : 0), 0);
 
   const total = applicableWeight === 0 ? null : Math.round(components.reduce((s, c) => s + c.contribution, 0));
 
@@ -334,7 +333,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   }).length;
   const anyActivity =
     tradesInWindow > 0 || habitCompleted > 0 || reviewsDone > 0 ||
-    bestDays.size > 0 || analysedDays.size > 0;
+    bestDays.size > 0 || analysedDays.size > 0 || completedExercises.length > 0 || windowRuleChecks.length > 0;
   const windowIncludesToday = start <= endOfDay(now) && clampEnd >= startOfDay(now);
   const pending = !anyActivity && windowIncludesToday;
 

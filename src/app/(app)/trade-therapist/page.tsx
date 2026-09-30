@@ -8,9 +8,9 @@ import { getTrades } from "@/lib/supabase/queries";
 import { DailyBestTrade } from "@/components/trade-therapist/daily-best-trade";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
 import { PreMarketExercises } from "@/components/trade-therapist/pre-market-exercises";
-import { CommitmentsPanel } from "@/components/trade-therapist/commitments-panel";
 import { MobileSubnav } from "@/components/layout/mobile-nav";
 import type { TradeJournalEntry } from "@/lib/types";
+import { FeatureGate } from "@/components/access/access-provider";
 
 /**
  * MC Trade Therapist: the surface for getting better at trading. Four views:
@@ -24,11 +24,10 @@ import type { TradeJournalEntry } from "@/lib/types";
  *                  counted in the MC Mindscore once a week has closed.
  * Every read is deterministic and traces back to the trader's own history.
  */
-type TherapistTab = "daily" | "premarket" | "commitments" | "reviews";
+type TherapistTab = "daily" | "premarket" | "reviews";
 const TABS: { key: TherapistTab; label: string; short?: string }[] = [
-  { key: "daily", label: "Best trades", short: "Best trades" },
+  { key: "daily", label: "Session review", short: "Session" },
   { key: "premarket", label: "Pre-market exercises", short: "Pre-market" },
-  { key: "commitments", label: "Commitments" },
   { key: "reviews", label: "Reviews" },
 ];
 
@@ -43,7 +42,8 @@ export default function TradeTherapistPage() {
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tab");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
-    if (TABS.some((x) => x.key === t)) setTab(t as TherapistTab);
+    if (t === "commitments") setTab("premarket");
+    else if (TABS.some((x) => x.key === t)) setTab(t as TherapistTab);
     getTrades().then(setTrades).catch(() => {});
   }, []);
 
@@ -71,8 +71,7 @@ export default function TradeTherapistPage() {
           />
         )}
         {tab === "premarket" && <PreMarketExercises trades={trades} date={dailyDate} />}
-        {tab === "commitments" && <CommitmentsPanel />}
-        {tab === "reviews" && <ReviewsPanel />}
+        {tab === "reviews" && <FeatureGate feature="weeklyReviews"><ReviewsPanel /></FeatureGate>}
       </PageWrapper>
     </div>
   );

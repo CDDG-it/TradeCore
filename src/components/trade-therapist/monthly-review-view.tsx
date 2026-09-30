@@ -7,9 +7,10 @@ import {
 } from "date-fns";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ArrowRight, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getTrades, getWeeklyTradeReviews } from "@/lib/supabase/queries";
+import { getTrades, getWeeklyTradeReviews, getAllTradeRuleChecks } from "@/lib/supabase/queries";
 import { getWeekGroup, tradeR, formatTotalR, instrumentName, tradesWinRate } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
+import { persistentBrokenPatterns } from "@/lib/reviews/rule-patterns";
 
 const TURQUOISE = "var(--primary)";
 
@@ -31,9 +32,10 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
 export function MonthlyReviewView({ month }: { month: string }) {
   const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
   const [reviews, setReviews] = useState<WeeklyTradeReview[]>([]);
+  const [ruleChecks, setRuleChecks] = useState<Awaited<ReturnType<typeof getAllTradeRuleChecks>>>([]);
 
   useEffect(() => {
-    Promise.all([getTrades(), getWeeklyTradeReviews()]).then(([t, r]) => { setTrades(t); setReviews(r); });
+    Promise.all([getTrades(), getWeeklyTradeReviews(), getAllTradeRuleChecks()]).then(([t, r, checks]) => { setTrades(t); setReviews(r); setRuleChecks(checks); });
   }, []);
 
   const valid = /^\d{4}-\d{2}$/.test(month);
@@ -81,6 +83,10 @@ export function MonthlyReviewView({ month }: { month: string }) {
   const nextMonth = format(addMonths(monthDate, 1), "yyyy-MM");
   const nextDisabled = startOfMonth(addMonths(monthDate, 1)) > new Date();
   const reviewedWeeks = new Set(reviews.filter((r) => r.lessons || r.mistakes || r.prevention_plan).map((r) => r.week_start));
+  const persistentPatterns = (() => {
+    const dateByTrade = new Map(data.inMonth.map((trade) => [trade.id, trade.date_time.slice(0, 10)]));
+    return persistentBrokenPatterns(ruleChecks.filter((check) => dateByTrade.has(check.trade_id)).map((check) => ({ ...check, date: dateByTrade.get(check.trade_id)! })));
+  })();
 
   return (
     <div className="space-y-4">
@@ -121,6 +127,8 @@ export function MonthlyReviewView({ month }: { month: string }) {
         <Metric label="Losses" value={String(data.losses)} tone="text-destructive" />
         <Metric label="Best week" value={data.bestWeek ? formatTotalR(data.bestWeek.totalR) : "-"} tone="text-success" />
       </div>
+
+      {persistentPatterns.length > 0 && <div className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-destructive">Persistent pattern</p>{persistentPatterns.map((pattern) => <div key={pattern.text} className="mt-2 flex items-start justify-between gap-3 text-sm"><span className="font-medium">{pattern.text}</span><span className="shrink-0 text-xs font-semibold text-destructive">broken across {pattern.weeks} weeks</span></div>)}</div>}
 
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 lg:grid-cols-2">
         {/* Weeks */}

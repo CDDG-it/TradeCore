@@ -124,12 +124,7 @@ export async function updateSession(request: NextRequest) {
   // Market data that is the same for everyone, plus the Supabase email hook,
   // which authenticates itself with its own shared secret. Everything else
   // under /api is the signed-in product and is gated like the pages are.
-  const isOpenApi =
-    path.startsWith("/api/gmi/") ||
-    path === "/api/prices" ||
-    path === "/api/cot" ||
-    path === "/api/bonds" ||
-    path === "/api/auth/send-email";
+  const isOpenApi = path === "/api/auth/send-email";
 
   const isPublicPage =
     path === "/" ||
