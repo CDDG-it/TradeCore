@@ -18,9 +18,22 @@ import {
   getAnalysisById,
   deleteTrade,
   updateTrade,
+  getTradeRuleChecks,
+  saveTradeRuleChecks,
+  type RuleCheckDraft,
 } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
-import type { TradeDiscipline, TradeMarketContext, TradeJournalEntry, PreTradeAnalysis } from "@/lib/types";
+import type { TradeDiscipline, TradeMarketContext, TradeJournalEntry, PreTradeAnalysis, RuleCheckStatus } from "@/lib/types";
+
+const RULE_OPTIONS: { value: RuleCheckStatus; label: string }[] = [
+  { value: "kept", label: "Kept" },
+  { value: "broken", label: "Broken" },
+  { value: "not_applicable", label: "N/A" },
+];
+const RULE_GROUPS = [
+  { type: "commitment" as const, title: "Today's commitment" },
+  { type: "standing_rule" as const, title: "Standing rules" },
+];
 
 export default function TradeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -36,6 +49,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [discipline, setDisciplineState] = useState<TradeDiscipline | undefined>(undefined);
+  const [ruleChecks, setRuleChecks] = useState<RuleCheckDraft[]>([]);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("from") === "trade-therapist") {
@@ -52,6 +66,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
         const a = await getAnalysisById(t.linked_analysis_id);
         setLinkedAnalysis(a);
       }
+      setRuleChecks(await getTradeRuleChecks(id).catch(() => []));
       setLoading(false);
     });
   }, [id]);
@@ -98,11 +113,30 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
     await updateTrade(id, { discipline: updated });
   }
 
+  /**
+   * Rule adherence is stored per trade in trade_rule_checks, not on the trade
+   * row, so the wording of a rule is frozen at the moment it was judged. The
+   * card below writes straight through, the same as the legacy checkboxes did.
+   */
+  async function setRuleStatus(sourceId: string, status: RuleCheckStatus) {
+    const next = ruleChecks.map((check) => check.source_id === sourceId ? { ...check, status } : check);
+    setRuleChecks(next);
+    await saveTradeRuleChecks(id, next);
+  }
+
   const groups = trade.screenshot_groups ?? [];
   const customChecks = discipline?.custom_checks ?? [];
   const hasCustomChecks = customChecks.length > 0;
 
-  const disciplineScore = discipline?.score ?? 0;
+  // Rule checks are the current source of truth; the legacy checkbox list is
+  // kept for trades logged before the rule engine existed.
+  const hasRuleChecks = ruleChecks.length > 0;
+  const judged = ruleChecks.filter((check) => check.status !== "not_applicable");
+  const ruleScore = judged.length > 0
+    ? Math.round((judged.filter((check) => check.status === "kept").length / judged.length) * 100)
+    : 0;
+
+  const disciplineScore = hasRuleChecks ? ruleScore : discipline?.score ?? 0;
   const scoreColor = disciplineScore >= 80
     ? "oklch(0.72 0.17 145)"
     : disciplineScore >= 60
@@ -248,12 +282,53 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
                 <Target className="w-4 h-4" style={{ color: "var(--primary)" }} />
                 Discipline Check
                 <span className="ml-auto text-sm font-bold" style={{ color: scoreColor }}>
-                  {hasCustomChecks ? `${disciplineScore}%` : "-"}
+                  {hasRuleChecks ? (judged.length > 0 ? `${disciplineScore}%` : "N/A") : hasCustomChecks ? `${disciplineScore}%` : "-"}
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {hasCustomChecks ? (
+              {hasRuleChecks ? (
+                <div className="space-y-2">
+                  {RULE_GROUPS.map((group) => {
+                    const rows = ruleChecks.filter((check) => check.source_type === group.type);
+                    if (rows.length === 0) return null;
+                    return (
+                      <section key={group.type} className="space-y-1.5">
+                        <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">{group.title}</h3>
+                        {rows.map((check) => (
+                          <div key={`${check.source_type}-${check.source_id}`} className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+                            <p className="text-xs leading-snug">{check.source_text_snapshot}</p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {RULE_OPTIONS.map((option) => (
+                                <button
+                                  key={option.value}
+                                  type="button"
+                                  onClick={() => setRuleStatus(check.source_id, option.value)}
+                                  className={cn(
+                                    "rounded-md border px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                                    check.status === option.value
+                                      ? option.value === "kept"
+                                        ? "border-success/40 bg-success/10 text-success"
+                                        : option.value === "broken"
+                                        ? "border-destructive/40 bg-destructive/10 text-destructive"
+                                        : "border-primary/40 bg-primary/10 text-primary"
+                                      : "border-border text-muted-foreground hover:text-foreground"
+                                  )}
+                                >
+                                  {option.label}
+                                </button>
+                              ))}
+                            </div>
+                            {check.note?.trim() && (
+                              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">{check.note}</p>
+                            )}
+                          </div>
+                        ))}
+                      </section>
+                    );
+                  })}
+                </div>
+              ) : hasCustomChecks ? (
                 <div className="space-y-1.5">
                   {customChecks.map((check, idx) => (
                     <button
@@ -285,8 +360,8 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground/60 text-center py-3">
-                  No discipline rules on this trade.{" "}
-                  <Link href={`/journal/${id}/edit`} className="text-primary hover:underline">Edit</Link> to add rules.
+                  No rules were active on this trade&apos;s date.{" "}
+                  <Link href="/psychological-edge" className="text-primary hover:underline">Set your trading rules</Link> to check them here.
                 </p>
               )}
               {discipline?.notes && (
