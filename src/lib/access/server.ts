@@ -1,7 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { PLANS, type EntitlementDecision, type EntitlementKey, type Entitlements, type GlobalMarketsAccess, type PlanId } from "@/lib/plans";
+import { PLANS, resolveEffectivePlan, type EntitlementDecision, type EntitlementKey, type Entitlements, type GlobalMarketsAccess, type PlanId } from "@/lib/plans";
 
 export type ResolvedAccess = { storedPlan: PlanId; effectivePlan: PlanId; entitlements: Entitlements; launchOverride: boolean };
 
@@ -14,7 +14,21 @@ export async function resolveAccess(): Promise<ResolvedAccess> {
     supabase.rpc("effective_entitlements", { for_user: user.id }),
   ]);
   const storedPlan = (row?.plan_id ?? "basic") as PlanId;
-  if (error || !effective) return { storedPlan, effectivePlan: storedPlan, entitlements: PLANS[storedPlan].entitlements, launchOverride: false };
+  if (error || !effective) {
+    // The database remains authoritative once the entitlement migration is
+    // installed. During rollout, keep launch access explicit and reversible
+    // through deployment configuration instead of silently demoting everyone.
+    const effectivePlan = resolveEffectivePlan(storedPlan, {
+      launchFreeEnabled: process.env.LAUNCH_FREE_ENABLED === "true",
+      billingEffectiveAt: process.env.BILLING_EFFECTIVE_AT ?? null,
+    });
+    return {
+      storedPlan,
+      effectivePlan,
+      entitlements: PLANS[effectivePlan].entitlements,
+      launchOverride: effectivePlan === "pro" && storedPlan !== "pro",
+    };
+  }
   const raw = effective as Record<string, unknown>;
   const effectivePlan = (raw.planId ?? storedPlan) as PlanId;
   const snapshot = { ...raw };
