@@ -39,12 +39,11 @@ cross join lateral regexp_split_to_table(coalesce(p.discipline_rules, ''), E'\\n
 where trim(rule) <> ''
 on conflict (user_id, lower(trim(text))) do nothing;
 
-insert into standing_rules (user_id, text, sort_order, active_from, created_at, updated_at)
-select c.user_id, trim('If ' || c.trigger_text || ', then ' || c.action_text), 1000 + row_number() over (partition by c.user_id order by c.created_at),
-       to_char(c.created_at, 'YYYY-MM-DD'), c.created_at, c.updated_at
-from commitments c
-where c.active and trim(c.trigger_text) <> '' and trim(c.action_text) <> ''
-on conflict (user_id, lower(trim(text))) do nothing;
+-- Legacy `commitments` rows are deliberately NOT folded in here. A commitment
+-- is a promise made for one morning and belongs to the pre-market exercise; a
+-- standing rule holds over every trade. An earlier version of this file copied
+-- them in as "If <trigger>, then <action>" standing rules — see
+-- commitments_not_standing_rules.sql, which undoes that.
 
 alter table trades add column if not exists funded_account_id uuid references funded_accounts(id) on delete set null;
 create index if not exists trades_funded_account_idx on trades (funded_account_id);
