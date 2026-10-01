@@ -232,6 +232,7 @@ export default function NewAnalysisPage() {
           <CardContent>
             {activeTab === "htf" ? (
               <ChartTab
+                key="htf"
                 label="HTF"
                 timeframe={htfTF}
                 onTimeframeChange={setHtfTF}
@@ -242,6 +243,7 @@ export default function NewAnalysisPage() {
               />
             ) : (
               <ChartTab
+                key="ltf"
                 label="LTF"
                 timeframe={ltfTF}
                 onTimeframeChange={setLtfTF}

@@ -211,11 +211,11 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
           </CardHeader>
           <CardContent>
             {activeTab === "htf" ? (
-              <ChartTab label="HTF" timeframe={htfTF} onTimeframeChange={setHtfTF}
+              <ChartTab key="htf" label="HTF" timeframe={htfTF} onTimeframeChange={setHtfTF}
                 urls={htfUrls} onUrlsChange={setHtfUrls} placeholder="e.g. 4H / Daily"
                 target={{ entityType: "analyses", entityId: id }} />
             ) : (
-              <ChartTab label="LTF" timeframe={ltfTF} onTimeframeChange={setLtfTF}
+              <ChartTab key="ltf" label="LTF" timeframe={ltfTF} onTimeframeChange={setLtfTF}
                 urls={ltfUrls} onUrlsChange={setLtfUrls} placeholder="e.g. 15m / 5m"
                 target={{ entityType: "analyses", entityId: id }} />
             )}

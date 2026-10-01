@@ -51,6 +51,14 @@ export function ChartTab({
   const urlsRef = useRef(urls);
   urlsRef.current = urls;
 
+  // And the latest `add` with it. The HTF and LTF tabs render the same
+  // component in the same position, so React keeps one instance alive across a
+  // tab switch and this effect never re-runs. Calling the `add` captured on the
+  // first render would hand a pasted LTF chart to HTF's onUrlsChange, which is
+  // exactly how pasting into LTF used to drop the image into the other tab.
+  const addRef = useRef(add);
+  addRef.current = add;
+
   useEffect(() => {
     async function onPaste(e: ClipboardEvent) {
       if (!dropZoneRef.current) return;
@@ -58,11 +66,10 @@ export function ChartTab({
         .filter((i) => i.type.startsWith("image/"))
         .map((i) => i.getAsFile())
         .filter((f): f is File => f !== null);
-      if (files.length) await add(files);
+      if (files.length) await addRef.current(files);
     }
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
