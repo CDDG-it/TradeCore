@@ -16,7 +16,8 @@ import { getAllTradeRuleChecks, getTrades } from "@/lib/supabase/queries";
 import type { TradeJournalEntry, TradeRuleCheck } from "@/lib/types";
 import { scoreBucket } from "@/lib/journal/edge";
 import {
-  computeHourStats, computeWeekdaySessionGrid, computeTradeOrderStats, computeHoldTimeStats,
+  computeEntryTimeStats, computeWeekdaySessionGrid, computeTradeOrderStats, computeHoldTimeStats,
+  type SlotSize,
 } from "@/lib/journal/time-stats";
 import {
   computeConfluenceStats, computeConfluenceStackStats, computeConfluencePairs,
@@ -102,6 +103,7 @@ function AnalyticsContent() {
   const [loading, setLoading] = useState(true);
   // null until the trades are in; then the latest month with a trade.
   const [picked, setPicked] = useState<MonthKey | null>(null);
+  const [slot, setSlot] = useState<SlotSize>(30);
   useEffect(() => {
     Promise.all([getTrades(), getAllTradeRuleChecks()])
       .then(([t, checks]) => { setAllTrades(t); setRuleChecks(checks); })
@@ -128,7 +130,7 @@ function AnalyticsContent() {
 
   const stats = useMemo(() => {
     const baseline = scoreBucket("all", "All trades", trades);
-    const hour = computeHourStats(trades);
+    const hour = computeEntryTimeStats(trades, slot);
     const grid = computeWeekdaySessionGrid(trades);
     const order = computeTradeOrderStats(trades);
     const hold = computeHoldTimeStats(trades);
@@ -139,7 +141,7 @@ function AnalyticsContent() {
     const clean = computeCleanVsBroken(trades, ruleChecks);
     const findings = buildFindings({ baseline, hours: hour.buckets, grid, order, confluences, rules, clean });
     return { baseline, hour, grid, order, hold, confluences, stack, pairs, rules, clean, findings };
-  }, [trades, ruleChecks]);
+  }, [trades, ruleChecks, slot]);
 
   if (loading) {
     return (
@@ -194,6 +196,8 @@ function AnalyticsContent() {
                 baseline={baseline}
                 hours={stats.hour.buckets}
                 hourCoverage={stats.hour.coverage}
+                slot={slot}
+                onSlotChange={setSlot}
                 grid={stats.grid}
                 order={stats.order}
                 hold={stats.hold.buckets}

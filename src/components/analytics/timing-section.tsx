@@ -4,11 +4,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { alpha, netRColor } from "@/lib/journal/colors";
 import { extremes, formatR, type EdgeBucket } from "@/lib/journal/edge";
 import {
-  hourWindow, SESSIONS, WEEKDAYS,
-  type Coverage, type WeekdaySessionGrid,
+  SESSIONS, WEEKDAYS,
+  type Coverage, type SlotSize, type WeekdaySessionGrid,
 } from "@/lib/journal/time-stats";
 import { cn } from "@/lib/utils";
-import { BARS_INFO, BucketBars, EmptyPanel, Panel, RValue, Section } from "./analytics-ui";
+import { BARS_INFO, BucketBars, Panel, RValue, Section } from "./analytics-ui";
+import { EntryTimePanel } from "./entry-time-panel";
 
 const tradesLabel = (n: number) => `${n} trade${n === 1 ? "" : "s"}`;
 
@@ -28,64 +29,6 @@ function BucketTip({ title, b }: { title: string; b: EdgeBucket }) {
           {b.thin && <p className="opacity-80">Thin sample: not a conclusion yet</p>}
         </>
       )}
-    </div>
-  );
-}
-
-// ── Hour of day ─────────────────────────────────────────────────────────
-
-const CHART_H = 116;
-
-function HourChart({ buckets }: { buckets: EdgeBucket[] }) {
-  const posMax = Math.max(0, ...buckets.map((b) => b.expectancy));
-  const negMax = Math.max(0, ...buckets.map((b) => -b.expectancy));
-  const total = posMax + negMax || 1;
-  const topH = (posMax / total) * CHART_H;
-  // With many hours the labels would collide on a phone: label every other one.
-  const sparse = buckets.length > 10;
-
-  return (
-    <div>
-      <div className="relative flex items-stretch gap-[3px] sm:gap-1.5" style={{ height: CHART_H }}>
-        {/* Zero line */}
-        <span className="pointer-events-none absolute inset-x-0 h-px bg-border" style={{ top: topH }} />
-        {buckets.map((b) => {
-          const h = b.trades ? Math.max((Math.abs(b.expectancy) / total) * CHART_H, 2) : 0;
-          const color = b.thin ? alpha("var(--muted-foreground)", 30) : netRColor(b.expectancy);
-          return (
-            <Tooltip key={b.key}>
-              <TooltipTrigger
-                aria-label={`${hourWindow(b.key)}: ${b.trades ? `${formatR(b.expectancy)} per trade over ${tradesLabel(b.trades)}` : "no trades"}`}
-                className="group relative flex-1 rounded-md transition-colors hover:bg-muted/30 focus-visible:bg-muted/30 focus-visible:outline-none"
-              >
-                {b.trades > 0 && (
-                  <span
-                    className={cn("absolute inset-x-[12%] rounded-[4px]", b.thin && "outline outline-1 outline-dashed outline-muted-foreground/40")}
-                    style={
-                      b.expectancy >= 0
-                        ? { bottom: CHART_H - topH, height: h, background: color }
-                        : { top: topH, height: h, background: color }
-                    }
-                  />
-                )}
-              </TooltipTrigger>
-              <TooltipContent className="text-left">
-                <BucketTip title={hourWindow(b.key)} b={b} />
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </div>
-      <div className="mt-1.5 flex gap-[3px] sm:gap-1.5">
-        {buckets.map((b, i) => (
-          <div key={b.key} className="flex-1 text-center">
-            <p className={cn("text-[10px] tabular-nums text-muted-foreground", sparse && i % 2 === 1 && "invisible sm:visible")}>
-              {b.label.slice(0, 2)}
-            </p>
-            <p className="hidden text-[9px] leading-none tabular-nums text-muted-foreground/50 sm:block">{b.trades || ""}</p>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -173,6 +116,8 @@ export function TimingSection({
   baseline,
   hours,
   hourCoverage,
+  slot,
+  onSlotChange,
   grid,
   order,
   hold,
@@ -181,6 +126,8 @@ export function TimingSection({
   baseline: EdgeBucket;
   hours: EdgeBucket[];
   hourCoverage: Coverage;
+  slot: SlotSize;
+  onSlotChange: (s: SlotSize) => void;
   grid: WeekdaySessionGrid;
   order: EdgeBucket[];
   hold: EdgeBucket[];
@@ -195,11 +142,11 @@ export function TimingSection({
   if (hourEx.best) {
     takeaway = (
       <>
-        Your strongest hour is <b>{hourWindow(hourEx.best.key)}</b> at{" "}
+        Your strongest entry window is <b>{hourEx.best.label}</b> at{" "}
         <RValue r={hourEx.best.expectancy} /> per trade over {tradesLabel(hourEx.best.trades)}
         {hourEx.worst && (
           <>
-            ; your weakest is <b>{hourWindow(hourEx.worst.key)}</b> at <RValue r={hourEx.worst.expectancy} />
+            ; your weakest is <b>{hourEx.worst.label}</b> at <RValue r={hourEx.worst.expectancy} />
           </>
         )}
         , against <RValue r={baseline.expectancy} /> on your average trade.
@@ -231,19 +178,15 @@ export function TimingSection({
       explainer="Everything here is R per trade: what you make on average for every 1R you risk. It shows at which times your trading pays, and when you would be better off flat."
       takeaway={takeaway}
     >
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Panel
-          title="Hour of day"
-          info="R per trade by the hour you entered, as you logged it. Bars above the line make money, below it cost money. The small number under each hour is how many trades. Dashed grey bars are thin samples."
-          coverage={hourCoverage}
-        >
-          {hours.length ? (
-            <HourChart buckets={hours} />
-          ) : (
-            <EmptyPanel>Add an entry time to your trades to see which hours make you money.</EmptyPanel>
-          )}
-        </Panel>
+      <EntryTimePanel
+        buckets={hours}
+        coverage={hourCoverage}
+        slot={slot}
+        onSlotChange={onSlotChange}
+        baseline={baseline.expectancy}
+      />
 
+      <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
         <Panel
           title="Day and session"
           info="Each cell is R per trade (big) and the number of trades (small) for that weekday and session. Stronger green is more profitable per trade, stronger red more costly. The right column and bottom row are totals."

@@ -7,7 +7,7 @@
  * trader can check the claim against the tables below it.
  */
 import { extremes, formatR, type EdgeBucket } from "@/lib/journal/edge";
-import { hourWindow, SESSIONS, WEEKDAYS, type WeekdaySessionGrid } from "@/lib/journal/time-stats";
+import { SESSIONS, WEEKDAYS, type WeekdaySessionGrid } from "@/lib/journal/time-stats";
 import type { ConfluenceStat } from "@/lib/journal/confluence-stats";
 import type { CleanVsBroken, RuleStat } from "@/lib/journal/rule-stats";
 
@@ -55,9 +55,9 @@ export function buildFindings(
       id: "best-hour",
       tone: "good",
       eyebrow: "Best time to trade",
-      headline: hourWindow(hourEx.best.key),
+      headline: hourEx.best.label,
       value: formatR(hourEx.best.expectancy),
-      detail: `Per trade over ${tradesLabel(hourEx.best.trades)} entered in this hour, ${vsBase}.`,
+      detail: `Per trade over ${tradesLabel(hourEx.best.trades)} entered in this window, ${vsBase}.`,
     });
   } else {
     // No timed sample yet: fall back to the strongest weekday x session cell.
@@ -81,10 +81,10 @@ export function buildFindings(
     out.push({
       id: "worst-hour",
       tone: "bad",
-      eyebrow: "Hour that costs you",
-      headline: hourWindow(hourEx.worst.key),
+      eyebrow: "Time that costs you",
+      headline: hourEx.worst.label,
       value: formatR(hourEx.worst.expectancy),
-      detail: `Per trade over ${tradesLabel(hourEx.worst.trades)}. Sitting this hour out would have saved ${Math.abs(hourEx.worst.totalR).toFixed(1)}R.`,
+      detail: `Per trade over ${tradesLabel(hourEx.worst.trades)}. Sitting this window out would have saved ${Math.abs(hourEx.worst.totalR).toFixed(1)}R.`,
     });
   }
 

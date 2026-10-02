@@ -106,6 +106,7 @@ export function Panel({
   info,
   hint,
   coverage,
+  action,
   className,
   children,
 }: {
@@ -113,6 +114,8 @@ export function Panel({
   info?: React.ReactNode;
   hint?: string;
   coverage?: Coverage;
+  /** A control on the right of the title, e.g. a granularity toggle. */
+  action?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -126,12 +129,15 @@ export function Panel({
           </h3>
           {hint && <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{hint}</p>}
         </div>
-        {coverage && coverage.total > 0 && (
-          <span className="inline-flex shrink-0 items-center gap-1 text-[10px] tabular-nums text-muted-foreground">
-            {coverage.used}/{coverage.total}
-            <MetricInfo>{`${coverage.used} of ${coverage.total} trades have the times needed. ${GLOSSARY.coverage}`}</MetricInfo>
-          </span>
-        )}
+        <div className="flex shrink-0 items-center gap-2.5">
+          {coverage && coverage.total > 0 && (
+            <span className="inline-flex items-center gap-1 text-[10px] tabular-nums text-muted-foreground">
+              {coverage.used}/{coverage.total}
+              <MetricInfo>{`${coverage.used} of ${coverage.total} trades have the times needed. ${GLOSSARY.coverage}`}</MetricInfo>
+            </span>
+          )}
+          {action}
+        </div>
       </div>
       {children}
     </div>

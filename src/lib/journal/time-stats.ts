@@ -37,39 +37,45 @@ export interface Coverage {
   total: number;
 }
 
-// ── Hour of day ─────────────────────────────────────────────────────────
+// ── Entry time ──────────────────────────────────────────────────────────
+
+/** Slot widths the entry-time chart can be read at, in minutes. */
+export type SlotSize = 15 | 30 | 60;
+
+const clock = (min: number) => `${pad(Math.floor(min / 60) % 24)}:${pad(min % 60)}`;
+
+/** "09:30" for a slot key (its start, in minutes since midnight). */
+export const slotStart = (key: string) => clock(Number(key));
 
 /**
- * R per trade by entry hour. Returns the span from the first to the last hour
- * that has a trade, gaps included, so the axis reads as a real clock.
+ * R per trade by entry time, in slots of `size` minutes. Each bucket's label
+ * is its window ("09:30–10:00"). Returns the span from the first to the last
+ * slot that has a trade, empty slots included, so the axis reads as a clock.
  */
-export function computeHourStats(trades: TimedTrade[]): { buckets: EdgeBucket[]; coverage: Coverage } {
-  const hourOf = (t: TimedTrade) => {
+export function computeEntryTimeStats(
+  trades: TimedTrade[],
+  size: SlotSize = 30
+): { buckets: EdgeBucket[]; coverage: Coverage } {
+  const slotOf = (t: TimedTrade) => {
     const m = minutesOfDay(t.execution_time);
-    return m === null ? null : Math.floor(m / 60);
+    return m === null ? null : Math.floor(m / size) * size;
   };
-  const hours = trades.map(hourOf).filter((h): h is number => h !== null);
-  if (hours.length === 0) return { buckets: [], coverage: { used: 0, total: trades.length } };
+  const slots = trades.map(slotOf).filter((s): s is number => s !== null);
+  if (slots.length === 0) return { buckets: [], coverage: { used: 0, total: trades.length } };
 
-  const lo = Math.min(...hours);
-  const hi = Math.max(...hours);
-  const order = Array.from({ length: hi - lo + 1 }, (_, i) => {
-    const h = lo + i;
-    return { key: String(h), label: `${pad(h)}:00` };
+  const lo = Math.min(...slots);
+  const hi = Math.max(...slots);
+  const order = Array.from({ length: (hi - lo) / size + 1 }, (_, i) => {
+    const start = lo + i * size;
+    return { key: String(start), label: `${clock(start)}–${clock(start + size)}` };
   });
   return {
     buckets: bucketize(trades, (t) => {
-      const h = hourOf(t);
-      return h === null ? null : String(h);
+      const s = slotOf(t);
+      return s === null ? null : String(s);
     }, order),
-    coverage: { used: hours.length, total: trades.length },
+    coverage: { used: slots.length, total: trades.length },
   };
-}
-
-/** "09:00–10:00" for an hour bucket key. */
-export function hourWindow(key: string): string {
-  const h = Number(key);
-  return `${pad(h)}:00–${pad((h + 1) % 24)}:00`;
 }
 
 // ── Weekday x session ───────────────────────────────────────────────────
