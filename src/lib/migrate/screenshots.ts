@@ -12,7 +12,7 @@ import type { ScreenshotGroup } from "@/lib/types";
  * every read of that row streams the whole picture out of the database. The
  * journal reads every trade at once, which means opening it used to download
  * the entire screenshot archive. In Storage the same image is fetched only
- * when it is shown, and can be resized on the way out.
+ * when it is shown, and a small rendition is stored beside it for the grid.
  *
  * Safety:
  *  - Runs as the signed-in user, so row-level security scopes it to their own
