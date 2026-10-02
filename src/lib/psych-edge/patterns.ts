@@ -30,6 +30,7 @@
  */
 import { format, parse } from "date-fns";
 import { tradeR, instrumentName } from "@/lib/journal/weeks";
+import { minutesOfDay } from "@/lib/journal/time-stats";
 import type { PatternType, PreTradeAnalysis, TradeSummary } from "@/lib/types";
 
 // ── Fixed thresholds: the whole engine's tunable surface, in one place ──
@@ -89,16 +90,6 @@ interface Ordered {
   /** Minutes-since-midnight of the exit, or null. */
   exitMin: number | null;
   r: number;
-}
-
-function minutesOfDay(hhmm?: string): number | null {
-  if (!hhmm) return null;
-  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
-  if (!m) return null;
-  const h = Number(m[1]);
-  const min = Number(m[2]);
-  if (h < 0 || h > 23 || min < 0 || min > 59) return null;
-  return h * 60 + min;
 }
 
 function order(trades: TradeSummary[]): Ordered[] {

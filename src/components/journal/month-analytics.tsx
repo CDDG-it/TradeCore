@@ -131,7 +131,7 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-sm font-semibold leading-none">{monthLabel}</p>
         <Link href="/analytics" className="text-[10px] font-semibold text-primary hover:underline">
-          Full analytics →
+          Edge analytics →
         </Link>
       </div>
 

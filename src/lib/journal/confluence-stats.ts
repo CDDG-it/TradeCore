@@ -11,6 +11,7 @@
  * reported, it just is not what the list is sorted by.
  */
 import { tradeR } from "@/lib/journal/weeks";
+import { bucketize, scoreBucket, type EdgeBucket } from "@/lib/journal/edge";
 import type { TradeJournalEntry } from "@/lib/types";
 
 /** Below this many trades a confluence is not evidence, it is an anecdote. */
@@ -83,4 +84,66 @@ export function computeConfluenceStats(
     .sort((a, b) =>
       a.thin !== b.thin ? Number(a.thin) - Number(b.thin) : b.expectancy - a.expectancy
     );
+}
+
+/** A trade's confluences, de-duplicated case-insensitively, keyed and labelled. */
+function uniqueConfluences(t: TradeJournalEntry): { key: string; name: string }[] {
+  const out = new Map<string, string>();
+  for (const raw of t.confluences ?? []) {
+    const name = (raw ?? "").trim();
+    if (name && !out.has(name.toLowerCase())) out.set(name.toLowerCase(), name);
+  }
+  return [...out.entries()].map(([key, name]) => ({ key, name }));
+}
+
+const STACK_BUCKETS = [
+  { key: "0", label: "None logged" },
+  { key: "1", label: "1 confluence" },
+  { key: "2", label: "2 confluences" },
+  { key: "3", label: "3 confluences" },
+  { key: "4", label: "4 or more" },
+];
+
+/**
+ * R per trade by how many confluences the trade had. Answers whether waiting
+ * for more reasons actually pays, or just means fewer, later entries.
+ */
+export function computeConfluenceStackStats(trades: TradeJournalEntry[]): EdgeBucket[] {
+  return bucketize(trades, (t) => String(Math.min(uniqueConfluences(t).length, 4)), STACK_BUCKETS);
+}
+
+export interface ConfluencePair extends EdgeBucket {
+  /** The two confluence labels, as first written. */
+  names: [string, string];
+}
+
+/**
+ * Pairs of confluences that appeared together, scored as a unit. Only pairs
+ * with a real sample come back, best first: a combination seen twice is noise.
+ */
+export function computeConfluencePairs(
+  trades: TradeJournalEntry[],
+  minSample: number = CONFLUENCE_MIN_SAMPLE,
+  limit = 6
+): ConfluencePair[] {
+  const groups = new Map<string, { names: [string, string]; trades: TradeJournalEntry[] }>();
+  for (const t of trades) {
+    const list = uniqueConfluences(t).sort((a, b) => a.key.localeCompare(b.key));
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const key = `${list[i].key}\u0000${list[j].key}`;
+        const g = groups.get(key) ?? { names: [list[i].name, list[j].name] as [string, string], trades: [] };
+        g.trades.push(t);
+        groups.set(key, g);
+      }
+    }
+  }
+  return [...groups.entries()]
+    .filter(([, g]) => g.trades.length >= minSample)
+    .map(([key, g]) => ({
+      ...scoreBucket(key, `${g.names[0]} + ${g.names[1]}`, g.trades, minSample),
+      names: g.names,
+    }))
+    .sort((a, b) => b.expectancy - a.expectancy || b.trades - a.trades)
+    .slice(0, limit);
 }

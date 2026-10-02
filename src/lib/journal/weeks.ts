@@ -16,7 +16,7 @@ export const instrumentName = (s: string) => INSTRUMENT_NAMES[(s ?? "").toUpperC
 export const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 /** R contribution of a single trade. */
-export function tradeR(t: TradeSummary): number {
+export function tradeR(t: Pick<TradeSummary, "result" | "rr">): number {
   if (t.result === "win") return t.rr;
   if (t.result === "loss") return -1;
   return 0;
