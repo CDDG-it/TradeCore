@@ -9,12 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
-import { getProfile, upsertProfile } from "@/lib/supabase/queries";
+import Link from "next/link";
+import { getProfile } from "@/lib/supabase/queries";
+import { tradedInstruments } from "@/lib/instruments";
 import { useTheme, type ThemePreference } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "motion/react";
-
-const PREFERRED_INSTRUMENTS = ["NQ", "ES", "Gold"] as const;
 
 /** Dark, Light, or hand it to the operating system. */
 const THEME_OPTIONS: { key: ThemePreference; label: string; Icon: typeof Moon }[] = [
@@ -31,26 +31,12 @@ export default function SettingsPage() {
   const [showNext, setShowNext] = useState(false);
   const [pwState, setPwState] = useState<"idle" | "loading" | "saved" | "error">("idle");
   const [pwError, setPwError] = useState("");
-  const [prefInstrument, setPrefInstrument] = useState<string | null>(null);
-  const [prefSaveState, setPrefSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  // Markets are set on the Profile page; shown here so nobody hunts for them.
+  const [markets, setMarkets] = useState<string[] | null>(null);
 
   useEffect(() => {
-    getProfile().then((p) => {
-      if (p?.preferred_instrument) setPrefInstrument(p.preferred_instrument);
-    });
+    getProfile().then((p) => setMarkets(tradedInstruments(p))).catch(() => setMarkets([]));
   }, []);
-
-  async function handleSaveInstrument(instrument: string) {
-    setPrefInstrument(instrument);
-    setPrefSaveState("saving");
-    try {
-      await upsertProfile({ preferred_instrument: instrument });
-      setPrefSaveState("saved");
-      setTimeout(() => setPrefSaveState("idle"), 2000);
-    } catch {
-      setPrefSaveState("idle");
-    }
-  }
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -140,35 +126,24 @@ export default function SettingsPage() {
             <p className="text-xs leading-relaxed text-muted-foreground">Set the market context used throughout your workspace.</p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label className="text-xs mb-2 block">Preferred Instrument</Label>
-              <div className="flex gap-2">
-                {PREFERRED_INSTRUMENTS.map((inst) => (
-                  <button
-                    key={inst}
-                    type="button"
-                    onClick={() => handleSaveInstrument(inst)}
-                    className={cn(
-                      "relative flex-1 overflow-hidden rounded-lg py-2 text-sm font-semibold font-mono transition-colors",
-                      prefInstrument === inst
-                        ? "text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                    )}
-                  >
-                    {prefInstrument === inst && <motion.span layoutId="settings-instrument-pill" className="absolute inset-0 bg-primary shadow-sm" transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 480, damping: 38 }} />}
-                    <span className="relative z-10">{inst}</span>
-                  </button>
-                ))}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <Label className="text-xs mb-1.5 block">Markets you trade</Label>
+                {markets === null ? (
+                  <p className="text-xs text-muted-foreground">Loading…</p>
+                ) : markets.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Not set yet: the forms offer a default mix of futures, forex and CFDs.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {markets.map((m) => (
+                      <span key={m} className="rounded-md bg-muted px-2 py-0.5 font-mono text-xs font-semibold">{m}</span>
+                    ))}
+                  </div>
+                )}
               </div>
-              {prefSaveState === "saved" && (
-                <div className="flex items-center gap-1.5 text-xs text-success mt-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                  Preference saved
-                </div>
-              )}
-              {prefSaveState === "saving" && (
-                <p className="text-xs text-muted-foreground mt-2">Saving...</p>
-              )}
+              <Link href="/profile" className="shrink-0 text-xs font-semibold text-primary hover:underline">
+                Change in Profile →
+              </Link>
             </div>
           </CardContent>
         </Card>

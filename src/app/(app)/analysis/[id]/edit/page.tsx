@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -9,13 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { getAnalysisById, updateAnalysis } from "@/lib/supabase/queries";
+import { getAnalysisById, updateAnalysis, getProfile } from "@/lib/supabase/queries";
+import { InstrumentPicker } from "@/components/journal/instrument-picker";
+import { marketOf, tradedInstruments } from "@/lib/instruments";
 import { ChartTab } from "@/components/analysis/chart-tab";
 import type { PreTradeAnalysis } from "@/lib/types";
 import type { Bias } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const BIASES: Bias[] = ["bullish", "bearish", "choppy"];
 
 export default function EditAnalysisPage({ params }: { params: Promise<{ id: string }> }) {
@@ -74,6 +75,15 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
     setFormState((prev) => ({ ...prev, [key]: value }));
   }
 
+  // The markets set on the profile; the instrument picker offers these.
+  const [markets, setMarkets] = useState<string[]>([]);
+  useEffect(() => {
+    getProfile().then((p) => setMarkets(tradedInstruments(p))).catch(() => {});
+  }, []);
+  const pickInstrument = useCallback((symbol: string) => {
+    setFormState((prev) => ({ ...prev, instrument: symbol }));
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!analysis) return;
@@ -82,7 +92,8 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
       await updateAnalysis(id, {
         ...form,
         title: `${form.instrument}: ${form.date}`,
-        market: analysis.market,
+        // Keep the stored market unless the instrument changed.
+        market: form.instrument === analysis.instrument ? analysis.market : marketOf(form.instrument),
         session: analysis.session,
         notes: "",
         used_for_trade: analysis.used_for_trade,
@@ -128,19 +139,7 @@ export default function EditAnalysisPage({ params }: { params: Promise<{ id: str
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Instrument *</Label>
-                <div className="flex gap-1.5">
-                  {INSTRUMENTS.map((inst) => (
-                    <button key={inst} type="button" onClick={() => set("instrument", inst)}
-                      className={cn("flex-1 py-1.5 rounded-lg text-sm font-medium transition-all font-mono",
-                        form.instrument === inst ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {inst}
-                    </button>
-                  ))}
-                </div>
-                {!INSTRUMENTS.includes(form.instrument) && (
-                  <Input value={form.instrument} onChange={(e) => set("instrument", e.target.value.toUpperCase())}
-                    className="h-8 text-sm mt-1" placeholder="Custom instrument" />
-                )}
+                <InstrumentPicker value={form.instrument} onChange={pickInstrument} preferred={markets} autoFill={false} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Date</Label>

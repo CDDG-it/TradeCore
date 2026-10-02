@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, X, Check } from "lucide-react";
 import { DateField, TimeField, RRField } from "@/components/journal/field-inputs";
@@ -19,6 +19,8 @@ import { AnalysisPicker } from "@/components/journal/analysis-picker";
 import { TIMEFRAMES, normalizeTimeframe } from "@/lib/timeframes";
 import { useFormDraft } from "@/lib/drafts";
 import { DraftBanner } from "@/components/ui/draft-banner";
+import { InstrumentPicker } from "@/components/journal/instrument-picker";
+import { marketOf, tradedInstruments } from "@/lib/instruments";
 import { ExecutionQualityField } from "@/components/journal/execution-quality-field";
 import { RuleChecksEditor } from "@/components/journal/rule-checks-editor";
 import { useAccess } from "@/components/access/access-provider";
@@ -26,8 +28,9 @@ import { useAccess } from "@/components/access/access-provider";
 // A draft is only worth keeping once the trader has entered something real:
 // keeps pristine, untouched forms from persisting an empty draft.
 function tradeDraftHasContent(f: TradeJournalEntryInput): boolean {
+  // The instrument alone does not count: a single-market trader gets it filled
+  // in automatically, and an untouched form must not come back as a draft.
   return (
-    !!f.instrument ||
     f.confluences.length > 0 ||
     !!f.execution_notes ||
     !!f.psychology_notes ||
@@ -40,7 +43,6 @@ function tradeDraftHasContent(f: TradeJournalEntryInput): boolean {
   );
 }
 
-const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
 
 const EMPTY_DISCIPLINE: TradeDiscipline = {
@@ -67,6 +69,8 @@ export default function NewTradePage() {
   const [ruleChecks, setRuleChecks] = useState<RuleCheckDraft[]>([]);
   const [allAnalyses, setAllAnalyses] = useState<AnalysisListRow[]>([]);
   const [accounts, setAccounts] = useState<FundedAccount[]>([]);
+  // The markets set on the profile; the instrument picker offers these.
+  const [markets, setMarkets] = useState<string[]>([]);
   const [customTF, setCustomTF] = useState("");
   const [showCustomTF, setShowCustomTF] = useState(false);
   const [savedConfluences, setSavedConfluences] = useState<string[]>([]);
@@ -109,6 +113,7 @@ export default function NewTradePage() {
       setAllAnalyses(analyses);
       setAccounts(accountRows);
       // Quick-select confluences are the saved library from Trading Behaviour.
+      setMarkets(tradedInstruments(profile));
       if (profile?.confluence_options) {
         setSavedConfluences(
           profile.confluence_options.split("\n").map((l) => l.trim()).filter(Boolean)
@@ -133,6 +138,11 @@ export default function NewTradePage() {
   function set<K extends keyof TradeJournalEntryInput>(key: K, value: TradeJournalEntryInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
+
+  // The market follows from the instrument (futures, forex, CFD, crypto).
+  const pickInstrument = useCallback((symbol: string) => {
+    setForm((prev) => ({ ...prev, instrument: symbol, market: marketOf(symbol) }));
+  }, []);
 
   function addConfluence() {
     const t = confluenceInput.trim();
@@ -215,15 +225,7 @@ export default function NewTradePage() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Instrument *</Label>
-                <div className="flex gap-1.5">
-                  {INSTRUMENTS.map((inst) => (
-                    <button key={inst} type="button" onClick={() => set("instrument", inst)}
-                      className={cn("flex-1 py-1.5 rounded-lg text-sm font-medium transition-all font-mono",
-                        form.instrument === inst ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {inst}
-                    </button>
-                  ))}
-                </div>
+                <InstrumentPicker value={form.instrument} onChange={pickInstrument} preferred={markets} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Date *</Label>

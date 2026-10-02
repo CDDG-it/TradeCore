@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -9,14 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { createAnalysis } from "@/lib/supabase/queries";
+import { createAnalysis, getProfile } from "@/lib/supabase/queries";
+import { InstrumentPicker } from "@/components/journal/instrument-picker";
+import { marketOf, tradedInstruments } from "@/lib/instruments";
 import { ChartTab } from "@/components/analysis/chart-tab";
 import type { Bias } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useFormDraft } from "@/lib/drafts";
 import { DraftBanner } from "@/components/ui/draft-banner";
 
-const INSTRUMENTS = ["NQ", "ES", "GOLD"];
 const BIASES: Bias[] = ["bullish", "bearish", "choppy"];
 
 export default function NewAnalysisPage() {
@@ -46,6 +47,15 @@ export default function NewAnalysisPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  // The markets set on the profile; the instrument picker offers these.
+  const [markets, setMarkets] = useState<string[]>([]);
+  useEffect(() => {
+    getProfile().then((p) => setMarkets(tradedInstruments(p))).catch(() => {});
+  }, []);
+  const pickInstrument = useCallback((symbol: string) => {
+    setForm((prev) => ({ ...prev, instrument: symbol }));
+  }, []);
+
   // Auto-save / restore the whole analysis (fields + chart tabs) as one draft.
   const draftValue = useMemo(
     () => ({ form, htfTF, ltfTF, htfUrls, ltfUrls }),
@@ -62,8 +72,9 @@ export default function NewAnalysisPage() {
     key: "analysis:new",
     value: draftValue,
     apply: applyDraft,
+    // The instrument alone does not count: it may have been filled in for a
+    // single-market trader, and an untouched form must not become a draft.
     shouldPersist: (d) =>
-      !!d.form.instrument ||
       !!d.form.thesis ||
       !!d.form.long_scenario ||
       !!d.form.short_scenario ||
@@ -79,7 +90,7 @@ export default function NewAnalysisPage() {
       const created = await createAnalysis({
         ...form,
         title: `${form.instrument}: ${form.date}`,
-        market: "futures",
+        market: marketOf(form.instrument),
         session: "New York",
         notes: "",
         used_for_trade: false,
@@ -127,15 +138,7 @@ export default function NewAnalysisPage() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Instrument *</Label>
-                <div className="flex gap-1.5">
-                  {INSTRUMENTS.map((inst) => (
-                    <button key={inst} type="button" onClick={() => set("instrument", inst)}
-                      className={cn("flex-1 py-1.5 rounded-lg text-sm font-medium transition-all font-mono",
-                        form.instrument === inst ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                      {inst}
-                    </button>
-                  ))}
-                </div>
+                <InstrumentPicker value={form.instrument} onChange={pickInstrument} preferred={markets} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="date" className="text-xs">Date *</Label>

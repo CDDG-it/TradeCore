@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  Camera, Mail, User, Calendar, CheckCircle2, AlertCircle, Loader2, Trash2, Upload,
+  Camera, Mail, User, Calendar, CheckCircle2, AlertCircle, Loader2, Trash2, Upload, CandlestickChart,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -18,9 +18,10 @@ import { useAuth } from "@/lib/auth-context";
 import { getProfile, upsertProfile } from "@/lib/supabase/queries";
 import { createClient } from "@/lib/supabase/client";
 import { deleteAvatar, uploadAvatar } from "@/lib/supabase/storage";
+import { MarketsPicker } from "@/components/profile/markets-picker";
+import { tradedInstruments } from "@/lib/instruments";
 
 const SESSIONS = ["London", "New York", "Asia", "London + New York overlap", "Other"] as const;
-const INSTRUMENTS = ["NQ", "ES", "XAUUSD", "EURUSD", "GBPUSD", "BTC", "CL", "Other"] as const;
 const TIMEZONES = [
   "Europe/Amsterdam",
   "Europe/London",
@@ -70,7 +71,7 @@ export default function ProfilePage() {
     bio: "",
     timezone: "Europe/Amsterdam",
     preferred_session: "",
-    preferred_instrument: "",
+    traded_instruments: [] as string[],
   });
 
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function ProfilePage() {
           bio: prev.bio || p.bio || "",
           timezone: prev.timezone !== "Europe/Amsterdam" ? prev.timezone : (p.timezone || "Europe/Amsterdam"),
           preferred_session: prev.preferred_session || p.preferred_session || "",
-          preferred_instrument: prev.preferred_instrument || p.preferred_instrument || "",
+          traded_instruments: prev.traded_instruments.length ? prev.traded_instruments : tradedInstruments(p),
         }));
       }
       setProfileLoading(false);
@@ -113,9 +114,19 @@ export default function ProfilePage() {
           bio: form.bio,
           timezone: form.timezone,
           preferred_session: form.preferred_session,
-          preferred_instrument: form.preferred_instrument,
+          // Kept in step with the list for anything still reading the single value.
+          preferred_instrument: form.traded_instruments[0] ?? null,
         }),
       ]);
+      // Saved on its own so a database without the column yet (traded_instruments.sql
+      // not run) still saves everything else, and says exactly what did not.
+      try {
+        await upsertProfile({ traded_instruments: form.traded_instruments });
+      } catch {
+        setSaveError("Profile saved, but your markets could not be stored yet: the database needs the traded_instruments update.");
+        setSaveState("error");
+        return;
+      }
       setSaveState("saved");
       setTimeout(() => setSaveState("idle"), 3000);
     } catch {
@@ -288,23 +299,25 @@ export default function ProfilePage() {
                     </Select>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Preferred Instrument</Label>
-                  <Select
-                    value={form.preferred_instrument}
-                    onValueChange={(v) => setForm((p) => ({ ...p, preferred_instrument: v ?? p.preferred_instrument }))}
-                  >
-                    <SelectTrigger className="h-9 text-sm bg-background/50">
-                      <SelectValue placeholder="Select instrument..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {INSTRUMENTS.map((i) => (
-                        <SelectItem key={i} value={i}>{i}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* Markets the trader logs */}
+            <Card className="bg-card border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <CandlestickChart className="w-4 h-4 text-primary" />
+                  Markets you trade
+                </CardTitle>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Futures, forex, indices, metals or crypto: whatever your funded accounts trade. The trade and analysis forms offer only these.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <MarketsPicker
+                  value={form.traded_instruments}
+                  onChange={(next) => setForm((p) => ({ ...p, traded_instruments: next }))}
+                />
               </CardContent>
             </Card>
 

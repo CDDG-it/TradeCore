@@ -1,7 +1,8 @@
 export type Bias = "bullish" | "bearish" | "choppy";
 export type Direction = "long" | "short";
 export type TradeResult = "win" | "loss" | "break-even";
-export type Market = "futures" | "commodities";
+/** Where an instrument trades. "commodities" is kept for rows logged before the catalogue. */
+export type Market = "futures" | "forex" | "cfd" | "crypto" | "commodities";
 export type Session = "London" | "New York" | "Asia";
 export type AccountPhase = "evaluation" | "funded" | "payout";
 export type AccountStatus = "active" | "inactive" | "blown" | "passed";

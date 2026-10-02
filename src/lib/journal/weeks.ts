@@ -4,13 +4,9 @@ import {
 } from "date-fns";
 import type { TradeSummary } from "@/lib/types";
 
-// Expand short tickers to the names traders recognise at a glance.
-export const INSTRUMENT_NAMES: Record<string, string> = {
-  NQ: "Nasdaq", MNQ: "Nasdaq", ES: "SP500", MES: "SP500",
-  GOLD: "Gold", GC: "Gold", XAUUSD: "Gold", CL: "Crude Oil",
-  EURUSD: "EUR/USD", GBPUSD: "GBP/USD", BTC: "Bitcoin",
-};
-export const instrumentName = (s: string) => INSTRUMENT_NAMES[(s ?? "").toUpperCase()] ?? s;
+// Short tickers read as the market they trade ("MNQ" → "Nasdaq"). The
+// catalogue lives in @/lib/instruments; re-exported here for existing callers.
+export { instrumentName } from "@/lib/instruments";
 
 // Weekdays only: Saturday and Sunday are dropped from the review.
 export const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri"];

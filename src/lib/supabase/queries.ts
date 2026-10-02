@@ -796,6 +796,8 @@ export interface UserProfile {
   confluence_options: string | null;
   preferred_session: string | null;
   preferred_instrument: string | null;
+  /** The markets the trader logs, set on the Profile page. Absent until traded_instruments.sql has run. */
+  traded_instruments?: string[] | null;
   timezone: string | null;
   created_at: string;
   updated_at: string | null;
