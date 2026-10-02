@@ -74,7 +74,7 @@ export function RValue({ r, thin, className, digits }: { r: number; thin?: boole
   );
 }
 
-/** A section of the page: title, a fixed line on what it shows, and the computed takeaway. */
+/** A section of the page: title with its explanation behind an (i), and the computed takeaway in one line. */
 export function Section({
   title,
   explainer,
@@ -87,46 +87,49 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-4">
-      <div className="max-w-3xl space-y-1.5">
-        <h2 className="font-heading text-base font-bold tracking-tight">{title}</h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">{explainer}</p>
+    <section className="space-y-3">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
+        <h2 className="flex shrink-0 items-center gap-1.5 font-heading text-sm font-bold tracking-tight">
+          {title}
+          <MetricInfo>{explainer}</MetricInfo>
+        </h2>
+        {takeaway && <p className="min-w-0 text-xs leading-relaxed text-muted-foreground">{takeaway}</p>}
       </div>
-      {takeaway && (
-        <div className="rounded-xl border border-primary/25 bg-primary/[0.06] px-4 py-3 text-sm leading-relaxed text-foreground/90">
-          {takeaway}
-        </div>
-      )}
       {children}
     </section>
   );
 }
 
-/** A card inside a section, with a title, a one-line "how to read" and optional coverage. */
+/** A card inside a section: title, (i) on how to read it, a one-line hint and optional coverage. */
 export function Panel({
   title,
+  info,
   hint,
   coverage,
   className,
   children,
 }: {
   title: string;
+  info?: React.ReactNode;
   hint?: string;
   coverage?: Coverage;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn("rounded-2xl border border-border/50 bg-card p-4 sm:p-5", className)}>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
-        <div className="min-w-0 space-y-0.5">
-          <h3 className="text-sm font-semibold">{title}</h3>
-          {hint && <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p>}
+    <div className={cn("rounded-2xl border border-border/50 bg-card p-4", className)}>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="flex items-center gap-1.5 text-[13px] font-semibold">
+            {title}
+            {info && <MetricInfo>{info}</MetricInfo>}
+          </h3>
+          {hint && <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{hint}</p>}
         </div>
         {coverage && coverage.total > 0 && (
-          <span className="inline-flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground">
-            {coverage.used} of {coverage.total} trades
-            <MetricInfo>{GLOSSARY.coverage}</MetricInfo>
+          <span className="inline-flex shrink-0 items-center gap-1 text-[10px] tabular-nums text-muted-foreground">
+            {coverage.used}/{coverage.total}
+            <MetricInfo>{`${coverage.used} of ${coverage.total} trades have the times needed. ${GLOSSARY.coverage}`}</MetricInfo>
           </span>
         )}
       </div>
@@ -138,15 +141,26 @@ export function Panel({
 /** Shown in place of a chart that has nothing to work with yet. */
 export function EmptyPanel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-[120px] items-center justify-center rounded-xl border border-dashed border-border/60 px-4 text-center text-xs leading-relaxed text-muted-foreground">
+    <div className="flex min-h-[88px] items-center justify-center rounded-xl border border-dashed border-border/60 px-4 text-center text-xs leading-relaxed text-muted-foreground">
       {children}
     </div>
   );
 }
 
+/** "Show all" for a long list, so a table never pushes the page down by default. */
+export function ShowMore({ hidden, open, onToggle }: { hidden: number; open: boolean; onToggle: () => void }) {
+  if (hidden <= 0) return null;
+  return (
+    <button type="button" onClick={onToggle} className="mt-2 text-[11px] font-semibold text-primary hover:underline">
+      {open ? "Show less" : `Show ${hidden} more`}
+    </button>
+  );
+}
+
 /**
  * Horizontal bars diverging from zero: green right, red left. Used for every
- * ordered breakdown (trade number, hold time, confluence stacking, weekday).
+ * ordered breakdown (trade number, hold time, confluence stacking).
+ * Columns: label, bar, R per trade, trades.
  */
 export function BucketBars({ buckets, emptyLabel }: { buckets: EdgeBucket[]; emptyLabel?: string }) {
   const filled = buckets.filter((b) => b.trades > 0);
@@ -160,16 +174,14 @@ export function BucketBars({ buckets, emptyLabel }: { buckets: EdgeBucket[]; emp
   const span = hasNeg && hasPos ? 50 : 100;
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-1.5">
       {buckets.map((b) => {
         const w = b.trades ? (Math.abs(b.expectancy) / maxAbs) * span : 0;
         const left = b.expectancy >= 0 ? zero : zero - w;
         return (
-          <div key={b.key} className="grid grid-cols-[6.5rem_1fr_4.25rem] items-center gap-3 text-xs sm:grid-cols-[7.5rem_1fr_4.5rem_4.5rem]">
-            <span className={cn("flex items-center gap-1.5 truncate font-medium", (b.thin || !b.trades) && "text-muted-foreground")}>
-              <span className="truncate">{b.label}</span>
-            </span>
-            <div className="relative h-2.5 rounded-full bg-muted/30">
+          <div key={b.key} className="grid grid-cols-[6rem_1fr_3.75rem_1.75rem] items-center gap-2.5 text-xs">
+            <span className={cn("truncate font-medium", (b.thin || !b.trades) && "text-muted-foreground")}>{b.label}</span>
+            <div className="relative h-2 rounded-full bg-muted/30">
               {hasNeg && hasPos && <span className="absolute inset-y-[-3px] left-1/2 w-px bg-border" />}
               {b.trades > 0 && (
                 <span
@@ -185,19 +197,14 @@ export function BucketBars({ buckets, emptyLabel }: { buckets: EdgeBucket[]; emp
             <span className="text-right">
               {b.trades ? <RValue r={b.expectancy} thin={b.thin} /> : <span className="text-muted-foreground/50">–</span>}
             </span>
-            <span className="hidden items-center justify-end gap-1.5 text-right tabular-nums text-muted-foreground sm:flex">
-              {b.thin && b.trades > 0 && <ThinTag />}
-              {b.trades}
-            </span>
+            <span className="text-right text-[10px] tabular-nums text-muted-foreground/70">{b.trades || ""}</span>
           </div>
         );
       })}
-      <div className="grid grid-cols-[6.5rem_1fr_4.25rem] gap-3 pt-1 text-[10px] uppercase tracking-wider text-muted-foreground/60 sm:grid-cols-[7.5rem_1fr_4.5rem_4.5rem]">
-        <span />
-        <span />
-        <span className="text-right">R / trade</span>
-        <span className="hidden text-right sm:block">Trades</span>
-      </div>
     </div>
   );
 }
+
+/** The shared "how to read" line for every bar breakdown. */
+export const BARS_INFO =
+  "Each bar is R per trade for that group: green right of the line makes money, red left of it costs money. The small number on the right is how many trades it is based on. Grey bars are thin samples.";

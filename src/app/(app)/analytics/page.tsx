@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { format, subDays, subMonths } from "date-fns";
+import { addMonths, format, parse } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,7 +23,6 @@ import {
 } from "@/lib/journal/confluence-stats";
 import { computeRuleStats, computeCleanVsBroken } from "@/lib/journal/rule-stats";
 import { buildFindings } from "@/lib/journal/analytics-findings";
-import { instrumentName } from "@/lib/journal/weeks";
 import { cn } from "@/lib/utils";
 
 /*
@@ -34,49 +34,64 @@ import { cn } from "@/lib/utils";
  * under which rules do you actually make money?
  */
 
-type Range = "all" | "12m" | "90d" | "30d";
-type DirectionFilter = "all" | "long" | "short";
+/** "yyyy-MM" of a month, or "all" for the whole journal. */
+type MonthKey = string;
 
-const RANGES: { id: Range; label: string }[] = [
-  { id: "all", label: "All time" },
-  { id: "12m", label: "12 months" },
-  { id: "90d", label: "90 days" },
-  { id: "30d", label: "30 days" },
-];
+const monthOf = (t: Pick<TradeJournalEntry, "date_time">) => t.date_time.slice(0, 7);
+const monthDate = (m: MonthKey) => parse(m, "yyyy-MM", new Date());
+const shiftMonth = (m: MonthKey, by: number) => format(addMonths(monthDate(m), by), "yyyy-MM");
 
-function rangeStart(range: Range): string | null {
-  const now = new Date();
-  if (range === "12m") return format(subMonths(now, 12), "yyyy-MM-dd");
-  if (range === "90d") return format(subDays(now, 90), "yyyy-MM-dd");
-  if (range === "30d") return format(subDays(now, 30), "yyyy-MM-dd");
-  return null;
-}
-
-/** Segmented control, matching the rest of the app's filters. */
-function Segmented<T extends string>({
-  value,
-  options,
+/** Month stepper with an "All time" escape, sized for the page header. */
+function MonthPicker({
+  month,
+  first,
+  last,
   onChange,
 }: {
-  value: T;
-  options: { id: T; label: string }[];
-  onChange: (v: T) => void;
+  month: MonthKey;
+  first: MonthKey;
+  last: MonthKey;
+  onChange: (m: MonthKey) => void;
 }) {
+  const all = month === "all";
+  const stepBtn =
+    "inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-30";
   return (
-    <div className="flex max-w-full overflow-x-auto rounded-lg border border-border/50">
-      {options.map((o) => (
+    <div className="flex items-center gap-1.5">
+      <div className={cn("flex items-center rounded-lg border border-border/50 p-0.5", all && "opacity-60")}>
         <button
-          key={o.id}
           type="button"
-          onClick={() => onChange(o.id)}
-          className={cn(
-            "shrink-0 px-2.5 py-1.5 text-xs font-medium transition-colors",
-            value === o.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-          )}
+          aria-label="Previous month"
+          className={stepBtn}
+          disabled={!all && month <= first}
+          onClick={() => onChange(all ? last : shiftMonth(month, -1))}
         >
-          {o.label}
+          <ChevronLeft className="h-4 w-4" />
         </button>
-      ))}
+        <span className="min-w-[4.75rem] text-center text-xs font-semibold tabular-nums sm:min-w-[7.5rem]">
+          <span className="sm:hidden">{format(monthDate(all ? last : month), "MMM yy")}</span>
+          <span className="hidden sm:inline">{format(monthDate(all ? last : month), "MMMM yyyy")}</span>
+        </span>
+        <button
+          type="button"
+          aria-label="Next month"
+          className={stepBtn}
+          disabled={!all && month >= last}
+          onClick={() => onChange(all ? last : shiftMonth(month, 1))}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(all ? last : "all")}
+        className={cn(
+          "h-8 rounded-lg border px-2.5 text-xs font-medium transition-colors",
+          all ? "border-primary bg-primary text-primary-foreground" : "border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+        )}
+      >
+        All time
+      </button>
     </div>
   );
 }
@@ -85,36 +100,31 @@ function AnalyticsContent() {
   const [allTrades, setAllTrades] = useState<TradeJournalEntry[]>([]);
   const [ruleChecks, setRuleChecks] = useState<TradeRuleCheck[]>([]);
   const [loading, setLoading] = useState(true);
-  const [range, setRange] = useState<Range>("all");
-  const [instrument, setInstrument] = useState<string>("all");
-  const [direction, setDirection] = useState<DirectionFilter>("all");
-
+  // null until the trades are in; then the latest month with a trade.
+  const [picked, setPicked] = useState<MonthKey | null>(null);
   useEffect(() => {
     Promise.all([getTrades(), getAllTradeRuleChecks()])
       .then(([t, checks]) => { setAllTrades(t); setRuleChecks(checks); })
       .finally(() => setLoading(false));
   }, []);
 
-  // Instruments by how often they are traded, grouped by display name so a
-  // micro and its full-size contract read as one market.
-  const instruments = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const t of allTrades) {
-      const name = instrumentName(t.instrument);
-      counts.set(name, (counts.get(name) ?? 0) + 1);
-    }
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
+  // The span the stepper can move through: first traded month to this month.
+  const bounds = useMemo(() => {
+    const current = format(new Date(), "yyyy-MM");
+    const months = allTrades.map(monthOf).sort();
+    return {
+      first: months[0] ?? current,
+      last: current,
+      latestTraded: months[months.length - 1] ?? current,
+    };
   }, [allTrades]);
 
-  const trades = useMemo(() => {
-    const from = rangeStart(range);
-    return allTrades.filter(
-      (t) =>
-        (!from || t.date_time.slice(0, 10) >= from) &&
-        (instrument === "all" || instrumentName(t.instrument) === instrument) &&
-        (direction === "all" || t.direction === direction)
-    );
-  }, [allTrades, range, instrument, direction]);
+  const month = picked ?? bounds.latestTraded;
+
+  const trades = useMemo(
+    () => (month === "all" ? allTrades : allTrades.filter((t) => monthOf(t) === month)),
+    [allTrades, month]
+  );
 
   const stats = useMemo(() => {
     const baseline = scoreBucket("all", "All trades", trades);
@@ -124,7 +134,7 @@ function AnalyticsContent() {
     const hold = computeHoldTimeStats(trades);
     const confluences = computeConfluenceStats(trades);
     const stack = computeConfluenceStackStats(trades);
-    const pairs = computeConfluencePairs(trades);
+    const pairs = computeConfluencePairs(trades, undefined, 4);
     const rules = computeRuleStats(trades, ruleChecks);
     const clean = computeCleanVsBroken(trades, ruleChecks);
     const findings = buildFindings({ baseline, hours: hour.buckets, grid, order, confluences, rules, clean });
@@ -141,64 +151,44 @@ function AnalyticsContent() {
 
   const { baseline } = stats;
 
+  const periodLabel = month === "all" ? "All time" : format(monthDate(month), "MMMM yyyy");
+
   return (
     <TooltipProvider delay={120}>
-      <div className="space-y-8">
-        <PageHeader title="Analytics" />
-        <PageWrapper className="space-y-10">
-          {/* Intro + filters */}
-          <div className="space-y-4">
-            <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-              Where your results come from: the times, setups and rules that make you money, and the ones that cost you.
-              Your scoreboard (net R, win rate, trade count) lives next to the calendar in the journal.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Segmented value={range} options={RANGES} onChange={setRange} />
-              {instruments.length > 1 && (
-                <Segmented
-                  value={instrument}
-                  options={[{ id: "all", label: "All markets" }, ...instruments.map((n) => ({ id: n, label: n }))]}
-                  onChange={setInstrument}
-                />
-              )}
-              <Segmented
-                value={direction}
-                options={[
-                  { id: "all", label: "Both directions" },
-                  { id: "long", label: "Long" },
-                  { id: "short", label: "Short" },
-                ]}
-                onChange={setDirection}
-              />
-            </div>
+      <div>
+        <PageHeader
+          title="Analytics"
+          action={<MonthPicker month={month} first={bounds.first} last={bounds.last} onChange={setPicked} />}
+        />
+        <PageWrapper className="space-y-7">
+          {/* Banner: the period and the yardstick every number below is read against */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-border/50 bg-card px-4 py-2.5 text-xs">
+            <span className="font-semibold">{periodLabel}</span>
+            <span className="tabular-nums text-muted-foreground">
+              {baseline.trades} trade{baseline.trades === 1 ? "" : "s"}
+            </span>
+            {baseline.trades > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                Average trade <RValue r={baseline.expectancy} className="text-sm" />
+                <MetricInfo>
+                  {`${GLOSSARY.rPerTrade} This is your yardstick: a time, setup or rule above it is part of your edge, one below it costs you.`}
+                </MetricInfo>
+              </span>
+            )}
+            {baseline.trades > 0 && baseline.trades < 20 && (
+              <span className="text-muted-foreground/70 sm:ml-auto">
+                Small sample: groups under 5 trades show as Thin.{month !== "all" && " Try All time for stronger patterns."}
+              </span>
+            )}
           </div>
 
           {trades.length === 0 ? (
-            <div className="rounded-2xl border border-border/50 bg-card px-6 py-16 text-center text-sm text-muted-foreground">
-              No trades in this selection yet.
+            <div className="rounded-2xl border border-border/50 bg-card px-6 py-12 text-center text-sm text-muted-foreground">
+              No trades in {periodLabel}.
             </div>
           ) : (
             <>
-              {/* Baseline: the yardstick every number below is read against */}
-              <div className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-card px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-baseline gap-3">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Your average trade
-                    <MetricInfo>{GLOSSARY.rPerTrade}</MetricInfo>
-                  </span>
-                  <RValue r={baseline.expectancy} className="text-2xl font-black" />
-                </div>
-                <p className="max-w-xl text-xs leading-relaxed text-muted-foreground sm:text-right">
-                  Over {baseline.trades} trade{baseline.trades === 1 ? "" : "s"} in this selection. This is your yardstick: a time,
-                  setup or rule that beats it is part of your edge, one below it is costing you.
-                  {baseline.trades < 20 && " With this few trades most groups are still marked Thin."}
-                </p>
-              </div>
-
-              <section className="space-y-3">
-                <h2 className="font-heading text-base font-bold tracking-tight">Key findings</h2>
-                <KeyFindings findings={stats.findings} />
-              </section>
+              <KeyFindings findings={stats.findings} />
 
               <TimingSection
                 baseline={baseline}

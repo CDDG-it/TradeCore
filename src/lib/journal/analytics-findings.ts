@@ -47,7 +47,7 @@ export function buildFindings(
   limit = 4
 ): Finding[] {
   const out: Finding[] = [];
-  const vsBase = `against ${formatR(baseline.expectancy)} on your average trade`;
+  const vsBase = `vs ${formatR(baseline.expectancy)} on your average trade`;
 
   const hourEx = extremes(hours);
   if (hourEx.best && hourEx.best.expectancy > baseline.expectancy) {
@@ -56,8 +56,8 @@ export function buildFindings(
       tone: "good",
       eyebrow: "Best time to trade",
       headline: hourWindow(hourEx.best.key),
-      value: `${formatR(hourEx.best.expectancy)} / trade`,
-      detail: `Over ${tradesLabel(hourEx.best.trades)} entered in this hour, ${vsBase}.`,
+      value: formatR(hourEx.best.expectancy),
+      detail: `Per trade over ${tradesLabel(hourEx.best.trades)} entered in this hour, ${vsBase}.`,
     });
   } else {
     // No timed sample yet: fall back to the strongest weekday x session cell.
@@ -71,8 +71,8 @@ export function buildFindings(
         tone: "good",
         eyebrow: "Best time to trade",
         headline: `${top.day} · ${top.session}`,
-        value: `${formatR(top.b.expectancy)} / trade`,
-        detail: `Over ${tradesLabel(top.b.trades)}, ${vsBase}.`,
+        value: formatR(top.b.expectancy),
+        detail: `Per trade over ${tradesLabel(top.b.trades)}, ${vsBase}.`,
       });
     }
   }
@@ -83,8 +83,8 @@ export function buildFindings(
       tone: "bad",
       eyebrow: "Hour that costs you",
       headline: hourWindow(hourEx.worst.key),
-      value: `${formatR(hourEx.worst.expectancy)} / trade`,
-      detail: `Over ${tradesLabel(hourEx.worst.trades)}. Sitting this hour out would have saved ${Math.abs(hourEx.worst.totalR).toFixed(1)}R.`,
+      value: formatR(hourEx.worst.expectancy),
+      detail: `Per trade over ${tradesLabel(hourEx.worst.trades)}. Sitting this hour out would have saved ${Math.abs(hourEx.worst.totalR).toFixed(1)}R.`,
     });
   }
 
@@ -95,8 +95,8 @@ export function buildFindings(
       tone: "good",
       eyebrow: "Setup that pays most",
       headline: topConfluence.name,
-      value: `${formatR(topConfluence.expectancy)} / trade`,
-      detail: `Over ${tradesLabel(topConfluence.trades)} with this confluence, ${vsBase}.`,
+      value: formatR(topConfluence.expectancy),
+      detail: `Per trade over ${tradesLabel(topConfluence.trades)} with this confluence, ${vsBase}.`,
     });
   }
 
@@ -116,8 +116,8 @@ export function buildFindings(
       tone: "good",
       eyebrow: "Worth of your rules",
       headline: "Trading clean",
-      value: `${formatR(clean.gap)} / trade`,
-      detail: `What a trade with every rule kept earns over one with a rule broken (${tradesLabel(clean.clean.trades)} vs ${tradesLabel(clean.broken.trades)}).`,
+      value: formatR(clean.gap),
+      detail: `Per trade: what a trade with every rule kept earns over one with a rule broken (${tradesLabel(clean.clean.trades)} vs ${tradesLabel(clean.broken.trades)}).`,
     });
   }
 
@@ -130,8 +130,8 @@ export function buildFindings(
       tone: "bad",
       eyebrow: "Diminishing returns",
       headline: ORDER_HEADLINE[later.key] ?? later.label,
-      value: `${formatR(later.expectancy)} / trade`,
-      detail: `Against ${formatR(first.expectancy)} on your first trade of the day, over ${tradesLabel(later.trades)}.`,
+      value: formatR(later.expectancy),
+      detail: `Per trade, against ${formatR(first.expectancy)} on your first trade of the day, over ${tradesLabel(later.trades)}.`,
     });
   }
 

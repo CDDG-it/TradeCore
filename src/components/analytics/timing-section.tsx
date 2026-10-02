@@ -8,7 +8,7 @@ import {
   type Coverage, type WeekdaySessionGrid,
 } from "@/lib/journal/time-stats";
 import { cn } from "@/lib/utils";
-import { BucketBars, EmptyPanel, Panel, RValue, Section } from "./analytics-ui";
+import { BARS_INFO, BucketBars, EmptyPanel, Panel, RValue, Section } from "./analytics-ui";
 
 const tradesLabel = (n: number) => `${n} trade${n === 1 ? "" : "s"}`;
 
@@ -34,7 +34,7 @@ function BucketTip({ title, b }: { title: string; b: EdgeBucket }) {
 
 // ── Hour of day ─────────────────────────────────────────────────────────
 
-const CHART_H = 168;
+const CHART_H = 116;
 
 function HourChart({ buckets }: { buckets: EdgeBucket[] }) {
   const posMax = Math.max(0, ...buckets.map((b) => b.expectancy));
@@ -76,20 +76,16 @@ function HourChart({ buckets }: { buckets: EdgeBucket[] }) {
           );
         })}
       </div>
-      <div className="mt-2 flex gap-[3px] sm:gap-1.5">
+      <div className="mt-1.5 flex gap-[3px] sm:gap-1.5">
         {buckets.map((b, i) => (
           <div key={b.key} className="flex-1 text-center">
             <p className={cn("text-[10px] tabular-nums text-muted-foreground", sparse && i % 2 === 1 && "invisible sm:visible")}>
               {b.label.slice(0, 2)}
             </p>
-            <p className="hidden text-[9px] tabular-nums text-muted-foreground/50 sm:block">{b.trades || ""}</p>
+            <p className="hidden text-[9px] leading-none tabular-nums text-muted-foreground/50 sm:block">{b.trades || ""}</p>
           </div>
         ))}
       </div>
-      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-        Bar height is R per trade for trades entered in that hour; the small number under each hour is how many trades that is.
-        Dashed grey bars are thin samples.
-      </p>
     </div>
   );
 }
@@ -102,7 +98,7 @@ function HeatCell({ b, title, maxAbs, emphasis }: { b: EdgeBucket; title: string
     <Tooltip>
       <TooltipTrigger
         className={cn(
-          "flex min-h-[52px] w-full flex-col items-center justify-center rounded-lg border px-1 py-1.5 text-center transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary",
+          "flex min-h-[38px] w-full flex-col items-center justify-center rounded-md border px-1 py-1 text-center transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary",
           b.trades === 0 ? "border-dashed border-border/40" : "border-border/40",
           b.thin && b.trades > 0 && "bg-muted/20",
           emphasis && "bg-muted/25"
@@ -113,10 +109,10 @@ function HeatCell({ b, title, maxAbs, emphasis }: { b: EdgeBucket; title: string
           <span className="text-xs text-muted-foreground/40">–</span>
         ) : (
           <>
-            <span className={cn("text-xs font-bold tabular-nums sm:text-sm", b.thin ? "text-muted-foreground" : "text-foreground")}>
+            <span className={cn("text-[11px] font-bold leading-tight tabular-nums sm:text-xs", b.thin ? "text-muted-foreground" : "text-foreground")}>
               {formatR(b.expectancy)}
             </span>
-            <span className="text-[9px] tabular-nums text-muted-foreground sm:text-[10px]">{b.trades}</span>
+            <span className="text-[9px] leading-none tabular-nums text-muted-foreground">{b.trades}</span>
           </>
         )}
       </TooltipTrigger>
@@ -137,7 +133,7 @@ function WeekdaySessionHeatmap({ grid }: { grid: WeekdaySessionGrid }) {
 
   return (
     <div>
-      <div className="grid grid-cols-[2.25rem_repeat(3,minmax(0,1fr))_minmax(0,1fr)] gap-1.5 sm:grid-cols-[3rem_repeat(3,minmax(0,1fr))_minmax(0,1fr)] sm:gap-2">
+      <div className="grid grid-cols-[2.25rem_repeat(3,minmax(0,1fr))_minmax(0,1fr)] gap-1 sm:grid-cols-[2.5rem_repeat(3,minmax(0,1fr))_minmax(0,1fr)]">
         <span />
         {SESSIONS.map((s) => (
           <span key={s} className="truncate text-center text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -162,11 +158,11 @@ function WeekdaySessionHeatmap({ grid }: { grid: WeekdaySessionGrid }) {
         ))}
         <span />
       </div>
-      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-        Each cell shows R per trade (big) and the number of trades (small). Stronger green means more profitable per trade,
-        stronger red means more costly. The right column and bottom row are the totals per day and per session.
-        {grid.weekendTrades > 0 && ` ${tradesLabel(grid.weekendTrades)} on weekends ${grid.weekendTrades === 1 ? "is" : "are"} left out.`}
-      </p>
+      {grid.weekendTrades > 0 && (
+        <p className="mt-2 text-[10px] text-muted-foreground/70">
+          {tradesLabel(grid.weekendTrades)} on weekends left out.
+        </p>
+      )}
     </div>
   );
 }
@@ -206,7 +202,7 @@ export function TimingSection({
             ; your weakest is <b>{hourWindow(hourEx.worst.key)}</b> at <RValue r={hourEx.worst.expectancy} />
           </>
         )}
-        . Your average trade makes <RValue r={baseline.expectancy} />, so anything clearly above that is where your edge lives.
+        , against <RValue r={baseline.expectancy} /> on your average trade.
       </>
     );
   } else if (cellEx.best) {
@@ -219,53 +215,52 @@ export function TimingSection({
             , your weakest <b>{cellEx.worst.label}</b> at <RValue r={cellEx.worst.expectancy} />
           </>
         )}
-        . Log entry times on your trades to see this hour by hour.
+.
       </>
     );
   }
 
   const first = order.find((b) => b.key === "1");
-  const orderLine =
-    first && !first.thin
-      ? `Your first trade of the day averages ${formatR(first.expectancy)}. If the bars shrink or turn red further down, the trades after it are giving that back.`
-      : "Do later trades in a day earn as much as the first? A shrinking or red bar further down is the signature of overtrading.";
+  const orderLine = first && !first.thin ? `First trade of the day: ${formatR(first.expectancy)} per trade.` : undefined;
+  const orderInfo =
+    "Do later trades in a day earn as much as the first? Bars that shrink or turn red further down are the signature of overtrading.";
 
   return (
     <Section
       title="When you trade best"
-      explainer="Everything here is measured in R per trade: what you make on average for every 1R you risk. It shows at which times your trading actually pays, and when you would be better off flat."
+      explainer="Everything here is R per trade: what you make on average for every 1R you risk. It shows at which times your trading pays, and when you would be better off flat."
       takeaway={takeaway}
     >
-      <Panel
-        title="Hour of day"
-        hint="By entry time, as you logged it."
-        coverage={hourCoverage}
-      >
-        {hours.length ? (
-          <HourChart buckets={hours} />
-        ) : (
-          <EmptyPanel>Add an entry time to your trades and this chart shows which hours make you money.</EmptyPanel>
-        )}
-      </Panel>
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Panel
+          title="Hour of day"
+          info="R per trade by the hour you entered, as you logged it. Bars above the line make money, below it cost money. The small number under each hour is how many trades. Dashed grey bars are thin samples."
+          coverage={hourCoverage}
+        >
+          {hours.length ? (
+            <HourChart buckets={hours} />
+          ) : (
+            <EmptyPanel>Add an entry time to your trades to see which hours make you money.</EmptyPanel>
+          )}
+        </Panel>
 
-      <Panel title="Day and session" hint="Where the week and the session meet: your best and worst slots at a glance.">
-        <WeekdaySessionHeatmap grid={grid} />
-      </Panel>
+        <Panel
+          title="Day and session"
+          info="Each cell is R per trade (big) and the number of trades (small) for that weekday and session. Stronger green is more profitable per trade, stronger red more costly. The right column and bottom row are totals."
+        >
+          <WeekdaySessionHeatmap grid={grid} />
+        </Panel>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Trade number of the day" hint={orderLine}>
+        <Panel title="Trade number of the day" info={`${orderInfo} ${BARS_INFO}`} hint={orderLine}>
           <BucketBars buckets={order} />
         </Panel>
         <Panel
           title="Hold time"
-          hint={
-            holdEx.best
-              ? `Trades held ${holdEx.best.label.toLowerCase()} pay you most, at ${formatR(holdEx.best.expectancy)} per trade.`
-              : "How long you stay in a trade, from entry to exit, against what it earns."
-          }
+          info={`Time from entry to exit against what the trade earned. ${BARS_INFO}`}
+          hint={holdEx.best ? `Best: held ${holdEx.best.label.toLowerCase()}, ${formatR(holdEx.best.expectancy)} per trade.` : undefined}
           coverage={holdCoverage}
         >
-          <BucketBars buckets={hold} emptyLabel="Log both an entry and an exit time to see how hold time relates to your results." />
+          <BucketBars buckets={hold} emptyLabel="Log entry and exit times to see how hold time relates to your results." />
         </Panel>
       </div>
     </Section>
