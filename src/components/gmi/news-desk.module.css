@@ -119,6 +119,7 @@
   .title { font-size: 28px; }
   .controls { justify-content: space-between; gap: 8px; }
   .select { max-width: 135px; }
+  .select, .refresh { min-height: 44px; }
   .workspace { margin-top: 12px; }
   .search input { font-size: 16px; }
   .leadTitle { font-size: 27px; }
@@ -128,6 +129,7 @@
   .storyMeta { gap: 4px 8px; }
   .storyMeta time { margin-left: 0; }
   .storyTitle { font-size: 15px; }
+  .excerpt summary { min-height: 40px; display: flex; align-items: center; }
   .rail { display: block; }
   .readings { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--news-line); }
   .readingsTable td { font-size: 12px; }
