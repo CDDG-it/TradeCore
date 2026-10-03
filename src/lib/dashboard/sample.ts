@@ -71,7 +71,7 @@ export function sampleDashboardData(now: Date): DashboardData {
 
   return {
     trades, accounts, habits, completions, goals,
-    analyses: [], bestTrades: [], weeklyReviews: [], adherenceLogs: [],
+    analyses: [], bestTrades: [], weeklyReviews: [], adherenceLogs: [], ruleChecks: [], preMarketExercises: [],
     firstName: "Alex",
     from: monthStart,
     today,

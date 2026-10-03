@@ -21,6 +21,7 @@ import { columns } from "@/lib/supabase/columns";
 import type {
   TradeJournalEntry, FundedAccount, Habit, HabitCompletion, PreTradeAnalysis,
   BestTradeOfDay, WeeklyTradeReview, CommitmentAdherenceLog, TradingGoal,
+  TradeRuleCheck, PreMarketExercise,
 } from "@/lib/types";
 
 /* Each list below is declared through `columns<T>()`, which derives the row
@@ -48,6 +49,12 @@ const ANALYSES = columns<PreTradeAnalysis>()("id", "date", "created_at");
 const BEST_TRADES = columns<BestTradeOfDay>()("id", "date", "created_at");
 const WEEKLY_REVIEWS = columns<WeeklyTradeReview>()("id", "week_start", "created_at");
 const ADHERENCE = columns<CommitmentAdherenceLog>()("id", "date", "followed", "created_at");
+/* The mind score reads both of these the same way the My Edge page does: rule
+   checks decide rule adherence, exercises the pre-market objective. Without
+   them the desk fell back to the trade's old checklist score (0 on every new
+   trade) and counted every weekday's exercise as skipped. */
+const RULE_CHECKS = columns<TradeRuleCheck>()("id", "trade_id", "status", "created_at");
+const EXERCISES = columns<PreMarketExercise>()("id", "date", "completed_at", "created_at");
 
 export type DashboardTradeRow = typeof TRADES.row;
 export type DashboardCompletionRow = typeof COMPLETIONS.row;
@@ -55,6 +62,8 @@ export type DashboardAnalysisRow = typeof ANALYSES.row;
 export type DashboardBestTradeRow = typeof BEST_TRADES.row;
 export type DashboardWeeklyReviewRow = typeof WEEKLY_REVIEWS.row;
 export type DashboardAdherenceRow = typeof ADHERENCE.row;
+export type DashboardRuleCheckRow = typeof RULE_CHECKS.row;
+export type DashboardExerciseRow = typeof EXERCISES.row;
 
 export interface DashboardData {
   /** Trades from `from` onward, newest first. Text and screenshot fields are absent. */
@@ -68,6 +77,11 @@ export interface DashboardData {
   bestTrades: DashboardBestTradeRow[];
   weeklyReviews: DashboardWeeklyReviewRow[];
   adherenceLogs: DashboardAdherenceRow[];
+  /** Rule checks written from `from` onward (a trade's checks are written with it). */
+  ruleChecks: DashboardRuleCheckRow[];
+  /** Exercises from `from` onward, plus the very first one ever: the score
+   *  starts counting the objective from the day the trader adopted it. */
+  preMarketExercises: DashboardExerciseRow[];
   goals: TradingGoal[];
   firstName: string | null;
   /** The first day (yyyy-MM-dd) the trades and completions cover. */
@@ -107,7 +121,7 @@ export async function readDashboard(supabase: SupabaseClient, now: Date = new Da
   for (const g of goals) if (!g.archived_at) floors.push(g.start_date);
   const from = localDayKey(subDays(new Date(floors.sort()[0] + "T12:00:00"), 1));
 
-  const [trades, completions, analyses, bestTrades, weeklyReviews, adherenceLogs] = await Promise.all([
+  const [trades, completions, analyses, bestTrades, weeklyReviews, adherenceLogs, ruleChecks, recentExercises, firstExercise] = await Promise.all([
     strict<DashboardTradeRow>(
       supabase.from("trades").select(TRADES.select).gte("date_time", from).order("date_time", { ascending: false })
     ),
@@ -122,12 +136,23 @@ export async function readDashboard(supabase: SupabaseClient, now: Date = new Da
     soft<DashboardBestTradeRow>(supabase.from("best_trade_of_day").select(BEST_TRADES.select).gte("date", from)),
     soft<DashboardWeeklyReviewRow>(supabase.from("weekly_trade_reviews").select(WEEKLY_REVIEWS.select).gte("week_start", from)),
     soft<DashboardAdherenceRow>(supabase.from("commitment_adherence_log").select(ADHERENCE.select).gte("date", from)),
+    // A trade dated in the window was logged on or after that day, so its
+    // checks were too: filtering on created_at keeps the read to the window.
+    soft<DashboardRuleCheckRow>(supabase.from("trade_rule_checks").select(RULE_CHECKS.select).gte("created_at", from)),
+    soft<DashboardExerciseRow>(supabase.from("pre_market_exercise").select(EXERCISES.select).gte("date", from)),
+    soft<DashboardExerciseRow>(
+      supabase.from("pre_market_exercise").select(EXERCISES.select).order("date", { ascending: true }).limit(1)
+    ),
   ]);
+  const preMarketExercises = firstExercise[0] && !recentExercises.some((e) => e.id === firstExercise[0].id)
+    ? [firstExercise[0], ...recentExercises]
+    : recentExercises;
 
   const fullName = (profile.data as { full_name?: string | null } | null)?.full_name ?? null;
 
   return {
-    trades, accounts, habits, completions, analyses, bestTrades, weeklyReviews, adherenceLogs, goals,
+    trades, accounts, habits, completions, analyses, bestTrades, weeklyReviews, adherenceLogs,
+    ruleChecks, preMarketExercises, goals,
     firstName: fullName ? fullName.split(" ")[0] : null,
     from,
     today: localDayKey(now),

@@ -100,7 +100,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
   const { hidden, toggle } = usePrivacy();
   const greeting = useGreeting();
   const today = useToday(data.today);
-  const { trades, accounts, habits, analyses, bestTrades, weeklyReviews, adherenceLogs, goals, firstName } = data;
+  const { trades, accounts, habits, analyses, bestTrades, weeklyReviews, adherenceLogs, ruleChecks, preMarketExercises, goals, firstName } = data;
 
   // Habit ticks are the one thing the desk writes. The tick shows at once and
   // is put back if the write fails, so the row never sits behind a spinner.
@@ -159,14 +159,15 @@ export function DashboardClient({ data }: { data: DashboardData }) {
   const goodExec = periodTrades.filter((t) => t.execution_quality === "good").length;
   const badExec = periodTrades.filter((t) => t.execution_quality === "bad").length;
 
-  // Psych sessions only anchor the all-time window, which the desk never
-  // shows, so they are not fetched for it.
+  // The same inputs as the My Edge page, so both show the same number. Psych
+  // sessions only anchor the all-time window, which the desk never shows, so
+  // they are not fetched for it.
   const mcMind = useMemo(
     () => computeMindScore(
-      { now, trades, habits, completions, psychSessions: [], bestTrades, weeklyReviews, analyses, adherenceLogs, goals },
+      { now, trades, habits, completions, psychSessions: [], bestTrades, weeklyReviews, analyses, adherenceLogs, goals, ruleChecks, preMarketExercises },
       mindPeriod
     ),
-    [now, trades, habits, completions, bestTrades, weeklyReviews, analyses, adherenceLogs, goals, mindPeriod]
+    [now, trades, habits, completions, bestTrades, weeklyReviews, analyses, adherenceLogs, goals, ruleChecks, preMarketExercises, mindPeriod]
   );
 
   // Live goals with their standing, closest deadline first: the same reading
