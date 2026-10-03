@@ -6,9 +6,10 @@ import { useGmi } from "@/lib/gmi/client";
 import type { CalendarEntry, CalendarMonth } from "@/lib/gmi/calendar";
 import type { DataEnvelope } from "@/lib/gmi/types";
 import { upcomingReleases } from "@/lib/gmi/news-view";
+import s from "./news-desk.module.css";
 
 function DataState({ env }: { env: DataEnvelope<unknown> | null }) {
-  return <p className="mt-3 text-xs text-muted-foreground">{!env ? "Loading releases." : env.status === "unavailable" ? "FRED is currently unavailable." : env.status === "stale" ? "Showing cached FRED data. Updates are delayed." : "Source: FRED. Release dates only; times are not provided."}</p>;
+  return <p className={s.railNote}>{!env ? "Loading releases." : env.status === "unavailable" ? "FRED is currently unavailable." : env.status === "stale" ? "Showing cached FRED data. Updates are delayed." : "Source: FRED. Release dates only; times are not provided."}</p>;
 }
 
 export function releaseValue(value: number | null, unit: string): string {
@@ -34,35 +35,43 @@ export function NewsContext({ now }: { now: number | null }) {
   const readings = ids.flatMap((id) => (latest?.data ?? []).filter((entry) => entry.id === id));
   const scheduleIncomplete = !current || current.status !== "ok" || (month !== format(today ? addDays(today, 6) : new Date(), "yyyy-MM") && (!next || next.status !== "ok"));
 
-  return <aside className="min-w-0 space-y-7 lg:col-span-4">
-    <section className="rounded-xl border border-border/60 bg-card/30 p-5">
-      <div className="flex items-baseline justify-between gap-3"><h2 className="text-base font-semibold">Next 7 days</h2><Link href="/news-city?tab=calendar" className="text-xs font-medium text-primary hover:underline">Full calendar</Link></div>
-      <DataState env={current} />
-      {scheduleIncomplete && current?.data && <p className="mt-2 text-xs text-muted-foreground">The schedule may be incomplete while sources update.</p>}
-      <ol className="mt-4 divide-y divide-border/50">
-        {events.slice(0, 8).map((event) => <li key={event.id} className="py-3 first:pt-0">
-          <p className="text-xs text-muted-foreground">{format(parseISO(event.date), "EEE, d MMM")}{event.released ? " · Released" : " · Scheduled"}</p>
-          <p className="mt-1 text-sm font-medium leading-snug">{event.label}</p>
-        </li>)}
-      </ol>
-      {!events.length && current?.data && !scheduleIncomplete && <p className="mt-4 text-sm text-muted-foreground">No releases scheduled in the next seven days.</p>}
-      {events.length > 8 && <Link href="/news-city?tab=calendar" className="mt-2 block text-xs text-primary">View all {events.length} releases</Link>}
-    </section>
-    <section className="rounded-xl border border-border/60 bg-card/30 p-5">
-      <h2 className="text-base font-semibold">Latest readings</h2>
-      <p className="mt-1 text-xs text-muted-foreground">Actual and prior period. FRED data.</p>
-      {latest?.status !== "ok" && <DataState env={latest} />}
-      <dl className="mt-4 divide-y divide-border/50">
-        {readings.map((entry) => <div key={entry.id} className="py-3 first:pt-0">
-          <dt className="text-sm font-medium">{entry.label}</dt>
-          <dd className="mt-1 text-xs text-muted-foreground">{entry.referenceDate ? format(parseISO(entry.referenceDate), "MMM yyyy") : "Period unavailable"} · {releaseUnit(entry.unit)}</dd>
-          <dd className="mt-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 tabular-nums">
-            <span className="text-base font-semibold">{releaseValue(entry.actual, entry.unit)}</span>
-            <span className="text-xs text-muted-foreground">Prior {releaseValue(entry.previous, entry.unit)}</span>
-          </dd>
+  const days = new Map<string, typeof events>();
+  for (const event of events.slice(0, 8)) {
+    if (!days.has(event.date)) days.set(event.date, []);
+    days.get(event.date)!.push(event);
+  }
+
+  return <aside className={s.rail}>
+    <section>
+      <div className={s.railHeader}><h2>Coming up</h2><Link href="/news-city?tab=calendar">Calendar</Link></div>
+      <p className={s.railNote}>The next seven days</p>
+      {current?.status !== "ok" && <DataState env={current} />}
+      {scheduleIncomplete && current?.data && <p className={s.railNote}>Schedule incomplete while sources update.</p>}
+      <div className={s.agenda}>
+        {[...days.entries()].map(([date, releases]) => <div key={date} className={s.agendaDay}>
+          <time dateTime={date} className={s.agendaDate}><strong>{format(parseISO(date), "dd")}</strong><span>{format(parseISO(date), "EEE, MMM")}</span></time>
+          <ol className={s.agendaItems}>{releases.map((event) => <li key={event.id}><p>{event.label}</p><small>{event.released ? "Released" : "Scheduled"}</small></li>)}</ol>
         </div>)}
-      </dl>
-      {latest?.status === "ok" && !readings.length && <p className="mt-3 text-sm text-muted-foreground">No readings available.</p>}
+      </div>
+      {!events.length && current?.data && !scheduleIncomplete && <p className={s.railNote}>No releases scheduled in the next seven days.</p>}
+      {events.length > 8 && <Link href="/news-city?tab=calendar" className="mt-3 inline-block text-xs text-primary">View all {events.length} releases</Link>}
+      <p className={s.railNote}>FRED schedule. Dates only; times not provided.</p>
     </section>
+    <section className={s.readings}>
+      <div className={s.railHeader}><h2>Economic readings</h2></div>
+      <p className={s.railNote}>Latest reported values</p>
+      {latest?.status !== "ok" && <DataState env={latest} />}
+      {readings.length > 0 && <table className={s.readingsTable}>
+        <caption className="sr-only">Latest economic readings with actual and prior period values</caption>
+        <thead><tr><th scope="col">Indicator</th><th scope="col">Actual</th><th scope="col">Prior</th></tr></thead>
+        <tbody>{readings.map((entry) => <tr key={entry.id}>
+          <th scope="row">{entry.label}<span>{entry.referenceDate ? format(parseISO(entry.referenceDate), "MMM yyyy") : "Period unavailable"}</span><span className={s.unit}>{releaseUnit(entry.unit)}</span></th>
+          <td>{entry.actual == null ? <span aria-label="Not available">-</span> : releaseValue(entry.actual, entry.unit)}</td>
+          <td>{entry.previous == null ? <span aria-label="Not available">-</span> : releaseValue(entry.previous, entry.unit)}</td>
+        </tr>)}</tbody>
+      </table>}
+      {latest?.status === "ok" && !readings.length && <p className={s.railNote}>No readings available.</p>}
+    </section>
+    <p className={s.railFoot}>Source: FRED. Figures describe the stated reporting period. Original publications appear in the release feed.</p>
   </aside>;
 }

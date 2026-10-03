@@ -5,12 +5,22 @@ import { useGmi } from "@/lib/gmi/client";
 import { filterNews, NEWS_TOPICS, publicationLabel, type NewsFilters } from "@/lib/gmi/news-view";
 import type { NewsArticle } from "@/lib/gmi/types";
 import { NewsContext } from "../news-context";
+import s from "../news-desk.module.css";
 
 const DEFAULT_FILTERS: NewsFilters = { query: "", topic: "All", agency: "All", days: 30 };
 const subscribeClock = (notify: () => void) => { const timer = setInterval(notify, 60_000); return () => clearInterval(timer); };
 const clockSnapshot = () => Math.floor(Date.now() / 60_000) * 60_000;
 const serverClock = () => null;
-const control = "min-h-11 rounded-lg border border-border/70 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary";
+
+function publicationDay(article: NewsArticle, timeZone: string) {
+  const zone = article.publishedPrecision === "date" ? "UTC" : timeZone;
+  const date = new Date(article.publishedAt);
+  return {
+    key: new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: zone }).format(date),
+    day: new Intl.DateTimeFormat("en-GB", { day: "2-digit", timeZone: zone }).format(date),
+    month: new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: zone }).format(date),
+  };
+}
 
 export function NewsTab() {
   const { env, loading, refresh } = useGmi<NewsArticle[]>("/api/gmi/news", 5 * 60_000);
@@ -23,76 +33,93 @@ export function NewsTab() {
   const articles = env?.data ?? [];
   const filtered = now == null ? [] : filterNews(articles, filters, now);
   const rangeArticles = now == null ? [] : filterNews(articles, { ...DEFAULT_FILTERS, days: filters.days }, now);
+  const topicArticles = now == null ? [] : filterNews(articles, { ...filters, topic: "All" }, now);
   const failedSources = env?.sources?.filter((source) => source.status !== "ok") ?? [];
   const checked = env?.sources?.map((source) => source.checkedAt).filter((date): date is string => Boolean(date)).sort().at(-1);
   const pending = now == null || (!env && loading);
+  const lead = filtered[0];
+  const groups = new Map<string, { day: string; month: string; articles: NewsArticle[] }>();
+  for (const article of filtered.slice(1, limit)) {
+    const date = publicationDay(article, timeZone);
+    if (!groups.has(date.key)) groups.set(date.key, { ...date, articles: [] });
+    groups.get(date.key)!.articles.push(article);
+  }
 
-  return <div className="grid grid-flow-dense grid-cols-1 items-start gap-7 lg:grid-cols-12 lg:gap-8">
-    <section className="min-w-0 lg:col-span-8" aria-labelledby="release-heading">
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div><h2 id="release-heading" className="text-xl font-semibold tracking-tight">Latest releases</h2>
-          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">Published by the Federal Reserve, BLS and EIA. Times in {timeZone}.</p>
-        </div>
-        <button type="button" disabled={refreshing || pending} onClick={async () => { setRefreshing(true); try { await refresh(); } finally { setRefreshing(false); } }}
-          className="min-h-10 shrink-0 rounded-lg border border-border/70 px-3 text-xs font-medium transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-50">{refreshing ? "Checking" : "Refresh"}</button>
+  return <div className={s.desk}>
+    <header className={s.mast}>
+      <div><h2 className={s.title}>Official releases</h2><p className={s.subtitle}>Federal Reserve · Bureau of Labor Statistics · EIA</p></div>
+      <div className={s.edition}>
+        <p className={s.editionDate}>{now == null ? "U.S. macro & energy" : new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "long", year: "numeric", timeZone }).format(new Date(now))}</p>
+        <p className={s.editionMeta}>{checked ? `Checked ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone }).format(new Date(checked))}` : env?.status === "unavailable" ? "Sources unavailable" : "Checking sources"}</p>
       </div>
-      <div className="rounded-xl border border-border/60 bg-card/30 p-4">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-          <label className="col-span-2 sm:col-span-1"><span className="sr-only">Search releases</span>
-            <input type="search" value={filters.query} onChange={(event) => changeFilters({ query: event.target.value })} placeholder="Search releases" className={`${control} w-full text-base sm:text-sm`} />
-          </label>
-          <label><span className="sr-only">Agency</span><select value={filters.agency} onChange={(event) => changeFilters({ agency: event.target.value })} className={`${control} w-full`}>
-            <option value="All">All agencies</option><option>Federal Reserve</option><option>BLS</option><option>EIA</option>
-          </select></label>
-          <label><span className="sr-only">Publication period</span><select value={filters.days} onChange={(event) => changeFilters({ days: Number(event.target.value) })} className={`${control} w-full`}>
-            {[7, 30, 90].map((days) => <option key={days} value={days}>Last {days} days</option>)}
-          </select></label>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1" role="group" aria-label="Release topic">
-          {NEWS_TOPICS.map((topic) => <button key={topic} type="button" aria-pressed={filters.topic === topic} onClick={() => changeFilters({ topic })}
-            className={`min-h-10 border-b text-xs font-medium transition-colors ${filters.topic === topic ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{topic}</button>)}
-        </div>
+    </header>
+    <div className={s.toolbar}>
+      <div className={s.topics} role="group" aria-label="Release topic">
+        {NEWS_TOPICS.map((topic) => <button key={topic} type="button" aria-pressed={filters.topic === topic} onClick={() => changeFilters({ topic })} className={s.topic}>
+          {topic === "All" ? "All releases" : topic}<span className={s.topicCount}>{pending ? "-" : topic === "All" ? topicArticles.length : topicArticles.filter((article) => article.topic === topic).length}</span>
+        </button>)}
       </div>
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/60 py-4 text-xs text-muted-foreground">
-        <span role="status">{pending ? "Loading releases" : `${filtered.length} release${filtered.length === 1 ? "" : "s"}`}</span>
-        <span>{checked ? `Last successful check ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone }).format(new Date(checked))}` : env?.status === "unavailable" ? "Source checks unsuccessful" : "Awaiting source checks"}</span>
+      <div className={s.controls}>
+        <label><span className="sr-only">Agency</span><select value={filters.agency} onChange={(event) => changeFilters({ agency: event.target.value })} className={s.select}>
+          <option value="All">All agencies</option><option>Federal Reserve</option><option>BLS</option><option>EIA</option>
+        </select></label>
+        <label><span className="sr-only">Publication period</span><select value={filters.days} onChange={(event) => changeFilters({ days: Number(event.target.value) })} className={s.select}>
+          {[7, 30, 90].map((days) => <option key={days} value={days}>{days} days</option>)}
+        </select></label>
+        <button type="button" disabled={refreshing || pending} onClick={async () => { setRefreshing(true); try { await refresh(); } finally { setRefreshing(false); } }} className={s.refresh}>{refreshing ? "Checking" : "Refresh"}</button>
       </div>
-      {env?.status === "stale" && <p className="border-b border-border/60 py-3 text-xs leading-relaxed text-warning" role="status">Some updates are delayed. Available releases remain visible.{failedSources.length ? ` ${failedSources.map((source) => `${source.agency}: ${source.name}`).join("; ")}.` : ""}</p>}
-      {pending ? <div className="space-y-5 py-6" aria-hidden>{[0, 1, 2, 3].map((i) => <div key={i} className="space-y-3"><div className="h-3 w-36 rounded bg-muted/40" /><div className="h-5 w-4/5 rounded bg-muted/30" /><div className="h-3 w-1/2 rounded bg-muted/20" /></div>)}</div>
-        : env?.status === "unavailable" ? <Empty title="Releases are currently unavailable" detail="The official sources could not be reached. Try refreshing shortly. The calendar is available separately." />
-        : filtered.length === 0 ? <Empty title={rangeArticles.length ? "No matching releases" : "No recent releases"} detail={rangeArticles.length ? "Try a different search, topic or agency." : "These sources publish on their own schedules. Try a longer date range; feeds may not include a full archive."}>
-          {(filters.query || filters.agency !== "All" || filters.topic !== "All") && <button onClick={() => changeFilters({ query: "", agency: "All", topic: "All" })} className="mt-4 text-sm text-primary">Clear filters</button>}
-        </Empty> : <ol className="divide-y divide-border/50">
-          {filtered.slice(0, limit).map((article) => <li key={article.id} className="py-5 sm:py-6">
-            <article>
-              <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground/80">{article.source}</span>
-                <time dateTime={article.publishedAt}>{publicationLabel(article, timeZone)}</time>
-                <span>{article.topic}</span>
+    </div>
+    <div className={s.workspace}>
+      <section className={s.main} aria-label="Published releases">
+        <div className={s.searchRow}>
+          <label className={s.search}><span className="sr-only">Search releases</span><input type="search" value={filters.query} onChange={(event) => changeFilters({ query: event.target.value })} placeholder="Search headlines and releases" /></label>
+          <span className={s.resultCount} role="status">{pending ? "Loading" : `${filtered.length} releases`}</span>
+        </div>
+        {env?.status === "stale" && <p className={s.notice} role="status">Updates delayed. Showing available releases.{failedSources.length ? ` Affected: ${failedSources.map((source) => `${source.agency} ${source.name}`).join("; ")}.` : ""}</p>}
+        {pending ? <div className={s.skeleton} aria-hidden>{[0, 1, 2, 3, 4].map((i) => <div key={i} />)}</div>
+          : env?.status === "unavailable" ? <Empty title="Sources temporarily unavailable" detail="The official feeds could not be reached. Refresh to try again. Your calendar remains available." />
+          : !lead ? <Empty title={rangeArticles.length ? "No matching releases" : "No releases in this period"} detail={rangeArticles.length ? "Try another search, topic or agency." : "Try a longer date range. Official feeds publish on their own schedules and may not include a full archive."}>
+            {(filters.query || filters.agency !== "All" || filters.topic !== "All") && <button onClick={() => changeFilters({ query: "", agency: "All", topic: "All" })} className="mt-4 text-sm text-primary">Clear filters</button>}
+          </Empty> : <>
+            <article className={s.lead}>
+              <div className={s.leadTop}><span className={s.latest}>Latest {filters.query || filters.topic !== "All" || filters.agency !== "All" ? "matching release" : "release"}</span><span className={s.topicName}>{lead.topic}</span></div>
+              <h3 className={s.leadTitle}><a href={lead.url} target="_blank" rel="noopener noreferrer" className={s.headlineLink}>{lead.title}<span className="sr-only"> (opens original release in a new tab)</span></a></h3>
+              {lead.snippet && lead.snippet !== lead.title && <p className={s.leadExcerpt}>{lead.snippet}</p>}
+              <div className={s.leadBottom}>
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1"><span className={s.source}>{lead.source}</span><time className={s.timestamp} dateTime={lead.publishedAt}>{publicationLabel(lead, timeZone)}</time></div>
+                <a href={lead.url} target="_blank" rel="noopener noreferrer" className={s.original}>Original release<span className="sr-only"> (opens in a new tab)</span></a>
               </div>
-              <h3 className="max-w-4xl text-[16px] font-medium leading-relaxed tracking-[-0.01em] sm:text-[17px]">
-                <a href={article.url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary">{article.title}<span className="sr-only"> (opens original release in a new tab)</span></a>
-              </h3>
-              {article.snippet && article.snippet !== article.title && <details className="mt-2.5">
-                <summary className="w-fit cursor-pointer list-none text-xs text-muted-foreground transition-colors hover:text-primary [&::-webkit-details-marker]:hidden">Read publisher excerpt</summary>
-                <p className="mt-3 max-w-3xl text-sm leading-relaxed text-foreground/75">{article.snippet}</p>
-              </details>}
             </article>
-          </li>)}
-        </ol>}
-      {filtered.length > limit && <button onClick={() => setLimit((count) => count + 25)} className="mt-4 min-h-11 w-full rounded-lg border border-border/70 text-sm font-medium transition-colors hover:border-primary/50 hover:text-primary">Show more ({filtered.length - limit} remaining)</button>}
-      <footer className="mt-6 border-t border-border/60 pt-4 text-xs leading-relaxed text-muted-foreground">
-        <p>Official publications only. Source checks run every 15 minutes while the dashboard is in use. Each feed provides a limited publication history.</p>
-        <details className="mt-3"><summary className="w-fit cursor-pointer list-none text-foreground/75 [&::-webkit-details-marker]:hidden">Source status and attribution</summary>
-          <ul className="mt-3 space-y-2">{env?.sources?.map((source) => <li key={source.id}>{source.agency} · {source.name}: {source.status === "ok" ? "Available" : source.status === "stale" ? "Delayed, showing cached releases" : "Unavailable"}{source.checkedAt ? ` · Checked ${new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone }).format(new Date(source.checkedAt))}` : ""}</li>)}</ul>
-          <p className="mt-3">Sources: <a className="underline underline-offset-2" href="https://www.federalreserve.gov/feeds/feeds.htm" target="_blank" rel="noopener noreferrer">Federal Reserve Board</a>, <a className="underline underline-offset-2" href="https://www.bls.gov/feed/" target="_blank" rel="noopener noreferrer">U.S. Bureau of Labor Statistics</a>, <a className="underline underline-offset-2" href="https://www.eia.gov/tools/rssfeeds/" target="_blank" rel="noopener noreferrer">U.S. Energy Information Administration</a>. Publication dates appear with each release.</p>
-        </details>
-      </footer>
-    </section>
-    <NewsContext now={now} />
+            {groups.size > 0 && <>
+              <div className={s.feedHeading}><h3>Earlier releases</h3><span>Newest first · {timeZone}</span></div>
+              {[...groups.entries()].map(([key, group]) => <section key={key} className={s.dayGroup} aria-label={`Releases ${key}`}>
+                <h4 className={s.dayLabel}><span className={s.dayNumber}>{group.day}</span>{group.month}</h4>
+                <ol>{group.articles.map((article) => <li key={article.id} className={s.story}>
+                  <article>
+                    <div className={s.storyMeta}><span className={s.source}>{article.source}</span><span className={s.topicName}>{article.topic}</span><time className={s.timestamp} dateTime={article.publishedAt}>{article.publishedPrecision === "date" ? "Date only" : new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone }).format(new Date(article.publishedAt))}</time></div>
+                    <h5 className={s.storyTitle}><a href={article.url} target="_blank" rel="noopener noreferrer" className={s.headlineLink}>{article.title}<span className="sr-only"> (opens original release in a new tab)</span></a></h5>
+                    {article.snippet && article.snippet !== article.title && <details className={s.excerpt}>
+                      <summary><span className={s.expandLabel}>Read excerpt</span><span className={s.collapseLabel}>Close excerpt</span></summary><p>{article.snippet}</p>
+                    </details>}
+                  </article>
+                </li>)}</ol>
+              </section>)}
+            </>}
+          </>}
+        {filtered.length > limit && <button onClick={() => setLimit((count) => count + 25)} className={s.more}>Load earlier releases<span>{filtered.length - limit} remaining</span></button>}
+        <footer className={s.footer}>
+          <details><summary>Sources & publication details</summary>
+            <p className="mt-3">Original agency publications. Times in {timeZone}. Sources are checked every 15 minutes while in use; available history varies by feed.</p>
+            <ul>{env?.sources?.map((source) => <li key={source.id}>{source.agency} · {source.name}: {source.status === "ok" ? "Available" : source.status === "stale" ? "Delayed, cached releases" : "Unavailable"}{source.checkedAt ? ` · Checked ${new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone }).format(new Date(source.checkedAt))}` : ""}</li>)}</ul>
+            <p><a href="https://www.federalreserve.gov/feeds/feeds.htm" target="_blank" rel="noopener noreferrer">Federal Reserve Board</a> · <a href="https://www.bls.gov/feed/" target="_blank" rel="noopener noreferrer">U.S. Bureau of Labor Statistics</a> · <a href="https://www.eia.gov/tools/rssfeeds/" target="_blank" rel="noopener noreferrer">U.S. Energy Information Administration</a>. Publication dates are shown with each release.</p>
+          </details>
+        </footer>
+      </section>
+      <NewsContext now={now} />
+    </div>
   </div>;
 }
 
 function Empty({ title, detail, children }: { title: string; detail: string; children?: React.ReactNode }) {
-  return <div className="py-12"><h3 className="text-base font-medium">{title}</h3><p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">{detail}</p>{children}</div>;
+  return <div className={s.empty}><h3>{title}</h3><p>{detail}</p>{children}</div>;
 }

@@ -16,7 +16,7 @@ import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay,
   eachDayOfInterval, min as dfMin, subDays,
 } from "date-fns";
-import { computeTradeRulesScore, computeHabitCounts, computeExecutionScore } from "@/lib/discipline";
+import { computeTradeRulesScore, computeHabitCounts } from "@/lib/discipline";
 import { computeGoalProgress } from "@/lib/goals/goals";
 import { isReviewOpen } from "@/lib/journal/weeks";
 import type {
@@ -30,12 +30,31 @@ export type MindPeriod = "week" | "month" | "all";
 /**
  * Nominal weights (out of 100), rescaled among the components that apply.
  *
- * Rules and execution are both "at the screen" and together carry 55: the
- * checklist says whether you ticked your non-negotiables, execution says
+ * Rules and execution are both "at the screen" and together carry 60, equally:
+ * the checklist says whether you ticked your non-negotiables, execution says
  * whether the trade was actually the one your plan and your edge called for.
- * They overlap, so execution is deliberately the smaller of the two.
+ * Execution used to be the smaller of the two, which let a neatly kept
+ * checklist carry a session that was poorly traded. Equal weights also mean
+ * that when habits or goals are not in use, their share flows to rules and
+ * execution alike rather than mostly to rules.
  */
-export const MIND_WEIGHTS = { rules: 35, execution: 20, habits: 20, objectives: 15, goals: 10 } as const;
+export const MIND_WEIGHTS = { rules: 30, execution: 30, habits: 15, objectives: 15, goals: 10 } as const;
+
+/**
+ * Execution, as the mind score reads it. A bad trade counts double: one badly
+ * executed trade undoes more than one good one earns, because that is what it
+ * does to an account. A trade left unrated counts as neutral (half), so not
+ * rating the bad ones can no longer keep the number high.
+ */
+export const EXECUTION_BAD_WEIGHT = 2;
+export const EXECUTION_UNRATED_VALUE = 0.5;
+
+export function mindExecutionScore(counts: { good: number; bad: number; unrated: number }): number | null {
+  const { good, bad, unrated } = counts;
+  const weight = good + unrated + bad * EXECUTION_BAD_WEIGHT;
+  if (weight === 0) return null;
+  return Math.round(((good + unrated * EXECUTION_UNRATED_VALUE) / weight) * 100);
+}
 
 export interface Objective {
   key: string;
@@ -48,6 +67,9 @@ export interface Objective {
   target: number;
   /** 0..1 completion rate (capped). */
   rate: number;
+  /** False when nothing is owed yet in this window (target 0): it then neither
+   *  adds to nor subtracts from the score. */
+  due: boolean;
   /** Share of the objectives sub-score this objective is worth (0..100). */
   contribution: number;
 }
@@ -88,6 +110,8 @@ export interface MindScore {
   objectivesScore: number; // 0..100
   band: MindBand;
   tradeCount: number;
+  /** Trades in the window by execution rating, as the execution part counts them. */
+  execution: { good: number; bad: number; unrated: number };
   habitCompleted: number;
   habitExpected: number;
   /** The window actually measured. */
@@ -230,7 +254,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   const analysisTarget = tradedDays.size; // nothing required on non-trading days
   const analysisRate = analysisTarget === 0 ? 1 : Math.min(1, analysedDays.size / analysisTarget);
 
-  const rawObjectives: Omit<Objective, "contribution">[] = [
+  const rawObjectives: Omit<Objective, "contribution" | "due">[] = [
     {
       key: "weekly-review", label: "Weekly review", description: "Complete each week's review once the trading week is over: from Friday",
       href: "/trade-therapist?tab=reviews", progress: reviewsDone, target: reviewTarget,
@@ -270,15 +294,30 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
     rate: Math.min(1, completedExercises.length / dueExerciseDays.length),
   });
 
-  const share = 100 / rawObjectives.length;
-  const objectives: Objective[] = rawObjectives.map((o) => ({ ...o, contribution: o.rate * share }));
+  // Only what is actually owed in this window counts. An objective with
+  // nothing due yet (no completed week to review, no traded day to prepare
+  // for) used to count as fully done, which handed out free points at the
+  // start of every week and month.
+  const dueCount = rawObjectives.filter((o) => o.target > 0).length;
+  const share = dueCount ? 100 / dueCount : 0;
+  const objectives: Objective[] = rawObjectives.map((o) => {
+    const due = o.target > 0;
+    return { ...o, due, contribution: due ? o.rate * share : 0 };
+  });
   const objectivesScore = objectives.reduce((s, o) => s + o.contribution, 0);
 
   // ── Rules & habits over the same window ───────────────────────────────
   const inWindowTradeIds = new Set(input.trades.filter((trade) => inRange(trade.date_time)).map((trade) => trade.id));
   const windowRuleChecks = (input.ruleChecks ?? []).filter((check) => inWindowTradeIds.has(check.trade_id));
   const rules = input.ruleChecks ? ruleAdherenceScore(windowRuleChecks) : computeTradeRulesScore(input.trades, start, clampEnd);
-  const execution = computeExecutionScore(input.trades, start, clampEnd);
+  const executionCounts = { good: 0, bad: 0, unrated: 0 };
+  for (const t of input.trades) {
+    if (!inRange(t.date_time)) continue;
+    if (t.execution_quality === "good") executionCounts.good++;
+    else if (t.execution_quality === "bad") executionCounts.bad++;
+    else executionCounts.unrated++;
+  }
+  const execution = mindExecutionScore(executionCounts);
   const { completed: habitCompleted, expected: habitExpected } = computeHabitCounts(input.habits, input.completions, start, clampEnd);
   const habits = habitExpected === 0 ? null : Math.round((habitCompleted / habitExpected) * 100);
   const tradeCount = input.trades.filter((t) => {
@@ -312,9 +351,9 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   // ── Blend (rescale weights among applicable components) ───────────────
   const raw: { key: MindComponent["key"]; label: string; value: number | null; weight: number }[] = [
     { key: "rules", label: "Rule adherence", value: rules, weight: MIND_WEIGHTS.rules },
-    { key: "execution", label: "Execution", value: execution.score, weight: MIND_WEIGHTS.execution },
+    { key: "execution", label: "Execution", value: execution, weight: MIND_WEIGHTS.execution },
     { key: "habits", label: "Habit consistency", value: habits, weight: MIND_WEIGHTS.habits },
-    { key: "objectives", label: "Objectives", value: Math.round(objectivesScore), weight: MIND_WEIGHTS.objectives },
+    { key: "objectives", label: "Objectives", value: dueCount ? Math.round(objectivesScore) : null, weight: MIND_WEIGHTS.objectives },
     { key: "goals", label: "Goal progress", value: goalScore, weight: MIND_WEIGHTS.goals },
   ];
   const components: MindComponent[] = redistributeWeights(raw);
@@ -339,7 +378,7 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
 
   return {
     period, total, pending, components, objectives, objectivesScore,
-    band: bandFor(total), tradeCount, habitCompleted, habitExpected,
+    band: bandFor(total), tradeCount, execution: executionCounts, habitCompleted, habitExpected,
     rangeStart: start, rangeEnd: clampEnd,
   };
 }

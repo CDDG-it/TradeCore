@@ -106,6 +106,11 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
               return <div key={part.key} className="py-1.5 first:pt-0 last:pb-0">
                 <div className="flex items-center justify-between gap-3 text-xs"><span className="truncate font-medium text-foreground/85">{PART_META[part.key]}</span><span className="shrink-0 font-bold tabular-nums" style={{ color: value === null ? "var(--muted-foreground)" : color }}>{value === null ? "—" : `${value}%`}</span></div>
                 <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted-foreground/15"><div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${value ?? 0}%`, background: color }} /></div>
+                {part.key === "execution" && value !== null && (
+                  <p className="mt-1 text-[10px] tabular-nums text-muted-foreground">
+                    {score.execution.good} good · {score.execution.bad} bad (counts double){score.execution.unrated > 0 && ` · ${score.execution.unrated} unrated (counts as neutral)`}
+                  </p>
+                )}
               </div>;
             })}
           </div>
@@ -117,11 +122,11 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
           <h2 className="mt-1 text-base font-semibold tracking-tight">What lifts your score</h2>
           <div className="mt-3 divide-y divide-border/60">
             {score.objectives.map((objective) => {
-              const done = objective.rate >= 1;
+              const done = objective.due && objective.rate >= 1;
               const progress = Math.min(objective.progress, objective.target);
               return <Link key={objective.key} href={objective.href} className="group flex items-center justify-between gap-3 py-2 text-xs transition-colors hover:text-primary first:pt-0 last:pb-0">
                 <span className="min-w-0 truncate font-medium">{objective.label}</span>
-                <span className={cn("shrink-0 font-bold tabular-nums", done ? "text-success" : "text-muted-foreground")}>{progress}/{objective.target}<span aria-hidden="true" className="ml-2 font-normal text-muted-foreground/50 group-hover:text-primary">↗</span></span>
+                <span className={cn("shrink-0 font-bold tabular-nums", done ? "text-success" : "text-muted-foreground")}>{objective.due ? `${progress}/${objective.target}` : <span className="font-medium">Not due yet</span>}<span aria-hidden="true" className="ml-2 font-normal text-muted-foreground/50 group-hover:text-primary">↗</span></span>
               </Link>;
             })}
           </div>
