@@ -21,6 +21,20 @@ export function releaseUnit(unit: string): string {
   return units[unit] ?? unit;
 }
 
+function sparklinePath(history: { value: number }[]): string {
+  const points = history.slice(-12);
+  if (points.length < 2) return "M0 18 L100 18";
+  const values = points.map((point) => point.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  return points.map((point, index) => {
+    const x = (index / (points.length - 1)) * 100;
+    const y = 31 - ((point.value - min) / range) * 25;
+    return `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+  }).join(" ");
+}
+
 export function NewsContext({ now }: { now: number | null }) {
   const today = now == null ? null : new Date(now);
   const month = today ? format(today, "yyyy-MM") : null;
@@ -61,15 +75,18 @@ export function NewsContext({ now }: { now: number | null }) {
       <div className={s.railHeader}><h2>Economic readings</h2></div>
       <p className={s.railNote}>Latest reported values</p>
       {latest?.status !== "ok" && <DataState env={latest} />}
-      {readings.length > 0 && <table className={s.readingsTable}>
-        <caption className="sr-only">Latest economic readings with actual and prior period values</caption>
-        <thead><tr><th scope="col">Indicator</th><th scope="col">Actual</th><th scope="col">Prior</th></tr></thead>
-        <tbody>{readings.map((entry) => <tr key={entry.id}>
-          <th scope="row">{entry.label}<span>{entry.referenceDate ? format(parseISO(entry.referenceDate), "MMM yyyy") : "Period unavailable"}</span><span className={s.unit}>{releaseUnit(entry.unit)}</span></th>
-          <td>{entry.actual == null ? <span aria-label="Not available">-</span> : releaseValue(entry.actual, entry.unit)}</td>
-          <td>{entry.previous == null ? <span aria-label="Not available">-</span> : releaseValue(entry.previous, entry.unit)}</td>
-        </tr>)}</tbody>
-      </table>}
+      {readings.length > 0 && <div className={s.readingGrid}>
+        {readings.map((entry) => {
+          const delta = entry.actual != null && entry.previous != null ? entry.actual - entry.previous : 0;
+          const tone = delta > 0 ? s.up : delta < 0 ? s.down : s.flat;
+          return <article key={entry.id} className={`${s.readingCard} ${tone}`}>
+            <h3>{entry.label}</h3>
+            <strong>{entry.actual == null ? <span aria-label="Not available">-</span> : releaseValue(entry.actual, entry.unit)}</strong>
+            <small>{entry.referenceDate ? format(parseISO(entry.referenceDate), "MMM yyyy") : "Period unavailable"} · {releaseUnit(entry.unit)}</small>
+            <svg className={s.spark} viewBox="0 0 100 36" preserveAspectRatio="none" aria-hidden><path d={sparklinePath(entry.history)} /></svg>
+          </article>;
+        })}
+      </div>}
       {latest?.status === "ok" && !readings.length && <p className={s.railNote}>No readings available.</p>}
     </section>
     <p className={s.railFoot}>Source: FRED. Figures describe the stated reporting period. Original publications appear in the release feed.</p>
