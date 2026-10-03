@@ -1,167 +1,98 @@
 "use client";
 
-/**
- * 04 NEWS: the wire, at length.
- *
- * The lead story gets room to be read; everything else runs as a dense feed you
- * can scan by time. Sentiment is Marketaux's own per-entity score, shown as a
- * mark in the margin: provider-supplied, never a call, never a written verdict.
- */
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { format, parseISO } from "date-fns";
-import { timeAgo, useGmi } from "@/lib/gmi/client";
+import { useState, useSyncExternalStore } from "react";
+import { useGmi } from "@/lib/gmi/client";
+import { filterNews, NEWS_TOPICS, publicationLabel, type NewsFilters } from "@/lib/gmi/news-view";
 import type { NewsArticle } from "@/lib/gmi/types";
-import { Pane, Empty, Label } from "../pane";
+import { NewsContext } from "../news-context";
 
-function sentimentColor(score: number | null): string {
-  if (score == null) return "var(--muted-foreground)";
-  if (score > 0.15) return "var(--success)";
-  if (score < -0.15) return "var(--destructive)";
-  return "var(--muted-foreground)";
-}
+const DEFAULT_FILTERS: NewsFilters = { query: "", topic: "All", agency: "All", days: 30 };
+const subscribeClock = (notify: () => void) => { const timer = setInterval(notify, 60_000); return () => clearInterval(timer); };
+const clockSnapshot = () => Math.floor(Date.now() / 60_000) * 60_000;
+const serverClock = () => null;
+const control = "min-h-11 rounded-lg border border-border/70 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary";
 
 export function NewsTab() {
-  const { env } = useGmi<NewsArticle[]>("/api/gmi/news", 15 * 60_000);
-  const [q, setQ] = useState("");
-  const [asset, setAsset] = useState<string | null>(null);
+  const { env, loading, refresh } = useGmi<NewsArticle[]>("/api/gmi/news", 5 * 60_000);
+  const now = useSyncExternalStore(subscribeClock, clockSnapshot, serverClock);
+  const timeZone = now === null ? "UTC" : Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [limit, setLimit] = useState(25);
+  const [refreshing, setRefreshing] = useState(false);
+  const changeFilters = (patch: Partial<NewsFilters>) => { setFilters((current) => ({ ...current, ...patch })); setLimit(25); };
+  const articles = env?.data ?? [];
+  const filtered = now == null ? [] : filterNews(articles, filters, now);
+  const rangeArticles = now == null ? [] : filterNews(articles, { ...DEFAULT_FILTERS, days: filters.days }, now);
+  const failedSources = env?.sources?.filter((source) => source.status !== "ok") ?? [];
+  const checked = env?.sources?.map((source) => source.checkedAt).filter((date): date is string => Boolean(date)).sort().at(-1);
+  const pending = now == null || (!env && loading);
 
-  const articles = useMemo(() => env?.data ?? [], [env]);
-
-  const topAssets = useMemo(() => {
-    const freq = new Map<string, number>();
-    for (const art of articles) for (const s of art.assets) freq.set(s, (freq.get(s) ?? 0) + 1);
-    return [...freq.entries()].sort((x, y) => y[1] - x[1]).slice(0, 10).map(([s]) => s);
-  }, [articles]);
-
-  const filtered = useMemo(
-    () =>
-      articles.filter((art) => {
-        if (asset && !art.assets.includes(asset)) return false;
-        if (q) {
-          const hay = `${art.title} ${art.assets.join(" ")} ${art.source}`.toLowerCase();
-          if (!hay.includes(q.toLowerCase())) return false;
-        }
-        return true;
-      }),
-    [articles, q, asset]
-  );
-
-  const [lead, ...rest] = filtered;
-
-  return (
-    <div className="grid grid-cols-1 gap-2 lg:h-full lg:min-h-0 lg:grid-cols-12">
-      {/* ── Lead ──────────────────────────────────────────────────────── */}
-      <Pane index="01" label="Lead story" className="min-h-[220px] lg:col-span-4" bodyClassName="p-0">
-        {env?.status === "unavailable" ? (
-          <Empty label="Wire down" hint="Marketaux is unavailable or the daily request budget is spent. Cached articles return by themselves." />
-        ) : !lead ? (
-          <Empty label="No article" hint={q || asset ? "Nothing matches the current filter." : undefined} />
-        ) : (
-          <Link
-            href={lead.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex h-full flex-col justify-between p-4 transition-colors hover:bg-muted/10"
-          >
-            <div className="min-h-0">
-              <div className="flex items-baseline gap-2">
-                <span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ background: sentimentColor(lead.sentimentScore) }} />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/75">{lead.source}</span>
-                <span className="text-[11px] tabular-nums text-foreground/65">{timeAgo(lead.publishedAt)}</span>
+  return <div className="grid grid-flow-dense grid-cols-1 items-start gap-7 lg:grid-cols-12 lg:gap-8">
+    <section className="min-w-0 lg:col-span-8" aria-labelledby="release-heading">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div><h2 id="release-heading" className="text-xl font-semibold tracking-tight">Latest releases</h2>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">Published by the Federal Reserve, BLS and EIA. Times in {timeZone}.</p>
+        </div>
+        <button type="button" disabled={refreshing || pending} onClick={async () => { setRefreshing(true); try { await refresh(); } finally { setRefreshing(false); } }}
+          className="min-h-10 shrink-0 rounded-lg border border-border/70 px-3 text-xs font-medium transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-50">{refreshing ? "Checking" : "Refresh"}</button>
+      </div>
+      <div className="rounded-xl border border-border/60 bg-card/30 p-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+          <label className="col-span-2 sm:col-span-1"><span className="sr-only">Search releases</span>
+            <input type="search" value={filters.query} onChange={(event) => changeFilters({ query: event.target.value })} placeholder="Search releases" className={`${control} w-full text-base sm:text-sm`} />
+          </label>
+          <label><span className="sr-only">Agency</span><select value={filters.agency} onChange={(event) => changeFilters({ agency: event.target.value })} className={`${control} w-full`}>
+            <option value="All">All agencies</option><option>Federal Reserve</option><option>BLS</option><option>EIA</option>
+          </select></label>
+          <label><span className="sr-only">Publication period</span><select value={filters.days} onChange={(event) => changeFilters({ days: Number(event.target.value) })} className={`${control} w-full`}>
+            {[7, 30, 90].map((days) => <option key={days} value={days}>Last {days} days</option>)}
+          </select></label>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1" role="group" aria-label="Release topic">
+          {NEWS_TOPICS.map((topic) => <button key={topic} type="button" aria-pressed={filters.topic === topic} onClick={() => changeFilters({ topic })}
+            className={`min-h-10 border-b text-xs font-medium transition-colors ${filters.topic === topic ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{topic}</button>)}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/60 py-4 text-xs text-muted-foreground">
+        <span role="status">{pending ? "Loading releases" : `${filtered.length} release${filtered.length === 1 ? "" : "s"}`}</span>
+        <span>{checked ? `Last successful check ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone }).format(new Date(checked))}` : env?.status === "unavailable" ? "Source checks unsuccessful" : "Awaiting source checks"}</span>
+      </div>
+      {env?.status === "stale" && <p className="border-b border-border/60 py-3 text-xs leading-relaxed text-warning" role="status">Some updates are delayed. Available releases remain visible.{failedSources.length ? ` ${failedSources.map((source) => `${source.agency}: ${source.name}`).join("; ")}.` : ""}</p>}
+      {pending ? <div className="space-y-5 py-6" aria-hidden>{[0, 1, 2, 3].map((i) => <div key={i} className="space-y-3"><div className="h-3 w-36 rounded bg-muted/40" /><div className="h-5 w-4/5 rounded bg-muted/30" /><div className="h-3 w-1/2 rounded bg-muted/20" /></div>)}</div>
+        : env?.status === "unavailable" ? <Empty title="Releases are currently unavailable" detail="The official sources could not be reached. Try refreshing shortly. The calendar is available separately." />
+        : filtered.length === 0 ? <Empty title={rangeArticles.length ? "No matching releases" : "No recent releases"} detail={rangeArticles.length ? "Try a different search, topic or agency." : "These sources publish on their own schedules. Try a longer date range; feeds may not include a full archive."}>
+          {(filters.query || filters.agency !== "All" || filters.topic !== "All") && <button onClick={() => changeFilters({ query: "", agency: "All", topic: "All" })} className="mt-4 text-sm text-primary">Clear filters</button>}
+        </Empty> : <ol className="divide-y divide-border/50">
+          {filtered.slice(0, limit).map((article) => <li key={article.id} className="py-5 sm:py-6">
+            <article>
+              <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground/80">{article.source}</span>
+                <time dateTime={article.publishedAt}>{publicationLabel(article, timeZone)}</time>
+                <span>{article.topic}</span>
               </div>
-              <h2 className="mt-3 font-heading text-[19px] font-bold leading-[1.25] tracking-tight text-foreground transition-colors group-hover:text-primary">
-                {lead.title}
-              </h2>
-              {lead.snippet && (
-                <p className="mt-3 line-clamp-6 text-[13px] leading-relaxed text-foreground/80">{lead.snippet}</p>
-              )}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-1.5 border-t border-border/30 pt-3">
-              {lead.assets.slice(0, 6).map((s) => (
-                <span key={s} className="border border-border/50 px-1.5 py-0.5 font-mono text-[11px] tracking-wider text-primary">{s}</span>
-              ))}
-            </div>
-          </Link>
-        )}
-      </Pane>
+              <h3 className="max-w-4xl text-[16px] font-medium leading-relaxed tracking-[-0.01em] sm:text-[17px]">
+                <a href={article.url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary">{article.title}<span className="sr-only"> (opens original release in a new tab)</span></a>
+              </h3>
+              {article.snippet && article.snippet !== article.title && <details className="mt-2.5">
+                <summary className="w-fit cursor-pointer list-none text-xs text-muted-foreground transition-colors hover:text-primary [&::-webkit-details-marker]:hidden">Read publisher excerpt</summary>
+                <p className="mt-3 max-w-3xl text-sm leading-relaxed text-foreground/75">{article.snippet}</p>
+              </details>}
+            </article>
+          </li>)}
+        </ol>}
+      {filtered.length > limit && <button onClick={() => setLimit((count) => count + 25)} className="mt-4 min-h-11 w-full rounded-lg border border-border/70 text-sm font-medium transition-colors hover:border-primary/50 hover:text-primary">Show more ({filtered.length - limit} remaining)</button>}
+      <footer className="mt-6 border-t border-border/60 pt-4 text-xs leading-relaxed text-muted-foreground">
+        <p>Official publications only. Source checks run every 15 minutes while the dashboard is in use. Each feed provides a limited publication history.</p>
+        <details className="mt-3"><summary className="w-fit cursor-pointer list-none text-foreground/75 [&::-webkit-details-marker]:hidden">Source status and attribution</summary>
+          <ul className="mt-3 space-y-2">{env?.sources?.map((source) => <li key={source.id}>{source.agency} · {source.name}: {source.status === "ok" ? "Available" : source.status === "stale" ? "Delayed, showing cached releases" : "Unavailable"}{source.checkedAt ? ` · Checked ${new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone }).format(new Date(source.checkedAt))}` : ""}</li>)}</ul>
+          <p className="mt-3">Sources: <a className="underline underline-offset-2" href="https://www.federalreserve.gov/feeds/feeds.htm" target="_blank" rel="noopener noreferrer">Federal Reserve Board</a>, <a className="underline underline-offset-2" href="https://www.bls.gov/feed/" target="_blank" rel="noopener noreferrer">U.S. Bureau of Labor Statistics</a>, <a className="underline underline-offset-2" href="https://www.eia.gov/tools/rssfeeds/" target="_blank" rel="noopener noreferrer">U.S. Energy Information Administration</a>. Publication dates appear with each release.</p>
+        </details>
+      </footer>
+    </section>
+    <NewsContext now={now} />
+  </div>;
+}
 
-      {/* ── Feed ──────────────────────────────────────────────────────── */}
-      <Pane
-        index="02"
-        label="Feed"
-        right={
-          <span className="flex items-center gap-3">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="filter..."
-              className="w-28 border-b border-border/50 bg-transparent pb-px text-[12px] text-foreground outline-none placeholder:text-foreground/65 focus:border-primary"
-            />
-            <Label className="hidden tracking-[0.18em] sm:inline">{filtered.length} items</Label>
-          </span>
-        }
-        bodyClassName="flex flex-col p-0"
-        className="min-h-[420px] lg:col-span-8"
-      >
-        {/* Asset filter: words, no chips-with-icons */}
-        <div className="scrollbar-none flex shrink-0 items-center gap-3 overflow-x-auto border-b border-border/30 px-3 py-1.5">
-          <button
-            onClick={() => setAsset(null)}
-            className={`shrink-0 border-b pb-px text-[12px] font-semibold uppercase tracking-wider transition-colors ${
-              asset === null ? "border-primary text-primary" : "border-transparent text-foreground/75 hover:text-foreground"
-            }`}
-          >
-            All
-          </button>
-          {topAssets.map((s) => (
-            <button
-              key={s}
-              onClick={() => setAsset(asset === s ? null : s)}
-              className={`shrink-0 border-b pb-px font-mono text-[11px] tracking-[0.1em] transition-colors ${
-                asset === s ? "border-primary text-primary" : "border-transparent text-foreground/75 hover:text-foreground"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {rest.length === 0 ? (
-            <Empty label="Nothing else on the wire" />
-          ) : (
-            <ol>
-              {rest.map((art) => (
-                <li key={art.id} className="border-b border-border/20 last:border-0">
-                  <Link
-                    href={art.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-baseline gap-3 px-3 py-[7px] transition-colors hover:bg-muted/20"
-                  >
-                    <span className="shrink-0 text-[12px] tabular-nums text-foreground/65">
-                      {format(parseISO(art.publishedAt), "HH:mm")}
-                    </span>
-                    <span aria-hidden className="mt-[5px] h-[3px] w-[3px] shrink-0 rounded-full" style={{ background: sentimentColor(art.sentimentScore) }} />
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-foreground/90 transition-colors group-hover:text-primary">
-                      {art.title}
-                    </span>
-                    {art.assets[0] && <span className="shrink-0 font-mono text-[11px] tracking-wider text-primary">{art.assets[0]}</span>}
-                    <span className="hidden w-28 shrink-0 truncate text-right text-[11px] uppercase tracking-wider text-foreground/65 xl:inline">
-                      {art.source}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          )}
-        </div>
-
-        <p className="shrink-0 border-t border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
-          Margin mark = provider sentiment · green positive, red negative, grey neutral or unscored
-        </p>
-      </Pane>
-    </div>
-  );
+function Empty({ title, detail, children }: { title: string; detail: string; children?: React.ReactNode }) {
+  return <div className="py-12"><h3 className="text-base font-medium">{title}</h3><p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">{detail}</p>{children}</div>;
 }

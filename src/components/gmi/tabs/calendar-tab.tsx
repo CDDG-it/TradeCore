@@ -20,11 +20,13 @@ import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval,
   addMonths, isSameMonth, isToday, isBefore, startOfDay, parseISO,
 } from "date-fns";
-import { useGmi, toneFor } from "@/lib/gmi/client";
+import { useGmi } from "@/lib/gmi/client";
 import type { CalendarMonth, CalendarEvent } from "@/lib/gmi/calendar";
 import { holidaysByDate, holidayChips, type MarketHoliday } from "@/lib/gmi/holidays";
 import { fedEventsByDate } from "@/lib/gmi/fed-events";
-import { Pane, Empty, Label, Meta, Figure, a } from "../pane";
+import { Pane, Empty, Label, a } from "../pane";
+
+import { releaseValue as fmtVal, releaseUnit } from "../news-context";
 
 const IMPORTANCE: Record<string, string> = {
   high: "var(--destructive)",
@@ -47,24 +49,6 @@ const hatch = (pct: number) =>
 const CLOSED_HATCH = hatch(13);
 /** A half day is still a session, so it is marked more lightly than a closure. */
 const EARLY_HATCH = hatch(6);
-
-function fmtVal(v: number | null, unit: string): string {
-  if (v == null) return "-";
-  if (unit === "%") return `${v.toFixed(1)}%`;
-  if (unit === "count") return Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(v);
-  if (unit === "kpersons") return `${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}M`;
-  if (unit === "$B") return `$${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 2 })}T`;
-  if (unit === "$M") return `$${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}B`;
-  return v.toLocaleString(undefined, { maximumFractionDigits: 1 });
-}
-
-function fmtDelta(v: number, unit: string): string {
-  const s = v > 0 ? "+" : "";
-  if (unit === "%") return `${s}${(v * 100).toFixed(0)}bp`;
-  if (unit === "kpersons") return `${s}${v.toFixed(0)}k`;
-  if (unit === "count") return `${s}${Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(v)}`;
-  return `${s}${fmtVal(v, unit)}`;
-}
 
 export function CalendarTab() {
   const [cursor, setCursor] = useState(() => startOfMonth(new Date()));
@@ -107,32 +91,37 @@ export function CalendarTab() {
   const closures = [...holidays.values()].flat().filter((h) => isSameMonth(parseISO(h.date), cursor)).length;
   const today = startOfDay(new Date());
   const weeks = Math.ceil(grid.length / 7);
+  function moveMonth(delta: number) {
+    const next = addMonths(cursor, delta);
+    setCursor(next);
+    setSelected(format(next, "yyyy-MM-dd"));
+  }
 
   return (
-    <div className="grid grid-cols-1 gap-2 lg:h-full lg:min-h-0 lg:grid-cols-12">
+    <div className="grid grid-flow-dense grid-cols-1 items-start gap-6 lg:grid-cols-12">
       {/* ── Month ─────────────────────────────────────────────────────── */}
       <Pane
         index="01"
         label={format(cursor, "MMMM yyyy")}
         right={
-          <span className="flex items-center gap-3">
+          <span className="flex flex-wrap items-center gap-3">
             <Label className="hidden tracking-[0.18em] md:inline">
               {events.length} releases · {fomcCount ? `${fomcCount} FOMC · ` : ""}{scheduled} scheduled · {closures} closure{closures === 1 ? "" : "s"}
             </Label>
             <span className="flex items-center gap-1.5">
               <button
-                onClick={() => setCursor((c) => addMonths(c, -1))}
+                onClick={() => moveMonth(-1)}
                 aria-label="Previous month"
-                className="border border-border/50 px-2 text-[13px] font-semibold leading-5 text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
+                className="min-h-10 rounded-md border border-border/50 px-3 text-xs font-medium text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
               >
-                &lt;
+                Previous
               </button>
               <button
-                onClick={() => setCursor((c) => addMonths(c, 1))}
+                onClick={() => moveMonth(1)}
                 aria-label="Next month"
-                className="border border-border/50 px-2 text-[13px] font-semibold leading-5 text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
+                className="min-h-10 rounded-md border border-border/50 px-3 text-xs font-medium text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
               >
-                &gt;
+                Next
               </button>
               {!isSameMonth(cursor, new Date()) && (
                 <button
@@ -143,13 +132,13 @@ export function CalendarTab() {
                 </button>
               )}
             </span>
-            <Meta env={env} />
+            <span className="text-xs text-muted-foreground">{!env ? "Loading FRED" : env.status === "stale" ? "FRED updates delayed" : env.status === "unavailable" ? "FRED unavailable" : "Source: FRED"}</span>
           </span>
         }
         bodyClassName="flex flex-col p-0"
-        className="min-h-[560px] lg:col-span-8 xl:col-span-9"
+        className="min-h-[520px] lg:col-span-8"
       >
-        {env?.status === "unavailable" ? (
+        {!env ? <Empty label="Loading calendar" /> : env.status === "unavailable" ? (
           <Empty label="FRED unavailable" />
         ) : (
           <>
@@ -162,7 +151,7 @@ export function CalendarTab() {
             </div>
 
             {/* Rows share the height evenly, so the month always fills the pane */}
-            <div className="grid min-h-0 flex-1 grid-cols-7" style={{ gridTemplateRows: `repeat(${weeks}, minmax(0, 1fr))` }}>
+            <div className="grid min-h-0 flex-1 grid-cols-7" style={{ gridTemplateRows: `repeat(${weeks}, minmax(90px, auto))` }}>
               {grid.map((day) => {
                 const key = format(day, "yyyy-MM-dd");
                 const dayEvents = byDate.get(key) ?? [];
@@ -175,7 +164,9 @@ export function CalendarTab() {
                 return (
                   <button
                     key={key}
-                    onClick={() => setSelected(key)}
+                    onClick={() => { setSelected(key); if (outside) setCursor(startOfMonth(day)); }}
+                    aria-label={`${format(day, "EEEE d MMMM yyyy")}, ${dayEvents.length + dayFed.length} releases${dayHolidays.length ? ", market holiday" : ""}`}
+                    aria-pressed={on}
                     title={dayHolidays.map((h) => `${h.market}: ${h.name}${h.closes ? ` · closes ${h.closes}` : " · closed"}`).join("\n") || undefined}
                     className={`relative flex min-h-0 flex-col gap-0.5 overflow-hidden border-b border-r border-border/20 p-1.5 text-left transition-colors ${
                       on ? "bg-primary/[0.1]" : "hover:bg-muted/15"
@@ -263,8 +254,7 @@ export function CalendarTab() {
             {selectedEvents.length + selectedFed.length || "no"} event{selectedEvents.length + selectedFed.length === 1 ? "" : "s"}
           </Label>
         }
-        scroll
-        className="min-h-[240px] lg:col-span-4 xl:col-span-3"
+        className="min-h-[240px] lg:col-span-4"
       >
         {selectedHolidays.length > 0 && (
           <div className="mb-3 space-y-1.5 border border-border/50 p-2.5" style={{ background: CLOSED_HATCH }}>
@@ -292,15 +282,14 @@ export function CalendarTab() {
           </div>
         )}
 
-        {selectedEvents.length === 0 && selectedFed.length === 0 ? (
+        {!env ? <Empty label="Loading releases" /> : env.status === "unavailable" ? <Empty label="Release data unavailable" /> : selectedEvents.length === 0 && selectedFed.length === 0 ? (
           <Empty
             label={selectedHolidays.some((h) => h.kind === "closed") ? "Market closed" : "Nothing scheduled"}
-            hint="No US macro release on this date."
+            hint="No U.S. macro release on this date."
           />
         ) : (
           <div className="space-y-3">
             {selectedEvents.map((e) => {
-              const delta = e.actual != null && e.previous != null ? e.actual - e.previous : null;
               return (
                 <div key={e.id} className="border-l-2 pl-2.5" style={{ borderColor: IMPORTANCE[e.importance] }}>
                   <p className="text-[13px] font-semibold leading-tight text-foreground">{e.label}</p>
@@ -311,22 +300,16 @@ export function CalendarTab() {
                   {e.released && e.actual != null ? (
                     <>
                       <div className="mt-2">
-                        <Figure
-                          size="md"
-                          value={fmtVal(e.actual, e.unit)}
-                          unit={e.referenceDate ? format(parseISO(e.referenceDate), "MMM yy") : undefined}
-                        />
+                        <p className="text-xl font-semibold tabular-nums">{fmtVal(e.actual, e.unit)}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{e.referenceDate ? format(parseISO(e.referenceDate), "MMM yyyy") : "Period unavailable"} · {releaseUnit(e.unit)}</p>
                       </div>
                       <div className="mt-1.5 flex items-baseline gap-3 text-[12px] tabular-nums">
-                        {delta != null && (
-                          <span style={{ color: toneFor(delta) }}>{fmtDelta(delta, e.unit)} vs prior</span>
-                        )}
                         <span className="text-foreground/75">prior {fmtVal(e.previous, e.unit)}</span>
                       </div>
                     </>
                   ) : (
                     <p className="mt-1.5 text-[12px] font-semibold uppercase tracking-wider text-foreground/75">
-                      {e.released ? "released · print not yet in the vintage" : "scheduled · no consensus on this tier"}
+                      {e.released ? "Released · value not yet available" : "Scheduled · value pending"}
                     </p>
                   )}
                 </div>

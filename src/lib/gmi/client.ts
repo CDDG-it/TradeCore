@@ -36,6 +36,7 @@ function request<T>(url: string): Promise<DataEnvelope<T>> {
 
   const run = (async () => {
     const res = await fetch(url);
+    if (!res.ok) throw new Error(`Market data request failed: ${res.status}`);
     const json = (await res.json()) as DataEnvelope<unknown>;
     // Only a usable answer is worth remembering; an outage should not pin the
     // desk to an error envelope for the rest of the polling window.
@@ -52,25 +53,31 @@ export function useGmi<T>(url: string | null, intervalMs = 60_000) {
   // Seeded from the cache so a section you have already opened paints from
   // memory. Safe against hydration: the store is empty on the first render of
   // a freshly loaded module, and every later mount is client-only.
-  const [env, setEnv] = useState<DataEnvelope<T> | null>(() => (url ? fresh<T>(url, intervalMs) : null));
+  const [result, setResult] = useState<{ url: string | null; env: DataEnvelope<T> | null }>(() => ({ url, env: url ? fresh<T>(url, intervalMs) : null }));
+  // A month change must not render the previous month's data under a new title.
+  const env = result.url === url ? result.env : url ? fresh<T>(url, intervalMs) : null;
   const [loading, setLoading] = useState(() => !(url && fresh<T>(url, intervalMs)));
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const generation = useRef(0);
 
   const load = useCallback(
     async (force = false) => {
       if (!url) return;
+      const requestGeneration = generation.current;
       const cached = force ? null : fresh<T>(url, intervalMs);
       if (cached) {
-        setEnv(cached);
+        setResult({ url, env: cached });
         setLoading(false);
         return;
       }
+      setLoading(true);
       try {
-        setEnv(await request<T>(url));
+        const next = await request<T>(url);
+        if (generation.current === requestGeneration) setResult({ url, env: next });
       } catch {
-        setEnv((prev) =>
-          prev
-            ? { ...prev, status: "stale" }
+        if (generation.current === requestGeneration) setResult((prev) => ({ url, env:
+          prev.url === url && prev.env?.data
+            ? { ...prev.env, status: "stale" }
             : {
                 data: null,
                 source: "-",
@@ -80,15 +87,16 @@ export function useGmi<T>(url: string | null, intervalMs = 60_000) {
                 status: "unavailable",
                 error: "network",
               }
-        );
+        }));
       } finally {
-        setLoading(false);
+        if (generation.current === requestGeneration) setLoading(false);
       }
     },
     [url, intervalMs]
   );
 
   useEffect(() => {
+    generation.current += 1;
     if (!url) return;
     void load();
 
@@ -101,6 +109,7 @@ export function useGmi<T>(url: string | null, intervalMs = 60_000) {
     document.addEventListener("visibilitychange", tick);
 
     return () => {
+      generation.current += 1;
       if (timer.current) clearInterval(timer.current);
       document.removeEventListener("visibilitychange", tick);
     };

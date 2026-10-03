@@ -1,12 +1,10 @@
 /**
  * A per-caller ceiling for the API routes that sit in front of a third-party
- * provider and need no login.
+ * provider.
  *
- * Why it exists: `/api/gmi/news` spends a Marketaux request from a free tier of
- * a hundred a day, `/api/gmi/macro` and the yield routes spend FRED quota, and
- * `/api/prices` makes three Yahoo calls per miss. Those routes are reachable by
- * anyone who knows the URL, so without a ceiling a single script can burn the
- * day's quota for every real trader on the site.
+ * News checks official feeds, macro and yield routes spend FRED quota, and
+ * prices makes three Yahoo calls per miss. A ceiling limits excessive calls
+ * independently of each route's authentication and entitlement checks.
  *
  * What it is not: the counter lives in one server instance's memory, so a
  * request served by a second warm instance starts from its own count, and a

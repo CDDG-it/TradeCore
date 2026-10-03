@@ -1425,3 +1425,32 @@ html:has(.marketing-page) { position: relative; }
   .footer-marquee { animation: none; }
   figcaption .marketing-callout:not(:first-child) { opacity: 0; }
 }
+
+/* News and calendar use page scrolling; detailed market tools retain their desk. */
+.news-desk .gmi-pane {
+  border-radius: 0.75rem;
+  border-color: var(--border);
+  background: color-mix(in oklch, var(--card) 30%, transparent);
+  box-shadow: none;
+}
+.news-desk .gmi-pane > header {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+.news-desk .gmi-pane > header > span:first-child > span:last-child {
+  font-size: 0.9375rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.news-desk .gmi-pane > div {
+  overflow: visible;
+}
+.news-desk .gmi-pane > div > .flex.items-baseline {
+  flex-wrap: wrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .news-desk *, .news-desk *::before, .news-desk *::after {
+    transition-duration: 0s !important;
+  }
+}

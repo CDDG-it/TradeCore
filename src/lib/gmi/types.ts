@@ -21,7 +21,7 @@ export type DataStatus = "ok" | "stale" | "unavailable";
 /** A standard wrapper around any provider payload. */
 export interface DataEnvelope<T> {
   data: T | null;
-  /** Human-readable provider, e.g. "Yahoo Finance", "FRED", "Marketaux". */
+  /** Human-readable provider, e.g. "Yahoo Finance", "FRED", "Official releases". */
   source: string;
   /** The provider's inherent update cadence. */
   freshness: DataFreshness;
@@ -32,6 +32,8 @@ export interface DataEnvelope<T> {
   status: DataStatus;
   /** Present only when status is "stale" or "unavailable". */
   error?: string;
+  /** Feed checks are independent of publication age. */
+  sources?: NewsSourceHealth[];
 }
 
 /** A single quote used by the ticker header, pulse cards and futures grid. */
@@ -72,7 +74,7 @@ export interface MacroSeries {
   status: DataStatus;
 }
 
-/** A news article, objective fields only: sentiment shown as the provider's own score. */
+/** A news article. Official releases have no sentiment scores or inferred assets. */
 export interface NewsArticle {
   id: string;
   title: string;
@@ -85,6 +87,17 @@ export interface NewsArticle {
   /** Provider sentiment score in [-1,1], or null when not supplied. Never invented. */
   sentimentScore: number | null;
   category: string | null;
+  topic?: NewsTopic;
+  publishedPrecision?: "date" | "time";
+}
+
+export type NewsTopic = "Monetary Policy" | "Inflation" | "Employment" | "Energy";
+export interface NewsSourceHealth {
+  id: string;
+  name: string;
+  agency: string;
+  status: DataStatus;
+  checkedAt: string | null;
 }
 
 /** Per-company earnings, EPS only on the free TwelveData tier (revenue may be null). */
