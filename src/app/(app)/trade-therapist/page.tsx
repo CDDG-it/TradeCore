@@ -57,7 +57,7 @@ export default function TradeTherapistPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
+    <div className="flex h-[calc(100dvh-8.5rem)] min-h-[30rem] flex-col gap-3 sm:h-[calc(100dvh-9.5rem)] lg:h-[calc(100dvh-7.25rem)] lg:min-h-[35rem]">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
         <SectionNav
           title="MC Trade Therapist"

@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import { RPotentialAnalysisSection } from "@/components/trade-therapist/r-potential-analysis";
+import { PostMarketDayPicker } from "@/components/trade-therapist/post-market-day-picker";
 import { useAccess } from "@/components/access/access-provider";
 import { dayOverview, postMarketDates } from "@/lib/post-market/day-overview";
 import { getBestTradeOfDay, getBestTradesOfDay, getRPotentialAnalyses, saveBestTradeOfDay, type BestTradeListRow } from "@/lib/supabase/queries";
@@ -31,9 +32,6 @@ export function PostMarketDayDesk({ date, trades, onDateChange }: { date: string
   const [observations, setObservations] = useState<Record<string, RPotentialAnalysis>>({});
   const [panel, setPanel] = useState<Panel>(null);
   const [rTradeId, setRTradeId] = useState<string | null>(null);
-  const [tradePage, setTradePage] = useState(0);
-  const [visibleTrades, setVisibleTrades] = useState(4);
-  const tradePanelRef = useRef<HTMLElement>(null);
   const [uploading, setUploading] = useState(false);
   const draftRef = useRef(draft);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -53,24 +51,11 @@ export function PostMarketDayDesk({ date, trades, onDateChange }: { date: string
   const recent = [...new Set([date, ...postMarketDates(trades, Object.values(reviews), today).slice(0, 4)])].sort((a, b) => b.localeCompare(a)).slice(0, 5);
   const chartCount = draft.screenshot_groups.reduce((count, group) => count + group.urls.length, 0);
   const selectedRTrade = dayTrades.find((trade) => trade.id === rTradeId);
-  const tradePages = Math.max(1, Math.ceil(dayTrades.length / visibleTrades));
   const status = uploading ? "Uploading..." : saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : saveState === "error" ? "Save failed. Try again." : "";
 
   useEffect(() => {
     getBestTradesOfDay().then((rows) => setReviews(Object.fromEntries(rows.map((row) => [row.date.slice(0, 10), row])))).catch(() => {});
   }, []);
-
-  useEffect(() => {
-    const panel = tradePanelRef.current;
-    if (!panel) return;
-    const observer = new ResizeObserver(() => {
-      const rows = Math.max(1, Math.min(4, Math.floor((panel.clientHeight - 92) / 44)));
-      setVisibleTrades(rows);
-      setTradePage((page) => Math.min(page, Math.max(0, Math.ceil(dayTrades.length / rows) - 1)));
-    });
-    observer.observe(panel);
-    return () => observer.disconnect();
-  }, [dayTrades.length, loading]);
 
   useEffect(() => {
     let active = true;
@@ -142,18 +127,20 @@ export function PostMarketDayDesk({ date, trades, onDateChange }: { date: string
     catch { setSaveState("error"); }
   }
 
-  async function selectDate(next: string) {
-    if (!next || next === date || next > today) return;
-    if (await flush()) { setPanel(null); onDateChange(next); }
+  async function selectDate(next: string): Promise<boolean> {
+    if (!next || next > today) return false;
+    if (next === date) return true;
+    if (await flush()) { setPanel(null); onDateChange(next); return true; }
+    return false;
   }
 
   async function closePanel() { const saved = await flush(); if (saved) setPanel(null); return saved; }
   const hasReview = reviewed(reviews[date]) || draft.review_step === "complete";
 
-  return <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
+  return <div className="flex h-full min-h-0 flex-col gap-2">
     <div className="flex shrink-0 items-center justify-between gap-2">
       <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-primary">Post Market</p><h2 className="truncate font-heading text-base font-bold sm:text-xl">{format(new Date(`${date}T12:00:00`), "EEEE, MMMM d, yyyy")}</h2></div>
-      <label className="shrink-0 text-[11px] text-muted-foreground">Choose day <input type="date" value={date} max={today} onChange={(event) => void selectDate(event.target.value)} disabled={uploading} className="ml-1 h-8 rounded-lg border border-border/70 bg-card px-1.5 text-xs text-foreground outline-none focus:border-primary/50" /></label>
+      <PostMarketDayPicker date={date} tradesByDay={tradesByDay} reviews={reviews} onSelect={selectDate} disabled={uploading} />
     </div>
     <div className="grid shrink-0 grid-cols-5 gap-1" aria-label="Recent logged days">
       {recent.map((key) => {
@@ -168,12 +155,11 @@ export function PostMarketDayDesk({ date, trades, onDateChange }: { date: string
       <Metric label="Observed MFE" value={summary.measuredCount ? `${summary.measuredMfeTotal.toFixed(2)}R` : "—"} detail={summary.winnerCount ? `${summary.measuredCount}/${summary.winnerCount} winners` : "No winners"} />
     </div>
     {loading ? <p className="flex flex-1 items-center justify-center text-xs text-muted-foreground">Loading day...</p> : <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_5.5rem] gap-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,.7fr)] lg:grid-rows-1">
-      <section ref={tradePanelRef} className="flex min-h-0 flex-col rounded-xl border border-border/60 bg-card/65 p-2.5 sm:p-4"><div className="flex items-center justify-between"><div><h3 className="text-xs font-bold sm:text-sm">Trades on this day</h3><p className="text-[10px] text-muted-foreground">Realised R and measured movement</p></div><span className="text-xs tabular-nums text-muted-foreground">{summary.tradeCount}</span></div>
-        {dayTrades.length ? <div className="mt-1.5 grid min-h-0 flex-1 content-start gap-1">{dayTrades.slice(tradePage * visibleTrades, tradePage * visibleTrades + visibleTrades).map((trade) => {
+      <section className="flex min-h-0 flex-col rounded-xl border border-border/60 bg-card/65 p-2.5 sm:p-4"><div className="flex items-center justify-between"><div><h3 className="text-xs font-bold sm:text-sm">Trades on this day</h3><p className="text-[10px] text-muted-foreground">Realised R and measured movement</p></div><span className="text-xs tabular-nums text-muted-foreground">{summary.tradeCount}</span></div>
+        {dayTrades.length ? <div className="mt-1.5 grid min-h-0 flex-1 content-start gap-1 overflow-y-auto pr-1">{dayTrades.map((trade) => {
           const record = observations[trade.id];
           return <div key={trade.id} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-border/50 bg-background/35 px-2 py-1.5 text-xs"><div className="min-w-0 flex-1"><p className="truncate font-semibold">{instrumentName(trade.instrument)} <span className="font-normal capitalize text-muted-foreground">{trade.direction}</span></p><p className="truncate text-[10px] text-muted-foreground">{trade.execution_time || trade.session} · {trade.result === "win" ? `MFE ${record?.mfe_r == null ? "not recorded" : `${record.mfe_r.toFixed(2)}R`}` : trade.result === "loss" ? "Stopped out" : "Break-even"}{record?.planned_take_profit_r != null ? ` · Plan ${record.planned_take_profit_r}R` : ""}</p></div><span className="shrink-0 font-bold tabular-nums" style={{ color: netRColor(tradeR(trade)) }}>{formatTotalR(tradeR(trade))}</span>{trade.result === "win" && <button type="button" onClick={() => { setRTradeId(trade.id); setPanel("r"); }} className="shrink-0 text-[10px] font-semibold text-primary">R data</button>}<Link href={`/journal/${trade.id}?from=trade-therapist`} className="shrink-0 text-[10px] text-muted-foreground hover:text-primary">Trade</Link></div>;
         })}</div> : <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center"><p className="text-sm font-semibold">No trades taken</p><p className="mt-1 text-xs text-muted-foreground">No realised R or trade-level R Potential for this day.</p></div>}
-        {tradePages > 1 && <div className="mt-1.5 flex shrink-0 items-center justify-between border-t border-border/50 pt-1.5 text-[10px]"><button disabled={tradePage === 0} onClick={() => setTradePage((page) => page - 1)} className="font-semibold text-primary disabled:opacity-30">Previous trades</button><span className="tabular-nums text-muted-foreground">{tradePage + 1}/{tradePages}</span><button disabled={tradePage === tradePages - 1} onClick={() => setTradePage((page) => page + 1)} className="font-semibold text-primary disabled:opacity-30">Next trades</button></div>}
       </section>
       <div className="grid min-h-0 grid-cols-3 gap-1.5 lg:grid-cols-1 lg:grid-rows-3 lg:gap-2">
         {entitlements.bestTrade && <section className="min-h-0 min-w-0 rounded-xl border border-border/60 bg-card/65 p-2 lg:p-3"><div className="flex justify-between gap-1"><h3 className="truncate text-[10px] font-bold lg:text-xs">Best trade</h3><button onClick={() => setPanel("best")} className="text-[10px] font-semibold text-primary">Edit</button></div><p className="mt-1 line-clamp-2 text-[10px] font-semibold lg:text-xs">{knownVerdict ? draft.taken_was_best ? dayTrades.length ? "Taken trade was best" : "Staying out was best" : "A better opportunity existed" : "Not reviewed yet"}</p><p className="mt-1 hidden line-clamp-2 text-[11px] text-muted-foreground lg:block">{draft.notes || "Record the reason behind this decision."}</p>{knownVerdict && !draft.taken_was_best ? <button onClick={() => setPanel("charts")} className="text-[10px] font-semibold text-primary">{chartCount} chart{chartCount === 1 ? "" : "s"}</button> : null}</section>}

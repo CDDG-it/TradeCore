@@ -79,7 +79,7 @@ export function TopNav() {
   return (
     <>
       <header
-        className="app-topbar relative z-40 shrink-0"
+        className="app-topbar sticky top-0 z-40"
         // The blur stays inline: the build strips `backdrop-filter` from the stylesheet.
         style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
       >

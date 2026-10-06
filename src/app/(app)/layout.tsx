@@ -4,7 +4,6 @@ import { TopNav } from "@/components/layout/top-nav";
 import { BottomNav } from "@/components/layout/mobile-nav";
 import { WarmReads } from "@/components/layout/warm-reads";
 import { TransitionLayout } from "@/components/layout/transition-layout";
-import { AppViewport } from "@/components/layout/app-viewport";
 import { AccessProvider } from "@/components/access/access-provider";
 import { resolveAccess } from "@/lib/access/server";
 
@@ -25,7 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const access = await resolveAccess();
   return (
     <div
-      className={`${inter.variable} relative flex h-dvh min-h-0 flex-col overflow-hidden bg-background`}
+      className={`${inter.variable} relative min-h-screen overflow-x-clip bg-background`}
       style={{
         // globals.css declares the font tokens with `@theme inline`, which bakes
         // their *values* straight into the utilities: `font-heading` compiles to
@@ -48,11 +47,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       {/* Main content fills the whole width beneath the bar. Tighter gutters
           and vertical padding on phones so content uses the full screen. */}
-      <main className="relative z-10 min-h-0 flex-1 overflow-hidden">
+      <main className="relative z-10">
         {/* `app-shell` reserves room for the fixed phone primary bar.
             Section menus open from each page title and add no content row. */}
-        <div className="app-shell mx-auto h-full w-full max-w-[1700px] px-3 py-4 sm:px-6 sm:py-8 lg:px-10">
-          <AppViewport><TransitionLayout>{children}</TransitionLayout></AppViewport>
+        <div className="app-shell mx-auto w-full max-w-[1700px] px-3 py-4 sm:px-6 sm:py-8 lg:px-10">
+          <TransitionLayout>{children}</TransitionLayout>
         </div>
       </main>
 
