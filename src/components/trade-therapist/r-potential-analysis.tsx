@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import Link from "next/link";
 import { Check, CircleHelp, ExternalLink, Loader2 } from "lucide-react";
 import { AccentPanel } from "@/components/ui/accent-panel";
@@ -27,10 +27,11 @@ function draftFrom(row?: RPotentialAnalysis): Draft {
   };
 }
 
-function RPotentialCard({ trade, initial, onChange }: {
+function RPotentialCard({ trade, initial, onChange, onRegisterFlush }: {
   trade: TradeJournalEntry;
   initial?: RPotentialAnalysis;
   onChange: (tradeId: string, draft: Draft) => void;
+  onRegisterFlush?: (tradeId: string, flush: (() => Promise<void>) | null) => void;
 }) {
   const [draft, setDraft] = useState<Draft>(() => draftFrom(initial));
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -39,13 +40,13 @@ function RPotentialCard({ trade, initial, onChange }: {
   const changed = useRef(false);
   const queued = useRef(Promise.resolve());
 
-  function persist(value: Draft) {
+  function persist(value: Draft): Promise<void> {
     const planned = numberOrNull(value.planned);
     const mfe = numberOrNull(value.mfe);
     const stopMfe = numberOrNull(value.stopMfe);
     if ((planned !== null && planned <= 0) || (mfe !== null && mfe < 0) || (stopMfe !== null && stopMfe < 0)) {
       setStatus("error");
-      return;
+      return Promise.reject(new Error("Invalid R value"));
     }
     setStatus("saving");
     queued.current = queued.current.catch(() => {}).then(async () => {
@@ -60,6 +61,7 @@ function RPotentialCard({ trade, initial, onChange }: {
     queued.current.then(() => {
       if (latest.current === value) setStatus("saved");
     }).catch(() => setStatus("error"));
+    return queued.current;
   }
 
   function update(partial: Partial<Draft>) {
@@ -70,16 +72,24 @@ function RPotentialCard({ trade, initial, onChange }: {
     setStatus("idle");
     onChange(trade.id, next);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => { timer.current = null; changed.current = false; persist(next); }, 700);
+    timer.current = setTimeout(() => { timer.current = null; changed.current = false; void persist(next).catch(() => {}); }, 700);
   }
 
-  function flush() {
-    if (!timer.current) return;
-    clearTimeout(timer.current);
-    timer.current = null;
-    changed.current = false;
-    persist(latest.current);
+  async function flush() {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+      changed.current = false;
+      await persist(latest.current);
+    } else await queued.current;
   }
+
+  const flushRef = useRef(flush);
+  useEffect(() => { flushRef.current = flush; });
+  useEffect(() => {
+    onRegisterFlush?.(trade.id, () => flushRef.current());
+    return () => onRegisterFlush?.(trade.id, null);
+  }, [trade.id, onRegisterFlush]);
 
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
@@ -112,13 +122,13 @@ function RPotentialCard({ trade, initial, onChange }: {
 
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <label className="text-[11px] font-medium text-muted-foreground">Planned take-profit R
-          <input type="number" min="0.01" step="0.01" inputMode="decimal" value={draft.planned} onChange={(e) => update({ planned: e.target.value })} onBlur={flush} placeholder="Optional" className={`mt-1 ${fieldClass}`} />
+          <input type="number" min="0.01" step="0.01" inputMode="decimal" value={draft.planned} onChange={(e) => update({ planned: e.target.value })} onBlur={() => { void flush().catch(() => {}); }} placeholder="Optional" className={`mt-1 ${fieldClass}`} />
         </label>
         <label className="text-[11px] font-medium text-muted-foreground">Maximum R reached (MFE)
-          <input type="number" min="0" step="0.01" inputMode="decimal" value={draft.mfe} onChange={(e) => update({ mfe: e.target.value })} onBlur={flush} placeholder="e.g. 2.32" className={`mt-1 ${fieldClass}`} />
+          <input type="number" min="0" step="0.01" inputMode="decimal" value={draft.mfe} onChange={(e) => update({ mfe: e.target.value })} onBlur={() => { void flush().catch(() => {}); }} placeholder="e.g. 2.32" className={`mt-1 ${fieldClass}`} />
         </label>
         <label className="text-[11px] font-medium text-muted-foreground">Max R before original stop was hit
-          <input type="number" min="0" step="0.01" inputMode="decimal" value={draft.stopMfe} onChange={(e) => update({ stopMfe: e.target.value })} onBlur={flush} placeholder="If observed" className={`mt-1 ${fieldClass}`} />
+          <input type="number" min="0" step="0.01" inputMode="decimal" value={draft.stopMfe} onChange={(e) => update({ stopMfe: e.target.value })} onBlur={() => { void flush().catch(() => {}); }} placeholder="If observed" className={`mt-1 ${fieldClass}`} />
         </label>
       </div>
 
@@ -133,7 +143,7 @@ function RPotentialCard({ trade, initial, onChange }: {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <input aria-label={`Optional note for ${instrumentName(trade.instrument)} trade`} value={draft.note} onChange={(e) => update({ note: e.target.value })} onBlur={flush} placeholder="Optional short note" className="h-9 min-w-0 flex-1 rounded-lg border border-border/60 bg-background/40 px-3 text-xs outline-none focus:border-primary/50" />
+        <input aria-label={`Optional note for ${instrumentName(trade.instrument)} trade`} value={draft.note} onChange={(e) => update({ note: e.target.value })} onBlur={() => { void flush().catch(() => {}); }} placeholder="Optional short note" className="h-9 min-w-0 flex-1 rounded-lg border border-border/60 bg-background/40 px-3 text-xs outline-none focus:border-primary/50" />
         <span className="min-w-14 text-right text-[11px] text-muted-foreground" role="status">
           {status === "saving" ? <><Loader2 className="mr-1 inline h-3 w-3 animate-spin" />Saving</> : status === "saved" ? <><Check className="mr-1 inline h-3 w-3 text-success" />Saved</> : status === "error" ? <span className="text-destructive">Save failed</span> : null}
         </span>
@@ -142,13 +152,26 @@ function RPotentialCard({ trade, initial, onChange }: {
   );
 }
 
-export function RPotentialAnalysisSection({ trades }: { trades: TradeJournalEntry[] }) {
+export function RPotentialAnalysisSection({ trades, flushRef }: { trades: TradeJournalEntry[]; flushRef?: MutableRefObject<(() => Promise<void>) | null> }) {
   const winners = useMemo(() => trades.filter((trade) => trade.result === "win"), [trades]);
   const [records, setRecords] = useState<Record<string, RPotentialAnalysis>>({});
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const ids = winners.map((trade) => trade.id).join(",");
+  const flushers = useRef(new Map<string, () => Promise<void>>());
+  const registerFlush = useCallback((tradeId: string, flush: (() => Promise<void>) | null) => {
+    if (flush) flushers.current.set(tradeId, flush);
+    else flushers.current.delete(tradeId);
+  }, []);
+  useEffect(() => {
+    if (!flushRef) return;
+    flushRef.current = async () => {
+      if (loading || error) throw new Error("R Potential Analysis is not ready");
+      await Promise.all([...flushers.current.values()].map((flush) => flush()));
+    };
+    return () => { flushRef.current = null; };
+  }, [flushRef, loading, error]);
 
   useEffect(() => {
     if (!ids) return;
@@ -175,7 +198,7 @@ export function RPotentialAnalysisSection({ trades }: { trades: TradeJournalEntr
         <TooltipProvider><Tooltip><TooltipTrigger aria-label="About MFE" className="shrink-0"><CircleHelp className="h-3.5 w-3.5" /></TooltipTrigger><TooltipContent>Measure from the original entry and stop-loss, using the highest favorable price before invalidation.</TooltipContent></Tooltip></TooltipProvider>
       </div>
       <div className="mt-4 space-y-2">
-        {winners.map((trade) => <RPotentialCard key={trade.id} trade={trade} initial={records[trade.id]} onChange={(id, draft) => setDrafts((prev) => ({ ...prev, [id]: draft }))} />)}
+        {winners.map((trade) => <RPotentialCard key={trade.id} trade={trade} initial={records[trade.id]} onChange={(id, draft) => setDrafts((prev) => ({ ...prev, [id]: draft }))} onRegisterFlush={registerFlush} />)}
       </div>
       {included.length > 0 && <div className="mt-4 border-t border-border/60 pt-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Exit Analysis · {included.length} reviewed winner{included.length !== 1 ? "s" : ""}</p>

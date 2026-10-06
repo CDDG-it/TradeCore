@@ -26,6 +26,7 @@ interface StorageConfig {
 interface Props {
   groups: ScreenshotGroup[];
   onChange: (groups: ScreenshotGroup[]) => void;
+  onUploadingChange?: (uploading: boolean) => void;
   maxFilesPerGroup?: number;
   className?: string;
   readOnly?: boolean;
@@ -55,12 +56,14 @@ function PendingShot() {
 export function ScreenshotUpload({
   groups,
   onChange,
+  onUploadingChange,
   maxFilesPerGroup = 5,
   className,
   readOnly = false,
   storageConfig,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const activeUploads = useRef(0);
   const [activeTab, setActiveTab] = useState(0);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
@@ -186,7 +189,9 @@ export function ScreenshotUpload({
       .slice(0, remaining);
     if (!toAdd.length) return;
     if (!storageConfig) return;
+    activeUploads.current += 1;
     setLoading(true);
+    onUploadingChange?.(true);
     setUploadError(null);
     try {
       const { data: { user } } = await createClient().auth.getUser();
@@ -205,7 +210,11 @@ export function ScreenshotUpload({
     } catch {
       setUploadError("Upload failed. Check your connection and try again.");
     } finally {
-      setLoading(false);
+      activeUploads.current -= 1;
+      if (activeUploads.current === 0) {
+        setLoading(false);
+        onUploadingChange?.(false);
+      }
     }
   }
 

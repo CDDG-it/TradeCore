@@ -978,6 +978,7 @@ const BEST_TRADE_LIST = columns<BestTradeOfDay>()(
   "taken_was_best",
   "notes",
   "post_market_analysis",
+  "review_step",
   "created_at",
   "updated_at",
 );
@@ -1010,7 +1011,8 @@ async function _getBestTradeOfDay(date: string): Promise<BestTradeOfDay | null> 
 }
 
 export async function saveBestTradeOfDay(
-  input: Pick<BestTradeOfDay, "date" | "taken_was_best" | "notes" | "post_market_analysis" | "screenshot_groups">
+  input: Pick<BestTradeOfDay, "date" | "taken_was_best" | "notes" | "post_market_analysis" | "screenshot_groups"> &
+    Partial<Pick<BestTradeOfDay, "review_step">>
 ): Promise<BestTradeOfDay> {
   const supabase = createClient();
   invalidateReads("bestTrade");

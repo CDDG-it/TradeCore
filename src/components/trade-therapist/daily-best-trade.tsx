@@ -1,440 +1,298 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import Link from "next/link";
-import {
-  format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isToday, isFuture,
-} from "date-fns";
-import {
-  ChevronLeft, ChevronRight, Loader2, Check,
-  ExternalLink,
-} from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { AccentPanel } from "@/components/ui/accent-panel";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isFuture, isToday } from "date-fns";
+import { motion, useReducedMotion } from "motion/react";
+import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
-import { cn } from "@/lib/utils";
-import {
-  getBestTradeOfDay, getBestTradesOfDay, saveBestTradeOfDay, deleteBestTradeOfDay,
-  getTradeRuleChecks, type BestTradeListRow,
-} from "@/lib/supabase/queries";
-import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
-import {
-  resultColor, resultBands, netRColor, inOrder, alpha,
-} from "@/lib/journal/colors";
-import type { TradeJournalEntry, BestTradeOfDay, ScreenshotGroup, TradeRuleCheck } from "@/lib/types";
-import { useAccess } from "@/components/access/access-provider";
 import { RPotentialAnalysisSection } from "@/components/trade-therapist/r-potential-analysis";
+import { initialPostMarketStep, postMarketSteps, type PostMarketStep } from "@/lib/post-market/flow";
+import { useAccess } from "@/components/access/access-provider";
+import { cn } from "@/lib/utils";
+import { getBestTradeOfDay, getBestTradesOfDay, saveBestTradeOfDay, deleteBestTradeOfDay, getTradeRuleChecks, type BestTradeListRow } from "@/lib/supabase/queries";
+import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
+import { inOrder, resultBands, resultColor, alpha, netRColor } from "@/lib/journal/colors";
+import type { BestTradeOfDay, ScreenshotGroup, TradeJournalEntry, TradeRuleCheck } from "@/lib/types";
 
-const TURQUOISE = "var(--primary)";
+type Step = PostMarketStep;
+type Draft = Pick<BestTradeOfDay, "taken_was_best" | "notes" | "post_market_analysis" | "screenshot_groups" | "review_step">;
 
-/**
- * Whether a best-trade entry holds anything worth marking.
- *
- * Charts are no longer part of the test. The list read leaves
- * `screenshot_groups` behind because that column may still hold whole images
- * inline, and pulling every reviewed day's charts to render a row of dots was
- * costing more than the dots are worth. A day holding charts and no words at
- * all therefore reads as not reviewed; a day with either the notes or the
- * post-market recap filled in still counts, as before.
- */
-function hasEntry(
-  b: Pick<BestTradeOfDay, "taken_was_best" | "notes" | "post_market_analysis"> | undefined
-): boolean {
-  if (!b) return false;
-  return (
-    b.taken_was_best ||
-    Boolean((b.notes ?? "").trim()) ||
-    Boolean((b.post_market_analysis ?? "").trim())
-  );
-}
+const emptyGroups = (): ScreenshotGroup[] => [{ label: "HTF", urls: [] }, { label: "Entry", urls: [] }];
+const emptyDraft = (): Draft => ({ taken_was_best: false, notes: "", post_market_analysis: "", screenshot_groups: emptyGroups(), review_step: null });
+const hasEntry = (row?: BestTradeListRow) => Boolean(row && (row.review_step === "complete" || row.taken_was_best || row.notes.trim() || row.post_market_analysis.trim()));
 
-/** The two chart slots the best-trade of the day is framed around: the higher
- *  timeframe read and the entry you should have taken. Fresh arrays each call
- *  so state is never shared across days. */
-function defaultShotGroups(): ScreenshotGroup[] {
-  return [{ label: "HTF", urls: [] }, { label: "Entry", urls: [] }];
-}
-
-/** Only the groups that actually hold a chart: what counts as content and what
- *  the "done" marker keys off, so empty HTF/Entry slots never read as filled. */
-const withCharts = (g: ScreenshotGroup[]) => g.filter((x) => x.urls.length > 0);
-
-/**
- * Daily / best trade of the day: a week calendar of results across the top,
- * and the selected day's trades, post-market recap and best trade below. Pick
- * any day in the week to work through it.
- */
-export function DailyBestTrade({
-  date, trades, onDateChange, onSaved,
-}: {
-  date: string; // yyyy-MM-dd
+export function DailyBestTrade({ date, trades, onDateChange, onSaved }: {
+  date: string;
   trades: TradeJournalEntry[];
   onDateChange: (date: string) => void;
   onSaved?: (date: string, entry: BestTradeOfDay | null) => void;
 }) {
   const { entitlements } = useAccess();
   const bestTradeEnabled = entitlements.bestTrade;
+  const reduceMotion = useReducedMotion();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const [takenWasBest, setTakenWasBest] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [postMarketAnalysis, setPostMarketAnalysis] = useState("");
-  const [ruleChecks, setRuleChecks] = useState<TradeRuleCheck[]>([]);
-  const [groups, setGroups] = useState<ScreenshotGroup[]>(defaultShotGroups());
-  const [loaded, setLoaded] = useState<BestTradeOfDay | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [step, setStep] = useState<Step>("verdict");
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
+  const [calendarWeek, setCalendarWeek] = useState(() => new Date(date + "T12:00:00"));
   const [bestByDay, setBestByDay] = useState<Record<string, BestTradeListRow>>({});
+  const [ruleChecks, setRuleChecks] = useState<TradeRuleCheck[]>([]);
+  const draftRef = useRef<Draft>(draft);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queue = useRef<Promise<BestTradeOfDay | null>>(Promise.resolve(null));
+  const revision = useRef(0);
+  const rFlushRef: MutableRefObject<(() => Promise<void>) | null> = useRef(null);
 
-  const d = useMemo(() => new Date(date + "T12:00:00"), [date]);
-  const weekStart = useMemo(() => startOfWeek(d, { weekStartsOn: 1 }), [d]);
-  const weekEnd = useMemo(() => endOfWeek(d, { weekStartsOn: 1 }), [d]);
-  const weekDays = useMemo(() => eachDayOfInterval({ start: weekStart, end: weekEnd }), [weekStart, weekEnd]);
-
+  const selectedDate = useMemo(() => new Date(date + "T12:00:00"), [date]);
   const tradesByDay = useMemo(() => {
     const map: Record<string, TradeJournalEntry[]> = {};
-    trades.forEach((t) => {
-      const k = t.date_time.slice(0, 10);
-      (map[k] ??= []).push(t);
-    });
+    for (const trade of trades) (map[trade.date_time.slice(0, 10)] ??= []).push(trade);
     return map;
   }, [trades]);
+  const dayTrades = useMemo(() => inOrder(tradesByDay[date] ?? []), [tradesByDay, date]);
+  const winners = useMemo(() => dayTrades.filter((trade) => trade.result === "win"), [dayTrades]);
+  const steps = useMemo<Step[]>(() => postMarketSteps(bestTradeEnabled, draft.taken_was_best, winners.length),
+  [bestTradeEnabled, draft.taken_was_best, winners.length]);
+  const currentStep = steps.includes(step) ? step : steps[0];
+  const stepIndex = steps.indexOf(currentStep);
+  const dayR = dayTrades.reduce((total, trade) => total + tradeR(trade), 0);
+  const weekStart = startOfWeek(calendarWeek, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(calendarWeek, { weekStartsOn: 1 });
+  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const reviewedDays = weekDays.filter((day) => {
+    const key = format(day, "yyyy-MM-dd");
+    return (tradesByDay[key] ?? []).length > 0 && hasEntry(bestByDay[key]);
+  }).length;
+  const tradedDays = weekDays.filter((day) => (tradesByDay[format(day, "yyyy-MM-dd")] ?? []).length > 0).length;
 
-  // All best-trade entries: only for marking which week days are done.
   useEffect(() => {
-    getBestTradesOfDay()
-      .then((rows) => setBestByDay(Object.fromEntries(rows.map((r) => [r.date.slice(0, 10), r]))))
-      .catch(() => {});
+    getBestTradesOfDay().then((rows) => setBestByDay(Object.fromEntries(rows.map((row) => [row.date.slice(0, 10), row])))).catch(() => {});
   }, []);
 
-  // The selected day's entry.
   useEffect(() => {
-    setLoading(true); setError(null); setSaved(false);
-    getBestTradeOfDay(date)
-      .then((entry) => {
-        setLoaded(entry);
-        setTakenWasBest(entry?.taken_was_best ?? false);
-        setNotes(entry?.notes ?? "");
-        setPostMarketAnalysis(entry?.post_market_analysis ?? "");
-        setGroups(entry?.screenshot_groups?.length ? entry.screenshot_groups : defaultShotGroups());
-      })
-      .finally(() => setLoading(false));
-  }, [date]);
+    let active = true;
+    getBestTradeOfDay(date).then((entry) => {
+      if (!active) return;
+      const next: Draft = {
+        taken_was_best: entry?.taken_was_best ?? false,
+        notes: entry?.notes ?? "",
+        post_market_analysis: entry?.post_market_analysis ?? "",
+        screenshot_groups: entry?.screenshot_groups?.length ? entry.screenshot_groups : emptyGroups(),
+        review_step: entry?.review_step ?? null,
+      };
+      draftRef.current = next;
+      setDraft(next);
+      setStep(initialPostMarketStep(entry, bestTradeEnabled));
+    }).catch(() => setSaveState("error")).finally(() => { if (active) setLoading(false); });
+    return () => {
+      active = false;
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = null;
+        const value = draftRef.current;
+        void queue.current.catch(() => null).then(() => saveBestTradeOfDay({
+          date,
+          taken_was_best: value.taken_was_best,
+          notes: value.notes,
+          post_market_analysis: value.post_market_analysis,
+          screenshot_groups: bestTradeEnabled || value.screenshot_groups.some((group) => group.urls.length) ? value.screenshot_groups : [],
+          review_step: value.review_step,
+        })).catch(() => {});
+      }
+    };
+  }, [date, bestTradeEnabled]);
 
-  const dayTrades = useMemo(
-    () => inOrder(tradesByDay[date] ?? []),
-    [tradesByDay, date]
-  );
   useEffect(() => {
-    Promise.all(dayTrades.map((trade) => getTradeRuleChecks(trade.id))).then((rows) => setRuleChecks(rows.flat())).catch(() => setRuleChecks([]));
+    Promise.all(dayTrades.map((trade) => getTradeRuleChecks(trade.id)))
+      .then((rows) => setRuleChecks(rows.flat())).catch(() => setRuleChecks([]));
   }, [dayTrades]);
-  const dayR = dayTrades.reduce((s, t) => s + tradeR(t), 0);
 
-  // Week-level review progress: only days that were actually traded can be
-  // "still to review", so the ratio never punishes a quiet week.
-  const isThisWeek = weekDays.some((day) => isToday(day));
-  const { tradedDays, reviewedDays } = useMemo(() => {
-    let traded = 0, reviewed = 0;
-    for (const day of weekDays) {
-      const k = format(day, "yyyy-MM-dd");
-      if ((tradesByDay[k] ?? []).length === 0) continue;
-      traded++;
-      if (hasEntry(bestByDay[k])) reviewed++;
-    }
-    return { tradedDays: traded, reviewedDays: reviewed };
-  }, [weekDays, tradesByDay, bestByDay]);
-
-  // Empty HTF/Entry slots never count as a change, so seeding them does not
-  // arm the save button on a fresh day.
-  const dirty =
-    (bestTradeEnabled && takenWasBest !== (loaded?.taken_was_best ?? false)) ||
-    (bestTradeEnabled && notes !== (loaded?.notes ?? "")) ||
-    postMarketAnalysis !== (loaded?.post_market_analysis ?? "") ||
-    (bestTradeEnabled && JSON.stringify(withCharts(groups)) !== JSON.stringify(withCharts(loaded?.screenshot_groups ?? [])));
-  const hasContent = postMarketAnalysis.trim() || (bestTradeEnabled && (takenWasBest || notes.trim() || groups.some((g) => g.urls.length > 0)));
-
-  async function save() {
-    setSaving(true); setError(null);
-    try {
-      const entry = await saveBestTradeOfDay({
-        date, taken_was_best: bestTradeEnabled ? takenWasBest : loaded?.taken_was_best ?? false,
-        notes: bestTradeEnabled ? notes.trim() : loaded?.notes ?? "",
-        post_market_analysis: postMarketAnalysis.trim(), screenshot_groups: groups,
-      });
-      setLoaded(entry);
-      setBestByDay((prev) => ({ ...prev, [date]: entry }));
-      setSaved(true);
+  function persist(value: Draft): Promise<BestTradeOfDay> {
+    const sequence = ++revision.current;
+    setSaveState("saving");
+    const next = queue.current.catch(() => null).then(() => saveBestTradeOfDay({
+      date,
+      taken_was_best: value.taken_was_best,
+      notes: value.notes,
+      post_market_analysis: value.post_market_analysis,
+      screenshot_groups: bestTradeEnabled || value.screenshot_groups.some((group) => group.urls.length) ? value.screenshot_groups : [],
+      review_step: value.review_step,
+    }));
+    queue.current = next;
+    next.then((entry) => {
+      setBestByDay((old) => ({ ...old, [date]: entry }));
       onSaved?.(date, entry);
-      setTimeout(() => setSaved(false), 2500);
+      if (sequence === revision.current) setSaveState("saved");
+    }).catch(() => { if (sequence === revision.current) setSaveState("error"); });
+    return next;
+  }
+
+  function update(partial: Partial<Draft>) {
+    const next = { ...draftRef.current, ...partial, review_step: currentStep };
+    draftRef.current = next;
+    setDraft(next);
+    setSaveState("idle");
+    revision.current += 1;
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => { timer.current = null; void persist(next).catch(() => {}); }, 700);
+  }
+
+  async function flush(nextStep?: Step): Promise<boolean> {
+    if (uploadingScreenshot) return false;
+    const pending = timer.current !== null;
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    const next = nextStep ? { ...draftRef.current, review_step: nextStep } : draftRef.current;
+    try {
+      if (rFlushRef.current) await rFlushRef.current();
+      if (pending || nextStep) {
+        draftRef.current = next;
+        setDraft(next);
+        await persist(next);
+      } else {
+        try { await queue.current; }
+        catch { await persist(next); }
+      }
+      return true;
     } catch {
-      setError("Could not save. Please try again.");
-    } finally {
-      setSaving(false);
+      setSaveState("error");
+      return false;
     }
+  }
+
+  async function answerVerdict(answer: boolean) {
+    const next = { ...draftRef.current, taken_was_best: answer, review_step: "why" as const };
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    try {
+      await persist(next);
+      draftRef.current = next;
+      setDraft(next);
+      setStep("why");
+    } catch { setSaveState("error"); }
+  }
+
+  async function move(target: Step) {
+    if (await flush(target)) setStep(target);
+  }
+
+  async function selectDate(nextDate: string) {
+    if (nextDate === date) { setCalendarOpen(false); return; }
+    if (!(await flush())) return;
+    setCalendarOpen(false);
+    onDateChange(nextDate);
   }
 
   async function clearDay() {
-    setSaving(true); setError(null);
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    setSaveState("saving");
     try {
+      await queue.current.catch(() => null);
       await deleteBestTradeOfDay(date);
-      setLoaded(null);
-      setBestByDay((prev) => { const n = { ...prev }; delete n[date]; return n; });
-      setTakenWasBest(false); setNotes(""); setPostMarketAnalysis(""); setGroups(defaultShotGroups());
+      const fresh = emptyDraft();
+      draftRef.current = fresh; setDraft(fresh);
+      setStep(bestTradeEnabled ? "verdict" : "market");
+      setBestByDay((old) => { const copy = { ...old }; delete copy[date]; return copy; });
+      setSaveState("idle");
       onSaved?.(date, null);
-    } catch {
-      setError("Could not clear this day.");
-    } finally {
-      setSaving(false);
-    }
+    } catch { setSaveState("error"); }
   }
 
-  return (
-    // The whole tab is meant to sit on one screen: the rail and the save bar
-    // are fixed, and the two working columns take the height that is left.
-    <div className="flex h-full min-h-0 flex-col gap-3">
-      {/* ── Week rail ────────────────────────────────────────────────────────
-          Deliberately not the Journal's calendar: this one answers "which day
-          still needs working through". It carries review state as the primary
-          signal, with the day's result bands underneath: one band per trade,
-          in the order taken, so a mixed day reads as mixed at a glance. */}
-      <AccentPanel accent="primary" className="shrink-0 p-0">
-        <div className="flex items-center justify-between gap-2 border-b border-border/40 px-2.5 py-1.5 sm:px-3">
-          <div className="flex items-center gap-1.5">
-            <button onClick={() => onDateChange(format(subWeeks(d, 1), "yyyy-MM-dd"))} aria-label="Previous week"
-              className="flex h-6 w-6 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button onClick={() => onDateChange(format(addWeeks(d, 1), "yyyy-MM-dd"))} aria-label="Next week"
-              className="flex h-6 w-6 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
-              <ChevronRight className="h-4 w-4" />
-            </button>
-            {!isThisWeek && (
-              <button onClick={() => onDateChange(format(new Date(), "yyyy-MM-dd"))}
-                className="ml-1 rounded-lg border border-primary/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10">
-                Today
-              </button>
-            )}
-          </div>
+  const textareaClass = "mt-5 min-h-48 w-full flex-1 resize-none rounded-xl border border-border/60 bg-background/40 px-4 py-4 text-sm leading-relaxed outline-none placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10";
+  const stepTitle: Record<Step, string> = {
+    verdict: dayTrades.length ? "Was your trade the best trade?" : "Was staying out the best decision?",
+    why: draft.taken_was_best ? "Why was this the best decision?" : "Why was another trade better?",
+    market: "Post Market review",
+    screenshots: "The best trade of the day",
+    r: "R Potential Analysis",
+    complete: "Review complete",
+  };
 
-          <div className="min-w-0 text-right sm:text-center">
-            <p className="truncate text-xs font-semibold tracking-tight">
-              {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}
-            </p>
-            <p className="mt-0.5 text-[10px] tabular-nums text-muted-foreground/70">
-              {tradedDays === 0
-                ? "No trades logged this week"
-                : `${reviewedDays} / ${tradedDays} traded days reviewed`}
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-7 gap-1 p-1.5 sm:gap-1.5 sm:p-2">
-          {weekDays.map((day) => {
-            const key = format(day, "yyyy-MM-dd");
-            const dayTradesFor = inOrder(tradesByDay[key] ?? []);
-            const traded = dayTradesFor.length > 0;
-            const netR = dayTradesFor.reduce((s, t) => s + tradeR(t), 0);
-            const selected = key === date;
-            const future = isFuture(day) && !isToday(day);
-            const best = bestByDay[key];
-            const done = Boolean(best?.taken_was_best) || hasEntry(best);
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => onDateChange(key)}
-                disabled={future}
-                title={future ? "" : done ? "Reviewed" : traded ? "Traded, not reviewed yet" : "No trades"}
-                className={cn(
-                  "group relative flex min-h-[62px] flex-col items-center justify-center overflow-hidden rounded-lg border px-0.5 py-1 transition-colors",
-                  selected
-                    ? "border-primary ring-1 ring-primary/30"
-                    : isToday(day)
-                    ? "border-primary/40 hover:border-primary/60"
-                    : "border-border/40 hover:border-primary/30",
-                  future ? "cursor-default opacity-30" : "cursor-pointer"
-                )}
-                style={traded ? { background: resultBands(dayTradesFor, selected ? 18 : 12) } : undefined}
-              >
-                {/* Result bar: one full-strength segment per trade */}
-                {traded && (
-                  <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-[3px] gap-px">
-                    {dayTradesFor.map((t) => (
-                    <span
-                      key={t.id}
-                        className="flex-1 transition-[filter] duration-300 group-hover:brightness-125"
-                        style={{ background: resultColor(t), boxShadow: `0 0 8px ${alpha(resultColor(t), 45)}` }}
-                      />
-                    ))}
-                  </span>
-                )}
-                {/* Selected day gets a soft turquoise floor */}
-                {selected && (
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0"
-                    style={{ background: `radial-gradient(120% 90% at 50% 100%, ${alpha(TURQUOISE, 16)}, transparent 68%)` }}
-                  />
-                )}
-
-                <span className="relative text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                  <span className="sm:hidden">{format(day, "EEEEE")}</span>
-                  <span className="hidden sm:inline">{format(day, "EEE")}</span>
-                </span>
-                <span
-                  className={cn(
-                    "relative mt-0.5 text-sm font-bold leading-none tabular-nums",
-                    selected || isToday(day) ? "text-primary" : "text-foreground/85"
-                  )}
-                >
-                  {format(day, "d")}
-                </span>
-
-                {/* Net R: the day's outcome, or a "flat" marker when nothing
-                    was taken, so a quiet day reads as a deliberate no-trade and
-                    not as missing data. Future days stay blank. */}
-                {traded ? (
-                  <span className="relative mt-1 flex items-center gap-1">
-                    <span className="text-[10px] font-bold leading-none tabular-nums" style={{ color: netRColor(netR) }}>
-                      {formatTotalR(netR)}
-                    </span>
-                    {dayTradesFor.length > 1 && (
-                      <span className="rounded-full border border-border/70 bg-background/50 px-1 text-[8px] font-bold leading-[13px] text-muted-foreground/80">
-                        {dayTradesFor.length}
-                      </span>
-                    )}
-                  </span>
-                ) : future ? (
-                  <span className="relative mt-1 h-1 w-1 rounded-full bg-muted-foreground/20" />
-                ) : (
-                  <span className="relative mt-1 text-[9px] text-muted-foreground/50" title="No trades this day">
-                    —
-                  </span>
-                )}
-
-                {done && <Check aria-label="Reviewed" className="absolute right-1 top-1 h-2.5 w-2.5 text-primary" strokeWidth={3} />}
-              </button>
-            );
-          })}
-        </div>
-      </AccentPanel>
-
-      {loading ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-      ) : (
-        <>
-          <div className="flex shrink-0 items-baseline justify-between gap-3">
-            <p className="text-sm font-semibold">{format(d, "EEEE, MMMM d")}</p>
-            <p className="text-[11px] text-muted-foreground">
-              {dayTrades.length === 0 ? "No trades taken" : `${dayTrades.length} trade${dayTrades.length !== 1 ? "s" : ""} · ${formatTotalR(dayR)}`}
-            </p>
-          </div>
-
-          <div className="grid shrink-0 gap-2 rounded-xl border border-border/60 bg-card/70 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <textarea value={postMarketAnalysis} onChange={(event) => { setPostMarketAnalysis(event.target.value); setSaved(false); }} rows={2} placeholder="Session reflection: what did the market offer, and how did you respond?" className="w-full resize-none rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-xs outline-none focus:border-primary/50" />
-            <div className="max-h-20 overflow-y-auto text-xs">{ruleChecks.length === 0 ? <p className="text-muted-foreground">No commitment or standing-rule checks for these trades.</p> : ruleChecks.map((check) => <div key={check.id} className="flex items-start justify-between gap-2 border-b border-border/40 py-1 last:border-0"><span className="line-clamp-1">{check.source_text_snapshot}</span><span className={cn("shrink-0 font-semibold", check.status === "kept" ? "text-success" : check.status === "broken" ? "text-destructive" : "text-muted-foreground")}>{check.status === "not_applicable" ? "N/A" : check.status}</span></div>)}</div>
-          </div>
-
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
-          <h2 className="font-heading text-sm font-bold tracking-tight">Best Trade of the Day</h2>
-          {bestTradeEnabled ? <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-3", !takenWasBest && "lg:grid-cols-2")}>
-            {/* ── LEFT: your verdict + why the better trade was better ───────
-                The one call this tab exists to make - was the trade you took
-                the best one available - and, when it was not, the room to write
-                out why the trade you should have taken was the better one. */}
-            <AccentPanel accent="primary" eyebrow="Verdict" title="Was your trade the best trade?" className="flex min-h-0 flex-col">
-              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
-                {dayTrades.length > 0 && <div className="flex flex-wrap items-center gap-2 border-b border-border/40 pb-3">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/60">Your actual {dayTrades.length > 1 ? "trades" : "trade"}</span>
-                  {dayTrades.map((t) => <Link key={t.id} href={`/journal/${t.id}?from=trade-therapist`} className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-2 py-1 text-xs font-semibold transition-colors hover:border-primary/40 hover:text-primary">
-                    {instrumentName(t.instrument)} <span className="tabular-nums">{formatTotalR(tradeR(t))}</span><ExternalLink className="h-3 w-3 text-muted-foreground/50" />
-                  </Link>)}
-                </div>}
-                {/* The toggle: a full-width bar so the day's verdict is the
-                    first thing the eye lands on, its state carried by colour. */}
-                <label
-                  className={cn(
-                    "flex shrink-0 cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors",
-                    takenWasBest ? "border-success/45 bg-success/[0.07]" : "border-border/60 bg-muted/20"
-                  )}
-                >
-                  <span className="min-w-0">
-                    <span className={cn("block text-sm font-bold leading-tight transition-colors", takenWasBest ? "text-success" : "text-foreground/90")}>
-                      {takenWasBest ? "Yes - I took the best available trade" : "The trade I took was the best available"}
-                    </span>
-                    <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground/75">
-                      On a flat day, staying out can be the best trade too.
-                    </span>
-                  </span>
-                  <Switch checked={takenWasBest} onCheckedChange={(v) => { setTakenWasBest(v); setSaved(false); }} />
-                </label>
-
-                {/* The explanation: why the better trade was the better one to
-                    take. Only really needed when your trade was not the best. */}
-                <div className="flex min-h-0 flex-1 flex-col">
-                  <p className="mb-2 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
-                    {takenWasBest ? "Why this was the best trade" : "Why the better trade was the better one"}
-                  </p>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => { setNotes(e.target.value); setSaved(false); }}
-                    placeholder={takenWasBest
-                      ? "What made your trade the highest-quality play on the board..."
-                      : "The cleaner level, more room to target, aligned with the daily bias - why the trade you should have taken beat the one you did..."}
-                    className="min-h-[110px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
-                  />
-                </div>
-              </div>
-            </AccentPanel>
-
-            {!takenWasBest && <>{/* ── RIGHT: the trade you should have taken ─────────────────────
-                The HTF read and the entry of the better trade, uploaded into
-                two fixed slots. A small link to your actual trade's log sits on
-                top for reference - the chart of what should have happened is the
-                point, not a thumbnail of what did. */}
-            <AccentPanel
-              accent="primary"
-              eyebrow="The better trade"
-              title="Screenshots you should have taken"
-              className="flex min-h-0 flex-col"
-            >
-              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
-                {/* The HTF + entry charts of the trade you should have taken. */}
-                <div className="min-h-0 flex-1 pr-1">
-                  <ScreenshotUpload
-                    groups={groups}
-                    onChange={(g) => { setGroups(g); setSaved(false); }}
-                    storageConfig={{ entityType: "best-trade", entityId: date }}
-                  />
-                </div>
-              </div>
-            </AccentPanel>
-            </>}
-          </div> : <div className="flex min-h-36 items-center justify-center rounded-2xl border border-border/60 bg-card px-6 text-center"><div><p className="text-sm font-semibold">Session review saved on every plan</p><p className="mt-1 text-xs text-muted-foreground">Plus adds Best Trade analysis and review screenshots.</p><Link href="/pricing" className="mt-3 inline-flex text-xs font-semibold text-primary hover:underline">Compare plans</Link></div></div>}
-          <RPotentialAnalysisSection key={date} trades={dayTrades} />
-          </div>
-
-          {/* Save bar */}
-          <div className="flex shrink-0 items-center justify-between gap-3">
-            <div className="text-xs">
-              {error ? <span className="text-destructive">{error}</span>
-                : saved ? <span className="inline-flex items-center gap-1.5 text-success"><Check className="w-3.5 h-3.5" /> Saved</span>
-                : loaded ? <button onClick={clearDay} disabled={saving} className="text-muted-foreground hover:text-destructive transition-colors">Clear this day</button>
-                : null}
+  return <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-3 lg:h-full lg:min-h-0">
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+      <Dialog open={calendarOpen} onOpenChange={(open) => { setCalendarOpen(open); if (open) setCalendarWeek(selectedDate); }}>
+        <button type="button" disabled={uploadingScreenshot} onClick={() => setCalendarOpen(true)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-semibold hover:border-primary/40 disabled:opacity-50">
+          <CalendarDays className="h-4 w-4 text-primary" />{format(selectedDate, "EEEE, MMM d, yyyy")}<ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader><DialogTitle>Choose a review day</DialogTitle><DialogDescription>Switch between days and weeks. Changes are saved before opening another day.</DialogDescription></DialogHeader>
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <div className="flex gap-1">
+              <button type="button" onClick={() => setCalendarWeek(subWeeks(calendarWeek, 1))} aria-label="Previous week" className="rounded-lg border border-border/60 p-1.5 hover:text-primary"><ChevronLeft className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setCalendarWeek(addWeeks(calendarWeek, 1))} aria-label="Next week" className="rounded-lg border border-border/60 p-1.5 hover:text-primary"><ChevronRight className="h-4 w-4" /></button>
             </div>
-            <button
-              onClick={save}
-              disabled={saving || !dirty || !hasContent}
-              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
-              style={{ background: TURQUOISE, boxShadow: "0 2px 12px color-mix(in oklch, var(--primary) 26%, transparent)" }}
-            >
-              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-              {loaded ? "Save changes" : "Save analysis"}
-            </button>
+            <span className="font-semibold">{format(weekStart, "MMM d")} – {format(weekEnd, "MMM d, yyyy")}</span>
+            <span className="text-muted-foreground">{reviewedDays}/{tradedDays} reviewed</span>
           </div>
-        </>
-      )}
+          <div className="grid grid-cols-7 gap-1.5">
+            {weekDays.map((day) => {
+              const key = format(day, "yyyy-MM-dd");
+              const dayTradesFor = inOrder(tradesByDay[key] ?? []);
+              const netR = dayTradesFor.reduce((total, trade) => total + tradeR(trade), 0);
+              const future = isFuture(day) && !isToday(day);
+              return <button key={key} type="button" disabled={future} onClick={() => void selectDate(key)} aria-label={`${format(day, "EEEE, MMMM d")}${hasEntry(bestByDay[key]) ? ", reviewed" : ""}`} className={cn("relative flex min-h-16 flex-col items-center justify-center rounded-lg border px-1 text-xs transition-colors", key === date ? "border-primary text-primary" : "border-border/60 hover:border-primary/40", future && "opacity-30")} style={dayTradesFor.length ? { background: resultBands(dayTradesFor, 12) } : undefined}>
+                {dayTradesFor.length > 0 && <span aria-hidden className="absolute inset-x-0 top-0 flex h-[2px]">{dayTradesFor.map((trade) => <span key={trade.id} className="flex-1" style={{ background: resultColor(trade), boxShadow: `0 0 8px ${alpha(resultColor(trade), 45)}` }} />)}</span>}
+                <span className="text-[9px] uppercase text-muted-foreground">{format(day, "EEE")}</span><span className="font-bold">{format(day, "d")}</span><span className="text-[9px] tabular-nums" style={{ color: dayTradesFor.length ? netRColor(netR) : undefined }}>{dayTradesFor.length ? formatTotalR(netR) : "—"}</span>
+                {hasEntry(bestByDay[key]) && <Check className="absolute right-1 top-1 h-2.5 w-2.5 text-primary" />}
+              </button>;
+            })}
+          </div>
+          <button type="button" onClick={() => void selectDate(format(new Date(), "yyyy-MM-dd"))} className="justify-self-end text-xs font-semibold text-primary hover:underline">Today</button>
+        </DialogContent>
+      </Dialog>
+      <span className="text-[11px] text-muted-foreground">{dayTrades.length ? `${dayTrades.length} trade${dayTrades.length === 1 ? "" : "s"} · ${formatTotalR(dayR)}` : "No trades taken"}</span>
     </div>
-  );
+
+    {loading ? <div className="flex min-h-0 flex-1 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : <>
+      <div className="flex shrink-0 items-center justify-between gap-3">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">Post Market · {stepIndex + 1} / {steps.length}</span>
+        <div className="flex gap-1" aria-label="Review progress">{steps.map((item, index) => <span key={item} className={cn("h-1 w-6 rounded-full", index <= stepIndex ? "bg-primary" : "bg-border")} />)}</div>
+      </div>
+      <motion.div key={currentStep} initial={{ opacity: 0, transform: reduceMotion ? "none" : "translateY(8px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} transition={{ duration: reduceMotion ? 0.15 : 0.2, ease: [0.23, 1, 0.32, 1] }} className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-border/60 bg-card/70" >
+        <div className="mx-auto flex min-h-full max-w-3xl flex-col justify-center px-5 py-7 sm:px-9 sm:py-9">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">{currentStep === "verdict" || currentStep === "why" || currentStep === "screenshots" ? "Best Trade of the Day" : currentStep === "r" ? "Exit analysis" : "Daily review"}</p>
+          <h2 className="mt-2 font-heading text-xl font-bold tracking-tight sm:text-2xl">{stepTitle[currentStep]}</h2>
+
+          {currentStep === "verdict" && <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {([true, false] as const).map((answer) => <button key={String(answer)} type="button" disabled={saveState === "saving"} onClick={() => void answerVerdict(answer)} className="min-h-24 rounded-xl border border-border/60 bg-background/40 p-5 text-left text-base font-semibold transition-[border-color,background-color] duration-150 hover:border-primary/50 hover:bg-primary/5 disabled:opacity-50">
+              {answer ? "Yes" : "No"}<span className="mt-1 block text-xs font-normal text-muted-foreground">{answer ? "Continue with what worked." : dayTrades.length ? "Review the better opportunity." : "Review the opportunity you chose to pass on."}</span>
+            </button>)}
+          </div>}
+
+          {currentStep === "why" && <>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{draft.taken_was_best ? "Record the decision quality that made this the best available trade." : "Describe the better setup and why it was preferable."}</p>
+            {dayTrades.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{dayTrades.map((trade) => <Link key={trade.id} href={`/journal/${trade.id}?from=trade-therapist`} className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-2.5 py-1 text-xs hover:border-primary/40 hover:text-primary">{instrumentName(trade.instrument)} · {formatTotalR(tradeR(trade))}<ExternalLink className="h-3 w-3" /></Link>)}</div>}
+            <textarea value={draft.notes} onChange={(event) => update({ notes: event.target.value })} onBlur={() => { if (timer.current) void flush(); }} placeholder={draft.taken_was_best ? "What made this the highest-quality decision?" : "What made the other setup better?"} className={textareaClass} />
+          </>}
+
+          {currentStep === "market" && <>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">What did the market offer, and how did you respond?</p>
+            <textarea value={draft.post_market_analysis} onChange={(event) => update({ post_market_analysis: event.target.value })} onBlur={() => { if (timer.current) void flush(); }} placeholder="Your session reflection..." className={textareaClass} />
+            {ruleChecks.length > 0 && <div className="mt-4 border-t border-border/50 pt-3"><p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Commitment and rule checks</p>{ruleChecks.map((check) => <div key={check.id} className="flex justify-between gap-3 py-1 text-xs"><span>{check.source_text_snapshot}</span><span className="shrink-0 capitalize text-muted-foreground">{check.status.replaceAll("_", " ")}</span></div>)}</div>}
+          </>}
+
+          {currentStep === "screenshots" && <>
+            <p className="mt-2 text-xs text-muted-foreground">Document the higher timeframe read and entry of the better trade.</p>
+            <div className="mt-5"><ScreenshotUpload groups={draft.screenshot_groups} onChange={(groups) => update({ screenshot_groups: groups })} onUploadingChange={setUploadingScreenshot} storageConfig={{ entityType: "best-trade", entityId: date }} /></div>
+          </>}
+
+          {currentStep === "r" && <RPotentialAnalysisSection key={date} trades={dayTrades} flushRef={rFlushRef} />}
+
+          {currentStep === "complete" && <div className="mt-6 space-y-3 text-sm">
+            {bestTradeEnabled && <div className="rounded-xl border border-border/60 bg-background/30 p-4"><p className="text-xs text-muted-foreground">Best trade decision</p><p className="mt-1 font-semibold">{draft.taken_was_best ? "Your decision was the best available" : "A better trade was available"}</p>{draft.notes && <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{draft.notes}</p>}</div>}
+            <div className="rounded-xl border border-border/60 bg-background/30 p-4"><p className="text-xs text-muted-foreground">Session review</p><p className="mt-1 whitespace-pre-wrap leading-relaxed">{draft.post_market_analysis || "No written reflection yet."}</p></div>
+            {winners.length > 0 && <p className="text-xs text-muted-foreground">R Potential observations: {winners.length} winning trade{winners.length === 1 ? "" : "s"}. Use Previous to revisit them.</p>}
+            <button type="button" onClick={() => void clearDay()} className="text-xs text-muted-foreground hover:text-destructive">Clear this day’s best-trade review</button>
+          </div>}
+        </div>
+      </motion.div>
+      <div className="flex shrink-0 items-center justify-between gap-3 pb-1">
+        <button type="button" disabled={stepIndex === 0 || saveState === "saving" || uploadingScreenshot} onClick={() => void move(steps[stepIndex - 1])} className="rounded-lg border border-border/60 px-4 py-2 text-xs font-semibold disabled:opacity-30">Previous</button>
+        <span role="status" className={cn("min-w-16 text-center text-[11px]", saveState === "error" ? "text-destructive" : "text-muted-foreground")}>{uploadingScreenshot ? "Uploading..." : saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : saveState === "error" ? "Save failed. Retry by continuing." : ""}</span>
+        {currentStep !== "verdict" && currentStep !== "complete" ? <button type="button" disabled={saveState === "saving" || uploadingScreenshot} onClick={() => void move(steps[stepIndex + 1])} className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50">{steps[stepIndex + 1] === "complete" ? "Finish review" : "Continue"}</button> : <span className="w-20" />}
+      </div>
+    </>}
+  </div>;
 }

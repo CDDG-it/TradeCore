@@ -42,6 +42,8 @@ export interface BestTradeOfDay {
   /** Free-form post-market recap of the whole session: what the market did,
    *  which setups appeared, how the day should have been traded. */
   post_market_analysis: string;
+  /** Last screen in the guided Post Market review; null for legacy entries. */
+  review_step: "verdict" | "why" | "market" | "screenshots" | "r" | "complete" | null;
   screenshot_groups: ScreenshotGroup[];
   created_at: string;
   updated_at: string;

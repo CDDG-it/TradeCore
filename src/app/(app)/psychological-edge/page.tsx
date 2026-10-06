@@ -79,7 +79,7 @@ export default function MyEdgePage() {
   return (
     <div className="space-y-3 sm:space-y-5">
       {/* Keep section selection in the title row on every screen size. */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 pr-28">
         <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">
           My Edge
         </h1>

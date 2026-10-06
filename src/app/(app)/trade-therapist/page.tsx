@@ -51,16 +51,17 @@ export default function TradeTherapistPage() {
     // takes the height that is left, scrolling inside itself where it must.
     // 7.5rem is the top nav plus the page gutter above and below it.
     <div className="flex flex-col gap-4 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 pr-28">
         <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
           MC Trade Therapist
         </h1>
-        <SectionNav items={TABS} value={tab} onChange={setTab} />
+        <SectionNav items={TABS} value={tab} onChange={setTab} focusMode={tab === "daily"} />
       </div>
 
       <PageWrapper className="min-h-0 flex-1 space-y-0">
         {tab === "daily" && (
           <DailyBestTrade
+            key={dailyDate}
             date={dailyDate}
             trades={trades}
             onDateChange={setDailyDate}
