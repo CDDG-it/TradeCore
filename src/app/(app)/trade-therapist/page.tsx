@@ -14,8 +14,8 @@ import { FeatureGate } from "@/components/access/access-provider";
 
 /**
  * MC Trade Therapist: the surface for getting better at trading. Four views:
- *   • Best trades: a week calendar of your results and executions, and the
- *                  best trade of the day for the selected date.
+ *   • Post Market: a week calendar, the selected day's best trade, and
+ *                  per-winning-trade R potential observations.
  *   • Pre-market:  the last two losses and two wins, with a written plan for
  *                  preventing and repeating them today.
  *   • Commitments: your standing if/then rules, and whether you held them
@@ -26,7 +26,7 @@ import { FeatureGate } from "@/components/access/access-provider";
  */
 type TherapistTab = "daily" | "premarket" | "reviews";
 const TABS: { key: TherapistTab; label: string; short?: string }[] = [
-  { key: "daily", label: "Session review", short: "Session" },
+  { key: "daily", label: "Post Market", short: "Post Market" },
   { key: "premarket", label: "Pre-market exercises", short: "Pre-market" },
   { key: "reviews", label: "Reviews" },
 ];

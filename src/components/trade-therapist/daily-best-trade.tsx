@@ -24,6 +24,7 @@ import {
 } from "@/lib/journal/colors";
 import type { TradeJournalEntry, BestTradeOfDay, ScreenshotGroup, TradeRuleCheck } from "@/lib/types";
 import { useAccess } from "@/components/access/access-provider";
+import { RPotentialAnalysisSection } from "@/components/trade-therapist/r-potential-analysis";
 
 const TURQUOISE = "var(--primary)";
 
@@ -383,7 +384,9 @@ export function DailyBestTrade({
             <div className="max-h-20 overflow-y-auto text-xs">{ruleChecks.length === 0 ? <p className="text-muted-foreground">No commitment or standing-rule checks for these trades.</p> : ruleChecks.map((check) => <div key={check.id} className="flex items-start justify-between gap-2 border-b border-border/40 py-1 last:border-0"><span className="line-clamp-1">{check.source_text_snapshot}</span><span className={cn("shrink-0 font-semibold", check.status === "kept" ? "text-success" : check.status === "broken" ? "text-destructive" : "text-muted-foreground")}>{check.status === "not_applicable" ? "N/A" : check.status}</span></div>)}</div>
           </div>
 
-          {bestTradeEnabled ? <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+          <h2 className="font-heading text-sm font-bold tracking-tight">Best Trade of the Day</h2>
+          {bestTradeEnabled ? <div className="grid min-h-[360px] grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
             {/* ── LEFT: your verdict + why the better trade was better ───────
                 The one call this tab exists to make - was the trade you took
                 the best one available - and, when it was not, the room to write
@@ -474,7 +477,9 @@ export function DailyBestTrade({
                 </div>
               </div>
             </AccentPanel>
-          </div> : <div className="flex min-h-0 flex-1 items-center justify-center rounded-2xl border border-border/60 bg-card px-6 text-center"><div><p className="text-sm font-semibold">Session review saved on every plan</p><p className="mt-1 text-xs text-muted-foreground">Plus adds Best Trade analysis and review screenshots.</p><Link href="/pricing" className="mt-3 inline-flex text-xs font-semibold text-primary hover:underline">Compare plans</Link></div></div>}
+          </div> : <div className="flex min-h-36 items-center justify-center rounded-2xl border border-border/60 bg-card px-6 text-center"><div><p className="text-sm font-semibold">Session review saved on every plan</p><p className="mt-1 text-xs text-muted-foreground">Plus adds Best Trade analysis and review screenshots.</p><Link href="/pricing" className="mt-3 inline-flex text-xs font-semibold text-primary hover:underline">Compare plans</Link></div></div>}
+          <RPotentialAnalysisSection key={date} trades={dayTrades} />
+          </div>
 
           {/* Save bar */}
           <div className="flex shrink-0 items-center justify-between gap-3">

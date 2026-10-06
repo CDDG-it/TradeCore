@@ -45,7 +45,7 @@ export default function TradeDetailPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("from") === "trade-therapist") {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
-      setBack({ href: "/trade-therapist?tab=daily", label: "Back to best trades" });
+      setBack({ href: "/trade-therapist?tab=daily", label: "Back to Post Market" });
     }
   }, []);
 

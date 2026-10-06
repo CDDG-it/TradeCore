@@ -47,6 +47,18 @@ export interface BestTradeOfDay {
   updated_at: string;
 }
 
+/** Per-trade exit observation. Trade result and realised R remain in trades. */
+export interface RPotentialAnalysis {
+  trade_id: string;
+  user_id: string;
+  planned_take_profit_r: number | null;
+  mfe_r: number | null;
+  stop_hit_mfe_r: number | null;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Pre-Market Exercise ─────────────────────────────────────────────────────
 // A pre-session drill: review the two most recent losses and two most recent
 // wins, then commit (in writing, before the open) to a plan for preventing

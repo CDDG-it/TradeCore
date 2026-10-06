@@ -24,6 +24,7 @@ import type {
   PsychEdgeSession,
   PsychEdgeSessionInput,
   BestTradeOfDay,
+  RPotentialAnalysis,
   PreMarketExercise,
   DashboardStats,
   PatternEvent,
@@ -1047,6 +1048,31 @@ export async function deleteBestTradeOfDay(date: string): Promise<void> {
   invalidateReads("bestTrade");
   const { error } = await supabase.from("best_trade_of_day").delete().eq("date", date);
   if (error) throw error;
+}
+
+// One observation per journal trade. RLS also checks that the linked trade
+// belongs to the current user; trade facts are read from trades itself.
+export async function getRPotentialAnalyses(tradeIds: string[]): Promise<RPotentialAnalysis[]> {
+  if (tradeIds.length === 0) return [];
+  const { data, error } = await createClient()
+    .from("r_potential_analyses")
+    .select("*")
+    .in("trade_id", tradeIds);
+  if (error) throw error;
+  return (data ?? []) as RPotentialAnalysis[];
+}
+
+export async function saveRPotentialAnalysis(
+  input: Pick<RPotentialAnalysis, "trade_id" | "planned_take_profit_r" | "mfe_r" | "stop_hit_mfe_r" | "note">
+): Promise<RPotentialAnalysis> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { data, error } = await supabase.from("r_potential_analyses")
+    .upsert({ ...input, user_id: user.id, updated_at: now() }, { onConflict: "trade_id" })
+    .select().single();
+  if (error) throw error;
+  return data as RPotentialAnalysis;
 }
 
 // ── Pre-Market Exercise ──────────────────────────────────────────────
