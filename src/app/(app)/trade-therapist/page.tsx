@@ -12,13 +12,11 @@ import type { TradeJournalEntry } from "@/lib/types";
 import { FeatureGate } from "@/components/access/access-provider";
 
 /**
- * MC Trade Therapist: the surface for getting better at trading. Four views:
- *   • Post Market: one day at a glance, with trades, review and measured
- *                  per-winning-trade R potential observations.
+ * MC Trade Therapist: the surface for getting better at trading. Three views:
+ *   • Post Market: one question per screen, followed by the selected day's
+ *                  trades, review and measured R potential observations.
  *   • Pre-market:  the last two losses and two wins, with a written plan for
  *                  preventing and repeating them today.
- *   • Commitments: your standing if/then rules, and whether you held them
- *                  when the behaviour they guard against recurred.
  *   • Reviews:     the weekly and monthly write-ups, auto-synced and only
  *                  counted in the MC Mindscore once a week has closed.
  * Every read is deterministic and traces back to the trader's own history.

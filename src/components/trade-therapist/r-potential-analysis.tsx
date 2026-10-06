@@ -27,13 +27,12 @@ function draftFrom(row?: RPotentialAnalysis): Draft {
   };
 }
 
-function RPotentialCard({ trade, initial, onChange, onRegisterFlush, onSaved, compact = false }: {
+function RPotentialCard({ trade, initial, onChange, onRegisterFlush, onSaved }: {
   trade: TradeJournalEntry;
   initial?: RPotentialAnalysis;
   onChange: (tradeId: string, draft: Draft) => void;
   onRegisterFlush?: (tradeId: string, flush: (() => Promise<void>) | null) => void;
   onSaved?: (record: RPotentialAnalysis) => void;
-  compact?: boolean;
 }) {
   const [draft, setDraft] = useState<Draft>(() => draftFrom(initial));
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -123,7 +122,7 @@ function RPotentialCard({ trade, initial, onChange, onRegisterFlush, onSaved, co
         <Link href={`/journal/${trade.id}?from=trade-therapist`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">View trade <ExternalLink className="h-3 w-3" /></Link>
       </div>
 
-      <div className={`mt-3 grid grid-cols-3 gap-2 ${compact ? "" : "max-sm:grid-cols-1"}`}>
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <label className="text-[11px] font-medium text-muted-foreground">Planned take-profit R
           <input type="number" min="0.01" step="0.01" inputMode="decimal" value={draft.planned} onChange={(e) => update({ planned: e.target.value })} onBlur={() => { void flush().catch(() => {}); }} placeholder="Optional" className={`mt-1 ${fieldClass}`} />
         </label>
@@ -201,9 +200,9 @@ export function RPotentialAnalysisSection({ trades, flushRef, onSaved, compact =
         <TooltipProvider><Tooltip><TooltipTrigger aria-label="About MFE" className="shrink-0"><CircleHelp className="h-3.5 w-3.5" /></TooltipTrigger><TooltipContent>Measure from the original entry and stop-loss, using the highest favorable price before invalidation.</TooltipContent></Tooltip></TooltipProvider>
       </div>
       <div className={`${compact ? "mt-2" : "mt-4"} space-y-2`}>
-        {winners.map((trade) => <RPotentialCard key={trade.id} trade={trade} initial={records[trade.id]} compact={compact} onChange={(id, draft) => setDrafts((prev) => ({ ...prev, [id]: draft }))} onRegisterFlush={registerFlush} onSaved={onSaved} />)}
+        {winners.map((trade) => <RPotentialCard key={trade.id} trade={trade} initial={records[trade.id]} onChange={(id, draft) => setDrafts((prev) => ({ ...prev, [id]: draft }))} onRegisterFlush={registerFlush} onSaved={onSaved} />)}
       </div>
-      {!compact && included.length > 0 && <div className="mt-4 border-t border-border/60 pt-3">
+      {included.length > 0 && <div className="mt-4 border-t border-border/60 pt-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Exit Analysis · {included.length} reviewed winner{included.length !== 1 ? "s" : ""}</p>
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
           <div><p className="text-muted-foreground">Actual average winner</p><p className="mt-0.5 font-semibold tabular-nums">{average(included.map(({ trade }) => tradeR(trade)))}R</p></div>
