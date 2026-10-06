@@ -920,17 +920,27 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
 
 
-/* ── Phone shell: fixed bottom tab bar ──
-   Below `lg` the primary navigation is a bar pinned to the bottom of the
-   viewport, and a page's own tabs dock just above it. Both are `position:
-   fixed`, so the content column has to reserve their height itself. Desktop
-   (>=1024px) is untouched: no bars, no padding. */
+/* Secondary navigation opens from the existing top bar. The menu is the only
+   moving surface; the page underneath never changes position. */
+.section-nav-menu {
+  transform-origin: var(--transform-origin);
+  transition: opacity 180ms var(--ease-out-strong), transform 180ms var(--ease-out-strong);
+}
+.section-nav-menu[data-starting-style],
+.section-nav-menu[data-ending-style] {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .section-nav-menu { transition: opacity 180ms var(--ease-out-strong); }
+  .section-nav-menu[data-starting-style],
+  .section-nav-menu[data-ending-style] { transform: none; }
+}
+
+/* Phone shell: the fixed primary tab bar is the only bottom bar. */
 @media (max-width: 1023px) {
   .app-shell {
     padding-bottom: calc(4.25rem + env(safe-area-inset-bottom));
-  }
-  html[data-subnav="1"] .app-shell {
-    padding-bottom: calc(7.25rem + env(safe-area-inset-bottom));
   }
 }
 
@@ -953,16 +963,11 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   transform: scale(0.92);
 }
 
-/* A page that is built as a fixed desk (Global Markets) keeps that shape on a
-   phone: it takes exactly what the top nav, the gutter and the bottom bars
-   leave, and scrolls inside its own panes. */
+/* Fixed desks use the space between the top and bottom primary bars. */
 @media (max-width: 1023px) {
   .fill-phone {
     height: calc(100dvh - 4.5rem - 4.25rem - env(safe-area-inset-bottom));
     overflow: hidden;
-  }
-  html[data-subnav="1"] .fill-phone {
-    height: calc(100dvh - 4.5rem - 7.25rem - env(safe-area-inset-bottom));
   }
 }
 

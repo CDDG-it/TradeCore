@@ -58,7 +58,7 @@ export default function TradeTherapistPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 pr-28">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
         <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
           MC Trade Therapist
         </h1>

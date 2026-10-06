@@ -36,7 +36,7 @@ function MarketsDesk() {
 
   return (
     <div className="w-full min-w-0 max-w-full">
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3 pr-28">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
         <div className="min-w-0">
           <h1 className="font-heading text-xl font-semibold tracking-tight sm:text-[28px]">Global Markets</h1>
           <p className="text-xs text-muted-foreground">{section === "news" ? "U.S. macro and energy releases" : section === "calendar" ? "Economic releases and market holidays" : section === "markets" ? "Futures, yields and rates" : "CFTC positioning"}</p>
