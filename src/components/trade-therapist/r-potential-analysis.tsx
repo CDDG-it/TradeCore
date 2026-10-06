@@ -27,11 +27,13 @@ function draftFrom(row?: RPotentialAnalysis): Draft {
   };
 }
 
-function RPotentialCard({ trade, initial, onChange, onRegisterFlush }: {
+function RPotentialCard({ trade, initial, onChange, onRegisterFlush, onSaved, compact = false }: {
   trade: TradeJournalEntry;
   initial?: RPotentialAnalysis;
   onChange: (tradeId: string, draft: Draft) => void;
   onRegisterFlush?: (tradeId: string, flush: (() => Promise<void>) | null) => void;
+  onSaved?: (record: RPotentialAnalysis) => void;
+  compact?: boolean;
 }) {
   const [draft, setDraft] = useState<Draft>(() => draftFrom(initial));
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -50,13 +52,14 @@ function RPotentialCard({ trade, initial, onChange, onRegisterFlush }: {
     }
     setStatus("saving");
     queued.current = queued.current.catch(() => {}).then(async () => {
-      await saveRPotentialAnalysis({
+      const saved = await saveRPotentialAnalysis({
         trade_id: trade.id,
         planned_take_profit_r: planned,
         mfe_r: mfe,
         stop_hit_mfe_r: stopMfe,
         note: value.note.trim(),
       });
+      onSaved?.(saved);
     });
     queued.current.then(() => {
       if (latest.current === value) setStatus("saved");
@@ -120,7 +123,7 @@ function RPotentialCard({ trade, initial, onChange, onRegisterFlush }: {
         <Link href={`/journal/${trade.id}?from=trade-therapist`} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">View trade <ExternalLink className="h-3 w-3" /></Link>
       </div>
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+      <div className={`mt-3 grid grid-cols-3 gap-2 ${compact ? "" : "max-sm:grid-cols-1"}`}>
         <label className="text-[11px] font-medium text-muted-foreground">Planned take-profit R
           <input type="number" min="0.01" step="0.01" inputMode="decimal" value={draft.planned} onChange={(e) => update({ planned: e.target.value })} onBlur={() => { void flush().catch(() => {}); }} placeholder="Optional" className={`mt-1 ${fieldClass}`} />
         </label>
@@ -152,7 +155,7 @@ function RPotentialCard({ trade, initial, onChange, onRegisterFlush }: {
   );
 }
 
-export function RPotentialAnalysisSection({ trades, flushRef }: { trades: TradeJournalEntry[]; flushRef?: MutableRefObject<(() => Promise<void>) | null> }) {
+export function RPotentialAnalysisSection({ trades, flushRef, onSaved, compact = false }: { trades: TradeJournalEntry[]; flushRef?: MutableRefObject<(() => Promise<void>) | null>; onSaved?: (record: RPotentialAnalysis) => void; compact?: boolean }) {
   const winners = useMemo(() => trades.filter((trade) => trade.result === "win"), [trades]);
   const [records, setRecords] = useState<Record<string, RPotentialAnalysis>>({});
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -167,7 +170,8 @@ export function RPotentialAnalysisSection({ trades, flushRef }: { trades: TradeJ
   useEffect(() => {
     if (!flushRef) return;
     flushRef.current = async () => {
-      if (loading || error) throw new Error("R Potential Analysis is not ready");
+      if (loading) return;
+      if (error) throw new Error("R Potential Analysis is not ready");
       await Promise.all([...flushers.current.values()].map((flush) => flush()));
     };
     return () => { flushRef.current = null; };
@@ -191,16 +195,15 @@ export function RPotentialAnalysisSection({ trades, flushRef }: { trades: TradeJ
   });
   const average = (values: number[]) => (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2);
 
-  return (
-    <AccentPanel accent="cyan" eyebrow="Post Market" title="R Potential Analysis" subtitle="Record the path of each winning trade to compare exit targets over time.">
-      <div className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground">
+  const content = <>
+      <div className={`${compact ? "mt-0" : "mt-2"} flex items-start gap-1.5 text-[11px] leading-relaxed text-muted-foreground`}>
         <span>Maximum Favorable Excursion (MFE) is the maximum profit, measured in R, that the trade reached before the original trade idea was invalidated.</span>
         <TooltipProvider><Tooltip><TooltipTrigger aria-label="About MFE" className="shrink-0"><CircleHelp className="h-3.5 w-3.5" /></TooltipTrigger><TooltipContent>Measure from the original entry and stop-loss, using the highest favorable price before invalidation.</TooltipContent></Tooltip></TooltipProvider>
       </div>
-      <div className="mt-4 space-y-2">
-        {winners.map((trade) => <RPotentialCard key={trade.id} trade={trade} initial={records[trade.id]} onChange={(id, draft) => setDrafts((prev) => ({ ...prev, [id]: draft }))} onRegisterFlush={registerFlush} />)}
+      <div className={`${compact ? "mt-2" : "mt-4"} space-y-2`}>
+        {winners.map((trade) => <RPotentialCard key={trade.id} trade={trade} initial={records[trade.id]} compact={compact} onChange={(id, draft) => setDrafts((prev) => ({ ...prev, [id]: draft }))} onRegisterFlush={registerFlush} onSaved={onSaved} />)}
       </div>
-      {included.length > 0 && <div className="mt-4 border-t border-border/60 pt-3">
+      {!compact && included.length > 0 && <div className="mt-4 border-t border-border/60 pt-3">
         <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Exit Analysis · {included.length} reviewed winner{included.length !== 1 ? "s" : ""}</p>
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
           <div><p className="text-muted-foreground">Actual average winner</p><p className="mt-0.5 font-semibold tabular-nums">{average(included.map(({ trade }) => tradeR(trade)))}R</p></div>
@@ -208,6 +211,7 @@ export function RPotentialAnalysisSection({ trades, flushRef }: { trades: TradeJ
           {[2, 2.5].map((target) => <div key={target}><p className="text-muted-foreground">Trades reaching {target}R</p><p className="mt-0.5 font-semibold tabular-nums">{included.filter(({ mfe }) => mfe >= target).length} / {included.length}</p></div>)}
         </div>
       </div>}
-    </AccentPanel>
-  );
+    </>;
+  if (compact) return content;
+  return <AccentPanel accent="cyan" eyebrow="Post Market" title="R Potential Analysis" subtitle="Record the path of each winning trade to compare exit targets over time.">{content}</AccentPanel>;
 }

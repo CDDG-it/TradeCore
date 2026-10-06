@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { SectionNav } from "@/components/layout/section-nav";
 import { getTrades } from "@/lib/supabase/queries";
-import { DailyBestTrade } from "@/components/trade-therapist/daily-best-trade";
+import { PostMarketDayDesk } from "@/components/trade-therapist/post-market-day-desk";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
 import { PreMarketExercises } from "@/components/trade-therapist/pre-market-exercises";
 import type { TradeJournalEntry } from "@/lib/types";
@@ -13,7 +13,7 @@ import { FeatureGate } from "@/components/access/access-provider";
 
 /**
  * MC Trade Therapist: the surface for getting better at trading. Four views:
- *   • Post Market: a week calendar, the selected day's best trade, and
+ *   • Post Market: one day at a glance, with trades, review and measured
  *                  per-winning-trade R potential observations.
  *   • Pre-market:  the last two losses and two wins, with a written plan for
  *                  preventing and repeating them today.
@@ -39,18 +39,25 @@ export default function TradeTherapistPage() {
   // prerendered, so seeding state from the URL up front would make the server
   // and client markup disagree.
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("tab");
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("tab");
+    const selectedDate = params.get("date");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
     if (t === "commitments") setTab("premarket");
     else if (TABS.some((x) => x.key === t)) setTab(t as TherapistTab);
+    if (selectedDate && /^\d{4}-\d{2}-\d{2}$/.test(selectedDate) && !Number.isNaN(Date.parse(`${selectedDate}T12:00:00`)) && selectedDate <= format(new Date(), "yyyy-MM-dd")) setDailyDate(selectedDate);
     getTrades().then(setTrades).catch(() => {});
   }, []);
 
+  function changeDate(date: string) {
+    setDailyDate(date);
+    const url = new URL(window.location.href);
+    url.searchParams.set("date", date);
+    window.history.replaceState(window.history.state, "", url);
+  }
+
   return (
-    // One screen, no page scroll: the title row is fixed and the active view
-    // takes the height that is left, scrolling inside itself where it must.
-    // 7.5rem is the top nav plus the page gutter above and below it.
-    <div className="flex flex-col gap-4 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 pr-28">
         <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
           MC Trade Therapist
@@ -60,11 +67,11 @@ export default function TradeTherapistPage() {
 
       <PageWrapper className="min-h-0 flex-1 space-y-0">
         {tab === "daily" && (
-          <DailyBestTrade
+          <PostMarketDayDesk
             key={dailyDate}
             date={dailyDate}
             trades={trades}
-            onDateChange={setDailyDate}
+            onDateChange={changeDate}
           />
         )}
         {tab === "premarket" && <PreMarketExercises trades={trades} date={dailyDate} />}

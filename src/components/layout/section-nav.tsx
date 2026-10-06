@@ -3,7 +3,6 @@
 import { useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useScrollNav } from "@/lib/ui/use-scroll-nav";
 import { cn } from "@/lib/utils";
 
 /** A page's sections stay available without occupying a separate navigation row. */
@@ -29,7 +28,6 @@ export function SectionNav<T extends string>({
   const active = items.find((item) => item.key === value);
   const onClient = useSyncExternalStore(noSubscribe, () => true, () => false);
   const [open, setOpen] = useState(false);
-  const { visible, show } = useScrollNav(open || focusMode);
 
   if (!onClient) return null;
 
@@ -37,10 +35,8 @@ export function SectionNav<T extends string>({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger
         aria-label={`Section: ${active?.label ?? "Select section"}. Choose another section`}
-        onFocus={show}
         className={cn(
-          "fixed right-3 top-[4.25rem] z-30 inline-flex h-9 max-w-[55vw] shrink-0 items-center gap-2 rounded-lg border border-border/60 bg-card/95 px-3.5 text-xs font-semibold tracking-[0.01em] text-foreground shadow-[0_12px_32px_rgba(0,0,0,.25)] outline-none backdrop-blur-md transition-[transform,opacity,border-color,color] duration-200 ease-[var(--ease-out-strong)] hover:border-primary/50 hover:text-primary data-[popup-open]:border-primary/50 motion-reduce:transition-[opacity,border-color] sm:right-6 sm:top-[5.25rem] lg:right-10",
-          !focusMode && !visible && !open && "pointer-events-none -translate-y-3 opacity-0 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:opacity-100",
+          "fixed right-3 top-[4.25rem] z-30 inline-flex h-9 max-w-[55vw] shrink-0 items-center gap-2 rounded-lg border border-border/60 bg-card/95 px-3.5 text-xs font-semibold tracking-[0.01em] text-foreground shadow-[0_12px_32px_rgba(0,0,0,.25)] outline-none backdrop-blur-md transition-[border-color,color] duration-200 ease-[var(--ease-out-strong)] hover:border-primary/50 hover:text-primary data-[popup-open]:border-primary/50 sm:right-6 sm:top-[5.25rem] lg:right-10",
           className
         )}
       >

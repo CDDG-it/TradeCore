@@ -30,6 +30,8 @@ interface Props {
   maxFilesPerGroup?: number;
   className?: string;
   readOnly?: boolean;
+  /** A single chart at a time, for viewport-sized review dialogs. */
+  compact?: boolean;
   /** Where uploads are filed. Required unless `readOnly`. */
   storageConfig?: StorageConfig;
 }
@@ -60,11 +62,13 @@ export function ScreenshotUpload({
   maxFilesPerGroup = 5,
   className,
   readOnly = false,
+  compact = false,
   storageConfig,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const activeUploads = useRef(0);
   const [activeTab, setActiveTab] = useState(0);
+  const [activeShot, setActiveShot] = useState(0);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
   /* The grid holds preview-sized URLs. Opening the lightbox is the one moment
@@ -93,6 +97,8 @@ export function ScreenshotUpload({
 
   const safeTab = Math.min(activeTab, Math.max(0, groups.length - 1));
   const currentGroup = groups[safeTab];
+  const safeShot = Math.min(activeShot, Math.max(0, (currentGroup?.urls.length ?? 0) - 1));
+  const shownUrls = compact && currentGroup ? currentGroup.urls.slice(safeShot, safeShot + 1) : currentGroup?.urls ?? [];
 
   // Close the lightbox with the Escape key
   useEffect(() => {
@@ -303,7 +309,7 @@ export function ScreenshotUpload({
             <div key={i} className="relative group/tab">
               <button
                 type="button"
-                onClick={() => setActiveTab(i)}
+                onClick={() => { setActiveTab(i); setActiveShot(0); }}
                 className={cn(
                   "px-3 py-1.5 text-xs font-medium rounded-lg transition-all pr-7",
                   safeTab === i
@@ -441,12 +447,12 @@ export function ScreenshotUpload({
         <>
           {/* Thumbnails: full charts, never cropped */}
           {currentGroup.urls.length > 0 && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {currentGroup.urls.map((url, i) => {
+            <div className={cn("grid gap-3", !compact && "sm:grid-cols-2")}>
+              {shownUrls.map((url, i) => {
                 const src = display(url);
                 return (
                 <div
-                  key={i}
+                  key={compact ? safeShot : i}
                   className="relative group overflow-hidden rounded-xl border border-border/60"
                   style={{ background: "#0b1120" }}
                 >
@@ -454,8 +460,8 @@ export function ScreenshotUpload({
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={src}
-                      alt={`${currentGroup.label} ${i + 1}`}
-                      className="w-full h-auto max-h-[320px] object-contain"
+                      alt={`${currentGroup.label} ${compact ? safeShot + 1 : i + 1}`}
+                      className={cn("w-full h-auto object-contain", compact ? "max-h-[min(30dvh,240px)]" : "max-h-[320px]")}
                     />
                   ) : (
                     <PendingShot />
@@ -484,6 +490,14 @@ export function ScreenshotUpload({
             </div>
           )}
 
+          {compact && currentGroup.urls.length > 1 && (
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <button type="button" disabled={safeShot === 0} onClick={() => setActiveShot(safeShot - 1)} className="font-semibold hover:text-primary disabled:opacity-30">Previous chart</button>
+              <span className="tabular-nums">{safeShot + 1} / {currentGroup.urls.length}</span>
+              <button type="button" disabled={safeShot === currentGroup.urls.length - 1} onClick={() => setActiveShot(safeShot + 1)} className="font-semibold hover:text-primary disabled:opacity-30">Next chart</button>
+            </div>
+          )}
+
           {/* Upload zone */}
           {currentGroup.urls.length < maxFilesPerGroup && (
             <button
@@ -497,19 +511,20 @@ export function ScreenshotUpload({
               onDrop={handleDrop}
               disabled={loading}
               className={cn(
-                "w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-7 text-xs text-muted-foreground transition-all",
+                "w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 text-xs text-muted-foreground transition-all",
+                compact ? "py-3" : "py-7",
                 dragging
                   ? "border-primary/60 bg-primary/4 text-primary"
                   : "border-border/50 hover:border-primary/40 hover:bg-muted/30",
                 loading && "opacity-60 cursor-wait"
               )}
             >
-              <ImagePlus
+              {!compact && <ImagePlus
                 className={cn(
                   "w-5 h-5",
                   dragging ? "text-primary" : "text-muted-foreground/60"
                 )}
-              />
+              />}
               {loading ? (
                 <span>Processing...</span>
               ) : (

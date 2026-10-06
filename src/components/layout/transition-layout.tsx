@@ -21,6 +21,7 @@ export function TransitionLayout({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       key={pathname}
+      className="h-full min-h-0"
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}

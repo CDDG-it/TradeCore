@@ -7,9 +7,8 @@ import { usePathname } from "next/navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/lib/nav";
-import { useScrollNav } from "@/lib/ui/use-scroll-nav";
 
-/** Text-first phone navigation that makes room for the page while scrolling. */
+/** Text-first phone navigation, always available at the workspace edge. */
 
 /** What the create pill offers: the two things a trader starts from the desk. */
 export const CREATE = [
@@ -48,14 +47,12 @@ function TabLabel({ tab, active }: { tab: (typeof PRIMARY_NAV)[number]; active: 
 export function BottomNav() {
   const pathname = usePathname();
   const [createOpen, setCreateOpen] = useState(false);
-  const { visible, show } = useScrollNav(createOpen);
   const [first, second, ...rest] = PRIMARY_NAV;
 
   return (
     <nav
       aria-label="Primary"
-      onFocusCapture={show}
-      className={cn("fixed inset-x-0 bottom-0 z-40 border-t border-sidebar-border/60 transition-[transform,opacity] duration-200 ease-[var(--ease-out-strong)] motion-reduce:transition-opacity lg:hidden", !visible && "pointer-events-none translate-y-full opacity-0 motion-reduce:translate-y-0")}
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-sidebar-border/60 lg:hidden"
       style={{
         background: "var(--nav-bg)",
         backdropFilter: "blur(24px)",
@@ -116,7 +113,6 @@ export function MobileSubnav<T extends string>({
   scrollRef?: RefObject<HTMLElement | null>;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const { visible, show } = useScrollNav();
   const picked = useRef(false);
   // The strip is portalled to <body>. The page it belongs to is rendered inside
   // the route transition's motion wrapper, and a `transform` there: even the
@@ -170,8 +166,7 @@ export function MobileSubnav<T extends string>({
   return createPortal(
     <div
       aria-label={label}
-      onFocusCapture={show}
-      className={cn("fixed inset-x-0 z-40 border-t border-sidebar-border/70 transition-[transform,opacity] duration-200 ease-[var(--ease-out-strong)] motion-reduce:transition-opacity lg:hidden", !visible && "pointer-events-none translate-y-full opacity-0 motion-reduce:translate-y-0")}
+      className="fixed inset-x-0 z-40 border-t border-sidebar-border/70 lg:hidden"
       style={{
         bottom: "calc(3.5rem + env(safe-area-inset-bottom))",
         background: "var(--nav-bg)",

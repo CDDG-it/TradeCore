@@ -5,9 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { gsap } from "gsap";
 import { cn } from "@/lib/utils";
-import { useScrollNav } from "@/lib/ui/use-scroll-nav";
 import { useAuth } from "@/lib/auth-context";
 import { PRIMARY_NAV } from "@/lib/nav";
 import { isActive } from "@/components/layout/mobile-nav";
@@ -15,10 +13,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 
 /**
  * The signed-in top bar. A text rail holds the four destinations. The bar
- * recedes on downward scroll and returns when navigation is needed again.
+ * stays available as a stable edge of the workspace.
  *
- * Motion stays short: the active pill uses its existing spring and the bar
- * enters or leaves in 200ms, with no travel under reduced motion.
+ * Motion stays short: the active pill uses its existing spring.
  */
 const MENU_MOTION = "duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]";
 const MENU_SURFACE = "rounded-2xl border border-border/60 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,.45)] backdrop-blur-md";
@@ -74,21 +71,7 @@ export function TopNav() {
   const { user, signOut, avatarUrl } = useAuth();
   const avatar = avatarUrl ?? undefined;
   const [open, setOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const headerRef = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
-  const { visible, scrolled, show } = useScrollNav(open || profileOpen);
-
-  useEffect(() => {
-    if (!headerRef.current) return;
-    gsap.to(headerRef.current, {
-      yPercent: visible ? 0 : -100,
-      opacity: visible ? 1 : 0,
-      duration: reduce ? 0 : 0.2,
-      ease: "power2.out",
-      overwrite: true,
-    });
-  }, [visible, reduce]);
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -96,10 +79,7 @@ export function TopNav() {
   return (
     <>
       <header
-        ref={headerRef}
-        data-scrolled={scrolled || undefined}
-        onFocusCapture={show}
-        className={cn("app-topbar sticky top-0 z-40", !visible && "pointer-events-none")}
+        className="app-topbar relative z-40 shrink-0"
         // The blur stays inline: the build strips `backdrop-filter` from the stylesheet.
         style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
       >
@@ -126,7 +106,7 @@ export function TopNav() {
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
             <div className="hidden shrink-0 items-center gap-2 lg:flex">
-              <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} avatarUrl={avatar} onSignOut={signOut} onOpenChange={setProfileOpen} />
+              <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} avatarUrl={avatar} onSignOut={signOut} />
             </div>
             {/* Phone: the profile lives top-right, the way every app does it:
                 navigation itself has moved to the bottom tab bar. */}
@@ -208,7 +188,7 @@ function AvatarChip({ initials, avatarUrl, size }: { initials: string; avatarUrl
 }
 
 /** Profile chip and its menu: Profile, Settings, Sign out. */
-function ProfileMenu({ displayName, email, initials, avatarUrl, onSignOut, onOpenChange }: { displayName: string; email: string; initials: string; avatarUrl?: string; onSignOut: () => void; onOpenChange: (open: boolean) => void }) {
+function ProfileMenu({ displayName, email, initials, avatarUrl, onSignOut }: { displayName: string; email: string; initials: string; avatarUrl?: string; onSignOut: () => void }) {
   const [open, setOpen] = useState(false);
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -230,7 +210,7 @@ function ProfileMenu({ displayName, email, initials, avatarUrl, onSignOut, onOpe
     { label: "Settings", href: "/settings" },
   ];
   return (
-    <DropdownMenu open={open} onOpenChange={(next) => { setOpen(next); onOpenChange(next); }}>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger onMouseEnter={enter} onMouseLeave={leave} className="press group/profile flex h-8 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] pl-1 pr-2.5 hover:border-primary/35 hover:bg-white/[0.07] data-[popup-open]:border-primary/35 data-[popup-open]:bg-white/[0.07]">
         <AvatarChip initials={initials} avatarUrl={avatarUrl} size={26} />
         <span className="max-w-[120px] truncate text-xs font-semibold text-sidebar-foreground/85">{displayName}</span>
