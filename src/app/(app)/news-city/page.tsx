@@ -3,8 +3,9 @@
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAccess } from "@/components/access/access-provider";
+import { SectionNav } from "@/components/layout/section-nav";
 import { marketsSection, type MarketsSection } from "@/lib/gmi/news-view";
 
 const loading = () => <p className="py-12 text-sm text-muted-foreground" role="status">Loading market data.</p>;
@@ -19,6 +20,7 @@ const sections: { key: MarketsSection; label: string }[] = [
 
 function MarketsDesk() {
   const params = useSearchParams();
+  const router = useRouter();
   const { entitlements } = useAccess();
   const section = marketsSection(params.get("tab"), entitlements.globalMarkets === "calendar");
   const rank = { calendar: 0, markets: 1, full: 2 };
@@ -26,20 +28,20 @@ function MarketsDesk() {
   const locked = rank[entitlements.globalMarkets] < required;
   const detail = section === "markets" || section === "positioning";
 
+  function selectSection(next: MarketsSection) {
+    const query = new URLSearchParams(params.toString());
+    query.set("tab", next);
+    router.push(`/news-city?${query}`, { scroll: false });
+  }
+
   return (
     <div className="w-full min-w-0 max-w-full">
-      <header className="mb-6 border-b border-border/60">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 pb-5">
-          <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-[28px]">Global Markets</h1>
-          <p className="text-sm text-muted-foreground">{section === "news" ? "U.S. macro and energy releases" : section === "calendar" ? "Economic releases and market holidays" : section === "markets" ? "Futures, yields and rates" : "CFTC positioning"}</p>
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
+        <div className="min-w-0">
+          <h1 className="font-heading text-xl font-semibold tracking-tight sm:text-[28px]">Global Markets</h1>
+          <p className="text-xs text-muted-foreground">{section === "news" ? "U.S. macro and energy releases" : section === "calendar" ? "Economic releases and market holidays" : section === "markets" ? "Futures, yields and rates" : "CFTC positioning"}</p>
         </div>
-        <nav aria-label="Global Markets sections" className="flex gap-5 sm:gap-8">
-          {sections.map((item) => {
-            const query = new URLSearchParams(params.toString()); query.set("tab", item.key);
-            return <Link key={item.key} href={`/news-city?${query}`} scroll={false} aria-current={section === item.key ? "page" : undefined}
-              className={`border-b-2 pb-3 text-sm font-medium transition-colors ${section === item.key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{item.label}</Link>;
-          })}
-        </nav>
+        <SectionNav items={sections} value={section} onChange={selectSection} />
       </header>
       {locked ? <div className="rounded-xl border border-border/60 px-6 py-12 text-center">
         <h2 className="text-lg font-semibold">{section === "positioning" ? "Pro" : "Plus"} includes this view</h2>

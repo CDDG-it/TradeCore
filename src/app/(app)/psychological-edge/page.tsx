@@ -9,7 +9,6 @@ import { GoalsView } from "@/components/goals/goals-view";
 import { TradingRulesEditor } from "@/components/habits/trading-rules";
 import { ConfluencesEditor } from "@/components/habits/confluences-editor";
 import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
-import { MobileSubnav } from "@/components/layout/mobile-nav";
 import { FeatureGate } from "@/components/access/access-provider";
 
 /**
@@ -79,16 +78,13 @@ export default function MyEdgePage() {
 
   return (
     <div className="space-y-3 sm:space-y-5">
-      {/* Header: the title and, from lg, the split control. */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      {/* Keep section selection in the title row on every screen size. */}
+      <div className="flex items-center justify-between gap-3">
         <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">
           My Edge
         </h1>
-        <SectionNav id="edge" items={EDGE_TABS} value={tab} onChange={selectTab} />
+        <SectionNav items={EDGE_TABS} value={tab} onChange={selectTab} />
       </div>
-
-      {/* Phone: the same four views, docked above the bottom bar. */}
-      <MobileSubnav items={EDGE_TABS} value={tab} onChange={selectTab} label="My Edge sections" />
 
       <PageWrapper>
         {tab === "habits" && <HabitsView />}

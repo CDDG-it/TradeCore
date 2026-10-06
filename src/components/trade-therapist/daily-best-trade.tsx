@@ -20,7 +20,6 @@ import {
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
 import {
   resultColor, resultBands, netRColor, inOrder, alpha,
-  WIN_COLOR, LOSS_COLOR, BE_COLOR,
 } from "@/lib/journal/colors";
 import type { TradeJournalEntry, BestTradeOfDay, ScreenshotGroup, TradeRuleCheck } from "@/lib/types";
 import { useAccess } from "@/components/access/access-provider";
@@ -200,14 +199,14 @@ export function DailyBestTrade({
           signal, with the day's result bands underneath: one band per trade,
           in the order taken, so a mixed day reads as mixed at a glance. */}
       <AccentPanel accent="primary" className="shrink-0 p-0">
-        <div className="flex items-center justify-between gap-3 border-b border-border/40 px-3 py-2.5 sm:px-4">
+        <div className="flex items-center justify-between gap-2 border-b border-border/40 px-2.5 py-1.5 sm:px-3">
           <div className="flex items-center gap-1.5">
             <button onClick={() => onDateChange(format(subWeeks(d, 1), "yyyy-MM-dd"))} aria-label="Previous week"
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+              className="flex h-6 w-6 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button onClick={() => onDateChange(format(addWeeks(d, 1), "yyyy-MM-dd"))} aria-label="Next week"
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
+              className="flex h-6 w-6 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
               <ChevronRight className="h-4 w-4" />
             </button>
             {!isThisWeek && (
@@ -218,36 +217,19 @@ export function DailyBestTrade({
             )}
           </div>
 
-          <div className="min-w-0 text-center">
-            <p className="truncate text-sm font-semibold tracking-tight">
+          <div className="min-w-0 text-right sm:text-center">
+            <p className="truncate text-xs font-semibold tracking-tight">
               {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}
             </p>
             <p className="mt-0.5 text-[10px] tabular-nums text-muted-foreground/70">
               {tradedDays === 0
                 ? "No trades logged this week"
-                : `${reviewedDays} of ${tradedDays} traded day${tradedDays !== 1 ? "s" : ""} reviewed`}
+                : `${reviewedDays} / ${tradedDays} traded days reviewed`}
             </p>
-          </div>
-
-          {/* Review progress: only meaningful once something was traded */}
-          <div className="flex w-16 shrink-0 items-center justify-end gap-2">
-            {tradedDays > 0 && (
-              <>
-                <span className="hidden text-[11px] font-bold tabular-nums text-primary sm:inline">
-                  {Math.round((reviewedDays / tradedDays) * 100)}%
-                </span>
-                <span className="h-1.5 w-8 overflow-hidden rounded-full bg-muted/40">
-                  <span
-                    className="block h-full rounded-full transition-[width] duration-500 ease-out"
-                    style={{ width: `${(reviewedDays / tradedDays) * 100}%`, background: TURQUOISE }}
-                  />
-                </span>
-              </>
-            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-1.5 p-2.5 sm:gap-2 sm:p-3">
+        <div className="grid grid-cols-7 gap-1 p-1.5 sm:gap-1.5 sm:p-2">
           {weekDays.map((day) => {
             const key = format(day, "yyyy-MM-dd");
             const dayTradesFor = inOrder(tradesByDay[key] ?? []);
@@ -265,13 +247,13 @@ export function DailyBestTrade({
                 disabled={future}
                 title={future ? "" : done ? "Reviewed" : traded ? "Traded, not reviewed yet" : "No trades"}
                 className={cn(
-                  "group relative flex flex-col items-center overflow-hidden rounded-xl border px-1 pb-2 pt-2.5 transition-all duration-300",
+                  "group relative flex min-h-[62px] flex-col items-center justify-center overflow-hidden rounded-lg border px-0.5 py-1 transition-colors",
                   selected
                     ? "border-primary ring-1 ring-primary/30"
                     : isToday(day)
                     ? "border-primary/40 hover:border-primary/60"
                     : "border-border/40 hover:border-primary/30",
-                  future ? "cursor-default opacity-30" : "cursor-pointer hover:-translate-y-0.5"
+                  future ? "cursor-default opacity-30" : "cursor-pointer"
                 )}
                 style={traded ? { background: resultBands(dayTradesFor, selected ? 18 : 12) } : undefined}
               >
@@ -279,8 +261,8 @@ export function DailyBestTrade({
                 {traded && (
                   <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-[3px] gap-px">
                     {dayTradesFor.map((t) => (
-                      <span
-                        key={t.id}
+                    <span
+                      key={t.id}
                         className="flex-1 transition-[filter] duration-300 group-hover:brightness-125"
                         style={{ background: resultColor(t), boxShadow: `0 0 8px ${alpha(resultColor(t), 45)}` }}
                       />
@@ -302,7 +284,7 @@ export function DailyBestTrade({
                 </span>
                 <span
                   className={cn(
-                    "relative mt-0.5 text-base font-bold leading-none tabular-nums",
+                    "relative mt-0.5 text-sm font-bold leading-none tabular-nums",
                     selected || isToday(day) ? "text-primary" : "text-foreground/85"
                   )}
                 >
@@ -313,8 +295,8 @@ export function DailyBestTrade({
                     was taken, so a quiet day reads as a deliberate no-trade and
                     not as missing data. Future days stay blank. */}
                 {traded ? (
-                  <span className="relative mt-1.5 flex items-center gap-1">
-                    <span className="text-[11px] font-black leading-none tabular-nums" style={{ color: netRColor(netR) }}>
+                  <span className="relative mt-1 flex items-center gap-1">
+                    <span className="text-[10px] font-bold leading-none tabular-nums" style={{ color: netRColor(netR) }}>
                       {formatTotalR(netR)}
                     </span>
                     {dayTradesFor.length > 1 && (
@@ -324,47 +306,17 @@ export function DailyBestTrade({
                     )}
                   </span>
                 ) : future ? (
-                  <span className="relative mt-2 h-1 w-1 rounded-full bg-muted-foreground/20" />
+                  <span className="relative mt-1 h-1 w-1 rounded-full bg-muted-foreground/20" />
                 ) : (
-                  <span className="relative mt-1.5 flex flex-col items-center gap-0.5" title="No trades this day">
-                    <span aria-hidden className="h-[2px] w-4 rounded-full bg-muted-foreground/30" />
-                    <span className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/45">Flat</span>
+                  <span className="relative mt-1 text-[9px] text-muted-foreground/50" title="No trades this day">
+                    —
                   </span>
                 )}
 
-                {/* Review state: a filled check once the day has been worked
-                    through, an open ring while it is still waiting. */}
-                <span
-                  aria-hidden
-                  className={cn(
-                    "relative mt-2 flex h-4 w-4 items-center justify-center rounded-full border transition-colors",
-                    done
-                      ? "border-transparent bg-primary text-primary-foreground"
-                      : traded
-                      ? "border-primary/60 text-transparent"
-                      : "border-border/50 text-transparent"
-                  )}
-                >
-                  <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
-                </span>
+                {done && <Check aria-label="Reviewed" className="absolute right-1 top-1 h-2.5 w-2.5 text-primary" strokeWidth={3} />}
               </button>
             );
           })}
-        </div>
-
-        {/* Legend: review state first, outcome colours second */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/40 px-3 py-2 text-[10px] text-muted-foreground sm:px-4">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="flex h-3 w-3 items-center justify-center rounded-full bg-primary" /> Reviewed
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-full border border-primary/60" /> To review
-          </span>
-          <span className="ml-auto inline-flex items-center gap-2.5">
-            <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: WIN_COLOR }} /> Win</span>
-            <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: LOSS_COLOR }} /> Loss</span>
-            <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full" style={{ background: BE_COLOR }} /> B/E</span>
-          </span>
         </div>
       </AccentPanel>
 
@@ -386,13 +338,19 @@ export function DailyBestTrade({
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
           <h2 className="font-heading text-sm font-bold tracking-tight">Best Trade of the Day</h2>
-          {bestTradeEnabled ? <div className="grid min-h-[360px] grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
+          {bestTradeEnabled ? <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-3", !takenWasBest && "lg:grid-cols-2")}>
             {/* ── LEFT: your verdict + why the better trade was better ───────
                 The one call this tab exists to make - was the trade you took
                 the best one available - and, when it was not, the room to write
                 out why the trade you should have taken was the better one. */}
             <AccentPanel accent="primary" eyebrow="Verdict" title="Was your trade the best trade?" className="flex min-h-0 flex-col">
               <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
+                {dayTrades.length > 0 && <div className="flex flex-wrap items-center gap-2 border-b border-border/40 pb-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/60">Your actual {dayTrades.length > 1 ? "trades" : "trade"}</span>
+                  {dayTrades.map((t) => <Link key={t.id} href={`/journal/${t.id}?from=trade-therapist`} className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-2 py-1 text-xs font-semibold transition-colors hover:border-primary/40 hover:text-primary">
+                    {instrumentName(t.instrument)} <span className="tabular-nums">{formatTotalR(tradeR(t))}</span><ExternalLink className="h-3 w-3 text-muted-foreground/50" />
+                  </Link>)}
+                </div>}
                 {/* The toggle: a full-width bar so the day's verdict is the
                     first thing the eye lands on, its state carried by colour. */}
                 <label
@@ -424,13 +382,13 @@ export function DailyBestTrade({
                     placeholder={takenWasBest
                       ? "What made your trade the highest-quality play on the board..."
                       : "The cleaner level, more room to target, aligned with the daily bias - why the trade you should have taken beat the one you did..."}
-                    className="min-h-[140px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+                    className="min-h-[110px] w-full flex-1 resize-none rounded-lg border border-border/60 bg-background/40 px-3.5 py-3 text-sm leading-relaxed outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
               </div>
             </AccentPanel>
 
-            {/* ── RIGHT: the trade you should have taken ─────────────────────
+            {!takenWasBest && <>{/* ── RIGHT: the trade you should have taken ─────────────────────
                 The HTF read and the entry of the better trade, uploaded into
                 two fixed slots. A small link to your actual trade's log sits on
                 top for reference - the chart of what should have happened is the
@@ -442,33 +400,8 @@ export function DailyBestTrade({
               className="flex min-h-0 flex-col"
             >
               <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
-                {/* Reference link to the actual trade log - not a picture. */}
-                {dayTrades.length > 0 && (
-                  <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border/40 pb-3">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/60">
-                      Your actual {dayTrades.length > 1 ? "trades" : "trade"}
-                    </span>
-                    {dayTrades.map((t) => (
-                      <Link
-                        key={t.id}
-                        // `from` so the trade page sends you back here, not into
-                        // the journal, when you were only checking the trade.
-                        href={`/journal/${t.id}?from=trade-therapist`}
-                        className="group inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-1 text-xs font-semibold transition-colors hover:border-primary/40 hover:bg-muted/30 hover:text-primary"
-                      >
-                        {instrumentName(t.instrument)}
-                        <span className={cn("tabular-nums",
-                          t.result === "win" ? "text-success" : t.result === "loss" ? "text-destructive" : "text-warning")}>
-                          {t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R"}
-                        </span>
-                        <ExternalLink className="h-3 w-3 text-muted-foreground/40 transition-colors group-hover:text-primary" />
-                      </Link>
-                    ))}
-                  </div>
-                )}
-
                 {/* The HTF + entry charts of the trade you should have taken. */}
-                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                <div className="min-h-0 flex-1 pr-1">
                   <ScreenshotUpload
                     groups={groups}
                     onChange={(g) => { setGroups(g); setSaved(false); }}
@@ -477,6 +410,7 @@ export function DailyBestTrade({
                 </div>
               </div>
             </AccentPanel>
+            </>}
           </div> : <div className="flex min-h-36 items-center justify-center rounded-2xl border border-border/60 bg-card px-6 text-center"><div><p className="text-sm font-semibold">Session review saved on every plan</p><p className="mt-1 text-xs text-muted-foreground">Plus adds Best Trade analysis and review screenshots.</p><Link href="/pricing" className="mt-3 inline-flex text-xs font-semibold text-primary hover:underline">Compare plans</Link></div></div>}
           <RPotentialAnalysisSection key={date} trades={dayTrades} />
           </div>

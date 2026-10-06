@@ -8,7 +8,6 @@ import { getTrades } from "@/lib/supabase/queries";
 import { DailyBestTrade } from "@/components/trade-therapist/daily-best-trade";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
 import { PreMarketExercises } from "@/components/trade-therapist/pre-market-exercises";
-import { MobileSubnav } from "@/components/layout/mobile-nav";
 import type { TradeJournalEntry } from "@/lib/types";
 import { FeatureGate } from "@/components/access/access-provider";
 
@@ -56,11 +55,8 @@ export default function TradeTherapistPage() {
         <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
           MC Trade Therapist
         </h1>
-        <SectionNav id="therapist" items={TABS} value={tab} onChange={setTab} />
+        <SectionNav items={TABS} value={tab} onChange={setTab} />
       </div>
-
-      {/* Phone: the same tabs, docked above the bottom bar. */}
-      <MobileSubnav items={TABS} value={tab} onChange={setTab} label="Therapist sections" />
 
       <PageWrapper className="min-h-0 flex-1 space-y-0">
         {tab === "daily" && (
