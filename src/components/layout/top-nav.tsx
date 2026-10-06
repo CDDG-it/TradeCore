@@ -5,25 +5,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { X, Settings, User as UserIcon, LogOut, ChevronDown } from "lucide-react";
+import { gsap } from "gsap";
 import { cn } from "@/lib/utils";
+import { useScrollNav } from "@/lib/ui/use-scroll-nav";
 import { useAuth } from "@/lib/auth-context";
 import { PRIMARY_NAV } from "@/lib/nav";
 import { isActive } from "@/components/layout/mobile-nav";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 /**
- * The signed-in top bar. One glass rail in the centre with the four
- * destinations, the active one under a pill that slides between them; a
- * create pill and the profile chip on the right, both opening Base UI menus
- * out of their trigger. The bar lifts (deeper ground, a shadow) once the page
- * has scrolled, so it reads as sitting above the content rather than
- * painted on it.
+ * The signed-in top bar. A text rail holds the four destinations. The bar
+ * recedes on downward scroll and returns when navigation is needed again.
  *
- * Motion budget: tab switches happen many times a day, so the only movement
- * is the pill sliding (a short spring, instant under reduced motion) and the
- * press itself. Menus enter from their trigger in 180ms and leave the same
- * way.
+ * Motion stays short: the active pill uses its existing spring and the bar
+ * enters or leaves in 200ms, with no travel under reduced motion.
  */
 const MENU_MOTION = "duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]";
 const MENU_SURFACE = "rounded-2xl border border-border/60 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,.45)] backdrop-blur-md";
@@ -74,25 +69,26 @@ function RailItem({ href, label, active, soon, instant }: { href: string; label:
   );
 }
 
-/** True once the page has moved: the bar deepens and casts a shadow. */
-function useScrolled() {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const read = () => setScrolled(window.scrollY > 8);
-    read();
-    window.addEventListener("scroll", read, { passive: true });
-    return () => window.removeEventListener("scroll", read);
-  }, []);
-  return scrolled;
-}
-
 export function TopNav() {
   const pathname = usePathname();
   const { user, signOut, avatarUrl } = useAuth();
   const avatar = avatarUrl ?? undefined;
   const [open, setOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
-  const scrolled = useScrolled();
+  const { visible, scrolled, show } = useScrollNav(open || profileOpen);
+
+  useEffect(() => {
+    if (!headerRef.current) return;
+    gsap.to(headerRef.current, {
+      yPercent: visible ? 0 : -100,
+      opacity: visible ? 1 : 0,
+      duration: reduce ? 0 : 0.2,
+      ease: "power2.out",
+      overwrite: true,
+    });
+  }, [visible, reduce]);
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -100,8 +96,10 @@ export function TopNav() {
   return (
     <>
       <header
+        ref={headerRef}
         data-scrolled={scrolled || undefined}
-        className="app-topbar sticky top-0 z-40"
+        onFocusCapture={show}
+        className={cn("app-topbar sticky top-0 z-40", !visible && "pointer-events-none")}
         // The blur stays inline: the build strips `backdrop-filter` from the stylesheet.
         style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
       >
@@ -128,7 +126,7 @@ export function TopNav() {
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
             <div className="hidden shrink-0 items-center gap-2 lg:flex">
-              <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} avatarUrl={avatar} onSignOut={signOut} />
+              <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} avatarUrl={avatar} onSignOut={signOut} onOpenChange={setProfileOpen} />
             </div>
             {/* Phone: the profile lives top-right, the way every app does it:
                 navigation itself has moved to the bottom tab bar. */}
@@ -168,20 +166,20 @@ export function TopNav() {
                   <p className="truncate text-sm font-semibold leading-tight">{displayName}</p>
                   <p className="truncate text-xs leading-tight text-muted-foreground">{user?.email}</p>
                 </div>
-                <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="press inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground">
-                  <X className="h-4 w-4" />
+                <button type="button" onClick={() => setOpen(false)} className="press inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-border px-2 text-muted-foreground">
+                  <span className="px-2 text-xs font-semibold">Close</span>
                 </button>
               </div>
               <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
               <div className="space-y-1 pt-2">
-                <Link href="/profile" onClick={() => setOpen(false)} className="press flex items-center gap-2.5 rounded-xl p-3 text-sm font-medium text-foreground/85">
-                  <UserIcon className="h-4 w-4 text-muted-foreground" /> Profile
+                <Link href="/profile" onClick={() => setOpen(false)} className="press flex items-center rounded-xl p-3 text-sm font-medium text-foreground/85">
+                  Profile
                 </Link>
-                <Link href="/settings" onClick={() => setOpen(false)} className="press flex items-center gap-2.5 rounded-xl p-3 text-sm font-medium text-foreground/85">
-                  <Settings className="h-4 w-4 text-muted-foreground" /> Settings
+                <Link href="/settings" onClick={() => setOpen(false)} className="press flex items-center rounded-xl p-3 text-sm font-medium text-foreground/85">
+                  Settings
                 </Link>
-                <button onClick={signOut} className="press flex w-full items-center gap-2.5 rounded-xl bg-destructive/10 p-3 text-sm font-medium text-destructive">
-                  <LogOut className="h-4 w-4" /> Sign out
+                <button onClick={signOut} className="press flex w-full items-center rounded-xl bg-destructive/10 p-3 text-sm font-medium text-destructive">
+                  Sign out
                 </button>
               </div>
             </motion.div>
@@ -210,7 +208,7 @@ function AvatarChip({ initials, avatarUrl, size }: { initials: string; avatarUrl
 }
 
 /** Profile chip and its menu: Profile, Settings, Sign out. */
-function ProfileMenu({ displayName, email, initials, avatarUrl, onSignOut }: { displayName: string; email: string; initials: string; avatarUrl?: string; onSignOut: () => void }) {
+function ProfileMenu({ displayName, email, initials, avatarUrl, onSignOut, onOpenChange }: { displayName: string; email: string; initials: string; avatarUrl?: string; onSignOut: () => void; onOpenChange: (open: boolean) => void }) {
   const [open, setOpen] = useState(false);
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -228,15 +226,14 @@ function ProfileMenu({ displayName, email, initials, avatarUrl, onSignOut }: { d
   };
   useEffect(() => cancelTimers, []);
   const links = [
-    { label: "Profile", href: "/profile", icon: UserIcon },
-    { label: "Settings", href: "/settings", icon: Settings },
+    { label: "Profile", href: "/profile" },
+    { label: "Settings", href: "/settings" },
   ];
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={(next) => { setOpen(next); onOpenChange(next); }}>
       <DropdownMenuTrigger onMouseEnter={enter} onMouseLeave={leave} className="press group/profile flex h-8 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] pl-1 pr-2.5 hover:border-primary/35 hover:bg-white/[0.07] data-[popup-open]:border-primary/35 data-[popup-open]:bg-white/[0.07]">
         <AvatarChip initials={initials} avatarUrl={avatarUrl} size={26} />
         <span className="max-w-[120px] truncate text-xs font-semibold text-sidebar-foreground/85">{displayName}</span>
-        <ChevronDown className="size-3.5 text-sidebar-foreground/40 transition-transform duration-150 ease-out group-data-[popup-open]/profile:rotate-180" />
       </DropdownMenuTrigger>
       <DropdownMenuContent onMouseEnter={enter} onMouseLeave={leave} side="bottom" align="end" sideOffset={10} className={cn("w-64", MENU_SURFACE, MENU_MOTION)}>
         <div className="flex items-center gap-3 px-2 py-2">
@@ -247,15 +244,13 @@ function ProfileMenu({ displayName, email, initials, avatarUrl, onSignOut }: { d
           </div>
         </div>
         <DropdownMenuSeparator className="my-1.5 bg-gradient-to-r from-transparent via-border to-transparent" />
-        {links.map(({ label, href, icon: Icon }) => (
-          <DropdownMenuItem key={href} render={<Link href={href} />} className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-sm font-medium text-foreground/85">
-            <Icon className="size-4 text-muted-foreground" />
+        {links.map(({ label, href }) => (
+          <DropdownMenuItem key={href} render={<Link href={href} />} className="group flex items-center rounded-xl px-2.5 py-2.5 text-sm font-medium text-foreground/85">
             <span>{label}</span>
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator className="my-1.5 bg-gradient-to-r from-transparent via-border to-transparent" />
         <DropdownMenuItem variant="destructive" onClick={onSignOut} className="flex items-center gap-2.5 rounded-xl bg-destructive/10 px-2.5 py-2.5 text-sm font-medium">
-          <LogOut className="size-4" />
           <span>Sign out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

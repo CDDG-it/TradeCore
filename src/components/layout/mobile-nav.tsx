@@ -1,33 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Plus, TrendingUp } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/lib/nav";
-import { NAV_ICON_ASSETS } from "@/lib/nav-icons";
-export { NAV_ICON_ASSETS } from "@/lib/nav-icons";
+import { useScrollNav } from "@/lib/ui/use-scroll-nav";
 
-/**
- * Phone navigation, the way the apps next to it on the home screen do it: a
- * fixed bar of icons pinned to the bottom, no labels, a raised "create" pill in
- * the middle that logs a trade. Icons carry the meaning; the selected one is
- * drawn heavier and brighter with a dot beneath it, and the link's accessible
- * name carries the label a screen reader needs.
- *
- * Switching tabs happens dozens of times a day, so it does not animate: the
- * only motion is the press itself. Desktop is untouched: everything here is
- * `lg:hidden`.
- */
+/** Text-first phone navigation that makes room for the page while scrolling. */
 
 /** What the create pill offers: the two things a trader starts from the desk. */
 export const CREATE = [
-  { label: "Log trade", hint: "Add to the journal", href: "/journal/new", icon: TrendingUp },
-  { label: "New analysis", hint: "Plan before the session", href: "/analysis/new", icon: Compass },
+  { label: "Log trade", hint: "Add to the journal", href: "/journal/new" },
+  { label: "New analysis", hint: "Plan before the session", href: "/analysis/new" },
 ] as const;
 
 /**
@@ -44,47 +31,31 @@ export const isActive = (pathname: string, href: string) =>
   pathname.startsWith(href + "/") ||
   (ALSO_UNDER[href] ?? []).some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-function TabIcon({ tab, active }: { tab: (typeof PRIMARY_NAV)[number]; active: boolean }) {
-  const iconSrc = NAV_ICON_ASSETS[tab.href];
+function TabLabel({ tab, active }: { tab: (typeof PRIMARY_NAV)[number]; active: boolean }) {
   return (
     <Link
       href={tab.href}
       aria-label={tab.label}
       aria-current={active ? "page" : undefined}
-      className={cn(
-        "mobile-tab relative flex h-full flex-col items-center justify-center",
-        active ? "text-foreground" : "text-foreground/55"
-      )}
+      className={cn("mobile-tab relative flex h-full min-w-0 items-center justify-center px-1 text-center text-[11px] font-semibold leading-tight tracking-tight transition-colors", active ? "text-foreground" : "text-foreground/55")}
     >
-      <span className={cn(
-        "relative h-[30px] w-[30px] transition-[filter,opacity,transform] duration-150",
-        active ? "scale-105 opacity-100" : "opacity-55 grayscale-[35%]"
-      )}>
-        <Image
-          src={iconSrc}
-          alt=""
-          fill
-          sizes="30px"
-          className="object-contain"
-          style={{ filter: active ? "brightness(.72) saturate(.9)" : "brightness(.55) saturate(.65) grayscale(.2)" }}
-        />
-      </span>
-      <span
-        aria-hidden
-        className={cn("mt-1.5 h-1 w-1 rounded-full bg-primary transition-opacity duration-150", active ? "opacity-100" : "opacity-0")}
-      />
+      <span className="relative z-10">{tab.short ?? tab.label}</span>
+      <span aria-hidden className={cn("absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-primary transition-opacity duration-200", active ? "opacity-100" : "opacity-0")} />
     </Link>
   );
 }
 
 export function BottomNav() {
   const pathname = usePathname();
+  const [createOpen, setCreateOpen] = useState(false);
+  const { visible, show } = useScrollNav(createOpen);
   const [first, second, ...rest] = PRIMARY_NAV;
 
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 lg:hidden border-t border-sidebar-border/60"
+      onFocusCapture={show}
+      className={cn("fixed inset-x-0 bottom-0 z-40 border-t border-sidebar-border/60 transition-[transform,opacity] duration-200 ease-[var(--ease-out-strong)] motion-reduce:transition-opacity lg:hidden", !visible && "pointer-events-none translate-y-full opacity-0 motion-reduce:translate-y-0")}
       style={{
         background: "var(--nav-bg)",
         backdropFilter: "blur(24px)",
@@ -93,30 +64,18 @@ export function BottomNav() {
       }}
     >
       <div className="mx-auto grid h-14 max-w-md grid-cols-5 items-stretch px-2">
-        {[first, second].map((tab) => <TabIcon key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
-        <DropdownMenu>
+        {[first, second].map((tab) => <TabLabel key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
+        <DropdownMenu open={createOpen} onOpenChange={setCreateOpen}>
           <DropdownMenuTrigger
             aria-label="Create"
-            className="group/create mobile-tab mobile-tab-create flex items-center justify-center outline-none"
+            className="group/create mobile-tab mobile-tab-create flex items-center justify-center text-[11px] font-semibold text-primary outline-none"
           >
-            <span
-              aria-hidden
-              className="grid h-8 w-12 place-items-center rounded-xl text-white"
-              style={{
-                background: "linear-gradient(135deg, var(--primary) 0%, var(--ice) 100%)",
-                boxShadow: "0 6px 18px color-mix(in oklch, var(--primary) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.25)",
-              }}
-            >
-              <Plus className="h-5 w-5 transition-transform duration-150 ease-out group-data-[popup-open]/create:rotate-45" strokeWidth={2.6} />
-            </span>
+            <span className="rounded-full border border-primary/35 bg-primary/10 px-2.5 py-1.5">Create</span>
           </DropdownMenuTrigger>
           {/* Opens upward out of the pill: two large rows, thumb-sized. */}
           <DropdownMenuContent side="top" align="center" sideOffset={14} className="w-64 rounded-2xl border border-border/60 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,.45)]">
             {CREATE.map((item) => (
               <DropdownMenuItem key={item.href} render={<Link href={item.href} />} className="flex items-center gap-3 rounded-xl px-2.5 py-2.5">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/12 text-primary">
-                  <item.icon className="size-[18px]" strokeWidth={2.1} />
-                </span>
                 <span className="min-w-0">
                   <span className="block text-[15px] font-semibold leading-tight text-foreground">{item.label}</span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">{item.hint}</span>
@@ -125,7 +84,7 @@ export function BottomNav() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        {rest.map((tab) => <TabIcon key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
+        {rest.map((tab) => <TabLabel key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
       </div>
     </nav>
   );
@@ -157,6 +116,7 @@ export function MobileSubnav<T extends string>({
   scrollRef?: RefObject<HTMLElement | null>;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const { visible, show } = useScrollNav();
   const picked = useRef(false);
   // The strip is portalled to <body>. The page it belongs to is rendered inside
   // the route transition's motion wrapper, and a `transform` there: even the
@@ -210,7 +170,8 @@ export function MobileSubnav<T extends string>({
   return createPortal(
     <div
       aria-label={label}
-      className="fixed inset-x-0 z-40 lg:hidden border-t border-sidebar-border/70"
+      onFocusCapture={show}
+      className={cn("fixed inset-x-0 z-40 border-t border-sidebar-border/70 transition-[transform,opacity] duration-200 ease-[var(--ease-out-strong)] motion-reduce:transition-opacity lg:hidden", !visible && "pointer-events-none translate-y-full opacity-0 motion-reduce:translate-y-0")}
       style={{
         bottom: "calc(3.5rem + env(safe-area-inset-bottom))",
         background: "var(--nav-bg)",

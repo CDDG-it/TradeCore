@@ -934,8 +934,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   }
 }
 
-/* Phone tab bar: the press is the only motion. The icon shrinks under the thumb
-   and springs back; the create pill presses a touch deeper. */
+/* Phone tab bar: restrained press feedback on text labels and Create. */
 .mobile-tab > * {
   transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "rea
 import Link from "next/link";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isFuture, isToday } from "date-fns";
 import { motion, useReducedMotion } from "motion/react";
-import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import { RPotentialAnalysisSection } from "@/components/trade-therapist/r-potential-analysis";
@@ -13,7 +13,7 @@ import { useAccess } from "@/components/access/access-provider";
 import { cn } from "@/lib/utils";
 import { getBestTradeOfDay, getBestTradesOfDay, saveBestTradeOfDay, deleteBestTradeOfDay, getTradeRuleChecks, type BestTradeListRow } from "@/lib/supabase/queries";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
-import { inOrder, resultBands, resultColor, alpha, netRColor } from "@/lib/journal/colors";
+import { inOrder, netRColor } from "@/lib/journal/colors";
 import type { BestTradeOfDay, ScreenshotGroup, TradeJournalEntry, TradeRuleCheck } from "@/lib/types";
 
 type Step = PostMarketStep;
@@ -21,7 +21,7 @@ type Draft = Pick<BestTradeOfDay, "taken_was_best" | "notes" | "post_market_anal
 
 const emptyGroups = (): ScreenshotGroup[] => [{ label: "HTF", urls: [] }, { label: "Entry", urls: [] }];
 const emptyDraft = (): Draft => ({ taken_was_best: false, notes: "", post_market_analysis: "", screenshot_groups: emptyGroups(), review_step: null });
-const hasEntry = (row?: BestTradeListRow) => Boolean(row && (row.review_step === "complete" || row.taken_was_best || row.notes.trim() || row.post_market_analysis.trim()));
+const isReviewed = (row?: BestTradeListRow) => Boolean(row && (row.review_step === "complete" || (row.review_step === null && (row.taken_was_best || row.notes.trim() || row.post_market_analysis.trim()))));
 
 export function DailyBestTrade({ date, trades, onDateChange, onSaved }: {
   date: string;
@@ -65,7 +65,7 @@ export function DailyBestTrade({ date, trades, onDateChange, onSaved }: {
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
   const reviewedDays = weekDays.filter((day) => {
     const key = format(day, "yyyy-MM-dd");
-    return (tradesByDay[key] ?? []).length > 0 && hasEntry(bestByDay[key]);
+    return (tradesByDay[key] ?? []).length > 0 && isReviewed(bestByDay[key]);
   }).length;
   const tradedDays = weekDays.filter((day) => (tradesByDay[format(day, "yyyy-MM-dd")] ?? []).length > 0).length;
 
@@ -213,33 +213,35 @@ export function DailyBestTrade({ date, trades, onDateChange, onSaved }: {
   return <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-3 lg:h-full lg:min-h-0">
     <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
       <Dialog open={calendarOpen} onOpenChange={(open) => { setCalendarOpen(open); if (open) setCalendarWeek(selectedDate); }}>
-        <button type="button" disabled={uploadingScreenshot} onClick={() => setCalendarOpen(true)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-semibold hover:border-primary/40 disabled:opacity-50">
-          <CalendarDays className="h-4 w-4 text-primary" />{format(selectedDate, "EEEE, MMM d, yyyy")}<ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        <button type="button" disabled={uploadingScreenshot} onClick={() => setCalendarOpen(true)} className="inline-flex min-h-9 items-center gap-3 rounded-lg border border-border/60 bg-card/70 px-3 text-xs font-semibold hover:border-primary/40 disabled:opacity-50">
+          <span>{format(selectedDate, "EEEE, MMM d, yyyy")}</span><span className="border-l border-border/70 pl-3 font-medium text-primary">Change day</span>
         </button>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader><DialogTitle>Choose a review day</DialogTitle><DialogDescription>Switch between days and weeks. Changes are saved before opening another day.</DialogDescription></DialogHeader>
-          <div className="flex items-center justify-between gap-2 text-xs">
-            <div className="flex gap-1">
-              <button type="button" onClick={() => setCalendarWeek(subWeeks(calendarWeek, 1))} aria-label="Previous week" className="rounded-lg border border-border/60 p-1.5 hover:text-primary"><ChevronLeft className="h-4 w-4" /></button>
-              <button type="button" onClick={() => setCalendarWeek(addWeeks(calendarWeek, 1))} aria-label="Next week" className="rounded-lg border border-border/60 p-1.5 hover:text-primary"><ChevronRight className="h-4 w-4" /></button>
-            </div>
-            <span className="font-semibold">{format(weekStart, "MMM d")} – {format(weekEnd, "MMM d, yyyy")}</span>
-            <span className="text-muted-foreground">{reviewedDays}/{tradedDays} reviewed</span>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3 text-xs">
+            <span className="font-semibold">{format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}</span>
+            <span className="text-muted-foreground">{reviewedDays} of {tradedDays} traded days reviewed</span>
           </div>
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="space-y-1.5">
             {weekDays.map((day) => {
               const key = format(day, "yyyy-MM-dd");
               const dayTradesFor = inOrder(tradesByDay[key] ?? []);
               const netR = dayTradesFor.reduce((total, trade) => total + tradeR(trade), 0);
               const future = isFuture(day) && !isToday(day);
-              return <button key={key} type="button" disabled={future} onClick={() => void selectDate(key)} aria-label={`${format(day, "EEEE, MMMM d")}${hasEntry(bestByDay[key]) ? ", reviewed" : ""}`} className={cn("relative flex min-h-16 flex-col items-center justify-center rounded-lg border px-1 text-xs transition-colors", key === date ? "border-primary text-primary" : "border-border/60 hover:border-primary/40", future && "opacity-30")} style={dayTradesFor.length ? { background: resultBands(dayTradesFor, 12) } : undefined}>
-                {dayTradesFor.length > 0 && <span aria-hidden className="absolute inset-x-0 top-0 flex h-[2px]">{dayTradesFor.map((trade) => <span key={trade.id} className="flex-1" style={{ background: resultColor(trade), boxShadow: `0 0 8px ${alpha(resultColor(trade), 45)}` }} />)}</span>}
-                <span className="text-[9px] uppercase text-muted-foreground">{format(day, "EEE")}</span><span className="font-bold">{format(day, "d")}</span><span className="text-[9px] tabular-nums" style={{ color: dayTradesFor.length ? netRColor(netR) : undefined }}>{dayTradesFor.length ? formatTotalR(netR) : "—"}</span>
-                {hasEntry(bestByDay[key]) && <Check className="absolute right-1 top-1 h-2.5 w-2.5 text-primary" />}
+              const status = isReviewed(bestByDay[key]) ? "Reviewed" : bestByDay[key]?.review_step ? "In progress" : "Not reviewed";
+              return <button key={key} type="button" disabled={future} onClick={() => void selectDate(key)} aria-current={key === date ? "date" : undefined} className={cn("flex min-h-12 w-full items-center gap-3 rounded-lg border px-3 text-left text-xs transition-colors", key === date ? "border-primary/60 bg-primary/[0.08]" : "border-border/50 bg-background/20 hover:border-primary/40 hover:bg-card", future && "opacity-30")}>
+                <span className="w-12 shrink-0 font-semibold text-foreground">{format(day, "EEE d")}</span>
+                <span className="min-w-0 flex-1 truncate text-muted-foreground">{dayTradesFor.length ? `${dayTradesFor.length} trade${dayTradesFor.length === 1 ? "" : "s"}` : "No trades"}</span>
+                {dayTradesFor.length > 0 && <span className="w-14 shrink-0 text-right font-semibold tabular-nums" style={{ color: netRColor(netR) }}>{formatTotalR(netR)}</span>}
+                <span className={cn("w-20 shrink-0 text-right text-[11px]", status === "Reviewed" ? "text-primary" : "text-muted-foreground")}>{status}</span>
               </button>;
             })}
           </div>
-          <button type="button" onClick={() => void selectDate(format(new Date(), "yyyy-MM-dd"))} className="justify-self-end text-xs font-semibold text-primary hover:underline">Today</button>
+          <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-3 text-xs font-semibold">
+            <button type="button" onClick={() => setCalendarWeek(subWeeks(calendarWeek, 1))} className="text-muted-foreground hover:text-primary">Previous week</button>
+            <button type="button" onClick={() => void selectDate(format(new Date(), "yyyy-MM-dd"))} className="text-primary hover:underline">Today</button>
+            <button type="button" onClick={() => setCalendarWeek(addWeeks(calendarWeek, 1))} className="text-muted-foreground hover:text-primary">Next week</button>
+          </div>
         </DialogContent>
       </Dialog>
       <span className="text-[11px] text-muted-foreground">{dayTrades.length ? `${dayTrades.length} trade${dayTrades.length === 1 ? "" : "s"} · ${formatTotalR(dayR)}` : "No trades taken"}</span>
