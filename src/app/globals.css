@@ -920,7 +920,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
 
 
-/* Secondary navigation opens from the existing top bar. The menu is the only
+/* Secondary navigation opens from the page title. The menu is the only
    moving surface; the page underneath never changes position. */
 .section-nav-menu {
   transform-origin: var(--transform-origin);

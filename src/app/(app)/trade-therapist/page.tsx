@@ -59,10 +59,13 @@ export default function TradeTherapistPage() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
-        <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
-          MC Trade Therapist
-        </h1>
-        <SectionNav items={TABS} value={tab} onChange={setTab} focusMode={tab === "daily"} />
+        <SectionNav
+          title="MC Trade Therapist"
+          titleClassName="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none"
+          items={TABS}
+          value={tab}
+          onChange={setTab}
+        />
       </div>
 
       <PageWrapper className="min-h-0 flex-1 space-y-0">

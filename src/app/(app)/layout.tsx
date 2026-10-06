@@ -50,7 +50,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           and vertical padding on phones so content uses the full screen. */}
       <main className="relative z-10 min-h-0 flex-1 overflow-hidden">
         {/* `app-shell` reserves room for the fixed phone primary bar.
-            Section menus live in the top bar and add no content row. */}
+            Section menus open from each page title and add no content row. */}
         <div className="app-shell mx-auto h-full w-full max-w-[1700px] px-3 py-4 sm:px-6 sm:py-8 lg:px-10">
           <AppViewport><TransitionLayout>{children}</TransitionLayout></AppViewport>
         </div>

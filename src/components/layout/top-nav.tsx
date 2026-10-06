@@ -105,9 +105,6 @@ export function TopNav() {
           </nav>
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-            {/* Pages with secondary views place one compact menu in this slot.
-                It shares the existing bar instead of taking a second row. */}
-            <div id="app-section-nav-slot" className="shrink-0" />
             <div className="hidden shrink-0 items-center gap-2 lg:flex">
               <ProfileMenu displayName={displayName} email={user?.email ?? ""} initials={initials} avatarUrl={avatar} onSignOut={signOut} />
             </div>

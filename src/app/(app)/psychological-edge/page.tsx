@@ -79,10 +79,13 @@ export default function MyEdgePage() {
   return (
     <div className="space-y-3 sm:space-y-5">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">
-          My Edge
-        </h1>
-        <SectionNav items={EDGE_TABS} value={tab} onChange={selectTab} />
+        <SectionNav
+          title="My Edge"
+          titleClassName="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl"
+          items={EDGE_TABS}
+          value={tab}
+          onChange={selectTab}
+        />
       </div>
 
       <PageWrapper>

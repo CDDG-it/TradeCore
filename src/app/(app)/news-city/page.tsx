@@ -38,10 +38,15 @@ function MarketsDesk() {
     <div className="w-full min-w-0 max-w-full">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
         <div className="min-w-0">
-          <h1 className="font-heading text-xl font-semibold tracking-tight sm:text-[28px]">Global Markets</h1>
+          <SectionNav
+            title="Global Markets"
+            titleClassName="font-heading text-xl font-semibold tracking-tight sm:text-[28px]"
+            items={sections}
+            value={section}
+            onChange={selectSection}
+          />
           <p className="text-xs text-muted-foreground">{section === "news" ? "U.S. macro and energy releases" : section === "calendar" ? "Economic releases and market holidays" : section === "markets" ? "Futures, yields and rates" : "CFTC positioning"}</p>
         </div>
-        <SectionNav items={sections} value={section} onChange={selectSection} />
       </header>
       {locked ? <div className="rounded-xl border border-border/60 px-6 py-12 text-center">
         <h2 className="text-lg font-semibold">{section === "positioning" ? "Pro" : "Plus"} includes this view</h2>
