@@ -138,7 +138,8 @@ export function FlowOptionsTab() {
               <span className="hidden pl-2 lg:block">Read</span>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            {/* Rows share the board's height, so a short list still fills the pane. */}
+            <div className="grid min-h-0 flex-1 overflow-y-auto" style={{ gridAutoRows: "minmax(38px, 1fr)" }}>
               {rows.map((inst, i) => {
                 const on = inst.symbol === selected?.symbol;
                 const tone = SIGNAL_TONE[inst.signal.kind] ?? "var(--muted-foreground)";

@@ -34,7 +34,7 @@ export function Sparkline({
   const areaPath = `M0,${height} L${points.join(" L")} L${width},${height} Z`;
 
   return (
-    <svg width={width} height={height} className={className} aria-hidden>
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className={className} aria-hidden>
       <defs>
         <linearGradient id={`spark-${id}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.22" />
@@ -49,6 +49,7 @@ export function Sparkline({
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );

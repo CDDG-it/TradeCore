@@ -117,9 +117,9 @@ export function NewsTab() {
         ) : (
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={`${topic}-${windowKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex min-h-0 flex-1 flex-col gap-2">
-              <LeadStory item={lead} now={now!} timeZone={timeZone} />
+              <LeadStory item={lead} now={now!} timeZone={timeZone} grow={rest.length <= 4} />
               {rest.length > 0 && (
-                <div className="grid min-h-0 flex-1 auto-rows-min content-start gap-2 overflow-y-auto sm:grid-cols-2 lg:overflow-hidden">
+                <div className={cn("grid min-h-0 auto-rows-min content-start items-start gap-2 overflow-y-auto sm:grid-cols-2 lg:overflow-hidden", rest.length > 4 && "flex-1")}>
                   {rest.map((item, i) => (
                     <StoryCard key={item.article.id} item={item} index={i} now={now!} timeZone={timeZone} open={open === item.article.id} onToggle={() => setOpen((cur) => (cur === item.article.id ? null : item.article.id))} />
                   ))}
@@ -129,11 +129,11 @@ export function NewsTab() {
             </motion.div>
           </AnimatePresence>
         )}
+        <KeyReadings />
       </div>
 
       <div className="flex min-h-0 flex-col gap-2 lg:col-span-4">
         <ComingUp now={now} />
-        <KeyReadings />
       </div>
     </div>
   );
@@ -152,15 +152,15 @@ function ImportanceTag({ item }: { item: RankedArticle }) {
   );
 }
 
-function LeadStory({ item, now, timeZone }: { item: RankedArticle; now: number; timeZone: string }) {
+function LeadStory({ item, now, timeZone, grow }: { item: RankedArticle; now: number; timeZone: string; grow: boolean }) {
   const { article } = item;
   const color = article.topic ? TOPIC_COLOR[article.topic] : "var(--primary)";
   return (
     <motion.article key={article.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} whileHover={{ y: -2 }}
-      className="group relative shrink-0 overflow-hidden rounded-[22px] border border-white/[.08] bg-card/70 p-5 transition-colors duration-300 hover:border-white/[.14]">
+      className={cn("group relative flex flex-col overflow-hidden rounded-[22px] border border-white/[.08] bg-card/70 p-5 transition-colors duration-300 hover:border-white/[.14]", grow ? "min-h-[12rem] flex-1" : "shrink-0")}>
       <div aria-hidden className="pointer-events-none absolute -right-20 -top-24 h-60 w-60 rounded-full blur-3xl transition-opacity duration-500 group-hover:opacity-100" style={{ background: a(color, 22), opacity: 0.7 }} />
       <div aria-hidden className="absolute inset-y-0 left-0 w-[3px]" style={{ background: color }} />
-      <div className="relative">
+      <div className="relative flex min-h-0 flex-1 flex-col">
         <div className="flex flex-wrap items-center gap-2">
           <Label className="text-[10px]" >Lead release</Label>
           <span className="text-[11px] font-semibold" style={{ color }}>{article.topic}</span>
@@ -169,8 +169,8 @@ function LeadStory({ item, now, timeZone }: { item: RankedArticle; now: number; 
         <h3 className="mt-2 font-heading text-lg font-bold leading-snug tracking-tight sm:text-xl">
           <a href={article.url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary">{article.title}<span className="sr-only"> (opens original release in a new tab)</span></a>
         </h3>
-        {article.snippet && article.snippet !== article.title && <p className="mt-2 line-clamp-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">{article.snippet}</p>}
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        {article.snippet && article.snippet !== article.title && <p className={cn("mt-2 max-w-3xl overflow-hidden text-sm leading-relaxed text-muted-foreground", grow ? "line-clamp-[10] min-h-0 flex-1" : "line-clamp-3")}>{article.snippet}</p>}
+        <div className="mt-auto flex pt-3 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
           <span className="font-semibold text-foreground/80">{article.source}</span>
           <time dateTime={article.publishedAt} title={publicationLabel(article, timeZone)}>{article.publishedPrecision === "date" ? publicationLabel(article, timeZone) : ago(article.publishedAt, now)}</time>
           <a href={article.url} target="_blank" rel="noopener noreferrer" className="group/link ml-auto inline-flex items-center gap-1 font-semibold text-primary">
@@ -223,29 +223,29 @@ function StoryCard({ item, index, now, timeZone, open, onToggle }: { item: Ranke
 function ComingUp({ now }: { now: number | null }) {
   const today = useMemo(() => (now == null ? null : new Date(now)), [now]);
   const month = today ? format(today, "yyyy-MM") : null;
-  const nextMonth = today ? format(addDays(today, 7), "yyyy-MM") : null;
+  const nextMonth = today ? format(addDays(today, 14), "yyyy-MM") : null;
   const { env: current } = useGmi<CalendarMonth>(month ? `/api/gmi/calendar?month=${month}` : null, 30 * 60_000);
   const { env: next } = useGmi<CalendarMonth>(nextMonth && nextMonth !== month ? `/api/gmi/calendar?month=${nextMonth}` : null, 30 * 60_000);
   const from = today ? format(today, "yyyy-MM-dd") : "";
-  const until = today ? format(addDays(today, 8), "yyyy-MM-dd") : "";
+  const until = today ? format(addDays(today, 15), "yyyy-MM-dd") : "";
 
   const items = useMemo(() => {
     if (!today) return [];
     const releases = upcomingReleases([...(current?.data?.events ?? []), ...(next?.data?.events ?? [])], from, until)
-      .filter((e) => e.importance === "high" && !e.released)
-      .map((e) => ({ id: e.id, date: e.date, title: e.label, sub: e.releaseName, fed: false }));
+      .filter((e) => e.importance !== "low" && !e.released)
+      .map((e) => ({ id: e.id, date: e.date, title: e.label, sub: e.releaseName, fed: false, high: e.importance === "high" }));
     const fed = [...fedEventsByDate(from, until).values()].flat()
-      .map((e) => ({ id: `${e.kind}-${e.date}`, date: e.date, title: e.kind === "fomc-decision" ? "FOMC rate decision" : "FOMC minutes", sub: e.detail, fed: true }));
-    return [...fed, ...releases].sort((x, y) => x.date.localeCompare(y.date) || Number(y.fed) - Number(x.fed)).slice(0, 6);
+      .map((e) => ({ id: `${e.kind}-${e.date}`, date: e.date, title: e.kind === "fomc-decision" ? "FOMC rate decision" : "FOMC minutes", sub: e.detail, fed: true, high: true }));
+    return [...fed, ...releases].sort((x, y) => x.date.localeCompare(y.date) || Number(y.fed) - Number(x.fed) || Number(y.high) - Number(x.high)).slice(0, 9);
   }, [today, current, next, from, until]);
 
   return (
-    <Pane index="02" label="Next up · high impact" right={<a href="/news-city?tab=calendar" className="text-[11px] font-semibold text-primary hover:underline">Calendar</a>} className="min-h-[220px] lg:flex-1" bodyClassName="p-2">
-      {!current ? <Empty label="Loading schedule" /> : items.length === 0 ? <Empty label="Nothing high-impact this week" hint="FRED schedule and Fed calendar, next 7 days." /> : (
+    <Pane index="02" label="Next up · two weeks" right={<a href="/news-city?tab=calendar" className="text-[11px] font-semibold text-primary hover:underline">Calendar</a>} className="min-h-[220px] lg:flex-1" bodyClassName="p-2">
+      {!current ? <Empty label="Loading schedule" /> : items.length === 0 ? <Empty label="Nothing scheduled" hint="FRED schedule and Fed calendar, next 14 days." /> : (
         <ol className="space-y-1">
           {items.map((item, i) => {
             const days = today ? differenceInCalendarDays(parseISO(item.date), today) : 0;
-            const color = item.fed ? "var(--ice)" : "var(--destructive)";
+            const color = item.fed ? "var(--ice)" : item.high ? "var(--destructive)" : "var(--warning)";
             return (
               <motion.li key={item.id} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22, delay: 0.08 + i * 0.04, ease: EASE }}
                 className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-background/40">
@@ -274,9 +274,9 @@ function KeyReadings() {
   const { env } = useGmi<CalendarEntry[]>("/api/gmi/calendar", 30 * 60_000);
   const readings = READINGS.flatMap((id) => (env?.data ?? []).filter((entry) => entry.id === id));
   return (
-    <Pane index="03" label="Key readings" right={<Label className="text-foreground/50">FRED</Label>} className="shrink-0" bodyClassName="p-2">
+    <Pane index="03" label="Key readings · latest print" right={<Label className="text-foreground/50">FRED</Label>} className="shrink-0" bodyClassName="p-2">
       {!env ? <Empty label="Loading readings" /> : readings.length === 0 ? <Empty label="Readings unavailable" /> : (
-        <div className="grid grid-cols-2 gap-1.5 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-6">
           {readings.map((entry, i) => {
             const delta = entry.actual != null && entry.previous != null ? entry.actual - entry.previous : null;
             const tone = delta == null || delta === 0 ? "var(--muted-foreground)" : delta > 0 ? "var(--success)" : "var(--destructive)";
