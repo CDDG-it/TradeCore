@@ -142,8 +142,7 @@ export function Logo({
     <div className={`flex items-center gap-2 ${className}`}>
       <LogoMark size={size} />
       <span
-        className={`font-black tracking-tight leading-none ${textSize}`}
-        style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
+        className={`font-heading font-black tracking-tight leading-none ${textSize}`}
       >
         <span style={{ color: tradeColor }}>Trading</span>
         <span style={{

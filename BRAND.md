@@ -35,9 +35,8 @@ MC Mindscore ramp (off the rails → dialled in): `#EF4444 · #F59E0B · #EAB308
 **No orange, anywhere.** Break-even is amber `#EAB308`, not orange.
 
 ## Type
-- **Display / headlines** — Clash Display (Fontshare), 500/600/700, tight tracking (`-0.06em`), leading ~0.98.
-- **Body / UI** — Barlow (`--font-body`); Inter on the landing page.
-- **Mono / tokens, labels, figures** — Geist Mono (`--font-mono`); use `tabular-nums` for aligned digits.
+- **Primary / headlines / controls** — Clash Display (Fontshare), 500/600/700. Use the pricing headline as the visual reference.
+- **Supporting copy / descriptions / data** — Inter (`--font-body`) across public pages and the signed-in app. Use `tabular-nums` for aligned figures.
 
 ## Feel & rules
 - Luxury-minimal dark fintech: roomy, sharp type, subtle motion, no clutter or cheap-template feel. A real product, never a demo. Mobile responsive.
