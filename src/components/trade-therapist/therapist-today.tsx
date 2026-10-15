@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format, startOfWeek } from "date-fns";
 import { ArrowRight, Check, Trophy } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
+import { CountUp } from "@/components/ui/count-up";
 import { getBestTradesOfDay, getPreMarketExercise, getWeeklyTradeReviews, type BestTradeListRow } from "@/lib/supabase/queries";
 import { isDayReviewed, postMarketDates } from "@/lib/post-market/day-overview";
 import { exerciseDefinition } from "@/lib/pre-market/exercises";
@@ -19,6 +20,9 @@ type Tone = "done" | "todo" | "waiting";
 type Status = { label: string; tone: Tone };
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 const EASE = [0.23, 1, 0.32, 1] as const;
+// Presses answer at once and settle without bounce: a control, not a toy.
+const PRESS = { type: "spring", stiffness: 520, damping: 32, mass: 0.6 } as const;
+const MotionLink = motion.create(Link);
 
 /**
  * The Therapist's front door. It fills the viewport with where the day stands,
@@ -103,28 +107,40 @@ export function TherapistToday({
   const weekRTone = group.totalR > 0 ? "text-success" : group.totalR < 0 ? "text-destructive" : "text-muted-foreground";
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="h-full overflow-y-auto lg:overflow-hidden">
       <div className="flex min-h-full flex-col gap-3 lg:h-full">
         {/* Hero: the day, the one thing to do now, and the week at a glance. */}
         <motion.header
-          initial={{ opacity: 0, transform: reduceMotion ? "none" : "translateY(6px)" }}
-          animate={{ opacity: 1, transform: "translateY(0px)" }}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.24, ease: EASE }}
           className="relative shrink-0 overflow-hidden rounded-2xl border border-border/60 bg-card/65 p-5 sm:p-6"
         >
-          <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl"
+            animate={reduceMotion ? undefined : { scale: [1, 1.12, 1], opacity: [0.8, 1, 0.8] }}
+            transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+          />
           <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div className="min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-primary">Today · {format(now, "EEEE")}</p>
               <h2 className="mt-1.5 font-heading text-2xl font-bold tracking-tight sm:text-3xl">{format(now, "d MMMM yyyy")}</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">{headline}</p>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.p key={headline} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18, ease: EASE }} className="mt-1.5 text-sm text-muted-foreground">
+                  {headline}
+                </motion.p>
+              </AnimatePresence>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex gap-5 sm:pr-5 sm:border-r sm:border-border/50">
-                <Stat label="Week R" value={formatTotalR(group.totalR)} className={weekRTone} />
-                <Stat label="Execution" value={group.execRate == null ? "-" : `${group.execRate}%`} className={group.execRate == null ? "text-muted-foreground/60" : group.execRate >= 70 ? "text-success" : group.execRate >= 40 ? "text-warning" : "text-destructive"} />
-                <Stat label="Reviewed" value={`${reviewedDays}/${tradedDays.length}`} />
+                <Stat label="Week R" className={weekRTone}><CountUp value={group.totalR} format={formatTotalR} /></Stat>
+                <Stat label="Execution" className={group.execRate == null ? "text-muted-foreground/60" : group.execRate >= 70 ? "text-success" : group.execRate >= 40 ? "text-warning" : "text-destructive"}>
+                  {group.execRate == null ? "-" : <CountUp value={group.execRate} format={(n) => `${Math.round(n)}%`} />}
+                </Stat>
+                <Stat label="Reviewed"><CountUp value={reviewedDays} />/{tradedDays.length}</Stat>
               </div>
               <div className="grid grid-cols-5 gap-1.5" aria-label="This week">
                 {group.days.map((d, i) => {
@@ -133,22 +149,41 @@ export function TherapistToday({
                   const future = d.date > today;
                   const reviewed = isDayReviewed(rows[d.date]);
                   return (
-                    <button
+                    <motion.button
                       key={d.date}
                       type="button"
                       disabled={future}
                       onClick={() => onPostMarket(d.date, false)}
+                      title={future ? undefined : `Open ${format(new Date(`${d.date}T12:00:00`), "EEEE")} in Post Market`}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.22, delay: 0.08 + i * 0.04, ease: EASE }}
+                      whileHover={future ? undefined : { y: -3 }}
+                      whileTap={future ? undefined : { scale: 0.94, transition: PRESS }}
                       className={cn(
-                        "flex w-14 flex-col items-center gap-1 rounded-lg border px-1.5 py-2 transition-colors disabled:opacity-35 sm:w-16",
-                        isToday ? "border-primary/50 bg-primary/[.07]" : "border-border/50 bg-background/30 hover:border-primary/40"
+                        "relative flex w-14 flex-col items-center gap-1 rounded-lg border px-1.5 py-2 transition-[border-color,background-color,box-shadow] duration-200 disabled:opacity-35 sm:w-16",
+                        isToday ? "border-primary/50 bg-primary/[.07]" : "border-border/50 bg-background/30 hover:border-primary/40 hover:bg-primary/[.04] hover:shadow-[0_10px_24px_-14px_color-mix(in_oklch,var(--primary)_60%,transparent)]"
                       )}
                     >
+                      {isToday && !reduceMotion && (
+                        <motion.span
+                          aria-hidden
+                          className="pointer-events-none absolute inset-0 rounded-lg border border-primary/50"
+                          animate={{ opacity: [0.7, 0, 0.7], scale: [1, 1.08, 1] }}
+                          transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                      )}
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{DAY_ABBR[i]}</span>
                       <span className="text-xs font-bold tabular-nums" style={{ color: d.trades.length ? netRColor(r) : undefined }}>
                         {d.trades.length ? formatTotalR(r) : "-"}
                       </span>
-                      <span className={cn("h-1 w-5 rounded-full", reviewed ? "bg-success" : d.trades.length && !future ? "bg-primary/35" : "bg-border")} />
-                    </button>
+                      <motion.span
+                        className={cn("h-1 w-5 origin-left rounded-full", reviewed ? "bg-success" : d.trades.length && !future ? "bg-primary/35" : "bg-border")}
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ duration: 0.4, delay: 0.25 + i * 0.05, ease: EASE }}
+                      />
+                    </motion.button>
                   );
                 })}
               </div>
@@ -185,9 +220,10 @@ export function TherapistToday({
                   {todayReviewed ? "View day" : todayInProgress ? "Continue review" : "Start review"}
                 </PanelButton>
                 {!todayReviewed && (
-                  <button type="button" onClick={() => onPostMarket(today, false)} className="text-xs font-semibold text-muted-foreground transition-colors hover:text-primary">
+                  <motion.button type="button" onClick={() => onPostMarket(today, false)} whileTap={{ scale: 0.96, transition: PRESS }}
+                    className="relative text-xs font-semibold text-muted-foreground transition-colors after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-primary after:transition-transform after:duration-200 hover:text-primary hover:after:scale-x-100">
                     Day overview
-                  </button>
+                  </motion.button>
                 )}
               </div>
             }>
@@ -199,13 +235,14 @@ export function TherapistToday({
                 </div>
                 {todayTrades.length ? (
                   <div className="mt-2 space-y-1">
-                    {todayTrades.map((trade) => (
-                      <div key={trade.id} className="flex items-center gap-2 rounded-lg border border-border/50 bg-background/30 px-2.5 py-2 text-xs">
+                    {todayTrades.map((trade, i) => (
+                      <motion.div key={trade.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22, delay: 0.2 + i * 0.04, ease: EASE }}
+                        className="flex items-center gap-2 rounded-lg border border-border/50 bg-background/30 px-2.5 py-2 text-xs transition-colors hover:border-border hover:bg-background/50">
                         <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", trade.execution_quality === "good" ? "bg-success" : trade.execution_quality === "bad" ? "bg-destructive" : "bg-border")} title={trade.execution_quality ? `Execution ${trade.execution_quality}` : "Execution not rated"} />
                         <span className="min-w-0 flex-1 truncate font-semibold">{instrumentName(trade.instrument)} <span className="font-normal capitalize text-muted-foreground">{trade.direction}</span></span>
                         <span className="text-[10px] text-muted-foreground">{trade.execution_time || trade.session}</span>
                         <span className="w-14 text-right font-bold tabular-nums" style={{ color: netRColor(tradeR(trade)) }}>{formatTotalR(tradeR(trade))}</span>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 ) : (
@@ -224,14 +261,19 @@ export function TherapistToday({
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">Still to review</p>
                   <div className="mt-2 grid grid-cols-2 gap-1.5">
-                    {backlog.map((date) => {
+                    {backlog.map((date, i) => {
                       const r = (tradesByDay[date] ?? []).reduce((total, trade) => total + tradeR(trade), 0);
                       return (
-                        <button key={date} type="button" onClick={() => onPostMarket(date, true)}
-                          className="flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/30 px-2.5 py-2 text-xs transition-colors hover:border-primary/40">
+                        <motion.button key={date} type="button" onClick={() => onPostMarket(date, true)}
+                          initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: 0.25 + i * 0.04, ease: EASE }}
+                          whileTap={{ scale: 0.97, transition: PRESS }}
+                          className="group/day flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/30 px-2.5 py-2 text-xs transition-colors hover:border-primary/40 hover:bg-primary/[.04]">
                           <span className="font-medium">{format(new Date(`${date}T12:00:00`), "EEE d MMM")}</span>
-                          <span className="font-semibold tabular-nums" style={{ color: netRColor(r) }}>{formatTotalR(r)}</span>
-                        </button>
+                          <span className="flex items-center gap-1">
+                            <span className="font-semibold tabular-nums" style={{ color: netRColor(r) }}>{formatTotalR(r)}</span>
+                            <ArrowRight className="h-3 w-0 -translate-x-1 text-primary opacity-0 transition-all duration-200 group-hover/day:w-3 group-hover/day:translate-x-0 group-hover/day:opacity-100" />
+                          </span>
+                        </motion.button>
                       );
                     })}
                   </div>
@@ -242,18 +284,16 @@ export function TherapistToday({
 
           <Panel index={2} reduceMotion={reduceMotion} active={focus === "week"} step="03" eyebrow="End of the week" title="Weekly review" status={loading ? null : weekStatus}
             action={
-              <Link href={`/trade-therapist/review/${weekStart}`}
-                className={cn("inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition-colors",
-                  focus === "week" ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border/60 text-foreground hover:border-primary/40 hover:text-primary")}>
-                {weekDone ? "Open review" : weekOpen ? "Write review" : "Preview week"} <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+              <MotionLink href={`/trade-therapist/review/${weekStart}`} whileTap={{ scale: 0.97, transition: PRESS }} className={buttonClass(focus === "week")}>
+                <ButtonContent primary={focus === "week"}>{weekDone ? "Open review" : weekOpen ? "Write review" : "Preview week"}</ButtonContent>
+              </MotionLink>
             }>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
-                <MiniStat label="Trading days" value={`${tradedDays.length}/5`} />
-                <MiniStat label="Days reviewed" value={`${reviewedDays}/${tradedDays.length}`} />
-                <MiniStat label="Missed winners" value={String(missedDays)} tone={missedDays ? "text-ice" : undefined} />
-                <MiniStat label="Good execution" value={`${group.goodExec}/${group.goodExec + group.badExec}`} />
+                <MiniStat label="Trading days"><CountUp value={tradedDays.length} />/5</MiniStat>
+                <MiniStat label="Days reviewed"><CountUp value={reviewedDays} />/{tradedDays.length}</MiniStat>
+                <MiniStat label="Missed winners" tone={missedDays ? "text-ice" : undefined}><CountUp value={missedDays} /></MiniStat>
+                <MiniStat label="Good execution"><CountUp value={group.goodExec} />/{group.goodExec + group.badExec}</MiniStat>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
                 {weekDone ? "This week's reflection is written. Open it to check last week's focus against how you traded."
@@ -265,6 +305,7 @@ export function TherapistToday({
         </div>
       </div>
     </div>
+    </MotionConfig>
   );
 }
 
@@ -281,18 +322,36 @@ function Panel({ index, reduceMotion, active, step, eyebrow, title, status, acti
 }) {
   return (
     <motion.section
-      initial={{ opacity: 0, transform: reduceMotion ? "none" : "translateY(8px)" }}
-      animate={{ opacity: 1, transform: "translateY(0px)" }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.26, delay: reduceMotion ? 0 : 0.06 + index * 0.05, ease: EASE }}
+      whileHover={{ y: -3, transition: { duration: 0.2, ease: EASE } }}
       className={cn(
-        "relative flex min-h-72 flex-col overflow-hidden rounded-2xl border bg-card/65 lg:min-h-0",
-        active ? "border-primary/45 shadow-[0_0_0_1px_color-mix(in_oklch,var(--primary)_16%,transparent),0_28px_70px_-44px_rgba(0,0,0,.6)]" : "border-border/60"
+        "group/panel relative flex min-h-72 flex-col overflow-hidden rounded-2xl border bg-card/65 transition-[border-color,box-shadow] duration-300 lg:min-h-0",
+        active
+          ? "border-primary/45 shadow-[0_0_0_1px_color-mix(in_oklch,var(--primary)_16%,transparent),0_28px_70px_-44px_rgba(0,0,0,.6)]"
+          : "border-border/60 hover:border-border hover:shadow-[0_28px_70px_-48px_rgba(0,0,0,.6)]"
       )}
     >
-      {active && <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />}
+      {active && (
+        <motion.div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent"
+          animate={reduceMotion ? undefined : { opacity: [0.45, 1, 0.45] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        />
+      )}
       <div className="flex shrink-0 items-start justify-between gap-3 px-5 pt-5">
         <div>
-          <p className="font-heading text-xs font-bold tabular-nums text-muted-foreground/50">{step}</p>
+          <p className="flex items-center gap-2 font-heading text-xs font-bold tabular-nums text-muted-foreground/50">
+            {step}
+            {active && (
+              <span className="relative flex h-1.5 w-1.5">
+                {!reduceMotion && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />}
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+              </span>
+            )}
+          </p>
           <p className={cn("mt-3 text-[10px] font-semibold uppercase tracking-[.16em]", active ? "text-primary" : "text-muted-foreground")}>{eyebrow}</p>
           <h3 className="mt-1 font-heading text-lg font-bold tracking-tight">{title}</h3>
         </div>
@@ -309,18 +368,39 @@ function StatusPill({ status }: { status: Status }) {
     <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold leading-none",
       status.tone === "done" ? "bg-success/12 text-success" : status.tone === "todo" ? "bg-primary/12 text-primary" : "bg-muted/40 text-muted-foreground")}>
       {status.tone === "done" && <Check className="h-3 w-3" />}
+      {status.tone === "todo" && <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" />}
       {status.label}
     </span>
   );
 }
 
+function buttonClass(primary: boolean) {
+  return cn(
+    "group/btn relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg px-4 py-2 text-xs font-semibold transition-[background-color,border-color,color,box-shadow] duration-200",
+    primary
+      ? "bg-primary text-primary-foreground shadow-[0_4px_16px_-6px_color-mix(in_oklch,var(--primary)_70%,transparent)] hover:shadow-[0_8px_26px_-8px_color-mix(in_oklch,var(--primary)_85%,transparent)]"
+      : "border border-border/60 text-foreground hover:border-primary/40 hover:bg-primary/[.05] hover:text-primary"
+  );
+}
+
+/** Label plus an arrow that leans forward on hover; the primary action also gets a light sweep. */
+function ButtonContent({ primary, children }: { primary: boolean; children: React.ReactNode }) {
+  return (
+    <>
+      {primary && (
+        <span aria-hidden className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-0 transition-[transform,opacity] duration-700 ease-out group-hover/btn:translate-x-[300%] group-hover/btn:opacity-100" />
+      )}
+      <span className="relative">{children}</span>
+      <ArrowRight className="relative h-3.5 w-3.5 transition-transform duration-200 ease-out group-hover/btn:translate-x-1" />
+    </>
+  );
+}
+
 function PanelButton({ primary, onClick, children }: { primary: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick}
-      className={cn("inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition-colors",
-        primary ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border/60 text-foreground hover:border-primary/40 hover:text-primary")}>
-      {children} <ArrowRight className="h-3.5 w-3.5" />
-    </button>
+    <motion.button type="button" onClick={onClick} whileTap={{ scale: 0.97, transition: PRESS }} className={buttonClass(primary)}>
+      <ButtonContent primary={primary}>{children}</ButtonContent>
+    </motion.button>
   );
 }
 
@@ -336,19 +416,19 @@ function Quote({ label, tone, children }: { label: string; tone: string; childre
   );
 }
 
-function Stat({ label, value, className }: { label: string; value: string; className?: string }) {
+function Stat({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className={cn("font-heading text-xl font-bold leading-none tabular-nums", className)}>{value}</p>
+      <p className={cn("font-heading text-xl font-bold leading-none tabular-nums", className)}>{children}</p>
       <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">{label}</p>
     </div>
   );
 }
 
-function MiniStat({ label, value, tone }: { label: string; value: string; tone?: string }) {
+function MiniStat({ label, tone, children }: { label: string; tone?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border/50 bg-background/30 px-3 py-2.5">
-      <p className={cn("font-heading text-lg font-bold leading-none tabular-nums", tone)}>{value}</p>
+    <div className="rounded-xl border border-border/50 bg-background/30 px-3 py-2.5 transition-colors hover:border-border hover:bg-background/50">
+      <p className={cn("font-heading text-lg font-bold leading-none tabular-nums", tone)}>{children}</p>
       <p className="mt-1 text-[10px] text-muted-foreground">{label}</p>
     </div>
   );
