@@ -1225,10 +1225,6 @@ html:has(.marketing-page) { position: relative; }
   background: linear-gradient(180deg, transparent, #0b1120);
 }
 
-.marketing-hero .marketing-grid {
-  mask-image: linear-gradient(180deg, transparent, black 15%, black 57%, transparent);
-}
-
 .marketing-light-flow {
   background: #f7fbfa;
 }
@@ -1318,14 +1314,6 @@ html:has(.marketing-page) { position: relative; }
   background:
     radial-gradient(ellipse 55% 35% at 92% 20%, rgba(20, 184, 166, 0.10), transparent 80%),
     linear-gradient(180deg, #eef7f5 0%, #e6f3f1 14%, #e6f3f1 86%, #f2f8f7 100%);
-}
-
-.marketing-grid {
-  background-image:
-    linear-gradient(rgba(149, 190, 194, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(149, 190, 194, 0.07) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: linear-gradient(90deg, transparent, black 30%, black 90%, transparent);
 }
 
 /* The hero screenshot: a thin frame, a soft product glow, no device chrome. */

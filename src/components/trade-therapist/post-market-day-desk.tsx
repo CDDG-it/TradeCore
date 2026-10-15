@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import { RPotentialAnalysisSection } from "@/components/trade-therapist/r-potential-analysis";
 import { PostMarketDayPicker } from "@/components/trade-therapist/post-market-day-picker";
 import { ScreenshotGallery } from "@/components/trade-therapist/screenshot-gallery";
-import { ArrowRight, Trophy } from "lucide-react";
+import { ArrowRight, Check, Target, Trophy } from "lucide-react";
+import { EASE_OUT, MotionButton, PRESS } from "@/components/trade-therapist/motion-button";
 import { bestTradeLogged } from "@/lib/reviews/day-recap";
 import { useAccess } from "@/components/access/access-provider";
 import { dayOverview, isDayReviewed, postMarketDates } from "@/lib/post-market/day-overview";
@@ -23,6 +24,23 @@ type Draft = Pick<BestTradeOfDay, "taken_was_best" | "notes" | "post_market_anal
 const emptyGroups = (): ScreenshotGroup[] => [{ label: "HTF", urls: [] }, { label: "Entry", urls: [] }];
 const blank = (): Draft => ({ taken_was_best: false, notes: "", post_market_analysis: "", screenshot_groups: emptyGroups(), review_step: null });
 const displayDate = (key: string) => format(new Date(`${key}T12:00:00`), "EEE d");
+
+const STEP_LABELS: Record<PostMarketStep, string> = { verdict: "Verdict", why: "Reasoning", market: "Session", screenshots: "Charts", r: "R potential", complete: "Done" };
+const STEP_VARIANTS = {
+  enter: (direction: number) => ({ opacity: 0, x: 28 * direction }),
+  center: { opacity: 1, x: 0 },
+  exit: (direction: number) => ({ opacity: 0, x: -28 * direction }),
+};
+const WHY_TAKEN_CHIPS = ["Clean higher-timeframe level", "Waited for confirmation", "Playbook setup", "Right session and timing", "Risk clearly defined"];
+const WHY_MISSED_CHIPS = ["Cleaner higher-timeframe level", "Better risk to reward", "Clearer confirmation", "I was in another trade", "Hesitated on the entry", "Not in my playbook yet"];
+const MARKET_CHIPS = ["Trend day", "Range day", "News-driven volatility", "Stayed patient", "Followed my plan", "Forced a trade", "Exited too early", "Chased an entry"];
+const wordCount = (text: string) => (text.trim() ? text.trim().split(/\s+/).length : 0);
+const chipLine = (chip: string) => `• ${chip}`;
+const hasChip = (text: string, chip: string) => text.split("\n").some((line) => line.trim() === chipLine(chip));
+// Quick-add phrases sit as their own bullet line, so a second tap takes them back out.
+const toggleChip = (text: string, chip: string) => hasChip(text, chip)
+  ? text.split("\n").filter((line) => line.trim() !== chipLine(chip)).join("\n")
+  : `${text.trimEnd() ? `${text.trimEnd()}\n` : ""}${chipLine(chip)}`;
 
 /**
  * One day's Post Market. It opens on the day overview; the guided review only
@@ -39,6 +57,8 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
   const [observations, setObservations] = useState<Record<string, RPotentialAnalysis>>({});
   const [ruleChecks, setRuleChecks] = useState<TradeRuleCheck[]>([]);
   const [step, setStep] = useState<PostMarketStep>("verdict");
+  const [direction, setDirection] = useState(1);
+  const [justFinished, setJustFinished] = useState(false);
   const [uploading, setUploading] = useState(false);
   const reduceMotion = useReducedMotion();
   const draftRef = useRef(draft);
@@ -141,12 +161,22 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
   async function answer(value: boolean) {
     if (timer.current) { clearTimeout(timer.current); timer.current = null; }
     const next: Draft = { ...draftRef.current, taken_was_best: value, review_step: "why" };
-    try { await persist(next); draftRef.current = next; setDraft(next); setKnownVerdict(true); setStep("why"); }
+    try { await persist(next); draftRef.current = next; setDraft(next); setKnownVerdict(true); setDirection(1); setStep("why"); }
     catch { setSaveState("error"); }
   }
 
   async function move(target: PostMarketStep) {
     if (await flush(target)) setStep(target);
+  }
+
+  /** Step within the flow, sliding the way you are going; finishing celebrates once on the overview. */
+  async function go(target: PostMarketStep) {
+    const forward = steps.indexOf(target) >= steps.indexOf(currentStep);
+    setDirection(forward ? 1 : -1);
+    if (await flush(target)) {
+      setStep(target);
+      if (target === "complete") { setJustFinished(true); setTimeout(() => setJustFinished(false), 3600); }
+    }
   }
 
   async function selectDate(next: string): Promise<boolean> {
@@ -164,6 +194,26 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
     if (await flush()) setStep("complete");
   }
 
+  // Keyboard: Y / N answers the verdict, Ctrl/⌘ + Enter moves on from a written step.
+  useEffect(() => {
+    if (loading || currentStep === "complete") return;
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const typing = target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.isContentEditable);
+      if (currentStep === "verdict" && !typing && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        const key = event.key.toLowerCase();
+        if (key === "y" || key === "n") { event.preventDefault(); void answer(key === "y"); }
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        const next = steps[steps.indexOf(currentStep) + 1];
+        if (next) { event.preventDefault(); void go(next); }
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  });
+
   if (loading) return <div className="flex h-full items-center justify-center rounded-2xl border border-border/60 bg-card/60 text-xs text-muted-foreground">Loading day...</div>;
 
   if (currentStep !== "complete") {
@@ -175,60 +225,139 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
       r: "How far did the winning trades move?",
       complete: "Post Market review",
     };
+    const hints: Record<PostMarketStep, string> = {
+      verdict: "Be honest: this is the one question the whole review hangs on.",
+      why: draft.taken_was_best ? "Name what made this the strongest decision available." : "Name what the other setup had that yours did not.",
+      market: "What did the market offer today, and how did you respond to it?",
+      screenshots: "Keep the higher timeframe and the entry, so you recognise it next time.",
+      r: "Measure how far each winner ran, against what you banked.",
+      complete: "",
+    };
     const eyebrow = currentStep === "r" ? "R Potential Analysis" : currentStep === "screenshots" ? "Best Trade of the Day" : "Post Market review";
     const next = steps[stepIndex + 1];
-    return <div className="flex h-full min-h-0 flex-col gap-3">
-      <header className="flex shrink-0 items-center justify-between gap-3 px-0.5">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-primary">Post Market · {format(new Date(`${date}T12:00:00`), "EEE, MMM d, yyyy")}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{dayTrades.length ? `${dayTrades.length} trade${dayTrades.length === 1 ? "" : "s"} · ${formatTotalR(summary.netR)} realised` : "No trades taken"}</p>
+    const flowSteps = steps.slice(0, -1);
+    const reachedIndex = Math.max(stepIndex, draft.review_step ? steps.indexOf(draft.review_step) : 0);
+    const busy = saveState === "saving" || uploading;
+    const progress = flowSteps.length ? (stepIndex / flowSteps.length) * 100 : 0;
+    const chips = currentStep === "why" ? (draft.taken_was_best ? WHY_TAKEN_CHIPS : WHY_MISSED_CHIPS) : currentStep === "market" ? MARKET_CHIPS : [];
+    const textField = currentStep === "why" ? "notes" : currentStep === "market" ? "post_market_analysis" : null;
+    const text = textField ? draft[textField] : "";
+
+    return <div className="flex h-full min-h-0 gap-3">
+      {/* Step rail: where you are, what is done, jump back to any answered step. */}
+      <aside className="hidden w-60 shrink-0 flex-col gap-3 lg:flex">
+        <div className="rounded-2xl border border-border/60 bg-card/65 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-primary">Post Market</p>
+          <p className="mt-1 font-heading text-base font-bold tracking-tight">{format(new Date(`${date}T12:00:00`), "EEEE d MMM")}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{dayTrades.length ? <>{dayTrades.length} trade{dayTrades.length === 1 ? "" : "s"} · <span className="font-semibold tabular-nums" style={{ color: netRColor(summary.netR) }}>{formatTotalR(summary.netR)}</span></> : "No trades taken"}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button type="button" disabled={saveState === "saving" || uploading} onClick={() => void backToOverview()} className="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-primary disabled:opacity-40">Day overview</button>
+        <nav aria-label="Review steps" className="flex-1 rounded-2xl border border-border/60 bg-card/65 p-2">
+          {flowSteps.map((item, index) => {
+            const done = index < stepIndex || (hasReview && index !== stepIndex);
+            const current = item === currentStep;
+            const reachable = !busy && (hasReview || index <= reachedIndex);
+            return <button key={item} type="button" disabled={!reachable || current} onClick={() => void go(item)}
+              className={cn("relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors", current ? "text-foreground" : reachable ? "text-muted-foreground hover:bg-background/40 hover:text-foreground" : "text-muted-foreground/40")}>
+              {current && <motion.span layoutId="pm-step-active" className="absolute inset-0 rounded-xl border border-primary/35 bg-primary/[.08]" transition={{ type: "spring", stiffness: 420, damping: 36 }} />}
+              <span className={cn("relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold tabular-nums transition-colors duration-300",
+                done ? "border-success/40 bg-success/15 text-success" : current ? "border-primary bg-primary text-primary-foreground" : "border-border")}>
+                {done ? <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={PRESS}><Check className="h-3 w-3" /></motion.span> : index + 1}
+              </span>
+              <span className="relative text-xs font-semibold">{STEP_LABELS[item]}</span>
+            </button>;
+          })}
+        </nav>
+        <MotionButton onClick={() => void backToOverview()} disabled={busy} back className="w-full">Day overview</MotionButton>
+      </aside>
+
+      <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/65 shadow-[0_24px_60px_-40px_rgba(0,0,0,.55)]">
+        {/* Progress fills as you go; it is the one bar on the screen. */}
+        <div className="h-1 shrink-0 bg-border/40"><motion.div className="h-full bg-gradient-to-r from-primary to-ice" initial={false} animate={{ width: `${progress}%` }} transition={{ duration: 0.5, ease: EASE_OUT }} /></div>
+        <div className="flex shrink-0 items-center justify-between gap-3 px-5 pt-4 sm:px-8 lg:hidden">
+          <button type="button" disabled={busy} onClick={() => void backToOverview()} className="text-[11px] font-semibold text-muted-foreground hover:text-primary">← Overview</button>
+          <span className="text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground">Step {stepIndex + 1} of {flowSteps.length}</span>
+        </div>
+        <div className="flex shrink-0 justify-end px-5 pt-4 sm:px-8">
           <PostMarketDayPicker date={date} tradesByDay={tradesByDay} reviews={reviews} onSelect={selectDate} disabled={uploading} />
         </div>
-      </header>
-      <div className="flex shrink-0 items-center justify-between gap-4 px-0.5">
-        <span className="text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground">Step {stepIndex + 1} of {steps.length - 1}</span>
-        <div className="flex gap-1" aria-label="Review progress">{steps.slice(0, -1).map((item, index) => <span key={item} className={cn("h-1 w-6 rounded-full transition-colors duration-200", index <= stepIndex ? "bg-primary" : "bg-border")} />)}</div>
-      </div>
-      <motion.section key={currentStep} initial={{ opacity: 0, transform: reduceMotion ? "none" : "translateY(6px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }} className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/65 shadow-[0_24px_60px_-40px_rgba(0,0,0,.55)]">
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-5 sm:px-8 sm:py-7">
-          <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-primary">{eyebrow}</p>
-            <h2 className="mt-2 font-heading text-xl font-bold tracking-tight sm:text-2xl">{titles[currentStep]}</h2>
-            {currentStep === "verdict" && <>
-              <p className="mt-2 text-xs text-muted-foreground">Choose the answer that best describes this day.</p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {([true, false] as const).map((choice) => <button key={String(choice)} type="button" disabled={saveState === "saving"} onClick={() => void answer(choice)} className={cn("min-h-28 rounded-xl border bg-background/35 p-5 text-left transition-[border-color,background-color] duration-150 hover:border-primary/50 hover:bg-primary/[.06] disabled:opacity-50", knownVerdict && draft.taken_was_best === choice ? "border-primary/50" : "border-border/60")}>
-                  <span className="block text-base font-semibold">{choice ? "Yes" : "No"}</span>
-                  <span className="mt-1 block text-xs text-muted-foreground">{choice ? dayTrades.length ? "The trade taken was the best available." : "Staying out was the best decision." : "A better opportunity was available."}</span>
-                </button>)}
-              </div>
-            </>}
-            {currentStep === "why" && <>
-              <p className="mt-2 text-xs text-muted-foreground">{draft.taken_was_best ? "Record why this decision was the strongest one available." : "Describe what made the other setup preferable."}</p>
-              {dayTrades.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{dayTrades.map((trade) => <Link key={trade.id} href={`/journal/${trade.id}?from=trade-therapist`} className="rounded-md border border-border/60 px-2.5 py-1 text-[11px] hover:border-primary/40 hover:text-primary">{instrumentName(trade.instrument)} · {formatTotalR(tradeR(trade))}</Link>)}</div>}
-              <textarea value={draft.notes} onChange={(event) => update({ notes: event.target.value })} onBlur={() => { if (timer.current) void flush(); }} placeholder={draft.taken_was_best ? "Why was this the best decision?" : "Why was the other trade better?"} className="mt-5 min-h-36 w-full resize-none rounded-xl border border-border/70 bg-background/35 p-4 text-sm outline-none focus:border-primary/50 sm:min-h-48" />
-            </>}
-            {currentStep === "market" && <>
-              <p className="mt-2 text-xs text-muted-foreground">What did the market offer, and how did you respond?</p>
-              <textarea value={draft.post_market_analysis} onChange={(event) => update({ post_market_analysis: event.target.value })} onBlur={() => { if (timer.current) void flush(); }} placeholder="Your session reflection..." className="mt-5 min-h-44 w-full resize-none rounded-xl border border-border/70 bg-background/35 p-4 text-sm outline-none focus:border-primary/50 sm:min-h-56" />
-              {ruleChecks.length > 0 && <div className="mt-4 border-t border-border/50 pt-3"><p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Commitment and rule checks</p>{ruleChecks.map((check) => <div key={check.id} className="flex justify-between gap-3 py-1 text-xs"><span>{check.source_text_snapshot}</span><span className="shrink-0 capitalize text-muted-foreground">{check.status.replaceAll("_", " ")}</span></div>)}</div>}
-            </>}
-            {currentStep === "screenshots" && <>
-              <p className="mt-2 text-xs text-muted-foreground">Keep the higher timeframe and entry evidence for the better setup.</p>
-              <div className="mt-5"><ScreenshotUpload compact groups={draft.screenshot_groups} onChange={(groups) => update({ screenshot_groups: groups })} onUploadingChange={setUploading} storageConfig={{ entityType: "best-trade", entityId: date }} /></div>
-            </>}
-            {currentStep === "r" && <div className="mt-5"><RPotentialAnalysisSection key={date} trades={dayTrades} compact flushRef={rFlushRef} onSaved={(record) => setObservations((old) => ({ ...old, [record.trade_id]: record }))} /></div>}
-          </div>
+
+        <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <motion.div key={currentStep} custom={direction} variants={STEP_VARIANTS} initial="enter" animate="center" exit="exit"
+              transition={{ duration: reduceMotion ? 0 : 0.22, ease: EASE_OUT }}
+              className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center px-5 py-6 sm:px-8">
+              <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04, duration: 0.24, ease: EASE_OUT }} className="hidden text-[10px] font-semibold uppercase tracking-[.18em] text-primary lg:block">
+                Step {stepIndex + 1} of {flowSteps.length} · {eyebrow}
+              </motion.p>
+              <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-primary lg:hidden">{eyebrow}</p>
+              <motion.h2 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07, duration: 0.28, ease: EASE_OUT }} className="mt-2 font-heading text-2xl font-bold tracking-tight sm:text-3xl">{titles[currentStep]}</motion.h2>
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.12, duration: 0.3 }} className="mt-2 text-sm text-muted-foreground">{hints[currentStep]}</motion.p>
+
+              {currentStep === "verdict" && <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                {([true, false] as const).map((choice, index) => {
+                  const selected = knownVerdict && draft.taken_was_best === choice;
+                  const Icon = choice ? Trophy : Target;
+                  return <motion.button key={String(choice)} type="button" disabled={busy} onClick={() => void answer(choice)}
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 + index * 0.06, duration: 0.28, ease: EASE_OUT }}
+                    whileHover={{ y: -4 }} whileTap={{ scale: 0.97, transition: PRESS }}
+                    className={cn("group/choice relative min-h-40 overflow-hidden rounded-2xl border bg-background/35 p-6 text-left transition-[border-color,background-color,box-shadow] duration-200 disabled:opacity-50",
+                      selected ? "border-primary/60 bg-primary/[.07]" : "border-border/60 hover:border-primary/45 hover:bg-primary/[.04] hover:shadow-[0_18px_40px_-24px_color-mix(in_oklch,var(--primary)_55%,transparent)]")}>
+                    <span className={cn("flex h-10 w-10 items-center justify-center rounded-xl transition-colors duration-200", choice ? "bg-success/12 text-success" : "bg-ice/12 text-ice")}>
+                      <Icon className="h-5 w-5 transition-transform duration-300 ease-out group-hover/choice:scale-110 group-hover/choice:-rotate-6" />
+                    </span>
+                    <span className="mt-4 block font-heading text-xl font-bold">{choice ? "Yes" : "No"}</span>
+                    <span className="mt-1 block text-sm text-muted-foreground">{choice ? dayTrades.length ? "The trade I took was the best one available." : "Staying out was the right call." : "A better opportunity was there."}</span>
+                    <kbd className="absolute right-4 top-4 rounded-md border border-border/60 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">{choice ? "Y" : "N"}</kbd>
+                    {selected && <motion.span layoutId="pm-verdict" className="absolute bottom-4 right-4 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground" transition={PRESS}><Check className="h-3.5 w-3.5" /></motion.span>}
+                  </motion.button>;
+                })}
+              </div>}
+
+              {textField && <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14, duration: 0.28, ease: EASE_OUT }} className="mt-6">
+                {currentStep === "why" && dayTrades.length > 0 && <div className="mb-3 flex flex-wrap gap-1.5">{dayTrades.map((trade) => <Link key={trade.id} href={`/journal/${trade.id}?from=trade-therapist`} className="rounded-md border border-border/60 px-2.5 py-1 text-[11px] transition-colors hover:border-primary/40 hover:text-primary">{instrumentName(trade.instrument)} · <span style={{ color: netRColor(tradeR(trade)) }}>{formatTotalR(tradeR(trade))}</span></Link>)}</div>}
+                <div className="group/field rounded-2xl border border-border/70 bg-background/35 transition-[border-color,box-shadow] duration-200 focus-within:border-primary/50 focus-within:shadow-[0_0_0_4px_color-mix(in_oklch,var(--primary)_12%,transparent)]">
+                  <textarea autoFocus value={text} onChange={(event) => update({ [textField]: event.target.value } as Partial<Draft>)} onBlur={() => { if (timer.current) void flush(); }}
+                    placeholder={currentStep === "why" ? (draft.taken_was_best ? "Why was this the best decision?" : "Why was the other trade better?") : "Your session reflection..."}
+                    className="min-h-40 w-full resize-none bg-transparent p-4 text-sm leading-relaxed outline-none sm:min-h-52" />
+                  <div className="flex items-center justify-between gap-3 border-t border-border/40 px-4 py-2 text-[10px] text-muted-foreground">
+                    <span className="tabular-nums">{wordCount(text)} word{wordCount(text) === 1 ? "" : "s"}</span>
+                    <span className="hidden sm:inline">Ctrl/⌘ + Enter to continue</span>
+                  </div>
+                </div>
+                {chips.length > 0 && <div className="mt-3">
+                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Quick add</p>
+                  <div className="flex flex-wrap gap-1.5">{chips.map((chip, index) => {
+                    const on = hasChip(text, chip);
+                    return <motion.button key={chip} type="button" onClick={() => update({ [textField]: toggleChip(text, chip) } as Partial<Draft>)}
+                      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 + index * 0.03, duration: 0.18, ease: EASE_OUT }}
+                      whileTap={{ scale: 0.94, transition: PRESS }}
+                      className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors duration-150",
+                        on ? "border-primary/50 bg-primary/12 text-primary" : "border-border/60 text-muted-foreground hover:border-primary/35 hover:text-foreground")}>
+                      <AnimatePresence initial={false}>{on && <motion.span initial={{ width: 0, opacity: 0 }} animate={{ width: "auto", opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }}><Check className="h-3 w-3" /></motion.span>}</AnimatePresence>
+                      {chip}
+                    </motion.button>;
+                  })}</div>
+                </div>}
+                {currentStep === "market" && ruleChecks.length > 0 && <div className="mt-5 rounded-xl border border-border/50 bg-background/25 p-3"><p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Commitment and rule checks</p>{ruleChecks.map((check) => <div key={check.id} className="flex justify-between gap-3 py-1 text-xs"><span>{check.source_text_snapshot}</span><span className={cn("shrink-0 capitalize", check.status === "kept" ? "text-success" : check.status === "broken" ? "text-destructive" : "text-muted-foreground")}>{check.status.replaceAll("_", " ")}</span></div>)}</div>}
+              </motion.div>}
+
+              {currentStep === "screenshots" && <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14, duration: 0.28, ease: EASE_OUT }} className="mt-6"><ScreenshotUpload compact groups={draft.screenshot_groups} onChange={(groups) => update({ screenshot_groups: groups })} onUploadingChange={setUploading} storageConfig={{ entityType: "best-trade", entityId: date }} /></motion.div>}
+              {currentStep === "r" && <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14, duration: 0.28, ease: EASE_OUT }} className="mt-6"><RPotentialAnalysisSection key={date} trades={dayTrades} compact flushRef={rFlushRef} onSaved={(record) => setObservations((old) => ({ ...old, [record.trade_id]: record }))} /></motion.div>}
+            </motion.div>
+          </AnimatePresence>
         </div>
+
         <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 px-5 py-3 sm:px-8">
-          <button type="button" disabled={stepIndex === 0 || saveState === "saving" || uploading} onClick={() => void move(steps[stepIndex - 1])} className="text-xs font-semibold text-muted-foreground hover:text-primary disabled:opacity-30">Back</button>
-          <span role="status" className={cn("text-center text-[11px]", saveState === "error" ? "text-destructive" : "text-muted-foreground")}>{status || "Autosave on"}</span>
-          {currentStep === "verdict" ? <span className="w-20" /> : <button type="button" disabled={saveState === "saving" || uploading} onClick={() => void move(next)} className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-40">{next === "complete" ? "Finish review" : "Continue"}</button>}
+          <MotionButton back disabled={stepIndex === 0 || busy} onClick={() => void go(steps[stepIndex - 1])}>Back</MotionButton>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span key={status || "idle"} role="status" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }}
+              className={cn("inline-flex items-center gap-1.5 text-center text-[11px]", saveState === "error" ? "text-destructive" : saveState === "saved" ? "text-success" : "text-muted-foreground")}>
+              {saveState === "saved" && <Check className="h-3 w-3" />}{status || "Autosave on"}
+            </motion.span>
+          </AnimatePresence>
+          {currentStep === "verdict" ? <span className="hidden text-[11px] text-muted-foreground sm:inline">Press Y or N</span> : <MotionButton primary disabled={busy} onClick={() => void go(next)}>{next === "complete" ? "Finish review" : "Continue"}</MotionButton>}
         </footer>
-      </motion.section>
+      </section>
     </div>;
   }
 
@@ -253,6 +382,15 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
           {reviewButton}
         </div>
       </header>
+
+      <AnimatePresence>
+        {justFinished && <motion.div initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -8, height: 0 }} transition={{ duration: 0.28, ease: EASE_OUT }} className="shrink-0 overflow-hidden">
+          <div className="flex items-center gap-3 rounded-xl border border-success/30 bg-success/[.07] px-4 py-2.5">
+            <motion.span initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ ...PRESS, delay: 0.1 }} className="flex h-7 w-7 items-center justify-center rounded-full bg-success text-background"><Check className="h-4 w-4" /></motion.span>
+            <div><p className="text-sm font-semibold">Review recorded</p><p className="text-xs text-muted-foreground">This day now counts toward your weekly review and MC Mindscore.</p></div>
+          </div>
+        </motion.div>}
+      </AnimatePresence>
 
       <div className="grid shrink-0 gap-2 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <div className="grid grid-cols-5 gap-1.5" aria-label="Recent logged days">
@@ -320,30 +458,76 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
         )}
 
         <div className="flex min-h-0 flex-col gap-3">
-          <section className="flex min-h-48 flex-1 flex-col rounded-2xl border border-border/60 bg-card/65 p-4 lg:min-h-0">
-            <div className="flex items-center justify-between"><h3 className="text-sm font-bold">Trades on this day</h3><span className="text-xs tabular-nums text-muted-foreground">{summary.tradeCount}</span></div>
-            {dayTrades.length ? <div className="mt-2 grid min-h-0 flex-1 content-start gap-1.5 overflow-y-auto pr-1">{dayTrades.map((trade) => {
-              const record = observations[trade.id];
-              return <div key={trade.id} className="flex min-w-0 items-center gap-2 rounded-lg border border-border/50 bg-background/35 px-2.5 py-2 text-xs">
+          <section className="shrink-0 rounded-2xl border border-border/60 bg-card/65 px-4 py-3">
+            <div className="flex items-center justify-between"><h3 className="text-xs font-bold">Trades on this day</h3><span className="text-[11px] tabular-nums text-muted-foreground">{summary.tradeCount}</span></div>
+            {dayTrades.length ? <div className="mt-1.5 max-h-28 space-y-1 overflow-y-auto pr-1">{dayTrades.map((trade) => (
+              <div key={trade.id} className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-[11px] transition-colors hover:bg-background/40">
                 <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", trade.execution_quality === "good" ? "bg-success" : trade.execution_quality === "bad" ? "bg-destructive" : "bg-border")} title={trade.execution_quality ? `Execution ${trade.execution_quality}` : "Execution not rated"} />
-                <div className="min-w-0 flex-1"><p className="truncate font-semibold">{instrumentName(trade.instrument)} <span className="font-normal capitalize text-muted-foreground">{trade.direction}</span></p><p className="truncate text-[10px] text-muted-foreground">{trade.execution_time || trade.session} · {trade.result === "win" ? `MFE ${record?.mfe_r == null ? "not recorded" : `${record.mfe_r.toFixed(2)}R`}` : trade.result === "loss" ? "Stopped out" : "Break-even"}{record?.planned_take_profit_r != null ? ` · Plan ${record.planned_take_profit_r}R` : ""}</p></div>
+                <span className="min-w-0 flex-1 truncate"><span className="font-semibold">{instrumentName(trade.instrument)}</span> <span className="capitalize text-muted-foreground">{trade.direction} · {trade.execution_time || trade.session}</span></span>
                 <span className="shrink-0 font-bold tabular-nums" style={{ color: netRColor(tradeR(trade)) }}>{formatTotalR(tradeR(trade))}</span>
-                {trade.result === "win" && <button type="button" onClick={() => void move("r")} className="shrink-0 text-[10px] font-semibold text-primary">R data</button>}
-                <Link href={`/journal/${trade.id}?from=trade-therapist`} className="shrink-0 text-[10px] text-muted-foreground hover:text-primary">Trade</Link>
-              </div>;
-            })}</div> : <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-4 text-center"><p className="text-sm font-semibold">No trades taken</p><p className="mt-1 text-xs text-muted-foreground">Nothing realised on this day.</p></div>}
+                <Link href={`/journal/${trade.id}?from=trade-therapist`} className="shrink-0 text-[10px] text-muted-foreground hover:text-primary">Open</Link>
+              </div>
+            ))}</div> : <p className="mt-1 text-[11px] text-muted-foreground">No trades taken on this day.</p>}
           </section>
-          {entitlements.bestTrade && <section className="shrink-0 rounded-2xl border border-border/60 bg-card/65 p-4">
-            <div className="flex justify-between gap-2"><h3 className="text-sm font-bold">Session review</h3><button onClick={() => void move("market")} className="text-[11px] font-semibold text-primary">Edit</button></div>
-            <p className="mt-1.5 line-clamp-4 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">{draft.post_market_analysis || "What did the market offer, and how did you respond?"}</p>
+
+          {entitlements.bestTrade && <section className="flex min-h-56 flex-[1.15] flex-col rounded-2xl border border-border/60 bg-card/65 p-4 lg:min-h-0">
+            <div className="flex shrink-0 items-start justify-between gap-2">
+              <div><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-primary">Session review</p><h3 className="mt-0.5 text-sm font-bold">How you responded to the market</h3></div>
+              <button onClick={() => void move("market")} className="text-[11px] font-semibold text-primary">{draft.post_market_analysis.trim() ? "Edit" : "Write"}</button>
+            </div>
+            <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1">
+              {draft.post_market_analysis.trim()
+                ? <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{draft.post_market_analysis}</p>
+                : <button type="button" onClick={() => void move("market")} className="flex h-full min-h-24 w-full items-center justify-center rounded-xl border border-dashed border-border/60 bg-background/25 p-4 text-center text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">What did the market offer, and how did you respond?</button>}
+              {ruleChecks.length > 0 && <div className="mt-4 border-t border-border/50 pt-3">
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Commitment and rule checks</p>
+                {ruleChecks.map((check) => <div key={check.id} className="flex justify-between gap-3 py-1 text-xs"><span className="min-w-0">{check.source_text_snapshot}</span><span className={cn("shrink-0 capitalize", check.status === "kept" ? "text-success" : check.status === "broken" ? "text-destructive" : "text-muted-foreground")}>{check.status.replaceAll("_", " ")}</span></div>)}
+              </div>}
+            </div>
           </section>}
-          <section className="shrink-0 rounded-2xl border border-border/60 bg-card/65 p-4">
-            <h3 className="text-sm font-bold">R Potential</h3>
-            {summary.winnerCount ? <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground"><p>Avg MFE <strong className="text-foreground">{summary.averageMfe == null ? "—" : `${summary.averageMfe.toFixed(2)}R`}</strong> · Avg winner <strong className="text-foreground">{summary.averageWinnerR?.toFixed(2)}R</strong></p><p>Reached 2R <strong className="text-foreground">{summary.reached2R}/{summary.measuredCount}</strong> · 2.5R <strong className="text-foreground">{summary.reached25R}/{summary.measuredCount}</strong> measured</p></div> : <p className="mt-1.5 text-xs text-muted-foreground">No winning trades to analyse on this day.</p>}
+
+          <section className="flex min-h-56 flex-1 flex-col rounded-2xl border border-border/60 bg-card/65 p-4 lg:min-h-0">
+            <div className="flex shrink-0 items-start justify-between gap-2">
+              <div><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-ice">R Potential</p><h3 className="mt-0.5 text-sm font-bold">How far the winners ran</h3></div>
+              {summary.winnerCount > 0 && <button onClick={() => void move("r")} className="text-[11px] font-semibold text-primary">{summary.measuredCount < summary.winnerCount ? "Measure" : "Edit"}</button>}
+            </div>
+            {summary.winnerCount ? <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
+              <div className="grid shrink-0 grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                <RTile label="Avg MFE" value={summary.averageMfe == null ? "—" : `${summary.averageMfe.toFixed(2)}R`} />
+                <RTile label="Avg winner" value={summary.averageWinnerR == null ? "—" : `${summary.averageWinnerR.toFixed(2)}R`} />
+                <RTile label="Reached 2R" value={`${summary.reached2R}/${summary.measuredCount}`} />
+                <RTile label="Reached 2.5R" value={`${summary.reached25R}/${summary.measuredCount}`} />
+              </div>
+              <RRunBars winners={dayTrades.filter((trade) => trade.result === "win")} observations={observations} />
+            </div> : <p className="mt-3 text-xs text-muted-foreground">No winning trades to analyse on this day.</p>}
           </section>
         </div>
       </div>
     </div>
+  </div>;
+}
+
+function RTile({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-xl border border-border/50 bg-background/30 px-2.5 py-2"><p className="font-heading text-base font-bold tabular-nums">{value}</p><p className="text-[10px] text-muted-foreground">{label}</p></div>;
+}
+
+/** Per winner: what was banked (solid) against how far price ran (MFE, ghost). */
+function RRunBars({ winners, observations }: { winners: TradeJournalEntry[]; observations: Record<string, RPotentialAnalysis> }) {
+  const reduceMotion = useReducedMotion();
+  const max = Math.max(1, ...winners.map((trade) => Math.max(tradeR(trade), observations[trade.id]?.mfe_r ?? 0)));
+  return <div className="space-y-2">
+    {winners.map((trade, index) => {
+      const realised = tradeR(trade);
+      const mfe = observations[trade.id]?.mfe_r;
+      return <div key={trade.id}>
+        <div className="mb-1 flex justify-between gap-2 text-[11px]"><span className="truncate font-semibold">{instrumentName(trade.instrument)}</span><span className="shrink-0 tabular-nums text-muted-foreground"><span className="text-success">{formatTotalR(realised)}</span> of {mfe == null ? "not measured" : `${mfe.toFixed(2)}R`}</span></div>
+        <div className="relative h-2 overflow-hidden rounded-full bg-muted/40">
+          {mfe != null && <motion.span className="absolute inset-y-0 left-0 origin-left rounded-full bg-ice/30" style={{ width: `${(mfe / max) * 100}%` }} initial={{ scaleX: reduceMotion ? 1 : 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.6, delay: index * 0.06, ease: [0.23, 1, 0.32, 1] }} />}
+          <motion.span className="absolute inset-y-0 left-0 origin-left rounded-full bg-success" style={{ width: `${(realised / max) * 100}%` }} initial={{ scaleX: reduceMotion ? 1 : 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.5, delay: 0.1 + index * 0.06, ease: [0.23, 1, 0.32, 1] }} />
+        </div>
+      </div>;
+    })}
+    <p className="flex gap-3 pt-0.5 text-[10px] text-muted-foreground"><span className="flex items-center gap-1"><span className="h-1.5 w-3 rounded-full bg-success" />Banked</span><span className="flex items-center gap-1"><span className="h-1.5 w-3 rounded-full bg-ice/30" />Max run (MFE)</span></p>
   </div>;
 }
 

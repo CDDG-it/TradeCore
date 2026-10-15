@@ -30,7 +30,6 @@ export default function PricingPage() {
     <LandingNav />
     <main id="main">
       <section className="marketing-hero relative overflow-hidden px-5 pb-16 pt-10 sm:px-10 sm:pt-14 lg:min-h-[calc(100svh-72px)] lg:px-12 lg:pb-10">
-        <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-30" />
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-280px] h-[620px] w-[900px] -translate-x-1/2 rounded-full bg-[#0b67c9]/20 blur-[110px]" />
         <div className="relative mx-auto max-w-[1180px]">
           <MarketingReveal className="mx-auto max-w-5xl text-center">

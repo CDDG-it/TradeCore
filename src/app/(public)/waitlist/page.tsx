@@ -39,7 +39,6 @@ export default function WaitlistPage() {
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_22%,rgba(20,184,166,.14),transparent_32%),radial-gradient(circle_at_18%_62%,rgba(6,182,212,.08),transparent_36%)]"
       />
-      <div aria-hidden className="marketing-grid pointer-events-none absolute inset-0 opacity-[.09]" />
 
       <div className="relative w-full max-w-lg text-center">
         <Link href="/" aria-label="TradingMC home" className="inline-block transition-opacity hover:opacity-75">

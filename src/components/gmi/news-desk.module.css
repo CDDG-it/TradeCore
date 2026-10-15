@@ -15,7 +15,6 @@
 .featureGrid { display:grid; grid-template-columns:minmax(0,2.05fr) minmax(280px,.95fr); grid-auto-flow:dense; gap:12px; margin-bottom:18px; }
 .feature,.coverage { position:relative; overflow:hidden; border:1px solid var(--line); border-radius:20px; background:color-mix(in oklch,var(--card) 82%,var(--background)); }
 .feature { min-height:410px; animation:feature-in 260ms var(--ease-out) both; isolation:isolate; }
-.feature::before { content:""; position:absolute; inset:0; z-index:-1; opacity:.52; background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px); background-size:52px 52px; mask-image:linear-gradient(to bottom,black,transparent 84%); }
 .featureGlow { position:absolute; width:540px; height:540px; right:-130px; top:-260px; border-radius:50%; background:color-mix(in oklch,var(--topic-color,var(--primary)) 20%,transparent); filter:blur(60px); opacity:.9; }
 .featureWave { position:absolute; inset:auto -3% 0; width:106%; height:55%; opacity:.28; }
 .featureWave path { fill:none; stroke:var(--topic-color,var(--primary)); stroke-width:2; vector-effect:non-scaling-stroke; stroke-dasharray:1300; stroke-dashoffset:1300; animation:draw 900ms var(--ease-out) 120ms forwards; }

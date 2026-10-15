@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { format, startOfWeek } from "date-fns";
 import { ArrowRight, Check, Trophy } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
 import { CountUp } from "@/components/ui/count-up";
+import { MotionButton, MotionLink, PRESS } from "@/components/trade-therapist/motion-button";
+import { StepPanel as Panel, type PanelStatus as Status } from "@/components/trade-therapist/step-panel";
 import { getBestTradesOfDay, getPreMarketExercise, getWeeklyTradeReviews, type BestTradeListRow } from "@/lib/supabase/queries";
 import { isDayReviewed, postMarketDates } from "@/lib/post-market/day-overview";
 import { exerciseDefinition } from "@/lib/pre-market/exercises";
@@ -16,13 +17,9 @@ import { bestTradeLogged } from "@/lib/reviews/day-recap";
 import { cn } from "@/lib/utils";
 import type { PreMarketExercise, TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
 
-type Tone = "done" | "todo" | "waiting";
-type Status = { label: string; tone: Tone };
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 const EASE = [0.23, 1, 0.32, 1] as const;
-// Presses answer at once and settle without bounce: a control, not a toy.
-const PRESS = { type: "spring", stiffness: 520, damping: 32, mass: 0.6 } as const;
-const MotionLink = motion.create(Link);
+
 
 /**
  * The Therapist's front door. It fills the viewport with where the day stands,
@@ -194,7 +191,7 @@ export function TherapistToday({
         {/* The day in three steps, filling the rest of the viewport. */}
         <div className="grid flex-1 gap-3 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1fr)]">
           <Panel index={0} reduceMotion={reduceMotion} active={focus === "pre"} step="01" eyebrow="Before the open" title="Pre-market exercise" status={loading ? null : preStatus}
-            action={<PanelButton primary={focus === "pre"} onClick={onPreMarket}>{preDone ? "View exercise" : "Start exercise"}</PanelButton>}>
+            action={<MotionButton primary={focus === "pre"} onClick={onPreMarket}>{preDone ? "View exercise" : "Start exercise"}</MotionButton>}>
             {preDone && preMarket ? (
               <div className="space-y-3">
                 {exercise && <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">{exercise.title}</p>}
@@ -216,9 +213,9 @@ export function TherapistToday({
           <Panel index={1} reduceMotion={reduceMotion} active={focus === "post"} step="02" eyebrow="After the close" title="Post Market review" status={loading ? null : postStatus}
             action={
               <div className="flex flex-wrap items-center gap-3">
-                <PanelButton primary={focus === "post"} onClick={() => onPostMarket(today, !todayReviewed)}>
+                <MotionButton primary={focus === "post"} onClick={() => onPostMarket(today, !todayReviewed)}>
                   {todayReviewed ? "View day" : todayInProgress ? "Continue review" : "Start review"}
-                </PanelButton>
+                </MotionButton>
                 {!todayReviewed && (
                   <motion.button type="button" onClick={() => onPostMarket(today, false)} whileTap={{ scale: 0.96, transition: PRESS }}
                     className="relative text-xs font-semibold text-muted-foreground transition-colors after:absolute after:-bottom-0.5 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-primary after:transition-transform after:duration-200 hover:text-primary hover:after:scale-x-100">
@@ -284,8 +281,8 @@ export function TherapistToday({
 
           <Panel index={2} reduceMotion={reduceMotion} active={focus === "week"} step="03" eyebrow="End of the week" title="Weekly review" status={loading ? null : weekStatus}
             action={
-              <MotionLink href={`/trade-therapist/review/${weekStart}`} whileTap={{ scale: 0.97, transition: PRESS }} className={buttonClass(focus === "week")}>
-                <ButtonContent primary={focus === "week"}>{weekDone ? "Open review" : weekOpen ? "Write review" : "Preview week"}</ButtonContent>
+              <MotionLink href={`/trade-therapist/review/${weekStart}`} primary={focus === "week"}>
+                {weekDone ? "Open review" : weekOpen ? "Write review" : "Preview week"}
               </MotionLink>
             }>
             <div className="space-y-4">
@@ -306,101 +303,6 @@ export function TherapistToday({
       </div>
     </div>
     </MotionConfig>
-  );
-}
-
-function Panel({ index, reduceMotion, active, step, eyebrow, title, status, action, children }: {
-  index: number;
-  reduceMotion: boolean | null;
-  active: boolean;
-  step: string;
-  eyebrow: string;
-  title: string;
-  status: Status | null;
-  action: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.26, delay: reduceMotion ? 0 : 0.06 + index * 0.05, ease: EASE }}
-      whileHover={{ y: -3, transition: { duration: 0.2, ease: EASE } }}
-      className={cn(
-        "group/panel relative flex min-h-72 flex-col overflow-hidden rounded-2xl border bg-card/65 transition-[border-color,box-shadow] duration-300 lg:min-h-0",
-        active
-          ? "border-primary/45 shadow-[0_0_0_1px_color-mix(in_oklch,var(--primary)_16%,transparent),0_28px_70px_-44px_rgba(0,0,0,.6)]"
-          : "border-border/60 hover:border-border hover:shadow-[0_28px_70px_-48px_rgba(0,0,0,.6)]"
-      )}
-    >
-      {active && (
-        <motion.div
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent"
-          animate={reduceMotion ? undefined : { opacity: [0.45, 1, 0.45] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        />
-      )}
-      <div className="flex shrink-0 items-start justify-between gap-3 px-5 pt-5">
-        <div>
-          <p className="flex items-center gap-2 font-heading text-xs font-bold tabular-nums text-muted-foreground/50">
-            {step}
-            {active && (
-              <span className="relative flex h-1.5 w-1.5">
-                {!reduceMotion && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />}
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-              </span>
-            )}
-          </p>
-          <p className={cn("mt-3 text-[10px] font-semibold uppercase tracking-[.16em]", active ? "text-primary" : "text-muted-foreground")}>{eyebrow}</p>
-          <h3 className="mt-1 font-heading text-lg font-bold tracking-tight">{title}</h3>
-        </div>
-        {status && <StatusPill status={status} />}
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
-      <div className="shrink-0 border-t border-border/50 px-5 py-3.5">{action}</div>
-    </motion.section>
-  );
-}
-
-function StatusPill({ status }: { status: Status }) {
-  return (
-    <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold leading-none",
-      status.tone === "done" ? "bg-success/12 text-success" : status.tone === "todo" ? "bg-primary/12 text-primary" : "bg-muted/40 text-muted-foreground")}>
-      {status.tone === "done" && <Check className="h-3 w-3" />}
-      {status.tone === "todo" && <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" />}
-      {status.label}
-    </span>
-  );
-}
-
-function buttonClass(primary: boolean) {
-  return cn(
-    "group/btn relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg px-4 py-2 text-xs font-semibold transition-[background-color,border-color,color,box-shadow] duration-200",
-    primary
-      ? "bg-primary text-primary-foreground shadow-[0_4px_16px_-6px_color-mix(in_oklch,var(--primary)_70%,transparent)] hover:shadow-[0_8px_26px_-8px_color-mix(in_oklch,var(--primary)_85%,transparent)]"
-      : "border border-border/60 text-foreground hover:border-primary/40 hover:bg-primary/[.05] hover:text-primary"
-  );
-}
-
-/** Label plus an arrow that leans forward on hover; the primary action also gets a light sweep. */
-function ButtonContent({ primary, children }: { primary: boolean; children: React.ReactNode }) {
-  return (
-    <>
-      {primary && (
-        <span aria-hidden className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-0 transition-[transform,opacity] duration-700 ease-out group-hover/btn:translate-x-[300%] group-hover/btn:opacity-100" />
-      )}
-      <span className="relative">{children}</span>
-      <ArrowRight className="relative h-3.5 w-3.5 transition-transform duration-200 ease-out group-hover/btn:translate-x-1" />
-    </>
-  );
-}
-
-function PanelButton({ primary, onClick, children }: { primary: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <motion.button type="button" onClick={onClick} whileTap={{ scale: 0.97, transition: PRESS }} className={buttonClass(primary)}>
-      <ButtonContent primary={primary}>{children}</ButtonContent>
-    </motion.button>
   );
 }
 

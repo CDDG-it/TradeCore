@@ -29,7 +29,6 @@ export default async function TraderLevelPage({ params }: { params: Promise<{ le
       <LandingNav />
       <main id="main">
         <section className="marketing-hero relative overflow-hidden px-6 pb-20 pt-20 sm:px-10 sm:pt-28 lg:px-12 lg:pb-28">
-          <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-35" />
           <div className="relative mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-end lg:gap-20">
             <MarketingReveal>
               <p className="marketing-eyebrow" style={{ color: "#7be0d5" }}>For traders<span className="text-white">{page.label}</span></p>
@@ -99,7 +98,6 @@ export default async function TraderLevelPage({ params }: { params: Promise<{ le
         <div aria-hidden="true" className="marketing-gradient-bridge marketing-gradient-bridge--dark" />
 
         <section className="relative overflow-hidden bg-[#0b1120] px-6 py-28 sm:px-10 md:py-40 lg:px-12">
-          <div aria-hidden="true" className="marketing-grid pointer-events-none absolute inset-0 opacity-20" />
           <div className="relative mx-auto max-w-[1260px]">
             <MarketingReveal>
               <h2 className="font-display max-w-[980px] text-balance text-[clamp(2.4rem,8vw,3.4rem)] font-semibold leading-[1] tracking-[-0.06em] sm:text-[clamp(3.2rem,5.6vw,6.4rem)]">{page.close}</h2>

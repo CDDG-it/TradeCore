@@ -70,7 +70,6 @@ export function LandingFooter() {
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_18%,rgba(20,184,166,.14),transparent_30%),radial-gradient(circle_at_16%_58%,rgba(6,182,212,.08),transparent_34%)]"
       />
-      <div aria-hidden className="marketing-grid pointer-events-none absolute inset-0 opacity-[.09]" />
 
       <div className="relative mx-auto flex w-full max-w-[1380px] flex-1 items-center px-6 py-10 sm:px-10 lg:px-12 lg:py-14">
         <div ref={statement} className="max-w-6xl">
