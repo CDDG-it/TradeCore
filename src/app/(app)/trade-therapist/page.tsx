@@ -51,27 +51,45 @@ export default function TradeTherapistPage() {
     if (t === "commitments") setTab("premarket");
     else if (TABS.some((x) => x.key === t)) setTab(t as TherapistTab);
     if (t === "daily" && params.get("start") === "1") setStartReview(true);
+    if (params.has("start")) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("start");
+      window.history.replaceState(window.history.state, "", url);
+    }
     if (selectedDate && /^\d{4}-\d{2}-\d{2}$/.test(selectedDate) && !Number.isNaN(Date.parse(`${selectedDate}T12:00:00`)) && selectedDate <= format(new Date(), "yyyy-MM-dd")) setDailyDate(selectedDate);
     getTrades().then(setTrades).catch(() => {});
   }, []);
 
+  // Keep the address bar in step with what is on screen, without the one-shot
+  // `start` flag: a refresh or a shared link reopens the view, never a question.
+  function syncUrl(next: { tab?: TherapistTab; date?: string }) {
+    const url = new URL(window.location.href);
+    if (next.tab) {
+      if (next.tab === "today") url.searchParams.delete("tab");
+      else url.searchParams.set("tab", next.tab);
+    }
+    if (next.date) url.searchParams.set("date", next.date);
+    url.searchParams.delete("start");
+    window.history.replaceState(window.history.state, "", url);
+  }
+
   function selectTab(next: TherapistTab) {
     setStartReview(false);
     setTab(next);
+    syncUrl({ tab: next });
   }
 
   function openPostMarket(date: string, start: boolean) {
-    changeDate(date);
+    setDailyDate(date);
     setStartReview(start);
     setTab("daily");
+    syncUrl({ tab: "daily", date });
   }
 
   function changeDate(date: string) {
     setStartReview(false);
     setDailyDate(date);
-    const url = new URL(window.location.href);
-    url.searchParams.set("date", date);
-    window.history.replaceState(window.history.state, "", url);
+    syncUrl({ date });
   }
 
   return (

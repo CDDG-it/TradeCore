@@ -570,7 +570,7 @@ export function ScreenshotUpload({
  * (a dialog, say) would otherwise become the containing block for the fixed
  * overlay and crop the chart to the panel it was opened from.
  */
-function Lightbox({ src, onClose }: { src: string | null; onClose: () => void }) {
+export function Lightbox({ src, onClose }: { src: string | null; onClose: () => void }) {
   if (!src || typeof document === "undefined") return null;
   return createPortal(
     <div className="screenshot-lightbox-overlay" onClick={onClose}>

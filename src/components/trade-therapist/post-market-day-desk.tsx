@@ -7,6 +7,9 @@ import { motion, useReducedMotion } from "motion/react";
 import { ScreenshotUpload } from "@/components/screenshot-upload";
 import { RPotentialAnalysisSection } from "@/components/trade-therapist/r-potential-analysis";
 import { PostMarketDayPicker } from "@/components/trade-therapist/post-market-day-picker";
+import { ScreenshotGallery } from "@/components/trade-therapist/screenshot-gallery";
+import { ArrowRight, Trophy } from "lucide-react";
+import { bestTradeLogged } from "@/lib/reviews/day-recap";
 import { useAccess } from "@/components/access/access-provider";
 import { dayOverview, isDayReviewed, postMarketDates } from "@/lib/post-market/day-overview";
 import { initialPostMarketStep, postMarketSteps, type PostMarketStep } from "@/lib/post-market/flow";
@@ -57,7 +60,6 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
   const summary = dayOverview(dayTrades, observations);
   const today = format(new Date(), "yyyy-MM-dd");
   const recent = [...new Set([date, ...postMarketDates(trades, Object.values(reviews), today).slice(0, 4)])].sort((a, b) => b.localeCompare(a)).slice(0, 5);
-  const chartCount = draft.screenshot_groups.reduce((count, group) => count + group.urls.length, 0);
   const status = uploading ? "Uploading..." : saveState === "saving" ? "Saving..." : saveState === "saved" ? "Saved" : saveState === "error" ? "Save failed. Try again." : "";
 
   useEffect(() => {
@@ -230,41 +232,121 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
     </div>;
   }
 
-  return <div className="flex h-full min-h-0 flex-col gap-2">
-    <div className="flex shrink-0 items-center justify-between gap-2">
-      <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-primary">Post Market</p><h2 className="truncate font-heading text-base font-bold sm:text-xl">{format(new Date(`${date}T12:00:00`), "EEEE, MMMM d, yyyy")}</h2></div>
-      <PostMarketDayPicker date={date} tradesByDay={tradesByDay} reviews={reviews} onSelect={selectDate} disabled={uploading} />
-    </div>
-    <div className="grid shrink-0 grid-cols-5 gap-1" aria-label="Recent logged days">
-      {recent.map((key) => {
-        const entries = tradesByDay[key] ?? [];
-        const net = entries.reduce((total, trade) => total + tradeR(trade), 0);
-        return <button key={key} type="button" onClick={() => void selectDate(key)} aria-current={key === date ? "date" : undefined} className={cn("min-w-0 rounded-lg border px-1.5 py-1.5 text-left sm:px-3", key === date ? "border-primary/60 bg-primary/[.08]" : "border-border/60 bg-card/50 hover:border-primary/40")}><span className="block truncate text-[11px] font-semibold">{displayDate(key)}</span><span className="block truncate text-[10px] tabular-nums" style={{ color: entries.length ? netRColor(net) : undefined }}>{entries.length ? formatTotalR(net) : "No trade"}</span></button>;
-      })}
-    </div>
-    <div className="grid shrink-0 grid-cols-3 gap-1 sm:gap-2">
-      <Metric label="Trades taken" value={String(summary.tradeCount)} detail={summary.tradeCount ? `${summary.winnerCount} winners` : "Stayed out"} />
-      <Metric label="Realised R" value={formatTotalR(summary.netR)} detail="Journal result" color={netRColor(summary.netR)} />
-      <Metric label="Observed MFE" value={summary.measuredCount ? `${summary.measuredMfeTotal.toFixed(2)}R` : "—"} detail={summary.winnerCount ? `${summary.measuredCount}/${summary.winnerCount} winners` : "No winners"} />
-    </div>
-    {loading ? <p className="flex flex-1 items-center justify-center text-xs text-muted-foreground">Loading day...</p> : <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_5.5rem] gap-2 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,.7fr)] lg:grid-rows-1">
-      <section className="flex min-h-0 flex-col rounded-xl border border-border/60 bg-card/65 p-2.5 sm:p-4"><div className="flex items-center justify-between"><div><h3 className="text-xs font-bold sm:text-sm">Trades on this day</h3><p className="text-[10px] text-muted-foreground">Realised R and measured movement</p></div><span className="text-xs tabular-nums text-muted-foreground">{summary.tradeCount}</span></div>
-        {dayTrades.length ? <div className="mt-1.5 grid min-h-0 flex-1 content-start gap-1 overflow-y-auto pr-1">{dayTrades.map((trade) => {
-          const record = observations[trade.id];
-          return <div key={trade.id} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-border/50 bg-background/35 px-2 py-1.5 text-xs"><div className="min-w-0 flex-1"><p className="truncate font-semibold">{instrumentName(trade.instrument)} <span className="font-normal capitalize text-muted-foreground">{trade.direction}</span></p><p className="truncate text-[10px] text-muted-foreground">{trade.execution_time || trade.session} · {trade.result === "win" ? `MFE ${record?.mfe_r == null ? "not recorded" : `${record.mfe_r.toFixed(2)}R`}` : trade.result === "loss" ? "Stopped out" : "Break-even"}{record?.planned_take_profit_r != null ? ` · Plan ${record.planned_take_profit_r}R` : ""}</p></div><span className="shrink-0 font-bold tabular-nums" style={{ color: netRColor(tradeR(trade)) }}>{formatTotalR(tradeR(trade))}</span>{trade.result === "win" && <button type="button" onClick={() => void move("r")} className="shrink-0 text-[10px] font-semibold text-primary">R data</button>}<Link href={`/journal/${trade.id}?from=trade-therapist`} className="shrink-0 text-[10px] text-muted-foreground hover:text-primary">Trade</Link></div>;
-        })}</div> : <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center"><p className="text-sm font-semibold">No trades taken</p><p className="mt-1 text-xs text-muted-foreground">No realised R or trade-level R Potential for this day.</p></div>}
-      </section>
-      <div className="grid min-h-0 grid-cols-3 gap-1.5 lg:grid-cols-1 lg:grid-rows-3 lg:gap-2">
-        {entitlements.bestTrade && <section className="min-h-0 min-w-0 rounded-xl border border-border/60 bg-card/65 p-2 lg:p-3"><div className="flex justify-between gap-1"><h3 className="truncate text-[10px] font-bold lg:text-xs">Best trade</h3><button onClick={() => void move("verdict")} className="text-[10px] font-semibold text-primary">Edit</button></div><p className="mt-1 line-clamp-2 text-[10px] font-semibold lg:text-xs">{knownVerdict ? draft.taken_was_best ? dayTrades.length ? "Taken trade was best" : "Staying out was best" : "A better opportunity existed" : "Not reviewed yet"}</p><p className="mt-1 hidden line-clamp-2 text-[11px] text-muted-foreground lg:block">{draft.notes || "Record the reason behind this decision."}</p>{knownVerdict && !draft.taken_was_best ? <button onClick={() => void move("screenshots")} className="text-[10px] font-semibold text-primary">{chartCount} chart{chartCount === 1 ? "" : "s"}</button> : null}</section>}
-        <section className={cn("min-h-0 min-w-0 rounded-xl border border-border/60 bg-card/65 p-2 lg:p-3", !entitlements.bestTrade && "col-span-2 lg:col-span-1 lg:row-span-2")}><div className="flex justify-between gap-1"><h3 className="truncate text-[10px] font-bold lg:text-xs">Session review</h3><button onClick={() => void move("market")} className="text-[10px] font-semibold text-primary">Edit</button></div><p className="mt-1 text-[10px] text-muted-foreground lg:hidden">{draft.post_market_analysis ? "Recorded" : "Not recorded"}</p><p className="mt-1 hidden line-clamp-3 whitespace-pre-wrap text-[11px] text-muted-foreground lg:block">{draft.post_market_analysis || "What did the market offer, and how did you respond?"}</p></section>
-        <section className="min-h-0 min-w-0 rounded-xl border border-border/60 bg-card/65 p-2 lg:p-3"><h3 className="truncate text-[10px] font-bold lg:text-xs">R Potential</h3>{summary.winnerCount ? <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground"><p>MFE <strong className="text-foreground">{summary.averageMfe == null ? "—" : `${summary.averageMfe.toFixed(2)}R`}</strong><span className="hidden lg:inline"> · Winner <strong className="text-foreground">{summary.averageWinnerR?.toFixed(2)}R</strong></span></p><p className="hidden lg:block">Reached 2R <strong className="text-foreground">{summary.reached2R}/{summary.measuredCount}</strong> · 2.5R <strong className="text-foreground">{summary.reached25R}/{summary.measuredCount}</strong> measured</p></div> : <p className="mt-1 line-clamp-2 text-[10px] text-muted-foreground lg:text-[11px]">No winning trades to analyse today.</p>}</section>
-      </div>
-    </div>}
-    <div className="flex shrink-0 items-center justify-between gap-2 text-[11px]"><span role="status" className={saveState === "error" ? "text-destructive" : "text-muted-foreground"}>{status || (hasReview ? "Review recorded" : "")}</span><button disabled={saveState === "saving" || uploading} onClick={() => void move(resumeStep ?? steps[0])} className={cn("rounded-lg px-3 py-1.5 font-semibold disabled:opacity-40", hasReview ? "border border-primary/40 text-primary" : "bg-primary text-primary-foreground")}>{hasReview ? "Edit review" : resumeStep ? "Continue review" : "Start review"}</button></div>
+  const verdict: "unknown" | "taken" | "missed" = !knownVerdict ? "unknown" : draft.taken_was_best ? "taken" : "missed";
+  const betterShots = draft.screenshot_groups.filter((group) => group.urls.length > 0);
+  // When the trade taken was the best one, its own charts are the evidence.
+  const takenShots: ScreenshotGroup[] = dayTrades.flatMap((trade) => (trade.screenshot_groups ?? [])
+    .filter((group) => group.urls.length > 0)
+    .map((group) => ({ label: dayTrades.length > 1 ? `${instrumentName(trade.instrument)} · ${group.label}` : group.label, urls: group.urls })));
+  const reviewButton = <button disabled={saveState === "saving" || uploading} onClick={() => void move(resumeStep ?? steps[0])} className={cn("inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-colors disabled:opacity-40", hasReview ? "border border-border/60 text-foreground hover:border-primary/40 hover:text-primary" : "bg-primary text-primary-foreground hover:bg-primary/90")}>{hasReview ? "Edit review" : resumeStep ? "Continue review" : "Start review"}<ArrowRight className="h-3.5 w-3.5" /></button>;
 
+  return <div className="h-full overflow-y-auto lg:overflow-hidden">
+    <div className="flex min-h-full flex-col gap-3 lg:h-full">
+      <header className="flex shrink-0 flex-wrap items-end justify-between gap-3 px-0.5">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-primary">Post Market · {hasReview ? "Reviewed" : resumeStep ? "Review in progress" : "Not reviewed"}</p>
+          <h2 className="mt-1 truncate font-heading text-xl font-bold tracking-tight sm:text-2xl">{format(new Date(`${date}T12:00:00`), "EEEE d MMMM yyyy")}</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          {status && <span role="status" className={cn("text-[11px]", saveState === "error" ? "text-destructive" : "text-muted-foreground")}>{status}</span>}
+          <PostMarketDayPicker date={date} tradesByDay={tradesByDay} reviews={reviews} onSelect={selectDate} disabled={uploading} />
+          {reviewButton}
+        </div>
+      </header>
+
+      <div className="grid shrink-0 gap-2 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-5 gap-1.5" aria-label="Recent logged days">
+          {recent.map((key) => {
+            const entries = tradesByDay[key] ?? [];
+            const net = entries.reduce((total, trade) => total + tradeR(trade), 0);
+            const row = reviews[key];
+            return <button key={key} type="button" onClick={() => void selectDate(key)} aria-current={key === date ? "date" : undefined} className={cn("min-w-0 rounded-xl border px-2 py-2 text-left transition-colors sm:px-3", key === date ? "border-primary/55 bg-primary/[.08]" : "border-border/60 bg-card/50 hover:border-primary/40")}>
+              <span className="flex items-center justify-between gap-1"><span className="truncate text-[11px] font-semibold">{displayDate(key)}</span>{row?.taken_was_best ? <Trophy className="h-3 w-3 shrink-0 text-success" /> : bestTradeLogged(row) ? <Trophy className="h-3 w-3 shrink-0 text-ice" /> : null}</span>
+              <span className="mt-0.5 block truncate text-[11px] font-semibold tabular-nums" style={{ color: entries.length ? netRColor(net) : undefined }}>{entries.length ? formatTotalR(net) : <span className="font-normal text-muted-foreground">No trade</span>}</span>
+              <span className={cn("mt-1.5 block h-0.5 w-6 rounded-full", isDayReviewed(row) ? "bg-success" : "bg-border")} />
+            </button>;
+          })}
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          <Metric label="Trades taken" value={String(summary.tradeCount)} detail={summary.tradeCount ? `${summary.winnerCount} winner${summary.winnerCount === 1 ? "" : "s"}` : "Stayed out"} />
+          <Metric label="Realised R" value={formatTotalR(summary.netR)} detail="Journal result" color={netRColor(summary.netR)} />
+          <Metric label="Observed MFE" value={summary.measuredCount ? `${summary.measuredMfeTotal.toFixed(2)}R` : "—"} detail={summary.winnerCount ? `${summary.measuredCount}/${summary.winnerCount} winners` : "No winners"} />
+        </div>
+      </div>
+
+      <div className="grid flex-1 gap-3 lg:min-h-0 lg:grid-cols-[minmax(0,1.6fr)_minmax(300px,1fr)]">
+        {entitlements.bestTrade ? (
+          <section className={cn("flex min-h-[26rem] flex-col overflow-hidden rounded-2xl border bg-card/65 lg:min-h-0", verdict === "missed" ? "border-ice/30" : verdict === "taken" ? "border-success/25" : "border-border/60")}>
+            <div className="flex shrink-0 items-start justify-between gap-3 px-5 pt-4">
+              <div className="min-w-0">
+                <p className={cn("flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.16em]", verdict === "missed" ? "text-ice" : verdict === "taken" ? "text-success" : "text-muted-foreground")}><Trophy className="h-3 w-3" /> Best trade of the day</p>
+                <h3 className="mt-1 font-heading text-lg font-bold tracking-tight">
+                  {verdict === "unknown" ? "Not reviewed yet" : verdict === "taken" ? (dayTrades.length ? "Your trade was the best trade" : "Staying out was the best call") : "A better trade was available"}
+                </h3>
+              </div>
+              {verdict !== "unknown" && <button type="button" onClick={() => void move(verdict === "missed" ? "screenshots" : "verdict")} className="shrink-0 text-[11px] font-semibold text-primary">{verdict === "missed" ? (betterShots.length ? "Edit charts" : "Add charts") : "Edit"}</button>}
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 pb-5 pt-3">
+              {verdict === "unknown" ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/60 bg-background/25 p-6 text-center">
+                  <p className="max-w-sm text-sm text-muted-foreground">{dayTrades.length ? "Was the trade you took the best one the market offered today? If not, save the charts of the better trade here." : "Was staying out the right call, or was there a trade worth taking?"}</p>
+                  {reviewButton}
+                </div>
+              ) : verdict === "missed" ? (
+                betterShots.length ? <ScreenshotGallery groups={betterShots} className="flex-1" /> : (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-ice/30 bg-ice/[.03] p-6 text-center">
+                    <p className="max-w-sm text-sm text-muted-foreground">No charts of the better trade yet. Add the higher timeframe and the entry so you can recognise it next time.</p>
+                    <button type="button" onClick={() => void move("screenshots")} className="rounded-lg border border-ice/40 px-3.5 py-2 text-xs font-semibold text-ice hover:bg-ice/10">Add charts</button>
+                  </div>
+                )
+              ) : takenShots.length ? <ScreenshotGallery groups={takenShots} className="flex-1" /> : (
+                <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-border/60 bg-background/25 p-6 text-center">
+                  <p className="max-w-sm text-sm text-muted-foreground">{dayTrades.length ? "No charts on this trade. Add them in the journal to keep the example." : "No trade, and that was right. Nothing to chart."}</p>
+                </div>
+              )}
+              {verdict !== "unknown" && draft.notes.trim() && (
+                <div className="shrink-0 rounded-xl border border-border/50 bg-background/30 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{verdict === "missed" ? "Why it was the better trade" : "Why this was the best decision"}</p>
+                  <p className="mt-1 line-clamp-4 whitespace-pre-wrap text-sm leading-snug">{draft.notes}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        ) : (
+          <section className="flex min-h-[20rem] flex-col rounded-2xl border border-border/60 bg-card/65 p-5 lg:min-h-0">
+            <div className="flex justify-between gap-2"><h3 className="font-heading text-lg font-bold tracking-tight">Session review</h3><button onClick={() => void move("market")} className="text-[11px] font-semibold text-primary">Edit</button></div>
+            <p className="mt-3 min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{draft.post_market_analysis || "What did the market offer, and how did you respond?"}</p>
+          </section>
+        )}
+
+        <div className="flex min-h-0 flex-col gap-3">
+          <section className="flex min-h-48 flex-1 flex-col rounded-2xl border border-border/60 bg-card/65 p-4 lg:min-h-0">
+            <div className="flex items-center justify-between"><h3 className="text-sm font-bold">Trades on this day</h3><span className="text-xs tabular-nums text-muted-foreground">{summary.tradeCount}</span></div>
+            {dayTrades.length ? <div className="mt-2 grid min-h-0 flex-1 content-start gap-1.5 overflow-y-auto pr-1">{dayTrades.map((trade) => {
+              const record = observations[trade.id];
+              return <div key={trade.id} className="flex min-w-0 items-center gap-2 rounded-lg border border-border/50 bg-background/35 px-2.5 py-2 text-xs">
+                <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", trade.execution_quality === "good" ? "bg-success" : trade.execution_quality === "bad" ? "bg-destructive" : "bg-border")} title={trade.execution_quality ? `Execution ${trade.execution_quality}` : "Execution not rated"} />
+                <div className="min-w-0 flex-1"><p className="truncate font-semibold">{instrumentName(trade.instrument)} <span className="font-normal capitalize text-muted-foreground">{trade.direction}</span></p><p className="truncate text-[10px] text-muted-foreground">{trade.execution_time || trade.session} · {trade.result === "win" ? `MFE ${record?.mfe_r == null ? "not recorded" : `${record.mfe_r.toFixed(2)}R`}` : trade.result === "loss" ? "Stopped out" : "Break-even"}{record?.planned_take_profit_r != null ? ` · Plan ${record.planned_take_profit_r}R` : ""}</p></div>
+                <span className="shrink-0 font-bold tabular-nums" style={{ color: netRColor(tradeR(trade)) }}>{formatTotalR(tradeR(trade))}</span>
+                {trade.result === "win" && <button type="button" onClick={() => void move("r")} className="shrink-0 text-[10px] font-semibold text-primary">R data</button>}
+                <Link href={`/journal/${trade.id}?from=trade-therapist`} className="shrink-0 text-[10px] text-muted-foreground hover:text-primary">Trade</Link>
+              </div>;
+            })}</div> : <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-4 text-center"><p className="text-sm font-semibold">No trades taken</p><p className="mt-1 text-xs text-muted-foreground">Nothing realised on this day.</p></div>}
+          </section>
+          {entitlements.bestTrade && <section className="shrink-0 rounded-2xl border border-border/60 bg-card/65 p-4">
+            <div className="flex justify-between gap-2"><h3 className="text-sm font-bold">Session review</h3><button onClick={() => void move("market")} className="text-[11px] font-semibold text-primary">Edit</button></div>
+            <p className="mt-1.5 line-clamp-4 whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">{draft.post_market_analysis || "What did the market offer, and how did you respond?"}</p>
+          </section>}
+          <section className="shrink-0 rounded-2xl border border-border/60 bg-card/65 p-4">
+            <h3 className="text-sm font-bold">R Potential</h3>
+            {summary.winnerCount ? <div className="mt-1.5 space-y-0.5 text-xs text-muted-foreground"><p>Avg MFE <strong className="text-foreground">{summary.averageMfe == null ? "—" : `${summary.averageMfe.toFixed(2)}R`}</strong> · Avg winner <strong className="text-foreground">{summary.averageWinnerR?.toFixed(2)}R</strong></p><p>Reached 2R <strong className="text-foreground">{summary.reached2R}/{summary.measuredCount}</strong> · 2.5R <strong className="text-foreground">{summary.reached25R}/{summary.measuredCount}</strong> measured</p></div> : <p className="mt-1.5 text-xs text-muted-foreground">No winning trades to analyse on this day.</p>}
+          </section>
+        </div>
+      </div>
+    </div>
   </div>;
 }
 
 function Metric({ label, value, detail, color }: { label: string; value: string; detail: string; color?: string }) {
-  return <div className="min-w-0 rounded-xl border border-border/60 bg-card/65 px-2 py-1.5 sm:px-4 sm:py-2"><p className="truncate text-[10px] text-muted-foreground">{label}</p><p className="truncate font-heading text-base font-bold tabular-nums sm:text-xl" style={{ color }}>{value}</p><p className="truncate text-[9px] text-muted-foreground sm:text-[11px]">{detail}</p></div>;
+  return <div className="min-w-0 rounded-xl border border-border/60 bg-card/65 px-2.5 py-2 sm:px-4"><p className="truncate text-[10px] text-muted-foreground">{label}</p><p className="truncate font-heading text-base font-bold tabular-nums sm:text-xl" style={{ color }}>{value}</p><p className="truncate text-[9px] text-muted-foreground sm:text-[11px]">{detail}</p></div>;
 }
