@@ -74,7 +74,7 @@ export function parseOfficialFeed(xml: string, feed: OfficialFeed): NewsArticle[
       id: createHash("sha256").update(`${url}|${publishedAt}`).digest("hex").slice(0, 24),
       title, url, source: feed.agency, publishedAt,
       snippet: plainText(item.description || item.summary || item.content).slice(0, 2000),
-      topic: feed.topic, category: feed.topic, publishedPrecision: dateOnly ? "date" : "time",
+      topic: feed.topic, category: feed.topic, publishedPrecision: dateOnly ? "date" : "time", feedId: feed.id,
       assets: [], sentimentScore: null,
     });
   }

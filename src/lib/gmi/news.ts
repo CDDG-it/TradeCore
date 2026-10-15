@@ -16,7 +16,7 @@ const feeds = OFFICIAL_FEEDS.map((feed) => unstable_cache(async () => {
   const encoding = prefix.match(/encoding=["']([^"']+)["']/i)?.[1] ?? "utf-8";
   const articles = parseOfficialFeed(new TextDecoder(encoding).decode(bytes), feed);
   return { articles, checkedAt: new Date().toISOString() };
-}, ["official-news-v1", feed.id, feed.url], { revalidate: NEWS_REVALIDATE_SECONDS }));
+}, ["official-news-v2", feed.id, feed.url], { revalidate: NEWS_REVALIDATE_SECONDS }));
 
 export async function fetchNews() {
   return assembleOfficialNews(await Promise.allSettled(feeds.map((getFeed) => getFeed())));

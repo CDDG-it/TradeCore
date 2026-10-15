@@ -1,113 +1,310 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore, type CSSProperties } from "react";
+/**
+ * 01 NEWS: only what is new and matters.
+ *
+ * Official U.S. releases, filtered twice before they reach the screen: by age
+ * (a 24h / 72h / 7-day window, never an archive) and by weight (scheduled
+ * prints, Fed policy and the Chair first; housekeeping and explainers never).
+ * The screen holds still: one lead, a short list that fits, and beside it what
+ * is coming next and where the key readings stand. No feed to scroll through.
+ */
+import { useMemo, useState, useSyncExternalStore } from "react";
+import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowUpRight, ChevronDown, RefreshCw } from "lucide-react";
 import { useGmi } from "@/lib/gmi/client";
-import { filterNews, NEWS_TOPICS, publicationLabel, type NewsFilters } from "@/lib/gmi/news-view";
+import { importantNews, NEWS_TOPICS, NEWS_WINDOWS, publicationLabel, upcomingReleases, type NewsWindow, type RankedArticle } from "@/lib/gmi/news-view";
+import type { CalendarEntry, CalendarMonth } from "@/lib/gmi/calendar";
+import { fedEventsByDate } from "@/lib/gmi/fed-events";
 import type { NewsArticle, NewsTopic } from "@/lib/gmi/types";
-import { NewsContext } from "../news-context";
-import s from "../news-desk.module.css";
+import { cn } from "@/lib/utils";
+import { Pane, Empty, Label, Switch, a } from "../pane";
+import { releaseValue } from "../news-context";
 
-const DEFAULT_FILTERS: NewsFilters = { query: "", topic: "All", agency: "All", days: 30 };
-const TOPICS: NewsTopic[] = ["Monetary Policy", "Inflation", "Employment", "Energy"];
-const TOPIC_CLASS: Record<NewsTopic, string> = { "Monetary Policy": s.policy, Inflation: s.inflation, Employment: s.employment, Energy: s.energy };
+const EASE = [0.23, 1, 0.32, 1] as const;
+const TOPIC_COLOR: Record<NewsTopic, string> = { "Monetary Policy": "var(--primary)", Inflation: "var(--ice)", Employment: "var(--success)", Energy: "var(--warning)" };
+const TOPIC_SHORT: Record<NewsTopic, string> = { "Monetary Policy": "Fed", Inflation: "Inflation", Employment: "Jobs", Energy: "Energy" };
+const LIST_LIMIT = 6;
+const READINGS = ["CPIAUCSL", "CPILFESL", "PCEPI", "UNRATE", "PAYEMS", "GDPC1"];
+
 const subscribeClock = (notify: () => void) => { const timer = setInterval(notify, 60_000); return () => clearInterval(timer); };
 const clockSnapshot = () => Math.floor(Date.now() / 60_000) * 60_000;
 const serverClock = () => null;
 
-function publicationDay(article: NewsArticle, timeZone: string) {
-  const zone = article.publishedPrecision === "date" ? "UTC" : timeZone;
-  const date = new Date(article.publishedAt);
-  return {
-    key: new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: zone }).format(date),
-    day: new Intl.DateTimeFormat("en-GB", { day: "2-digit", timeZone: zone }).format(date),
-    month: new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: zone }).format(date),
-  };
-}
-
-function coverageGradient(counts: Map<NewsTopic, number>): string {
-  const total = TOPICS.reduce((sum, topic) => sum + (counts.get(topic) ?? 0), 0) || 1;
-  const colors = ["var(--primary)", "var(--ice)", "var(--success)", "var(--warning)"];
-  let cursor = 0;
-  return `conic-gradient(from -90deg, ${TOPICS.map((topic, index) => {
-    const start = cursor;
-    cursor += ((counts.get(topic) ?? 0) / total) * 100;
-    return `${colors[index]} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
-  }).join(", ")})`;
+function ago(iso: string, now: number): string {
+  const minutes = Math.max(0, Math.round((now - Date.parse(iso)) / 60_000));
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  return hours < 48 ? `${hours}h ago` : `${Math.round(hours / 24)}d ago`;
 }
 
 export function NewsTab() {
   const { env, loading, refresh } = useGmi<NewsArticle[]>("/api/gmi/news", 5 * 60_000);
   const now = useSyncExternalStore(subscribeClock, clockSnapshot, serverClock);
   const timeZone = now === null ? "UTC" : Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [limit, setLimit] = useState(25);
+  const [windowKey, setWindowKey] = useState<NewsWindow>("72h");
+  const [topic, setTopic] = useState<string>("All");
+  const [open, setOpen] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const changeFilters = (patch: Partial<NewsFilters>) => { setFilters((current) => ({ ...current, ...patch })); setLimit(25); };
+  const hours = NEWS_WINDOWS.find((w) => w.key === windowKey)?.hours ?? 72;
+
   const articles = useMemo(() => env?.data ?? [], [env]);
-  const filtered = now == null ? [] : filterNews(articles, filters, now);
-  const rangeArticles = now == null ? [] : filterNews(articles, { ...DEFAULT_FILTERS, days: filters.days }, now);
-  const topicArticles = useMemo(
-    () => now == null ? [] : filterNews(articles, { ...filters, topic: "All" }, now),
-    [articles, filters, now]
-  );
-  const failedSources = env?.sources?.filter((source) => source.status !== "ok") ?? [];
-  const checked = env?.sources?.map((source) => source.checkedAt).filter((date): date is string => Boolean(date)).sort().at(-1);
+  const all = useMemo(() => (now == null ? [] : importantNews(articles, now, hours)), [articles, now, hours]);
+  const ranked = topic === "All" ? all : all.filter((r) => r.article.topic === topic);
+  const counts = useMemo(() => {
+    const map = new Map<string, number>([["All", all.length]]);
+    for (const r of all) if (r.article.topic) map.set(r.article.topic, (map.get(r.article.topic) ?? 0) + 1);
+    return map;
+  }, [all]);
+  const lead = ranked[0];
+  const rest = ranked.slice(1, 1 + LIST_LIMIT);
+  const hidden = Math.max(0, ranked.length - 1 - LIST_LIMIT);
   const pending = now == null || (!env && loading);
-  const lead = filtered[0];
-  const groups = new Map<string, { day: string; month: string; articles: NewsArticle[] }>();
-  for (const article of filtered.slice(1, limit)) {
-    const date = publicationDay(article, timeZone);
-    if (!groups.has(date.key)) groups.set(date.key, { ...date, articles: [] });
-    groups.get(date.key)!.articles.push(article);
+  const checked = env?.sources?.map((source) => source.checkedAt).filter((date): date is string => Boolean(date)).sort().at(-1);
+
+  async function reload() {
+    setRefreshing(true);
+    try { await refresh(); } finally { setRefreshing(false); }
   }
-  const topicCounts = useMemo(() => {
-    const counts = new Map<NewsTopic, number>();
-    for (const topic of TOPICS) counts.set(topic, topicArticles.filter((article) => article.topic === topic).length);
-    return counts;
-  }, [topicArticles]);
-  const agencies = useMemo(() => ["Federal Reserve", "BLS", "EIA"].map((agency) => ({ agency, count: topicArticles.filter((article) => article.source === agency).length })), [topicArticles]);
-  const maxAgency = Math.max(1, ...agencies.map((item) => item.count));
 
-  return <div className={s.desk}>
-    <header className={s.mast}>
-      <div><h2 className={s.title}>Market briefing</h2><p className={s.subtitle}>Official U.S. macro, policy and energy releases</p></div>
-      <div className={s.edition}><p className={s.editionDate}>{now == null ? "U.S. macro & energy" : new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "long", year: "numeric", timeZone }).format(new Date(now))}</p><p className={s.editionMeta}>{checked ? `Checked ${new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone }).format(new Date(checked))}` : env?.status === "unavailable" ? "Sources unavailable" : "Checking sources"}</p></div>
-    </header>
+  return (
+    <div className="grid grid-cols-1 gap-2 lg:h-full lg:min-h-0 lg:grid-cols-12">
+      <div className="flex min-h-0 flex-col gap-2 lg:col-span-8">
+        {/* Controls: topic, window, freshness. */}
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, ease: EASE }}
+          className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/[.07] bg-card/50 p-1.5">
+          <div className="flex flex-wrap gap-0.5" role="group" aria-label="Topic">
+            {NEWS_TOPICS.map((t) => {
+              const on = topic === t;
+              const n = counts.get(t) ?? 0;
+              return (
+                <motion.button key={t} type="button" aria-pressed={on} onClick={() => { setTopic(t); setOpen(null); }} whileTap={{ scale: 0.95 }}
+                  className={cn("relative rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-colors duration-200", on ? "text-foreground" : "text-foreground/60 hover:text-foreground")}>
+                  {on && <motion.span layoutId="news-topic" className="absolute inset-0 rounded-lg border border-primary/40 bg-primary/12" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
+                  <span className="relative flex items-center gap-1.5">
+                    {t !== "All" && <span className="h-1.5 w-1.5 rounded-full" style={{ background: TOPIC_COLOR[t as NewsTopic] }} />}
+                    {t === "All" ? "All" : TOPIC_SHORT[t as NewsTopic]}
+                    <span className={cn("tabular-nums", n ? "text-foreground/60" : "text-foreground/30")}>{pending ? "-" : n}</span>
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-2 pr-1">
+            <Switch options={NEWS_WINDOWS.map((w) => ({ key: w.key, label: w.label }))} value={windowKey} onChange={(k) => { setWindowKey(k); setOpen(null); }} />
+            <motion.button type="button" onClick={() => void reload()} disabled={refreshing || pending} whileTap={{ scale: 0.9 }} aria-label="Check sources now"
+              title={checked && now ? `Checked ${ago(checked, now)}` : "Check sources"}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 text-foreground/70 transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-40">
+              <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+            </motion.button>
+          </div>
+        </motion.div>
 
-    {!pending && lead && <section className={s.featureGrid} aria-label="Latest release and coverage">
-      <article key={lead.id} className={`${s.feature} ${lead.topic ? TOPIC_CLASS[lead.topic] : ""}`}>
-        <div className={s.featureGlow} aria-hidden />
-        <svg className={s.featureWave} viewBox="0 0 900 220" preserveAspectRatio="none" aria-hidden><path d="M0 170 C85 170 90 136 170 144 S280 190 360 136 S470 58 545 96 S660 166 740 112 S830 72 900 84" /><path className={s.waveEcho} d="M0 190 C92 182 125 155 210 164 S335 202 410 150 S520 86 590 118 S700 184 775 138 S850 100 900 108" /></svg>
-        <div className={s.featureContent}>
-          <div className={s.featureMeta}><span className={s.liveMark}><i aria-hidden />Latest release</span><span>{lead.topic}</span></div>
-          <h3><a href={lead.url} target="_blank" rel="noopener noreferrer">{lead.title}<span className="sr-only"> (opens original release in a new tab)</span></a></h3>
-          {lead.snippet && lead.snippet !== lead.title && <p>{lead.snippet}</p>}
-          <div className={s.featureFoot}><span>{lead.source}</span><time dateTime={lead.publishedAt}>{publicationLabel(lead, timeZone)}</time><a href={lead.url} target="_blank" rel="noopener noreferrer">Open release</a></div>
-        </div>
-      </article>
-      <aside className={s.coverage} aria-label="Coverage distribution">
-        <div className={s.coverageHeader}><div><p className={s.eyebrow}>Coverage</p><h3>{topicArticles.length} releases</h3></div><span>{filters.days}d</span></div>
-        <div className={s.coverageBody}><div className={s.coverageRing} style={{ "--coverage": coverageGradient(topicCounts) } as CSSProperties}><span>{TOPICS.filter((topic) => (topicCounts.get(topic) ?? 0) > 0).length}<small>topics</small></span></div><ul className={s.coverageLegend}>{TOPICS.map((topic) => <li key={topic} className={TOPIC_CLASS[topic]}><i aria-hidden /><span>{topic}</span><strong>{topicCounts.get(topic) ?? 0}</strong></li>)}</ul></div>
-        <div className={s.sourceBars}>{agencies.map((item) => <div key={item.agency}><span>{item.agency}</span><i><b style={{ transform: `scaleX(${item.count / maxAgency})` }} /></i><strong>{item.count}</strong></div>)}</div>
-      </aside>
-    </section>}
+        {env?.status === "stale" && <p className="shrink-0 px-1 text-[11px] text-warning">Some sources are delayed. Showing what was last published.</p>}
 
-    <div className={s.toolbar}>
-      <div className={s.topics} role="group" aria-label="Release topic">{NEWS_TOPICS.map((topic) => <button key={topic} type="button" aria-pressed={filters.topic === topic} onClick={() => changeFilters({ topic })} className={s.topic}>{topic === "All" ? "All releases" : topic}<span className={s.topicCount}>{pending ? "-" : topic === "All" ? topicArticles.length : topicCounts.get(topic as NewsTopic) ?? 0}</span></button>)}</div>
-      <div className={s.controls}><label><span className="sr-only">Agency</span><select value={filters.agency} onChange={(event) => changeFilters({ agency: event.target.value })} className={s.select}><option value="All">All agencies</option><option>Federal Reserve</option><option>BLS</option><option>EIA</option></select></label><label><span className="sr-only">Publication period</span><select value={filters.days} onChange={(event) => changeFilters({ days: Number(event.target.value) })} className={s.select}>{[7, 30, 90].map((days) => <option key={days} value={days}>{days} days</option>)}</select></label><button type="button" disabled={refreshing || pending} onClick={async () => { setRefreshing(true); try { await refresh(); } finally { setRefreshing(false); } }} className={s.refresh}>{refreshing ? "Checking" : "Refresh"}</button></div>
+        {pending ? (
+          <div className="grid min-h-0 flex-1 gap-2" aria-hidden>
+            <div className="h-44 animate-pulse rounded-[22px] bg-card/40" />
+            <div className="grid flex-1 gap-2 sm:grid-cols-2">{[0, 1, 2, 3].map((i) => <div key={i} className="h-20 animate-pulse rounded-2xl bg-card/30" />)}</div>
+          </div>
+        ) : env?.status === "unavailable" ? (
+          <Pane className="flex-1"><Empty label="Sources unavailable" hint="The official feeds could not be reached. Try again in a moment." /></Pane>
+        ) : !lead ? (
+          <Pane className="flex-1">
+            <Empty label={`Nothing market-moving in the last ${NEWS_WINDOWS.find((w) => w.key === windowKey)?.label}`} hint={windowKey !== "7d" ? "Widen the window to see the week's releases." : "Quiet week for official releases. The calendar shows what is due next."} />
+          </Pane>
+        ) : (
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={`${topic}-${windowKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex min-h-0 flex-1 flex-col gap-2">
+              <LeadStory item={lead} now={now!} timeZone={timeZone} />
+              {rest.length > 0 && (
+                <div className="grid min-h-0 flex-1 auto-rows-min content-start gap-2 overflow-y-auto sm:grid-cols-2 lg:overflow-hidden">
+                  {rest.map((item, i) => (
+                    <StoryCard key={item.article.id} item={item} index={i} now={now!} timeZone={timeZone} open={open === item.article.id} onToggle={() => setOpen((cur) => (cur === item.article.id ? null : item.article.id))} />
+                  ))}
+                </div>
+              )}
+              {hidden > 0 && <p className="shrink-0 px-1 text-[11px] text-muted-foreground">{hidden} more important release{hidden === 1 ? "" : "s"} in this window. Narrow by topic to see them.</p>}
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
+
+      <div className="flex min-h-0 flex-col gap-2 lg:col-span-4">
+        <ComingUp now={now} />
+        <KeyReadings />
+      </div>
     </div>
-
-    <div className={s.workspace}>
-      <section className={s.main} aria-label="Published releases">
-        <div className={s.searchRow}><label className={s.search}><span className="sr-only">Search releases</span><input type="search" value={filters.query} onChange={(event) => changeFilters({ query: event.target.value })} placeholder="Search headlines and releases" /></label><span className={s.resultCount} role="status">{pending ? "Loading" : `${filtered.length} releases`}</span></div>
-        {env?.status === "stale" && <p className={s.notice} role="status">Updates delayed. Showing available releases.{failedSources.length ? ` Affected: ${failedSources.map((source) => `${source.agency} ${source.name}`).join("; ")}.` : ""}</p>}
-        {pending ? <div className={s.skeleton} aria-hidden>{[0, 1, 2, 3, 4].map((i) => <div key={i} />)}</div> : env?.status === "unavailable" ? <Empty title="Sources temporarily unavailable" detail="The official feeds could not be reached. Refresh to try again. Your calendar remains available." /> : !lead ? <Empty title={rangeArticles.length ? "No matching releases" : "No releases in this period"} detail={rangeArticles.length ? "Try another search, topic or agency." : "Try a longer date range. Official feeds publish on their own schedules and may not include a full archive."}>{(filters.query || filters.agency !== "All" || filters.topic !== "All") && <button onClick={() => changeFilters({ query: "", agency: "All", topic: "All" })} className="mt-4 text-sm text-primary">Clear filters</button>}</Empty> : groups.size > 0 && <><div className={s.feedHeading}><h3>Release stream</h3><span>Newest first · {timeZone}</span></div>{[...groups.entries()].map(([key, group]) => <section key={key} className={s.dayGroup} aria-label={`Releases ${key}`}><h4 className={s.dayLabel}><span className={s.dayNumber}>{group.day}</span>{group.month}</h4><ol>{group.articles.map((article) => <li key={article.id} className={s.story}><article><div className={s.storyMeta}><span className={`${s.topicMarker} ${article.topic ? TOPIC_CLASS[article.topic] : ""}`}><i aria-hidden />{article.topic}</span><span className={s.source}>{article.source}</span><time className={s.timestamp} dateTime={article.publishedAt}>{article.publishedPrecision === "date" ? "Date only" : new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone }).format(new Date(article.publishedAt))}</time></div><h5 className={s.storyTitle}><a href={article.url} target="_blank" rel="noopener noreferrer" className={s.headlineLink}>{article.title}<span className="sr-only"> (opens original release in a new tab)</span></a></h5>{article.snippet && article.snippet !== article.title && <details className={s.excerpt}><summary><span className={s.expandLabel}>Read excerpt</span><span className={s.collapseLabel}>Close excerpt</span></summary><p>{article.snippet}</p></details>}</article></li>)}</ol></section>)}</>}
-        {filtered.length > limit && <button onClick={() => setLimit((count) => count + 25)} className={s.more}>Load earlier releases<span>{filtered.length - limit} remaining</span></button>}
-        <footer className={s.footer}><details><summary>Sources & publication details</summary><p className="mt-3">Original agency publications. Times in {timeZone}. Sources are checked every 15 minutes while in use; available history varies by feed.</p><ul>{env?.sources?.map((source) => <li key={source.id}>{source.agency} · {source.name}: {source.status === "ok" ? "Available" : source.status === "stale" ? "Delayed, cached releases" : "Unavailable"}{source.checkedAt ? ` · Checked ${new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone }).format(new Date(source.checkedAt))}` : ""}</li>)}</ul></details></footer>
-      </section>
-      <NewsContext now={now} />
-    </div>
-  </div>;
+  );
 }
 
-function Empty({ title, detail, children }: { title: string; detail: string; children?: React.ReactNode }) { return <div className={s.empty}><h3>{title}</h3><p>{detail}</p>{children}</div>; }
+function ImportanceTag({ item }: { item: RankedArticle }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      {item.fresh && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+          <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" /><span className="relative h-1.5 w-1.5 rounded-full bg-primary" /></span>New
+        </span>
+      )}
+      {item.importance === "high" && <span className="rounded-full bg-destructive/12 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-destructive">High impact</span>}
+    </span>
+  );
+}
+
+function LeadStory({ item, now, timeZone }: { item: RankedArticle; now: number; timeZone: string }) {
+  const { article } = item;
+  const color = article.topic ? TOPIC_COLOR[article.topic] : "var(--primary)";
+  return (
+    <motion.article key={article.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} whileHover={{ y: -2 }}
+      className="group relative shrink-0 overflow-hidden rounded-[22px] border border-white/[.08] bg-card/70 p-5 transition-colors duration-300 hover:border-white/[.14]">
+      <div aria-hidden className="pointer-events-none absolute -right-20 -top-24 h-60 w-60 rounded-full blur-3xl transition-opacity duration-500 group-hover:opacity-100" style={{ background: a(color, 22), opacity: 0.7 }} />
+      <div aria-hidden className="absolute inset-y-0 left-0 w-[3px]" style={{ background: color }} />
+      <div className="relative">
+        <div className="flex flex-wrap items-center gap-2">
+          <Label className="text-[10px]" >Lead release</Label>
+          <span className="text-[11px] font-semibold" style={{ color }}>{article.topic}</span>
+          <ImportanceTag item={item} />
+        </div>
+        <h3 className="mt-2 font-heading text-lg font-bold leading-snug tracking-tight sm:text-xl">
+          <a href={article.url} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-primary">{article.title}<span className="sr-only"> (opens original release in a new tab)</span></a>
+        </h3>
+        {article.snippet && article.snippet !== article.title && <p className="mt-2 line-clamp-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">{article.snippet}</p>}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+          <span className="font-semibold text-foreground/80">{article.source}</span>
+          <time dateTime={article.publishedAt} title={publicationLabel(article, timeZone)}>{article.publishedPrecision === "date" ? publicationLabel(article, timeZone) : ago(article.publishedAt, now)}</time>
+          <a href={article.url} target="_blank" rel="noopener noreferrer" className="group/link ml-auto inline-flex items-center gap-1 font-semibold text-primary">
+            Open release <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/link:-translate-y-0.5 group-hover/link:translate-x-0.5" />
+          </a>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+function StoryCard({ item, index, now, timeZone, open, onToggle }: { item: RankedArticle; index: number; now: number; timeZone: string; open: boolean; onToggle: () => void }) {
+  const { article } = item;
+  const color = article.topic ? TOPIC_COLOR[article.topic] : "var(--primary)";
+  const hasExcerpt = Boolean(article.snippet && article.snippet !== article.title);
+  return (
+    <motion.article layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, delay: 0.05 + index * 0.04, ease: EASE, layout: { duration: 0.25, ease: EASE } }}
+      className={cn("relative overflow-hidden rounded-2xl border bg-card/55 transition-colors duration-200", open ? "border-primary/35" : "border-white/[.07] hover:border-white/[.13]")}>
+      <div aria-hidden className="absolute inset-y-0 left-0 w-[2px]" style={{ background: color }} />
+      <button type="button" onClick={onToggle} aria-expanded={open} className="block w-full px-4 py-3 text-left">
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-2 text-[10px] font-semibold uppercase tracking-wider">
+            <span style={{ color }}>{article.topic ? TOPIC_SHORT[article.topic] : article.source}</span>
+            <span className="truncate text-foreground/50 normal-case tracking-normal">{article.source} · {article.publishedPrecision === "date" ? publicationLabel(article, timeZone) : ago(article.publishedAt, now)}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5">
+            <ImportanceTag item={item} />
+            <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}><ChevronDown className="h-3.5 w-3.5 text-foreground/50" /></motion.span>
+          </span>
+        </div>
+        <h4 className={cn("mt-1.5 text-[13px] font-semibold leading-snug", !open && "line-clamp-2")}>{article.title}</h4>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22, ease: EASE }} className="overflow-hidden">
+            <div className="px-4 pb-3">
+              {hasExcerpt && <p className="line-clamp-5 text-xs leading-relaxed text-muted-foreground">{article.snippet}</p>}
+              <a href={article.url} target="_blank" rel="noopener noreferrer" className="group/link mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+                Open release <ArrowUpRight className="h-3 w-3 transition-transform duration-200 group-hover/link:-translate-y-0.5 group-hover/link:translate-x-0.5" />
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.article>
+  );
+}
+
+/** The week ahead, high-impact only: what the next headline will be. */
+function ComingUp({ now }: { now: number | null }) {
+  const today = useMemo(() => (now == null ? null : new Date(now)), [now]);
+  const month = today ? format(today, "yyyy-MM") : null;
+  const nextMonth = today ? format(addDays(today, 7), "yyyy-MM") : null;
+  const { env: current } = useGmi<CalendarMonth>(month ? `/api/gmi/calendar?month=${month}` : null, 30 * 60_000);
+  const { env: next } = useGmi<CalendarMonth>(nextMonth && nextMonth !== month ? `/api/gmi/calendar?month=${nextMonth}` : null, 30 * 60_000);
+  const from = today ? format(today, "yyyy-MM-dd") : "";
+  const until = today ? format(addDays(today, 8), "yyyy-MM-dd") : "";
+
+  const items = useMemo(() => {
+    if (!today) return [];
+    const releases = upcomingReleases([...(current?.data?.events ?? []), ...(next?.data?.events ?? [])], from, until)
+      .filter((e) => e.importance === "high" && !e.released)
+      .map((e) => ({ id: e.id, date: e.date, title: e.label, sub: e.releaseName, fed: false }));
+    const fed = [...fedEventsByDate(from, until).values()].flat()
+      .map((e) => ({ id: `${e.kind}-${e.date}`, date: e.date, title: e.kind === "fomc-decision" ? "FOMC rate decision" : "FOMC minutes", sub: e.detail, fed: true }));
+    return [...fed, ...releases].sort((x, y) => x.date.localeCompare(y.date) || Number(y.fed) - Number(x.fed)).slice(0, 6);
+  }, [today, current, next, from, until]);
+
+  return (
+    <Pane index="02" label="Next up · high impact" right={<a href="/news-city?tab=calendar" className="text-[11px] font-semibold text-primary hover:underline">Calendar</a>} className="min-h-[220px] lg:flex-1" bodyClassName="p-2">
+      {!current ? <Empty label="Loading schedule" /> : items.length === 0 ? <Empty label="Nothing high-impact this week" hint="FRED schedule and Fed calendar, next 7 days." /> : (
+        <ol className="space-y-1">
+          {items.map((item, i) => {
+            const days = today ? differenceInCalendarDays(parseISO(item.date), today) : 0;
+            const color = item.fed ? "var(--ice)" : "var(--destructive)";
+            return (
+              <motion.li key={item.id} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22, delay: 0.08 + i * 0.04, ease: EASE }}
+                className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-background/40">
+                <span className="flex w-10 shrink-0 flex-col items-center rounded-lg border border-border/50 py-1">
+                  <span className="text-[13px] font-bold leading-none tabular-nums">{format(parseISO(item.date), "d")}</span>
+                  <span className="mt-0.5 text-[9px] font-semibold uppercase text-muted-foreground">{format(parseISO(item.date), "EEE")}</span>
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} /><span className="truncate text-[12px] font-semibold">{item.title}</span></span>
+                  <span className="block truncate text-[10px] text-muted-foreground">{item.sub}</span>
+                </span>
+                <span className={cn("shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold", days <= 0 ? "bg-primary/15 text-primary" : "text-muted-foreground")}>
+                  {days <= 0 ? "Today" : days === 1 ? "Tomorrow" : `in ${days}d`}
+                </span>
+              </motion.li>
+            );
+          })}
+        </ol>
+      )}
+    </Pane>
+  );
+}
+
+/** The six readings the releases are about, as tiles with their last year drawn in. */
+function KeyReadings() {
+  const { env } = useGmi<CalendarEntry[]>("/api/gmi/calendar", 30 * 60_000);
+  const readings = READINGS.flatMap((id) => (env?.data ?? []).filter((entry) => entry.id === id));
+  return (
+    <Pane index="03" label="Key readings" right={<Label className="text-foreground/50">FRED</Label>} className="shrink-0" bodyClassName="p-2">
+      {!env ? <Empty label="Loading readings" /> : readings.length === 0 ? <Empty label="Readings unavailable" /> : (
+        <div className="grid grid-cols-2 gap-1.5 xl:grid-cols-3">
+          {readings.map((entry, i) => {
+            const delta = entry.actual != null && entry.previous != null ? entry.actual - entry.previous : null;
+            const tone = delta == null || delta === 0 ? "var(--muted-foreground)" : delta > 0 ? "var(--success)" : "var(--destructive)";
+            return (
+              <motion.div key={entry.id} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.22, delay: 0.1 + i * 0.04, ease: EASE }} whileHover={{ y: -2 }}
+                title={entry.referenceDate ? `${entry.label}, ${format(parseISO(entry.referenceDate), "MMM yyyy")}` : entry.label}
+                className="relative overflow-hidden rounded-xl border border-border/50 bg-background/30 px-2.5 pb-1 pt-2">
+                <p className="truncate text-[10px] font-semibold text-muted-foreground">{entry.label}</p>
+                <p className="mt-0.5 font-heading text-base font-bold tabular-nums">{entry.actual == null ? "-" : releaseValue(entry.actual, entry.unit)}</p>
+                <p className="text-[10px] tabular-nums" style={{ color: tone }}>{delta == null ? "No prior" : `${delta > 0 ? "+" : ""}${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(delta)} vs prior`}</p>
+                <Spark values={entry.history.map((h) => h.value)} color={tone} delay={0.2 + i * 0.05} />
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </Pane>
+  );
+}
+
+function Spark({ values, color, delay }: { values: number[]; color: string; delay: number }) {
+  const points = values.slice(-12);
+  if (points.length < 2) return <div className="h-6" />;
+  const min = Math.min(...points), max = Math.max(...points), range = max - min || 1;
+  const d = points.map((v, i) => `${i ? "L" : "M"}${((i / (points.length - 1)) * 100).toFixed(1)} ${(22 - ((v - min) / range) * 18).toFixed(1)}`).join(" ");
+  return (
+    <svg viewBox="0 0 100 24" preserveAspectRatio="none" className="mt-1 h-6 w-full" aria-hidden>
+      <motion.path d={d} fill="none" stroke={color} strokeWidth={1.4} vectorEffect="non-scaling-stroke" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.8, delay, ease: EASE }} />
+    </svg>
+  );
+}

@@ -9,6 +9,7 @@
  * Correlation is a description of the past, never a signal.
  */
 import { useMemo, useState } from "react";
+import { motion } from "motion/react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fmtPrice, fmtPct, toneFor, useGmi } from "@/lib/gmi/client";
 import type { Quote } from "@/lib/gmi/types";
@@ -102,19 +103,21 @@ export function FuturesTab() {
           const q = new Map((quotesEnv?.data ?? []).map((x) => [x.symbol, x])).get(it.s);
           const on = it.s === sym;
           return (
-            <button
+            <motion.button
               key={it.s}
               onClick={() => setSym(it.s)}
-              className={`flex w-full items-baseline justify-between gap-2 border-b border-border/20 px-3 py-[9px] text-left transition-colors ${
-                on ? "bg-primary/[0.09]" : "hover:bg-muted/20"
+              whileTap={{ scale: 0.97 }}
+              className={`relative flex w-full items-baseline justify-between gap-2 border-b border-border/20 px-3 py-[9px] text-left transition-colors ${
+                on ? "" : "hover:bg-muted/20"
               }`}
             >
-              <span className="min-w-0">
+              {on && <motion.span layoutId="futures-board" aria-hidden className="absolute inset-0 border-l-2 border-primary bg-primary/[0.09]" transition={{ type: "spring", stiffness: 480, damping: 40 }} />}
+              <span className="relative min-w-0">
                 <span className={`block font-mono text-[12px] font-bold tracking-[0.1em] ${on ? "text-primary" : "text-foreground/85"}`}>{it.s}</span>
                 <span className="block truncate text-[11px] text-foreground/75">{it.label}</span>
               </span>
-              <Delta value={q?.changePct} />
-            </button>
+              <span className="relative"><Delta value={q?.changePct} /></span>
+            </motion.button>
           );
         })}
       </Pane>
@@ -130,7 +133,7 @@ export function FuturesTab() {
           </span>
         }
         bodyClassName="flex flex-col p-0"
-        className="min-h-[400px] lg:col-span-7 lg:min-h-[320px]"
+        className="min-h-[400px] lg:col-span-7 lg:min-h-0"
       >
         {/* Reading line: price, move, and where in the day's range it sits */}
         <div className="flex shrink-0 flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b border-border/30 px-3 py-2">
@@ -150,7 +153,7 @@ export function FuturesTab() {
           {pos != null && (
             <div className="w-[210px]">
               <div className="relative h-[3px] bg-border/60">
-                <span className="absolute -top-[3px] h-[9px] w-[2px] bg-primary" style={{ left: `calc(${(pos * 100).toFixed(1)}% - 1px)` }} />
+                <motion.span className="absolute -top-[3px] h-[9px] w-[2px] bg-primary" initial={false} animate={{ left: `calc(${(pos * 100).toFixed(1)}% - 1px)` }} transition={{ type: "spring", stiffness: 200, damping: 26 }} />
               </div>
               <div className="mt-1 flex justify-between text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
                 <span>L {fmtPrice(lo)}</span>
@@ -175,7 +178,7 @@ export function FuturesTab() {
                 <XAxis dataKey="i" hide />
                 <YAxis domain={["auto", "auto"]} tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={52} tickFormatter={(v: number) => fmtPrice(v)} />
                 <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 2, fontSize: 11 }} labelFormatter={() => ""} formatter={(v) => [fmtPrice(Number(v ?? 0)), sym]} />
-                <Area type="monotone" dataKey="v" stroke={stroke} strokeWidth={1.5} fill="url(#gmi-inst)" dot={false} isAnimationActive={false} />
+                <Area key={`${sym}-${tfKey}`} type="monotone" dataKey="v" stroke={stroke} strokeWidth={1.5} fill="url(#gmi-inst)" dot={false} isAnimationActive animationDuration={600} animationEasing="ease-out" activeDot={{ r: 3, fill: stroke, stroke: "var(--background)", strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -204,7 +207,7 @@ export function FuturesTab() {
         label="Cross-asset"
         right={<Switch options={CROSS_RANGES} value={rangeKey} onChange={setRangeKey} />}
         bodyClassName="flex flex-col p-0"
-        className="min-h-[420px] lg:col-span-3"
+        className="min-h-[420px] lg:col-span-3 lg:min-h-0"
       >
         {symbols.length === 0 ? (
           <Empty label="Loading" />
@@ -213,27 +216,26 @@ export function FuturesTab() {
             {/* Ranked move over the window: a leaderboard, not a tangle of lines */}
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
               <Label className="mb-1.5 block">Move over {CROSS_RANGES.find((r) => r.key === rangeKey)?.label}</Label>
-              {ranked.map((s) => {
+              {ranked.map((s, i) => {
                 const v = perf[s] ?? 0;
                 const w = (Math.abs(v) / maxAbs) * 50; // half-width bars, centred
                 return (
-                  <div key={s} className="flex items-center gap-2 py-[3px]">
+                  <motion.div layout key={s} className="flex items-center gap-2 py-[3px]" transition={{ layout: { duration: 0.3 } }}>
                     <span className="w-11 shrink-0 font-mono text-[11px] tracking-wider text-foreground/85">{s}</span>
                     <span className="relative h-[7px] flex-1 border-x border-border/30">
                       <span aria-hidden className="absolute inset-y-0 left-1/2 w-px bg-border/60" />
-                      <span
+                      <motion.span
                         className="absolute inset-y-0"
-                        style={{
-                          left: v >= 0 ? "50%" : `${50 - w}%`,
-                          width: `${w}%`,
-                          background: v >= 0 ? a("var(--success)", 70) : a("var(--destructive)", 70),
-                        }}
+                        initial={{ width: 0, left: "50%" }}
+                        animate={{ left: v >= 0 ? "50%" : `${50 - w}%`, width: `${w}%` }}
+                        transition={{ duration: 0.5, delay: i * 0.03, ease: [0.23, 1, 0.32, 1] }}
+                        style={{ background: v >= 0 ? a("var(--success)", 70) : a("var(--destructive)", 70) }}
                       />
                     </span>
                     <span className="w-12 shrink-0 text-right text-[12px] tabular-nums" style={{ color: toneFor(v) }}>
                       {fmtPct(v)}
                     </span>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
@@ -253,7 +255,7 @@ export function FuturesTab() {
                           return (
                             <td
                               key={colSym}
-                              className="h-[18px] w-[18px] text-center align-middle"
+                              className="h-[18px] w-[18px] cursor-default text-center align-middle transition-transform duration-150 hover:scale-125 hover:outline hover:outline-1 hover:outline-primary/60"
                               style={{ background: self ? a("var(--muted-foreground)", 14) : corrShade(v) }}
                               title={`${rowSym} / ${colSym}: ${Number.isNaN(v) ? "-" : v.toFixed(2)}`}
                             />

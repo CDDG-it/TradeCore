@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const ts = require('typescript');
 require.extensions['.ts'] = (loaded, filename) => loaded._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, filename);
 const { parseOfficialFeed, OFFICIAL_FEEDS, assembleOfficialNews, plainText } = require('../src/lib/gmi/official-feeds.ts');
-const { filterNews, marketsSection, publicationLabel } = require('../src/lib/gmi/news-view.ts');
+const { filterNews, marketsSection, publicationLabel, newsImportance, importantNews } = require('../src/lib/gmi/news-view.ts');
 const feed = OFFICIAL_FEEDS[0];
 const date = '2026-10-01T18:00:00Z';
 const now = Date.parse('2026-10-03T10:00:00Z');
@@ -164,4 +164,28 @@ test('Next cache reuses feed snapshots and preserves them when background refres
     assert.equal(errors.length, OFFICIAL_FEEDS.length);
     assert.equal(entries.size, OFFICIAL_FEEDS.length);
   } finally { global.fetch = originalFetch; console.error = originalError; }
+});
+
+test('importance keeps scheduled prints, policy and the Chair; drops energy explainers', () => {
+  const at = (hoursAgo) => new Date(now - hoursAgo * 3_600_000).toISOString();
+  const make = (feedId, title, extra = {}) => {
+    const feed = OFFICIAL_FEEDS.find((f) => f.id === feedId);
+    return { id: `${feedId}-${title}`, title, snippet: '', url: 'https://example.gov', source: feed.agency, topic: feed.topic, feedId, publishedAt: at(2), assets: [], sentimentScore: null, category: feed.topic, ...extra };
+  };
+  assert.equal(newsImportance(make('bls-cpi', 'Consumer Price Index - September 2026')), 'high');
+  assert.equal(newsImportance(make('fed-policy', 'Federal Reserve issues FOMC statement')), 'high');
+  assert.equal(newsImportance(make('fed-speeches', 'Chair Powell, Economic Outlook')), 'high');
+  assert.equal(newsImportance(make('fed-speeches', 'Governor Cook, Financial Literacy')), 'medium');
+  assert.equal(newsImportance(make('eia-energy', 'U.S. crude oil production reaches record')), 'medium');
+  assert.equal(newsImportance(make('eia-energy', 'Solar panels on schools in Ohio')), 'low');
+  assert.equal(newsImportance(make('eia-press', 'EIA releases Short-Term Energy Outlook')), 'high');
+
+  const list = importantNews([
+    make('eia-energy', 'Solar panels on schools in Ohio'),
+    make('bls-cpi', 'Consumer Price Index', { publishedAt: at(100) }),
+    make('fed-speeches', 'Governor Cook, Financial Literacy', { publishedAt: at(3) }),
+    make('fed-policy', 'Federal Reserve issues FOMC statement', { publishedAt: at(5) }),
+  ], now, 72);
+  assert.deepEqual(list.map((r) => r.article.feedId), ['fed-policy', 'fed-speeches']);
+  assert.equal(list[0].fresh, true);
 });

@@ -10,10 +10,12 @@
  * not a bet.
  *
  * Tuesday's positions, published Friday: weekly by nature, never realtime, and
- * labelled that way. ETF creation flow is not on the free sources this desk
- * uses, so it is stated as missing rather than estimated.
+ * labelled that way. Beside the board sit the extremes: the markets where
+ * positioning sits furthest toward a one-year edge, since that is where a
+ * crowded trade can unwind.
  */
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { format } from "date-fns";
 import type { CotInstrument, CotGroup, CotSnapshot } from "@/lib/cot/types";
 import { Pane, Empty, Label, Switch } from "../pane";
@@ -49,12 +51,12 @@ function RangeRail({ value }: { value: number }) {
   return (
     <span className="relative block h-[7px] w-full border-x border-border/40 bg-muted/20">
       <span aria-hidden className="absolute inset-y-0 left-1/2 w-px bg-border/50" />
-      <span
+      <motion.span
         className="absolute top-[-2px] h-[11px] w-[2px]"
-        style={{
-          left: `calc(${Math.min(100, Math.max(0, value))}% - 1px)`,
-          background: value > 80 ? "var(--destructive)" : value < 20 ? "var(--chart-2)" : "var(--primary)",
-        }}
+        initial={{ left: "calc(50% - 1px)", opacity: 0 }}
+        animate={{ left: `calc(${Math.min(100, Math.max(0, value))}% - 1px)`, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 160, damping: 22 }}
+        style={{ background: value > 80 ? "var(--destructive)" : value < 20 ? "var(--chart-2)" : "var(--primary)" }}
       />
     </span>
   );
@@ -95,6 +97,7 @@ export function FlowOptionsTab() {
   }, [snapshot, group]);
 
   const selected: CotInstrument | null = rows.find((r) => r.symbol === picked) ?? rows[0] ?? null;
+  const extremes = useMemo(() => [...(snapshot?.instruments ?? [])].sort((x, y) => Math.abs(y.cotIndex - 50) - Math.abs(x.cotIndex - 50)).slice(0, 4), [snapshot]);
   const longs = (snapshot?.instruments ?? []).filter((i) => i.bias === "long").length;
   const shorts = (snapshot?.instruments ?? []).filter((i) => i.bias === "short").length;
 
@@ -136,46 +139,52 @@ export function FlowOptionsTab() {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
-              {rows.map((inst) => {
+              {rows.map((inst, i) => {
                 const on = inst.symbol === selected?.symbol;
                 const tone = SIGNAL_TONE[inst.signal.kind] ?? "var(--muted-foreground)";
                 return (
-                  <button
+                  <motion.button
+                    layout="position"
                     key={inst.symbol}
                     onClick={() => setPicked(inst.symbol)}
-                    className={`grid w-full grid-cols-[2.4rem_1fr_4.2rem_3.6rem] items-center gap-x-2 border-b border-border/20 px-3 py-[9px] text-left transition-colors lg:grid-cols-[2.6rem_1fr_4.4rem_3.8rem_7rem_5rem_1fr] ${
-                      on ? "bg-primary/[0.09]" : "hover:bg-muted/20"
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.22, delay: Math.min(i, 12) * 0.025, layout: { duration: 0.3 } }}
+                    whileTap={{ scale: 0.99 }}
+                    className={`relative grid w-full grid-cols-[2.4rem_1fr_4.2rem_3.6rem] items-center gap-x-2 border-b border-border/20 px-3 py-[9px] text-left transition-colors lg:grid-cols-[2.6rem_1fr_4.4rem_3.8rem_7rem_5rem_1fr] ${
+                      on ? "" : "hover:bg-muted/20"
                     }`}
                   >
-                    <span className={`font-mono text-[12px] font-bold tracking-[0.1em] ${on ? "text-primary" : "text-foreground/85"}`}>
+                    {on && <motion.span layoutId="cot-row" aria-hidden className="absolute inset-0 border-l-2 border-primary bg-primary/[0.09]" transition={{ type: "spring", stiffness: 480, damping: 40 }} />}
+                    <span className={`relative font-mono text-[12px] font-bold tracking-[0.1em] ${on ? "text-primary" : "text-foreground/85"}`}>
                       {inst.symbol}
                     </span>
-                    <span className="min-w-0 truncate text-[12px] text-foreground/80">{inst.label}</span>
+                    <span className="relative min-w-0 truncate text-[12px] text-foreground/80">{inst.label}</span>
                     <span
-                      className="text-right text-[14px] font-bold tabular-nums"
+                      className="relative text-right text-[14px] font-bold tabular-nums"
                       style={{ color: inst.latest.netSpec >= 0 ? "var(--success)" : "var(--destructive)" }}
                     >
                       {signed(inst.latest.netSpec)}
                     </span>
                     <span
-                      className="text-right text-[12px] tabular-nums"
+                      className="relative text-right text-[12px] tabular-nums"
                       style={{ color: inst.netSpecChg > 0 ? "var(--success)" : inst.netSpecChg < 0 ? "var(--destructive)" : "var(--muted-foreground)" }}
                     >
                       {signed(inst.netSpecChg)}
                     </span>
-                    <span className="hidden items-center gap-1.5 lg:flex">
+                    <span className="relative hidden items-center gap-1.5 lg:flex">
                       <RangeRail value={inst.cotIndex} />
                       <span className="w-6 shrink-0 text-right text-[11px] tabular-nums text-foreground/75">
                         {Math.round(inst.cotIndex)}
                       </span>
                     </span>
-                    <span className="hidden text-right text-[12px] tabular-nums text-foreground/80 lg:block">
+                    <span className="relative hidden text-right text-[12px] tabular-nums text-foreground/80 lg:block">
                       {(inst.netShareOfOi * 100).toFixed(0)}%
                     </span>
-                    <span className="hidden min-w-0 truncate pl-2 text-[11px] font-semibold lg:block" style={{ color: tone }}>
+                    <span className="relative hidden min-w-0 truncate pl-2 text-[11px] font-semibold lg:block" style={{ color: tone }}>
                       {inst.signal.label}
                     </span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -199,7 +208,8 @@ export function FlowOptionsTab() {
           {!selected ? (
             <Empty label="No market selected" />
           ) : (
-            <div className="space-y-4">
+            <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={selected.symbol} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }} className="space-y-4">
               <div>
                 <Label className="block">Large speculators, net</Label>
                 <div className="mt-1 flex items-baseline gap-2">
@@ -228,8 +238,8 @@ export function FlowOptionsTab() {
                   return (
                     <div key={k} className="flex items-center gap-2">
                       <span className="w-[76px] shrink-0 text-[11px] text-foreground/80">{k}</span>
-                      <span className="relative h-[7px] flex-1 overflow-hidden bg-destructive/45">
-                        <span className="absolute inset-y-0 left-0 bg-success/70" style={{ width: `${pct}%` }} />
+                      <span className="relative h-[7px] flex-1 overflow-hidden rounded-full bg-destructive/45">
+                        <motion.span className="absolute inset-y-0 left-0 bg-success/70" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.55, ease: [0.23, 1, 0.32, 1] }} />
                       </span>
                       <span className="w-8 shrink-0 text-right text-[12px] tabular-nums text-foreground/85">
                         {pct.toFixed(0)}%
@@ -260,15 +270,26 @@ export function FlowOptionsTab() {
                 </p>
                 <p className="mt-1 text-[12px] leading-relaxed text-foreground/80">{selected.signal.detail}</p>
               </div>
-            </div>
+            </motion.div>
+            </AnimatePresence>
           )}
         </Pane>
 
-        <Pane index="03" label="ETF creations & redemptions" className="shrink-0 lg:h-[120px]">
-          <Empty
-            label="Not available"
-            hint="Reliable QQQ / SPY / IWM flow isn't on the free sources this desk uses. Wire up a provider and this pane fills itself."
-          />
+        <Pane index="03" label="At the extremes" right={<Label className="text-foreground/50">1-yr range</Label>} className="shrink-0" bodyClassName="p-1.5">
+          {extremes.length === 0 ? <Empty label="Loading" /> : extremes.map((inst, i) => {
+            const high = inst.cotIndex >= 50;
+            return (
+              <motion.button key={inst.symbol} type="button" onClick={() => setPicked(inst.symbol)}
+                initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2, delay: 0.1 + i * 0.04 }} whileTap={{ scale: 0.98 }}
+                className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors ${inst.symbol === selected?.symbol ? "bg-primary/[0.1]" : "hover:bg-muted/20"}`}>
+                <span className="w-9 shrink-0 font-mono text-[11px] font-bold tracking-wider text-foreground/85">{inst.symbol}</span>
+                <span className="min-w-0 flex-1"><RangeRail value={inst.cotIndex} /></span>
+                <span className="w-24 shrink-0 text-right text-[11px] font-semibold" style={{ color: high ? "var(--destructive)" : "var(--chart-2)" }}>
+                  {high ? "Most long" : "Most short"} · {Math.round(inst.cotIndex)}
+                </span>
+              </motion.button>
+            );
+          })}
         </Pane>
       </div>
     </div>

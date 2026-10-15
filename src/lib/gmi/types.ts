@@ -89,6 +89,8 @@ export interface NewsArticle {
   category: string | null;
   topic?: NewsTopic;
   publishedPrecision?: "date" | "time";
+  /** Which official feed it came from (e.g. "fed-policy"); drives the importance read. */
+  feedId?: string;
 }
 
 export type NewsTopic = "Monetary Policy" | "Inflation" | "Employment" | "Energy";

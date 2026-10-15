@@ -16,6 +16,8 @@
  * thin or absent session is visible before it is traded rather than after.
  */
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval,
   addMonths, isSameMonth, isToday, isBefore, startOfDay, parseISO,
@@ -55,6 +57,7 @@ export function CalendarTab() {
   const monthKey = format(cursor, "yyyy-MM");
   const { env } = useGmi<CalendarMonth>(`/api/gmi/calendar?month=${monthKey}`, 30 * 60_000);
   const [selected, setSelected] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [direction, setDirection] = useState(1);
 
   const byDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
@@ -93,12 +96,21 @@ export function CalendarTab() {
   const weeks = Math.ceil(grid.length / 7);
   function moveMonth(delta: number) {
     const next = addMonths(cursor, delta);
+    setDirection(delta >= 0 ? 1 : -1);
     setCursor(next);
     setSelected(format(next, "yyyy-MM-dd"));
   }
 
+  // What to watch this month: every FOMC date and every high-impact print
+  // still to come, in date order, as one short list beside the grid.
+  const todayKey = format(today, "yyyy-MM-dd");
+  const watch = [
+    ...[...fed.values()].flat().filter((e) => isSameMonth(parseISO(e.date), cursor)).map((e) => ({ id: `${e.kind}-${e.date}`, date: e.date, title: e.kind === "fomc-decision" ? "FOMC decision" : "FOMC minutes", fed: true })),
+    ...events.filter((e) => e.importance === "high" && e.date >= todayKey).map((e) => ({ id: e.id, date: e.date, title: e.label, fed: false })),
+  ].filter((item) => item.date >= todayKey || !isSameMonth(cursor, today)).sort((x, y) => x.date.localeCompare(y.date)).slice(0, 7);
+
   return (
-    <div className="grid grid-flow-dense grid-cols-1 items-start gap-6 lg:grid-cols-12">
+    <div className="grid grid-cols-1 gap-2 lg:h-full lg:min-h-0 lg:grid-cols-12">
       {/* ── Month ─────────────────────────────────────────────────────── */}
       <Pane
         index="01"
@@ -108,35 +120,41 @@ export function CalendarTab() {
             <Label className="hidden tracking-[0.18em] md:inline">
               {events.length} releases · {fomcCount ? `${fomcCount} FOMC · ` : ""}{scheduled} scheduled · {closures} closure{closures === 1 ? "" : "s"}
             </Label>
-            <span className="flex items-center gap-1.5">
-              <button
+            <span className="flex items-center gap-1">
+              <motion.button
                 onClick={() => moveMonth(-1)}
                 aria-label="Previous month"
-                className="min-h-10 rounded-md border border-border/50 px-3 text-xs font-medium text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
+                whileTap={{ scale: 0.9 }}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
               >
-                Previous
-              </button>
-              <button
+                <ChevronLeft className="h-4 w-4" />
+              </motion.button>
+              <motion.button
                 onClick={() => moveMonth(1)}
                 aria-label="Next month"
-                className="min-h-10 rounded-md border border-border/50 px-3 text-xs font-medium text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
+                whileTap={{ scale: 0.9 }}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 text-foreground/80 transition-colors hover:border-primary/50 hover:text-primary"
               >
-                Next
-              </button>
-              {!isSameMonth(cursor, new Date()) && (
-                <button
-                  onClick={() => { setCursor(startOfMonth(new Date())); setSelected(format(new Date(), "yyyy-MM-dd")); }}
-                  className="border-b border-primary pb-px text-[12px] font-semibold uppercase tracking-wider text-primary"
-                >
-                  Today
-                </button>
-              )}
+                <ChevronRight className="h-4 w-4" />
+              </motion.button>
+              <AnimatePresence initial={false}>
+                {!isSameMonth(cursor, new Date()) && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => { setDirection(isBefore(cursor, new Date()) ? 1 : -1); setCursor(startOfMonth(new Date())); setSelected(format(new Date(), "yyyy-MM-dd")); }}
+                    className="ml-1 rounded-lg bg-primary/12 px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary"
+                  >
+                    Today
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </span>
             <span className="text-xs text-muted-foreground">{!env ? "Loading FRED" : env.status === "stale" ? "FRED updates delayed" : env.status === "unavailable" ? "FRED unavailable" : "Source: FRED"}</span>
           </span>
         }
         bodyClassName="flex flex-col p-0"
-        className="min-h-[520px] lg:col-span-8"
+        className="min-h-[520px] lg:col-span-8 lg:min-h-0"
       >
         {!env ? <Empty label="Loading calendar" /> : env.status === "unavailable" ? (
           <Empty label="FRED unavailable" />
@@ -151,7 +169,18 @@ export function CalendarTab() {
             </div>
 
             {/* Rows share the height evenly, so the month always fills the pane */}
-            <div className="grid min-h-0 flex-1 grid-cols-7" style={{ gridTemplateRows: `repeat(${weeks}, minmax(90px, auto))` }}>
+            <div className="relative min-h-0 flex-1 overflow-hidden">
+            <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+            <motion.div
+              key={monthKey}
+              custom={direction}
+              initial={{ opacity: 0, x: 40 * direction }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 * direction }}
+              transition={{ duration: 0.26, ease: [0.23, 1, 0.32, 1] }}
+              className="grid h-full grid-cols-7"
+              style={{ gridTemplateRows: `repeat(${weeks}, minmax(72px, 1fr))` }}
+            >
               {grid.map((day) => {
                 const key = format(day, "yyyy-MM-dd");
                 const dayEvents = byDate.get(key) ?? [];
@@ -169,9 +198,10 @@ export function CalendarTab() {
                     aria-pressed={on}
                     title={dayHolidays.map((h) => `${h.market}: ${h.name}${h.closes ? ` · closes ${h.closes}` : " · closed"}`).join("\n") || undefined}
                     className={`relative flex min-h-0 flex-col gap-0.5 overflow-hidden border-b border-r border-border/20 p-1.5 text-left transition-colors ${
-                      on ? "bg-primary/[0.1]" : "hover:bg-muted/15"
+                      on ? "" : "hover:bg-muted/15"
                     } ${outside ? "opacity-25" : past ? "opacity-75" : ""}`}
                   >
+                    {on && <motion.span layoutId="cal-selected" aria-hidden className="absolute inset-0 border border-primary/50 bg-primary/[0.1]" transition={{ type: "spring", stiffness: 480, damping: 40 }} />}
                     {dayHolidays.length > 0 && (
                       <span aria-hidden className="absolute inset-0" style={{ background: shut ? CLOSED_HATCH : EARLY_HATCH }} />
                     )}
@@ -230,6 +260,8 @@ export function CalendarTab() {
                   </button>
                 );
               })}
+            </motion.div>
+            </AnimatePresence>
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/30 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/65">
@@ -245,6 +277,7 @@ export function CalendarTab() {
         )}
       </Pane>
 
+      <div className="flex min-h-0 flex-col gap-2 lg:col-span-4">
       {/* ── The selected day ──────────────────────────────────────────── */}
       <Pane
         index="02"
@@ -254,8 +287,11 @@ export function CalendarTab() {
             {selectedEvents.length + selectedFed.length || "no"} event{selectedEvents.length + selectedFed.length === 1 ? "" : "s"}
           </Label>
         }
-        className="min-h-[240px] lg:col-span-4"
+        className="min-h-[240px] lg:flex-1"
+        scroll
       >
+        <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={selected} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }} className="h-full">
         {selectedHolidays.length > 0 && (
           <div className="mb-3 space-y-1.5 border border-border/50 p-2.5" style={{ background: CLOSED_HATCH }}>
             {selectedHolidays.map((h) => (
@@ -317,7 +353,28 @@ export function CalendarTab() {
             })}
           </div>
         )}
+        </motion.div>
+        </AnimatePresence>
       </Pane>
+
+      {/* ── What to watch this month ─────────────────────────────────── */}
+      <Pane index="03" label="To watch" right={<Label className="text-foreground/50">{format(cursor, "MMMM")}</Label>} className="shrink-0" bodyClassName="p-1.5">
+        {watch.length === 0 ? <Empty label="Nothing high-impact left" /> : (
+          <ol>
+            {watch.map((item, i) => (
+              <motion.li key={item.id} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2, delay: 0.06 + i * 0.03 }}>
+                <button type="button" onClick={() => setSelected(item.date)}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors ${item.date === selected ? "bg-primary/[0.1]" : "hover:bg-muted/20"}`}>
+                  <span className="w-12 shrink-0 text-[11px] font-semibold tabular-nums text-foreground/70">{format(parseISO(item.date), "EEE d")}</span>
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: item.fed ? FED_COLOR : IMPORTANCE.high }} />
+                  <span className="min-w-0 flex-1 truncate text-[12px] font-medium">{item.title}</span>
+                </button>
+              </motion.li>
+            ))}
+          </ol>
+        )}
+      </Pane>
+      </div>
     </div>
   );
 }

@@ -11,7 +11,9 @@
  * rounded cards stacked on a scrolling page, no decorative icons: the screen
  * is the instrument and it holds still while you read it.
  */
+import { useId } from "react";
 import { AlertTriangle } from "lucide-react";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { FRESHNESS_LABEL, timeAgo } from "@/lib/gmi/client";
 import type { DataEnvelope } from "@/lib/gmi/types";
@@ -89,6 +91,7 @@ export function Pane({
   className,
   bodyClassName,
   children,
+  lift = false,
 }: {
   label?: string;
   /** Optional pane number, e.g. "02": the desk's own index. */
@@ -98,9 +101,18 @@ export function Pane({
   className?: string;
   bodyClassName?: string;
   children: React.ReactNode;
+  /** Hover lift, for panes that act as a single control. */
+  lift?: boolean;
 }) {
+  // Panes rise in, in reading order: the index doubles as the stagger.
+  const order = Number(index) || 0;
   return (
-    <section className={cn("gmi-pane relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[22px] border border-white/[.07] bg-[linear-gradient(145deg,color-mix(in_oklch,var(--card)_88%,transparent),color-mix(in_oklch,var(--background)_78%,transparent))] shadow-[0_18px_48px_-30px_rgba(0,0,0,.9),inset_0_1px_0_rgba(255,255,255,.035)]", className)}>
+    <motion.section
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, delay: Math.min(order, 8) * 0.045, ease: [0.23, 1, 0.32, 1] }}
+      whileHover={lift ? { y: -2 } : undefined}
+      className={cn("gmi-pane relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[22px] border border-white/[.07] bg-[linear-gradient(145deg,color-mix(in_oklch,var(--card)_88%,transparent),color-mix(in_oklch,var(--background)_78%,transparent))] shadow-[0_18px_48px_-30px_rgba(0,0,0,.9),inset_0_1px_0_rgba(255,255,255,.035)] transition-[border-color,box-shadow] duration-300 hover:border-white/[.11]", className)}>
       {(label || right) && (
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border/40 px-3 py-[7px]">
           <span className="flex min-w-0 items-baseline gap-2">
@@ -113,7 +125,7 @@ export function Pane({
       <div className={cn("min-h-0 flex-1", scroll ? "overflow-y-auto" : "overflow-hidden", bodyClassName ?? "p-3")}>
         {children}
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -180,7 +192,7 @@ export function Empty({ label = "No data", hint }: { label?: string; hint?: stri
   );
 }
 
-/** The desk's only control: a row of words, the live one underlined. */
+/** The desk's only control: a row of words; a pill slides to the live one. */
 export function Switch<T extends string>({
   options,
   value,
@@ -192,24 +204,26 @@ export function Switch<T extends string>({
   onChange: (key: T) => void;
   className?: string;
 }) {
+  const id = useId();
   return (
-    <div className={cn("flex items-center gap-2.5", className)}>
+    <div className={cn("flex items-center gap-0.5 rounded-lg bg-background/40 p-0.5", className)} role="group">
       {options.map((o) => {
         const active = o.key === value;
         return (
-          <button
+          <motion.button
             key={o.key}
             type="button"
+            aria-pressed={active}
             onClick={() => onChange(o.key)}
+            whileTap={{ scale: 0.94 }}
             className={cn(
-              "border-b pb-px text-[12px] font-semibold uppercase tracking-wider transition-colors",
-              active
-                ? "border-primary text-primary"
-                : "border-transparent text-foreground/75 hover:text-foreground"
+              "relative rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wider transition-colors duration-200",
+              active ? "text-primary-foreground" : "text-foreground/70 hover:text-foreground"
             )}
           >
-            {o.label}
-          </button>
+            {active && <motion.span layoutId={`switch-${id}`} className="absolute inset-0 rounded-md bg-primary" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
+            <span className="relative">{o.label}</span>
+          </motion.button>
         );
       })}
     </div>

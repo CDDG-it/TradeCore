@@ -11,6 +11,7 @@
  */
 import dynamic from "next/dynamic";
 import { useMemo, useState, useSyncExternalStore } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fmtPrice, toneFor, useGmi, timeAgo } from "@/lib/gmi/client";
 import type { Quote, MacroSeries } from "@/lib/gmi/types";
@@ -127,8 +128,10 @@ export function MarketsTab() {
           <div className="relative h-full w-full overflow-hidden" style={{ background: "#0a1019" }}>
             {wide && <WorldMap3D markers={markers} selected={selected} onSelect={setSelected} />}
 
+            <AnimatePresence mode="wait" initial={false}>
             {sel && (
-              <div className="border-border/50 bg-background/80 m-3 border p-3 backdrop-blur-md sm:pointer-events-none sm:absolute sm:left-3 sm:top-3 sm:m-0 sm:w-[188px]">
+              <motion.div key={sel.id} initial={{ opacity: 0, y: 6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                className="m-3 rounded-xl border border-border/50 bg-background/80 p-3 backdrop-blur-md sm:pointer-events-none sm:absolute sm:left-3 sm:top-3 sm:m-0 sm:w-[188px]">
                 <div className="flex items-baseline gap-2">
                   <span className="font-mono text-[11px] font-bold tracking-[0.18em] text-primary">{sel.id.toUpperCase()}</span>
                   <span className="truncate text-[12px] text-foreground/90">{sel.country}</span>
@@ -165,8 +168,9 @@ export function MarketsTab() {
                     <span className="truncate pl-2 text-right text-[11px] text-foreground/80">{sel.centralBank}</span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
           </div>
         </Pane>
 
@@ -175,7 +179,7 @@ export function MarketsTab() {
           label="Sovereign 10Y"
           right={<Switch options={SORTS} value={sort} onChange={setSort} />}
           bodyClassName="p-0"
-          className="min-h-[340px] lg:col-span-5"
+          className="min-h-[340px] lg:col-span-5 lg:min-h-0"
         >
           {yields.length === 0 ? (
             <Empty label="Loading yields" />
@@ -192,7 +196,9 @@ export function MarketsTab() {
                 {rows.map(({ y, change, spread }) => {
                   const on = y.id === selected;
                   return (
-                    <button
+                    <motion.button
+                      layout="position"
+                      transition={{ layout: { duration: 0.35, ease: [0.23, 1, 0.32, 1] } }}
                       key={y.id}
                       onClick={() => setSelected(y.id)}
                       className={`relative grid w-full grid-cols-[2.2rem_1fr_3.4rem_3.2rem_3.2rem] items-center gap-x-2 border-b border-border/20 px-3 py-[7px] text-left transition-colors ${
@@ -200,11 +206,15 @@ export function MarketsTab() {
                       }`}
                     >
                       {/* The bar is the ranking: length is the yield itself */}
-                      <span
+                      <motion.span
                         aria-hidden
-                        className="pointer-events-none absolute inset-y-0 left-0 transition-[width] duration-500"
-                        style={{ width: `${((y.value ?? 0) / maxYield) * 100}%`, background: a(CYAN_BAR, on ? 12 : 6) }}
+                        className="pointer-events-none absolute inset-y-0 left-0"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${((y.value ?? 0) / maxYield) * 100}%` }}
+                        transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                        style={{ background: a(CYAN_BAR, on ? 14 : 6) }}
                       />
+                      {on && <motion.span layoutId="yield-row" aria-hidden className="absolute inset-y-0 left-0 w-[2px] bg-primary" transition={{ type: "spring", stiffness: 480, damping: 40 }} />}
                       <span className={`relative font-mono text-[11px] font-bold tracking-[0.14em] ${on ? "text-primary" : "text-foreground/75"}`}>
                         {y.id.toUpperCase()}
                       </span>
@@ -218,7 +228,7 @@ export function MarketsTab() {
                       <span className="relative text-right text-[12px] tabular-nums text-foreground/80">
                         {y.id === "us" ? "-" : bp(spread)}
                       </span>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
@@ -250,7 +260,7 @@ export function MarketsTab() {
                     <XAxis dataKey="mat" tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
                     <YAxis domain={["auto", "auto"]} tick={{ fontSize: 9, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={38} tickFormatter={(v: number) => v.toFixed(1)} />
                     <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 2, fontSize: 11 }} formatter={(v) => [`${Number(v ?? 0).toFixed(2)}%`, "Yield"]} />
-                    <Area type="monotone" dataKey="yield" stroke="var(--chart-1)" strokeWidth={1.8} fill="url(#gmi-curve)" dot={{ r: 2.5, fill: "var(--chart-1)" }} isAnimationActive={false} />
+                    <Area type="monotone" dataKey="yield" stroke="var(--chart-1)" strokeWidth={1.8} fill="url(#gmi-curve)" dot={{ r: 2.5, fill: "var(--chart-1)" }} activeDot={{ r: 4 }} isAnimationActive animationDuration={700} animationEasing="ease-out" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
