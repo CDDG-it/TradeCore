@@ -26,7 +26,7 @@ const comparison = [
 ] as const;
 
 export default function PricingPage() {
-  return <div className="marketing-page min-h-screen overflow-x-clip bg-[#0b1120] text-white">
+  return <div className="marketing-page min-h-screen overflow-x-clip bg-[#0b1120] text-white [--font-inter:var(--font-nunito)]">
     <LandingNav />
     <main id="main">
       <section className="marketing-hero relative overflow-hidden px-5 pb-16 pt-10 sm:px-10 sm:pt-14 lg:min-h-[calc(100svh-72px)] lg:px-12 lg:pb-10">

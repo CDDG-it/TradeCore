@@ -36,8 +36,8 @@ MC Mindscore ramp (off the rails → dialled in): `#EF4444 · #F59E0B · #EAB308
 
 ## Type
 - **Display / headlines** — Clash Display (Fontshare), 500/600/700, tight tracking (`-0.06em`), leading ~0.98.
-- **Body / UI / supporting text** — Nunito (`--font-body`) across public pages and the product.
-- **Figures and tokens** — Nunito (`--font-mono`) with `tabular-nums` for aligned digits. The site uses only these two font families.
+- **Body / UI** — Barlow (`--font-body`); Inter on the landing page.
+- **Mono / tokens, labels, figures** — Geist Mono (`--font-mono`); use `tabular-nums` for aligned digits.
 
 ## Feel & rules
 - Luxury-minimal dark fintech: roomy, sharp type, subtle motion, no clutter or cheap-template feel. A real product, never a demo. Mobile responsive.
