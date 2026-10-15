@@ -29,38 +29,37 @@ export default function HomePage() {
           </div>
         </section>
 
-        <div aria-hidden="true" className="marketing-gradient-bridge marketing-gradient-bridge--light" />
-        <div className="marketing-light-flow text-[#0b1120]">
-          <section id="the-approach" className="marketing-section marketing-section--mist px-6 pb-20 pt-16 sm:px-10 md:pb-28 md:pt-24 lg:px-12">
+        <div className="marketing-dark-flow text-white">
+          <section id="the-approach" className="marketing-section marketing-section--blue-glow px-6 pb-20 pt-16 sm:px-10 md:pb-28 md:pt-24 lg:px-12">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader label="My Edge" title="Give the next session a direction." className="mb-14 lg:mb-18">
+              <SectionHeader label="My Edge" title="Give the next session a direction." tone="dark" className="mb-14 lg:mb-18">
                 Plan the session. Turn recurring mistakes into commitments, then track the habits and goals that support execution.
               </SectionHeader>
               <ProcessCanvas />
             </div>
           </section>
 
-          <section id="mindscore" className="marketing-section marketing-section--white px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
+          <section id="mindscore" className="marketing-section marketing-section--blue-glow px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader label="MC Mindscore" title="Your effort, made visible." className="mb-14 lg:mb-20">
+              <SectionHeader label="MC Mindscore" title="Your effort, made visible." tone="dark" className="mb-14 lg:mb-20">
                 MC Mindscore turns the work you log on and off the charts into one explainable view.
               </SectionHeader>
               <MindscoreAssembly />
             </div>
           </section>
 
-          <section id="trade-therapist" className="marketing-section marketing-section--tint px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
+          <section id="trade-therapist" className="marketing-section marketing-section--blue-glow px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.42fr_0.58fr] lg:gap-20">
               <div className="marketing-sticky">
-                <SectionHeader label="MC Trade Therapist" title="A practice of looking closer." align="stack">
+                <SectionHeader label="MC Trade Therapist" title="A practice of looking closer." tone="dark" align="stack">
                   Prepare before the market, analyse after it and turn each week into a lesson. Monthly rollups show what persists.
                 </SectionHeader>
                 <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
-                  <ol className="divide-y divide-[#c2dcda] border-y border-[#c2dcda]">
+                  <ol className="divide-y divide-white/10 border-y border-white/10">
                     {therapistCadence.map((item) => (
                       <li key={item.label} className="flex items-baseline justify-between gap-6 py-4 text-sm">
-                        <span className="flex items-baseline gap-4"><span className="font-medium text-[#102b37]">{item.label}</span></span>
-                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#6b858b]">{item.meta}</span>
+                        <span className="flex items-baseline gap-4"><span className="font-medium text-[#e7f5f4]">{item.label}</span></span>
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#91aeb4]">{item.meta}</span>
                       </li>
                     ))}
                   </ol>
@@ -70,18 +69,18 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section id="review" className="marketing-section marketing-section--white px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
+          <section id="review" className="marketing-section marketing-section--blue-glow px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.38fr_0.62fr] lg:gap-20">
               <div className="marketing-sticky">
-                <SectionHeader label="Best trade of the day" title="A review should change what you do." align="stack">
+                <SectionHeader label="Best trade of the day" title="A review should change what you do." tone="dark" align="stack">
                   Look back at the trade you took, mark the best trade that was on offer, and turn the difference into one response for the next session.
                 </SectionHeader>
                 <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
-                  <ol className="divide-y divide-[#c2dcda] border-y border-[#c2dcda]">
+                  <ol className="divide-y divide-white/10 border-y border-white/10">
                     {reviewSteps.map((item) => (
                       <li key={item.label} className="flex items-baseline justify-between gap-6 py-4 text-sm">
-                        <span className="flex items-baseline gap-4"><span className="font-medium text-[#102b37]">{item.label}</span></span>
-                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#6b858b]">{item.meta}</span>
+                        <span className="flex items-baseline gap-4"><span className="font-medium text-[#e7f5f4]">{item.label}</span></span>
+                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#91aeb4]">{item.meta}</span>
                       </li>
                     ))}
                   </ol>
@@ -91,18 +90,18 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section id="market-context" className="marketing-section marketing-section--mist px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
+          <section id="market-context" className="marketing-section marketing-section--blue-glow px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader label="Global Markets" title="Your process meets the market you actually trade." className="mb-14 lg:mb-18">
+              <SectionHeader label="Global Markets" title="Your process meets the market you actually trade." tone="dark" className="mb-14 lg:mb-18">
                 Releases, positioning and the rates backdrop sit beside the plan you already wrote, so context informs the session without rewriting it.
               </SectionHeader>
               <MarketingReveal delay={0.15} distance={10} className="mb-6 hidden lg:block">
-                <ol className="flex divide-x divide-[#c2dcda] border-y border-[#c2dcda] text-sm">
+                <ol className="flex divide-x divide-white/10 border-y border-white/10 text-sm">
                   {marketTabs.map((tab, index) => (
                     <li key={tab.label} className="flex flex-1 items-baseline gap-4 px-5 py-4 first:pl-0 last:pr-0">
-                      <span className="font-display tabular-nums text-[#167c79]">0{index + 1}</span>
-                      <span className="font-medium text-[#102b37]">{tab.label}</span>
-                      <span className="ml-auto text-xs font-semibold uppercase tracking-[0.12em] text-[#6b858b]">{tab.meta}</span>
+                      <span className="font-display tabular-nums text-[#65d4c8]">0{index + 1}</span>
+                      <span className="font-medium text-[#e7f5f4]">{tab.label}</span>
+                      <span className="ml-auto text-xs font-semibold uppercase tracking-[0.12em] text-[#91aeb4]">{tab.meta}</span>
                     </li>
                   ))}
                 </ol>
@@ -111,8 +110,6 @@ export default function HomePage() {
             </div>
           </section>
         </div>
-        <div aria-hidden="true" className="marketing-gradient-bridge marketing-gradient-bridge--dark" />
-
       </main>
       <LandingFooter />
     </div>

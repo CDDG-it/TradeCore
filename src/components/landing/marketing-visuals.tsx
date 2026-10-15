@@ -12,10 +12,10 @@ const processTrack = [["Plan", "Written"], ["Commit", "Specific"], ["Repeat", "T
 
 export function ProcessCanvas() {
   return (
-    <div className="group relative overflow-hidden rounded-[36px] bg-[#0b2430] p-3 text-white shadow-[0_34px_90px_rgba(13,59,68,.2)] sm:p-4" aria-label="A trading plan connected to a commitment, habits and a goal">
-      <div aria-hidden className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#38c9ba]/10 blur-[90px]" />
+    <div className="group relative overflow-hidden rounded-[36px] border border-[#29435b] bg-[#0d1c29] p-3 text-white shadow-[0_34px_90px_rgba(0,0,0,.28)] sm:p-4" aria-label="A trading plan connected to a commitment, habits and a goal">
+      <div aria-hidden className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#0b67c9]/20 blur-[90px]" />
       <div className="relative grid grid-flow-dense gap-3 lg:grid-cols-12">
-        <MarketingReveal className="relative flex min-h-[480px] flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 bg-[#102f3c] p-7 transition-transform duration-700 ease-out group-hover:scale-[1.006] sm:p-10 lg:col-span-7 lg:p-12">
+        <MarketingReveal className="relative flex min-h-[480px] flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 bg-[#101f32] p-7 transition-transform duration-700 ease-out group-hover:scale-[1.006] sm:p-10 lg:col-span-7 lg:p-12">
           <div aria-hidden className="absolute inset-x-0 bottom-0 h-[58%] opacity-70">
             <svg viewBox="0 0 700 250" className="h-full w-full" preserveAspectRatio="none">
               <defs><linearGradient id="edge-area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#65d4c8" stopOpacity=".22" /><stop offset="1" stopColor="#65d4c8" stopOpacity="0" /></linearGradient></defs>
@@ -30,13 +30,13 @@ export function ProcessCanvas() {
             <p className="font-display mt-8 max-w-3xl text-balance text-[clamp(2.4rem,4.3vw,4.8rem)] font-semibold leading-[.98] tracking-[-.055em]">Turn a clear plan into consistent execution.</p>
           </div>
           <div className="relative z-10 mt-24 grid max-w-2xl grid-cols-2 gap-2 text-sm sm:grid-cols-3">
-            {[['Setup', 'Planned pullback'], ['Risk', 'Defined first'], ['Trigger', 'Fresh confirmation']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/10 bg-[#0b2430]/75 p-3 backdrop-blur-md"><span className="block text-[10px] uppercase tracking-[.14em] text-[#75949c]">{label}</span><span className="mt-1 block font-medium text-[#e7f5f4]">{value}</span></div>)}
+            {[['Setup', 'Planned pullback'], ['Risk', 'Defined first'], ['Trigger', 'Fresh confirmation']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/10 bg-[#0b1728]/80 p-3 backdrop-blur-md"><span className="block text-[10px] uppercase tracking-[.14em] text-[#91aeb4]">{label}</span><span className="mt-1 block font-medium text-[#e7f5f4]">{value}</span></div>)}
           </div>
         </MarketingReveal>
 
         <div className="grid gap-3 lg:col-span-5 lg:grid-rows-3">
           {processDetails.map((step, index) => (
-            <MarketingReveal key={step.title} delay={0.12 + index * 0.1} distance={20} className="group/edge relative overflow-hidden rounded-[24px] border border-white/10 bg-[#143541] p-6 transition-[transform,border-color,background-color] duration-500 ease-out hover:-translate-x-1 hover:border-[#65d4c8]/35 hover:bg-[#173e4a] sm:p-7">
+            <MarketingReveal key={step.title} delay={0.12 + index * 0.1} distance={20} className="group/edge relative overflow-hidden rounded-[24px] border border-white/10 bg-[#14243a] p-6 transition-[transform,border-color,background-color] duration-500 ease-out hover:-translate-x-1 hover:border-[#65d4c8]/35 hover:bg-[#1a304b] sm:p-7">
               <div className="flex items-center justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">{step.title}</p><p className="text-[10px] font-semibold tracking-[.16em] text-[#719098]">{step.meta}</p></div>
               <p className="font-display mt-3 max-w-md text-balance text-[clamp(1.3rem,2vw,2rem)] font-medium leading-[1.1] tracking-[-.035em]">{step.value}</p>
               <span aria-hidden className="absolute inset-x-6 bottom-0 h-px bg-white/10"><GrowBar axis="x" delay={0.5 + index * 0.12} className="block h-px origin-left bg-[#65d4c8]" style={{ width: `${72 + index * 11}%` }} /></span>
@@ -45,9 +45,9 @@ export function ProcessCanvas() {
         </div>
       </div>
 
-      <div className="relative mt-3 grid grid-cols-4 overflow-hidden rounded-[24px] bg-[#dff2ef] px-4 py-5 text-center text-[11px] font-semibold text-[#365a63] sm:px-8 sm:text-xs">
+      <div className="relative mt-3 grid grid-cols-4 overflow-hidden rounded-[24px] border border-white/10 bg-[#111f33] px-4 py-5 text-center text-[11px] font-semibold text-[#d6e4e6] sm:px-8 sm:text-xs">
         <DrawLine axis="x" delay={0.15} duration={1.2} className="absolute left-[12.5%] right-[12.5%] top-[25px] block h-px bg-[#84bdb8]" />
-        {processTrack.map(([label, state], index) => <MarketingReveal key={label} delay={0.2 + index * 0.14} distance={7} className="relative"><span aria-hidden className="relative mx-auto mb-3 block h-3 w-3 rounded-full border-2 border-[#dff2ef] bg-[#148f87] ring-1 ring-[#148f87]" /><span className="block text-[#153b46]">{label}</span><span className="mt-1 block font-normal text-[#638087]">{state}</span></MarketingReveal>)}
+        {processTrack.map(([label, state], index) => <MarketingReveal key={label} delay={0.2 + index * 0.14} distance={7} className="relative"><span aria-hidden className="relative mx-auto mb-3 block h-3 w-3 rounded-full border-2 border-[#111f33] bg-[#14b8a6] ring-1 ring-[#14b8a6]" /><span className="block text-[#e7f5f4]">{label}</span><span className="mt-1 block font-normal text-[#91aeb4]">{state}</span></MarketingReveal>)}
       </div>
     </div>
   );
@@ -194,7 +194,7 @@ export function ReviewCanvas() {
           <p className="mt-5 text-xs leading-relaxed text-[#9db6bb] sm:text-sm"><span className="font-semibold text-[#c6dcdf]">Why it was better:</span> the level was retested, confirmation came first, and there was room to the target.</p>
         </MarketingReveal>
 
-        <MarketingReveal delay={2.1} distance={16} className="flex flex-col justify-between rounded-[24px] bg-[#173849] p-6 sm:p-7">
+        <MarketingReveal delay={2.1} distance={16} className="flex flex-col justify-between rounded-[24px] border border-white/10 bg-[#14243a] p-6 sm:p-7">
           <div>
             <p className="text-[10px] font-semibold tracking-[0.14em] text-[#8de0d5]">NEXT RESPONSE</p>
             <p className="font-display mt-3 text-balance text-[clamp(1.5rem,2.4vw,2.2rem)] font-medium leading-[1.12] tracking-[-0.04em]">Wait for my level and confirmation.</p>
@@ -216,7 +216,7 @@ export const therapistCadence = [
 export function TherapistVisual() {
   return (
     <div className="grid gap-4 sm:grid-cols-2" aria-label="Trade Therapist reflection cadence">
-      <MarketingReveal className="relative overflow-hidden rounded-[28px] bg-[#102332] bg-[radial-gradient(circle_at_15%_12%,#1b5b5c,transparent_62%)] p-6 text-white shadow-[0_34px_90px_rgba(13,59,68,.20)] sm:col-span-2 sm:p-8">
+      <MarketingReveal className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#102332] bg-[radial-gradient(circle_at_15%_12%,#1a4068,transparent_62%)] p-6 text-white shadow-[0_34px_90px_rgba(0,0,0,.22)] sm:col-span-2 sm:p-8">
         <div className="flex items-baseline justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Before the market</p><span className="text-xs text-[#78959c]">PRE-MARKET EXERCISES</span></div>
         <p className="font-display mt-5 max-w-[560px] text-balance text-[clamp(1.7rem,2.6vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.04em]">Look back at two losses and two wins, then write today&apos;s plan.</p>
 
@@ -251,7 +251,7 @@ export function TherapistVisual() {
       </MarketingReveal>
 
       {/* After the market: the session read back as decisions, not a chart. */}
-      <MarketingReveal delay={0.08} className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#173849] bg-[radial-gradient(circle_at_85%_0%,#1f6a68,transparent_58%)] p-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_24px_60px_rgba(13,59,68,.16)] sm:p-8">
+      <MarketingReveal delay={0.08} className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#14243a] bg-[radial-gradient(circle_at_85%_0%,#254b76,transparent_58%)] p-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_24px_60px_rgba(0,0,0,.18)] sm:p-8">
         <CardEyebrow label="After the market" meta="Session" />
         <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">Examine the decisions.</p>
         <ol className="mt-6" aria-label="The session's trades and their verdicts">
@@ -275,24 +275,24 @@ export function TherapistVisual() {
       </MarketingReveal>
 
       {/* Weekly review: the week's days, then the lesson in the trader's own words. */}
-      <MarketingReveal delay={0.16} className="relative overflow-hidden rounded-[28px] border border-[#bfdcd7] bg-[#dcefeb] bg-[radial-gradient(circle_at_85%_0%,#ffffff,transparent_55%)] p-6 text-[#153743] shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_24px_60px_rgba(13,59,68,.10)] sm:p-8">
-        <CardEyebrow label="Weekly review" meta="5 days" light />
+      <MarketingReveal delay={0.16} className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#14243a] bg-[radial-gradient(circle_at_85%_0%,#254b76,transparent_58%)] p-6 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_24px_60px_rgba(0,0,0,.18)] sm:p-8">
+        <CardEyebrow label="Weekly review" meta="5 days" />
         <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">Write the lesson down.</p>
         <div aria-hidden="true" className="mt-6 grid grid-cols-5 gap-2">
           {reviewWeek.map((day, index) => (
-            <MarketingReveal key={day.day} delay={0.3 + index * 0.06} distance={10} className={`rounded-xl border px-2 py-2.5 text-center ${day.missed ? "border-dashed border-[#9fc4bf] bg-white/30" : "border-[#9fd0c9] bg-[#b9e3dd]/80"}`}>
-              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#4f7a7f]">{day.day}</span>
-              <span className={`mt-1 block text-sm font-semibold tabular-nums ${day.missed ? "text-[#8aa5ab]" : day.r < 0 ? "text-[#c0392b]" : "text-[#157a4b]"}`}>{day.missed ? "–" : `${day.r > 0 ? "+" : ""}${day.r}R`}</span>
+            <MarketingReveal key={day.day} delay={0.3 + index * 0.06} distance={10} className={`rounded-xl border px-2 py-2.5 text-center ${day.missed ? "border-dashed border-white/15 bg-[#0d1c29]/50" : "border-[#65d4c8]/25 bg-[#0d1c29]/75"}`}>
+              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#9db6bb]">{day.day}</span>
+              <span className={`mt-1 block text-sm font-semibold tabular-nums ${day.missed ? "text-[#78959c]" : day.r < 0 ? "text-[#f08c8c]" : "text-[#7ee0a4]"}`}>{day.missed ? "–" : `${day.r > 0 ? "+" : ""}${day.r}R`}</span>
               <svg viewBox="0 0 16 16" className="mx-auto mt-1.5 h-4 w-4">
                 {!day.missed && <DrawPath d="M3 8.5 L6.5 12 L13 4.5" stroke="#167c79" strokeWidth={2} delay={0.55 + index * 0.08} duration={0.5} />}
               </svg>
             </MarketingReveal>
           ))}
         </div>
-        <div className="mt-6 border-l-2 border-[#167c79]/60 pl-4">
-          <p className="text-[10px] font-semibold tracking-[0.16em] text-[#167c79]">LESSON · WEEK 38</p>
+        <div className="mt-6 border-l-2 border-[#65d4c8]/60 pl-4">
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-[#8de0d5]">LESSON · WEEK 38</p>
           <p className="mt-1.5 text-sm font-medium"><WriteIn delay={0.9} duration={1.1}>Both losses came from entering before the retest.</WriteIn></p>
-          <p className="mt-3 text-[10px] font-semibold tracking-[0.16em] text-[#167c79]">FOCUS FOR NEXT WEEK</p>
+          <p className="mt-3 text-[10px] font-semibold tracking-[0.16em] text-[#8de0d5]">FOCUS FOR NEXT WEEK</p>
           <p className="mt-1.5 text-sm font-medium"><WriteIn delay={1.9} duration={0.9}>Level first, then confirmation.</WriteIn></p>
         </div>
       </MarketingReveal>
@@ -437,7 +437,7 @@ export function MarketContextVisual() {
       </MarketingReveal>
 
       {/* Positioning: who holds what, from the weekly CFTC report. */}
-      <MarketingReveal delay={0.12} className="rounded-[28px] bg-[#173849] p-6 text-white shadow-[0_24px_60px_rgba(13,59,68,.16)] sm:p-8">
+      <MarketingReveal delay={0.12} className="rounded-[28px] border border-white/10 bg-[#14243a] p-6 text-white shadow-[0_24px_60px_rgba(0,0,0,.18)] sm:p-8">
         <div className="flex items-baseline justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Positioning</p><span className="text-xs text-[#78959c]">ES · COT</span></div>
         <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">Who holds what.</p>
         <ul className="mt-7 space-y-5">
@@ -454,15 +454,15 @@ export function MarketContextVisual() {
       </MarketingReveal>
 
       {/* Markets: the rates backdrop in three numbers. */}
-      <MarketingReveal delay={0.2} className="rounded-[28px] border border-[#bfdcd7] bg-[#dcefeb] p-6 text-[#153743] sm:p-8">
-        <div className="flex items-baseline justify-between gap-4"><p className="text-sm font-medium text-[#167c79]">Markets</p><span className="text-xs text-[#6b858b]">YIELDS · CURVE · DOLLAR</span></div>
+      <MarketingReveal delay={0.2} className="rounded-[28px] border border-white/10 bg-[#111f33] p-6 text-white sm:p-8">
+        <div className="flex items-baseline justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Markets</p><span className="text-xs text-[#9db6bb]">YIELDS · CURVE · DOLLAR</span></div>
         <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">The backdrop, in three numbers.</p>
         <div className="mt-7 grid grid-cols-3 gap-2 sm:gap-3">
           {marketTiles.map((tile, index) => (
-            <MarketingReveal key={tile.label} delay={0.45 + index * 0.08} distance={10} className="rounded-2xl border border-[#b7d4d1] bg-white/60 p-3 sm:p-4">
-              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#6b858b]">{tile.label.toUpperCase()}</span>
+            <MarketingReveal key={tile.label} delay={0.45 + index * 0.08} distance={10} className="rounded-2xl border border-white/10 bg-[#1a2d46] p-3 sm:p-4">
+              <span className="block text-[10px] font-semibold tracking-[0.12em] text-[#9db6bb]">{tile.label.toUpperCase()}</span>
               <span className="font-display mt-2 block text-lg font-semibold tabular-nums tracking-[-0.04em] sm:text-xl">{tile.value}</span>
-              <span className={`mt-1 block text-[11px] font-medium ${tile.up ? "text-[#15803d]" : "text-[#b91c1c]"}`}>{tile.change}</span>
+              <span className={`mt-1 block text-[11px] font-medium ${tile.up ? "text-[#7ee0a4]" : "text-[#f08c8c]"}`}>{tile.change}</span>
             </MarketingReveal>
           ))}
         </div>
@@ -475,8 +475,8 @@ export function MarketContextVisual() {
           <p className="font-display mt-3 max-w-[460px] text-balance text-[clamp(1.5rem,2.4vw,2.2rem)] font-medium leading-[1.12] tracking-[-0.04em]">Wait for price to hit my level of interest.</p>
         </div>
         <dl className="mt-6 grid shrink-0 grid-cols-2 gap-3 text-sm lg:mt-0 lg:min-w-[300px]">
-          <div className="rounded-2xl bg-[#173849] px-4 py-3"><dt className="text-[10px] font-semibold tracking-[0.12em] text-[#8aa9ae]">PLAN STATUS</dt><dd className="mt-1 font-medium text-[#8de0d5]">Unchanged</dd></div>
-          <div className="rounded-2xl bg-[#173849] px-4 py-3"><dt className="text-[10px] font-semibold tracking-[0.12em] text-[#8aa9ae]">RISK ON WED</dt><dd className="mt-1 font-medium text-white">Half size</dd></div>
+          <div className="rounded-2xl bg-[#1a2d46] px-4 py-3"><dt className="text-[10px] font-semibold tracking-[0.12em] text-[#9db6bb]">PLAN STATUS</dt><dd className="mt-1 font-medium text-[#8de0d5]">Unchanged</dd></div>
+          <div className="rounded-2xl bg-[#1a2d46] px-4 py-3"><dt className="text-[10px] font-semibold tracking-[0.12em] text-[#9db6bb]">RISK ON WED</dt><dd className="mt-1 font-medium text-white">Half size</dd></div>
         </dl>
       </MarketingReveal>
     </div>

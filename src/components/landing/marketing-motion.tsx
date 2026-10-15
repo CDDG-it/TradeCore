@@ -180,25 +180,26 @@ export function WriteIn({ children, className, delay = 0, duration = 1.1 }: {
 }
 
 /** Eyebrow, heading and standfirst. Shared by every section between the hero and the close. */
-export function SectionHeader({ label, title, children, align = "split", className, id }: {
+export function SectionHeader({ label, title, children, align = "split", tone = "light", className, id }: {
   label: string;
   title: ReactNode;
   children?: ReactNode;
   /** `split` puts the standfirst in a right column on large screens; `stack` keeps it under the heading. */
   align?: "split" | "stack";
+  tone?: "light" | "dark";
   className?: string;
   id?: string;
 }) {
   const split = align === "split" && children;
   return (
-    <div className={`${split ? "grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.52fr)] lg:items-end lg:gap-20" : ""} ${className ?? ""}`}>
+    <div className={`${split ? "grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.52fr)] lg:items-end lg:gap-20" : ""} ${tone === "dark" ? "text-white" : ""} ${className ?? ""}`}>
       <MarketingReveal>
         <p className="marketing-eyebrow">{label}</p>
         <h2 id={id} className="font-display mt-6 max-w-[860px] text-balance text-[clamp(2.6rem,4.8vw,5.4rem)] font-semibold leading-[1.02] tracking-[-0.055em]">{title}</h2>
       </MarketingReveal>
       {children && (
         <MarketingReveal delay={0.1} className={split ? "lg:pb-2" : "mt-7"}>
-          <p className="max-w-[520px] text-lg leading-[1.65] text-[#4d6871]">{children}</p>
+          <p className={`max-w-[520px] text-lg leading-[1.65] ${tone === "dark" ? "text-[#b8ccd0]" : "text-[#4d6871]"}`}>{children}</p>
         </MarketingReveal>
       )}
     </div>
@@ -206,7 +207,7 @@ export function SectionHeader({ label, title, children, align = "split", classNa
 }
 
 const scoreParts = [
-  { name: "Rule adherence", weight: 35, color: "#174657", note: "Did the session follow the written plan?" },
+  { name: "Rule adherence", weight: 35, color: "#4887a3", note: "Did the session follow the written plan?" },
   { name: "Execution", weight: 20, color: "#0d817c", note: "Entries, exits and risk as planned." },
   { name: "Habit consistency", weight: 20, color: "#14b8a6", note: "The routines kept on and off the charts." },
   { name: "Reflection work", weight: 15, color: "#06b6d4", note: "Prepared before, examined after." },
@@ -221,39 +222,39 @@ export function MindscoreAssembly() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-14" aria-label="MC Mindscore weighting: rule adherence 35 percent, execution 20 percent, habit consistency 20 percent, reflection work 15 percent, goal progress 10 percent">
-      <MarketingReveal className="relative flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[32px] border border-[#c2dcda] bg-[#edf7f5] p-7 shadow-[0_28px_75px_rgba(27,88,92,.10)] sm:min-h-[500px] sm:p-10 lg:p-12">
-        <div className="flex items-start justify-between gap-4 border-b border-[#c2dcda] pb-5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#54737b]">MC Mindscore</span>
-          <span className="rounded-full border border-[#a8cfcb] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#167c79]">Illustrative data</span>
+      <MarketingReveal className="marketing-mindscore-card relative flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[32px] border border-[#29435b] bg-[#111f33] p-7 shadow-[0_28px_75px_rgba(0,0,0,.22)] sm:min-h-[500px] sm:p-10 lg:p-12">
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9db6bb]">MC Mindscore</span>
+          <span className="rounded-full border border-[#65d4c8]/35 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8de0d5]">Illustrative data</span>
         </div>
         <div className="my-7 flex items-center gap-4 sm:gap-6">
           <BrainScore score={74} className="size-[120px] sm:size-[150px]" />
-          <div><span className="font-display text-[clamp(4rem,10vw,7rem)] font-semibold leading-[0.85] tracking-[-0.09em] tabular-nums text-[#102b37]">74</span><span className="mt-2 block text-sm font-semibold text-[#167c79]">Solid</span></div>
+          <div><span className="font-display text-[clamp(4rem,10vw,7rem)] font-semibold leading-[0.85] tracking-[-0.09em] tabular-nums text-white">74</span><span className="mt-2 block text-sm font-semibold text-[#8de0d5]">Solid</span></div>
         </div>
         <div>
-          <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.12em] text-[#54737b]"><span>Score over time</span><span>Example period</span></div>
-          <MindscoreTrend points={illustrativeTrend} color="#0d817c" light />
-          <p className="mt-5 text-xs leading-relaxed text-[#5b7780]">One score shaped by the work behind every session. The curve above is illustrative.</p>
+          <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9db6bb]"><span>Score over time</span><span>Example period</span></div>
+          <MindscoreTrend points={illustrativeTrend} color="#65d4c8" />
+          <p className="mt-5 text-xs leading-relaxed text-[#9db6bb]">One score shaped by the work behind every session. The curve above is illustrative.</p>
         </div>
       </MarketingReveal>
 
       <div className="min-w-0">
-        <MarketingReveal delay={0.05}><p className="font-display text-2xl font-semibold tracking-[-0.04em] text-[#102b37] sm:text-3xl">Five measurable parts.</p></MarketingReveal>
-        <dl className="mt-6 border-t border-[#bdd7d4]">
+        <MarketingReveal delay={0.05}><p className="font-display text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">Five measurable parts.</p></MarketingReveal>
+        <dl className="mt-6 border-t border-white/10">
           {scoreParts.map((part, index) => (
-            <MarketingReveal key={part.name} delay={0.1 + index * 0.07} distance={16} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-3 border-b border-[#bdd7d4] py-5">
+            <MarketingReveal key={part.name} delay={0.1 + index * 0.07} distance={16} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-3 border-b border-white/10 py-5">
               <dt className="flex min-w-0 items-start gap-4">
                 <span aria-hidden="true" className="mt-1.5 h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: part.color }} />
-                <span className="min-w-0"><span className="block text-sm font-semibold text-[#102b37] sm:text-base">{part.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#67838a] sm:text-sm">{part.note}</span></span>
+                <span className="min-w-0"><span className="block text-sm font-semibold text-[#e7f5f4] sm:text-base">{part.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#9db6bb] sm:text-sm">{part.note}</span></span>
               </dt>
-              <dd className="font-display text-2xl font-semibold tabular-nums tracking-[-0.05em] text-[#102b37] sm:text-3xl">{part.weight}%</dd>
-              <dd aria-hidden="true" className="col-span-2 h-1 overflow-hidden rounded-full bg-[#d7e8e7]">
+              <dd className="font-display text-2xl font-semibold tabular-nums tracking-[-0.05em] text-white sm:text-3xl">{part.weight}%</dd>
+              <dd aria-hidden="true" className="col-span-2 h-1 overflow-hidden rounded-full bg-[#29435b]">
                 <GrowBar axis="x" delay={0.25 + index * 0.07} className="block h-full rounded-full" style={{ width: `${part.weight}%`, backgroundColor: part.color }} />
               </dd>
             </MarketingReveal>
           ))}
         </dl>
-        <MarketingReveal delay={0.4} distance={12}><p className="mt-6 max-w-xl text-sm leading-relaxed text-[#526e75]">No active goal? Its weight is shared across the other logged work.</p></MarketingReveal>
+        <MarketingReveal delay={0.4} distance={12}><p className="mt-6 max-w-xl text-sm leading-relaxed text-[#9db6bb]">No active goal? Its weight is shared across the other logged work.</p></MarketingReveal>
       </div>
     </div>
   );

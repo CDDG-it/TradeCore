@@ -1233,6 +1233,34 @@ html:has(.marketing-page) { position: relative; }
   background: #f7fbfa;
 }
 
+.marketing-dark-flow {
+  background: #0b1120;
+}
+
+.marketing-dark-flow .marketing-eyebrow {
+  color: #65d4c8;
+}
+
+.marketing-mindscore-card {
+  --border: #29435b;
+  --muted-foreground: #9db6bb;
+  --card: #111f33;
+}
+
+.marketing-dark-flow .marketing-section::after {
+  background: linear-gradient(90deg, transparent, rgba(111, 153, 188, 0.22) 18%, rgba(111, 153, 188, 0.22) 82%, transparent);
+}
+
+.marketing-dark-flow .marketing-section--blue-glow::before {
+  background:
+    radial-gradient(ellipse 620px 440px at var(--glow-x, 72%) 28%, rgba(11, 103, 201, 0.20), transparent 76%),
+    #0b1120;
+}
+
+.marketing-dark-flow .marketing-section--blue-glow:nth-child(even) {
+  --glow-x: 24%;
+}
+
 .marketing-gradient-bridge {
   position: relative;
   height: clamp(112px, 14vw, 190px);
