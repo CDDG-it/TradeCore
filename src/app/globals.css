@@ -18,9 +18,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-nunito), system-ui, sans-serif;
+  --font-sans: var(--font-inter), Arial, sans-serif;
   --font-mono: var(--font-inter), system-ui, sans-serif;
-  --font-heading: var(--font-nunito), system-ui, sans-serif;
+  --font-heading: var(--font-inter), Arial, sans-serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -303,6 +303,10 @@ html.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  html,
+  body {
+    font-family: var(--font-inter), Arial, sans-serif;
   }
   body {
     @apply text-foreground bg-background;
@@ -997,9 +1001,9 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   scroll-margin-top: 6rem;
 }
 
-/* The same two typefaces run through public pages and the signed-in app. */
+/* Public pages and the signed-in app share the same base typeface. */
 .marketing-page {
-  font-family: var(--font-nunito), system-ui, sans-serif;
+  font-family: var(--font-inter), Arial, sans-serif;
   /* Motion tokens for the public page. Strong curves: built-in easings are too weak
      for deliberate reveals. Entering = ease-out, on-screen movement = ease-in-out. */
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
@@ -1178,7 +1182,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 .marketing-page .font-display,
 .marketing-page main h1,
 .marketing-page main h2 {
-  font-family: var(--font-nunito), system-ui, sans-serif;
+  font-family: var(--font-inter), Arial, sans-serif;
 }
 
 /* The public sample keeps the app's dark dashboard tokens even when the
@@ -1195,11 +1199,11 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   --win: #22c55e;
   --loss: #ef4444;
   --be: #eab308;
-  font-family: var(--font-nunito), system-ui, sans-serif;
+  font-family: var(--font-inter), Arial, sans-serif;
   color: var(--foreground);
 }
 
-.marketing-dashboard .font-heading { font-family: var(--font-nunito), system-ui, sans-serif; }
+.marketing-dashboard .font-heading { font-family: var(--font-inter), Arial, sans-serif; }
 
 /* Motion measures the decorative scenes against the document scroll root. */
 html:has(.marketing-page) { position: relative; }

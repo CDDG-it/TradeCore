@@ -4,19 +4,12 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/lib/theme-context";
 
-// The pricing headline's rounded Nunito is the site-wide primary face.
-// Landing-page Inter remains the quieter face for supporting copy and data.
+// The visible pricing headline uses Inter. Keep it local so every page renders
+// the same face, including authenticated pages and slow network connections.
 const inter = localFont({
   src: "./fonts/inter-latin.woff2",
   variable: "--font-inter",
   weight: "100 900",
-  display: "swap",
-});
-
-const nunito = localFont({
-  src: "./fonts/nunito-latin.woff2",
-  variable: "--font-nunito",
-  weight: "400 900",
   display: "swap",
 });
 
@@ -83,7 +76,7 @@ export default function RootLayout({
       // scrolling on for its own scroll-to-top after a route change and every
       // navigation animates the old page sliding upward first.
       data-scroll-behavior="smooth"
-      className={`${inter.variable} ${nunito.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
       <head>
         {/*

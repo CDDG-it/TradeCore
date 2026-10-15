@@ -143,7 +143,7 @@ export function Logo({
       <LogoMark size={size} />
       <span
         className={`font-black tracking-tight leading-none ${textSize}`}
-        style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}
+        style={{ fontFamily: "var(--font-inter), Arial, sans-serif" }}
       >
         <span style={{ color: tradeColor }}>Trading</span>
         <span style={{
