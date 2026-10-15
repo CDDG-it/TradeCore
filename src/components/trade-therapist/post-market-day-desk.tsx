@@ -8,7 +8,7 @@ import { ScreenshotUpload } from "@/components/screenshot-upload";
 import { RPotentialAnalysisSection } from "@/components/trade-therapist/r-potential-analysis";
 import { PostMarketDayPicker } from "@/components/trade-therapist/post-market-day-picker";
 import { useAccess } from "@/components/access/access-provider";
-import { dayOverview, postMarketDates } from "@/lib/post-market/day-overview";
+import { dayOverview, isDayReviewed, postMarketDates } from "@/lib/post-market/day-overview";
 import { initialPostMarketStep, postMarketSteps, type PostMarketStep } from "@/lib/post-market/flow";
 import { getBestTradeOfDay, getBestTradesOfDay, getRPotentialAnalyses, getTradeRuleChecks, saveBestTradeOfDay, type BestTradeListRow } from "@/lib/supabase/queries";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
@@ -19,10 +19,14 @@ import type { BestTradeOfDay, RPotentialAnalysis, ScreenshotGroup, TradeJournalE
 type Draft = Pick<BestTradeOfDay, "taken_was_best" | "notes" | "post_market_analysis" | "screenshot_groups" | "review_step">;
 const emptyGroups = (): ScreenshotGroup[] => [{ label: "HTF", urls: [] }, { label: "Entry", urls: [] }];
 const blank = (): Draft => ({ taken_was_best: false, notes: "", post_market_analysis: "", screenshot_groups: emptyGroups(), review_step: null });
-const reviewed = (row?: BestTradeListRow) => Boolean(row && (row.review_step === "complete" || (row.review_step === null && (row.taken_was_best || row.notes.trim() || row.post_market_analysis.trim()))));
 const displayDate = (key: string) => format(new Date(`${key}T12:00:00`), "EEE d");
 
-export function PostMarketDayDesk({ date, trades, onDateChange }: { date: string; trades: TradeJournalEntry[]; onDateChange: (date: string) => void }) {
+/**
+ * One day's Post Market. It opens on the day overview; the guided review only
+ * starts when the trader asks for it (`autoStart` when they already did, e.g.
+ * from the Today screen), so opening the Therapist never drops you into a question.
+ */
+export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = false }: { date: string; trades: TradeJournalEntry[]; onDateChange: (date: string) => void; autoStart?: boolean }) {
   const { entitlements } = useAccess();
   const [draft, setDraft] = useState<Draft>(blank);
   const [knownVerdict, setKnownVerdict] = useState(false);
@@ -68,7 +72,7 @@ export function PostMarketDayDesk({ date, trades, onDateChange }: { date: string
       draftRef.current = value;
       setDraft(value);
       setKnownVerdict(Boolean(entry && (entry.review_step !== null || entry.taken_was_best || entry.notes.trim() || entry.screenshot_groups?.some((group) => group.urls.length))));
-      setStep(initialPostMarketStep(entry, entitlements.bestTrade));
+      setStep(autoStart ? initialPostMarketStep(entry, entitlements.bestTrade) : "complete");
     }).catch(() => setSaveState("error")).finally(() => { if (active) setLoading(false); });
     return () => {
       active = false;
@@ -78,7 +82,7 @@ export function PostMarketDayDesk({ date, trades, onDateChange }: { date: string
         void queue.current.catch(() => null).then(() => saveBestTradeOfDay({ date, ...value })).catch(() => {});
       }
     };
-  }, [date, entitlements.bestTrade]);
+  }, [date, entitlements.bestTrade, autoStart]);
 
   useEffect(() => {
     let active = true;
@@ -150,7 +154,13 @@ export function PostMarketDayDesk({ date, trades, onDateChange }: { date: string
     return false;
   }
 
-  const hasReview = reviewed(reviews[date]) || draft.review_step === "complete";
+  const hasReview = isDayReviewed(reviews[date]) || draft.review_step === "complete";
+  // A review left halfway resumes where it stopped instead of at the first question.
+  const resumeStep = !hasReview && draft.review_step && draft.review_step !== "complete" && steps.includes(draft.review_step) ? draft.review_step : null;
+
+  async function backToOverview() {
+    if (await flush()) setStep("complete");
+  }
 
   if (loading) return <div className="flex h-full items-center justify-center rounded-2xl border border-border/60 bg-card/60 text-xs text-muted-foreground">Loading day...</div>;
 
@@ -171,7 +181,10 @@ export function PostMarketDayDesk({ date, trades, onDateChange }: { date: string
           <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-primary">Post Market · {format(new Date(`${date}T12:00:00`), "EEE, MMM d, yyyy")}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">{dayTrades.length ? `${dayTrades.length} trade${dayTrades.length === 1 ? "" : "s"} · ${formatTotalR(summary.netR)} realised` : "No trades taken"}</p>
         </div>
-        <PostMarketDayPicker date={date} tradesByDay={tradesByDay} reviews={reviews} onSelect={selectDate} disabled={uploading} />
+        <div className="flex shrink-0 items-center gap-2">
+          <button type="button" disabled={saveState === "saving" || uploading} onClick={() => void backToOverview()} className="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-primary disabled:opacity-40">Day overview</button>
+          <PostMarketDayPicker date={date} tradesByDay={tradesByDay} reviews={reviews} onSelect={selectDate} disabled={uploading} />
+        </div>
       </header>
       <div className="flex shrink-0 items-center justify-between gap-4 px-0.5">
         <span className="text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground">Step {stepIndex + 1} of {steps.length - 1}</span>
@@ -247,7 +260,7 @@ export function PostMarketDayDesk({ date, trades, onDateChange }: { date: string
         <section className="min-h-0 min-w-0 rounded-xl border border-border/60 bg-card/65 p-2 lg:p-3"><h3 className="truncate text-[10px] font-bold lg:text-xs">R Potential</h3>{summary.winnerCount ? <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground"><p>MFE <strong className="text-foreground">{summary.averageMfe == null ? "—" : `${summary.averageMfe.toFixed(2)}R`}</strong><span className="hidden lg:inline"> · Winner <strong className="text-foreground">{summary.averageWinnerR?.toFixed(2)}R</strong></span></p><p className="hidden lg:block">Reached 2R <strong className="text-foreground">{summary.reached2R}/{summary.measuredCount}</strong> · 2.5R <strong className="text-foreground">{summary.reached25R}/{summary.measuredCount}</strong> measured</p></div> : <p className="mt-1 line-clamp-2 text-[10px] text-muted-foreground lg:text-[11px]">No winning trades to analyse today.</p>}</section>
       </div>
     </div>}
-    <div className="flex shrink-0 items-center justify-between gap-2 text-[11px]"><span role="status" className={saveState === "error" ? "text-destructive" : "text-muted-foreground"}>{status || (hasReview ? "Review recorded" : "")}</span><button disabled={saveState === "saving" || uploading} onClick={() => void move(steps[0])} className="rounded-lg border border-primary/40 px-3 py-1.5 font-semibold text-primary disabled:opacity-40">Edit review</button></div>
+    <div className="flex shrink-0 items-center justify-between gap-2 text-[11px]"><span role="status" className={saveState === "error" ? "text-destructive" : "text-muted-foreground"}>{status || (hasReview ? "Review recorded" : "")}</span><button disabled={saveState === "saving" || uploading} onClick={() => void move(resumeStep ?? steps[0])} className={cn("rounded-lg px-3 py-1.5 font-semibold disabled:opacity-40", hasReview ? "border border-primary/40 text-primary" : "bg-primary text-primary-foreground")}>{hasReview ? "Edit review" : resumeStep ? "Continue review" : "Start review"}</button></div>
 
   </div>;
 }

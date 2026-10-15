@@ -7,6 +7,11 @@ export function postMarketDates(trades: TradeJournalEntry[], reviews: Pick<BestT
     .sort((a, b) => b.localeCompare(a));
 }
 
+/** A day counts as reviewed once the guided flow is finished; legacy rows (no step) once anything was written. */
+export function isDayReviewed(row?: Pick<BestTradeOfDay, "review_step" | "taken_was_best" | "notes" | "post_market_analysis">): boolean {
+  return Boolean(row && (row.review_step === "complete" || (row.review_step === null && (row.taken_was_best || row.notes.trim() || row.post_market_analysis.trim()))));
+}
+
 export function dayOverview(trades: TradeJournalEntry[], observations: Record<string, RPotentialAnalysis>) {
   const winners = trades.filter((trade) => trade.result === "win");
   const measured = winners.flatMap((trade) => {

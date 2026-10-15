@@ -8,11 +8,14 @@ import { getTrades } from "@/lib/supabase/queries";
 import { PostMarketDayDesk } from "@/components/trade-therapist/post-market-day-desk";
 import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
 import { PreMarketExercises } from "@/components/trade-therapist/pre-market-exercises";
+import { TherapistToday } from "@/components/trade-therapist/therapist-today";
 import type { TradeJournalEntry } from "@/lib/types";
 import { FeatureGate } from "@/components/access/access-provider";
 
 /**
- * MC Trade Therapist: the surface for getting better at trading. Three views:
+ * MC Trade Therapist: the surface for getting better at trading. Four views:
+ *   • Today:       where the day stands (pre-market, Post Market, weekly
+ *                  review) with nothing started until the trader picks it.
  *   • Post Market: one question per screen, followed by the selected day's
  *                  trades, review and measured R potential observations.
  *   • Pre-market:  the last two losses and two wins, with a written plan for
@@ -21,15 +24,19 @@ import { FeatureGate } from "@/components/access/access-provider";
  *                  counted in the MC Mindscore once a week has closed.
  * Every read is deterministic and traces back to the trader's own history.
  */
-type TherapistTab = "daily" | "premarket" | "reviews";
+type TherapistTab = "today" | "daily" | "premarket" | "reviews";
 const TABS: { key: TherapistTab; label: string; short?: string }[] = [
+  { key: "today", label: "Today" },
   { key: "daily", label: "Post Market", short: "Post Market" },
   { key: "premarket", label: "Pre-market exercises", short: "Pre-market" },
   { key: "reviews", label: "Reviews" },
 ];
 
 export default function TradeTherapistPage() {
-  const [tab, setTab] = useState<TherapistTab>("daily");
+  const [tab, setTab] = useState<TherapistTab>("today");
+  // Only true when the trader asked to start the review (from Today, or a
+  // `?start=1` link): the Post Market desk otherwise opens on the day overview.
+  const [startReview, setStartReview] = useState(false);
   const [dailyDate, setDailyDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [trades, setTrades] = useState<TradeJournalEntry[]>([]);
 
@@ -43,11 +50,24 @@ export default function TradeTherapistPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
     if (t === "commitments") setTab("premarket");
     else if (TABS.some((x) => x.key === t)) setTab(t as TherapistTab);
+    if (t === "daily" && params.get("start") === "1") setStartReview(true);
     if (selectedDate && /^\d{4}-\d{2}-\d{2}$/.test(selectedDate) && !Number.isNaN(Date.parse(`${selectedDate}T12:00:00`)) && selectedDate <= format(new Date(), "yyyy-MM-dd")) setDailyDate(selectedDate);
     getTrades().then(setTrades).catch(() => {});
   }, []);
 
+  function selectTab(next: TherapistTab) {
+    setStartReview(false);
+    setTab(next);
+  }
+
+  function openPostMarket(date: string, start: boolean) {
+    changeDate(date);
+    setStartReview(start);
+    setTab("daily");
+  }
+
   function changeDate(date: string) {
+    setStartReview(false);
     setDailyDate(date);
     const url = new URL(window.location.href);
     url.searchParams.set("date", date);
@@ -62,17 +82,21 @@ export default function TradeTherapistPage() {
           titleClassName="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none"
           items={TABS}
           value={tab}
-          onChange={setTab}
+          onChange={selectTab}
         />
       </div>
 
       <PageWrapper className="min-h-0 flex-1 space-y-0">
+        {tab === "today" && (
+          <TherapistToday trades={trades} onPreMarket={() => selectTab("premarket")} onPostMarket={openPostMarket} />
+        )}
         {tab === "daily" && (
           <PostMarketDayDesk
             key={dailyDate}
             date={dailyDate}
             trades={trades}
             onDateChange={changeDate}
+            autoStart={startReview}
           />
         )}
         {tab === "premarket" && <PreMarketExercises trades={trades} date={dailyDate} />}
