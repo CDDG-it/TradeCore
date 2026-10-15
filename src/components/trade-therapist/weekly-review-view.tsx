@@ -15,6 +15,8 @@ import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, getAllTradeRuleCh
 import { getWeekGroup, tradeR, formatTotalR, reviewOpensOn, isReviewOpen } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
 import { mostBrokenItem } from "@/lib/reviews/rule-patterns";
+import { bestTradeLogged, buildDayRecaps, summarizeDayRecaps } from "@/lib/reviews/day-recap";
+import { DailyBreakdown } from "@/components/trade-therapist/daily-breakdown";
 
 const TURQUOISE = "var(--primary)";
 const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -71,6 +73,12 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
     const dateByTrade = new Map(group.days.flatMap((day) => day.trades.map((trade) => [trade.id, day.date] as const)));
     return mostBrokenItem(ruleChecks.filter((check) => dateByTrade.has(check.trade_id)).map((check) => ({ ...check, date: dateByTrade.get(check.trade_id)! })));
   }, [group, ruleChecks]);
+  // What each day already says in the journal and the Post Market review, laid
+  // out so the week's reflection can be written from it.
+  const recaps = useMemo(() => {
+    if (!group || !trades) return null;
+    return buildDayRecaps(group.days, new Map(trades.map((t) => [t.id, t])), bestByDay);
+  }, [group, trades, bestByDay]);
 
   const dirty =
     wentWell !== (review?.lessons ?? "") ||
@@ -195,9 +203,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
             // Charts are not part of this test: the list read leaves
             // `screenshot_groups` behind so a week strip never pulls every
             // reviewed day's images. Words still count, as they did.
-            const bestLogged = best && !bestTaken && (
-              (best.post_market_analysis ?? "").trim() || (best.notes ?? "").trim()
-            );
+            const bestLogged = bestTradeLogged(best);
             return (
               <div key={d.date} className={cn("rounded-xl border p-3 flex flex-col items-center gap-2",
                 outcome === "win" ? "border-success/25 bg-success/5"
@@ -225,6 +231,8 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
           })}
         </div>
       </div>
+
+      {recaps && <DailyBreakdown recaps={recaps} summary={summarizeDayRecaps(recaps)} />}
 
       {/* Previous week reference: did I hold to it? */}
       <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
