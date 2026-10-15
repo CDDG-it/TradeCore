@@ -11,7 +11,7 @@ Claude artifact **TradingMC Brand Kit** — https://claude.ai/artifact/6AmVxGwfU
 ## Logo
 - Mark: transparent PNG at [`public/tradingmc-logo.png`](public/tradingmc-logo.png) — turquoise→cyan interlocking monogram.
 - Used in the landing nav and the signed-in top bar, always linking to `/` (home).
-- Wordmark: **Trading** in foreground + **MC** in turquoise, set in Clash Display.
+- Wordmark: **Trading** in foreground + **MC** in turquoise, set in Inter.
 - Keep clear space ≈ half the mark's height. Never recolor, outline, add shadow, or stretch it — scale uniformly.
 
 ## Colour (dark-first, navy-grounded)
@@ -35,9 +35,9 @@ MC Mindscore ramp (off the rails → dialled in): `#EF4444 · #F59E0B · #EAB308
 **No orange, anywhere.** Break-even is amber `#EAB308`, not orange.
 
 ## Type
-- **Display / headlines** — Clash Display (Fontshare), 500/600/700, tight tracking (`-0.06em`), leading ~0.98.
-- **Body / UI** — Barlow (`--font-body`); Inter on the landing page.
-- **Mono / tokens, labels, figures** — Geist Mono (`--font-mono`); use `tabular-nums` for aligned digits.
+- **All site and app text** — self-hosted Inter (`--font-inter`), including headlines, navigation, cards, forms, and the wordmark.
+- **Headlines** — use heavier Inter weights and tight tracking where the layout calls for it.
+- **Figures** — use `tabular-nums` for aligned digits; `--font-mono` also uses Inter.
 
 ## Feel & rules
 - Luxury-minimal dark fintech: roomy, sharp type, subtle motion, no clutter or cheap-template feel. A real product, never a demo. Mobile responsive.
