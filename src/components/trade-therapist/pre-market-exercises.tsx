@@ -17,7 +17,7 @@ import type { CommitmentFormat, ExerciseTypeId, TradeJournalEntry } from "@/lib/
 
 type Draft = { exercise_type: ExerciseTypeId; inputs: Record<string, unknown>; focus: string; commitment_text: string; commitment_format: CommitmentFormat | null };
 const emptyDraft = (type: ExerciseTypeId): Draft => ({ exercise_type: type, inputs: {}, focus: "", commitment_text: "", commitment_format: exerciseDefinition(type).suggestedCommitmentFormat });
-const FORMAT_LABEL: Record<CommitmentFormat, string> = { rule: "Rule", if_then: "If / then", scope: "Scope" } as Record<CommitmentFormat, string>;
+const FORMAT_LABEL: Record<CommitmentFormat, string> = { rule: "Rule", if_then: "If / then", scope: "Scope" };
 
 /**
  * Pre-market, laid out like the Therapist's Today screen: the exercise to pick
@@ -62,15 +62,20 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
   }, [draft, draftKey, dirty, loading]);
 
   const requiredComplete = definition.fields.every((field) => !field.required || String(draft.inputs[field.id] ?? "").trim());
-  const lookedBack = requiredComplete && definition.fields.some((field) => {
+  // Exercises with required prompts are done when those are filled; the trade
+  // review has none, so one written plan counts (or nothing to review at all).
+  const hasRequired = definition.fields.some((field) => field.required);
+  const reviewable = definition.fields.some((field) => field.kind === "trade_review" && trades.some((trade) => trade.result === field.tradeResult));
+  const anyAnswered = definition.fields.some((field) => {
     const value = draft.inputs[field.id];
     if (field.kind === "trade_review") return Object.values((value ?? {}) as Record<string, string>).some((text) => text.trim());
     return String(value ?? "").trim().length > 0;
   });
+  const lookedBack = hasRequired ? requiredComplete : anyAnswered || !reviewable;
   const hasFocus = draft.focus.trim().length > 0;
   const hasCommitment = draft.commitment_text.trim().length > 0;
   const canComplete = Boolean(requiredComplete && hasFocus && hasCommitment);
-  const doneCount = [lookedBack || requiredComplete && !definition.fields.some((f) => f.required) && lookedBack, hasFocus, hasCommitment].filter(Boolean).length;
+  const doneCount = [lookedBack, hasFocus, hasCommitment].filter(Boolean).length;
   const completed = Boolean(completedAt) && !dirty;
   const activeStep = !lookedBack ? 1 : !hasFocus ? 2 : !hasCommitment ? 3 : 0;
 
@@ -159,7 +164,7 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
           <StepPanel index={2} reduceMotion={reduceMotion} active={activeStep === 3} lift={false} step="03" eyebrow="Commit" title="Today's commitment" status={status(hasCommitment, 3)}>
             <p className="text-xs text-muted-foreground">{definition.commitmentPrompt}</p>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <span className="rounded-full bg-ice/12 px-2 py-0.5 text-[10px] font-semibold text-ice">Suggested: {FORMAT_LABEL[definition.suggestedCommitmentFormat] ?? definition.suggestedCommitmentFormat}</span>
+              <span className="rounded-full bg-ice/12 px-2 py-0.5 text-[10px] font-semibold text-ice">Suggested: {FORMAT_LABEL[definition.suggestedCommitmentFormat]}</span>
               <AnimatePresence initial={false}>
                 {!hasCommitment && <motion.button type="button" onClick={() => setDraft((current) => ({ ...current, commitment_text: definition.commitmentTemplate }))}
                   initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.15 }} whileTap={{ scale: 0.94, transition: PRESS }}
@@ -183,7 +188,7 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
                 {error ? <span className="text-destructive">{error}</span>
                   : justSaved || completed ? <span className="inline-flex items-center gap-1.5 text-success"><Check className="h-3.5 w-3.5" /> Exercise completed{completedAt ? ` at ${format(new Date(completedAt), "HH:mm")}` : ""}</span>
                   : dirty ? <span className="text-muted-foreground">Draft kept in this session.</span>
-                  : <span className="text-muted-foreground">{3 - [lookedBack, hasFocus, hasCommitment].filter(Boolean).length} step{3 - [lookedBack, hasFocus, hasCommitment].filter(Boolean).length === 1 ? "" : "s"} to go.</span>}
+                  : <span className="text-muted-foreground">{3 - doneCount} step{3 - doneCount === 1 ? "" : "s"} to go.</span>}
               </motion.p>
             </AnimatePresence>
           </div>
