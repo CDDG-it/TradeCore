@@ -20,7 +20,7 @@ const TEXT = "#F8FAFC";
 const SECONDARY = "#CBD5E1";
 const MUTED = "#64748B";
 
-/** Clash Display and Inter do not load in mail, so this is the closest stack. */
+/** Clash Display and Barlow do not load in mail, so this is the closest stack. */
 const FONT =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 

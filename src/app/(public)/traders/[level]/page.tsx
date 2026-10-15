@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
 import { MarketingReveal } from "@/components/landing/marketing-motion";
 import { TRADER_LEVELS } from "@/lib/landing/nav";
 import { TRADER_LEVEL_BY_SLUG, TRADER_LEVEL_PAGES } from "@/lib/landing/traders";
+
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
 
 export function generateStaticParams() {
   return TRADER_LEVEL_PAGES.map((level) => ({ level: level.slug }));
@@ -25,7 +28,7 @@ export default async function TraderLevelPage({ params }: { params: Promise<{ le
   const others = TRADER_LEVELS.filter((item) => item.slug !== page.slug);
 
   return (
-    <div className="marketing-page min-h-screen overflow-x-clip bg-[#0b1120] text-white">
+    <div className={`${inter.variable} marketing-page min-h-screen overflow-x-clip bg-[#0b1120] text-white`}>
       <LandingNav />
       <main id="main">
         <section className="marketing-hero relative overflow-hidden px-6 pb-20 pt-20 sm:px-10 sm:pt-28 lg:px-12 lg:pb-28">

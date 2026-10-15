@@ -32,23 +32,23 @@
 
 .coverage { padding:27px; animation:feature-in 260ms var(--ease-out) 45ms both; }
 .coverageHeader,.coverageBody { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
-.coverageHeader > span { border:1px solid var(--line); border-radius:999px; padding:5px 8px; color:var(--muted); font-family:var(--font-inter),system-ui,sans-serif; font-size:9px; }
+.coverageHeader > span { border:1px solid var(--line); border-radius:999px; padding:5px 8px; color:var(--muted); font-family:var(--font-geist-mono),monospace; font-size:9px; }
 .eyebrow { color:var(--muted); font-size:9px; font-weight:650; text-transform:uppercase; letter-spacing:.15em; }
 .coverageHeader h3 { margin-top:7px; font-size:20px; font-weight:550; letter-spacing:-.035em; }
 .coverageBody { align-items:center; margin-top:28px; }
 .coverageRing { --coverage:conic-gradient(var(--primary) 0 100%); position:relative; display:grid; width:112px; aspect-ratio:1; flex:0 0 auto; place-items:center; border-radius:50%; background:var(--coverage); transform:rotate(-14deg); animation:ring-in 380ms var(--ease-out) 90ms both; }
 .coverageRing::after { content:""; position:absolute; inset:12px; border-radius:50%; background:color-mix(in oklch,var(--card) 92%,var(--background)); box-shadow:inset 0 0 0 1px var(--line); }
-.coverageRing > span { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; transform:rotate(14deg); font-family:var(--font-inter),system-ui,sans-serif; font-size:25px; font-weight:600; line-height:1; }
+.coverageRing > span { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; transform:rotate(14deg); font-family:var(--font-geist-mono),monospace; font-size:25px; font-weight:600; line-height:1; }
 .coverageRing small { margin-top:5px; color:var(--muted); font-family:var(--font-body),sans-serif; font-size:9px; font-weight:500; }
 .coverageLegend { min-width:0; flex:1; }
 .coverageLegend li { display:grid; grid-template-columns:7px minmax(0,1fr) auto; align-items:center; gap:8px; padding:5px 0; font-size:10px; color:var(--muted); }
 .coverageLegend i,.topicMarker i { width:5px; height:5px; border-radius:50%; background:var(--topic-color,var(--primary)); }
-.coverageLegend strong { color:var(--foreground); font-family:var(--font-inter),system-ui,sans-serif; font-weight:500; }
+.coverageLegend strong { color:var(--foreground); font-family:var(--font-geist-mono),monospace; font-weight:500; }
 .sourceBars { margin-top:30px; padding-top:18px; border-top:1px solid var(--line); }
 .sourceBars > div { display:grid; grid-template-columns:82px minmax(40px,1fr) 20px; align-items:center; gap:10px; margin-top:10px; font-size:9px; color:var(--muted); }
 .sourceBars i { overflow:hidden; height:3px; border-radius:5px; background:var(--line); }
 .sourceBars b { display:block; width:100%; height:100%; transform-origin:left; background:linear-gradient(90deg,var(--primary),var(--ice)); transition:transform 220ms var(--ease-out); }
-.sourceBars strong { text-align:right; color:var(--foreground); font-family:var(--font-inter),system-ui,sans-serif; font-weight:500; }
+.sourceBars strong { text-align:right; color:var(--foreground); font-family:var(--font-geist-mono),monospace; font-weight:500; }
 .policy { --topic-color:var(--primary); }.inflation { --topic-color:var(--ice); }.employment { --topic-color:var(--success); }.energy { --topic-color:var(--warning); }
 
 .toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:0 24px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
@@ -56,7 +56,7 @@
 .topic { position:relative; min-height:54px; flex-shrink:0; color:var(--muted); font-size:11px; transition:color 140ms ease; }
 .topic[aria-pressed="true"] { color:var(--foreground); }
 .topic[aria-pressed="true"]::after { content:""; position:absolute; right:0; bottom:0; left:0; height:2px; background:var(--primary); transform-origin:left; animation:tab-line 180ms var(--ease-out) both; }
-.topicCount { margin-left:7px; color:var(--muted); font-family:var(--font-inter),system-ui,sans-serif; font-size:9px; }
+.topicCount { margin-left:7px; color:var(--muted); font-family:var(--font-geist-mono),monospace; font-size:9px; }
 .controls { display:flex; align-items:center; gap:15px; padding:8px 0; }
 .select { min-height:38px; max-width:145px; border:0; background:transparent; color:var(--muted); font-size:11px; }
 .select option { background:var(--background); color:var(--foreground); }
@@ -105,7 +105,7 @@
 .readings { margin-top:31px; padding-top:23px; border-top:1px solid var(--line); }
 .readingGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:16px; }
 .readingCard { position:relative; overflow:hidden; min-height:127px; border:1px solid var(--line); border-radius:13px; padding:13px; background:color-mix(in oklch,var(--card) 52%,transparent); }
-.readingCard h3 { min-height:30px; color:var(--muted); font-size:10px; font-weight:500; line-height:1.35; }.readingCard strong { display:block; margin-top:8px; font-family:var(--font-inter),system-ui,sans-serif; font-size:17px; font-weight:550; letter-spacing:-.04em; }.readingCard small { display:block; margin-top:4px; color:var(--muted); font-size:8px; }
+.readingCard h3 { min-height:30px; color:var(--muted); font-size:10px; font-weight:500; line-height:1.35; }.readingCard strong { display:block; margin-top:8px; font-family:var(--font-geist-mono),monospace; font-size:17px; font-weight:550; letter-spacing:-.04em; }.readingCard small { display:block; margin-top:4px; color:var(--muted); font-size:8px; }
 .spark { position:absolute; right:0; bottom:0; left:0; width:100%; height:36px; opacity:.72; }.spark path { fill:none; stroke:var(--spark-color,var(--primary)); stroke-width:1.5; vector-effect:non-scaling-stroke; stroke-dasharray:180; stroke-dashoffset:180; animation:draw-mini 700ms var(--ease-out) 180ms forwards; }.spark area { fill:url(#sparkFill); }
 .readingCard.up { --spark-color:var(--success); }.readingCard.down { --spark-color:var(--destructive); }.readingCard.flat { --spark-color:var(--primary); }
 .railFoot { margin-top:24px; padding-top:15px; border-top:1px solid var(--line); color:var(--muted); font-size:9px; line-height:1.7; }
