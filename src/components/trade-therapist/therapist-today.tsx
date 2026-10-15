@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { format, startOfWeek } from "date-fns";
-import { ArrowRight, Check, Trophy } from "lucide-react";
+import { ArrowRight, Trophy } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
 import { CountUp } from "@/components/ui/count-up";
 import { MotionButton, MotionLink, PRESS } from "@/components/trade-therapist/motion-button";

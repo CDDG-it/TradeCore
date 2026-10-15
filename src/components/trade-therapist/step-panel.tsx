@@ -12,7 +12,7 @@ const EASE = [0.23, 1, 0.32, 1] as const;
  * lifts on hover, and the one marked `active` carries the turquoise edge and a
  * live dot so the eye lands on what to do next.
  */
-export function StepPanel({ index, reduceMotion, active, step, eyebrow, title, status, action, children }: {
+export function StepPanel({ index, reduceMotion, active, step, eyebrow, title, status, action, children, className, lift = true }: {
   index: number;
   reduceMotion: boolean | null;
   active: boolean;
@@ -22,18 +22,22 @@ export function StepPanel({ index, reduceMotion, active, step, eyebrow, title, s
   status: PanelStatus | null;
   action?: React.ReactNode;
   children: React.ReactNode;
+  className?: string;
+  /** Hover lift; off for panels you type in, where movement under the cursor distracts. */
+  lift?: boolean;
 }) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.26, delay: reduceMotion ? 0 : 0.06 + index * 0.05, ease: EASE }}
-      whileHover={{ y: -3, transition: { duration: 0.2, ease: EASE } }}
+      whileHover={lift ? { y: -3, transition: { duration: 0.2, ease: EASE } } : undefined}
       className={cn(
         "group/panel relative flex min-h-72 flex-col overflow-hidden rounded-2xl border bg-card/65 transition-[border-color,box-shadow] duration-300 lg:min-h-0",
         active
           ? "border-primary/45 shadow-[0_0_0_1px_color-mix(in_oklch,var(--primary)_16%,transparent),0_28px_70px_-44px_rgba(0,0,0,.6)]"
-          : "border-border/60 hover:border-border hover:shadow-[0_28px_70px_-48px_rgba(0,0,0,.6)]"
+          : "border-border/60 hover:border-border hover:shadow-[0_28px_70px_-48px_rgba(0,0,0,.6)]",
+        className
       )}
     >
       {active && (
