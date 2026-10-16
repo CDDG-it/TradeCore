@@ -3,16 +3,17 @@
 import { DrawLine, DrawPath, GrowBar, MarketingReveal, PinReveal, WriteIn } from "@/components/landing/marketing-motion";
 
 const processDetails = [
-  { title: "Daily commitment", meta: "PRE-MARKET", value: "Max three trades. Wait for fresh confirmation after a loss." },
-  { title: "Habits", meta: "REPEAT", value: "Plan · Review · Reset" },
-  { title: "Goal", meta: "MEASURE", value: "Execution 75% → 85%" },
+  { title: "Habits", meta: "REPEAT", value: "Review the session before closing the day." },
+  { title: "Goals", meta: "PROGRESS", value: "Execution 75% → 85%." },
+  { title: "Rules", meta: "DISCIPLINE", value: "Wait for confirmation before entry." },
+  { title: "Confluences", meta: "SETUP", value: "Trend · Key level · Retest." },
 ] as const;
 
-const processTrack = [["Plan", "Written"], ["Commit", "Specific"], ["Repeat", "Tracked"], ["Measure", "Visible"]] as const;
+const processTrack = [["Define", "Written"], ["Practice", "Daily"], ["Track", "Logged"], ["Refine", "Improved"]] as const;
 
 export function ProcessCanvas() {
   return (
-    <div className="group relative overflow-hidden rounded-[36px] border border-[#29435b] bg-[#0d1c29] p-3 text-white shadow-[0_34px_90px_rgba(0,0,0,.28)] sm:p-4" aria-label="A trading plan connected to a commitment, habits and a goal">
+    <div className="group relative overflow-hidden rounded-[36px] border border-[#29435b] bg-[#0d1c29] p-3 text-white shadow-[0_34px_90px_rgba(0,0,0,.28)] sm:p-4" aria-label="My Edge brings habits, goals, rules and confluences together">
       <div aria-hidden className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-[#0b67c9]/20 blur-[90px]" />
       <div className="relative grid grid-flow-dense gap-3 lg:grid-cols-12">
         <MarketingReveal className="relative flex min-h-[480px] flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 bg-[#101f32] p-7 transition-transform duration-700 ease-out group-hover:scale-[1.006] sm:p-10 lg:col-span-7 lg:p-12">
@@ -26,20 +27,20 @@ export function ProcessCanvas() {
             <PinReveal delay={1.3} className="absolute right-[8%] top-[19%]"><span className="block h-3 w-3 rounded-full bg-[#65d4c8] shadow-[0_0_0_8px_rgba(101,212,200,.12),0_0_24px_rgba(101,212,200,.7)]" /></PinReveal>
           </div>
           <div className="relative z-10">
-            <div className="flex items-center justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Your session plan</p><span className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#75949c]">Before entry</span></div>
-            <p className="font-display mt-8 max-w-3xl text-balance text-[clamp(2.4rem,4.3vw,4.8rem)] font-semibold leading-[.98] tracking-[-.055em]">Turn a clear plan into consistent execution.</p>
+            <div className="flex items-center justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Your personal edge</p><span className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#75949c]">Built over time</span></div>
+            <p className="font-display mt-8 max-w-3xl text-balance text-[clamp(2.4rem,4.3vw,4.8rem)] font-semibold leading-[.98] tracking-[-.055em]">Know what to repeat. Know what to improve.</p>
           </div>
           <div className="relative z-10 mt-24 grid max-w-2xl grid-cols-2 gap-2 text-sm sm:grid-cols-3">
-            {[['Setup', 'Planned pullback'], ['Risk', 'Defined first'], ['Trigger', 'Fresh confirmation']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/10 bg-[#0b1728]/80 p-3 backdrop-blur-md"><span className="block text-[10px] uppercase tracking-[.14em] text-[#91aeb4]">{label}</span><span className="mt-1 block font-medium text-[#e7f5f4]">{value}</span></div>)}
+            {[['Behavior', 'Practiced daily'], ['Target', 'Measured clearly'], ['Setup', 'Defined first']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/10 bg-[#0b1728]/80 p-3 backdrop-blur-md"><span className="block text-[10px] uppercase tracking-[.14em] text-[#91aeb4]">{label}</span><span className="mt-1 block font-medium text-[#e7f5f4]">{value}</span></div>)}
           </div>
         </MarketingReveal>
 
-        <div className="grid gap-3 lg:col-span-5 lg:grid-rows-3">
+        <div className="grid gap-3 lg:col-span-5 lg:grid-rows-4">
           {processDetails.map((step, index) => (
-            <MarketingReveal key={step.title} delay={0.12 + index * 0.1} distance={20} className="group/edge relative overflow-hidden rounded-[24px] border border-white/10 bg-[#14243a] p-6 transition-[transform,border-color,background-color] duration-500 ease-out hover:-translate-x-1 hover:border-[#65d4c8]/35 hover:bg-[#1a304b] sm:p-7">
+            <MarketingReveal key={step.title} delay={0.12 + index * 0.1} distance={20} className="group/edge relative overflow-hidden rounded-[24px] border border-white/10 bg-[#14243a] p-5 sm:p-6">
               <div className="flex items-center justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">{step.title}</p><p className="text-[10px] font-semibold tracking-[.16em] text-[#719098]">{step.meta}</p></div>
               <p className="font-display mt-3 max-w-md text-balance text-[clamp(1.3rem,2vw,2rem)] font-medium leading-[1.1] tracking-[-.035em]">{step.value}</p>
-              <span aria-hidden className="absolute inset-x-6 bottom-0 h-px bg-white/10"><GrowBar axis="x" delay={0.5 + index * 0.12} className="block h-px origin-left bg-[#65d4c8]" style={{ width: `${72 + index * 11}%` }} /></span>
+              <span aria-hidden className="absolute inset-x-6 bottom-0 h-px bg-white/10"><GrowBar axis="x" delay={0.5 + index * 0.12} className="block h-px origin-left bg-[#65d4c8]" style={{ width: `${66 + index * 10}%` }} /></span>
             </MarketingReveal>
           ))}
         </div>
@@ -113,48 +114,44 @@ export function ReviewCanvas() {
   );
 }
 
-/** Four moments of reflection, shown without a sample trade ledger. */
+/** A single editorial journey instead of a stack of dashboard widgets. */
 export function TherapistVisual() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2" aria-label="Trade Therapist routine from preparation to monthly reflection">
-      <MarketingReveal className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#102332] bg-[radial-gradient(circle_at_15%_12%,#1a4068,transparent_62%)] p-6 text-white shadow-[0_34px_90px_rgba(0,0,0,.22)] sm:col-span-2 sm:p-8">
-        <p className="text-sm font-medium text-[#8de0d5]">Before the market</p>
-        <p className="font-display mt-4 max-w-[550px] text-balance text-[clamp(1.8rem,2.8vw,2.7rem)] font-medium leading-[1.1] tracking-[-0.04em]">Choose one thing to do well.</p>
-        <div className="mt-7 rounded-2xl border border-[#14b8a6]/30 bg-[#0e2531]/75 p-5 sm:p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8de0d5]">Today&apos;s focus</p>
-          <p className="mt-3 max-w-[520px] text-lg font-medium leading-snug sm:text-xl"><WriteIn delay={0.3} duration={1.1}>Wait for the retest before entering.</WriteIn></p>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-x-7 gap-y-2 text-sm text-[#b8ccd0]">
-          <span><span className="font-medium text-[#f08c8c]">Avoid</span> early entries</span>
-          <span><span className="font-medium text-[#8de0d5]">Repeat</span> patient entries</span>
-        </div>
-      </MarketingReveal>
+    <div className="relative overflow-hidden rounded-[36px] border border-[#2b5360] bg-[#0c1d2c] text-white shadow-[0_34px_90px_rgba(0,0,0,.22)]" aria-label="Trade Therapist pre-market exercises and reflection routine">
+      <div aria-hidden className="pointer-events-none absolute -left-20 -top-32 size-96 rounded-full bg-[#0b67c9]/20 blur-[100px]" />
+      <div className="relative grid lg:grid-cols-[0.84fr_1.16fr]">
+        <MarketingReveal className="relative flex min-h-[360px] flex-col justify-between overflow-hidden p-7 sm:p-10 lg:min-h-[500px] lg:border-r lg:border-white/10 lg:p-12">
+          <span aria-hidden className="pointer-events-none absolute -bottom-20 -right-3 font-display text-[18rem] font-semibold leading-none tracking-[-.12em] text-white/[.025]">01</span>
+          <div className="relative"><p className="text-xs font-semibold uppercase tracking-[.17em] text-[#8de0d5]">Before the open</p><h3 className="font-display mt-8 max-w-md text-balance text-[clamp(2.5rem,4.5vw,4.6rem)] font-medium leading-[.98] tracking-[-.055em]">Pre-market exercises.</h3><p className="mt-6 max-w-sm text-base leading-relaxed text-[#b8ccd0]">A short exercise based on recent sessions helps you choose what to practice today.</p></div>
+          <div className="relative mt-12 flex items-center gap-3 text-sm text-[#8de0d5]"><span aria-hidden className="size-2 rounded-full bg-[#65d4c8]" />Notice the pattern before it repeats.</div>
+        </MarketingReveal>
 
-      <MarketingReveal delay={0.1} className="rounded-[28px] border border-white/10 bg-[#14243a] p-6 text-white shadow-[0_24px_60px_rgba(0,0,0,.18)] sm:p-8">
-        <p className="text-sm font-medium text-[#8de0d5]">After the market</p>
-        <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">Review the decision.</p>
-        <div className="mt-7 border-l-2 border-[#65d4c8] pl-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#9db6bb]">What worked</p>
-          <p className="mt-2 text-base font-medium leading-snug">Waited for confirmation.</p>
+        <div className="relative flex flex-col justify-between border-t border-white/10 bg-[#102839]/75 p-7 sm:p-10 lg:border-t-0 lg:p-12">
+          <div className="flex items-center justify-between gap-4"><p className="text-xs font-semibold uppercase tracking-[.17em] text-[#8de0d5]">An example exercise</p><span className="text-xs text-[#78959c]">Reflect → Commit</span></div>
+          <MarketingReveal delay={0.18} distance={16} className="my-12 max-w-2xl"><p className="font-display text-balance text-[clamp(1.9rem,3.5vw,3.4rem)] font-medium leading-[1.12] tracking-[-.045em]">What happened the last time you entered before confirmation?</p></MarketingReveal>
+          <div className="border-t border-[#65d4c8]/35 pt-6"><MarketingReveal delay={0.36} distance={10}><p className="text-[11px] font-semibold uppercase tracking-[.15em] text-[#8de0d5]">Today&apos;s commitment</p><p className="mt-3 max-w-lg text-lg font-medium leading-snug sm:text-xl"><WriteIn delay={0.45} duration={1.1}>Wait for the retest before entering.</WriteIn></p></MarketingReveal></div>
         </div>
-      </MarketingReveal>
+      </div>
 
-      <MarketingReveal delay={0.18} className="rounded-[28px] border border-white/10 bg-[#14243a] p-6 text-white shadow-[0_24px_60px_rgba(0,0,0,.18)] sm:p-8">
-        <p className="text-sm font-medium text-[#8de0d5]">Weekly review</p>
-        <p className="font-display mt-4 text-2xl font-semibold tracking-[-0.035em]">Name the pattern.</p>
-        <div className="mt-7 border-l-2 border-[#65d4c8] pl-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#9db6bb]">This week&apos;s lesson</p>
-          <p className="mt-2 text-base font-medium leading-snug">Rushed entries followed losses.</p>
+      <div className="relative border-t border-[#65d4c8]/25 bg-[#101f32] px-7 pb-8 pt-9 sm:px-10 sm:pb-10 lg:px-12">
+        <p className="text-xs font-semibold uppercase tracking-[.17em] text-[#8de0d5]">Carry the lesson forward</p>
+        <div className="relative mt-8 grid gap-8 sm:grid-cols-3 sm:gap-6">
+          <DrawLine axis="x" delay={0.25} duration={1.25} className="absolute left-[16.7%] right-[16.7%] top-2 hidden h-px bg-[#65d4c8]/45 sm:block" />
+          <DrawLine axis="y" delay={0.25} duration={1.25} className="absolute bottom-8 left-[7px] top-2 w-px bg-[#65d4c8]/45 sm:hidden" />
+          {[
+            { label: "After the close", title: "Review the decision.", detail: "Did you follow the focus?" },
+            { label: "Each week", title: "Name the pattern.", detail: "See what keeps returning." },
+            { label: "Over time", title: "Change the response.", detail: "Bring one lesson into the next session." },
+          ].map((step, index) => (
+            <MarketingReveal key={step.label} delay={0.2 + index * 0.15} distance={10} className="relative pl-8 sm:pl-0">
+              <PinReveal delay={0.35 + index * 0.17} className="absolute left-0 top-0 sm:relative"><span aria-hidden className="block size-4 rounded-full border-[3px] border-[#101f32] bg-[#65d4c8] ring-1 ring-[#65d4c8]" /></PinReveal>
+              <p className="text-[11px] font-semibold uppercase tracking-[.14em] text-[#8de0d5] sm:mt-6">{step.label}</p>
+              <p className="font-display mt-2 text-xl font-medium tracking-[-.035em] sm:text-2xl">{step.title}</p>
+              <p className="mt-2 text-sm leading-relaxed text-[#9db6bb]">{step.detail}</p>
+            </MarketingReveal>
+          ))}
         </div>
-      </MarketingReveal>
-
-      <MarketingReveal delay={0.26} className="flex flex-wrap items-center justify-between gap-5 rounded-[28px] border border-white/10 bg-[#0d1c29] p-6 text-white shadow-[0_24px_60px_rgba(0,0,0,.18)] sm:col-span-2 sm:p-8">
-        <div>
-          <p className="text-sm font-medium text-[#8de0d5]">Monthly rollup</p>
-          <p className="font-display mt-3 text-2xl font-semibold tracking-[-0.035em]">See what persists.</p>
-        </div>
-        <div className="rounded-2xl border border-[#65d4c8]/25 bg-[#14243a] px-5 py-4 text-sm font-medium text-[#e7f5f4]">Recurring pattern <span className="ml-3 text-[#8de0d5]">Early entries</span></div>
-      </MarketingReveal>
+      </div>
     </div>
   );
 }

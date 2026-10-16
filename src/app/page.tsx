@@ -31,8 +31,8 @@ export default function HomePage() {
         <div className="marketing-dark-flow text-white">
           <section id="the-approach" className="marketing-section marketing-section--blue-glow px-6 pb-20 pt-16 sm:px-10 md:pb-28 md:pt-24 lg:px-12">
             <div className="mx-auto max-w-[1260px]">
-              <SectionHeader label="My Edge" title="Give the next session a direction." tone="dark" className="mb-14 lg:mb-18">
-                Plan the session. Turn recurring mistakes into commitments, then track the habits and goals that support execution.
+              <SectionHeader label="My Edge" title="Make your edge something you can repeat." tone="dark" className="mb-14 lg:mb-18">
+                Bring your habits, goals, trading rules and confluences into one clear process.
               </SectionHeader>
               <ProcessCanvas />
             </div>
@@ -48,12 +48,10 @@ export default function HomePage() {
           </section>
 
           <section id="trade-therapist" className="marketing-section marketing-section--blue-glow px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
-            <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.42fr_0.58fr] lg:gap-20">
-              <div className="marketing-sticky">
-                <SectionHeader label="MC Trade Therapist" title="A practice of looking closer." tone="dark" align="stack">
-                  Prepare with intention, review your decisions and carry one lesson into the next session.
-                </SectionHeader>
-              </div>
+            <div className="mx-auto max-w-[1260px]">
+              <SectionHeader label="MC Trade Therapist" title="Practice before the market. Learn after it." tone="dark" className="mb-14 lg:mb-18">
+                Start with a pre-market exercise shaped by recent sessions. Review your decisions afterward and carry the lesson forward.
+              </SectionHeader>
               <TherapistVisual />
             </div>
           </section>
