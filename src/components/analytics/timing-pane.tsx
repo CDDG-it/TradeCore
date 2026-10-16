@@ -230,9 +230,10 @@ function Heatmap({ grid, drill, onDrill }: { grid: WeekdaySessionGrid; drill: Dr
 // ── Pane ────────────────────────────────────────────────────────────────
 
 export function TimingPane({
-  index, className, hours, hourCoverage, slot, onSlot, grid, order, hold, holdCoverage, baseline, drill, onDrill,
+  index, className, hours, hourCoverage, slot, onSlot, grid, order, hold, holdCoverage, baseline, drill, onDrill, defaultView = "hour",
 }: {
   index: string;
+  defaultView?: View;
   className?: string;
   hours: EdgeBucket[];
   hourCoverage: Coverage;
@@ -246,7 +247,7 @@ export function TimingPane({
   drill: Drill;
   onDrill: (d: Partial<Drill>) => void;
 }) {
-  const [view, setView] = useState<View>("hour");
+  const [view, setView] = useState<View>(defaultView);
   return (
     <Pane
       index={index}

@@ -1,48 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CountUp } from "@/components/ui/count-up";
 import { Pane } from "@/components/gmi/pane";
-import { formatR } from "@/lib/journal/edge";
-import { netRColor } from "@/lib/journal/colors";
+import { formatR, type EdgeBucket } from "@/lib/journal/edge";
 import type { CleanVsBroken, RuleStat } from "@/lib/journal/rule-stats";
 import type { Drill } from "@/lib/journal/analytics-filter";
-import { cn } from "@/lib/utils";
-import { EASE, EmptyPanel, GLOSSARY, MetricInfo, RValue, tradesLabel } from "./analytics-ui";
+import { EdgeBars, EmptyPanel, RValue } from "./analytics-ui";
 
-function CleanTile({ label, b }: { label: string; b: CleanVsBroken["clean"] }) {
-  return (
-    <div className="rounded-xl border border-border/40 bg-muted/15 px-2.5 py-2">
-      <p className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-black leading-none tabular-nums" style={{ color: b.trades && !b.thin ? netRColor(b.expectancy) : undefined }}>
-        {b.trades ? <CountUp value={b.expectancy} format={(n) => formatR(n)} /> : <span className="text-muted-foreground/50">–</span>}
-      </p>
-      <p className="mt-1 text-[10px] text-muted-foreground">per trade · {b.trades}</p>
-    </div>
-  );
+interface RuleRow extends EdgeBucket {
+  stat: RuleStat;
 }
 
-/** One verdict side of a rule: a pill that drills into the trades where you kept / broke it. */
-function VerdictPill({ r, n, on, off, kept, onClick }: { r: number | null; n: number; on: boolean; off: boolean; kept: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      disabled={!n}
-      onClick={onClick}
-      aria-pressed={on}
-      title={`${kept ? "Kept" : "Broken"} on ${tradesLabel(n)}: click to see them`}
-      className={cn(
-        "flex h-6 items-center justify-end rounded-md border px-1.5 text-[11px] transition-[background-color,border-color,opacity,transform] duration-200 active:scale-95 disabled:pointer-events-none disabled:opacity-40",
-        on ? "border-primary bg-primary/15" : "border-border/40 hover:border-primary/40 hover:bg-primary/5",
-        off && "opacity-45"
-      )}
-    >
-      {r === null ? <span className="text-muted-foreground/60">–</span> : <RValue r={r} />}
-    </button>
-  );
-}
+/**
+ * What each rule is worth: R per trade when kept minus R per trade when broken.
+ * Positive means keeping it pays. A rule never broken (or never kept) has
+ * nothing to compare against and shows as an early read.
+ */
+const asRow = (r: RuleStat): RuleRow => ({
+  key: r.label.toLowerCase(),
+  label: r.label,
+  trades: r.evaluated,
+  wins: 0,
+  losses: 0,
+  winRate: null,
+  totalR: r.totalCost ?? 0,
+  expectancy: r.cost ?? 0,
+  thin: r.thin || r.cost === null,
+  stat: r,
+});
 
 export function RulePane({
   index, className, rules, clean, drill, onDrill,
@@ -54,28 +39,29 @@ export function RulePane({
   drill: Drill;
   onDrill: (d: Partial<Drill>) => void;
 }) {
-  const reduce = useReducedMotion();
+  const rows = rules.map(asRow);
+  const selected = drill.rule?.key;
+
+  // One click shows the trades where you broke the rule, a second where you kept it, a third clears.
+  const cycle = (b: EdgeBucket) => {
+    const cur = drill.rule?.key === b.key ? drill.rule : undefined;
+    onDrill({ rule: !cur ? { key: b.key, label: b.label, kept: false } : !cur.kept ? { key: b.key, label: b.label, kept: true } : undefined });
+  };
+
   return (
-    <Pane index={index} label="Rules that pay" className={className} bodyClassName="flex flex-col p-3">
-      <div className="grid shrink-0 grid-cols-2 gap-2">
-        <CleanTile label="All rules kept" b={clean.clean} />
-        <CleanTile label="A rule broken" b={clean.broken} />
-      </div>
-      <p className="mt-2 shrink-0 text-[11px] leading-snug text-muted-foreground">
+    <Pane index={index} label="Rule reward" className={className} bodyClassName="flex flex-col p-3">
+      <p className="mb-2 shrink-0 text-xs text-muted-foreground">
         {clean.gap !== null ? (
-          <>Keeping your rules is worth <RValue r={clean.gap} /> a trade{clean.rGivenUp !== null && clean.rGivenUp > 0 && <> · <b className="text-foreground">{clean.rGivenUp.toFixed(1)}R</b> left on the table</>}.</>
+          <>
+            Clean trades earn <RValue r={clean.gap} /> more
+            {clean.rGivenUp !== null && clean.rGivenUp > 0 && <> · {clean.rGivenUp.toFixed(1)}R left on the table</>}.
+          </>
         ) : (
-          "Not enough clean and broken trades yet to compare."
+          "What keeping each rule is worth per trade."
         )}
       </p>
-
-      <div className="mt-3 grid shrink-0 grid-cols-[minmax(0,1fr)_3.9rem_3.9rem] gap-1.5 px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        <span className="inline-flex items-center gap-1">Rule <MetricInfo>{`${GLOSSARY.cost} Click Kept or Broke to see those trades.`}</MetricInfo></span>
-        <span className="text-right">Kept</span>
-        <span className="text-right">Broke</span>
-      </div>
-      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-0.5">
-        {rules.length === 0 ? (
+      <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">
+        {rows.length === 0 ? (
           <EmptyPanel>
             <span>
               No rules checked in this selection. Set them in{" "}
@@ -83,49 +69,26 @@ export function RulePane({
             </span>
           </EmptyPanel>
         ) : (
-          rules.map((r, i) => {
-            const key = r.label.toLowerCase();
-            const active = drill.rule?.key === key ? drill.rule : undefined;
-            const toggle = (kept: boolean) =>
-              onDrill({ rule: active && active.kept === kept ? undefined : { key, label: r.label, kept } });
-            return (
-              <div
-                key={key}
-                className={cn(
-                  "grid grid-cols-[minmax(0,1fr)_3.9rem_3.9rem] items-center gap-1.5 rounded-md px-1 py-1 transition-opacity",
-                  drill.rule && !active && "opacity-45"
-                )}
-              >
-                <Tooltip>
-                  <TooltipTrigger className="min-w-0 cursor-help text-left">
-                    <span className={cn("block truncate text-xs font-medium", r.thin && "text-muted-foreground")}>{r.label}</span>
-                    <span className="mt-1 flex items-center gap-1.5">
-                      <span className="relative h-1 flex-1 overflow-hidden rounded-full bg-muted/30">
-                        <motion.span
-                          className="absolute inset-y-0 left-0 rounded-full"
-                          style={{ background: r.breakRate >= 40 ? "var(--loss)" : r.breakRate >= 20 ? "var(--be)" : "var(--win)", opacity: r.thin ? 0.35 : 0.85 }}
-                          initial={reduce ? false : { width: 0 }}
-                          animate={{ width: `${Math.max(r.breakRate, 2)}%` }}
-                          transition={{ duration: 0.6, delay: reduce ? 0 : i * 0.04, ease: EASE }}
-                        />
-                      </span>
-                      <span className="text-[10px] tabular-nums text-muted-foreground">{r.breakRate}% broken</span>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[260px] text-left">
-                    <div className="space-y-0.5">
-                      <p className="font-semibold">{r.label}</p>
-                      <p>Broken {r.broken} of {r.evaluated} times ({r.breakRate}%)</p>
-                      {r.cost !== null && <p>One breach costs {formatR(r.cost)}{r.totalCost !== null && ` · ${formatR(-r.totalCost, 1)} in total`}</p>}
-                      {r.thin && <p className="opacity-80">Thin sample: not a conclusion yet</p>}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-                <VerdictPill r={r.rKept} n={r.kept} kept on={active?.kept === true} off={!!active && !active.kept} onClick={() => toggle(true)} />
-                <VerdictPill r={r.rBroken} n={r.broken} kept={false} on={active?.kept === false} off={!!active && active.kept} onClick={() => toggle(false)} />
-              </div>
-            );
-          })
+          <EdgeBars
+            buckets={rows}
+            collapseThin
+            selected={selected}
+            onSelect={cycle}
+            labelWidth="minmax(0,11rem)"
+            tip={(b) => {
+              const r = (b as RuleRow).stat;
+              return (
+                <div className="space-y-0.5">
+                  <p className="font-semibold">{r.label}</p>
+                  {r.cost !== null ? <p>Keeping it is worth {formatR(r.cost)} per trade</p> : <p>Nothing to compare yet: needs trades where you kept and broke it</p>}
+                  <p className="opacity-80">
+                    Kept {r.kept}× {r.rKept !== null && `(${formatR(r.rKept)})`} · broken {r.broken}× {r.rBroken !== null && `(${formatR(r.rBroken)})`} · {r.breakRate}% broken
+                  </p>
+                  <p className="pt-0.5 text-[10px] opacity-70">Click: trades where you broke it · again: kept it · again: clear</p>
+                </div>
+              );
+            }}
+          />
         )}
       </div>
     </Pane>

@@ -3,25 +3,32 @@
 import { useMemo, useState } from "react";
 import { addMonths, format, parse } from "date-fns";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronLeft, ChevronRight, MousePointerClick, X } from "lucide-react";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CountUp } from "@/components/ui/count-up";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Empty, Switch } from "@/components/gmi/pane";
 import { PRESS } from "@/components/trade-therapist/motion-button";
-import { scoreBucket } from "@/lib/journal/edge";
+import { formatR, scoreBucket } from "@/lib/journal/edge";
+import { netRColor } from "@/lib/journal/colors";
 import {
   computeEntryTimeStats, computeHoldTimeStats, computeTradeOrderStats, computeWeekdaySessionGrid, type SlotSize,
 } from "@/lib/journal/time-stats";
 import { computeConfluencePairs, computeConfluenceStackStats, computeConfluenceStats } from "@/lib/journal/confluence-stats";
 import { computeCleanVsBroken, computeRuleStats, ruleVerdictsByTrade } from "@/lib/journal/rule-stats";
-import { buildFindings } from "@/lib/journal/analytics-findings";
 import {
   applyDrill, computeDirectionStats, computeEquityCurve, computeHeadline, computeInstrumentStats, computeQualityStats,
-  drillChips, inPeriod, type Drill, type DrillKey,
+  drillChips, inPeriod, pickSetups, type Drill, type DrillKey, type Headline,
 } from "@/lib/journal/analytics-filter";
 import type { Session, TradeJournalEntry, TradeRuleCheck } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { EASE, GLOSSARY, MetricInfo } from "./analytics-ui";
-import { KpiStrip } from "./kpi-strip";
+import { EASE, GLOSSARY } from "./analytics-ui";
+import { SetupHero } from "./setup-hero";
+import { ComboPane } from "./combo-pane";
+import { ContextStrip } from "./context-strip";
 import { TimingPane } from "./timing-pane";
 import { ConfluencePane } from "./confluence-pane";
 import { RulePane } from "./rule-pane";
@@ -127,22 +134,14 @@ export function AnalyticsDesk({ trades: allTrades, ruleChecks, today = new Date(
     const stack = computeConfluenceStackStats(sel);
     const rules = computeRuleStats(forRule, ruleChecks);
     const clean = computeCleanVsBroken(sel, ruleChecks);
-    // Findings read the selection itself, so they always describe what is on screen.
-    const findings = buildFindings({
-      baseline,
-      hours: computeEntryTimeStats(sel, slot).buckets,
-      grid: computeWeekdaySessionGrid(sel),
-      order,
-      confluences: computeConfluenceStats(sel),
-      rules: computeRuleStats(sel, ruleChecks),
-      clean,
-    });
+    // Setups are ranked without the confluence drill, so the hero stays put while you drill into it.
+    const setups = pickSetups(confluences, pairs, scoreBucket("conf", "", forConf).expectancy);
     return {
       sel,
       baseline,
       headline: computeHeadline(sel),
       baseHeadline: computeHeadline(base),
-      hour, grid, order, hold, confluences, pairs, stack, rules, clean, findings,
+      hour, grid, order, hold, confluences, pairs, stack, rules, clean, setups,
       quality: computeQualityStats(f(without(drill, "quality"))),
       direction: computeDirectionStats(f(without(drill, "direction"))),
       instruments: computeInstrumentStats(f(without(drill, "instrument"))),
@@ -167,69 +166,110 @@ export function AnalyticsDesk({ trades: allTrades, ruleChecks, today = new Date(
     return next;
   });
 
-  const paneH = "h-[22rem] lg:h-auto";
+  const activeFilters = (drill.direction ? 1 : 0) + (drill.session ? 1 : 0);
+  const pane = "h-[24rem] lg:h-auto";
+  const full = "h-full w-full";
+  const timing = (defaultView: "hour" | "day") => (
+    <TimingPane
+      index="0"
+      defaultView={defaultView}
+      className={full}
+      hours={s.hour.buckets}
+      hourCoverage={s.hour.coverage}
+      slot={slot}
+      onSlot={(n) => { setSlot(n); onDrill({ hourSlot: undefined }); }}
+      grid={s.grid}
+      order={s.order}
+      hold={s.hold.buckets}
+      holdCoverage={s.hold.coverage}
+      baseline={s.baseline.expectancy}
+      drill={drill}
+      onDrill={onDrill}
+    />
+  );
 
   return (
     <TooltipProvider delay={120}>
       <div className="flex flex-col gap-3 lg:h-[calc(100dvh-7.25rem)] lg:min-h-[40rem] lg:overflow-hidden">
-        {/* Title and the period / side / session filters */}
+        {/* Title, the one-line summary, and the period / filter controls */}
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <div className="flex items-baseline gap-3">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
             <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">Analytics</h1>
-            <span className="text-[11px] tabular-nums text-muted-foreground">{base.length} trades in period</span>
+            {base.length > 0 && <Summary now={s.headline} base={s.baseHeadline} drilled={drilled} />}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <AnimatePresence initial={false}>
               {mode === "month" && <MonthStepper key="m" month={shownMonth} first={bounds.first} last={bounds.last} onChange={setMonth} />}
             </AnimatePresence>
             <Switch options={MODES} value={mode} onChange={setMode} />
-            <Switch options={SIDES} value={drill.direction ?? "all"} onChange={(k) => onDrill({ direction: k === "all" ? undefined : k })} />
-            <Switch options={SESSION_OPTS} value={drill.session ?? "all"} onChange={(k) => onDrill({ session: k === "all" ? undefined : k })} />
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className={cn(
+                  "relative inline-flex h-7 items-center gap-1.5 rounded-lg bg-background/40 px-2.5 text-[11px] font-semibold uppercase tracking-wider transition-colors hover:text-foreground",
+                  activeFilters ? "text-primary" : "text-foreground/70"
+                )}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Filter
+                {activeFilters > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] text-primary-foreground">{activeFilters}</span>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Side</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={drill.direction ?? "all"} onValueChange={(v) => onDrill({ direction: v === "all" ? undefined : (v as Drill["direction"]) })}>
+                    {SIDES.map((o) => <DropdownMenuRadioItem key={o.key} value={o.key}>{o.label}</DropdownMenuRadioItem>)}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Session</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={drill.session ?? "all"} onValueChange={(v) => onDrill({ session: v === "all" ? undefined : (v as Session) })}>
+                    {SESSION_OPTS.map((o) => <DropdownMenuRadioItem key={o.key} value={o.key}>{o.key === "all" ? "All sessions" : o.key}</DropdownMenuRadioItem>)}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
-        {/* Active drill-down */}
-        <div className="flex min-h-7 shrink-0 flex-wrap items-center gap-1.5">
-          <AnimatePresence initial={false} mode="popLayout">
-            {drilled ? (
-              chips.map((c) => (
-                <motion.button
-                  key={c.key}
-                  layout
-                  type="button"
-                  onClick={() => onDrill({ [c.key]: undefined })}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  whileTap={{ scale: 0.94, transition: PRESS }}
-                  transition={{ duration: 0.18, ease: EASE }}
-                  className="group inline-flex h-7 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 pl-3 pr-2 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20"
-                >
-                  {c.label}
-                  <X className="h-3 w-3 opacity-70 transition-opacity group-hover:opacity-100" />
-                </motion.button>
-              ))
-            ) : (
-              <motion.span
-                key="hint"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground"
-              >
-                <MousePointerClick className="h-3.5 w-3.5 text-primary" />
-                Click any bar, cell or row to drill down
-                <MetricInfo>{GLOSSARY.drill}</MetricInfo>
-              </motion.span>
-            )}
-          </AnimatePresence>
+        {/* Active drill-down: only takes room when there is one */}
+        <AnimatePresence initial={false}>
           {drilled && (
-            <motion.span layout className="ml-auto flex items-center gap-3 text-[11px] text-muted-foreground">
-              <span className="tabular-nums">{s.sel.length} of {base.length} trades</span>
-              <button type="button" onClick={() => setDrill({})} className="font-semibold text-primary hover:underline">Reset</button>
-            </motion.span>
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: EASE }}
+              className="flex shrink-0 flex-wrap items-center gap-1.5 overflow-hidden"
+            >
+              <AnimatePresence initial={false} mode="popLayout">
+                {chips.map((c) => (
+                  <motion.button
+                    key={c.key}
+                    layout
+                    type="button"
+                    onClick={() => onDrill({ [c.key]: undefined })}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    whileTap={{ scale: 0.94, transition: PRESS }}
+                    transition={{ duration: 0.18, ease: EASE }}
+                    className="group inline-flex h-7 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 pl-3 pr-2 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20"
+                  >
+                    {c.label}
+                    <X className="h-3 w-3 opacity-70 transition-opacity group-hover:opacity-100" />
+                  </motion.button>
+                ))}
+              </AnimatePresence>
+              <span className="ml-auto flex items-center gap-3 text-[11px] text-muted-foreground">
+                <span className="tabular-nums">{s.sel.length} of {base.length} trades</span>
+                <button type="button" onClick={() => setDrill({})} className="font-semibold text-primary hover:underline">Reset</button>
+              </span>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
         {base.length === 0 ? (
           <div className="flex min-h-[20rem] flex-1 items-center justify-center rounded-[22px] border border-white/[.07] bg-card/60">
@@ -240,41 +280,61 @@ export function AnalyticsDesk({ trades: allTrades, ruleChecks, today = new Date(
           </div>
         ) : (
           <>
-            <KpiStrip now={s.headline} base={s.baseHeadline} findings={s.findings} drilled={drilled} />
-            <div className="grid min-h-0 flex-1 gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:grid-rows-[minmax(0,1.3fr)_minmax(0,1fr)]">
-              <TimingPane
-                index="01"
-                className={cn(paneH, "sm:col-span-2 lg:col-span-5")}
-                hours={s.hour.buckets}
-                hourCoverage={s.hour.coverage}
-                slot={slot}
-                onSlot={(n) => { setSlot(n); onDrill({ hourSlot: undefined }); }}
-                grid={s.grid}
-                order={s.order}
-                hold={s.hold.buckets}
-                holdCoverage={s.hold.coverage}
-                baseline={s.baseline.expectancy}
-                drill={drill}
-                onDrill={onDrill}
-              />
-              <ConfluencePane
-                index="02"
-                className={cn(paneH, "lg:col-span-4")}
-                confluences={s.confluences}
-                pairs={s.pairs}
-                stack={s.stack}
-                drill={drill}
-                onDrill={onDrill}
-              />
-              <RulePane index="03" className={cn(paneH, "lg:col-span-3")} rules={s.rules} clean={s.clean} drill={drill} onDrill={onDrill} />
-              <ExecutionPane index="04" className={cn("h-[13rem] lg:h-auto", "lg:col-span-2")} buckets={s.quality} drill={drill} onDrill={onDrill} />
-              <DirectionPane index="05" className={cn("h-[13rem] lg:h-auto", "lg:col-span-2")} buckets={s.direction} drill={drill} onDrill={onDrill} />
-              <InstrumentPane index="06" className={cn("h-[16rem] lg:h-auto", "lg:col-span-3")} buckets={s.instruments} drill={drill} onDrill={onDrill} />
-              <EquityPane index="07" className={cn(paneH, "sm:col-span-2 lg:col-span-5")} points={s.curve} trades={s.sel} />
+            <SetupHero best={s.setups.best} worst={s.setups.worst} drill={drill} onDrill={onDrill} />
+            <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-3">
+              <ConfluencePane index="02" className={pane} confluences={s.confluences} pairs={s.pairs} drill={drill} onDrill={onDrill} />
+              <RulePane index="03" className={pane} rules={s.rules} clean={s.clean} drill={drill} onDrill={onDrill} />
+              <ComboPane index="04" className={pane} pairs={s.pairs} stack={s.stack} drill={drill} onDrill={onDrill} />
             </div>
+            <ContextStrip
+              hours={s.hour.buckets}
+              grid={s.grid}
+              quality={s.quality}
+              direction={s.direction}
+              instruments={s.instruments}
+              curve={s.curve}
+              panels={{
+                hour: timing("hour"),
+                day: timing("day"),
+                execution: <ExecutionPane index="0" className={full} buckets={s.quality} drill={drill} onDrill={onDrill} />,
+                direction: <DirectionPane index="0" className={full} buckets={s.direction} drill={drill} onDrill={onDrill} />,
+                market: <InstrumentPane index="0" className={full} buckets={s.instruments} drill={drill} onDrill={onDrill} />,
+                curve: <EquityPane index="0" className={full} points={s.curve} trades={s.sel} />,
+              }}
+            />
           </>
         )}
       </div>
     </TooltipProvider>
+  );
+}
+
+/** The period in one line: trades, R per trade and net R; the rest of the scoreboard is in the hover. */
+function Summary({ now, base, drilled }: { now: Headline; base: Headline; drilled: boolean }) {
+  const delta = drilled ? now.expectancy - base.expectancy : null;
+  return (
+    <Tooltip>
+      <TooltipTrigger className="flex cursor-help items-baseline gap-2 text-xs text-muted-foreground">
+        <span className="tabular-nums"><CountUp value={now.trades} /> trades</span>
+        <span aria-hidden className="text-muted-foreground/40">·</span>
+        <span className="tabular-nums">
+          <CountUp value={now.expectancy} format={(n) => formatR(n)} className="font-semibold" />
+          <span className="sr-only"> per trade</span>
+        </span>
+        <span className="text-muted-foreground/70">avg</span>
+        {delta !== null && Math.abs(delta) >= 0.01 && (
+          <span className="text-[11px] tabular-nums" style={{ color: netRColor(delta) }}>({formatR(delta)} vs period)</span>
+        )}
+        <span aria-hidden className="text-muted-foreground/40">·</span>
+        <span className="tabular-nums" style={{ color: netRColor(now.netR) }}>
+          <CountUp value={now.netR} format={(n) => formatR(n, 1)} className="font-semibold" />
+        </span>
+        <span className="text-muted-foreground/70">net</span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[260px] text-left leading-relaxed">
+        <p>{now.winRate === null ? "No decisive trades" : `${now.winRate}% win rate`} · profit factor {now.profitFactor === null ? "–" : now.profitFactor.toFixed(2)}</p>
+        <p className="opacity-80">{now.breakEven} break-even · {GLOSSARY.rPerTrade}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }

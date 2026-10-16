@@ -11,6 +11,7 @@ import { bucketize, round2, scoreBucket, type EdgeBucket } from "@/lib/journal/e
 import { inOrder } from "@/lib/journal/colors";
 import { minutesOfDay, WEEKDAYS, type SlotSize } from "@/lib/journal/time-stats";
 import { instrumentName, tradeR, winRateOf } from "@/lib/journal/weeks";
+import type { ConfluencePair, ConfluenceStat } from "@/lib/journal/confluence-stats";
 import type { Direction, Session, TradeJournalEntry } from "@/lib/types";
 
 /** "all", a trailing window ("30d" / "90d"), or a calendar month ("yyyy-MM"). */
@@ -25,8 +26,8 @@ export interface Drill {
   weekday?: string;
   /** Entry window: start minute of the day and its width. */
   hourSlot?: { start: number; size: SlotSize };
-  /** Lower-cased confluence key. */
-  confluence?: string;
+  /** Lower-cased confluence keys; a trade must carry every one (one key, or a pair). */
+  confluence?: string[];
   /** Lower-cased rule key and the verdict to keep. */
   rule?: { key: string; label: string; kept: boolean };
   quality?: "good" | "bad" | "unrated";
@@ -69,7 +70,10 @@ export function matchesDrill(t: TradeJournalEntry, drill: Drill, verdicts: Verdi
     const m = minutesOfDay(t.execution_time);
     if (m === null || Math.floor(m / drill.hourSlot.size) * drill.hourSlot.size !== drill.hourSlot.start) return false;
   }
-  if (drill.confluence && !confluenceKeys(t).has(drill.confluence)) return false;
+  if (drill.confluence?.length) {
+    const keys = confluenceKeys(t);
+    if (!drill.confluence.every((k) => keys.has(k))) return false;
+  }
   if (drill.rule && verdicts.get(t.id)?.get(drill.rule.key) !== drill.rule.kept) return false;
   return true;
 }
@@ -92,7 +96,9 @@ export function drillChips(drill: Drill, confluenceLabel?: (key: string) => stri
     const { start, size } = drill.hourSlot;
     out.push({ key: "hourSlot", label: `${clock(start)}–${clock(start + size)}` });
   }
-  if (drill.confluence) out.push({ key: "confluence", label: confluenceLabel?.(drill.confluence) ?? drill.confluence });
+  if (drill.confluence?.length) {
+    out.push({ key: "confluence", label: drill.confluence.map((k) => confluenceLabel?.(k) ?? k).join(" + ") });
+  }
   if (drill.rule) out.push({ key: "rule", label: `${drill.rule.kept ? "Kept" : "Broke"}: ${drill.rule.label}` });
   if (drill.quality) {
     out.push({ key: "quality", label: drill.quality === "unrated" ? "Execution unrated" : `${drill.quality === "good" ? "Good" : "Bad"} execution` });
@@ -169,4 +175,65 @@ export function computeHeadline(trades: TradeJournalEntry[]): Headline {
     profitFactor: lost > 0 ? round2(won / lost) : null,
     breakEven: trades.filter((t) => t.result === "break-even").length,
   };
+}
+
+// ── Setups ──────────────────────────────────────────────────────────────
+
+/** A setup the trader can repeat or avoid: one confluence, or two taken together. */
+export interface Setup {
+  kind: "confluence" | "pair";
+  label: string;
+  /** Lower-cased confluence keys, ready to drill into. */
+  keys: string[];
+  trades: number;
+  winRate: number | null;
+  expectancy: number;
+  totalR: number;
+}
+
+/** Same key, same order, so a selected setup can be recognised and toggled. */
+export const sameKeys = (a?: string[], b?: string[]) =>
+  !!a && !!b && a.length === b.length && [...a].sort().join("\u0000") === [...b].sort().join("\u0000");
+
+/**
+ * The setup that pays most and the one that costs most, from every confluence
+ * and pair with a real sample. "Costs" only fires on a setup that loses money
+ * or trails the average trade: the weakest of a strong set is not a problem.
+ */
+export function pickSetups(
+  confluences: ConfluenceStat[],
+  pairs: ConfluencePair[],
+  baseline: number,
+  minSample = 5
+): { best: Setup | null; worst: Setup | null } {
+  const all: Setup[] = [
+    ...confluences
+      .filter((c) => c.trades >= minSample)
+      .map((c) => ({
+        kind: "confluence" as const,
+        label: c.name,
+        keys: [c.name.toLowerCase()],
+        trades: c.trades,
+        winRate: c.wins + c.losses ? c.winRate : null,
+        expectancy: c.expectancy,
+        totalR: c.totalR,
+      })),
+    ...pairs
+      .filter((p) => p.trades >= minSample)
+      .map((p) => ({
+        kind: "pair" as const,
+        label: `${p.names[0]} + ${p.names[1]}`,
+        keys: p.names.map((n) => n.toLowerCase()),
+        trades: p.trades,
+        winRate: p.winRate,
+        expectancy: p.expectancy,
+        totalR: p.totalR,
+      })),
+  ].sort((a, b) => b.expectancy - a.expectancy || b.trades - a.trades);
+
+  if (all.length === 0) return { best: null, worst: null };
+  const best = all[0].expectancy > 0 ? all[0] : null;
+  const last = all[all.length - 1];
+  const worst = last !== best && (last.expectancy < 0 || last.expectancy < baseline) ? last : null;
+  return { best, worst };
 }

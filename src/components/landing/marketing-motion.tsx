@@ -207,11 +207,11 @@ export function SectionHeader({ label, title, children, align = "split", tone = 
 }
 
 const scoreParts = [
-  { name: "Rule adherence", weight: 35, color: "#4887a3", note: "Did the session follow the written plan?" },
-  { name: "Execution", weight: 20, color: "#0d817c", note: "Entries, exits and risk as planned." },
-  { name: "Habit consistency", weight: 20, color: "#14b8a6", note: "The routines kept on and off the charts." },
-  { name: "Reflection work", weight: 15, color: "#06b6d4", note: "Prepared before, examined after." },
-  { name: "Goal progress", weight: 10, color: "#91dfd5", note: "Movement toward the active goal." },
+  { name: "Rule adherence", weight: 35, color: "#4887a3" },
+  { name: "Execution", weight: 20, color: "#0d817c" },
+  { name: "Habit consistency", weight: 20, color: "#14b8a6" },
+  { name: "Reflection work", weight: 15, color: "#06b6d4" },
+  { name: "Goal progress", weight: 10, color: "#91dfd5" },
 ] as const;
 
 export function MindscoreAssembly() {
@@ -223,9 +223,8 @@ export function MindscoreAssembly() {
   return (
     <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-14" aria-label="MC Mindscore weighting: rule adherence 35 percent, execution 20 percent, habit consistency 20 percent, reflection work 15 percent, goal progress 10 percent">
       <MarketingReveal className="marketing-mindscore-card relative flex min-h-[420px] flex-col justify-between overflow-hidden rounded-[32px] border border-[#29435b] bg-[#111f33] p-7 shadow-[0_28px_75px_rgba(0,0,0,.22)] sm:min-h-[500px] sm:p-10 lg:p-12">
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
+        <div className="border-b border-white/10 pb-5">
           <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9db6bb]">MC Mindscore</span>
-          <span className="rounded-full border border-[#65d4c8]/35 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8de0d5]">Illustrative data</span>
         </div>
         <div className="my-7 flex items-center gap-4 sm:gap-6">
           <BrainScore score={74} className="size-[120px] sm:size-[150px]" />
@@ -234,7 +233,6 @@ export function MindscoreAssembly() {
         <div>
           <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9db6bb]"><span>Score over time</span><span>Example period</span></div>
           <MindscoreTrend points={illustrativeTrend} color="#65d4c8" />
-          <p className="mt-5 text-xs leading-relaxed text-[#9db6bb]">One score shaped by the work behind every session. The curve above is illustrative.</p>
         </div>
       </MarketingReveal>
 
@@ -245,7 +243,7 @@ export function MindscoreAssembly() {
             <MarketingReveal key={part.name} delay={0.1 + index * 0.07} distance={16} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-3 border-b border-white/10 py-5">
               <dt className="flex min-w-0 items-start gap-4">
                 <span aria-hidden="true" className="mt-1.5 h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: part.color }} />
-                <span className="min-w-0"><span className="block text-sm font-semibold text-[#e7f5f4] sm:text-base">{part.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#9db6bb] sm:text-sm">{part.note}</span></span>
+                <span className="min-w-0 text-sm font-semibold text-[#e7f5f4] sm:text-base">{part.name}</span>
               </dt>
               <dd className="font-display text-2xl font-semibold tabular-nums tracking-[-0.05em] text-white sm:text-3xl">{part.weight}%</dd>
               <dd aria-hidden="true" className="col-span-2 h-1 overflow-hidden rounded-full bg-[#29435b]">

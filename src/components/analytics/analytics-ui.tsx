@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Info } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -84,81 +85,132 @@ export function BucketTip({ title, b }: { title: string; b: EdgeBucket }) {
 }
 
 /** Dim the rest of a dimension once one of its segments is drilled into. */
-export const segState = (selected: string | undefined, key: string) =>
-  selected === undefined ? "idle" : selected === key ? "on" : "off";
+export const segState = (selected: string | string[] | undefined, key: string) =>
+  selected === undefined ? "idle" : (Array.isArray(selected) ? selected.includes(key) : selected === key) ? "on" : "off";
 
 /**
- * Horizontal bars diverging from zero: green right, red left, widths grow in.
- * Rows are buttons when `onSelect` is given: the drill-down for that bucket.
+ * Ranked rows, one number each: label (with its trade count in small grey),
+ * a bar diverging from zero, and R per trade. Everything else lives in the
+ * hover. Rows are buttons when `onSelect` is given: the drill-down for that
+ * bucket. `collapseThin` tucks samples under 5 trades behind a toggle, so the
+ * list leads with what is actually evidence.
  */
 export function EdgeBars({
   buckets,
   selected,
   onSelect,
   tipTitle = (b) => b.label,
-  labelWidth = "6rem",
+  tip,
+  labelWidth = "minmax(0,9rem)",
   emptyLabel,
+  collapseThin = false,
+  metric = (b) => b.expectancy,
+  formatValue = (n) => formatR(n),
 }: {
   buckets: EdgeBucket[];
-  selected?: string;
+  /** One key, or several (both halves of a drilled pair). */
+  selected?: string | string[];
   onSelect?: (b: EdgeBucket) => void;
   tipTitle?: (b: EdgeBucket) => string;
+  /** Replaces the default hover card. */
+  tip?: (b: EdgeBucket) => React.ReactNode;
   labelWidth?: string;
   emptyLabel?: string;
+  collapseThin?: boolean;
+  /** The one number a row shows; R per trade unless a pane scores something else. */
+  metric?: (b: EdgeBucket) => number;
+  formatValue?: (n: number) => string;
 }) {
   const reduce = useReducedMotion();
+  const [showThin, setShowThin] = useState(false);
   const filled = buckets.filter((b) => b.trades > 0);
   if (filled.length === 0) return <EmptyPanel>{emptyLabel ?? "No trades in this selection."}</EmptyPanel>;
 
-  const maxAbs = Math.max(0.01, ...filled.map((b) => Math.abs(b.expectancy)));
-  const hasNeg = filled.some((b) => b.expectancy < 0);
-  const hasPos = filled.some((b) => b.expectancy > 0);
+  const thinRows = collapseThin ? buckets.filter((b) => b.thin && b.trades > 0) : [];
+  const rows = collapseThin && !showThin ? buckets.filter((b) => !b.thin || segState(selected, b.key) === "on") : buckets;
+  if (collapseThin && rows.length === 0 && !showThin) {
+    return (
+      <EmptyPanel>
+        <span>
+          Nothing with 5+ trades yet.{" "}
+          <button type="button" onClick={() => setShowThin(true)} className="font-semibold text-primary hover:underline">
+            Show {thinRows.length} early read{thinRows.length === 1 ? "" : "s"}
+          </button>
+        </span>
+      </EmptyPanel>
+    );
+  }
+
+  const values = rows.filter((b) => b.trades > 0).map(metric);
+  const maxAbs = Math.max(0.01, ...values.map(Math.abs));
+  const hasNeg = values.some((v) => v < 0);
+  const hasPos = values.some((v) => v > 0);
   const zero = hasNeg && hasPos ? 50 : hasNeg ? 100 : 0;
   const span = hasNeg && hasPos ? 50 : 100;
+  const hiddenThin = thinRows.filter((b) => !rows.includes(b)).length;
 
   return (
-    <div className="space-y-0.5">
-      {buckets.map((b, i) => {
-        const w = b.trades ? Math.max((Math.abs(b.expectancy) / maxAbs) * span, 1.5) : 0;
-        const left = b.expectancy >= 0 ? zero : zero - w;
+    <div className="space-y-px">
+      {rows.map((b, i) => {
+        const v = metric(b);
+        const w = b.trades ? Math.max((Math.abs(v) / maxAbs) * span, 1.5) : 0;
+        const left = v >= 0 ? zero : zero - w;
         const state = segState(selected, b.key);
+        const muted = b.thin || !b.trades;
         return (
           <Tooltip key={b.key}>
             <TooltipTrigger
               disabled={!b.trades}
               onClick={onSelect && b.trades ? () => onSelect(b) : undefined}
               className={cn(
-                "grid w-full items-center gap-2.5 rounded-md px-1.5 py-[5px] text-left text-xs transition-[background-color,opacity] duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary",
-                onSelect && b.trades ? "cursor-pointer hover:bg-muted/40 active:scale-[.99]" : "cursor-default",
+                "grid w-full items-center gap-3 rounded-lg px-2 py-[7px] text-left text-[13px] transition-[background-color,opacity] duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary",
+                onSelect && b.trades ? "cursor-pointer hover:bg-muted/35 active:scale-[.99]" : "cursor-default",
                 state === "on" && "bg-primary/10 ring-1 ring-primary/50",
                 state === "off" && "opacity-45"
               )}
-              style={{ gridTemplateColumns: `${labelWidth} minmax(0,1fr) 3.75rem 1.75rem` }}
+              style={{ gridTemplateColumns: `${labelWidth} minmax(0,1fr) 3.75rem` }}
             >
-              <span className={cn("truncate font-medium", (b.thin || !b.trades) && "text-muted-foreground")}>{b.label}</span>
-              <span className="relative h-2 rounded-full bg-muted/30">
-                {hasNeg && hasPos && <span className="absolute inset-y-[-3px] left-1/2 w-px bg-border" />}
+              <span className={cn("flex min-w-0 items-baseline gap-1.5", muted && "text-muted-foreground")}>
+                <span className="truncate">{b.label}</span>
+                {b.trades > 0 && <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground/60">{b.trades}</span>}
+              </span>
+              <span className="relative h-1.5 rounded-full bg-muted/25">
+                {hasNeg && hasPos && <span className="absolute inset-y-[-3px] left-1/2 w-px bg-border/70" />}
                 {b.trades > 0 && (
                   <motion.span
                     className="absolute inset-y-0 rounded-full"
                     initial={reduce ? false : { width: 0, left: `${zero}%` }}
                     animate={{ width: `${w}%`, left: `${left}%` }}
                     transition={{ duration: 0.55, delay: reduce ? 0 : i * 0.025, ease: EASE }}
-                    style={{ background: b.thin ? alpha("var(--muted-foreground)", 35) : netRColor(b.expectancy) }}
+                    style={{ background: b.thin ? alpha("var(--muted-foreground)", 35) : alpha(netRColor(v), 80) }}
                   />
                 )}
               </span>
               <span className="text-right">
-                {b.trades ? <RValue r={b.expectancy} thin={b.thin} /> : <span className="text-muted-foreground/50">–</span>}
+                {b.trades ? (
+                  <span className={cn("font-semibold tabular-nums", muted && "text-muted-foreground")} style={muted ? undefined : { color: netRColor(v) }}>
+                    {formatValue(v)}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground/50">–</span>
+                )}
               </span>
-              <span className="text-right text-[10px] tabular-nums text-muted-foreground/70">{b.trades || ""}</span>
             </TooltipTrigger>
-            <TooltipContent className="text-left">
-              <BucketTip title={tipTitle(b)} b={b} />
+            <TooltipContent className="max-w-[280px] text-left">
+              {tip ? tip(b) : <BucketTip title={tipTitle(b)} b={b} />}
             </TooltipContent>
           </Tooltip>
         );
       })}
+      {collapseThin && (hiddenThin > 0 || showThin) && thinRows.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowThin((x) => !x)}
+          className="px-2 pt-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {showThin ? "Hide early reads" : `+${hiddenThin} with too few trades`}
+        </button>
+      )}
     </div>
   );
 }

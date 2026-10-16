@@ -2,8 +2,8 @@ import Link from "next/link";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/footer";
 import { DashboardScreenshot } from "@/components/landing/dashboard-sample";
-import { MarketContextVisual, ProcessCanvas, ReviewCanvas, TherapistVisual, marketTabs, reviewSteps, therapistCadence } from "@/components/landing/marketing-visuals";
-import { MarketingReveal, MindscoreAssembly, SectionHeader } from "@/components/landing/marketing-motion";
+import { MarketContextVisual, ProcessCanvas, ReviewCanvas, TherapistVisual } from "@/components/landing/marketing-visuals";
+import { MindscoreAssembly, SectionHeader } from "@/components/landing/marketing-motion";
 
 export default function HomePage() {
   return (
@@ -51,18 +51,8 @@ export default function HomePage() {
             <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.42fr_0.58fr] lg:gap-20">
               <div className="marketing-sticky">
                 <SectionHeader label="MC Trade Therapist" title="A practice of looking closer." tone="dark" align="stack">
-                  Prepare before the market, analyse after it and turn each week into a lesson. Monthly rollups show what persists.
+                  Prepare with intention, review your decisions and carry one lesson into the next session.
                 </SectionHeader>
-                <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
-                  <ol className="divide-y divide-white/10 border-y border-white/10">
-                    {therapistCadence.map((item) => (
-                      <li key={item.label} className="flex items-baseline justify-between gap-6 py-4 text-sm">
-                        <span className="flex items-baseline gap-4"><span className="font-medium text-[#e7f5f4]">{item.label}</span></span>
-                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#91aeb4]">{item.meta}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </MarketingReveal>
               </div>
               <TherapistVisual />
             </div>
@@ -72,18 +62,8 @@ export default function HomePage() {
             <div className="mx-auto grid max-w-[1260px] gap-12 lg:grid-cols-[0.38fr_0.62fr] lg:gap-20">
               <div className="marketing-sticky">
                 <SectionHeader label="Best trade of the day" title="A review should change what you do." tone="dark" align="stack">
-                  Look back at the trade you took, mark the best trade that was on offer, and turn the difference into one response for the next session.
+                  Compare the trade you took with the better opportunity. See the decision that made the difference.
                 </SectionHeader>
-                <MarketingReveal delay={0.2} distance={12} className="mt-10 hidden lg:block">
-                  <ol className="divide-y divide-white/10 border-y border-white/10">
-                    {reviewSteps.map((item) => (
-                      <li key={item.label} className="flex items-baseline justify-between gap-6 py-4 text-sm">
-                        <span className="flex items-baseline gap-4"><span className="font-medium text-[#e7f5f4]">{item.label}</span></span>
-                        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#91aeb4]">{item.meta}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </MarketingReveal>
               </div>
               <ReviewCanvas />
             </div>
@@ -92,19 +72,8 @@ export default function HomePage() {
           <section id="market-context" className="marketing-section marketing-section--blue-glow px-6 py-24 sm:px-10 md:py-32 lg:px-12 lg:py-40">
             <div className="mx-auto max-w-[1260px]">
               <SectionHeader label="Global Markets" title="Your process meets the market you actually trade." tone="dark" className="mb-14 lg:mb-18">
-                Releases, positioning and the rates backdrop sit beside the plan you already wrote, so context informs the session without rewriting it.
+                See the events and market signals that matter before you trade. Keep your plan in view.
               </SectionHeader>
-              <MarketingReveal delay={0.15} distance={10} className="mb-6 hidden lg:block">
-                <ol className="flex divide-x divide-white/10 border-y border-white/10 text-sm">
-                  {marketTabs.map((tab, index) => (
-                    <li key={tab.label} className="flex flex-1 items-baseline gap-4 px-5 py-4 first:pl-0 last:pr-0">
-                      <span className="font-display tabular-nums text-[#65d4c8]">0{index + 1}</span>
-                      <span className="font-medium text-[#e7f5f4]">{tab.label}</span>
-                      <span className="ml-auto text-xs font-semibold uppercase tracking-[0.12em] text-[#91aeb4]">{tab.meta}</span>
-                    </li>
-                  ))}
-                </ol>
-              </MarketingReveal>
               <MarketContextVisual />
             </div>
           </section>

@@ -12,7 +12,7 @@ require.extensions['.ts'] = function (loaded, filename) { const source = fs.read
 
 const {
   inPeriod, applyDrill, drillChips, computeDirectionStats, computeQualityStats,
-  computeInstrumentStats, computeEquityCurve, computeHeadline,
+  computeInstrumentStats, computeEquityCurve, computeHeadline, pickSetups, sameKeys,
 } = require('../src/lib/journal/analytics-filter.ts');
 const { ruleVerdictsByTrade, computeRuleStats } = require('../src/lib/journal/rule-stats.ts');
 const { sampleAnalyticsData } = require('../src/lib/journal/analytics-sample.ts');
@@ -42,7 +42,8 @@ test('drills combine and match the same trades the panes show', () => {
   assert.deepEqual(applyDrill(all, { weekday: '2', session: 'London' }, none).map((t) => t.id), [a.id]);
   assert.deepEqual(applyDrill(all, { hourSlot: { start: 9 * 60 + 30, size: 30 } }, none).map((t) => t.id), [a.id, c.id]);
   assert.deepEqual(applyDrill(all, { hourSlot: { start: 9 * 60, size: 60 } }, none).map((t) => t.id), [a.id, c.id]);
-  assert.equal(applyDrill(all, { confluence: 'fvg' }, none).length, 2);
+  assert.equal(applyDrill(all, { confluence: ['fvg'] }, none).length, 2);
+  assert.deepEqual(applyDrill(all, { confluence: ['fvg', 'htf bias'] }, none).map((t) => t.id), [a.id]);
   assert.deepEqual(applyDrill(all, { instrument: 'Nasdaq' }, none).length, 3); // NQ and MNQ are one market
   assert.deepEqual(applyDrill(all, { quality: 'unrated', direction: 'long' }, none).map((t) => t.id), [a.id]);
   assert.deepEqual(applyDrill(all, {}, none).length, 3);
@@ -63,6 +64,31 @@ test('rule drill uses the same verdicts as the rule stats', () => {
 test('chips read as plain labels', () => {
   const chips = drillChips({ weekday: '2', session: 'London', hourSlot: { start: 570, size: 30 }, rule: { key: 'x', label: 'X', kept: false }, quality: 'good' });
   assert.deepEqual(chips.map((c) => c.label), ['Tuesday', 'London', '09:30–10:00', 'Broke: X', 'Good execution']);
+});
+
+test('pair chips join both confluence names', () => {
+  const chips = drillChips({ confluence: ['fvg', 'htf bias'] }, (k) => k.toUpperCase());
+  assert.deepEqual(chips.map((c) => c.label), ['FVG + HTF BIAS']);
+});
+
+test('setups: best and worst across confluences and pairs, real samples only', () => {
+  const conf = (name, trades, expectancy) => ({ name, trades, wins: 3, losses: 2, winRate: 60, totalR: expectancy * trades, expectancy, thin: trades < 5 });
+  const pair = (a, b, trades, expectancy) => ({ key: `${a}|${b}`, label: `${a} + ${b}`, names: [a, b], trades, wins: 3, losses: 2, winRate: 60, totalR: expectancy * trades, expectancy, thin: trades < 5 });
+  const { best, worst } = pickSetups(
+    [conf('FVG', 10, 0.4), conf('News', 6, -0.5), conf('Lucky', 2, 3)],
+    [pair('FVG', 'Sweep', 5, 0.9)],
+    0.2
+  );
+  assert.equal(best.kind, 'pair');
+  assert.deepEqual(best.keys, ['fvg', 'sweep']);
+  assert.equal(worst.label, 'News');
+  // A strong set has no "costs": its weakest member still beats the average.
+  const strong = pickSetups([conf('A', 8, 0.6), conf('B', 8, 0.5)], [], 0.3);
+  assert.equal(strong.best.label, 'A');
+  assert.equal(strong.worst, null);
+  assert.deepEqual(pickSetups([], [], 0), { best: null, worst: null });
+  assert.ok(sameKeys(['b', 'a'], ['a', 'b']));
+  assert.ok(!sameKeys(['a'], ['a', 'b']));
 });
 
 test('direction, quality and instrument breakdowns', () => {
