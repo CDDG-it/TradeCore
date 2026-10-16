@@ -17,7 +17,7 @@ const QUALITY_COLOR: Record<string, string> = {
 };
 
 /**
- * A share bar plus one tile per bucket: used for execution quality and
+ * A share bar plus one row per bucket: used for execution quality and
  * direction, the two splits small enough to read at a glance.
  */
 function SplitTiles({
@@ -45,7 +45,7 @@ function SplitTiles({
           />
         ))}
       </div>
-      <div className={cn("grid min-h-0 flex-1 gap-1.5", buckets.length === 3 ? "grid-cols-3" : "grid-cols-2")}>
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-1.5">
         {buckets.map((b) => {
           const state = segState(selected, b.key);
           return (
@@ -54,23 +54,23 @@ function SplitTiles({
                 disabled={!b.trades}
                 onClick={() => onSelect(b)}
                 className={cn(
-                  "flex min-w-0 flex-col justify-between rounded-xl border border-border/40 bg-muted/15 px-2 py-2 text-left transition-[background-color,border-color,opacity,transform] duration-200 hover:border-primary/40 active:scale-[.97] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:pointer-events-none",
+                  "flex min-w-0 items-center gap-2 rounded-xl border border-border/40 bg-muted/15 px-2.5 py-2 text-left transition-[background-color,border-color,opacity,transform] duration-200 hover:border-primary/40 active:scale-[.98] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50",
                   state === "on" && "border-primary bg-primary/10",
                   state === "off" && "opacity-45"
                 )}
               >
-                <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: colorOf(b) }} />
-                  <span className="truncate">{b.label}</span>
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: colorOf(b) }} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-semibold">{b.label}</span>
+                  <span className="block text-[10px] tabular-nums text-muted-foreground">
+                    {b.trades} · {b.winRate === null ? "–" : `${b.winRate}% win`}
+                  </span>
                 </span>
                 <span
-                  className={cn("mt-1 text-base font-black leading-none tabular-nums", b.thin && "text-muted-foreground")}
+                  className={cn("shrink-0 text-sm font-black tabular-nums", b.thin && "text-muted-foreground")}
                   style={b.trades && !b.thin ? { color: netRColor(b.expectancy) } : undefined}
                 >
                   {b.trades ? <CountUp value={b.expectancy} format={(n) => formatR(n)} /> : "–"}
-                </span>
-                <span className="mt-1 text-[10px] tabular-nums text-muted-foreground">
-                  {b.trades} · {b.winRate === null ? "–" : `${b.winRate}%`}
                 </span>
               </TooltipTrigger>
               <TooltipContent className="text-left">
