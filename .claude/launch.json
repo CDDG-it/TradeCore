@@ -9,6 +9,12 @@
       "autoPort": true
     },
     {
+      "name": "tradinghub-analytics",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "-p", "3107"],
+      "port": 3107
+    },
+    {
       "name": "tradinghub-webpack",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["next", "dev", "--webpack"],
