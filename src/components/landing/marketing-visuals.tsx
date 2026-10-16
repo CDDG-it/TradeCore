@@ -53,49 +53,59 @@ export function ProcessCanvas() {
   );
 }
 
-/** A quiet comparison of the decision made and the opportunity that followed. */
+/** One setup, two decisions. Motion follows the moment of entry through to the outcome. */
 export function ReviewCanvas() {
   return (
-    <div className="overflow-hidden rounded-[32px] border border-[#193c48] bg-[#102332] text-white shadow-[0_30px_80px_rgba(18,62,71,.18)]" aria-label="A session review comparing an early entry with a patient entry">
-      <div className="border-b border-white/10 px-6 py-5 sm:px-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8aa5ab]">Session review</p>
+    <div className="overflow-hidden rounded-[32px] border border-[#28505a] bg-[#0d1c29] text-white shadow-[0_30px_80px_rgba(18,62,71,.18)]" aria-label="A session review comparing an early entry with a patient entry">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10 px-6 py-6 sm:px-8">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8de0d5]">Session review</p><p className="font-display mt-2 text-xl font-medium tracking-[-0.035em] sm:text-2xl">Same setup. Different timing.</p></div>
+        <span className="text-xs text-[#90aeb5]">The decision changes the trade</span>
       </div>
 
-      <div className="grid gap-3 p-4 sm:p-5 lg:grid-cols-2">
-        <MarketingReveal distance={16} className="rounded-[24px] border border-white/10 bg-[#0d1c29] p-6">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-white">Trade taken</p>
-            <span className="rounded-full bg-[#ef4444]/10 px-3 py-1 text-xs font-medium text-[#f08c8c]">Entered early</span>
+      <div className="relative space-y-3 p-4 sm:p-5">
+        <DrawLine axis="y" delay={0.2} duration={1} className="absolute bottom-12 left-[36px] top-12 z-10 w-px bg-[#65d4c8]/40 sm:left-[40px]" />
+        <MarketingReveal distance={14} className="relative overflow-hidden rounded-[24px] border border-[#ef7777]/20 bg-[#122335] px-5 py-5 sm:px-7">
+          <div className="grid gap-5 sm:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)] sm:items-center">
+            <div className="relative z-20 pl-7">
+              <span aria-hidden className="absolute left-[-19px] top-1.5 block size-3 rounded-full border-[3px] border-[#122335] bg-[#f08c8c] ring-1 ring-[#f08c8c]" />
+              <p className="text-xs font-semibold uppercase tracking-[0.13em] text-[#f08c8c]">Trade taken</p>
+              <p className="font-display mt-2 text-2xl font-medium tracking-[-0.04em]">Entered early</p>
+              <MarketingReveal delay={0.65} distance={7}><p className="mt-3 max-w-[220px] text-sm leading-relaxed text-[#b8ccd0]">The entry came before the level held.</p></MarketingReveal>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl border border-white/5 bg-[#0d1c29] px-3 py-4" role="img" aria-label="Price fell after an entry made before confirmation">
+              <span className="absolute right-4 top-3 text-[10px] uppercase tracking-[.13em] text-[#78959c]">Planned level</span>
+              <svg viewBox="0 0 320 120" className="h-32 w-full" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0 62 H320" stroke="#91aeb4" strokeOpacity=".3" strokeDasharray="4 6" />
+                <path d="M0 58 C38 49 58 58 83 34 S115 42 139 64 S177 54 192 82 S238 101 263 91 S296 99 320 102 L320 120 H0 Z" fill="#ef4444" fillOpacity=".09" />
+                <DrawPath d="M0 58 C38 49 58 58 83 34 S115 42 139 64 S177 54 192 82 S238 101 263 91 S296 99 320 102" stroke="#f08c8c" strokeWidth={2.5} delay={0.2} duration={1.5} />
+              </svg>
+              <PinReveal delay={0.65} className="absolute left-[34%] top-[30%]"><span className="block size-3 rounded-full border-[3px] border-[#0d1c29] bg-[#f08c8c] ring-1 ring-[#f08c8c]" /></PinReveal>
+            </div>
           </div>
-          <div className="mt-7 overflow-hidden rounded-2xl bg-[#11283a] px-4 py-5" role="img" aria-label="Price fell after an entry made before confirmation">
-            <svg viewBox="0 0 320 150" className="h-36 w-full" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M0 92 H320" stroke="#9db6bb" strokeOpacity=".22" strokeDasharray="5 7" />
-              <path d="M0 66 C32 54 55 68 78 48 S116 41 138 82 S175 71 190 99 S235 126 263 117 S291 107 320 119 L320 150 H0 Z" fill="#ef4444" fillOpacity=".08" />
-              <DrawPath d="M0 66 C32 54 55 68 78 48 S116 41 138 82 S175 71 190 99 S235 126 263 117 S291 107 320 119" stroke="#f08c8c" strokeWidth={3} delay={0.2} duration={1.3} />
-              <circle cx="101" cy="45" r="5" fill="#f08c8c" />
-            </svg>
-          </div>
-          <p className="mt-5 text-sm leading-relaxed text-[#b8ccd0]">The entry came before the level held.</p>
         </MarketingReveal>
 
-        <MarketingReveal delay={0.14} distance={16} className="rounded-[24px] border border-[#14b8a6]/30 bg-[#0d1c29] p-6">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-white">Best trade on offer</p>
-            <span className="rounded-full bg-[#14b8a6]/10 px-3 py-1 text-xs font-medium text-[#8de0d5]">Waited for the level</span>
+        <MarketingReveal delay={0.22} distance={14} className="relative overflow-hidden rounded-[24px] border border-[#65d4c8]/35 bg-[#10303b] px-5 py-5 sm:px-7">
+          <div className="grid gap-5 sm:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)] sm:items-center">
+            <div className="relative z-20 pl-7">
+              <span aria-hidden className="absolute left-[-19px] top-1.5 block size-3 rounded-full border-[3px] border-[#10303b] bg-[#65d4c8] ring-1 ring-[#65d4c8]" />
+              <p className="text-xs font-semibold uppercase tracking-[0.13em] text-[#8de0d5]">Best trade on offer</p>
+              <p className="font-display mt-2 text-2xl font-medium tracking-[-0.04em]">Waited for the level</p>
+              <MarketingReveal delay={0.85} distance={7}><p className="mt-3 max-w-[220px] text-sm leading-relaxed text-[#b8ccd0]">The level held. Confirmation came first.</p></MarketingReveal>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl border border-[#65d4c8]/10 bg-[#0d2530] px-3 py-4" role="img" aria-label="Price rose after the planned level held and the entry was confirmed">
+              <span className="absolute right-4 top-3 text-[10px] uppercase tracking-[.13em] text-[#78959c]">Planned level</span>
+              <svg viewBox="0 0 320 120" className="h-32 w-full" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0 62 H320" stroke="#91aeb4" strokeOpacity=".3" strokeDasharray="4 6" />
+                <path d="M0 38 C35 46 54 76 83 82 S119 87 145 62 S186 64 215 43 S263 35 320 12 L320 120 H0 Z" fill="#14b8a6" fillOpacity=".1" />
+                <DrawPath d="M0 38 C35 46 54 76 83 82 S119 87 145 62 S186 64 215 43 S263 35 320 12" stroke="#65d4c8" strokeWidth={2.5} delay={0.5} duration={1.5} />
+              </svg>
+              <PinReveal delay={1.1} className="absolute left-[44%] top-[52%]"><span className="block size-3 rounded-full border-[3px] border-[#0d2530] bg-[#65d4c8] ring-1 ring-[#65d4c8]" /></PinReveal>
+            </div>
           </div>
-          <div className="mt-7 overflow-hidden rounded-2xl bg-[#11283a] px-4 py-5" role="img" aria-label="Price rose after the planned level held and the entry was confirmed">
-            <svg viewBox="0 0 320 150" className="h-36 w-full" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M0 92 H320" stroke="#9db6bb" strokeOpacity=".22" strokeDasharray="5 7" />
-              <path d="M0 57 C35 72 54 100 83 108 S121 116 146 91 S187 89 215 63 S260 52 320 20 L320 150 H0 Z" fill="#14b8a6" fillOpacity=".1" />
-              <DrawPath d="M0 57 C35 72 54 100 83 108 S121 116 146 91 S187 89 215 63 S260 52 320 20" stroke="#65d4c8" strokeWidth={3} delay={0.4} duration={1.3} />
-              <circle cx="127" cy="107" r="5" fill="#65d4c8" />
-            </svg>
-          </div>
-          <p className="mt-5 text-sm leading-relaxed text-[#b8ccd0]">The level held. Confirmation came first.</p>
         </MarketingReveal>
       </div>
 
-      <MarketingReveal delay={0.35} distance={8} className="flex flex-wrap items-baseline justify-between gap-3 border-t border-white/10 px-6 py-5 sm:px-8">
+      <MarketingReveal delay={0.9} distance={8} className="flex flex-wrap items-baseline justify-between gap-3 border-t border-[#65d4c8]/20 bg-[#102b35] px-6 py-5 sm:px-8">
         <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8de0d5]">The difference</span>
         <span className="font-display text-xl font-medium tracking-[-0.03em] text-white">Patience before entry.</span>
       </MarketingReveal>
@@ -150,9 +160,9 @@ export function TherapistVisual() {
 }
 
 const marketEvents = [
-  { day: "Tue", event: "CPI", time: "08:30", tone: "text-[#8de0d5]" },
-  { day: "Wed", event: "Rate decision", time: "14:00", tone: "text-[#8de0d5]" },
-  { day: "Thu", event: "Jobless claims", time: "08:30", tone: "text-[#b8ccd0]" },
+  { day: "Tue", event: "CPI", time: "08:30" },
+  { day: "Wed", event: "Rate decision", time: "14:00" },
+  { day: "Thu", event: "Jobless claims", time: "08:30" },
 ] as const;
 
 const marketBackdrop = [
@@ -164,40 +174,44 @@ const marketBackdrop = [
 export function MarketContextVisual() {
   return (
     <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]" aria-label="Example Global Markets view with events, positioning, rates and the trading plan">
-      <MarketingReveal className="flex flex-col rounded-[28px] border border-[#193c48] bg-[#102332] p-6 text-white shadow-[0_30px_80px_rgba(18,62,71,.16)] sm:p-8 lg:row-span-2">
-        <p className="text-sm font-medium text-[#8de0d5]">Event watch</p>
-        <p className="font-display mt-4 max-w-md text-balance text-[clamp(1.8rem,2.8vw,2.8rem)] font-medium leading-[1.08] tracking-[-0.04em]">Know what is ahead.</p>
-        <div className="mt-8 divide-y divide-white/10 border-y border-white/10">
+      <MarketingReveal className="relative flex flex-col overflow-hidden rounded-[28px] border border-[#26515a] bg-[#102332] p-6 text-white shadow-[0_30px_80px_rgba(18,62,71,.16)] sm:p-8 lg:row-span-2">
+        <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-[#0b67c9]/10 blur-[65px]" />
+        <div className="relative flex items-start justify-between gap-4"><div><p className="text-sm font-medium text-[#8de0d5]">Event watch</p><p className="font-display mt-4 max-w-md text-balance text-[clamp(1.8rem,2.8vw,2.8rem)] font-medium leading-[1.08] tracking-[-0.04em]">Know what is ahead.</p></div><span className="rounded-full border border-[#65d4c8]/25 px-3 py-1 text-[10px] font-semibold uppercase tracking-[.12em] text-[#8de0d5]">This week</span></div>
+
+        <div className="relative mt-12 grid grid-cols-3 gap-2 pb-2">
+          <DrawLine axis="x" delay={0.2} duration={1.1} className="absolute left-[16.7%] right-[16.7%] top-2.5 h-px bg-[#65d4c8]/65" />
           {marketEvents.map((item, index) => (
-            <MarketingReveal key={item.event} delay={0.1 + index * 0.1} distance={8} className="grid grid-cols-[3.5rem_minmax(0,1fr)_auto] items-center gap-4 py-5">
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#78959c]">{item.day}</span>
-              <span className={`font-medium ${item.tone}`}>{item.event}</span>
-              <span className="text-sm tabular-nums text-[#9db6bb]">{item.time}</span>
+            <MarketingReveal key={item.event} delay={0.26 + index * 0.18} distance={9} className="relative min-w-0 text-center">
+              <span aria-hidden className={`relative z-10 mx-auto block size-5 rounded-full border-[5px] border-[#102332] ring-1 ${index === 0 ? "bg-[#65d4c8] ring-[#65d4c8] shadow-[0_0_20px_rgba(101,212,200,.5)]" : "bg-[#7b9ba4] ring-[#7b9ba4]"}`} />
+              <span className="mt-6 block text-[10px] font-semibold uppercase tracking-[.14em] text-[#78959c]">{item.day} · {item.time}</span>
+              <span className={`mt-2 block text-sm font-medium leading-tight sm:text-base ${index === 0 ? "text-[#8de0d5]" : "text-white"}`}>{item.event}</span>
             </MarketingReveal>
           ))}
         </div>
-        <div className="mt-auto flex items-center gap-3 pt-8 text-sm text-[#b8ccd0]"><span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-[#14b8a6]" />Check the release before entering.</div>
+        <MarketingReveal delay={0.9} distance={8} className="mt-auto flex items-center gap-3 border-t border-white/10 pt-7 text-sm text-[#b8ccd0]"><span aria-hidden className="size-2 shrink-0 rounded-full bg-[#14b8a6]" />Check the release before entering.</MarketingReveal>
       </MarketingReveal>
 
-      <MarketingReveal delay={0.12} className="rounded-[28px] border border-white/10 bg-[#14243a] p-6 text-white shadow-[0_24px_60px_rgba(0,0,0,.18)] sm:p-8">
-        <div className="flex items-center justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Positioning</p><span className="text-xs text-[#78959c]">ES · COT</span></div>
-        <p className="font-display mt-5 text-2xl font-semibold tracking-[-0.035em]">Large traders lean long.</p>
-        <div className="mt-7 flex items-center justify-between gap-4 text-sm"><span className="text-[#b8ccd0]">Large speculators</span><span className="font-medium tabular-nums text-[#8de0d5]">62% long</span></div>
-        <span aria-hidden="true" className="mt-3 block h-1.5 overflow-hidden rounded-full bg-white/10"><GrowBar axis="x" delay={0.45} className="block h-full rounded-full bg-[#14b8a6]" style={{ width: "62%" }} /></span>
+      <MarketingReveal delay={0.12} className="flex items-center justify-between gap-5 rounded-[28px] border border-white/10 bg-[#14243a] p-6 text-white shadow-[0_24px_60px_rgba(0,0,0,.18)] sm:p-8">
+        <div className="min-w-0"><div className="flex flex-wrap items-center gap-x-3 gap-y-1"><p className="text-sm font-medium text-[#8de0d5]">Positioning</p><span className="text-xs text-[#78959c]">ES · COT</span></div><p className="font-display mt-5 max-w-[210px] text-2xl font-semibold leading-tight tracking-[-0.035em]">Large traders lean long.</p><p className="mt-3 text-xs text-[#9db6bb]">Large speculators</p></div>
+        <div className="relative size-28 shrink-0 sm:size-32" role="img" aria-label="Large speculators are 62 percent long">
+          <svg viewBox="0 0 120 120" className="size-full -rotate-90" aria-hidden="true"><circle cx="60" cy="60" r="48" fill="none" stroke="#29435b" strokeWidth="9" /><DrawPath d="M60 12 A48 48 0 1 1 27 95" stroke="#65d4c8" strokeWidth={9} delay={0.4} duration={1.2} /></svg>
+          <span className="absolute inset-0 flex flex-col items-center justify-center"><span className="font-display text-3xl font-semibold tabular-nums tracking-[-.06em]">62<span className="text-lg">%</span></span><span className="text-[10px] uppercase tracking-[.14em] text-[#8de0d5]">Long</span></span>
+        </div>
       </MarketingReveal>
 
-      <MarketingReveal delay={0.2} className="rounded-[28px] border border-white/10 bg-[#111f33] p-6 text-white sm:p-8">
-        <p className="text-sm font-medium text-[#8de0d5]">Market backdrop</p>
-        <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-white/10 pt-5">
-          {marketBackdrop.map((item) => (
-            <div key={item.label} className="min-w-0"><dt className="text-xs text-[#9db6bb]">{item.label}</dt><dd className="font-display mt-2 text-lg font-semibold tabular-nums tracking-[-0.04em] sm:text-xl">{item.value}</dd></div>
+      <MarketingReveal delay={0.2} className="overflow-hidden rounded-[28px] border border-white/10 bg-[#111f33] p-6 text-white sm:p-8">
+        <div className="flex items-center justify-between gap-4"><p className="text-sm font-medium text-[#8de0d5]">Market backdrop</p><span aria-hidden className="flex items-end gap-1"><span className="h-2 w-1 rounded-full bg-[#65d4c8]/30" /><span className="h-4 w-1 rounded-full bg-[#65d4c8]/60" /><span className="h-3 w-1 rounded-full bg-[#65d4c8]" /></span></div>
+        <dl className="mt-6 grid grid-cols-3 divide-x divide-white/10 border-t border-white/10 pt-5">
+          {marketBackdrop.map((item, index) => (
+            <MarketingReveal key={item.label} delay={0.3 + index * 0.1} distance={8} className={`min-w-0 ${index === 0 ? "pr-2" : "px-3 sm:px-4"}`}><dt className="text-[11px] text-[#9db6bb]">{item.label}</dt><dd className="font-display mt-2 text-lg font-semibold tabular-nums tracking-[-0.04em] sm:text-xl">{item.value}</dd></MarketingReveal>
           ))}
         </dl>
       </MarketingReveal>
 
-      <MarketingReveal delay={0.28} className="flex flex-wrap items-center justify-between gap-5 rounded-[28px] border border-[#65d4c8]/20 bg-[#0d1c29] p-6 text-white sm:p-8 lg:col-span-2">
+      <MarketingReveal delay={0.28} className="relative flex flex-wrap items-center justify-between gap-5 overflow-hidden rounded-[28px] border border-[#65d4c8]/25 bg-[#0d2530] p-6 text-white sm:p-8 lg:col-span-2">
+        <DrawLine axis="x" delay={0.6} duration={1} className="absolute inset-x-0 top-0 h-px bg-[#65d4c8]" />
         <div><p className="text-sm font-medium text-[#8de0d5]">Your plan</p><p className="font-display mt-2 text-xl font-medium tracking-[-0.03em] sm:text-2xl">Wait for price to reach your level.</p></div>
-        <span className="rounded-full border border-[#65d4c8]/30 px-4 py-2 text-sm font-medium text-[#8de0d5]">Unchanged</span>
+        <span className="flex items-center gap-2 rounded-full border border-[#65d4c8]/30 px-4 py-2 text-sm font-medium text-[#8de0d5]"><span aria-hidden className="size-1.5 rounded-full bg-[#65d4c8]" />Unchanged</span>
       </MarketingReveal>
     </div>
   );
