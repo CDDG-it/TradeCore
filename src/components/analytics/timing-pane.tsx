@@ -60,7 +60,8 @@ function HourChart({
   const rows: Row[] = buckets.map((b) => ({ ...b, start: slotStart(b.key), r: b.trades ? b.expectancy : null }));
   const sel = drill.hourSlot && drill.hourSlot.size === slot ? String(drill.hourSlot.start) : undefined;
   const { best, worst } = extremes(buckets);
-  const labelAll = slot === 60 || rows.length <= 12;
+  // About ten labels across the axis, whatever the slot size.
+  const every = Math.max(1, Math.ceil(rows.length / 10));
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -73,7 +74,7 @@ function HourChart({
               tickLine={false}
               interval={0}
               tick={({ x, y, index }: { x: number | string; y: number | string; index: number }) =>
-                labelAll || Number(rows[index]?.key) % 60 === 0 ? (
+                index % every === 0 ? (
                   <text x={x} y={Number(y) + 10} textAnchor="middle" fontSize={10} fill="var(--color-muted-foreground)">
                     {rows[index]?.start}
                   </text>

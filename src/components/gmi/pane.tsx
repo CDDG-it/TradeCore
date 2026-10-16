@@ -217,7 +217,7 @@ export function Switch<T extends string>({
             onClick={() => onChange(o.key)}
             whileTap={{ scale: 0.94 }}
             className={cn(
-              "relative rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wider transition-colors duration-200",
+              "relative whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wider transition-colors duration-200",
               active ? "text-primary-foreground" : "text-foreground/70 hover:text-foreground"
             )}
           >
