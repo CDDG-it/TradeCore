@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { addMonths, format, parse } from "date-fns";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CountUp } from "@/components/ui/count-up";
@@ -13,7 +13,7 @@ import {
 import { Empty, Switch } from "@/components/gmi/pane";
 import { PRESS } from "@/components/trade-therapist/motion-button";
 import { formatR, scoreBucket } from "@/lib/journal/edge";
-import { netRColor } from "@/lib/journal/colors";
+import { BE_COLOR, LOSS_COLOR, WIN_COLOR, netRColor } from "@/lib/journal/colors";
 import {
   computeEntryTimeStats, computeHoldTimeStats, computeTradeOrderStats, computeWeekdaySessionGrid, type SlotSize,
 } from "@/lib/journal/time-stats";
@@ -195,7 +195,13 @@ export function AnalyticsDesk({ trades: allTrades, ruleChecks, today = new Date(
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
             <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">Analytics</h1>
-            {base.length > 0 && <Summary now={s.headline} base={s.baseHeadline} drilled={drilled} />}
+            {base.length > 0 && (
+              <>
+                <Summary now={s.headline} base={s.baseHeadline} drilled={drilled} />
+                <span aria-hidden className="hidden h-3 w-px self-center bg-border sm:block" />
+                <Record now={s.headline} base={s.baseHeadline} drilled={drilled} />
+              </>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <AnimatePresence initial={false}>
@@ -332,8 +338,63 @@ function Summary({ now, base, drilled }: { now: Headline; base: Headline; drille
         <span className="text-muted-foreground/70">net</span>
       </TooltipTrigger>
       <TooltipContent className="max-w-[260px] text-left leading-relaxed">
-        <p>{now.winRate === null ? "No decisive trades" : `${now.winRate}% win rate`} · profit factor {now.profitFactor === null ? "–" : now.profitFactor.toFixed(2)}</p>
-        <p className="opacity-80">{now.breakEven} break-even · {GLOSSARY.rPerTrade}</p>
+        <p>Profit factor {now.profitFactor === null ? "–" : now.profitFactor.toFixed(2)}</p>
+        <p className="opacity-80">{GLOSSARY.rPerTrade}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+/** Wins, losses and break-evens as counts and as one split bar, with the win rate beside them. */
+function Record({ now, base, drilled }: { now: Headline; base: Headline; drilled: boolean }) {
+  const reduce = useReducedMotion();
+  const parts = [
+    { key: "W", n: now.wins, color: WIN_COLOR, label: "wins" },
+    { key: "L", n: now.losses, color: LOSS_COLOR, label: "losses" },
+    { key: "BE", n: now.breakEven, color: BE_COLOR, label: "break-even" },
+  ];
+  const total = Math.max(1, now.trades);
+  const delta = drilled && now.winRate !== null && base.winRate !== null ? now.winRate - base.winRate : null;
+  return (
+    <Tooltip>
+      <TooltipTrigger className="flex cursor-help items-center gap-2.5 text-xs text-muted-foreground">
+        <span className="flex items-baseline gap-2 tabular-nums">
+          {parts.map((p) => (
+            <span key={p.key} className="flex items-baseline gap-0.5">
+              <span className="text-[10px] font-semibold" style={{ color: p.color }}>{p.key}</span>
+              <CountUp value={p.n} className="font-semibold text-foreground/90" />
+            </span>
+          ))}
+        </span>
+        <span className="flex h-1.5 w-14 overflow-hidden rounded-full bg-muted/30" aria-hidden>
+          {parts.map((p) => (
+            <motion.span
+              key={p.key}
+              className="h-full"
+              style={{ background: p.color, opacity: 0.85 }}
+              initial={reduce ? false : { width: 0 }}
+              animate={{ width: `${(p.n / total) * 100}%` }}
+              transition={{ duration: 0.6, ease: EASE }}
+            />
+          ))}
+        </span>
+        <span className="tabular-nums">
+          {now.winRate === null ? (
+            <span className="text-muted-foreground/60">–</span>
+          ) : (
+            <CountUp value={now.winRate} format={(n) => `${Math.round(n)}%`} className="font-semibold text-foreground/90" />
+          )}{" "}
+          <span className="text-muted-foreground/70">win</span>
+        </span>
+        {delta !== null && delta !== 0 && (
+          <span className="text-[11px] tabular-nums" style={{ color: delta > 0 ? WIN_COLOR : LOSS_COLOR }}>
+            ({delta > 0 ? "+" : "−"}{Math.abs(delta)} pts)
+          </span>
+        )}
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[260px] text-left leading-relaxed">
+        <p>{now.wins} wins · {now.losses} losses · {now.breakEven} break-even</p>
+        <p className="opacity-80">{GLOSSARY.winRate}</p>
       </TooltipContent>
     </Tooltip>
   );

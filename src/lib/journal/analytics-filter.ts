@@ -155,6 +155,8 @@ export function computeEquityCurve(trades: TradeJournalEntry[]): EquityPoint[] {
 
 export interface Headline {
   trades: number;
+  wins: number;
+  losses: number;
   winRate: number | null;
   expectancy: number;
   netR: number;
@@ -169,6 +171,8 @@ export function computeHeadline(trades: TradeJournalEntry[]): Headline {
   const lost = trades.filter((t) => t.result === "loss").length;
   return {
     trades: b.trades,
+    wins: b.wins,
+    losses: b.losses,
     winRate: winRateOf(b.wins, b.losses),
     expectancy: b.expectancy,
     netR: b.totalR,
