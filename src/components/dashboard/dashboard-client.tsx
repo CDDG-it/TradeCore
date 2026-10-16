@@ -211,18 +211,18 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       </motion.div>
 
       <DashboardDesk
-        capital={<>
-          <ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />
-          <HabitsCard
-            habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit}
-            error={habitError} className="max-h-[18rem] flex-1 md:max-h-none"
-          />
-        </>}
+        mindScore={<MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} className="md:h-auto md:min-h-0 md:flex-1" />}
+        capital={<ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} className="shrink-0" />}
         winRate={<WinRateCard winRate={winRate} wins={wins} losses={losses} be={be} total={periodTrades.length} netR={periodR} goodExec={goodExec} badExec={badExec} period={wrPeriod} onPeriodChange={setWrPeriod} className="h-full" />}
         journal={<WeekStrip days={weekDays} today={today} />}
-        mindScore={<MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} className="shrink-0" />}
-        goals={<GoalsCard goals={goals} progress={goalProgress} className="md:min-h-0 md:flex-1" />}
-        news={<NewsHub today={today} className="md:min-h-0 md:flex-[1.7]" />}
+        habits={
+          <HabitsCard
+            habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit}
+            error={habitError} className="max-h-[18rem] md:max-h-[40%] md:min-h-0 md:shrink-0"
+          />
+        }
+        goals={<GoalsCard goals={goals} progress={goalProgress} className="md:min-h-0 md:shrink-0" />}
+        news={<NewsHub today={today} className="md:min-h-[12rem] md:flex-1" />}
       />
     </div>
   );

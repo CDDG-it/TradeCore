@@ -18,12 +18,13 @@ export default function DashboardLoading() {
         <div className="h-5 w-48 animate-pulse rounded-md bg-muted/40 md:h-6" />
       </div>
       <DashboardDesk
-        capital={<><Ghost className="h-[5.5rem] shrink-0" /><Ghost className="min-h-[10rem] flex-1" /></>}
+        mindScore={<Ghost className="min-h-[9.5rem] md:min-h-0 md:flex-1" />}
+        capital={<Ghost className="h-[5.5rem] shrink-0" />}
         winRate={<Ghost className="h-full min-h-[16rem]" />}
         journal={<Ghost className="h-full min-h-[14rem]" />}
-        mindScore={<Ghost className="h-[9.5rem] shrink-0" />}
-        goals={<Ghost className="min-h-[8rem] md:min-h-0 md:flex-1" />}
-        news={<Ghost className="min-h-[8rem] md:min-h-0 md:flex-1" />}
+        habits={<Ghost className="h-[10rem] shrink-0" />}
+        goals={<Ghost className="h-[8rem] shrink-0" />}
+        news={<Ghost className="min-h-[12rem] md:flex-1" />}
       />
     </div>
   );

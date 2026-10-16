@@ -77,10 +77,11 @@ export function DashboardScreenshot() {
             <p className="mb-3 text-base font-bold text-white">Good morning, Alex</p>
             <DashboardDesk
               preview
-              capital={<><ActiveCapitalCard capital={52840} count={2} hidden={false} onToggle={() => {}} compactNumbers /><Ringed index={2} className="min-h-0 flex-1"><HabitsCard habits={habits} doneToday={new Set(["plan", "review", "pause"])} pendingHabit={null} onToggle={() => {}} className="h-full" /></Ringed></>}
+              mindScore={<Ringed index={0} className="min-h-0 flex-1"><MindScoreOrb score={mindScore} period="week" onPeriodChange={() => {}} compactNumbers className="h-full" /></Ringed>}
+              capital={<ActiveCapitalCard capital={52840} count={2} hidden={false} onToggle={() => {}} compactNumbers className="shrink-0" />}
               winRate={<WinRateCard winRate={75} wins={3} losses={1} be={0} total={4} netR={4.5} goodExec={3} badExec={1} period="week" onPeriodChange={() => {}} compactNumbers className="h-full" />}
               journal={<Ringed index={1} className="h-full"><WeekStrip days={weekDays} compactNumbers /></Ringed>}
-              mindScore={<Ringed index={0} className="shrink-0"><MindScoreOrb score={mindScore} period="week" onPeriodChange={() => {}} compactNumbers /></Ringed>}
+              habits={<Ringed index={2} className="min-h-0 flex-1"><HabitsCard habits={habits} doneToday={new Set(["plan", "review", "pause"])} pendingHabit={null} onToggle={() => {}} className="h-full" /></Ringed>}
               goals={<GoalsCard goals={goals} progress={goalProgress} compactNumbers className="min-h-0 flex-1" />}
               news={<div className="rounded-2xl border border-white/10 bg-[#131b2e] p-4 text-[11px] text-white"><p className="font-semibold uppercase tracking-wider text-[#8198a7]">This week&apos;s news</p><p className="mt-3 font-semibold">US macro releases</p><p className="mt-1 text-[#9eb1bd]">Check the calendar before the open.</p></div>}
             />
