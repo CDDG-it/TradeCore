@@ -205,7 +205,7 @@ export function pickSetups(
   pairs: ConfluencePair[],
   baseline: number,
   minSample = 5
-): { best: Setup | null; worst: Setup | null } {
+): { best: Setup | null; worst: Setup | null; candidates: number } {
   const all: Setup[] = [
     ...confluences
       .filter((c) => c.trades >= minSample)
@@ -231,9 +231,9 @@ export function pickSetups(
       })),
   ].sort((a, b) => b.expectancy - a.expectancy || b.trades - a.trades);
 
-  if (all.length === 0) return { best: null, worst: null };
+  if (all.length === 0) return { best: null, worst: null, candidates: 0 };
   const best = all[0].expectancy > 0 ? all[0] : null;
   const last = all[all.length - 1];
   const worst = last !== best && (last.expectancy < 0 || last.expectancy < baseline) ? last : null;
-  return { best, worst };
+  return { best, worst, candidates: all.length };
 }

@@ -11,9 +11,10 @@ import { cn } from "@/lib/utils";
 import { EASE, tradesLabel } from "./analytics-ui";
 
 function SetupCard({
-  tone, setup, index, drill, onDrill,
+  tone, setup, index, drill, onDrill, hasCandidates,
 }: {
   tone: "good" | "bad";
+  hasCandidates: boolean;
   setup: Setup | null;
   index: number;
   drill: Drill;
@@ -39,7 +40,7 @@ function SetupCard({
         </span>
       </div>
       <div className="mt-2 flex items-end justify-between gap-4">
-        <p className="min-w-0 truncate font-heading text-xl font-bold tracking-tight md:text-2xl" title={setup.label}>{setup.label}</p>
+        <p className="line-clamp-2 min-w-0 font-heading text-xl font-bold leading-tight tracking-tight md:text-2xl" title={setup.label}>{setup.label}</p>
         <p className="shrink-0 text-3xl font-black leading-none tabular-nums md:text-4xl" style={{ color }}>
           <CountUp value={setup.expectancy} format={(n) => formatR(n)} />
         </p>
@@ -56,9 +57,11 @@ function SetupCard({
         {eyebrow}
       </p>
       <p className="mt-2 text-sm text-muted-foreground">
-        {tone === "good"
-          ? "No setup with 5+ trades makes money yet."
-          : "Nothing costs you yet: every setup with 5+ trades beats your average."}
+        {!hasCandidates
+          ? "No confluence or pair has 5+ trades in this selection yet."
+          : tone === "good"
+            ? "No setup with 5+ trades makes money yet."
+            : "Nothing costs you yet: every setup with 5+ trades beats your average."}
       </p>
     </div>
   );
@@ -90,17 +93,18 @@ function SetupCard({
 
 /** The two answers the page leads with: the setup to repeat and the one to drop. */
 export function SetupHero({
-  best, worst, drill, onDrill,
+  best, worst, candidates, drill, onDrill,
 }: {
   best: Setup | null;
   worst: Setup | null;
+  candidates: number;
   drill: Drill;
   onDrill: (d: Partial<Drill>) => void;
 }) {
   return (
     <div className="grid shrink-0 gap-3 md:grid-cols-2">
-      <SetupCard tone="good" setup={best} index={0} drill={drill} onDrill={onDrill} />
-      <SetupCard tone="bad" setup={worst} index={1} drill={drill} onDrill={onDrill} />
+      <SetupCard tone="good" setup={best} index={0} drill={drill} onDrill={onDrill} hasCandidates={candidates > 0} />
+      <SetupCard tone="bad" setup={worst} index={1} drill={drill} onDrill={onDrill} hasCandidates={candidates > 0} />
     </div>
   );
 }

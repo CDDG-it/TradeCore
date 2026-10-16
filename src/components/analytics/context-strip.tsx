@@ -111,7 +111,7 @@ export function ContextStrip({
       </div>
 
       <Dialog open={open !== null} onOpenChange={(o) => !o && setOpen(null)}>
-        <DialogContent className="h-[min(80dvh,40rem)] w-full max-w-[calc(100%-2rem)] grid-rows-[minmax(0,1fr)] bg-transparent p-0 ring-0 sm:max-w-3xl" showCloseButton={false}>
+        <DialogContent className="h-[min(80dvh,40rem)] w-full max-w-[calc(100%-2rem)] grid-rows-[minmax(0,1fr)] rounded-[22px] bg-background p-0 ring-1 ring-white/[.07] sm:max-w-3xl" showCloseButton={false}>
           <DialogTitle className="sr-only">{tiles.find((t) => t.key === open)?.label ?? "Details"}</DialogTitle>
           {open && <div className="flex min-h-0 [&>section]:flex-1">{panels[open]}</div>}
         </DialogContent>

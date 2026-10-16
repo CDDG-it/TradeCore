@@ -86,7 +86,7 @@ test('setups: best and worst across confluences and pairs, real samples only', (
   const strong = pickSetups([conf('A', 8, 0.6), conf('B', 8, 0.5)], [], 0.3);
   assert.equal(strong.best.label, 'A');
   assert.equal(strong.worst, null);
-  assert.deepEqual(pickSetups([], [], 0), { best: null, worst: null });
+  assert.deepEqual(pickSetups([], [], 0), { best: null, worst: null, candidates: 0 });
   assert.ok(sameKeys(['b', 'a'], ['a', 'b']));
   assert.ok(!sameKeys(['a'], ['a', 'b']));
 });

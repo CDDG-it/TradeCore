@@ -280,7 +280,7 @@ export function AnalyticsDesk({ trades: allTrades, ruleChecks, today = new Date(
           </div>
         ) : (
           <>
-            <SetupHero best={s.setups.best} worst={s.setups.worst} drill={drill} onDrill={onDrill} />
+            <SetupHero best={s.setups.best} worst={s.setups.worst} candidates={s.setups.candidates} drill={drill} onDrill={onDrill} />
             <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-3">
               <ConfluencePane index="02" className={pane} confluences={s.confluences} pairs={s.pairs} drill={drill} onDrill={onDrill} />
               <RulePane index="03" className={pane} rules={s.rules} clean={s.clean} drill={drill} onDrill={onDrill} />
