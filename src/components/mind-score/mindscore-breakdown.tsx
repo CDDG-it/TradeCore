@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { ArrowUpRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrainScore } from "@/components/mind-score/brain-score";
 import { MindscoreTrend } from "@/components/mind-score/mindscore-trend";
@@ -16,11 +16,15 @@ import {
   type MindPeriod, type MindInputs, type MindComponent,
 } from "@/lib/mind-score/mind-score";
 import { useAccess } from "@/components/access/access-provider";
+import styles from "./mindscore-breakdown.module.css";
 
 const PERIOD_LABEL: Record<MindPeriod, string> = { week: "Week", month: "Month", all: "All time" };
-const PART_META: Record<MindComponent["key"], string> = {
-  rules: "Rule adherence", execution: "Execution", habits: "Daily habits",
-  objectives: "Reflection work", goals: "Goal progress",
+const PART_META: Record<MindComponent["key"], { name: string; detail: string }> = {
+  rules: { name: "Rule adherence", detail: "The rules you follow at the screen" },
+  execution: { name: "Execution", detail: "Trades taken to plan and edge" },
+  habits: { name: "Daily habits", detail: "The routine behind your sessions" },
+  objectives: { name: "Reflection work", detail: "Reviews, preparation and commitments" },
+  goals: { name: "Goal progress", detail: "Your measurable goals, on pace" },
 };
 
 export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
@@ -43,96 +47,98 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
   const score = scores?.[period] ?? null;
   const trend = useMemo(() => (data && score ? computeMindScoreTrend(data, period, score) : []), [data, period, score]);
 
-  if (!score) return <div className="flex h-56 items-center justify-center"><Loader2 className="size-5 animate-spin text-muted-foreground" /></div>;
+  if (!score) return <div className="flex min-h-72 items-center justify-center rounded-[28px] border border-white/10 bg-[#111d30]" role="status" aria-label="Loading MC Mindscore"><Loader2 className="size-5 animate-spin text-[#6ad5c9]" /></div>;
 
   const current = score.pending ? null : score.total;
-  const color = current === null ? "var(--primary)" : bandColorFor(current);
-
-  if (entitlements.mindscore === "score") return <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-border/60 bg-card p-8 text-center"><div><BrainScore score={current} className="mx-auto size-40" /><p className="mt-4 font-heading text-xl font-bold" style={{ color }}>{score.pending ? "A fresh period" : score.band.label}</p><p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">Basic includes your MC Mindscore. Plus unlocks the full breakdown and trend.</p><Link href="/pricing" className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">See Plus</Link></div></div>;
+  const color = current === null ? "#6ad5c9" : bandColorFor(current);
+  const limited = entitlements.mindscore === "score";
 
   return (
-    <div className="grid gap-3 lg:h-[calc(100dvh-14rem)] lg:min-h-[500px] lg:grid-cols-[minmax(0,1.12fr)_minmax(0,.88fr)]">
-      <section className="relative flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card p-4 shadow-[0_8px_30px_-18px_rgba(0,0,0,.5)] sm:p-5" aria-label="MC Mindscore trend">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">MC Mindscore</p>
-          <div className="flex items-center gap-1 rounded-full border border-border/70 bg-muted/25 p-1" role="group" aria-label="Mindscore period">
-            {(["week", "month", "all"] as MindPeriod[]).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setPeriod(option)}
-                aria-pressed={period === option}
-                className={cn("rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors", period === option ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
-              >{PERIOD_LABEL[option]}</button>
-            ))}
-          </div>
+    <div className="space-y-4 pb-8 text-[#f8fafc] sm:space-y-5">
+      <header className="rise-in flex flex-col gap-5 pb-2 lg:flex-row lg:items-end lg:justify-between" style={{ "--i": 0 } as CSSProperties}>
+        <div className="max-w-2xl">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6ad5c9]">Your process, measured</p>
+          <h1 className="mt-2 font-heading text-[clamp(1.8rem,3.2vw,2.8rem)] font-semibold leading-[1.06] tracking-[-0.055em]">MC Mindscore</h1>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#a9bec8]">A clear reading of the work behind your trading, from rules and execution to the habits that keep you steady.</p>
         </div>
+        <div className="inline-flex w-fit max-w-full items-center gap-1 rounded-full border border-white/10 bg-[#142338] p-1" role="group" aria-label="Mindscore period">
+          {(["week", "month", "all"] as MindPeriod[]).map((option) => (
+            <button key={option} type="button" onClick={() => setPeriod(option)} aria-pressed={period === option}
+              className={cn("press rounded-full px-3.5 py-2 text-xs font-semibold transition-colors duration-150 sm:px-4", period === option ? "bg-[#14b8a6] text-[#071920]" : "text-[#a9bec8] hover:text-white")}
+            >{PERIOD_LABEL[option]}</button>
+          ))}
+        </div>
+      </header>
 
-        <div className="flex items-center gap-4 border-b border-border/60 py-4 sm:gap-6">
-          <BrainScore score={current} className="size-28 sm:size-32 lg:size-[clamp(120px,18vh,170px)]" />
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-2">
-              <span className="font-heading text-[clamp(3.5rem,7vw,6rem)] font-black leading-none tracking-[-0.07em] tabular-nums" style={{ color }}>{current ?? "·"}</span>
-              {current !== null && <span className="text-xs font-semibold text-muted-foreground">MC</span>}
+      <div className={cn("grid gap-4 sm:gap-5", limited ? "max-w-4xl" : "lg:grid-cols-[minmax(0,1.05fr)_minmax(0,.95fr)]")}>
+        <section className={cn(styles.scorePanel, "rise-in relative min-h-[315px] overflow-hidden rounded-[28px] border border-white/10 p-5 sm:p-7")} style={{ "--i": 1 } as CSSProperties} aria-label="Current MC Mindscore">
+          <div className={styles.scoreGlow} aria-hidden="true" />
+          <div className="relative flex h-full flex-col">
+            <div className="flex items-start justify-between gap-4">
+              <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#86c7c4]">Current reading</p><p className="mt-1 text-xs text-[#a9bec8]">{PERIOD_LABEL[period]} · Process score</p></div>
+              <span className="rounded-full border border-[#6ad5c9]/25 bg-[#6ad5c9]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8ce3d9]">0-100 scale</span>
             </div>
-            <p className="mt-1 text-sm font-semibold" style={{ color }}>{score.pending ? "A fresh period" : current === null ? "No data yet" : score.band.label}</p>
-            <p className="mt-1 max-w-[270px] text-xs leading-relaxed text-muted-foreground">
-              {score.pending ? "Your score builds as you log trades, habits and reviews." : current === null ? "Start logging to see your process take shape." : score.band.description}
-            </p>
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 py-4 sm:flex-row sm:justify-start sm:gap-6">
+              <div className="relative flex size-40 shrink-0 items-center justify-center sm:size-44 lg:size-32 xl:size-44">
+                <div className="absolute inset-1 rounded-full border border-white/10" aria-hidden="true" />
+                <div className="absolute inset-4 rounded-full border border-[#6ad5c9]/10" aria-hidden="true" />
+                <BrainScore score={current} className="relative size-32 sm:size-36 lg:size-28 xl:size-36" />
+              </div>
+              <div className="min-w-0 text-center sm:text-left">
+                <div className="flex items-end justify-center gap-2 sm:justify-start"><span className="font-heading text-[clamp(4.6rem,10vw,7rem)] font-semibold leading-[.85] tracking-[-0.085em] tabular-nums" style={{ color }}>{current ?? "-"}</span>{current !== null && <span className="pb-2 text-sm font-semibold text-[#86a5ae]">/ 100</span>}</div>
+                <p className="mt-4 text-base font-semibold" style={{ color }}>{score.pending ? "A fresh period" : current === null ? "No data yet" : score.band.label}</p>
+                <p className="mt-1 max-w-[360px] text-xs leading-relaxed text-[#a9bec8] sm:text-sm">{score.pending ? "Your score builds as you log trades, habits and reviews." : current === null ? "Start logging to see your process take shape." : score.band.description}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 border-t border-white/10 pt-4 text-xs text-[#9cb5bd]">
+              <span><strong className="mr-1.5 font-semibold tabular-nums text-white">{score.tradeCount}</strong>{score.tradeCount === 1 ? "trade" : "trades"} measured</span>
+              <span><strong className="mr-1.5 font-semibold tabular-nums text-white">{score.habitCompleted}/{score.habitExpected}</strong>habits completed</span>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-auto min-h-0 pt-5">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-xs font-semibold text-foreground">Your score over time</p>
-            <span className="text-[10px] font-medium text-muted-foreground">{PERIOD_LABEL[period]}</span>
-          </div>
-          <div className="relative">
-            <MindscoreTrend points={trend} color={color} interactive />
-            {!trend.some((point) => point.value !== null) && <p className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-xs text-muted-foreground">The curve appears when this period has activity.</p>}
-          </div>
-        </div>
-      </section>
+        {!limited && <section className="rise-in flex min-h-[315px] flex-col rounded-[28px] border border-white/10 bg-[#111d30] p-5 sm:p-7" style={{ "--i": 2 } as CSSProperties} aria-label="MC Mindscore trend">
+          <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6ad5c9]">The pattern</p><h2 className="mt-2 text-lg font-semibold tracking-[-0.035em]">Your score over time</h2></div><span className="rounded-full border border-white/10 px-3 py-1 text-[10px] font-medium text-[#a9bec8]">{PERIOD_LABEL[period]}</span></div>
+          <p className="mt-2 text-xs leading-relaxed text-[#8faab4]">See where your process holds and where it needs attention.</p>
+          <div className="relative mt-auto pt-8"><MindscoreTrend points={trend} color={color} interactive />{!trend.some((point) => point.value !== null) && <p className="pointer-events-none absolute inset-x-0 top-1/2 text-center text-xs text-[#a9bec8]">Your trend appears when this period has activity.</p>}</div>
+        </section>}
+      </div>
 
-      <div className="grid min-h-0 gap-3 lg:grid-rows-[minmax(0,1.12fr)_minmax(0,.88fr)]">
-        <section className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card p-4" aria-label="Mindscore breakdown">
-          <div className="flex items-baseline justify-between gap-3">
-            <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">Breakdown</p><h2 className="mt-1 text-base font-semibold tracking-tight">What makes up your score</h2></div>
-            <span className="text-[10px] text-muted-foreground">5 signals</span>
-          </div>
-          <div className="mt-2 flex-1 divide-y divide-border/60">
-            {score.components.map((part) => {
+      {limited ? <div className="rise-in flex max-w-4xl flex-col gap-4 rounded-[24px] border border-[#14b8a6]/20 bg-[#102b38] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6" style={{ "--i": 2 } as CSSProperties}>
+        <div><h2 className="text-base font-semibold">Go deeper into your score</h2><p className="mt-1 text-sm text-[#a9bec8]">Plus unlocks the five-part breakdown, trends and next steps.</p></div>
+        <Link href="/pricing" className="press inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#14b8a6] px-5 py-3 text-sm font-semibold text-[#071920]">Explore Plus <ArrowUpRight className="size-4" aria-hidden="true" /></Link>
+      </div> : <div className="grid gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)]">
+        <section className="rise-in rounded-[28px] border border-white/10 bg-[#111d30] p-5 sm:p-7" style={{ "--i": 3 } as CSSProperties} aria-label="Mindscore breakdown">
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6ad5c9]">The breakdown</p><h2 className="mt-2 text-lg font-semibold tracking-[-0.035em]">Five parts of your edge</h2></div><span className="text-xs text-[#8faab4]">Weighted by what applies</span></div>
+          <div className="mt-5 divide-y divide-white/10">
+            {score.components.map((part, index) => {
               const value = part.applicable && !score.pending ? part.value : null;
-              return <div key={part.key} className="py-1.5 first:pt-0 last:pb-0">
-                <div className="flex items-center justify-between gap-3 text-xs"><span className="truncate font-medium text-foreground/85">{PART_META[part.key]}</span><span className="shrink-0 font-bold tabular-nums" style={{ color: value === null ? "var(--muted-foreground)" : color }}>{value === null ? "—" : `${value}%`}</span></div>
-                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted-foreground/15"><div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${value ?? 0}%`, background: color }} /></div>
-                {part.key === "execution" && value !== null && (
-                  <p className="mt-1 text-[10px] tabular-nums text-muted-foreground">
-                    {score.execution.good} good · {score.execution.bad} bad (counts double){score.execution.unrated > 0 && ` · ${score.execution.unrated} unrated (counts as neutral)`}
-                  </p>
-                )}
+              return <div key={part.key} className="rise-in grid gap-3 py-3.5 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,.85fr)_auto] sm:items-center sm:gap-5" style={{ "--i": index + 4 } as CSSProperties}>
+                <div className="min-w-0"><p className="text-sm font-semibold text-[#f4fafb]">{PART_META[part.key].name}</p><p className="mt-0.5 text-[11px] text-[#8faab4]">{PART_META[part.key].detail}</p></div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-white/10" role="meter" aria-label={`${PART_META[part.key].name} score`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value ?? undefined} aria-valuetext={value === null ? "No reading" : `${value} percent`}><div className={styles.barFill} style={{ "--fill": (value ?? 0) / 100, backgroundColor: value === null ? "#4c6473" : color } as CSSProperties} /></div>
+                <div className="flex items-baseline justify-between gap-2 sm:justify-end sm:text-right"><span className="text-[10px] text-[#7f9ba5] sm:hidden">{Math.round(part.effectiveWeight)}% of score</span><span className="min-w-10 text-sm font-bold tabular-nums" style={{ color: value === null ? "#9cb5bd" : color }}>{value === null ? "-" : `${value}%`}</span></div>
+                <p className="hidden text-[10px] text-[#7f9ba5] sm:col-start-2 sm:mt-[-8px] sm:block">{Math.round(part.effectiveWeight)}% of score</p>
               </div>;
             })}
           </div>
-          <p className="mt-2 text-[10px] leading-snug text-muted-foreground">Each part is weighted by the work you can measure in this period.</p>
+          <p className="mt-5 border-t border-white/10 pt-4 text-xs leading-relaxed text-[#8faab4]">A missing input does not count against you. Its weight moves to the parts you can measure.</p>
         </section>
 
-        <section className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card p-4 sm:p-5" aria-label="Mindscore next steps">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ice">Next steps</p>
-          <h2 className="mt-1 text-base font-semibold tracking-tight">What lifts your score</h2>
-          <div className="mt-3 divide-y divide-border/60">
+        <section className="rise-in flex flex-col rounded-[28px] border border-white/10 bg-[#111d30] p-5 sm:p-7" style={{ "--i": 4 } as CSSProperties} aria-label="Mindscore next steps">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#6ad5c9]">Keep building</p><h2 className="mt-2 text-lg font-semibold tracking-[-0.035em]">Your next steps</h2><p className="mt-2 text-xs leading-relaxed text-[#8faab4]">Small, repeatable actions shape the reading over time.</p>
+          <div className="mt-5 divide-y divide-white/10">
             {score.objectives.map((objective) => {
               const done = objective.due && objective.rate >= 1;
               const progress = Math.min(objective.progress, objective.target);
-              return <Link key={objective.key} href={objective.href} className="group flex items-center justify-between gap-3 py-2 text-xs transition-colors hover:text-primary first:pt-0 last:pb-0">
-                <span className="min-w-0 truncate font-medium">{objective.label}</span>
-                <span className={cn("shrink-0 font-bold tabular-nums", done ? "text-success" : "text-muted-foreground")}>{objective.due ? `${progress}/${objective.target}` : <span className="font-medium">Not due yet</span>}<span aria-hidden="true" className="ml-2 font-normal text-muted-foreground/50 group-hover:text-primary">↗</span></span>
+              return <Link key={objective.key} href={objective.href} className="group flex items-center justify-between gap-4 py-3.5 text-sm first:pt-0 last:pb-0">
+                <span className="min-w-0 font-medium text-[#e5f1f3] transition-colors duration-150 group-hover:text-[#6ad5c9]">{objective.label}</span>
+                <span className="flex shrink-0 items-center gap-2 text-xs tabular-nums"><span className={cn("font-semibold", done ? "text-[#4ade80]" : "text-[#9cb5bd]")}>{objective.due ? `${progress}/${objective.target}` : "Not due"}</span><ArrowUpRight className="size-3.5 text-[#6ad5c9]" aria-hidden="true" /></span>
               </Link>;
             })}
           </div>
-          {score.objectives.length === 0 && <p className="mt-3 text-xs text-muted-foreground">Your next steps appear as you begin logging.</p>}
+          {score.objectives.length === 0 && <p className="mt-5 text-sm text-[#a9bec8]">Your next steps appear as you begin logging.</p>}
         </section>
-      </div>
+      </div>}
     </div>
   );
 }
