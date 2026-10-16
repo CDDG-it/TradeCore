@@ -92,6 +92,19 @@ function assessmentsByTrade(
   return out;
 }
 
+/**
+ * Each trade's kept/broken verdict per rule, keyed by trade id and rule label
+ * (lower-cased). Same source and merging as the stats below, so a drill-down
+ * into "trades where I broke X" matches the row that offered it.
+ */
+export function ruleVerdictsByTrade(trades: RuleTrade[], ruleChecks: RuleCheckRow[] = []): Map<string, Map<string, boolean>> {
+  const out = new Map<string, Map<string, boolean>>();
+  for (const [t, list] of assessmentsByTrade(trades, ruleChecks)) {
+    out.set(t.id, new Map(list.map((a) => [a.key, a.passed])));
+  }
+  return out;
+}
+
 export function computeRuleStats(
   trades: RuleTrade[],
   ruleChecks: RuleCheckRow[] = [],
