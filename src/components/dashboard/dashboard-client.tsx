@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay,
-  startOfMonth, endOfMonth, isWithinInterval,
+  startOfMonth, endOfMonth, isWithinInterval, addWeeks,
 } from "date-fns";
 import { motion } from "motion/react";
 import { toggleHabitCompletion } from "@/lib/supabase/queries";
@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import type { HabitCompletion } from "@/lib/types";
 import type { DashboardData } from "@/lib/dashboard/reads";
 import {
-  MindScoreOrb, GoalsCard, WinRateCard, ActiveCapitalCard, HabitsCard, WeekStrip, CARD_BASE, CardFx,
+  MindScoreOrb, GoalsCard, WinRateCard, HabitsCard, WeekStrip, CARD_BASE, CardFx,
 } from "@/components/dashboard/dashboard-cards";
 import { DashboardDesk } from "@/components/dashboard/dashboard-desk";
 
@@ -211,8 +211,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       </motion.div>
 
       <DashboardDesk
-        mindScore={<MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} className="md:h-auto md:min-h-0 md:flex-1" />}
-        capital={<ActiveCapitalCard capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} className="shrink-0" />}
+        mindScore={<MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />}
         winRate={<WinRateCard winRate={winRate} wins={wins} losses={losses} be={be} total={periodTrades.length} netR={periodR} goodExec={goodExec} badExec={badExec} period={wrPeriod} onPeriodChange={setWrPeriod} className="h-full" />}
         journal={<WeekStrip days={weekDays} today={today} />}
         habits={
@@ -228,14 +227,9 @@ export function DashboardClient({ data }: { data: DashboardData }) {
   );
 }
 
-/* ── This week's news: the releases and Fed days that move the tape ───────
-   What is still to come this week: US macro prints from FRED's own release
-   calendar, the FOMC decisions and minutes from the Fed's published schedule,
-   and any day the exchange is shut. Grouped by day and counting down as the
-   week runs out: on Monday you see the whole week, by Thursday only Thursday
-   to Sunday, because a print that has already landed is no longer news to plan
-   around. A forthcoming print carries the appointment and nothing else: what a
-   number will be is never guessed, and FRED publishes dates, not clock times. */
+/* ── Upcoming news: published releases, Fed days and market closures. The
+   window starts today and includes next week from Friday onward, or sooner
+   when no events remain this week. FRED publishes dates, not clock times. */
 const NEWS_IMPORTANCE: Record<string, string> = { high: RED, medium: AMBER, low: "var(--muted-foreground)" };
 const MAX_NEWS = 9;
 
@@ -244,23 +238,24 @@ type NewsItem = { key: string; date: string; label: string; tone: string; kind: 
 function NewsHub({ today, className }: { today: string; className?: string }) {
   // Keyed on the day, so the week's bounds are stable objects between renders
   // and the row list below is only rebuilt when something actually changed.
-  const { weekStart, weekEnd } = useMemo(() => {
+  const { weekStart, weekEnd, nextWeekEnd, lateWeek } = useMemo(() => {
     const d = new Date(today + "T12:00:00");
-    return { weekStart: startOfWeek(d, { weekStartsOn: 1 }), weekEnd: endOfWeek(d, { weekStartsOn: 1 }) };
+    return { weekStart: startOfWeek(d, { weekStartsOn: 1 }), weekEnd: endOfWeek(d, { weekStartsOn: 1 }), nextWeekEnd: endOfWeek(addWeeks(d, 1), { weekStartsOn: 1 }), lateWeek: d.getDay() >= 5 };
   }, [today]);
   const thisMonth = format(weekStart, "yyyy-MM");
-  const nextMonth = format(weekEnd, "yyyy-MM");
+  const nextMonth = format(nextWeekEnd, "yyyy-MM");
 
-  // A week can straddle a month end, so the spill-over month is fetched too.
+  // The two-week window can cross a month boundary, so fetch both months.
   const { env: a } = useGmi<CalendarMonth>(`/api/gmi/calendar?month=${thisMonth}`, 30 * 60_000);
   const { env: b } = useGmi<CalendarMonth>(
     nextMonth === thisMonth ? null : `/api/gmi/calendar?month=${nextMonth}`,
     30 * 60_000
   );
 
-  // The window shrinks as the week runs down: from today, never from Monday.
+  // Past events never return to the card, even when it shows next week.
   const from = today;
-  const to = format(weekEnd, "yyyy-MM-dd");
+  const thisWeekEnd = format(weekEnd, "yyyy-MM-dd");
+  const to = format(nextWeekEnd, "yyyy-MM-dd");
 
   const { days, total } = useMemo(() => {
     // One line per release, not one per series: CPI and Core CPI land together
@@ -287,7 +282,7 @@ function NewsHub({ today, className }: { today: string; className?: string }) {
         label: e.kind === "fomc-decision" ? "FOMC rate decision" : "FOMC minutes",
         tone: CYAN, kind: "fed" as const,
       })),
-      ...[...holidaysByDate(weekStart, weekEnd).values()].flat()
+      ...[...holidaysByDate(weekStart, nextWeekEnd).values()].flat()
         .filter((h) => h.kind === "closed" && h.market === "US" && h.date >= from && h.date <= to)
         .map((h) => ({
           key: `holiday-${h.date}`, date: h.date, label: `${h.name}: US market closed`,
@@ -295,22 +290,24 @@ function NewsHub({ today, className }: { today: string; className?: string }) {
         })),
     ];
 
-    // Too many for the card? Trim the quiet tail, never a Fed day or a
-    // high-impact print, then restore date order.
+    // Give this week's remaining appointments first claim on the card.
+    // On Friday or when none remain, fill the space with next week's events.
     const rank = (i: NewsItem) => (i.kind === "fed" ? 0 : i.tone === RED ? 1 : i.tone === AMBER ? 2 : 3);
-    const trimmed = items.length <= MAX_NEWS
-      ? items
-      : [...items].sort((x, y) => rank(x) - rank(y)).slice(0, MAX_NEWS);
+    const current = items.filter((i) => i.date <= thisWeekEnd);
+    const upcoming = items.filter((i) => i.date > thisWeekEnd);
+    const showNext = lateWeek || current.length === 0;
+    const take = (list: NewsItem[], count: number) => [...list].sort((x, y) => rank(x) - rank(y) || x.date.localeCompare(y.date)).slice(0, count);
+    const trimmed = [...take(current, MAX_NEWS), ...(showNext ? take(upcoming, Math.max(0, MAX_NEWS - current.length)) : [])];
     trimmed.sort((x, y) => x.date.localeCompare(y.date) || rank(x) - rank(y));
 
     // Group into days, so the card reads as a countdown of the week ahead.
     const map = new Map<string, NewsItem[]>();
     for (const it of trimmed) (map.get(it.date) ?? map.set(it.date, []).get(it.date)!).push(it);
     const days = [...map.entries()].sort(([x], [y]) => x.localeCompare(y)).map(([date, list]) => ({ date, list }));
-    return { days, total: items.length };
-  }, [a, b, from, to, weekStart, weekEnd]);
+    return { days, total: current.length + (showNext ? upcoming.length : 0) };
+  }, [a, b, from, to, thisWeekEnd, lateWeek, weekStart, nextWeekEnd]);
 
-  const unavailable = a?.status === "unavailable";
+  const unavailable = a?.status === "unavailable" && (nextMonth === thisMonth || b?.status === "unavailable");
 
   return (
     <div className={cn(CARD_BASE, "flex flex-col", className)}>
@@ -325,9 +322,9 @@ function NewsHub({ today, className }: { today: string; className?: string }) {
 
       {days.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-1 py-3 text-center">
-          <p className="text-sm text-muted-foreground">{unavailable ? "Calendar unavailable" : "Nothing left this week"}</p>
+          <p className="text-sm text-muted-foreground">{unavailable ? "Calendar unavailable" : "No upcoming events"}</p>
           <p className="text-xs text-muted-foreground/60">
-            {unavailable ? "FRED is not answering right now." : "No more US macro releases scheduled."}
+            {unavailable ? "FRED is not answering right now." : "No US macro releases scheduled through next week."}
           </p>
         </div>
       ) : (
@@ -335,8 +332,10 @@ function NewsHub({ today, className }: { today: string; className?: string }) {
           {days.map(({ date, list }) => {
             const day = new Date(date + "T12:00:00");
             const isTodayRow = date === today;
+            const isNextWeek = date > thisWeekEnd;
             return (
               <div key={date}>
+                {isNextWeek && !days.some((d) => d.date > thisWeekEnd && d.date < date) && <p className="mb-2 border-t border-border/40 pt-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Next week</p>}
                 <p
                   className={cn(
                     "mb-1.5 text-[11px] font-bold uppercase tracking-wider tabular-nums",
@@ -366,7 +365,7 @@ function NewsHub({ today, className }: { today: string; className?: string }) {
             );
           })}
           {total > MAX_NEWS && (
-            <p className="text-[11px] text-muted-foreground/60">+{total - MAX_NEWS} more this week</p>
+            <p className="text-[11px] text-muted-foreground/60">+{total - MAX_NEWS} more events</p>
           )}
         </div>
       )}

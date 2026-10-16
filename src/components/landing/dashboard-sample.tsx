@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { eachDayOfInterval, endOfWeek, format, startOfWeek } from "date-fns";
 import { DashboardDesk } from "@/components/dashboard/dashboard-desk";
-import { ActiveCapitalCard, GoalsCard, HabitsCard, MindScoreOrb, WeekStrip, WinRateCard } from "@/components/dashboard/dashboard-cards";
+import { GoalsCard, HabitsCard, MindScoreOrb, WeekStrip, WinRateCard } from "@/components/dashboard/dashboard-cards";
 import { computeMindScore } from "@/lib/mind-score/mind-score";
 import { computeGoalProgress } from "@/lib/goals/goals";
 import { tradeR } from "@/lib/journal/weeks";
@@ -77,8 +77,7 @@ export function DashboardScreenshot() {
             <p className="mb-3 text-base font-bold text-white">Good morning, Alex</p>
             <DashboardDesk
               preview
-              mindScore={<Ringed index={0} className="min-h-0 flex-1"><MindScoreOrb score={mindScore} period="week" onPeriodChange={() => {}} compactNumbers className="h-full" /></Ringed>}
-              capital={<ActiveCapitalCard capital={52840} count={2} hidden={false} onToggle={() => {}} compactNumbers className="shrink-0" />}
+              mindScore={<Ringed index={0} className="h-full"><MindScoreOrb score={mindScore} period="week" onPeriodChange={() => {}} capital={52840} count={2} hidden={false} onToggle={() => {}} compactNumbers className="h-full" /></Ringed>}
               winRate={<WinRateCard winRate={75} wins={3} losses={1} be={0} total={4} netR={4.5} goodExec={3} badExec={1} period="week" onPeriodChange={() => {}} compactNumbers className="h-full" />}
               journal={<Ringed index={1} className="h-full"><WeekStrip days={weekDays} compactNumbers /></Ringed>}
               habits={<Ringed index={2} className="min-h-0 flex-1"><HabitsCard habits={habits} doneToday={new Set(["plan", "review", "pause"])} pendingHabit={null} onToggle={() => {}} className="h-full" /></Ringed>}

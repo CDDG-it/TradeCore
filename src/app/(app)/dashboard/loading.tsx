@@ -18,8 +18,7 @@ export default function DashboardLoading() {
         <div className="h-5 w-48 animate-pulse rounded-md bg-muted/40 md:h-6" />
       </div>
       <DashboardDesk
-        mindScore={<Ghost className="min-h-[9.5rem] md:min-h-0 md:flex-1" />}
-        capital={<Ghost className="h-[5.5rem] shrink-0" />}
+        mindScore={<Ghost className="h-full min-h-[15rem]" />}
         winRate={<Ghost className="h-full min-h-[16rem]" />}
         journal={<Ghost className="h-full min-h-[14rem]" />}
         habits={<Ghost className="h-[10rem] shrink-0" />}

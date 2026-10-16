@@ -83,15 +83,11 @@ function PeriodToggle({ value, onChange, accent }: {
   );
 }
 
-/* ── MC mind score: the readiness number, and nothing else ───────────────
-   One figure, its band, and a brain that fills with the score. What the score is
-   made of (rules, execution, habits, objectives) is a study in its own right,
-   not something to scan past on a dashboard, so it lives one click away on the
-   breakdown page together with the calculation and the week / month / all-time
-   scores. Keeping the card to the headline is what makes room beneath it for
-   the goals and the plans. */
-export function MindScoreOrb({ score, period, onPeriodChange, className, compactNumbers = false }: {
+/* ── Readiness and capital share one compact glance. The score breakdown and
+   account details remain one click away. */
+export function MindScoreOrb({ score, period, onPeriodChange, capital, count, hidden, onToggle, className, compactNumbers = false }: {
   score: MindScore | null; period: Period; onPeriodChange: (p: Period) => void; className?: string;
+  capital: number; count: number; hidden: boolean; onToggle: () => void;
   compactNumbers?: boolean;
 }) {
   const pending = score?.pending ?? false;
@@ -118,22 +114,22 @@ export function MindScoreOrb({ score, period, onPeriodChange, className, compact
 
   const color = pending ? TURQUOISE : hasData ? bandColorFor(target) : "var(--muted-foreground)";
   return (
-    <div className={cn(CARD_BASE, "group flex h-[clamp(172px,22vh,206px)] flex-col", className)}>
+    <div className={cn(CARD_BASE, "flex h-full min-h-[240px] flex-col", className)}>
       <CardFx accent={color} />
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">MC mind score</p>
         <PeriodToggle value={period} onChange={onPeriodChange} accent={TURQUOISE} />
       </div>
 
-      <div className="relative z-10 grid min-h-0 grow grid-cols-[minmax(92px,.92fr)_minmax(0,1.08fr)] items-center gap-2 short:grid-cols-[78px_minmax(0,1fr)]">
+      <div className="relative z-10 grid min-h-[94px] grow grid-cols-[minmax(72px,.8fr)_minmax(0,1.2fr)] items-center gap-2 short:grid-cols-[70px_minmax(0,1fr)]">
         <div className="flex min-w-0 items-center justify-center overflow-hidden">
           <BrainScore
             score={hasData ? Math.round(prog * 100) : null}
-            className="size-[clamp(94px,8.5vw,128px)] max-w-full transition-transform duration-700 ease-out group-hover:scale-[1.035] short:size-[78px]"
+            className="size-[clamp(72px,7vw,98px)] max-w-full short:size-[70px]"
           />
         </div>
         <div className="min-w-0 border-l border-border/45 pl-3">
-          <p className={cn("font-black leading-none tracking-[-.055em] tabular-nums", compactNumbers ? "text-[36px] short:text-[26px]" : "text-[46px] short:text-[32px]")} style={{ color }}>
+          <p className={cn("font-black leading-none tracking-[-.055em] tabular-nums", compactNumbers ? "text-[30px] short:text-[26px]" : "text-[38px] short:text-[32px]")} style={{ color }}>
             {pending ? "·" : hasData ? display : "-"}
           </p>
           <p className="mt-1.5 truncate text-[10px] font-semibold uppercase tracking-[.1em]" style={{ color: pending || hasData ? color : "var(--muted-foreground)" }}>
@@ -148,13 +144,18 @@ export function MindScoreOrb({ score, period, onPeriodChange, className, compact
         </p>
       )}
 
-      <Link
-        href="/psychological-edge?tab=mindscore"
-        className="relative z-10 mt-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2.5 text-[11px] font-medium text-muted-foreground/75 transition-colors hover:text-primary"
-      >
-        <span>What this is made of</span>
-        <span aria-hidden>Breakdown →</span>
-      </Link>
+      <Link href="/psychological-edge?tab=mindscore" className="relative z-10 mb-3 text-right text-[11px] font-semibold text-primary hover:underline">Score breakdown →</Link>
+
+      <div className="relative z-10 border-t border-border/60 pt-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Active capital</p>
+          <button type="button" onClick={onToggle} aria-pressed={hidden} className="text-[10px] font-semibold text-muted-foreground transition-colors hover:text-foreground">{hidden ? "Show" : "Hide"}</button>
+        </div>
+        <div className="mt-2 flex items-end justify-between gap-3">
+          <div><p className={cn("font-black tabular-nums leading-none", compactNumbers ? "text-lg" : "text-xl")} style={{ color: TURQUOISE }}>{capital > 0 ? mask(`$${capital.toLocaleString("en-US")}`, hidden) : "-"}</p><p className="mt-1 text-[11px] text-muted-foreground">{count} active account{count !== 1 ? "s" : ""}</p></div>
+          <Link href="/accounts" className="shrink-0 text-[11px] font-semibold text-primary hover:underline">View →</Link>
+        </div>
+      </div>
     </div>
   );
 }
@@ -398,31 +399,6 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
       <Link href="/analytics" className="mt-1.5 text-[11px] font-semibold text-primary hover:underline short:mt-1">
         View full analytics →
       </Link>
-    </div>
-  );
-}
-
-export function ActiveCapitalCard({ capital, count, hidden, onToggle, className, compactNumbers = false }: {
-  capital: number; count: number; hidden: boolean; onToggle: () => void; className?: string;
-  compactNumbers?: boolean;
-}) {
-  return (
-    <div className={cn(CARD_BASE, "flex flex-col justify-center p-3 sm:px-4 sm:py-3", className)}>
-      <CardFx accent={TURQUOISE} />
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Active capital</p>
-        <button type="button" onClick={onToggle} aria-pressed={hidden}
-          className="text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
-          {hidden ? "Show" : "Hide"}
-        </button>
-      </div>
-      <p className={cn("font-black tabular-nums leading-none mt-1.5", compactNumbers ? "text-lg" : "text-xl")} style={{ color: TURQUOISE }}>
-        {capital > 0 ? mask(`$${capital.toLocaleString("en-US")}`, hidden) : "-"}
-      </p>
-      <div className="mt-1.5 flex items-center justify-between">
-        <p className="text-[11px] text-muted-foreground">{count} active account{count !== 1 ? "s" : ""}</p>
-        <Link href="/accounts" className="text-[11px] font-semibold text-primary hover:underline">View →</Link>
-      </div>
     </div>
   );
 }
