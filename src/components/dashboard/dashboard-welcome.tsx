@@ -11,7 +11,6 @@ export function DashboardWelcome({ firstName, exiting = false }: { firstName: st
         <span className="dashboard-welcome-glow dashboard-welcome-glow-one animate-drift-a" />
         <span className="dashboard-welcome-glow dashboard-welcome-glow-two animate-drift-b" />
         <span className="dashboard-welcome-glow dashboard-welcome-glow-three animate-drift-c" />
-        <span className="dashboard-welcome-grid" />
       </div>
       <div className="dashboard-welcome-content relative z-10 flex w-full max-w-[1100px] flex-col items-center text-center">
         <div className="dashboard-welcome-mark mb-9 sm:mb-12">
@@ -21,8 +20,11 @@ export function DashboardWelcome({ firstName, exiting = false }: { firstName: st
           <span className="block">Welcome back{firstName ? "," : ""}</span>
           {firstName && <span className="dashboard-welcome-name mt-2 block sm:mt-3">{firstName}</span>}
         </h1>
-        <div className="dashboard-welcome-track mt-12 h-px w-48 overflow-hidden bg-white/15 sm:mt-16 sm:w-80" aria-hidden="true">
-          <div className="dashboard-welcome-progress h-full w-full origin-left bg-primary" />
+        <div className="dashboard-welcome-loader mt-12 sm:mt-16" aria-hidden="true">
+          <span className="dashboard-welcome-loader-segment" />
+          <span className="dashboard-welcome-loader-segment" />
+          <span className="dashboard-welcome-loader-segment" />
+          <span className="dashboard-welcome-loader-segment" />
         </div>
       </div>
     </div>
