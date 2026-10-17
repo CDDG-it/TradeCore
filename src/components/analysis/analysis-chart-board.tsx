@@ -16,12 +16,13 @@ const MAX_GROUPS = 8;
 const MAX_IMAGES = 5;
 
 /** One large chart, a thumbnail rail, and a separate screenshot group per timeframe. */
-export function AnalysisChartBoard({ groups, onChange, target, readOnly = false, demo = false, onUploadingChange }: {
+export function AnalysisChartBoard({ groups, onChange, target, readOnly = false, demo = false, hideDescription = false, onUploadingChange }: {
   groups: ScreenshotGroup[];
   onChange?: (groups: ScreenshotGroup[]) => void;
   target: ScreenshotTarget | null;
   readOnly?: boolean;
   demo?: boolean;
+  hideDescription?: boolean;
   onUploadingChange?: (uploading: boolean) => void;
 }) {
   const [active, setActive] = useState(0);
@@ -110,7 +111,7 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
       <div className="flex shrink-0 items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-foreground">Chart evidence</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">One timeframe at a time. Keep the structure visible.</p>
+          {!hideDescription && <p className="mt-0.5 text-xs text-muted-foreground">One timeframe at a time. Keep the structure visible.</p>}
         </div>
         {!readOnly && groups.length < MAX_GROUPS && <button type="button" onClick={() => setAdding(!adding)} disabled={uploading}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 disabled:opacity-50">
@@ -138,6 +139,7 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
           {safeActive === index && <motion.span layoutId="analysis-timeframe-active" className="absolute inset-0 -z-10 rounded-[7px] bg-primary/12 shadow-[0_0_22px_rgba(20,184,166,.12)]" transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 34 }} />}
           {item.label}<span className="ml-2 text-[10px] opacity-50">{item.urls.length}</span>
         </button>)}
+        {!readOnly && group && group.urls.length === 0 && <button type="button" onClick={removeGroup} className="ml-auto shrink-0 text-[11px] text-muted-foreground hover:text-destructive">Remove timeframe</button>}
       </div>
 
       <div className="relative flex min-h-[16rem] flex-1 items-center justify-center overflow-hidden rounded-2xl border border-border/70 bg-[#0a1323] lg:min-h-0"
@@ -171,7 +173,7 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
         {url && preview && <button type="button" onClick={() => void openFull()} aria-label="Open chart full size" className="absolute right-3 top-3 z-10 flex size-9 items-center justify-center rounded-lg border border-white/15 bg-[#0b1120]/80 text-white"><Maximize2 className="size-4" /></button>}
       </div>
 
-      <div className="flex min-h-14 shrink-0 items-center gap-2 overflow-x-auto pb-1">
+      {(group?.urls.length ?? 0) > 0 && <div className="flex min-h-14 shrink-0 items-center gap-2 overflow-x-auto pb-1">
         {group?.urls.map((item, index) => <div key={`${item}:${index}`} className={cn("group relative h-14 w-24 shrink-0 overflow-hidden rounded-lg border bg-muted/20", safeShot === index ? "border-primary" : "border-border/60")}>
           <button type="button" onClick={() => setShot(index)} aria-label={`Show ${group.label} chart ${index + 1}`} className="h-full w-full">
             {display(item) ? <img src={display(item)!} alt="" className="h-full w-full object-cover" /> : <span className="block h-full w-full animate-pulse bg-white/[.04]" />}
@@ -179,8 +181,7 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
           {!readOnly && <button type="button" onClick={() => removeShot(index)} aria-label={`Remove chart ${index + 1}`} className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-[#0b1120]/85 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"><X className="size-3" /></button>}
         </div>)}
         {!readOnly && group && group.urls.length > 0 && group.urls.length < MAX_IMAGES && <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className="flex h-14 w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-[10px] font-medium text-muted-foreground hover:border-primary/50 hover:text-primary disabled:opacity-50"><Plus className="size-4" /> Add chart</button>}
-        {!readOnly && group && group.urls.length === 0 && <button type="button" onClick={removeGroup} className="ml-auto shrink-0 text-[11px] text-muted-foreground hover:text-destructive">Remove timeframe</button>}
-      </div>
+      </div>}
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
       {!readOnly && <input ref={inputRef} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} onChange={(event) => { if (event.target.files) void addFiles(event.target.files); event.target.value = ""; }} />}
       {lightbox && createPortal(<div role="dialog" aria-modal="true" aria-label="Chart full size" className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050a15]/95 p-4" onClick={() => setLightbox(null)}>

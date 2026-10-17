@@ -512,6 +512,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
               onChange={(g) => set("screenshot_groups", g)}
               target={preview ? null : { entityType: "trades", entityId }}
               demo={preview}
+              hideDescription
               onUploadingChange={setUploading}
             />
           </CardContent>
