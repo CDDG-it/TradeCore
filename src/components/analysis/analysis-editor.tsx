@@ -86,9 +86,9 @@ export function AnalysisEditor({ mode, analysisId, initial, preview = false }: {
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (preview || saving || uploading) return;
-    if (!form.instrument || !form.thesis.trim()) {
+    if (!form.instrument || !form.date || !form.thesis.trim()) {
       setStep("context");
-      setSaveError("Choose an instrument and write your thesis before saving.");
+      setSaveError(!form.instrument ? "Choose an instrument before saving." : !form.date ? "Choose an analysis date before saving." : "Write your thesis before saving.");
       return;
     }
     setSaving(true);
@@ -139,7 +139,7 @@ export function AnalysisEditor({ mode, analysisId, initial, preview = false }: {
       {restored && <DraftBanner onDismiss={dismiss} />}
       {saveError && <p role="alert" className="rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2 text-xs text-destructive">{saveError}</p>}
 
-      <form id="analysis-workspace-form" onSubmit={save} className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(22rem,0.9fr)_minmax(0,1.1fr)]">
+      <form id="analysis-workspace-form" onSubmit={save} noValidate className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(22rem,0.9fr)_minmax(0,1.1fr)]">
         <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/75">
           <div className="shrink-0 border-b border-border/60 p-3 sm:p-4">
             <div role="tablist" aria-label="Analysis sections" className="grid grid-cols-2 gap-1 rounded-xl border border-border/50 bg-background/55 p-1">
