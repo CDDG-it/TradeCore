@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo, useCallback, useSyncExternalStore } from "react";
+import { useState, useMemo, useCallback, useSyncExternalStore, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay,
   startOfMonth, endOfMonth, isWithinInterval, addWeeks,
 } from "date-fns";
-import { motion } from "motion/react";
 import { toggleHabitCompletion } from "@/lib/supabase/queries";
 import { computeMindScore } from "@/lib/mind-score/mind-score";
 import { computeGoalProgress } from "@/lib/goals/goals";
@@ -83,22 +83,51 @@ function useToday(serverToday: string): string {
   return useSyncExternalStore(subscribeMinutely, todayKey, () => serverToday);
 }
 
-/** The hour decides the greeting; read after mount so the server, on its own
- *  clock, never argues with the browser about the time of day. */
-function useGreeting(): string {
-  return useSyncExternalStore(
-    () => () => {},
-    () => {
-      const h = new Date().getHours();
-      return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-    },
-    () => ""
+function DashboardWelcome({ firstName }: { firstName: string | null }) {
+  const [visible, setVisible] = useState(false);
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    const key = "tradecore:dashboard-welcome-seen";
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      // If storage is unavailable, still show the welcome once for this mount.
+    }
+
+    setVisible(true);
+    const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 650 : 1600;
+    const timeout = window.setTimeout(() => setVisible(false), duration);
+    return () => window.clearTimeout(timeout);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div className="dashboard-welcome fixed inset-0 z-[100] flex items-center justify-center bg-background px-6" role="status" aria-live="polite">
+      <div className="dashboard-welcome-content flex flex-col items-center text-center">
+        <div className="dashboard-welcome-mark mb-9 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-card shadow-[0_0_52px_color-mix(in_oklch,var(--primary)_12%,transparent)]">
+          <Image src="/tradingmc-logo.png" alt="" width={979} height={500} priority className="h-7 w-auto" />
+        </div>
+        <p className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[.28em] text-ice">TradingMC · Secure workspace</p>
+        <h1 className="font-heading text-3xl font-semibold tracking-[-.045em] text-foreground sm:text-5xl">
+          Welcome back{firstName ? `, ${firstName}` : ""}
+        </h1>
+        <p className="mt-4 text-xs tracking-wide text-muted-foreground">Preparing your trading desk</p>
+        <div className="dashboard-welcome-track mt-9 h-px w-48 overflow-hidden bg-border sm:w-64" aria-hidden="true">
+          <div className="dashboard-welcome-progress h-full w-full origin-left bg-primary" />
+        </div>
+        <span className="mt-3 font-mono text-[9px] uppercase tracking-[.2em] text-muted-foreground">Workspace ready</span>
+      </div>
+    </div>
   );
 }
 
 export function DashboardClient({ data }: { data: DashboardData }) {
   const { hidden, toggle } = usePrivacy();
-  const greeting = useGreeting();
   const today = useToday(data.today);
   const { trades, accounts, habits, analyses, bestTrades, weeklyReviews, adherenceLogs, ruleChecks, preMarketExercises, goals, firstName } = data;
 
@@ -199,16 +228,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     // 7.5rem = the top nav (3.5rem) plus the page gutter above and below it:
     // anything less and the page keeps a stray scrollbar.
     <div className="flex flex-col gap-3 short:gap-2 lg:h-[calc(100dvh-7.5rem)] lg:overflow-hidden">
-      <motion.div
-        initial={{ opacity: 0, y: -6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-wrap items-end justify-between gap-3 shrink-0"
-      >
-        <h1 className="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none">
-          {greeting ? `${greeting}${firstName ? `, ${firstName}` : ""}` : "Dashboard"}
-        </h1>
-      </motion.div>
+      <DashboardWelcome firstName={firstName} />
 
       <DashboardDesk
         mindScore={<MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />}
