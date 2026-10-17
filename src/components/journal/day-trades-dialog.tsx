@@ -25,11 +25,13 @@ export function DayTradesDialog({
   trades,
   open,
   onOpenChange,
+  preview = false,
 }: {
   date: string; // yyyy-MM-dd
   trades: TradeJournalEntry[];
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  preview?: boolean;
 }) {
   const dayR = trades.reduce((s, t) => s + tradeR(t), 0);
 
@@ -49,18 +51,13 @@ export function DayTradesDialog({
             </span>
           </DialogTitle>
           <DialogDescription>
-            {trades.length} trade{trades.length !== 1 ? "s" : ""} logged: open one to see the full entry.
+            {preview ? "Sample trades for design review." : `${trades.length} trade${trades.length !== 1 ? "s" : ""} logged: open one to see the full entry.`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-1.5">
-          {trades.map((t) => (
-            <Link
-              key={t.id}
-              href={`/journal/${t.id}`}
-              onClick={() => onOpenChange(false)}
-              className="group flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/40"
-            >
+          {trades.map((t) => {
+            const content = <>
               {/* Direction */}
               {t.direction === "long"
                 ? <TrendingUp className="w-4 h-4 shrink-0 text-success" />
@@ -100,9 +97,13 @@ export function DayTradesDialog({
                 {tradeRLabel(t)}
               </span>
 
-              <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-            </Link>
-          ))}
+              {!preview && <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />}
+            </>;
+            const className = cn("group flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2.5", !preview && "transition-colors hover:border-primary/40 hover:bg-muted/40");
+            return preview
+              ? <div key={t.id} className={className}>{content}</div>
+              : <Link key={t.id} href={`/journal/${t.id}`} onClick={() => onOpenChange(false)} className={className}>{content}</Link>;
+          })}
         </div>
       </DialogContent>
     </Dialog>

@@ -11,7 +11,7 @@ const TURQUOISE = "var(--primary)";
 /** One tight stat cell. */
 function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/20 px-2 py-1.5">
+    <div className="journal-stat rounded-lg border border-border/50 bg-muted/20 px-2 py-1.5">
       <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">{label}</p>
       <p className={cn("mt-1 text-base font-black tabular-nums leading-none", tone)}>{value}</p>
     </div>
@@ -84,7 +84,7 @@ function RCurve({ trades }: { trades: TradeJournalEntry[] }) {
  * the two halves of the page can never disagree. Sized to sit beside the grid
  * without scrolling.
  */
-export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEntry[]; monthLabel: string }) {
+export function MonthAnalytics({ trades, monthLabel, preview = false }: { trades: TradeJournalEntry[]; monthLabel: string; preview?: boolean }) {
   const wins = trades.filter((t) => t.result === "win");
   const losses = trades.filter((t) => t.result === "loss");
   const bes = trades.filter((t) => t.result === "break-even");
@@ -116,7 +116,7 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
 
   if (trades.length === 0) {
     return (
-      <div className="flex h-full flex-col rounded-2xl border border-border/50 bg-card p-4">
+      <div className="journal-analytics-card flex h-full flex-col rounded-2xl border border-border/50 bg-card p-4">
         <p className="text-sm font-semibold">{monthLabel}</p>
         <div className="flex flex-1 items-center justify-center">
           <p className="text-center text-xs text-muted-foreground/70">No trades logged this month.</p>
@@ -126,17 +126,17 @@ export function MonthAnalytics({ trades, monthLabel }: { trades: TradeJournalEnt
   }
 
   return (
-    <div className="flex h-full flex-col gap-2.5 rounded-2xl border border-border/50 bg-card p-3.5">
+    <div className="journal-analytics-card flex h-full flex-col gap-2.5 rounded-2xl border border-border/50 bg-card p-3.5">
       {/* Header */}
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-sm font-semibold leading-none">{monthLabel}</p>
-        <Link href="/analytics" className="text-[10px] font-semibold text-primary hover:underline">
+        <Link href={preview ? "/preview/analytics" : "/analytics"} className="text-[10px] font-semibold text-primary hover:underline">
           Edge analytics →
         </Link>
       </div>
 
       {/* Hero: net R */}
-      <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2.5">
+      <div className="journal-analytics-hero rounded-xl border border-border/50 px-3 py-2.5">
         <div className="flex items-end justify-between gap-2">
           <div>
             <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-none">Net R</p>
