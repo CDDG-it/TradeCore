@@ -32,10 +32,10 @@ export function SectionNav<T extends string>({
       <h1 className={cn("min-w-0", titleClassName)}>
         <DropdownMenuTrigger
           aria-label={`${title}. Current section: ${selectedLabel}. Open sections`}
-          className="section-nav-trigger group/section inline-flex max-w-full min-w-0 items-center gap-2.5 rounded-xl text-left text-inherit outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+          className="section-nav-trigger group/section inline-flex max-w-full min-w-0 items-center gap-2.5 rounded-xl py-1 text-left text-inherit outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           style={{ font: "inherit" }}
         >
-          <span className="min-w-0 truncate">{title}</span>
+          <span className="min-w-0 whitespace-normal leading-[1.25] sm:whitespace-nowrap">{title}</span>
           <span className="section-nav-current inline-flex min-w-0 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5">
             <span className="max-w-20 truncate text-[11px] font-semibold leading-none tracking-normal sm:max-w-32">{selectedLabel}</span>
             <ChevronDown aria-hidden className={cn("section-nav-chevron size-3 shrink-0", open && "section-nav-chevron-open")} />
