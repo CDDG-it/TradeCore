@@ -22,20 +22,24 @@ export function DashboardWelcome({ firstName, preview = false }: { firstName: st
   if (!visible) return null;
 
   return (
-    <div className={`dashboard-welcome fixed inset-0 z-[100] flex items-center justify-center bg-background px-6 ${exiting ? "dashboard-welcome-exiting" : ""}`} role="status" aria-live="polite">
-      <div className="dashboard-welcome-content flex flex-col items-center text-center">
-        <div className="dashboard-welcome-mark mb-9 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-card shadow-[0_0_52px_color-mix(in_oklch,var(--primary)_12%,transparent)]">
-          <Image src="/tradingmc-logo.png" alt="" width={979} height={500} priority className="h-7 w-auto" />
+    <div className={`dashboard-welcome fixed inset-0 z-[100] flex items-center justify-center overflow-hidden px-6 ${exiting ? "dashboard-welcome-exiting" : ""}`} role="status" aria-live="polite">
+      <div className="dashboard-welcome-scene" aria-hidden="true">
+        <span className="dashboard-welcome-glow dashboard-welcome-glow-one animate-drift-a" />
+        <span className="dashboard-welcome-glow dashboard-welcome-glow-two animate-drift-b" />
+        <span className="dashboard-welcome-glow dashboard-welcome-glow-three animate-drift-c" />
+        <span className="dashboard-welcome-grid" />
+      </div>
+      <div className="dashboard-welcome-content relative z-10 flex w-full max-w-[1100px] flex-col items-center text-center">
+        <div className="dashboard-welcome-mark mb-9 sm:mb-12">
+          <Image src="/tradingmc-logo.png" alt="" width={979} height={500} priority className="h-14 w-auto sm:h-20" />
         </div>
-        <p className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[.28em] text-ice">TradingMC · Secure workspace</p>
-        <h1 className="font-heading text-3xl font-semibold tracking-[-.045em] text-foreground sm:text-5xl">
-          Welcome back{firstName ? `, ${firstName}` : ""}
+        <h1 className="font-heading text-[clamp(3.5rem,8.5vw,8.25rem)] font-semibold leading-[.9] tracking-[-.065em] text-[#f8fafc]">
+          <span className="block">Welcome back{firstName ? "," : ""}</span>
+          {firstName && <span className="dashboard-welcome-name mt-2 block sm:mt-3">{firstName}</span>}
         </h1>
-        <p className="mt-4 text-xs tracking-wide text-muted-foreground">Preparing your trading desk</p>
-        <div className="dashboard-welcome-track mt-9 h-px w-48 overflow-hidden bg-border sm:w-64" aria-hidden="true">
+        <div className="dashboard-welcome-track mt-12 h-px w-48 overflow-hidden bg-white/15 sm:mt-16 sm:w-80" aria-hidden="true">
           <div className="dashboard-welcome-progress h-full w-full origin-left bg-primary" />
         </div>
-        <span className="mt-3 font-mono text-[9px] uppercase tracking-[.2em] text-muted-foreground">Workspace ready</span>
       </div>
     </div>
   );
