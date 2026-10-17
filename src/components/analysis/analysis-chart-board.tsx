@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ImagePlus, Maximize2, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImagePlus, Maximize2, Plus, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { ScreenshotGroup } from "@/lib/types";
 import { normalizeTimeframe } from "@/lib/timeframes";
@@ -37,6 +37,8 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
   const group = visibleGroups[safeActive];
   const safeShot = Math.min(shot, Math.max(0, (group?.urls.length ?? 0) - 1));
   const url = group?.urls[safeShot];
+  const chartSequence = visibleGroups.flatMap((item, groupIndex) => item.urls.map((_, shotIndex) => ({ groupIndex, shotIndex })));
+  const sequenceIndex = chartSequence.findIndex((item) => item.groupIndex === safeActive && item.shotIndex === safeShot);
   const { display, upload, fullSize, uploading, error } = useScreenshots(target, group?.urls ?? []);
   const preview = url ? display(url) : null;
 
@@ -49,6 +51,13 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
   }, [lightbox]);
 
   function choose(index: number) { setActive(index); setShot(0); }
+  function moveChart(direction: -1 | 1) {
+    if (chartSequence.length < 2) return;
+    const start = sequenceIndex < 0 ? (direction === 1 ? -1 : 0) : sequenceIndex;
+    const next = chartSequence[(start + direction + chartSequence.length) % chartSequence.length];
+    setActive(next.groupIndex);
+    setShot(next.shotIndex);
+  }
   function updateUrls(urls: string[]) {
     if (!group || !onChange) return;
     onChange(groups.map((item) => item.label === group.label ? { ...item, urls } : item));
@@ -154,6 +163,11 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
           </motion.div>}
         </AnimatePresence>
         {dragging && <div className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-primary bg-primary/10 text-sm font-semibold text-primary">Drop chart here</div>}
+        {chartSequence.length > 1 && <>
+          <button type="button" onClick={() => moveChart(-1)} aria-label="Previous chart" className="absolute left-2 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-[#0b1120]/85 text-white shadow-lg transition-[background-color,transform] hover:bg-[#1b3345] active:scale-95 sm:left-3"><ChevronLeft className="size-5" /></button>
+          <button type="button" onClick={() => moveChart(1)} aria-label="Next chart" className="absolute right-2 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-[#0b1120]/85 text-white shadow-lg transition-[background-color,transform] hover:bg-[#1b3345] active:scale-95 sm:right-3"><ChevronRight className="size-5" /></button>
+        </>}
+        {url && <span className="absolute bottom-3 left-3 z-10 rounded-md border border-white/10 bg-[#0b1120]/85 px-2 py-1 text-[10px] font-semibold text-white/80">{group.label} · {safeShot + 1} / {group.urls.length}</span>}
         {url && preview && <button type="button" onClick={() => void openFull()} aria-label="Open chart full size" className="absolute right-3 top-3 z-10 flex size-9 items-center justify-center rounded-lg border border-white/15 bg-[#0b1120]/80 text-white"><Maximize2 className="size-4" /></button>}
       </div>
 

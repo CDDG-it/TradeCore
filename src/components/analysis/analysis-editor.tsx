@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Save, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, TrendingDown, TrendingUp } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AnalysisChartBoard } from "@/components/analysis/analysis-chart-board";
 import { AnalysisNewsBrief } from "@/components/analysis/analysis-news-brief";
@@ -151,29 +151,26 @@ export function AnalysisEditor({ mode, analysisId, initial, preview = false }: {
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
             <AnimatePresence mode="wait" initial={false}>
-              {step === "context" ? <motion.div key="context" role="tabpanel" className="space-y-4"
+              {step === "context" ? <motion.div key="context" role="tabpanel" className="flex min-h-full flex-col gap-4"
                 initial={{ opacity: 0, transform: reduce ? "none" : "translateY(8px)" }} animate={{ opacity: 1, transform: "translateY(0)" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }}>
                 <div className="space-y-2"><Label className="text-xs font-semibold">Instrument <span className="text-primary">*</span></Label><InstrumentPicker value={form.instrument} onChange={pickInstrument} preferred={markets} autoFill={!initial && !preview} compact /></div>
                 <div className="space-y-2"><Label htmlFor="analysis-date" className="text-xs font-semibold">Analysis date</Label><Input id="analysis-date" type="date" value={form.date} onChange={(event) => set("date", event.target.value)} required className="h-10 bg-background/60" /></div>
                 <div className="space-y-2"><Label className="text-xs font-semibold">Current bias</Label><div className="grid grid-cols-3 gap-2">{BIASES.map((bias) => <button key={bias.value} type="button" onClick={() => set("bias", bias.value)} aria-pressed={form.bias === bias.value}
                   className={cn("rounded-xl border px-2 py-2.5 text-xs font-semibold transition-[background-color,border-color,color]", form.bias === bias.value ? bias.className : "border-border/70 bg-background/50 text-muted-foreground hover:text-foreground")}>{bias.label}</button>)}</div></div>
-                <div className="space-y-2"><Label htmlFor="analysis-thesis" className="text-xs font-semibold">Thesis <span className="text-primary">*</span></Label><p className="text-[11px] leading-relaxed text-muted-foreground">What is price doing, which levels matter and what would change your read?</p><Textarea id="analysis-thesis" value={form.thesis} onChange={(event) => set("thesis", event.target.value)} required placeholder="Market structure, key level, catalyst and the reason this matters..." className="min-h-36 resize-y bg-background/60 text-sm leading-relaxed" /></div>
+                <div className="flex min-h-56 flex-1 flex-col gap-2"><Label htmlFor="analysis-thesis" className="text-xs font-semibold">Thesis <span className="text-primary">*</span></Label><p className="text-[11px] leading-relaxed text-muted-foreground">What is price doing, which levels matter and what would change your read?</p><Textarea id="analysis-thesis" value={form.thesis} onChange={(event) => set("thesis", event.target.value)} required placeholder="Market structure, key level, catalyst and the reason this matters..." className="min-h-44 flex-1 resize-y bg-background/60 text-sm leading-relaxed lg:resize-none" /></div>
                 <AnalysisNewsBrief date={form.date} preview={preview} />
                 <button type="button" onClick={() => setStep("scenarios")} className="inline-flex items-center gap-2 text-xs font-semibold text-primary transition-opacity hover:opacity-75">Continue to scenarios <ArrowRight className="size-3.5" /></button>
-              </motion.div> : <motion.div key="scenarios" role="tabpanel" className="space-y-4"
+              </motion.div> : <motion.div key="scenarios" role="tabpanel" className="flex min-h-full flex-col gap-4"
                 initial={{ opacity: 0, transform: reduce ? "none" : "translateY(8px)" }} animate={{ opacity: 1, transform: "translateY(0)" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }}>
-                <div><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-primary">02 / Decision paths</p><h2 className="mt-1.5 text-lg font-semibold tracking-tight">Plan both sides before price moves</h2><p className="mt-1 text-xs leading-relaxed text-muted-foreground">A scenario is conditional. Write what must happen, where the idea fails and what you will do next.</p></div>
-                <div className="rounded-xl border border-success/20 bg-success/[.04] p-3.5 sm:p-4">
+                <div><h2 className="text-lg font-semibold tracking-tight">Plan both sides before price moves</h2><p className="mt-1 text-xs leading-relaxed text-muted-foreground">A scenario is conditional. Write what must happen, where the idea fails and what you will do next.</p></div>
+                <div className="flex min-h-56 flex-1 flex-col rounded-xl border border-success/20 bg-success/[.04] p-3.5 sm:p-4">
                   <div className="flex items-center gap-2 text-success"><TrendingUp className="size-4" /><Label htmlFor="analysis-long" className="text-sm font-semibold">Long scenario</Label></div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">If price reclaims or holds a level, what confirms the long? Add your entry area, invalidation and first target.</p>
-                  <Textarea id="analysis-long" value={form.long_scenario} onChange={(event) => set("long_scenario", event.target.value)} placeholder="If price holds above... I look for... The idea is wrong below..." className="mt-3 min-h-36 resize-y border-success/20 bg-background/60 text-sm leading-relaxed focus-visible:ring-success/30" />
+                  <Textarea id="analysis-long" value={form.long_scenario} onChange={(event) => set("long_scenario", event.target.value)} placeholder="If price holds above... I look for... The idea is wrong below..." className="mt-3 min-h-40 flex-1 resize-y border-success/20 bg-background/60 text-sm leading-relaxed focus-visible:ring-success/30 lg:resize-none" />
                 </div>
-                <div className="rounded-xl border border-destructive/20 bg-destructive/[.04] p-3.5 sm:p-4">
+                <div className="flex min-h-56 flex-1 flex-col rounded-xl border border-destructive/20 bg-destructive/[.04] p-3.5 sm:p-4">
                   <div className="flex items-center gap-2 text-destructive"><TrendingDown className="size-4" /><Label htmlFor="analysis-short" className="text-sm font-semibold">Short scenario</Label></div>
-                  <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">If price rejects or loses a level, what confirms the short? Add your entry area, invalidation and first target.</p>
-                  <Textarea id="analysis-short" value={form.short_scenario} onChange={(event) => set("short_scenario", event.target.value)} placeholder="If price fails at... I look for... The idea is wrong above..." className="mt-3 min-h-36 resize-y border-destructive/20 bg-background/60 text-sm leading-relaxed focus-visible:ring-destructive/30" />
+                  <Textarea id="analysis-short" value={form.short_scenario} onChange={(event) => set("short_scenario", event.target.value)} placeholder="If price fails at... I look for... The idea is wrong above..." className="mt-3 min-h-40 flex-1 resize-y border-destructive/20 bg-background/60 text-sm leading-relaxed focus-visible:ring-destructive/30 lg:resize-none" />
                 </div>
-                <p className="flex items-center gap-2 text-[11px] text-muted-foreground"><Check className="size-3.5 text-primary" /> You can save with one scenario, both, or neither.</p>
               </motion.div>}
             </AnimatePresence>
           </div>
