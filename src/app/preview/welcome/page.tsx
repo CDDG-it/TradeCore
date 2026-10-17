@@ -8,7 +8,7 @@ export default function PreviewWelcomePage() {
   if (process.env.NODE_ENV === "production") notFound();
   return (
     <main className="min-h-screen bg-background">
-      <DashboardWelcome firstName="Collin" preview />
+      <DashboardWelcome firstName="Collin" />
     </main>
   );
 }

@@ -4,23 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 /** Fullscreen startup welcome, shown on each entry into the signed-in app. */
-export function DashboardWelcome({ firstName, preview = false }: { firstName: string | null; preview?: boolean }) {
-  const [visible, setVisible] = useState(true);
-  const [exiting, setExiting] = useState(false);
-
-  useEffect(() => {
-    if (preview) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const hold = window.setTimeout(() => setExiting(true), reduceMotion ? 550 : 1350);
-    const remove = window.setTimeout(() => setVisible(false), reduceMotion ? 730 : 1610);
-    return () => {
-      window.clearTimeout(hold);
-      window.clearTimeout(remove);
-    };
-  }, [preview]);
-
-  if (!visible) return null;
-
+export function DashboardWelcome({ firstName, exiting = false }: { firstName: string | null; exiting?: boolean }) {
   return (
     <div className={`dashboard-welcome fixed inset-0 z-[100] flex items-center justify-center overflow-hidden px-6 ${exiting ? "dashboard-welcome-exiting" : ""}`} role="status" aria-live="polite">
       <div className="dashboard-welcome-scene" aria-hidden="true">
@@ -45,6 +29,25 @@ export function DashboardWelcome({ firstName, preview = false }: { firstName: st
   );
 }
 
-export function AppWelcome({ firstName }: { firstName: string | null }) {
-  return <DashboardWelcome firstName={firstName} />;
+export function AppWelcome({ firstName, children }: { firstName: string | null; children: React.ReactNode }) {
+  const [phase, setPhase] = useState<"welcome" | "exit" | "app">("welcome");
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const hold = window.setTimeout(() => setPhase("exit"), reduceMotion ? 550 : 1350);
+    const reveal = window.setTimeout(() => setPhase("app"), reduceMotion ? 730 : 1610);
+    return () => {
+      window.clearTimeout(hold);
+      window.clearTimeout(reveal);
+    };
+  }, []);
+
+  if (phase === "app") return children;
+
+  // Only one screen is mounted at a time. The dashboard appears after the intro exits.
+  return (
+    <div className="min-h-screen bg-[#0b1120]">
+      <DashboardWelcome firstName={firstName} exiting={phase === "exit"} />
+    </div>
+  );
 }
