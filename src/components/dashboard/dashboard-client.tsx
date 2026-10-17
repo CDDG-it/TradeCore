@@ -83,11 +83,15 @@ function useToday(serverToday: string): string {
   return useSyncExternalStore(subscribeMinutely, todayKey, () => serverToday);
 }
 
-function DashboardWelcome({ firstName }: { firstName: string | null }) {
+export function DashboardWelcome({ firstName, preview = false }: { firstName: string | null; preview?: boolean }) {
   const [visible, setVisible] = useState(false);
   const started = useRef(false);
 
   useEffect(() => {
+    if (preview) {
+      setVisible(true);
+      return;
+    }
     if (started.current) return;
     started.current = true;
     const key = "tradecore:dashboard-welcome-seen";
@@ -102,7 +106,7 @@ function DashboardWelcome({ firstName }: { firstName: string | null }) {
     const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 650 : 1600;
     const timeout = window.setTimeout(() => setVisible(false), duration);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [preview]);
 
   if (!visible) return null;
 
