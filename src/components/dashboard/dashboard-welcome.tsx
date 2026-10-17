@@ -1,39 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useAuth } from "@/lib/auth-context";
 
-/** Fullscreen startup welcome, shown once per signed-in browser tab. */
+/** Fullscreen startup welcome, shown on each entry into the signed-in app. */
 export function DashboardWelcome({ firstName, preview = false }: { firstName: string | null; preview?: boolean }) {
-  const [visible, setVisible] = useState(preview);
-  const started = useRef(false);
+  const [visible, setVisible] = useState(true);
+  const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    if (preview) {
-      setVisible(true);
-      return;
-    }
-    if (started.current) return;
-    started.current = true;
-    const key = "tradecore:dashboard-welcome-seen";
-    try {
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, "1");
-    } catch {
-      // If storage is unavailable, still show the welcome once for this mount.
-    }
-
-    setVisible(true);
-    const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 650 : 1600;
-    const timeout = window.setTimeout(() => setVisible(false), duration);
-    return () => window.clearTimeout(timeout);
+    if (preview) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const hold = window.setTimeout(() => setExiting(true), reduceMotion ? 550 : 1350);
+    const remove = window.setTimeout(() => setVisible(false), reduceMotion ? 730 : 1610);
+    return () => {
+      window.clearTimeout(hold);
+      window.clearTimeout(remove);
+    };
   }, [preview]);
 
   if (!visible) return null;
 
   return (
-    <div className={`dashboard-welcome fixed inset-0 z-[100] flex items-center justify-center bg-background px-6 ${preview ? "dashboard-welcome-preview" : ""}`} role="status" aria-live="polite">
+    <div className={`dashboard-welcome fixed inset-0 z-[100] flex items-center justify-center bg-background px-6 ${exiting ? "dashboard-welcome-exiting" : ""}`} role="status" aria-live="polite">
       <div className="dashboard-welcome-content flex flex-col items-center text-center">
         <div className="dashboard-welcome-mark mb-9 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-card shadow-[0_0_52px_color-mix(in_oklch,var(--primary)_12%,transparent)]">
           <Image src="/tradingmc-logo.png" alt="" width={979} height={500} priority className="h-7 w-auto" />
@@ -52,10 +41,6 @@ export function DashboardWelcome({ firstName, preview = false }: { firstName: st
   );
 }
 
-/** Wait for the existing session bootstrap so the intro uses the signed-in name. */
-export function AppWelcome() {
-  const { user, isLoading } = useAuth();
-  if (isLoading || !user) return null;
-  const name = user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "";
-  return <DashboardWelcome firstName={name.trim().split(/\s+/)[0] || null} />;
+export function AppWelcome({ firstName }: { firstName: string | null }) {
+  return <DashboardWelcome firstName={firstName} />;
 }

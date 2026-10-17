@@ -879,8 +879,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 /* One-time dashboard entry screen. The content and data stay still beneath it;
    only the welcome layer and its loading indicator move. */
 @keyframes dashboard-welcome-exit {
-  0%, 78% { opacity: 1; }
-  100% { opacity: 0; }
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 @keyframes dashboard-welcome-enter {
   from { opacity: 0; transform: translateY(8px); }
@@ -890,14 +890,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
-.dashboard-welcome { animation: dashboard-welcome-exit 1.6s linear both; }
-.dashboard-welcome-preview { animation: none; opacity: 1; }
+.dashboard-welcome-exiting { animation: dashboard-welcome-exit 260ms var(--ease-out-strong) both; }
 .dashboard-welcome-content { animation: dashboard-welcome-enter 420ms var(--ease-out-strong) both; }
 .dashboard-welcome-mark { animation: dashboard-welcome-enter 360ms var(--ease-out-strong) both; }
 .dashboard-welcome-progress { animation: dashboard-welcome-load 1.05s var(--ease-out-strong) 120ms both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .dashboard-welcome { animation-duration: 650ms; }
+  .dashboard-welcome-exiting { animation-duration: 180ms; }
   .dashboard-welcome-content, .dashboard-welcome-mark { animation: dashboard-welcome-enter 180ms ease-out both; }
   .dashboard-welcome-content { animation-name: none; opacity: 1; transform: none; }
   .dashboard-welcome-progress { animation-duration: 400ms; }

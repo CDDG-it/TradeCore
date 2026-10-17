@@ -5,9 +5,17 @@ import { TransitionLayout } from "@/components/layout/transition-layout";
 import { AccessProvider } from "@/components/access/access-provider";
 import { resolveAccess } from "@/lib/access/server";
 import { AppWelcome } from "@/components/dashboard/dashboard-welcome";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const access = await resolveAccess();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const access = await resolveAccess(user);
+  const fullName = typeof user.user_metadata?.full_name === "string"
+    ? user.user_metadata.full_name
+    : user.email?.split("@")[0] ?? "";
+  const firstName = fullName.trim().split(/\s+/)[0] || null;
   return (
     <div
       className="relative min-h-screen overflow-x-clip bg-background"
@@ -16,7 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* Full-width top navigation: no fixed left sidebar */}
       <TopNav />
       <WarmReads />
-      <AppWelcome />
+      <AppWelcome firstName={firstName} />
 
       {/* Main content fills the whole width beneath the bar. Tighter gutters
           and vertical padding on phones so content uses the full screen. */}
