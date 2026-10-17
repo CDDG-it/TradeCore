@@ -237,7 +237,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
   }
 
   return (
-    <div className="trade-static-scroll space-y-4">
+    <div className="trade-static-scroll space-y-3">
       {/* Compact header: actions stay in view so the form needs no scroll to submit */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -268,14 +268,14 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
         <div className="min-w-0 space-y-3">
         {/* Trade Details */}
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Trade Details</CardTitle></CardHeader>
-          <CardContent className="space-y-2.5">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
+          <CardHeader className="pb-1.5"><CardTitle className="text-sm font-semibold">Trade Details</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
                 <Label className="text-xs">Instrument *</Label>
                 <InstrumentPicker value={form.instrument} onChange={pickInstrument} preferred={markets} compact />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs">Date *</Label>
                 <DateField
                   value={form.date_time}
@@ -285,8 +285,8 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
                 <Label className="text-xs">Direction</Label>
                 <div className="flex gap-1.5">
                   {(["long", "short"] as Direction[]).map((d) => (
@@ -300,7 +300,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                   ))}
                 </div>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs">Result</Label>
                 <div className="flex gap-1">
                   {(["win", "loss", "break-even"] as TradeResult[]).map((r) => (
@@ -318,8 +318,8 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
                 <Label className="text-xs">Session</Label>
                 <div className="flex flex-wrap gap-1.5">
                   {SESSIONS.map((s) => (
@@ -331,7 +331,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                   ))}
                 </div>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs">Entry Timeframe</Label>
                 <div className="flex flex-wrap gap-1.5">
                   {visibleTimeframes.map((tf) => (
@@ -369,14 +369,14 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="space-y-1.5">
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="space-y-1">
                 {/* Only a win is scored off R:R: a loss is -1R and a scratch 0R
                     whatever is typed here, so it is asked for, not demanded. */}
                 <Label htmlFor="rr" className="text-xs">R:R{form.result === "win" ? " *" : ""}</Label>
                 <RRField id="rr" value={form.rr > 0 ? form.rr : null} onChange={(v) => set("rr", v ?? 0)} />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs">Entry Time</Label>
                 <TimeField
                   value={form.execution_time ?? ""}
@@ -385,7 +385,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                   label="Entry time"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label className="text-xs">Exit Time</Label>
                 <TimeField
                   value={form.execution_end_time ?? ""}
@@ -395,7 +395,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                 />
               </div>
             </div>
-            <div className="border-t border-border/50 pt-2.5">
+            <div className="border-t border-border/50 pt-1.5">
               <button type="button" onClick={() => setShowAnalysis((value) => !value)} aria-expanded={showAnalysis}
                 className="flex w-full items-center gap-2 rounded-lg px-1 py-1 text-left text-xs transition-colors hover:text-primary">
                 <Link2 className="size-3.5 text-primary" />
@@ -412,12 +412,12 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
 
         {/* Notes get the room saved by the compact trade details. */}
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Notes</CardTitle></CardHeader>
-          <CardContent className="grid gap-2.5 sm:grid-cols-2">
+          <CardHeader className="pb-1.5"><CardTitle className="text-sm font-semibold">Notes</CardTitle></CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2">
             {NOTE_FIELDS.map(({ key, label, placeholder, icon: Icon, accent, surface }) => {
               const value = form[key] ?? "";
-              return <div key={key} className={cn("trade-note rounded-xl border p-2.5 transition-[border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none", surface)}>
-                <div className="mb-1.5 flex items-center gap-1.5">
+              return <div key={key} className={cn("trade-note rounded-xl border p-2 transition-[border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none", surface)}>
+                <div className="mb-1 flex items-center gap-1.5">
                   <Icon className={cn("size-3.5", accent)} aria-hidden="true" />
                   <Label htmlFor={`trade-note-${key}`} className="text-xs font-semibold">{label}</Label>
                   <span className={cn("ml-auto text-[10px] tabular-nums transition-opacity duration-150", accent, activeNote === key || value ? "opacity-70" : "opacity-0")} aria-hidden="true">{value.length}</span>
@@ -426,7 +426,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                   onChange={(e) => set(key, e.target.value)}
                   onFocus={() => setActiveNote(key)} onBlur={() => setActiveNote(null)}
                   placeholder={placeholder}
-                  className="min-h-[108px] resize-y border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:border-0 focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent" />
+                  className="min-h-[62px] resize-y border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:border-0 focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent" />
               </div>;
             })}
           </CardContent>
@@ -436,7 +436,8 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
         {/* ── RIGHT: setup quality and chart evidence ── */}
         <div className="min-w-0 space-y-3">
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardContent className="space-y-3">
+          <CardContent className="grid gap-3 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+            <div className="min-w-0 space-y-2">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-xs font-semibold text-foreground/85">Confluences</h3>
               <button type="button" onClick={() => setShowConfluenceInput((open) => !open)} aria-expanded={showConfluenceInput}
@@ -489,14 +490,15 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                 ))}
               </div>
             )}
-            <div className="border-t border-border/60 pt-3">
+            <div className="border-t border-border/60 pt-2">
               <ExecutionQualityField
                 value={form.execution_quality}
                 onChange={(next) => set("execution_quality", next)}
               />
             </div>
-            <div className="border-t border-border/60 pt-3">
-              <h3 className="mb-2 text-xs font-semibold text-foreground/85">Discipline check</h3>
+            </div>
+            <div className="min-w-0 border-t border-border/60 pt-2 min-[1100px]:border-l min-[1100px]:border-t-0 min-[1100px]:pl-3 min-[1100px]:pt-0">
+              <h3 className="mb-1.5 text-xs font-semibold text-foreground/85">Discipline check</h3>
               <RuleChecksEditor checks={ruleChecks} onChange={setRuleChecks} compact />
             </div>
           </CardContent>
@@ -504,7 +506,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
 
         {/* One chart at a time, with the same timeframe and image navigation as analysis. */}
         {entitlements.screenshots ? <Card className="bg-card border-border/50 shadow-sm">
-          <CardContent className="h-[30rem] min-h-0 p-4">
+          <CardContent className="h-[min(24rem,50dvh)] min-h-0 p-3">
             <AnalysisChartBoard
               groups={form.screenshot_groups}
               onChange={(g) => set("screenshot_groups", g)}

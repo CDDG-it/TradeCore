@@ -753,6 +753,21 @@ html:has(.trade-static-scroll) {
   scroll-behavior: auto;
 }
 
+/* Give the two trade workspaces more of the viewport than the standard app
+   pages. On short desktop windows the note fields contract before any content
+   is pushed below the fold; users can still resize them when writing more. */
+@media (min-width: 900px) {
+  .app-shell:has(.trade-static-scroll) {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+}
+@media (min-width: 900px) and (max-height: 800px) {
+  .trade-static-scroll .trade-note textarea {
+    min-height: 42px;
+  }
+}
+
 /* ── App motion ──────────────────────────────────────────────────────
    One set of curves for the logged-in surfaces. Built-in easings are too
    weak: entering = strong ease-out, on-screen movement = strong ease-in-out.
