@@ -1006,16 +1006,29 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
 /* One section picker across My Edge, Trade Therapist and Global Markets. */
 .section-nav-current {
+  position: relative;
   border-color: color-mix(in oklch, var(--primary) 24%, transparent);
   background: color-mix(in oklch, var(--primary) 8%, var(--background));
   color: var(--primary);
-  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  transition: transform 180ms var(--ease-out-strong);
+}
+.section-nav-current::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  box-shadow: 0 0 22px rgba(20, 184, 166, .3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms var(--ease-out-strong);
 }
 .section-nav-trigger:focus-visible .section-nav-current,
 .section-nav-current-open {
-  border-color: color-mix(in oklch, var(--primary) 48%, transparent);
-  background: color-mix(in oklch, var(--primary) 14%, var(--background));
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 5%, transparent);
+  transform: scale(1.035);
+}
+.section-nav-trigger:focus-visible .section-nav-current::before,
+.section-nav-current-open::before {
+  opacity: 1;
 }
 .section-nav-chevron {
   opacity: .75;
@@ -1023,22 +1036,31 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 }
 .section-nav-chevron-open { transform: rotate(180deg); opacity: 1; }
 .section-nav-item {
-  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+  position: relative;
+  isolation: isolate;
+  transition: transform 180ms var(--ease-out-strong);
+}
+.section-nav-item::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in oklch, var(--primary) 12%, var(--popover));
+  box-shadow: 0 0 22px rgba(20, 184, 166, .18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms var(--ease-out-strong);
 }
 .section-nav-item[data-highlighted] {
-  background: color-mix(in oklch, var(--primary) 11%, var(--popover));
   color: var(--foreground);
 }
+.section-nav-item[data-highlighted]::before { opacity: 1; }
 @media (hover: hover) and (pointer: fine) {
-  .section-nav-trigger:hover .section-nav-current {
-    border-color: color-mix(in oklch, var(--primary) 48%, transparent);
-    background: color-mix(in oklch, var(--primary) 14%, var(--background));
-    box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 5%, transparent);
-  }
-  .section-nav-item:hover {
-    background: color-mix(in oklch, var(--primary) 11%, var(--popover));
-    color: var(--foreground);
-  }
+  .section-nav-trigger:hover .section-nav-current { transform: scale(1.035); }
+  .section-nav-trigger:hover .section-nav-current::before { opacity: 1; }
+  .section-nav-item:hover { transform: scale(1.02); }
+  .section-nav-item:hover::before { opacity: 1; }
 }
 .section-nav-menu {
   transform-origin: var(--transform-origin);
@@ -1050,11 +1072,16 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   transform: translateY(-6px) scale(0.97);
 }
 @media (prefers-reduced-motion: reduce) {
+  .section-nav-current, .section-nav-item { transition: none; }
+  .section-nav-trigger:focus-visible .section-nav-current,
+  .section-nav-current-open { transform: none; }
   .section-nav-chevron { transition: opacity 180ms ease; }
   .section-nav-chevron-open { transform: none; }
   .section-nav-menu { transition: opacity 180ms var(--ease-out-strong); }
   .section-nav-menu[data-starting-style],
   .section-nav-menu[data-ending-style] { transform: none; }
+  .section-nav-trigger:hover .section-nav-current,
+  .section-nav-item:hover { transform: none; }
 }
 
 /* Phone shell: the fixed primary tab bar is the only bottom bar. */
