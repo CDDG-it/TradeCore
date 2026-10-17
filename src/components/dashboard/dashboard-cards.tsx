@@ -21,7 +21,7 @@ const RED = "var(--loss)";
 const AMBER = "var(--be)";
 /** The desk's card shell and its ambient decoration, shared by every card on
  *  the dashboard (the news card lives in the page and borrows them). */
-export const CARD_BASE = "group/card relative rounded-2xl border border-border/60 bg-card p-4 short:p-3 overflow-hidden shadow-[0_4px_20px_-10px_rgba(0,0,0,0.25)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-0.5 hover:border-border/90 hover:shadow-[0_10px_36px_-14px_rgba(0,0,0,0.45)]";
+export const CARD_BASE = "group/card relative rounded-2xl border border-border/60 bg-card p-4 short:p-3 overflow-hidden shadow-[0_4px_20px_-10px_rgba(0,0,0,0.25)] transition-[box-shadow,border-color] duration-300 ease-out hover:border-border/90 hover:shadow-[0_10px_36px_-14px_rgba(0,0,0,0.45)]";
 export function CardFx({ accent }: { accent: string }) {
   return (
     <>
@@ -355,7 +355,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
         ].map((s) => (
           <div
             key={s.label}
-            className="group/chip relative rounded-lg border border-border/50 bg-muted/20 px-2 py-1 text-center transition-transform duration-300 hover:-translate-y-px short:py-0.5"
+            className="group/chip relative rounded-lg border border-border/50 bg-muted/20 px-2 py-1 text-center short:py-0.5"
           >
             <p className={cn("relative z-10 font-black tabular-nums leading-none", compactNumbers ? "text-sm" : "text-base")} style={{ color: s.color }}>{s.value}</p>
             <p className="relative z-10 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground mt-0.5">{s.label}</p>
@@ -531,7 +531,7 @@ export function WeekStrip({ days, today, compactNumbers = false }: {
               href={has ? `/journal?day=${format(date, "yyyy-MM-dd")}` : "/journal"}
               className={cn(
                 "group/day relative flex flex-col items-center overflow-hidden rounded-lg border px-0.5 pb-2 pt-2 sm:rounded-xl sm:px-1 sm:pb-2.5 sm:pt-3 short:pb-1.5 short:pt-2",
-                "transition-all duration-300 ease-out hover:-translate-y-1",
+                "transition-[border-color,box-shadow] duration-300 ease-out",
                 isCurrent ? "border-primary/50" : "border-border/60"
               )}
               style={has ? { background: resultBands(ordered, 14) } : undefined}
@@ -572,13 +572,13 @@ export function WeekStrip({ days, today, compactNumbers = false }: {
               />
 
               <span className={cn("relative text-[10px] font-semibold uppercase tracking-wide", isCurrent ? "text-primary" : "text-muted-foreground/60")}>{format(date, "EEE")}</span>
-              <span className={cn("relative mt-0.5 font-bold tabular-nums transition-transform duration-300 group-hover/day:scale-110", compactNumbers ? "text-sm sm:text-base" : "text-base sm:text-lg", isCurrent ? "text-primary" : "text-foreground/85")}>
+              <span className={cn("relative mt-0.5 font-bold tabular-nums", compactNumbers ? "text-sm sm:text-base" : "text-base sm:text-lg", isCurrent ? "text-primary" : "text-foreground/85")}>
                 {format(date, "d")}
               </span>
 
               {has ? (
                 <span className="relative mt-1 flex items-center gap-1">
-                  <span className={cn("font-black tabular-nums transition-transform duration-300 group-hover/day:scale-105", compactNumbers ? "text-[11px]" : "text-[13px]")} style={{ color: netColor }}>
+                  <span className={cn("font-black tabular-nums", compactNumbers ? "text-[11px]" : "text-[13px]")} style={{ color: netColor }}>
                     {r > 0 ? "+" : ""}{r.toFixed(1)}R
                   </span>
                   {dt.length > 1 && (
@@ -588,7 +588,7 @@ export function WeekStrip({ days, today, compactNumbers = false }: {
                   )}
                 </span>
               ) : (
-                <span className="relative mt-2 h-1.5 w-1.5 rounded-full bg-border transition-all duration-300 group-hover/day:bg-muted-foreground/50 group-hover/day:scale-125" />
+                <span className="relative mt-2 h-1.5 w-1.5 rounded-full bg-border transition-colors duration-300 group-hover/day:bg-muted-foreground/50" />
               )}
 
               {/* Per trade: pair, its R, and how cleanly it was run: each on the
