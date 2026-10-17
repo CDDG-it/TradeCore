@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronDown, Link2, Plus, X, Check } from "lucide-react";
+import { ArrowLeft, Brain, ChevronDown, CircleAlert, Lightbulb, Link2, Plus, ScanLine, X, Check } from "lucide-react";
 import { DateField, TimeField, RRField } from "@/components/journal/field-inputs";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { createTrade, getAnalyses, getProfile, getRuleSourcesForDate, saveTradeRuleChecks, type AnalysisListRow, type RuleCheckDraft } from "@/lib/supabase/queries";
+import { createTrade, getAnalyses, getProfile, getRuleSourcesForDate, getUsedTradeTimeframes, saveTradeRuleChecks, type AnalysisListRow, type RuleCheckDraft } from "@/lib/supabase/queries";
 import { invalidateReads } from "@/lib/supabase/cache";
 import { AnalysisChartBoard } from "@/components/analysis/analysis-chart-board";
 import type { TradeJournalEntryInput, Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry, ScreenshotGroup } from "@/lib/types";
@@ -44,6 +44,13 @@ function tradeDraftHasContent(f: TradeJournalEntryInput): boolean {
 }
 
 const SESSIONS: Session[] = ["London", "New York", "Asia"];
+const DEFAULT_TIMEFRAMES = TIMEFRAMES.filter((timeframe) => timeframe !== "1H" && timeframe !== "4H");
+const NOTE_FIELDS = [
+  { key: "execution_notes", label: "Execution", placeholder: "Entry timing, management, exit...", icon: ScanLine, accent: "text-cyan-400", surface: "border-cyan-400/15 bg-cyan-400/[0.035] focus-within:border-cyan-400/50 focus-within:shadow-[0_0_24px_-12px_rgba(6,182,212,.65)]" },
+  { key: "psychology_notes", label: "Psychology", placeholder: "Emotions, mindset, discipline...", icon: Brain, accent: "text-violet-400", surface: "border-violet-400/15 bg-violet-400/[0.035] focus-within:border-violet-400/50 focus-within:shadow-[0_0_24px_-12px_rgba(167,139,250,.65)]" },
+  { key: "mistakes", label: "Mistakes", placeholder: "What could have been better?", icon: CircleAlert, accent: "text-rose-400", surface: "border-rose-400/15 bg-rose-400/[0.035] focus-within:border-rose-400/50 focus-within:shadow-[0_0_24px_-12px_rgba(251,113,133,.65)]" },
+  { key: "lessons", label: "Lessons", placeholder: "What did you learn?", icon: Lightbulb, accent: "text-emerald-400", surface: "border-emerald-400/15 bg-emerald-400/[0.035] focus-within:border-emerald-400/50 focus-within:shadow-[0_0_24px_-12px_rgba(52,211,153,.65)]" },
+] as const;
 
 const EMPTY_DISCIPLINE: TradeDiscipline = {
   followed_plan: false,
@@ -75,6 +82,8 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
   const [markets, setMarkets] = useState<string[]>([]);
   const [customTF, setCustomTF] = useState("");
   const [showCustomTF, setShowCustomTF] = useState(false);
+  const [usedTimeframes, setUsedTimeframes] = useState<string[]>([]);
+  const [activeNote, setActiveNote] = useState<string | null>(null);
   const [savedConfluences, setSavedConfluences] = useState<string[]>([]);
   // Pre-generate entity ID so screenshots can be uploaded before the trade is saved
   const [entityId] = useState(() => crypto.randomUUID());
@@ -109,6 +118,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
   useEffect(() => {
     if (preview) {
       setMarkets(["NQ"]);
+      setUsedTimeframes(["15m", "5m", "1m", "30s", "2m"]);
       setSavedConfluences(["Liquidity sweep", "CISD", "OTE", "Session liquidity", "Fair value gap", "IFVG"]);
       setAllAnalyses([{ id: "preview-analysis", user_id: "preview", date: form.date_time, title: `NQ: ${form.date_time}`, instrument: "NQ", market: "futures", session: "New York", bias: "bullish", used_for_trade: false, thesis: "Wait for a sweep and clear displacement before entry.", created_at: new Date().toISOString() }]);
       setRuleChecks([
@@ -133,6 +143,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
         );
       }
     });
+    getUsedTradeTimeframes().then(setUsedTimeframes).catch(() => setUsedTimeframes([]));
   // The preview is isolated from Supabase: its controls are safe to annotate.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preview]);
@@ -176,6 +187,20 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
         : [...form.confluences, c]
     );
   }
+
+  function addCustomTimeframe() {
+    const value = normalizeTimeframe(customTF);
+    if (!value) return;
+    const selected = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : [];
+    if (!selected.includes(value)) set("timeframe", [...selected, value].join(" / "));
+    setUsedTimeframes((current) => [value, ...current.filter((timeframe) => timeframe !== value)]);
+    setCustomTF("");
+    setShowCustomTF(false);
+  }
+
+  const selectedTimeframes = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : [];
+  const recentTimeframes = usedTimeframes.filter((timeframe) => !["1H", "4H"].includes(timeframe));
+  const visibleTimeframes = [...new Set([...selectedTimeframes, ...(recentTimeframes.length ? recentTimeframes : DEFAULT_TIMEFRAMES)])];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -291,12 +316,6 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
               </div>
             </div>
 
-            {/* Execution quality: the "i" explains what the two answers mean. */}
-            <ExecutionQualityField
-              value={form.execution_quality}
-              onChange={(next) => set("execution_quality", next)}
-            />
-
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label className="text-xs">Session</Label>
@@ -313,7 +332,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
               <div className="space-y-1.5">
                 <Label className="text-xs">Entry Timeframe</Label>
                 <div className="flex flex-wrap gap-1.5">
-                  {TIMEFRAMES.map((tf) => (
+                  {visibleTimeframes.map((tf) => (
                     <button key={tf} type="button"
                       onClick={() => {
                         const parts = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : [];
@@ -331,22 +350,16 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                   <button type="button" onClick={() => setShowCustomTF((v) => !v)}
                     className={cn("px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
                       showCustomTF ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground")}>
-                    Custom
+                    + Custom
                   </button>
                 </div>
                 {showCustomTF && (
                   <div className="flex gap-2 mt-1.5">
                     <Input value={customTF} onChange={(e) => setCustomTF(e.target.value)}
                       placeholder="e.g. 15s, 2H" className="h-8 text-xs font-mono max-w-32"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          const v = normalizeTimeframe(customTF);
-                          if (v) { const parts = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : []; if (!parts.includes(v)) set("timeframe", [...parts, v].join(" / ")); setCustomTF(""); setShowCustomTF(false); }
-                        }
-                      }} />
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTimeframe(); } }} />
                     <Button type="button" size="sm" variant="outline" className="h-8 px-3 text-xs"
-                      onClick={() => { const v = normalizeTimeframe(customTF); if (v) { const parts = form.timeframe ? form.timeframe.split(" / ").filter(Boolean) : []; if (!parts.includes(v)) set("timeframe", [...parts, v].join(" / ")); setCustomTF(""); setShowCustomTF(false); } }}>
+                      onClick={addCustomTimeframe}>
                       Add
                     </Button>
                   </div>
@@ -398,43 +411,22 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
         {/* Notes get the room saved by the compact trade details. */}
         <Card className="bg-card border-border/50 shadow-sm">
           <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Notes</CardTitle></CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Execution</Label>
-              <Textarea
-                value={form.execution_notes ?? ""}
-                onChange={(e) => set("execution_notes", e.target.value)}
-                placeholder="Entry timing, management, exit..."
-                className="min-h-[112px] text-sm bg-background/50 resize-y"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Psychology</Label>
-              <Textarea
-                value={form.psychology_notes ?? ""}
-                onChange={(e) => set("psychology_notes", e.target.value)}
-                placeholder="Emotions, mindset, discipline..."
-                className="min-h-[112px] text-sm bg-background/50 resize-y"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Mistakes</Label>
-              <Textarea
-                value={form.mistakes ?? ""}
-                onChange={(e) => set("mistakes", e.target.value)}
-                placeholder="What could have been better?"
-                className="min-h-[112px] text-sm bg-background/50 resize-y"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Lessons</Label>
-              <Textarea
-                value={form.lessons ?? ""}
-                onChange={(e) => set("lessons", e.target.value)}
-                placeholder="What did you learn?"
-                className="min-h-[112px] text-sm bg-background/50 resize-y"
-              />
-            </div>
+          <CardContent className="grid gap-2.5 sm:grid-cols-2">
+            {NOTE_FIELDS.map(({ key, label, placeholder, icon: Icon, accent, surface }) => {
+              const value = form[key] ?? "";
+              return <div key={key} className={cn("rounded-xl border p-2.5 transition-[border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none", surface)}>
+                <div className="mb-1.5 flex items-center gap-1.5">
+                  <Icon className={cn("size-3.5", accent)} aria-hidden="true" />
+                  <Label htmlFor={`trade-note-${key}`} className="text-xs font-semibold">{label}</Label>
+                  <span className={cn("ml-auto text-[10px] tabular-nums transition-opacity duration-150", accent, activeNote === key || value ? "opacity-70" : "opacity-0")} aria-hidden="true">{value.length}</span>
+                </div>
+                <Textarea id={`trade-note-${key}`} value={value}
+                  onChange={(e) => set(key, e.target.value)}
+                  onFocus={() => setActiveNote(key)} onBlur={() => setActiveNote(null)}
+                  placeholder={placeholder}
+                  className="min-h-[108px] resize-y border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent" />
+              </div>;
+            })}
           </CardContent>
         </Card>
         </div>
@@ -492,6 +484,12 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                 ))}
               </div>
             )}
+            <div className="mt-4 border-t border-border/60 pt-3">
+              <ExecutionQualityField
+                value={form.execution_quality}
+                onChange={(next) => set("execution_quality", next)}
+              />
+            </div>
             <div className="mt-4 border-t border-border/60 pt-3">
               <h3 className="mb-2.5 text-xs font-semibold text-foreground/85">Discipline check</h3>
               <RuleChecksEditor checks={ruleChecks} onChange={setRuleChecks} />

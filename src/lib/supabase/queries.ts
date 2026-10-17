@@ -168,6 +168,20 @@ async function _getTrades(): Promise<TradeJournalEntry[]> {
   return (data ?? []) as TradeJournalEntry[];
 }
 
+/** Lightweight history for the new-trade timeframe picker. */
+export async function getUsedTradeTimeframes(): Promise<string[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("trades")
+    .select("timeframe")
+    .order("date_time", { ascending: false })
+    .limit(5000);
+  if (error) throw error;
+  return [...new Set((data ?? []).flatMap((trade) =>
+    (trade.timeframe ?? "").split(" / ").map((timeframe: string) => timeframe.trim()).filter(Boolean)
+  ))];
+}
+
 export async function getTradeById(id: string): Promise<TradeJournalEntry | null> {
   const supabase = createClient();
   const { data, error } = await supabase
