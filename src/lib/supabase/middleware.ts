@@ -172,9 +172,11 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages, but NOT from
-  // /auth/update-password, which requires an active session to work.
-  if (user && isAuthPage && path !== "/auth/update-password") {
+  // Keep account creation available even if the visitor is already signed in:
+  // the landing-page Create account action must always open the signup form.
+  // Sign in still takes an existing session straight to the app. The password
+  // update route also remains available to an active session.
+  if (user && isAuthPage && path !== "/auth/update-password" && path !== "/signup") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

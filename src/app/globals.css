@@ -891,6 +891,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   to { transform: scaleX(1); }
 }
 .dashboard-welcome { animation: dashboard-welcome-exit 1.6s linear both; }
+.dashboard-welcome-preview { animation: none; opacity: 1; }
 .dashboard-welcome-content { animation: dashboard-welcome-enter 420ms var(--ease-out-strong) both; }
 .dashboard-welcome-mark { animation: dashboard-welcome-enter 360ms var(--ease-out-strong) both; }
 .dashboard-welcome-progress { animation: dashboard-welcome-load 1.05s var(--ease-out-strong) 120ms both; }

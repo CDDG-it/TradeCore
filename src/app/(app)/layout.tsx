@@ -4,6 +4,7 @@ import { WarmReads } from "@/components/layout/warm-reads";
 import { TransitionLayout } from "@/components/layout/transition-layout";
 import { AccessProvider } from "@/components/access/access-provider";
 import { resolveAccess } from "@/lib/access/server";
+import { AppWelcome } from "@/components/dashboard/dashboard-welcome";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const access = await resolveAccess();
@@ -15,6 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* Full-width top navigation: no fixed left sidebar */}
       <TopNav />
       <WarmReads />
+      <AppWelcome />
 
       {/* Main content fills the whole width beneath the bar. Tighter gutters
           and vertical padding on phones so content uses the full screen. */}
