@@ -17,6 +17,9 @@ import { usePathname } from "next/navigation";
  */
 export function TransitionLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const staticTradePage = pathname === "/journal/new" || /^\/journal\/[^/]+$/.test(pathname);
+
+  if (staticTradePage) return <div>{children}</div>;
 
   return (
     <motion.div

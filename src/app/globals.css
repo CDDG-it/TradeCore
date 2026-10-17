@@ -747,6 +747,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   }
 }
 
+/* Trade entry and saved trades use direct scrolling; their long reading areas
+   should track the user's gesture without the site's smooth-scroll effect. */
+html:has(.trade-static-scroll) {
+  scroll-behavior: auto;
+}
+
 /* ── App motion ──────────────────────────────────────────────────────
    One set of curves for the logged-in surfaces. Built-in easings are too
    weak: entering = strong ease-out, on-screen movement = strong ease-in-out.

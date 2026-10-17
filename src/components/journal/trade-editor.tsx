@@ -237,7 +237,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
   }
 
   return (
-    <div className="space-y-4">
+    <div className="trade-static-scroll space-y-4">
       {/* Compact header: actions stay in view so the form needs no scroll to submit */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">

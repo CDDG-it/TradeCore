@@ -137,7 +137,7 @@ export function TradeDetail({ id, previewTrade, previewRuleChecks = [], previewA
     : "oklch(0.65 0.22 25)";
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-5">
+    <div className="trade-static-scroll mx-auto w-full max-w-[1500px] space-y-5">
       <div>
         <Link href={back.href} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="w-3.5 h-3.5" /> {back.label}
