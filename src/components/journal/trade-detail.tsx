@@ -240,8 +240,8 @@ export function TradeDetail({ id, previewTrade, previewRuleChecks = [], previewA
 
         <div className="min-w-0 space-y-3">
           <Card className="border-border/50 bg-card shadow-sm">
-            <CardContent className="space-y-3 p-4">
-              <div>
+            <CardContent className="grid gap-3 p-4 sm:grid-cols-[minmax(0,.7fr)_minmax(0,1.3fr)]">
+              <div className="min-w-0">
                 <h2 className="text-xs font-semibold text-foreground/85">Confluences</h2>
                 {trade.confluences.length > 0 ? (
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -253,7 +253,7 @@ export function TradeDetail({ id, previewTrade, previewRuleChecks = [], previewA
                   </div>
                 ) : <p className="mt-1.5 text-xs text-muted-foreground">No confluences logged.</p>}
               </div>
-              <div className="border-t border-border/60 pt-3">
+              <div className="min-w-0 border-t border-border/60 pt-3 sm:border-l sm:border-t-0 sm:py-0 sm:pl-3">
                 <div className="mb-2 flex items-center gap-2">
                   <h2 className="text-xs font-semibold text-foreground/85">Discipline check</h2>
                 <span className="ml-auto text-sm font-bold" style={{ color: scoreColor }}>
