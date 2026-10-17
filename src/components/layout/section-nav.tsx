@@ -36,7 +36,7 @@ export function SectionNav<T extends string>({
           style={{ font: "inherit" }}
         >
           <span className="min-w-0 truncate">{title}</span>
-          <span className={cn("section-nav-current inline-flex min-w-0 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5", open && "section-nav-current-open")}>
+          <span className="section-nav-current inline-flex min-w-0 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5">
             <span className="max-w-20 truncate text-[11px] font-semibold leading-none tracking-normal sm:max-w-32">{selectedLabel}</span>
             <ChevronDown aria-hidden className={cn("section-nav-chevron size-3 shrink-0", open && "section-nav-chevron-open")} />
           </span>
