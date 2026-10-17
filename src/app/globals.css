@@ -1004,18 +1004,54 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
 
 
-/* Secondary navigation opens from the page title. The menu is the only
-   moving surface; the page underneath never changes position. */
+/* One section picker across My Edge, Trade Therapist and Global Markets. */
+.section-nav-current {
+  border-color: color-mix(in oklch, var(--primary) 24%, transparent);
+  background: color-mix(in oklch, var(--primary) 8%, var(--background));
+  color: var(--primary);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+.section-nav-trigger:focus-visible .section-nav-current,
+.section-nav-current-open {
+  border-color: color-mix(in oklch, var(--primary) 48%, transparent);
+  background: color-mix(in oklch, var(--primary) 14%, var(--background));
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 5%, transparent);
+}
+.section-nav-chevron {
+  opacity: .75;
+  transition: transform 180ms var(--ease-out-strong), opacity 180ms ease;
+}
+.section-nav-chevron-open { transform: rotate(180deg); opacity: 1; }
+.section-nav-item {
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.section-nav-item[data-highlighted] {
+  background: color-mix(in oklch, var(--primary) 11%, var(--popover));
+  color: var(--foreground);
+}
+@media (hover: hover) and (pointer: fine) {
+  .section-nav-trigger:hover .section-nav-current {
+    border-color: color-mix(in oklch, var(--primary) 48%, transparent);
+    background: color-mix(in oklch, var(--primary) 14%, var(--background));
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 5%, transparent);
+  }
+  .section-nav-item:hover {
+    background: color-mix(in oklch, var(--primary) 11%, var(--popover));
+    color: var(--foreground);
+  }
+}
 .section-nav-menu {
   transform-origin: var(--transform-origin);
-  transition: opacity 180ms var(--ease-out-strong), transform 180ms var(--ease-out-strong);
+  transition: opacity 220ms var(--ease-out-strong), transform 220ms var(--ease-out-strong);
 }
 .section-nav-menu[data-starting-style],
 .section-nav-menu[data-ending-style] {
   opacity: 0;
-  transform: translateY(-4px) scale(0.97);
+  transform: translateY(-6px) scale(0.97);
 }
 @media (prefers-reduced-motion: reduce) {
+  .section-nav-chevron { transition: opacity 180ms ease; }
+  .section-nav-chevron-open { transform: none; }
   .section-nav-menu { transition: opacity 180ms var(--ease-out-strong); }
   .section-nav-menu[data-starting-style],
   .section-nav-menu[data-ending-style] { transform: none; }

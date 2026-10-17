@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +10,7 @@ export interface SectionNavItem<T extends string> {
   label: string;
 }
 
-/** The page heading itself opens its sections; no second nav bar is rendered. */
+/** One shared section picker for My Edge, Trade Therapist and Global Markets. */
 export function SectionNav<T extends string>({
   title,
   titleClassName,
@@ -25,65 +25,49 @@ export function SectionNav<T extends string>({
   onChange: (key: T) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function cancelClose() {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = null;
-  }
-
-  function scheduleClose(pointerType: string) {
-    if (pointerType !== "mouse") return;
-    cancelClose();
-    closeTimer.current = setTimeout(() => setOpen(false), 180);
-  }
-
-  useEffect(() => () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-  }, []);
+  const selectedIndex = items.findIndex((item) => item.key === value);
+  const selectedLabel = items[selectedIndex]?.label ?? "unknown";
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <h1 className={cn("min-w-0", titleClassName)}>
         <DropdownMenuTrigger
-          aria-label={`${title}. Current section: ${items.find((item) => item.key === value)?.label ?? "unknown"}. Open sections`}
-          className="group/title inline-flex max-w-full items-center gap-1.5 rounded-md text-left text-inherit outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+          aria-label={`${title}. Current section: ${selectedLabel}. Open sections`}
+          className="section-nav-trigger group/section inline-flex max-w-full min-w-0 items-center gap-2.5 rounded-xl text-left text-inherit outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           style={{ font: "inherit" }}
-          onPointerEnter={(event) => { if (event.pointerType === "mouse") { cancelClose(); setOpen(true); } }}
-          onPointerLeave={(event) => scheduleClose(event.pointerType)}
         >
-          <span className="truncate">{title}</span>
-          <ChevronDown
-            aria-hidden
-            className={cn(
-              "size-[.72em] shrink-0 text-primary/60 transition-[transform,color] duration-150 ease-[var(--ease-out-strong)] group-hover/title:text-primary group-focus-visible/title:text-primary motion-reduce:transition-colors",
-              open && "rotate-180 text-primary"
-            )}
-          />
+          <span className="min-w-0 truncate">{title}</span>
+          <span className={cn("section-nav-current inline-flex min-w-0 shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5", open && "section-nav-current-open")}>
+            <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_8px_rgba(20,184,166,.55)]" />
+            <span className="max-w-20 truncate text-[11px] font-semibold leading-none tracking-normal sm:max-w-32">{selectedLabel}</span>
+            <ChevronDown aria-hidden className={cn("section-nav-chevron size-3 shrink-0", open && "section-nav-chevron-open")} />
+          </span>
         </DropdownMenuTrigger>
       </h1>
       <DropdownMenuContent
         align="start"
-        sideOffset={8}
+        sideOffset={10}
         aria-label={`${title} sections`}
         style={{ animation: "none" }}
-        onPointerEnter={(event) => { if (event.pointerType === "mouse") cancelClose(); }}
-        onPointerLeave={(event) => scheduleClose(event.pointerType)}
-        className="section-nav-menu w-64 rounded-xl border border-border/70 bg-popover p-1.5 shadow-[0_20px_50px_rgba(0,0,0,.38)]"
+        className="section-nav-menu w-[min(19rem,calc(100vw-2rem))] rounded-2xl border border-border bg-popover p-1.5 shadow-[0_24px_70px_rgba(0,0,0,.48)]"
       >
-        <div className="px-2.5 pb-1.5 pt-1 text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground">Sections</div>
-        {items.map((item) => (
+        <div className="flex items-center justify-between px-3 pb-2 pt-2.5 text-[10px] font-semibold uppercase tracking-[.16em] text-muted-foreground">
+          <span>Sections</span>
+          <span className="tabular-nums text-primary/75">{String(selectedIndex + 1).padStart(2, "0")} / {String(items.length).padStart(2, "0")}</span>
+        </div>
+        {items.map((item, index) => (
           <DropdownMenuItem
             key={item.key}
-            onClick={() => { cancelClose(); onChange(item.key); setOpen(false); }}
+            onClick={() => { onChange(item.key); setOpen(false); }}
             aria-current={item.key === value ? "page" : undefined}
             className={cn(
-              "flex min-h-10 items-center gap-3 rounded-lg px-2.5 text-xs font-medium",
-              item.key === value && "bg-primary/10 text-primary"
+              "section-nav-item flex min-h-11 items-center gap-3 rounded-xl border border-transparent px-3 text-sm font-medium",
+              item.key === value ? "border-primary/20 bg-primary/10 text-primary" : "text-foreground/80"
             )}
           >
+            <span aria-hidden className={cn("w-5 shrink-0 text-[10px] tabular-nums", item.key === value ? "text-primary/80" : "text-muted-foreground/70")}>{String(index + 1).padStart(2, "0")}</span>
             <span className="min-w-0 flex-1 truncate">{item.label}</span>
-            {item.key === value && <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary" />}
+            {item.key === value && <Check aria-hidden className="size-3.5 shrink-0" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
