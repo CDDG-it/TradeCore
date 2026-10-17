@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Check, Save, TrendingDown, TrendingUp } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AnalysisChartBoard } from "@/components/analysis/analysis-chart-board";
+import { AnalysisNewsBrief } from "@/components/analysis/analysis-news-brief";
 import { InstrumentPicker } from "@/components/journal/instrument-picker";
 import { DraftBanner } from "@/components/ui/draft-banner";
 import { Input } from "@/components/ui/input";
@@ -125,7 +126,6 @@ export function AnalysisEditor({ mode, analysisId, initial, preview = false }: {
           <Link href={cancelHref} aria-label="Back to analyses" className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/70 text-muted-foreground transition-colors hover:text-foreground"><ArrowLeft className="size-4" /></Link>
           <div className="min-w-0">
             <h1 className="font-heading text-xl font-bold leading-tight tracking-tight text-foreground">{mode === "new" ? "New analysis" : "Edit analysis"}</h1>
-            <p className="text-xs text-muted-foreground">Build a plan you can read again at a glance.</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -151,14 +151,14 @@ export function AnalysisEditor({ mode, analysisId, initial, preview = false }: {
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
             <AnimatePresence mode="wait" initial={false}>
-              {step === "context" ? <motion.div key="context" role="tabpanel" className="space-y-5"
+              {step === "context" ? <motion.div key="context" role="tabpanel" className="space-y-4"
                 initial={{ opacity: 0, transform: reduce ? "none" : "translateY(8px)" }} animate={{ opacity: 1, transform: "translateY(0)" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }}>
-                <div><p className="text-[10px] font-semibold uppercase tracking-[.16em] text-primary">01 / Market read</p><h2 className="mt-1.5 text-lg font-semibold tracking-tight">Start with what the market shows</h2><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Capture the instrument, your directional lean and the evidence behind it.</p></div>
-                <div className="space-y-2"><Label className="text-xs font-semibold">Instrument <span className="text-primary">*</span></Label><InstrumentPicker value={form.instrument} onChange={pickInstrument} preferred={markets} autoFill={!initial && !preview} /></div>
+                <div className="space-y-2"><Label className="text-xs font-semibold">Instrument <span className="text-primary">*</span></Label><InstrumentPicker value={form.instrument} onChange={pickInstrument} preferred={markets} autoFill={!initial && !preview} compact /></div>
                 <div className="space-y-2"><Label htmlFor="analysis-date" className="text-xs font-semibold">Analysis date</Label><Input id="analysis-date" type="date" value={form.date} onChange={(event) => set("date", event.target.value)} required className="h-10 bg-background/60" /></div>
                 <div className="space-y-2"><Label className="text-xs font-semibold">Current bias</Label><div className="grid grid-cols-3 gap-2">{BIASES.map((bias) => <button key={bias.value} type="button" onClick={() => set("bias", bias.value)} aria-pressed={form.bias === bias.value}
                   className={cn("rounded-xl border px-2 py-2.5 text-xs font-semibold transition-[background-color,border-color,color]", form.bias === bias.value ? bias.className : "border-border/70 bg-background/50 text-muted-foreground hover:text-foreground")}>{bias.label}</button>)}</div></div>
                 <div className="space-y-2"><Label htmlFor="analysis-thesis" className="text-xs font-semibold">Thesis <span className="text-primary">*</span></Label><p className="text-[11px] leading-relaxed text-muted-foreground">What is price doing, which levels matter and what would change your read?</p><Textarea id="analysis-thesis" value={form.thesis} onChange={(event) => set("thesis", event.target.value)} required placeholder="Market structure, key level, catalyst and the reason this matters..." className="min-h-36 resize-y bg-background/60 text-sm leading-relaxed" /></div>
+                <AnalysisNewsBrief date={form.date} preview={preview} />
                 <button type="button" onClick={() => setStep("scenarios")} className="inline-flex items-center gap-2 text-xs font-semibold text-primary transition-opacity hover:opacity-75">Continue to scenarios <ArrowRight className="size-3.5" /></button>
               </motion.div> : <motion.div key="scenarios" role="tabpanel" className="space-y-4"
                 initial={{ opacity: 0, transform: reduce ? "none" : "translateY(8px)" }} animate={{ opacity: 1, transform: "translateY(0)" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }}>

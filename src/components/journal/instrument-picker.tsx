@@ -23,6 +23,7 @@ export function InstrumentPicker({
   onChange,
   preferred,
   autoFill = true,
+  compact = false,
 }: {
   value: string;
   onChange: (symbol: string) => void;
@@ -30,6 +31,8 @@ export function InstrumentPicker({
   preferred: string[];
   /** Fill in a single-market trader's market. Off on edit forms, where the entry already has one. */
   autoFill?: boolean;
+  /** Keep profile markets in one row and use the search for any other symbol. */
+  compact?: boolean;
 }) {
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");
@@ -41,10 +44,10 @@ export function InstrumentPicker({
   }, [single, value, onChange]);
 
   const options = useMemo(() => {
-    const base = preferred.length ? preferred : DEFAULT_PICKS;
+    const base = compact ? preferred : preferred.length ? preferred : DEFAULT_PICKS;
     const current = normalizeSymbol(value);
     return current && !base.includes(current) ? [...base, current] : base;
-  }, [preferred, value]);
+  }, [compact, preferred, value]);
 
   const results = useMemo(() => searchInstruments(query).slice(0, 24), [query]);
   const typed = normalizeSymbol(query);
@@ -58,13 +61,15 @@ export function InstrumentPicker({
 
   const chip = (active: boolean) =>
     cn(
-      "min-w-[4.25rem] flex-1 rounded-lg px-2.5 py-1.5 text-sm font-medium font-mono transition-all",
+      "rounded-lg px-2.5 py-1.5 font-medium font-mono transition-colors",
+      compact ? "shrink-0 text-xs" : "min-w-[4.25rem] flex-1 text-sm",
       active ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground"
     );
 
   return (
     <div className="space-y-1.5">
-      <div className="flex flex-wrap gap-1.5">
+      <div className={cn("flex gap-1.5", compact ? "items-center" : "flex-wrap")}>
+        <div className={cn("flex min-w-0 gap-1.5", compact ? "flex-1 overflow-x-auto pb-0.5" : "contents")}>
         {options.map((s) => (
           <button
             key={s}
@@ -76,13 +81,14 @@ export function InstrumentPicker({
             {s}
           </button>
         ))}
+        </div>
         <button
           type="button"
           onClick={() => setSearching((o) => !o)}
           aria-expanded={searching}
           className={cn(chip(false), "flex-none font-sans text-xs", searching && "text-foreground ring-1 ring-primary/50")}
         >
-          {searching ? "Close" : "Other"}
+          {searching ? "Close" : compact ? "+ Add instrument" : "Other"}
         </button>
       </div>
 
@@ -140,7 +146,7 @@ export function InstrumentPicker({
         </div>
       )}
 
-      {preferred.length === 0 && (
+      {!compact && preferred.length === 0 && (
         <p className="text-[11px] text-muted-foreground">
           Trade other markets?{" "}
           <Link href="/profile" className="font-medium text-primary hover:underline">Set your markets in Profile</Link>.
