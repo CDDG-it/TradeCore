@@ -1109,6 +1109,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   border-radius: 4px;
 }
 
+/* The focused note tile supplies the visible cue; its textarea stays seamless. */
+.trade-note textarea:focus-visible {
+  outline: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* An anchor jump should land the section below the sticky header, not under it.
    Set on every anchored section, not only `:target`: the router scrolls before
    the hash has settled, so a `:target` rule would not match at that moment. */

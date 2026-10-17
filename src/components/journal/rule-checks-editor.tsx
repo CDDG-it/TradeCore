@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
  * Statuses are stored per trade in trade_rule_checks, so the wording of a rule
  * is frozen at the moment it was judged.
  */
-export function RuleChecksEditor({ checks, onChange, showScore = true }: { checks: RuleCheckDraft[]; onChange: (checks: RuleCheckDraft[]) => void; showScore?: boolean }) {
+export function RuleChecksEditor({ checks, onChange, showScore = true, compact = false }: { checks: RuleCheckDraft[]; onChange: (checks: RuleCheckDraft[]) => void; showScore?: boolean; compact?: boolean }) {
   function setStatus(sourceId: string, status: RuleCheckStatus) {
     onChange(checks.map((row) => row.source_id === sourceId ? { ...row, status } : row));
   }
@@ -48,7 +48,7 @@ export function RuleChecksEditor({ checks, onChange, showScore = true }: { check
     { key: "standing_rule" as const, label: "Standing rules", group: rules },
   ].map((item) => ({ ...item, count: item.group.length, broken: item.group.some((check) => check.status === "broken") }));
 
-  return <div className="space-y-3">
+  return <div className={compact ? "space-y-2" : "space-y-3"}>
     {showScore && scored.length > 0 && <div className="flex items-center gap-2">
       <div className="h-1.5 max-w-28 flex-1 overflow-hidden rounded-full" style={{ background: "oklch(0.18 0.005 28)" }}>
         <div className="h-full rounded-full transition-all duration-300" style={{ width: `${score}%`, background: scoreColor }} />
@@ -57,7 +57,7 @@ export function RuleChecksEditor({ checks, onChange, showScore = true }: { check
       <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">{kept} of {scored.length} kept</span>
     </div>}
 
-    <div className="flex items-center gap-1 rounded-lg bg-secondary p-1">
+    <div className={cn("flex items-center gap-1 rounded-lg bg-secondary", compact ? "p-0.5" : "p-1")}>
       {TABS.map((item) => (
         <button
           key={item.key}
@@ -65,7 +65,8 @@ export function RuleChecksEditor({ checks, onChange, showScore = true }: { check
           onClick={() => setTab(item.key)}
           aria-pressed={tab === item.key}
           className={cn(
-            "press flex-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors",
+            "press flex-1 rounded-md px-2.5 text-xs font-semibold transition-colors",
+            compact ? "py-1" : "py-1.5",
             tab === item.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
           )}
         >
@@ -84,7 +85,7 @@ export function RuleChecksEditor({ checks, onChange, showScore = true }: { check
           ? "No completed pre-market commitment for this date."
           : "No standing rules active for this date."}
       </p>
-    ) : <div className="space-y-1.5">
+    ) : <div className={compact ? "space-y-1" : "space-y-1.5"}>
       {shown.map((check) => {
         const passed = check.status === "kept";
         const setAside = check.status === "not_applicable";
@@ -93,7 +94,8 @@ export function RuleChecksEditor({ checks, onChange, showScore = true }: { check
             type="button"
             onClick={() => setStatus(check.source_id, passed ? "broken" : "kept")}
             className={cn(
-              "flex flex-1 items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-all",
+              "flex flex-1 items-center gap-3 rounded-lg border px-3 text-left transition-all",
+              compact ? "py-1.5" : "py-2.5",
               passed ? "border-success/25 bg-success/8"
                 : setAside ? "border-border bg-secondary hover:border-primary/30 hover:bg-muted"
                 : "border-destructive/25 bg-destructive/5 hover:border-destructive/40"

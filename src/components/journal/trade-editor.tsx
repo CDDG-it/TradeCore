@@ -76,6 +76,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
   const [uploading, setUploading] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [confluenceInput, setConfluenceInput] = useState("");
+  const [showConfluenceInput, setShowConfluenceInput] = useState(false);
   const [ruleChecks, setRuleChecks] = useState<RuleCheckDraft[]>([]);
   const [allAnalyses, setAllAnalyses] = useState<AnalysisListRow[]>([]);
   // The markets set on the profile; the instrument picker offers these.
@@ -176,6 +177,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
     if (t && !form.confluences.includes(t)) {
       set("confluences", [...form.confluences, t]);
       setConfluenceInput("");
+      setShowConfluenceInput(false);
     }
   }
 
@@ -414,7 +416,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
           <CardContent className="grid gap-2.5 sm:grid-cols-2">
             {NOTE_FIELDS.map(({ key, label, placeholder, icon: Icon, accent, surface }) => {
               const value = form[key] ?? "";
-              return <div key={key} className={cn("rounded-xl border p-2.5 transition-[border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none", surface)}>
+              return <div key={key} className={cn("trade-note rounded-xl border p-2.5 transition-[border-color,background-color,box-shadow] duration-150 ease-out motion-reduce:transition-none", surface)}>
                 <div className="mb-1.5 flex items-center gap-1.5">
                   <Icon className={cn("size-3.5", accent)} aria-hidden="true" />
                   <Label htmlFor={`trade-note-${key}`} className="text-xs font-semibold">{label}</Label>
@@ -424,7 +426,7 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                   onChange={(e) => set(key, e.target.value)}
                   onFocus={() => setActiveNote(key)} onBlur={() => setActiveNote(null)}
                   placeholder={placeholder}
-                  className="min-h-[108px] resize-y border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent" />
+                  className="min-h-[108px] resize-y border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:border-0 focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent" />
               </div>;
             })}
           </CardContent>
@@ -434,12 +436,16 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
         {/* ── RIGHT: setup quality and chart evidence ── */}
         <div className="min-w-0 space-y-3">
         <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold">Setup &amp; Discipline</CardTitle></CardHeader>
-          <CardContent>
-            <h3 className="mb-2 text-xs font-semibold text-foreground/85">Confluences</h3>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-xs font-semibold text-foreground/85">Confluences</h3>
+              <button type="button" onClick={() => setShowConfluenceInput((open) => !open)} aria-expanded={showConfluenceInput}
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10">
+                <Plus className="size-3.5" /> Add custom
+              </button>
+            </div>
             {savedConfluences.length > 0 && (
-              <div className="mb-2.5">
-                <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                   {savedConfluences.map((c) => {
                     const active = form.confluences.includes(c);
                     return (
@@ -459,10 +465,9 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                       </button>
                     );
                   })}
-                </div>
               </div>
             )}
-            <div className="mb-2.5 flex gap-2">
+            {showConfluenceInput && <div className="flex gap-2">
               <Input value={confluenceInput} onChange={(e) => setConfluenceInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addConfluence())}
                 placeholder="e.g. Demand zone, Session momentum, Structure break..."
@@ -470,10 +475,10 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
               <Button type="button" variant="outline" size="sm" onClick={addConfluence} className="shrink-0">
                 <Plus className="w-3.5 h-3.5" />
               </Button>
-            </div>
-            {form.confluences.length > 0 && (
+            </div>}
+            {form.confluences.some((confluence) => !savedConfluences.includes(confluence)) && (
               <div className="flex flex-wrap gap-1.5">
-                {form.confluences.map((c) => (
+                {form.confluences.filter((confluence) => !savedConfluences.includes(confluence)).map((c) => (
                   <span key={c} className="inline-flex items-center gap-1 text-xs bg-secondary text-secondary-foreground px-2.5 py-1 rounded-lg border border-border/50">
                     {c}
                     <button type="button" onClick={() => set("confluences", form.confluences.filter((x) => x !== c))}
@@ -484,15 +489,15 @@ export function TradeEditor({ preview = false, sampleCharts }: { preview?: boole
                 ))}
               </div>
             )}
-            <div className="mt-4 border-t border-border/60 pt-3">
+            <div className="border-t border-border/60 pt-3">
               <ExecutionQualityField
                 value={form.execution_quality}
                 onChange={(next) => set("execution_quality", next)}
               />
             </div>
-            <div className="mt-4 border-t border-border/60 pt-3">
-              <h3 className="mb-2.5 text-xs font-semibold text-foreground/85">Discipline check</h3>
-              <RuleChecksEditor checks={ruleChecks} onChange={setRuleChecks} />
+            <div className="border-t border-border/60 pt-3">
+              <h3 className="mb-2 text-xs font-semibold text-foreground/85">Discipline check</h3>
+              <RuleChecksEditor checks={ruleChecks} onChange={setRuleChecks} compact />
             </div>
           </CardContent>
         </Card>
