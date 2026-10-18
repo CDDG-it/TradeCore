@@ -148,7 +148,7 @@ export function TradeProfileApp() {
     <MotionConfig reducedMotion="user">
       <ProfileNavContext.Provider value={nav}>
         <div ref={frame} className="h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
-          <div className="mx-auto w-full max-w-6xl space-y-5 pb-10">
+          <div className="w-full space-y-5 pb-10">
             {finished && inSection && <SectionTabs value={shownTab} onChange={nav.goTab} />}
             {store.demo && <DemoBar />}
             {store.saveError && !store.demo && (

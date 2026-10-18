@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { copy } from "@/lib/trade-profile/content/copy";
 import { focusAreas } from "@/lib/trade-profile/content/focus-areas";
 import { traitName } from "@/lib/trade-profile/content/traits";
@@ -74,7 +75,7 @@ export function FocusView() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
+      <div className={cn("grid gap-4 lg:items-start", s && "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]")}>
         <AccentPanel accent="primary" eyebrow={t.primary} className="sm:p-6 sm:pl-7">
           <h2 className="mt-2 font-heading text-2xl font-bold tracking-tight sm:text-[28px]">{p.title}</h2>
           <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">{p.summary}</p>
