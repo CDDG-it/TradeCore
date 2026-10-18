@@ -1,5 +1,6 @@
 import { TopNav } from "@/components/layout/top-nav";
 import { BottomNav } from "@/components/layout/mobile-nav";
+import { AppBackground } from "@/components/layout/app-background";
 import { WarmReads } from "@/components/layout/warm-reads";
 import { TransitionLayout } from "@/components/layout/transition-layout";
 import { AccessProvider } from "@/components/access/access-provider";
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <AppWelcome firstName={firstName}>
       <div className="relative min-h-screen overflow-x-clip bg-background">
+        <AppBackground />
         <AccessProvider value={access}>
           {/* Full-width top navigation: no fixed left sidebar */}
           <TopNav />
