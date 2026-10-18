@@ -1,10 +1,10 @@
-import "@/components/dashboard/dashboard-backdrop.css";
+import "@/components/layout/app-backdrop.css";
 
 /**
- * The dashboard's backdrop: a slow aurora in the brand's navy, turquoise and
+ * The app's backdrop, behind every logged-in screen: a slow aurora in the brand's navy, turquoise and
  * cyan, with faint contour lines over it, like a topographic map of the
  * session. Everything is low contrast and moves on cycles of a minute or more,
- * so it gives the desk depth without pulling the eye off the numbers. Pure CSS
+ * so it gives each screen depth without pulling the eye off the numbers. Pure CSS
  * and SVG, server-rendered; it stands still for reduced motion.
  */
 
@@ -24,9 +24,9 @@ function ring(cx: number, cy: number, radius: number, k: number, points = 120) {
 const PEAK = Array.from({ length: 15 }, (_, i) => ring(0, 0, 36 + i * 46, i + 1));
 const VALLEY = Array.from({ length: 10 }, (_, i) => ring(0, 0, 28 + i * 40, i + 4));
 
-export function DashboardBackdrop() {
+export function AppBackdrop() {
   return (
-    <div aria-hidden className="dash-backdrop pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div aria-hidden className="dash-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <div className="dash-aurora dash-aurora--a" />
       <div className="dash-aurora dash-aurora--b" />
       <div className="dash-aurora dash-aurora--c" />
