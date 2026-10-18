@@ -1,77 +1,30 @@
-.enter {
-  animation: enter 220ms var(--ease-out-strong) both;
+.card,
+.footprint {
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms cubic-bezier(.2,.8,.2,1);
 }
 
-.tab,
-.selectable,
-.footstep,
-.fingerprintPanel {
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform var(--duration-press) var(--ease-out-strong);
-}
-
-.ridge {
-  animation: ridgeReveal 220ms var(--ease-out-strong) both;
-}
-
-.footprintViewport {
-  scrollbar-color: rgba(20, 184, 166, .3) transparent;
+.trail {
+  scrollbar-color: rgba(20, 184, 166, .35) transparent;
   scrollbar-width: thin;
 }
 
-.footprintTrail::before {
-  content: "";
-  position: absolute;
-  right: 1rem;
-  left: 1rem;
-  top: 50%;
-  height: 1px;
-  background: repeating-linear-gradient(to right, rgba(20, 184, 166, .3) 0 5px, transparent 5px 12px);
+.footprint {
+  animation: printIn 280ms cubic-bezier(.2,.8,.2,1) both;
 }
 
-.footstep {
-  transform: translateY(var(--step-y));
-}
+.footprint:nth-child(2n) { animation-delay: 35ms; }
+.footprint:nth-child(3n) { animation-delay: 70ms; }
 
-.stepHigh {
-  --step-y: -11px;
-}
-
-.stepLow {
-  --step-y: 11px;
-}
-
-.rail::before {
-  content: "";
-  position: absolute;
-  top: 1.5rem;
-  bottom: 1.5rem;
-  left: 1.9rem;
-  width: 1px;
-  background: linear-gradient(to bottom, rgba(20, 184, 166, .42), rgba(20, 184, 166, .06));
-}
-
-@keyframes enter {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes ridgeReveal {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes printIn {
+  from { opacity: 0; transform: translateY(5px) scale(.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .selectable:hover,
-  .fingerprintPanel:hover { border-color: rgba(20, 184, 166, .4); }
-  .footstep:hover { transform: translateY(calc(var(--step-y) - 2px)); }
-  .tab:hover { background-color: rgba(20, 184, 166, .08); }
+  .footprint:hover { transform: translateY(-3px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .enter { animation: none; }
-  .ridge { animation: none; }
-  .tab,
-  .selectable,
-  .footstep,
-  .fingerprintPanel { transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+  .footprint { animation: none; }
+  .card, .footprint { transition: none; }
 }

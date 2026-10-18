@@ -1,192 +1,82 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ChevronRight, CircleHelp, Clock3, Crosshair } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, Minus, X } from "lucide-react";
 import { inPeriod } from "@/lib/journal/analytics-filter";
-import { buildDayTransitions, buildTradingSessions, summarizeAdherence, type AssessedTrade, type DayTransition, type TradingSession } from "@/lib/journal/behavioral-analytics";
-import type { FundedAccount, PreMarketExercise, TradeJournalEntry, TradeRuleCheck } from "@/lib/types";
+import { adherence, buildResponseDays, type ResponseDay, type Signal } from "@/lib/journal/behavioral-context";
+import type { BestTradeOfDay, FundedAccount, Habit, HabitCompletion, PreMarketExercise, TradeJournalEntry, TradeRuleCheck, WeeklyTradeReview } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import styles from "./behavioral-insights.module.css";
 
-type Focus = "all" | "loss" | "win";
-const dayLabel = (date: string) => format(new Date(`${date}T12:00:00`), "d MMM yyyy");
-const rate = (value: number | null) => value === null ? "--" : `${value}%`;
-const isBroken = (row: AssessedTrade) => row.rules.some((rule) => !rule.passed);
-const statusLabel = (row: AssessedTrade) => row.rules.length === 0 ? "Not assessed" : isBroken(row) ? "Rule broken" : "Checks kept";
+type Props = {
+  trades: TradeJournalEntry[]; ruleChecks: TradeRuleCheck[]; accounts: FundedAccount[];
+  exercises: PreMarketExercise[]; habits: Habit[]; habitCompletions: HabitCompletion[];
+  weeklyReviews: WeeklyTradeReview[];
+  recaps: Pick<BestTradeOfDay, "date" | "review_step" | "taken_was_best" | "notes" | "post_market_analysis" | "updated_at">[];
+};
+type Focus = "all" | "loss" | "win" | "loss-streak" | "win-streak";
+const labelDate = (date: string) => format(new Date(`${date}T12:00:00`), "d MMM");
+const pct = (value: number | null) => value === null ? "—" : `${value}%`;
 
-function Surface({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={cn("rounded-[24px] border border-white/[.08] bg-card/60", className)}>{children}</section>;
+function Footprint({ flip = false }: { flip?: boolean }) {
+  return <svg viewBox="0 0 48 70" fill="currentColor" aria-hidden="true" className={cn("h-10 w-7", flip && "-scale-x-100")}><path d="M18.5 27.5C12 31 10.5 39 12.2 49.5c1.3 9.1 6.2 15.1 13 15.1 7.7 0 11.7-7 10.4-17.2-.8-7.6-3.6-14.1-8.1-18.5-2.7-2.7-5.9-3.3-9.3-1.4Z" /><circle cx="11" cy="22" r="4.1" /><circle cx="17" cy="15" r="4.6" /><circle cx="24.5" cy="11" r="4.4" /><circle cx="32" cy="12" r="3.8" /><circle cx="38" cy="18" r="3" /></svg>;
 }
 
-function Kicker({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <p className={cn("text-[10px] font-bold uppercase tracking-[.19em] text-primary", className)}>{children}</p>;
+function SignalMark({ value }: { value: Signal }) {
+  return <span aria-label={value === "yes" ? "Done" : value === "no" ? "Missed" : "Unknown"} className={cn("inline-flex size-5 items-center justify-center rounded-full border", value === "yes" ? "border-primary/35 bg-primary/10 text-primary" : value === "no" ? "border-destructive/35 bg-destructive/10 text-destructive" : "border-white/10 bg-white/[.04] text-muted-foreground")}>{value === "yes" ? <Check className="size-3" /> : value === "no" ? <X className="size-3" /> : <Minus className="size-3" />}</span>;
 }
 
-function Metric({ label, value, detail, accent = false }: { label: string; value: string; detail: string; accent?: boolean }) {
-  return <div className="min-w-0 border-t border-white/[.08] pt-4">
-    <p className="text-[10px] font-semibold uppercase tracking-[.15em] text-muted-foreground">{label}</p>
-    <p className={cn("mt-2 font-heading text-[28px] font-semibold leading-none tabular-nums tracking-[-.045em] sm:text-[34px]", accent && "text-primary")}>{value}</p>
-    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{detail}</p>
-  </div>;
+function ContextCard({ title, rows, selected, onClick }: { title: string; rows: ResponseDay[]; selected: boolean; onClick: () => void }) {
+  const summary = adherence(rows);
+  return <button type="button" onClick={onClick} aria-pressed={selected} className={cn(styles.card, "rounded-2xl border p-4 text-left", selected ? "border-primary/45 bg-primary/[.08]" : "border-white/[.08] bg-card/60 hover:border-primary/30")}><div className="flex items-start justify-between gap-2"><span className="text-[11px] font-semibold">{title}</span><span className="text-[10px] text-muted-foreground">{summary.assessed} assessed</span></div><div className="mt-4 flex items-end justify-between gap-2"><strong className="font-heading text-3xl font-semibold tracking-tight text-primary">{pct(summary.rate)}</strong><div className="flex max-w-24 flex-wrap justify-end gap-1" aria-hidden="true">{rows.slice(0, 9).map((row) => <span key={row.id} className={cn("size-1.5 rounded-full", row.rules === "yes" ? "bg-primary" : row.rules === "no" ? "bg-destructive" : "bg-muted-foreground/45")} />)}</div></div><p className="mt-2 text-[10px] text-muted-foreground">Rules kept on {summary.kept}/{summary.assessed} days</p></button>;
 }
 
-function FootprintMark({ mirrored = false }: { mirrored?: boolean }) {
-  return <svg aria-hidden="true" viewBox="0 0 48 70" className={cn("h-11 w-8", mirrored && "-scale-x-100")} fill="currentColor">
-    <path d="M18.5 27.5C12 31 10.5 39 12.2 49.5c1.3 9.1 6.2 15.1 13 15.1 7.7 0 11.7-7 10.4-17.2-.8-7.6-3.6-14.1-8.1-18.5-2.7-2.7-5.9-3.3-9.3-1.4Z" />
-    <circle cx="11" cy="22" r="4.1" /><circle cx="17" cy="15" r="4.6" /><circle cx="24.5" cy="11" r="4.4" /><circle cx="32" cy="12" r="3.8" /><circle cx="38" cy="18" r="3" />
-  </svg>;
-}
+const dimensions = [
+  { key: "habits" as const, title: "Habits" },
+  { key: "weeklyReview" as const, title: "Prior week review" },
+  { key: "preMarket" as const, title: "Pre-market exercise" },
+  { key: "yesterdayRecap" as const, title: "Yesterday’s recap" },
+];
 
-function FingerprintFigure({ loss, win, lossRate, winRate, focus, onFocus }: { loss: DayTransition[]; win: DayTransition[]; lossRate: number | null; winRate: number | null; focus: Focus; onFocus: (focus: Focus) => void }) {
-  const groups = [
-    { key: "loss" as const, label: "After a loss", rows: loss, value: lossRate },
-    { key: "win" as const, label: "After a win", rows: win, value: winRate },
-  ];
-  return <div className="grid gap-3 sm:grid-cols-2" aria-label="Visual fingerprint of recorded first trades">
-    {groups.map((group) => <button key={group.key} type="button" onClick={() => onFocus(focus === group.key ? "all" : group.key)} aria-pressed={focus === group.key} aria-label={`${group.label}: ${rate(group.value)} rule adherence across ${group.rows.length} recorded days. Show these days in the evidence list.`} className={cn(styles.fingerprintPanel, "relative overflow-hidden rounded-[22px] border bg-background/45 px-4 pb-5 pt-2 text-left", focus === group.key ? "border-primary/50" : "border-white/[.08]")}>
-      <svg viewBox="0 0 200 200" className="mx-auto h-44 w-full max-w-52 sm:h-48" aria-hidden="true">
-        <defs><radialGradient id={`fingerprint-glow-${group.key}`}><stop stopColor="#14B8A6" stopOpacity=".14" /><stop offset="1" stopColor="#14B8A6" stopOpacity="0" /></radialGradient></defs>
-        <circle cx="100" cy="100" r="96" fill={`url(#fingerprint-glow-${group.key})`} />
-        {Array.from({ length: 9 }, (_, index) => {
-          const row = group.rows[index]?.current;
-          const color = !row ? "rgba(148,163,184,.11)" : !row.rules.length ? "rgba(148,163,184,.5)" : isBroken(row) ? "var(--destructive)" : "var(--primary)";
-          return <ellipse key={index} cx="100" cy="100" rx={18 + index * 8} ry={27 + index * 8} fill="none" stroke={color} strokeWidth={index === 8 ? 2.2 : 2.5} strokeLinecap="round" strokeDasharray={row ? undefined : "3 7"} className={styles.ridge} style={{ animationDelay: `${index * 30}ms` }} />;
-        })}
-        <path d="M100 76c-9 0-17 9-17 20 0 10 6 19 17 27 11-8 17-17 17-27 0-11-8-20-17-20Z" fill="none" stroke="rgba(255,255,255,.22)" strokeWidth="1.5" />
-      </svg>
-      <div className="relative -mt-1 flex items-end justify-between gap-3 border-t border-white/[.08] pt-4"><div><p className="text-xs font-semibold text-foreground">{group.label}</p><p className="mt-1 text-[11px] text-muted-foreground">{group.rows.length} first trades / up to 9 recent ridges</p></div><strong className="font-heading text-3xl font-semibold tabular-nums tracking-tight text-primary">{rate(group.value)}</strong></div>
-    </button>)}
-  </div>;
-}
-
-function TradeStatus({ row }: { row: AssessedTrade }) {
-  return <span className={cn("inline-flex items-center gap-1.5 text-[11px] font-semibold", row.rules.length === 0 ? "text-muted-foreground" : isBroken(row) ? "text-destructive" : "text-primary")}>
-    <span className={cn("size-1.5 rounded-full", row.rules.length === 0 ? "bg-muted-foreground" : isBroken(row) ? "bg-destructive" : "bg-primary")} />{statusLabel(row)}
-  </span>;
-}
-
-function DecisionDetail({ row, transition, number }: { row: AssessedTrade; transition?: DayTransition; number?: number }) {
-  return <Surface className="p-5 sm:p-6">
-    <div className="flex items-start justify-between gap-3"><Kicker>Decision detail</Kicker><Crosshair className="size-4 text-primary" aria-hidden="true" /></div>
-    <h3 className="mt-3 font-heading text-xl font-semibold tracking-tight">{row.trade.instrument}</h3>
-    <p className="mt-1 text-xs text-muted-foreground">{dayLabel(row.trade.date_time.slice(0, 10))} / {row.trade.execution_time || "Time not logged"}{number ? ` / Trade ${number}` : ""}</p>
-    {transition && <p className="mt-4 rounded-lg border border-white/[.08] bg-background/35 px-3 py-2 text-xs text-foreground/80">Previous recorded day: <strong className="font-semibold text-foreground">{transition.previousResult}</strong> on {dayLabel(transition.previousDate)}</p>}
-    <div className="mt-5 flex items-center justify-between border-y border-white/[.08] py-3"><TradeStatus row={row} /><span className="text-xs text-muted-foreground">{row.trade.result}</span></div>
-    <div className="mt-2 divide-y divide-white/[.06]">{row.rules.length ? row.rules.map((rule) => <div key={rule.label} className="flex items-start justify-between gap-3 py-3 text-xs"><span className="max-w-[75%] leading-relaxed text-foreground/80">{rule.label}</span><span className={cn("shrink-0 font-semibold", rule.passed ? "text-primary" : "text-destructive")}>{rule.passed ? "Kept" : "Broken"}</span></div>) : <p className="py-4 text-xs leading-relaxed text-muted-foreground">No rule checks were saved for this trade. Its plan status is unknown.</p>}</div>
-    <Link href={`/journal/${row.trade.id}`} className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-foreground">Open in Journal <ArrowRight className="size-3.5" /></Link>
-  </Surface>;
-}
-
-function DailyRhythm({ rows, transitions, selectedId, onSelect }: { rows: AssessedTrade[]; transitions: DayTransition[]; selectedId: string | null; onSelect: (id: string) => void }) {
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const recent = [...rows.slice(0, 18)].reverse();
-  const selectedOlder = rows.find((row) => row.trade.id === selectedId && !recent.some((item) => item.trade.id === row.trade.id));
-  const displayed = selectedOlder ? [selectedOlder, ...recent] : recent;
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    const activeId = selectedId ?? rows[0]?.trade.id;
-    const button = Array.from(viewport?.querySelectorAll<HTMLButtonElement>("button[data-trade-id]") ?? []).find((item) => item.dataset.tradeId === activeId);
-    if (viewport && button) viewport.scrollLeft += button.getBoundingClientRect().left - viewport.getBoundingClientRect().left - viewport.clientWidth / 2 + button.clientWidth / 2;
-  }, [rows, selectedId]);
-  return <Surface className="overflow-hidden p-5 sm:p-6">
-    <div className="flex flex-wrap items-end justify-between gap-3"><div><Kicker>02 / Decision footprints</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">Every day leaves a mark</h3></div><span className="text-xs text-muted-foreground">{rows.length} ordered trading days</span></div>
-    <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">Each footprint is the first trade of a day. Its color shows whether the checked rules were kept, broken or not assessed. Select a step to inspect the decision.</p>
-    {displayed.length ? <div ref={viewportRef} className={cn(styles.footprintViewport, "mt-5 overflow-x-auto pb-4")}><div className={cn(styles.footprintTrail, "relative flex w-max min-w-full items-center gap-1.5 px-2 py-5")} aria-label="First trades by day">{displayed.map((row, index) => {
-      const prior = transitions.find((item) => item.current.trade.id === row.trade.id);
-      const active = (selectedId ?? rows[0]?.trade.id) === row.trade.id;
-      return <button key={row.trade.id} data-trade-id={row.trade.id} type="button" onClick={() => onSelect(row.trade.id)} aria-label={`${dayLabel(row.trade.date_time.slice(0, 10))}, ${statusLabel(row)}${prior ? `, after a ${prior.previousResult}` : ""}`} aria-pressed={active} className={cn(styles.footstep, "relative z-10 flex h-[102px] w-[66px] shrink-0 flex-col items-center justify-center rounded-2xl border text-[10px] font-semibold", index % 2 ? styles.stepHigh : styles.stepLow, active ? "border-primary/70 bg-primary/[.1] shadow-[0_0_28px_rgba(20,184,166,.12)]" : "border-white/[.07] bg-background/70", row.rules.length === 0 ? "text-muted-foreground" : isBroken(row) ? "text-destructive" : "text-primary") }>
-        <FootprintMark mirrored={index % 2 === 1} /><span className="mt-1 tabular-nums text-foreground/75">{format(new Date(`${row.trade.date_time.slice(0, 10)}T12:00:00`), "d MMM")}</span>
-      </button>;
-    })}</div></div> : <p className="mt-6 text-sm text-muted-foreground">No day has a reliable first trade yet.</p>}
-    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/[.08] pt-4 text-[11px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-primary" /> Checks kept</span><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-destructive" /> Rule broken</span><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-muted-foreground" /> Not assessed</span></div>
-    {rows.length > 18 && <p className="mt-3 text-xs text-muted-foreground">Showing the 18 most recent days{selectedOlder ? " and the selected day" : ""}. Scroll horizontally to follow the trail.</p>}
-  </Surface>;
-}
-
-function IntradaySection({ sessions, selected, selectedTrade, onSession, onTrade, accountName, preMarket }: { sessions: TradingSession[]; selected: TradingSession | null; selectedTrade: AssessedTrade | null; onSession: (id: string) => void; onTrade: (id: string) => void; accountName: (id: string | null) => string; preMarket: PreMarketExercise | null }) {
-  if (sessions.length === 0) return <Surface className="p-5 sm:p-6"><Kicker className="text-ice">03 / Within-day drift</Kicker><h3 className="mt-2 font-heading text-xl font-semibold">One decision per day</h3><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">No day in this selection has multiple trades. Your day-to-day pattern above is the relevant view; there is no intraday sequence to reconstruct.</p></Surface>;
-  const summary = selected ? summarizeAdherence(selected.trades) : null;
-  return <div className="space-y-4">
-    <div className="px-1"><Kicker className="text-ice">03 / Within-day drift</Kicker><h2 className="mt-2 font-heading text-2xl font-semibold tracking-tight">When a day has more than one trade</h2><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Inspect the first recorded rule break within a session. This section only shows multi-trade days.</p></div>
-    <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[290px_minmax(0,1fr)]">
-      <Surface className="h-fit p-3"><div className="px-2 py-2"><Kicker>Session index</Kicker><p className="mt-1 text-xs text-muted-foreground">{sessions.length} multi-trade days</p></div><div className="mt-2 max-h-[38rem] space-y-1 overflow-y-auto pr-1">{sessions.map((item) => { const s = summarizeAdherence(item.trades); return <button key={item.id} type="button" aria-pressed={selected?.id === item.id} onClick={() => onSession(item.id)} className={cn(styles.selectable, "w-full rounded-xl border px-3.5 py-3 text-left", selected?.id === item.id ? "border-primary/40 bg-primary/[.08]" : "border-transparent hover:bg-background/40")}><span className="flex items-center justify-between gap-2"><strong className="text-xs font-semibold">{dayLabel(item.date)}</strong><ChevronRight className="size-3.5 text-muted-foreground" /></span><span className="mt-1 block truncate text-[11px] text-muted-foreground">{accountName(item.accountId)} / {item.trades.length} trades</span><span className={cn("mt-2 block text-[10px] font-semibold", s.broken ? "text-destructive" : s.assessed ? "text-primary" : "text-muted-foreground")}>{s.broken ? `${s.broken} recorded breach${s.broken === 1 ? "" : "es"}` : s.assessed ? "No checked breach" : "No rules assessed"}</span></button>; })}</div></Surface>
-      {selected && summary && <div className="space-y-4">
-        <Surface className="p-5 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><Kicker>Session / {dayLabel(selected.date)}</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">{selected.orderReliable ? selected.firstBreachIndex === null ? summary.assessed ? "No recorded break" : "No assessed decisions" : `First recorded break at trade ${selected.firstBreachIndex + 1}` : "Sequence cannot be verified"}</h3><p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">{selected.orderReliable ? selected.firstBreachIndex === null ? "The checked rules show no breach in this account-day group. Unassessed trades remain unknown." : `A checked rule first failed at ${selected.trades[selected.firstBreachIndex].trade.execution_time}. Select a decision below to inspect it.` : "Some entry times are missing or tied. The first breach and order cannot be established reliably."}</p></div><Clock3 className="size-5 text-primary" /></div><div className="mt-6 grid gap-5 border-t border-white/[.08] pt-5 sm:grid-cols-4"><Metric label="Trades" value={String(selected.trades.length)} detail="In this group" /><Metric label="Assessed" value={String(summary.assessed)} detail="Rule checks saved" accent /><Metric label="Breaches" value={String(summary.broken)} detail="At least one rule broken" /><Metric label="Unknown" value={String(summary.unassessed)} detail="No rule checks" /></div></Surface>
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)]"><Surface className="p-5 sm:p-6"><Kicker>Decision sequence</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">Every trade, in context</h3><div className={cn("relative mt-6 space-y-2", styles.rail)}>{selected.trades.map((row, index) => { const first = selected.orderReliable && selected.firstBreachIndex === index; const active = selectedTrade?.trade.id === row.trade.id; return <button key={row.trade.id} type="button" aria-pressed={active} onClick={() => onTrade(row.trade.id)} className={cn(styles.selectable, "relative z-10 flex w-full items-center gap-3 rounded-xl border p-3 text-left sm:p-3.5", active ? "border-primary/45 bg-primary/[.08]" : "border-white/[.07] bg-background/60", first && "ring-1 ring-destructive/35")}><span className={cn("flex size-9 shrink-0 items-center justify-center rounded-full border bg-background text-[11px] font-semibold tabular-nums", isBroken(row) ? "border-destructive/45 text-destructive" : row.rules.length ? "border-primary/45 text-primary" : "border-white/[.15] text-muted-foreground")}>{selected.orderReliable ? String(index + 1).padStart(2, "0") : "?"}</span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold">{row.trade.instrument} <span className="font-normal text-muted-foreground">/ {row.trade.execution_time || "Time not logged"}</span></span><span className="mt-1 block"><TradeStatus row={row} /></span></span>{first && <span className="hidden rounded-full border border-destructive/25 bg-destructive/[.08] px-2 py-1 text-[10px] font-semibold text-destructive sm:block">First break</span>}<ChevronRight className="size-3.5 shrink-0 text-muted-foreground" /></button>; })}</div></Surface><div className="space-y-4">{selectedTrade && <DecisionDetail key={selectedTrade.trade.id} row={selectedTrade} number={selected.orderReliable ? selected.trades.findIndex((row) => row.trade.id === selectedTrade.trade.id) + 1 : undefined} />}<Surface className="p-5 sm:p-6"><Kicker className="text-ice">Saved daily entry</Kicker><h3 className="mt-2 font-heading text-lg font-semibold">Pre-market focus</h3>{preMarket ? <div className="mt-4 space-y-4 text-sm"><div><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Focus</p><p className="mt-1 leading-relaxed">{preMarket.focus || "None recorded"}</p></div><div><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Commitment</p><p className="mt-1 leading-relaxed">{preMarket.commitment_text || "None recorded"}</p></div><p className="text-xs leading-relaxed text-muted-foreground">This entry belongs to the selected day. Its presence alone does not prove it was completed before each trade.</p></div> : <p className="mt-4 text-sm leading-relaxed text-muted-foreground">No completed pre-market exercise was found for this day.</p>}</Surface></div></div>
-      </div>}
-    </div>
-  </div>;
-}
-
-export function BehavioralInsights({ trades, ruleChecks, accounts, exercises }: { trades: TradeJournalEntry[]; ruleChecks: TradeRuleCheck[]; accounts: FundedAccount[]; exercises: PreMarketExercise[] }) {
+export function BehavioralInsights({ trades, ruleChecks, accounts, exercises, habits, habitCompletions, weeklyReviews, recaps }: Props) {
   const [period, setPeriod] = useState("90d");
   const [accountId, setAccountId] = useState("all");
   const [focus, setFocus] = useState<Focus>("all");
-  const [dailyId, setDailyId] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [tradeId, setTradeId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const today = format(new Date(), "yyyy-MM-dd");
   const accountTrades = useMemo(() => trades.filter((trade) => accountId === "all" || (accountId === "unlinked" ? !trade.funded_account_id : trade.funded_account_id === accountId)), [trades, accountId]);
   const filtered = useMemo(() => inPeriod(accountTrades, period, today), [accountTrades, period, today]);
-  const allSessions = useMemo(() => buildTradingSessions(accountTrades, ruleChecks), [accountTrades, ruleChecks]);
-  const selectedIds = useMemo(() => new Set(filtered.map((trade) => `${trade.date_time.slice(0, 10)}|${trade.funded_account_id ?? "unlinked"}`)), [filtered]);
-  const sessions = useMemo(() => allSessions.filter((item) => selectedIds.has(item.id)), [allSessions, selectedIds]);
-  const transitions = useMemo(() => buildDayTransitions(allSessions).filter((item) => selectedIds.has(`${item.date}|${item.accountId ?? "unlinked"}`)), [allSessions, selectedIds]);
-  const dailyRows = useMemo(() => sessions.filter((item) => item.trades.length === 1 || item.orderReliable).map((item) => item.trades[0]), [sessions]);
-  const multiSessions = useMemo(() => sessions.filter((item) => item.trades.length > 1), [sessions]);
-  const dailySummary = useMemo(() => summarizeAdherence(dailyRows), [dailyRows]);
-  const lossTransitions = transitions.filter((item) => item.previousResult === "loss");
-  const winTransitions = transitions.filter((item) => item.previousResult === "win");
-  const afterLoss = summarizeAdherence(lossTransitions.map((item) => item.current));
-  const afterWin = summarizeAdherence(winTransitions.map((item) => item.current));
-  const delta = afterLoss.rate !== null && afterWin.rate !== null ? afterLoss.rate - afterWin.rate : null;
-  const enough = afterLoss.assessed >= 5 && afterWin.assessed >= 5;
-  const selectedDaily = dailyRows.find((row) => row.trade.id === dailyId) ?? dailyRows[0] ?? null;
-  const selectedTransition = transitions.find((item) => item.current.trade.id === selectedDaily?.trade.id);
-  const chosenSession = multiSessions.find((item) => item.id === sessionId) ?? multiSessions[0] ?? null;
-  const chosenTrade = chosenSession?.trades.find((row) => row.trade.id === tradeId) ?? chosenSession?.trades[0] ?? null;
-  const preMarket = chosenSession ? exercises.find((item) => item.date === chosenSession.date && item.completed_at) ?? null : null;
-  const accountName = (id: string | null) => id ? (accounts.find((account) => account.id === id)?.account_name ?? "Archived account") : "No account linked";
-  const focusedTransitions = transitions.filter((item) => focus === "all" || item.previousResult === focus);
-  const brokenRules = Object.entries(dailyRows.flatMap((row) => row.rules.filter((rule) => !rule.passed).map((rule) => rule.label)).reduce<Record<string, number>>((counts, label) => { counts[label] = (counts[label] ?? 0) + 1; return counts; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 4);
-  const ambiguousDays = sessions.filter((item) => item.trades.length > 1 && !item.orderReliable).length;
-  const changeSelection = () => { setDailyId(null); setSessionId(null); setTradeId(null); };
+  const allRows = useMemo(() => buildResponseDays({ trades: accountTrades, ruleChecks, habits, habitCompletions, weeklyReviews, exercises, recaps }), [accountTrades, ruleChecks, habits, habitCompletions, weeklyReviews, exercises, recaps]);
+  const dates = useMemo(() => new Set(filtered.map((trade) => trade.date_time.slice(0, 10))), [filtered]);
+  const rows = useMemo(() => allRows.filter((row) => dates.has(row.date)), [allRows, dates]);
+  const afterLoss = rows.filter((row) => row.previousResult === "loss");
+  const afterWin = rows.filter((row) => row.previousResult === "win");
+  const lossStreak = afterLoss.filter((row) => row.previousStreak >= 2);
+  const winStreak = afterWin.filter((row) => row.previousStreak >= 2);
+  const visible = rows.filter((row) => focus === "all" || (focus === "loss" && row.previousResult === "loss") || (focus === "win" && row.previousResult === "win") || (focus === "loss-streak" && row.previousResult === "loss" && row.previousStreak >= 2) || (focus === "win-streak" && row.previousResult === "win" && row.previousStreak >= 2));
+  const selected = visible.find((row) => row.id === selectedId) ?? visible[0];
+  const links = dimensions.map((dimension) => {
+    const yes = adherence(visible.filter((row) => row[dimension.key] === "yes"));
+    const no = adherence(visible.filter((row) => row[dimension.key] === "no"));
+    return { ...dimension, yes, no, delta: yes.rate !== null && no.rate !== null ? yes.rate - no.rate : null };
+  });
+  const strongest = links.filter((item) => item.yes.assessed >= 3 && item.no.assessed >= 3 && item.delta !== null).sort((a, b) => Math.abs(b.delta ?? 0) - Math.abs(a.delta ?? 0))[0];
+  const context = selected?.previousStreak >= 2 ? `${selected.previousStreak} ${selected.previousResult === "loss" ? "losses" : "wins"} in a row` : selected?.previousResult ? `After a ${selected.previousResult}` : "No prior result";
 
-  return <div className="mx-auto max-w-[1500px] space-y-5 pb-12">
-    <header className="flex flex-wrap items-start justify-between gap-4 py-1">
-      <div><Link href="/analytics" className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:text-primary"><ArrowLeft className="size-3.5" /> Analytics desk</Link><h1 className="mt-3 font-heading text-3xl font-semibold tracking-[-.045em] sm:text-4xl">Behavioral insights<span className="text-primary">.</span></h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">Your decision pattern across trading days, with the underlying rule checks one click away.</p></div>
-      <span className="rounded-full border border-primary/20 bg-primary/[.07] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.12em] text-primary">Journal evidence</span>
-    </header>
-
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[.08] bg-card/55 p-3">
-      <p className="px-1 text-xs text-muted-foreground">One view. Every trading day.</p>
-      <div className="flex flex-wrap gap-2"><label className="sr-only" htmlFor="behavior-period">Period</label><select id="behavior-period" value={period} onChange={(event) => { setPeriod(event.target.value); changeSelection(); }} className="h-9 rounded-lg border border-white/[.09] bg-background px-3 text-xs text-foreground"><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="all">All time</option></select><label className="sr-only" htmlFor="behavior-account">Account</label><select id="behavior-account" value={accountId} onChange={(event) => { setAccountId(event.target.value); changeSelection(); }} className="h-9 max-w-48 rounded-lg border border-white/[.09] bg-background px-3 text-xs text-foreground"><option value="all">All accounts</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}<option value="unlinked">No account linked</option></select></div>
-    </div>
-
-    {filtered.length === 0 ? <Surface className="p-12 text-center"><CircleHelp className="mx-auto size-7 text-primary" /><h2 className="mt-4 font-heading text-xl font-semibold">No trades in this selection</h2><p className="mt-2 text-sm text-muted-foreground">Choose a wider period or another account, or add trades in Journal.</p><Link href="/journal" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">Open Journal <ArrowRight className="size-4" /></Link></Surface> : <div className={cn(styles.enter, "space-y-5")}>
-      <Surface className="relative overflow-hidden border-primary/20 bg-[radial-gradient(ellipse_at_85%_5%,rgba(20,184,166,.15),transparent_48%),linear-gradient(135deg,rgba(20,184,166,.055),rgba(11,17,32,.25))] p-5 sm:p-7">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,.88fr)_minmax(430px,1.12fr)] lg:items-center">
-          <div><Kicker>01 / Day-to-day fingerprint</Kicker><h2 className="mt-4 max-w-xl font-heading text-3xl font-semibold leading-tight tracking-[-.04em] sm:text-[38px]">Does yesterday&apos;s result<br /><span className="text-primary">leave a mark?</span></h2><p className="mt-4 max-w-xl text-sm leading-relaxed text-foreground/65">The first decision of each day becomes part of your fingerprint. Compare days after a loss with days after a win, on the same account.</p>
-            <div className="mt-7 flex items-center gap-4 border-t border-white/[.1] pt-5"><strong className={cn("font-heading text-4xl font-semibold tabular-nums tracking-tight", delta !== null && delta < 0 ? "text-destructive" : "text-primary")}>{delta === null ? "--" : `${delta > 0 ? "+" : ""}${delta}`}<span className="ml-1 text-sm font-medium text-muted-foreground">pts</span></strong><p className="max-w-xs text-xs leading-relaxed text-foreground/75">{delta === null ? "A comparison needs assessed trades after both results." : delta === 0 ? "The recorded rule adherence is equal in both groups." : `${Math.abs(delta)} points ${delta < 0 ? "lower" : "higher"} after a loss.`}<span className="mt-1 block text-muted-foreground">{enough ? "A descriptive pattern, not a cause." : "Small sample on at least one side."}</span></p></div>
-          </div>
-          <FingerprintFigure loss={lossTransitions} win={winTransitions} lossRate={afterLoss.rate} winRate={afterWin.rate} focus={focus} onFocus={setFocus} />
+  return <div className="mx-auto max-w-[1440px] space-y-4 pb-8">
+    <header className="flex flex-wrap items-end justify-between gap-4"><div><Link href="/analytics" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="size-3.5" /> Analytics</Link><p className="mt-5 text-[10px] font-bold uppercase tracking-[.2em] text-primary">Behavioral insights</p><h1 className="mt-1 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">Your process fingerprint<span className="text-primary">.</span></h1><p className="mt-2 text-sm text-muted-foreground">Five recorded signals around each trading day. See what changes after a loss, win or streak.</p></div><div className="flex gap-2"><select aria-label="Period" value={period} onChange={(event) => { setPeriod(event.target.value); setSelectedId(null); }} className="h-9 rounded-lg border border-white/10 bg-card px-3 text-xs"><option value="30d">30 days</option><option value="90d">90 days</option><option value="all">All time</option></select><select aria-label="Account" value={accountId} onChange={(event) => { setAccountId(event.target.value); setSelectedId(null); }} className="h-9 max-w-40 rounded-lg border border-white/10 bg-card px-3 text-xs"><option value="all">All accounts</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}<option value="unlinked">Unlinked</option></select></div></header>
+    {rows.length === 0 ? <div className="rounded-2xl border border-white/10 bg-card/60 p-8 text-sm text-muted-foreground">No trades in this selection. Add a trade with rule checks in Journal or choose a wider period.</div> : <>
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4"><ContextCard title="After a loss" rows={afterLoss} selected={focus === "loss"} onClick={() => setFocus(focus === "loss" ? "all" : "loss")} /><ContextCard title="After a win" rows={afterWin} selected={focus === "win"} onClick={() => setFocus(focus === "win" ? "all" : "win")} /><ContextCard title="After 2+ losses" rows={lossStreak} selected={focus === "loss-streak"} onClick={() => setFocus(focus === "loss-streak" ? "all" : "loss-streak")} /><ContextCard title="After 2+ wins" rows={winStreak} selected={focus === "win-streak"} onClick={() => setFocus(focus === "win-streak" ? "all" : "win-streak")} /></div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(350px,.75fr)]">
+        <section className="min-w-0 overflow-hidden rounded-[22px] border border-white/[.08] bg-card/60 p-4 sm:p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-primary">The footprint trail</p><h2 className="mt-1 font-heading text-lg font-semibold">Preparation → decision</h2></div><span className="text-[11px] text-muted-foreground">{visible.length} trading days</span></div><div className="mt-4 flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground"><span className="inline-flex items-center gap-1"><span className="size-1.5 rounded-full bg-primary" /> Rules kept</span><span className="inline-flex items-center gap-1"><span className="size-1.5 rounded-full bg-destructive" /> Broken</span><span className="inline-flex items-center gap-1"><span className="size-1.5 rounded-full bg-muted-foreground" /> Unknown</span><button type="button" onClick={() => setFocus("all")} className="ml-auto text-primary hover:underline">Show all</button></div><div className={cn(styles.trail, "mt-4 flex gap-2 overflow-x-auto pb-3 pt-3")} aria-label="Trading day footprints">{[...visible].reverse().slice(-30).map((row, index) => <button key={row.id} type="button" onClick={() => setSelectedId(row.id)} aria-pressed={selected?.id === row.id} aria-label={`${labelDate(row.date)}, ${row.rules === "yes" ? "rules kept" : row.rules === "no" ? "rule broken" : "rules unknown"}`} className={cn(styles.footprint, "flex min-w-14 flex-col items-center rounded-xl border px-2 py-2.5", selected?.id === row.id ? "border-primary/60 bg-primary/[.09]" : "border-white/[.07] bg-background/40", row.rules === "yes" ? "text-primary" : row.rules === "no" ? "text-destructive" : "text-muted-foreground")}><Footprint flip={index % 2 === 1} /><span className="mt-1 text-[10px] text-foreground/70">{labelDate(row.date)}</span></button>)}</div><p className="mt-1 text-[10px] text-muted-foreground">Each footprint is one trading day. Colour uses saved rule checks. Select a day to inspect its five signals.</p>
+          <div className="mt-5 border-t border-white/[.08] pt-4"><p className="text-[10px] font-bold uppercase tracking-[.18em] text-primary">Preparation links</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{dimensions.map((dimension) => { const yes = adherence(visible.filter((row) => row[dimension.key] === "yes")); const no = adherence(visible.filter((row) => row[dimension.key] === "no")); return <div key={dimension.key} className="rounded-xl border border-white/[.07] bg-background/35 px-3 py-3"><p className="text-xs font-semibold">{dimension.title}</p><div className="mt-2 flex items-end justify-between gap-3 text-[11px]"><span className="text-muted-foreground">Done <strong className="ml-1 font-semibold text-primary">{pct(yes.rate)}</strong><small className="ml-1">({yes.assessed})</small></span><span className="text-muted-foreground">Missed <strong className="ml-1 font-semibold text-foreground">{pct(no.rate)}</strong><small className="ml-1">({no.assessed})</small></span></div><div className="mt-2 flex h-1 gap-1"><span className="rounded-full bg-primary" style={{ width: `${yes.rate ?? 0}%` }} /><span className="rounded-full bg-white/20" style={{ width: `${no.rate ?? 0}%` }} /></div></div>; })}</div></div>
+        </section>
+        <div className="space-y-4"><section className="rounded-[22px] border border-primary/20 bg-[radial-gradient(circle_at_top_right,rgba(20,184,166,.12),transparent_60%)] p-5"><p className="text-[10px] font-bold uppercase tracking-[.18em] text-primary">Strongest recorded link</p>{strongest ? <><h2 className="mt-2 font-heading text-xl font-semibold">{strongest.title}</h2><p className="mt-2 text-sm text-foreground/80">Rule adherence is <strong className="text-primary">{Math.abs(strongest.delta ?? 0)} points {strongest.delta! >= 0 ? "higher" : "lower"}</strong> on days this was done.</p><p className="mt-2 text-[11px] text-muted-foreground">{strongest.yes.assessed} done days vs {strongest.no.assessed} missed days. Descriptive association, not proof of cause.</p></> : <><h2 className="mt-2 font-heading text-xl font-semibold">More paired days needed</h2><p className="mt-2 text-xs leading-relaxed text-muted-foreground">A link appears once a signal has at least three assessed days in both done and missed groups.</p></>}</section>
+          {selected && <section className="rounded-[22px] border border-white/[.08] bg-card/60 p-5"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-primary">Selected day · {labelDate(selected.date)}</p><h2 className="mt-1 font-heading text-xl font-semibold">{context}</h2></div><Link href={`/journal/${selected.tradeId}`} aria-label="Open trade in Journal" className="rounded-lg border border-white/10 p-2 text-muted-foreground hover:text-primary"><ArrowUpRight className="size-4" /></Link></div><div className="mt-4 divide-y divide-white/[.07]">{[{ label: "Rules followed", value: selected.rules, detail: "All checked trades" }, { label: "Habits done", value: selected.habits, detail: selected.habitExpected ? `${selected.habitDone}/${selected.habitExpected} due` : "No habits due" }, { label: "Previous week review", value: selected.weeklyReview, detail: "Saved before this day" }, { label: "Pre-market exercise", value: selected.preMarket, detail: "Completed on this day" }, { label: "Yesterday’s post-market recap", value: selected.yesterdayRecap, detail: "Calendar day before this trade" }].map((item) => <div key={item.label} className="flex items-center justify-between gap-3 py-2.5"><div><p className="text-xs font-medium">{item.label}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{item.detail}</p></div><SignalMark value={item.value as Signal} /></div>)}</div><p className="mt-3 text-[11px] text-muted-foreground">Result: <span className="font-semibold text-foreground">{selected.result}</span> · An outcome can be a loss even when every rule was followed.</p></section>}
         </div>
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/[.08] pt-4 text-[11px] text-muted-foreground"><span>Select an imprint to filter the day-pair evidence below. Each colored ridge is one recent first trade.</span><span className="flex flex-wrap gap-3"><span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-primary" /> Kept</span><span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-destructive" /> Broken</span><span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-muted-foreground" /> Unknown</span></span></div>
-      </Surface>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,.75fr)]">
-        <Surface className="p-5 sm:p-6"><Kicker>The pattern in context</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">Process before outcome</h3><p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80">A day counts as compliant only when every checked rule on its first trade was kept. Profit, R and the strategy outcome do not decide the verdict.</p><div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-4"><Metric label="After loss" value={rate(afterLoss.rate)} detail={`${afterLoss.kept}/${afterLoss.assessed} assessed`} accent /><Metric label="After win" value={rate(afterWin.rate)} detail={`${afterWin.kept}/${afterWin.assessed} assessed`} /><Metric label="All first trades" value={rate(dailySummary.rate)} detail={`${dailySummary.kept}/${dailySummary.assessed} assessed`} /><Metric label="Unknown" value={String(dailySummary.unassessed)} detail="No rule checks" /></div></Surface>
-        <Surface className="p-5 sm:p-6"><Kicker>Data coverage</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">What the trail can show</h3><div className="mt-5 grid grid-cols-2 gap-5"><Metric label="Day pairs" value={String(transitions.length)} detail="Prior recorded day available" accent /><Metric label="Multi-trade days" value={String(multiSessions.length)} detail="Explored below" /></div><p className="mt-5 border-t border-white/[.08] pt-4 text-xs leading-relaxed text-muted-foreground">{ambiguousDays} days have an uncertain intraday order. A prior day can sit outside this period. Break-even days appear in the trail but not the win/loss comparison. Unlinked trades form one separate stream; link accounts if you trade several.</p></Surface>
-      </div>
-
-      <div id="decision-rhythm" className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,.75fr)]"><DailyRhythm rows={dailyRows} transitions={transitions} selectedId={dailyId} onSelect={setDailyId} />{selectedDaily ? <DecisionDetail key={selectedDaily.trade.id} row={selectedDaily} transition={selectedTransition} /> : <Surface className="p-5 sm:p-6"><Kicker>Decision detail</Kicker><p className="mt-4 text-sm text-muted-foreground">No first trade has a reliable order in this selection.</p></Surface>}</div>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,.75fr)]"><Surface className="p-5 sm:p-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><Kicker>Recorded day pairs</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">Review the evidence</h3></div><div className="flex gap-1 rounded-lg border border-white/[.08] bg-background/40 p-1" aria-label="Filter by previous result">{([{"key":"all","label":"All"},{"key":"loss","label":"After loss"},{"key":"win","label":"After win"}] as const).map((item) => <button key={item.key} type="button" aria-pressed={focus === item.key} onClick={() => setFocus(item.key)} className={cn(styles.tab, "rounded-md px-2.5 py-1.5 text-[11px] font-semibold", focus === item.key ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground")}>{item.label}</button>)}</div></div><div className="mt-5 max-h-80 divide-y divide-white/[.07] overflow-y-auto">{focusedTransitions.length ? focusedTransitions.map((item) => <button key={item.current.trade.id} type="button" onClick={() => { setDailyId(item.current.trade.id); document.getElementById("decision-rhythm")?.scrollIntoView({ behavior: "auto", block: "center" }); }} className="flex w-full flex-wrap items-center justify-between gap-2 py-3 text-left text-xs hover:text-primary"><span className="font-medium">{dayLabel(item.date)} <span className="font-normal text-muted-foreground">/ after {item.previousResult} / {item.current.trade.instrument}</span></span><TradeStatus row={item.current} /></button>) : <p className="py-6 text-sm text-muted-foreground">No recorded day pair matches this filter.</p>}</div></Surface><Surface className="p-5 sm:p-6"><Kicker>Repeated deviations</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">Rules to revisit</h3><div className="mt-4 space-y-2">{brokenRules.length ? brokenRules.map(([label, count]) => <div key={label} className="flex items-start justify-between gap-4 border-b border-white/[.06] py-2 text-xs"><span className="leading-relaxed text-foreground/80">{label}</span><strong className="tabular-nums text-destructive">{count}</strong></div>) : <p className="text-sm text-muted-foreground">No broken checked rules on the first trade of a day.</p>}</div><p className="mt-5 text-xs leading-relaxed text-muted-foreground">Counts describe the first trade of each ordered day, including days with no prior result in the data.</p></Surface></div>
-
-      <IntradaySection sessions={multiSessions} selected={chosenSession} selectedTrade={chosenTrade} onSession={(id) => { setSessionId(id); setTradeId(null); }} onTrade={setTradeId} accountName={accountName} preMarket={preMarket} />
-      <p className="px-1 text-xs leading-relaxed text-muted-foreground">These insights describe recorded rule checks. They cannot infer motive, patience or actual position risk. The Playbook shows current limits, not a historical session plan.</p>
-    </div>}
+      </div><p className="px-1 text-[11px] leading-relaxed text-muted-foreground">Streaks use previous recorded trading days on the same account. Recap checks the previous calendar day; if there was no trade yesterday it remains unknown. Pre-market completion is recorded by day, so timing before entry cannot always be verified. Missing rule checks remain unknown.</p>
+    </>}
   </div>;
 }
