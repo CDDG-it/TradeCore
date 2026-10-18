@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
-import {
-  ArrowRight, CalendarCheck, Check, Clock, Eye, FileCheck, Gauge, GitBranch, Hand, Lightbulb, ListChecks, Loader2,
-  Pencil, Quote, Repeat, RotateCcw, Scale, ShieldAlert, Sparkles, Target, Wind, Zap, type LucideIcon,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock, Eye, Loader2, Pencil, Quote, Sparkles, Wand2 } from "lucide-react";
 import { TradeDetailDialog } from "@/components/journal/trade-detail-dialog";
-import { MotionButton, PRESS, EASE_OUT } from "@/components/trade-therapist/motion-button";
+import { PRESS, EASE_OUT } from "@/components/trade-therapist/motion-button";
+import { ExerciseIcon } from "@/components/trade-therapist/exercise-icons";
+import "@/components/trade-therapist/pre-market-glass.css";
 import { getPreMarketExercise, getRecentPreMarketExerciseTypes, getTradeProfileBundle, savePreMarketExercise } from "@/lib/supabase/queries";
 import {
   aggregateSessions, CATEGORY_LABEL, exerciseDefinition, PRE_MARKET_EXERCISES, selectExercise,
@@ -46,13 +45,9 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "profile", label: "Trade Profile" },
   { key: "recovery", label: "After losses" },
 ];
-const ICON: Record<ExerciseTypeId, LucideIcon> = {
-  loss_win_review: Scale, mental_contrasting: Target, pre_mortem: ShieldAlert, mental_rehearsal: Repeat, rules_recall: ListChecks,
-  state_check: Gauge, scenario_plan: GitBranch, post_loss_reset: RotateCcw, calm_plan: Wind, impulse_gate: Hand,
-  follow_through: CalendarCheck, thrill_outlet: Zap, idea_parking: Lightbulb, evidence_file: FileCheck,
-};
-/** Big writing surfaces: they grow with the text (field-sizing) and start roomy. */
-const TEXTAREA = "block w-full resize-y bg-transparent p-4 text-[15px] leading-relaxed outline-none [field-sizing:content] placeholder:text-muted-foreground/60";
+const SPRING = { type: "spring", stiffness: 420, damping: 30 } as const;
+/** Big writing surfaces: they start roomy and grow with the text, so they never scroll inside. */
+const TEXTAREA = "block w-full resize-none overflow-hidden bg-transparent p-4 text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground/60";
 
 /** Has a field been answered, in the way that field kind counts as answered? */
 function answered(field: ExerciseField, value: unknown) {
@@ -66,6 +61,10 @@ function answered(field: ExerciseField, value: unknown) {
  * every exercise (routine, after losses, and one per My Trade Profile focus
  * area); the session on the right walks through it in three steps (do the
  * exercise, pick one focus, commit), one step at a time with room to write.
+ *
+ * Nothing scrolls inside the page: the library shows every exercise and the
+ * text fields grow with what you write. Motion is kept to the controls you
+ * touch, not to content sliding in.
  */
 export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry[]; date: string }) {
   const reduceMotion = useReducedMotion();
@@ -79,9 +78,12 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
   const [error, setError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<TradeJournalEntry | null>(null);
   const [step, setStep] = useState<Step>(1);
-  const [direction, setDirection] = useState(1);
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState(false);
+  // Answers per exercise, so switching to another exercise and back keeps them.
+  const answersByType = useRef<Partial<Record<ExerciseTypeId, Record<string, unknown>>>>({});
+  const scroller = useRef<HTMLDivElement>(null);
+  const session = useRef<HTMLElement>(null);
   const definition = exerciseDefinition(draft.exercise_type);
   const draftKey = `premarket-library-draft:${date}`;
 
@@ -127,17 +129,28 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
   const update = (patch: Partial<Draft>) => setDraft((current) => ({ ...current, ...patch }));
   const setInput = (id: string, value: unknown) => setDraft((current) => ({ ...current, inputs: { ...current.inputs, [id]: value } }));
 
+  /** Bring the top of the session back into view when it has scrolled away, without a scroll animation. */
+  function revealSession() {
+    const box = scroller.current;
+    const card = session.current;
+    if (!box || !card) return;
+    const offset = card.getBoundingClientRect().top - box.getBoundingClientRect().top;
+    if (offset < 0) box.scrollTop += offset - 8;
+  }
+
   function go(next: Step) {
-    setDirection(next > step ? 1 : -1);
     setStep(next);
+    requestAnimationFrame(revealSession);
   }
 
   function choose(type: ExerciseTypeId) {
     if (type === draft.exercise_type) return;
-    setDraft((current) => ({ ...emptyDraft(type), focus: current.focus, commitment_text: current.commitment_text }));
-    setDirection(1);
+    answersByType.current[draft.exercise_type] = draft.inputs;
+    setDraft((current) => ({ ...emptyDraft(type), inputs: answersByType.current[type] ?? {}, focus: current.focus, commitment_text: current.commitment_text }));
     setStep(1);
     setEditing(true);
+    setError(null);
+    requestAnimationFrame(revealSession);
   }
 
   async function save() {
@@ -152,6 +165,7 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
       const clean: Draft = { exercise_type: result.exercise_type, inputs: result.inputs, focus: result.focus, commitment_text: result.commitment_text, commitment_format: result.commitment_format };
       setDraft(clean); setLoaded(clean); setCompletedAt(result.completed_at ?? new Date().toISOString());
       setEditing(false);
+      requestAnimationFrame(revealSession);
     } catch (e) {
       // 23514: the database still has the original three-exercise check.
       setError((e as { code?: string })?.code === "23514"
@@ -164,135 +178,124 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
 
   if (loading) return <div className="flex h-full items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
 
-  const Icon = ICON[definition.id];
   const trains = definition.focusArea ? focusAreas[definition.focusArea] : null;
+  const stepDone = doneFlags[step - 1];
 
   return <MotionConfig reducedMotion="user">
-    <div className="h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
-      <div className="grid gap-4 pb-8 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:items-start">
+    <div ref={scroller} className="relative h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+      {/* Two soft brand glows behind the glass, so it has something to catch. */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[900px] overflow-hidden">
+        <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-primary/[.13] blur-[90px]" />
+        <div className="absolute right-0 top-64 h-96 w-96 rounded-full bg-ice/[.10] blur-[110px]" />
+      </div>
+
+      <div className="relative grid gap-4 pb-8 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:items-start">
 
         {/* ── Library ───────────────────────────────────────────── */}
-        <aside className="min-w-0 lg:sticky lg:top-0">
-          <div className="rounded-2xl border border-border/60 bg-card p-3 sm:p-4">
-            <div className="flex items-baseline justify-between px-1">
-              <h2 className="font-heading text-sm font-bold tracking-tight">Exercises</h2>
-              <span className="text-[11px] tabular-nums text-muted-foreground">{PRE_MARKET_EXERCISES.length} in the library</span>
-            </div>
-
-            <div role="tablist" aria-label="Filter exercises" className="mt-3 flex gap-1 overflow-x-auto rounded-xl bg-background/40 p-1 [scrollbar-width:none]">
-              {FILTERS.map((f) => {
-                const on = f.key === filter;
-                return <button key={f.key} type="button" role="tab" aria-selected={on} onClick={() => setFilter(f.key)}
-                  className={cn("relative flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors", on ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
-                  {on && <motion.span layoutId="pm-filter" className="absolute inset-0 rounded-lg bg-card shadow-sm" transition={{ type: "spring", stiffness: 480, damping: 38 }} />}
-                  <span className="relative">{f.label}</span>
-                </button>;
-              })}
-            </div>
-
-            <motion.ul layout className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:max-h-[calc(100vh-260px)] lg:flex-col lg:overflow-y-auto lg:overflow-x-visible lg:pb-0 [scrollbar-width:thin]" role="radiogroup" aria-label="Choose an exercise">
-              <AnimatePresence initial={false} mode="popLayout">
-                {filtered.map((exercise, index) => <LibraryCard key={exercise.id} exercise={exercise} index={index}
-                  selected={exercise.id === draft.exercise_type} suggested={exercise.id === suggested}
-                  yourFocus={!!exercise.focusArea && (exercise.focusArea === profileFocus?.primary || exercise.focusArea === profileFocus?.secondary)}
-                  onChoose={() => choose(exercise.id)} />)}
-              </AnimatePresence>
-            </motion.ul>
-
-            {(filter === "profile" || filter === "all") && !profileFocus && (
-              <Link href="/trade-therapist?tab=profile" className="group mt-3 flex items-center gap-3 rounded-xl border border-dashed border-primary/30 p-3 text-xs text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground">
-                <Sparkles className="h-4 w-4 shrink-0 text-primary" />
-                <span className="flex-1">Take the Big Five in My Trade Profile and the exercise for your focus area is picked for you.</span>
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            )}
+        <aside className="pm-glass min-w-0 p-3 sm:p-4">
+          <div className="flex items-baseline justify-between px-1">
+            <h2 className="font-heading text-sm font-bold tracking-tight">Exercises</h2>
+            <span className="text-[11px] tabular-nums text-muted-foreground">{PRE_MARKET_EXERCISES.length} in the library</span>
           </div>
+
+          <div role="tablist" aria-label="Filter exercises" className="pm-well mt-3 flex gap-1 p-1">
+            {FILTERS.map((f) => {
+              const on = f.key === filter;
+              return <motion.button key={f.key} type="button" role="tab" aria-selected={on} onClick={() => setFilter(f.key)} whileTap={{ scale: 0.94, transition: PRESS }}
+                className={cn("relative flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors", on ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
+                {on && <motion.span layoutId="pm-filter" className="absolute inset-0 rounded-lg bg-primary/15 shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_45%,transparent),0_0_16px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]" transition={SPRING} />}
+                <span className="relative">{f.label}</span>
+              </motion.button>;
+            })}
+          </div>
+
+          <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1" role="radiogroup" aria-label="Choose an exercise">
+            {filtered.map((exercise) => <LibraryCard key={exercise.id} exercise={exercise}
+              selected={exercise.id === draft.exercise_type} suggested={exercise.id === suggested}
+              yourFocus={!!exercise.focusArea && (exercise.focusArea === profileFocus?.primary || exercise.focusArea === profileFocus?.secondary)}
+              onChoose={() => choose(exercise.id)} />)}
+          </ul>
+
+          {(filter === "profile" || filter === "all") && !profileFocus && (
+            <Link href="/trade-therapist?tab=profile" className="group mt-3 flex items-center gap-3 rounded-xl border border-dashed border-primary/30 p-3 text-xs text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground">
+              <Sparkles className="h-4 w-4 shrink-0 text-primary transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+              <span className="flex-1">Take the Big Five in My Trade Profile and the exercise for your focus area is picked for you.</span>
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+            </Link>
+          )}
         </aside>
 
         {/* ── Session ───────────────────────────────────────────── */}
-        <section className="min-w-0 overflow-hidden rounded-2xl border border-border/60 bg-card">
+        <section ref={session} className="pm-glass min-w-0 overflow-hidden">
           {/* Header: which exercise and why. */}
-          <div className="relative overflow-hidden border-b border-border/50 p-5 sm:p-7">
-            <motion.div aria-hidden className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl"
-              animate={reduceMotion ? undefined : { scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }} />
-            <p className="relative text-[10px] font-semibold uppercase tracking-[.18em] text-primary">Before the open · {format(new Date(`${date}T12:00:00`), "EEEE d MMMM")}</p>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div key={definition.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2, ease: EASE_OUT }} className="relative mt-3 flex items-start gap-4">
-                <motion.span initial={{ scale: 0.6, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 380, damping: 22 }}
-                  className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-primary/30 bg-primary/10 text-primary">
-                  <Icon className="h-5 w-5" />
-                </motion.span>
-                <div className="min-w-0">
-                  <h2 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">{definition.title}</h2>
-                  <p className="mt-1.5 max-w-[62ch] text-sm leading-relaxed text-muted-foreground">{definition.rationale}</p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    <Chip><Clock className="h-3 w-3" /> About {definition.minutes} min</Chip>
-                    <Chip>{definition.technique}</Chip>
-                    {trains && <Chip tone="ice"><Sparkles className="h-3 w-3" /> Trains: {trains.title}</Chip>}
-                  </div>
+          <div className="relative border-b border-white/[.06] p-5 sm:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-primary">Before the open · {format(new Date(`${date}T12:00:00`), "EEEE d MMMM")}</p>
+            <motion.div key={definition.id} initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.18 }} className="mt-3 flex items-start gap-4">
+              <motion.span initial="rest" animate="active" className="pm-glass pm-glass--active grid h-14 w-14 shrink-0 place-items-center text-primary">
+                <ExerciseIcon id={definition.id} size={26} />
+              </motion.span>
+              <div className="min-w-0">
+                <h2 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">{definition.title}</h2>
+                <p className="mt-1.5 max-w-[62ch] text-sm leading-relaxed text-muted-foreground">{definition.rationale}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  <Chip><Clock className="h-3 w-3" /> About {definition.minutes} min</Chip>
+                  <Chip>{definition.technique}</Chip>
+                  {trains && <Chip tone="ice"><Sparkles className="h-3 w-3" /> Trains: {trains.title}</Chip>}
                 </div>
-              </motion.div>
-            </AnimatePresence>
+              </div>
+            </motion.div>
           </div>
 
           {showSummary ? (
             <CompletedSummary draft={draft} completedAt={completedAt!} onEdit={() => { setEditing(true); go(1); }} />
           ) : (
             <>
-              {/* Stepper: every step is clickable; the bar fills as steps are done. */}
-              <nav aria-label="Steps" className="grid grid-cols-3 gap-1 border-b border-border/50 px-3 pt-3 sm:px-5">
+              {/* Stepper: every step is clickable; done steps carry a tick. */}
+              <nav aria-label="Steps" className="grid grid-cols-3 gap-1.5 border-b border-white/[.06] p-2.5 sm:px-5">
                 {STEPS.map(({ step: s, label }) => {
                   const on = s === step;
                   const done = doneFlags[s - 1];
-                  return <button key={s} type="button" onClick={() => go(s)} aria-current={on ? "step" : undefined}
-                    className={cn("relative flex items-center justify-center gap-2 rounded-t-lg px-2 py-3 text-xs font-semibold transition-colors sm:justify-start sm:px-3", on ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
-                    <motion.span animate={{ scale: done ? [1, 1.25, 1] : 1 }} transition={{ duration: 0.3 }}
-                      className={cn("grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold tabular-nums", done ? "bg-primary text-primary-foreground" : on ? "border border-primary text-primary" : "border border-border text-muted-foreground")}>
+                  return <motion.button key={s} type="button" onClick={() => go(s)} aria-current={on ? "step" : undefined}
+                    whileHover={on ? undefined : { y: -1.5 }} whileTap={{ scale: 0.96, transition: PRESS }}
+                    className={cn("relative flex items-center justify-center gap-2 rounded-xl px-2 py-2.5 text-xs font-semibold transition-colors sm:justify-start sm:px-3", on ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
+                    {on && <motion.span layoutId="pm-step" className="absolute inset-0 rounded-xl bg-primary/[.12] shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_45%,transparent),0_0_22px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)]" transition={SPRING} />}
+                    <motion.span key={String(done)} initial={done ? { scale: 0.4 } : false} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 16 }}
+                      className={cn("relative grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold tabular-nums", done ? "bg-primary text-primary-foreground shadow-[0_0_12px_-2px_var(--primary)]" : on ? "border border-primary text-primary" : "border border-border text-muted-foreground")}>
                       {done ? <Check className="h-3 w-3" strokeWidth={3} /> : s}
                     </motion.span>
-                    <span className="hidden sm:inline">{label}</span>
-                    {on && <motion.span layoutId="pm-step" className="absolute inset-x-1 -bottom-px h-0.5 rounded-full bg-primary" transition={{ type: "spring", stiffness: 480, damping: 38 }} />}
-                  </button>;
+                    <span className="relative hidden sm:inline">{label}</span>
+                  </motion.button>;
                 })}
               </nav>
 
-              <div className="relative min-h-[420px] overflow-hidden p-5 sm:p-7">
-                <AnimatePresence mode="wait" initial={false} custom={direction}>
-                  <motion.div key={`${definition.id}-${step}`} custom={direction}
-                    initial={{ opacity: 0, x: direction * 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: direction * -28 }} transition={{ duration: 0.22, ease: EASE_OUT }}>
-                    <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-primary">Step {step} of 3</p>
-                    <h3 className="mt-1 font-heading text-xl font-bold tracking-tight">{STEPS[step - 1].title}</h3>
+              <motion.div key={`${definition.id}-${step}`} initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} className="p-5 sm:p-7">
+                <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-primary">Step {step} of 3</p>
+                <h3 className="mt-1 font-heading text-xl font-bold tracking-tight">{STEPS[step - 1].title}</h3>
 
-                    {step === 1 && <div className="mt-5 space-y-6">
-                      {definition.fields.map((field, i) => <motion.div key={field.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.06, duration: 0.24, ease: EASE_OUT }}>
-                        <ExerciseFieldInput field={field} value={draft.inputs[field.id]} trades={trades} onChange={(value) => setInput(field.id, value)} onView={setViewing} />
-                      </motion.div>)}
-                    </div>}
+                {step === 1 && <div className="mt-5 space-y-6">
+                  {definition.fields.map((field) => <ExerciseFieldInput key={field.id} field={field} value={draft.inputs[field.id]} trades={trades} onChange={(value) => setInput(field.id, value)} onView={setViewing} />)}
+                </div>}
 
-                    {step === 2 && <FocusStep definition={definition} draft={draft} onChange={(focus) => update({ focus })} />}
+                {step === 2 && <FocusStep definition={definition} draft={draft} onChange={(focus) => update({ focus })} />}
 
-                    {step === 3 && <CommitStep definition={definition} draft={draft} onChange={update} />}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+                {step === 3 && <CommitStep definition={definition} draft={draft} onChange={update} />}
+              </motion.div>
 
-              <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border/50 px-5 py-4 sm:px-7">
+              <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[.06] px-5 py-4 sm:px-7">
                 <div className="flex min-w-0 items-center gap-3">
                   <ProgressRing done={doneCount} />
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.p key={error ?? (dirty ? "dirty" : "idle")} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }} className="min-w-0 text-xs">
-                      {error ? <span className="text-destructive">{error}</span>
-                        : <span className="text-muted-foreground">{doneCount === 3 ? "Ready to complete." : `${3 - doneCount} step${3 - doneCount === 1 ? "" : "s"} to go.`}{dirty ? " Draft kept in this session." : ""}</span>}
-                    </motion.p>
-                  </AnimatePresence>
+                  <p className="min-w-0 text-xs">
+                    {error ? <span className="text-destructive">{error}</span>
+                      : <span className="text-muted-foreground">{doneCount === 3 ? "Ready to complete." : `${3 - doneCount} step${3 - doneCount === 1 ? "" : "s"} to go.`}{dirty ? " Draft kept in this session." : ""}</span>}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {step > 1 && <MotionButton back onClick={() => go((step - 1) as Step)}>Back</MotionButton>}
+                  {step > 1 && <GlowButton icon="back" onClick={() => go((step - 1) as Step)}>Back</GlowButton>}
                   {step < 3
-                    ? <MotionButton primary onClick={() => go((step + 1) as Step)}>Next</MotionButton>
-                    : <MotionButton primary={canComplete} onClick={() => void save()} disabled={saving || (!dirty && completed)} arrow={!saving}>
-                      {saving && <Loader2 className="mr-1 inline h-3.5 w-3.5 animate-spin" />}{completedAt ? "Save changes" : "Complete exercise"}
-                    </MotionButton>}
+                    ? <GlowButton primary icon="next" nudge={stepDone} onClick={() => go((step + 1) as Step)}>Next</GlowButton>
+                    : <GlowButton primary ready={canComplete && (dirty || !completed)} icon={saving ? "saving" : "check"} onClick={() => void save()} disabled={saving || (!dirty && completed)}>
+                      {completedAt ? "Save changes" : "Complete exercise"}
+                    </GlowButton>}
                 </div>
               </footer>
             </>
@@ -304,38 +307,84 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
   </MotionConfig>;
 }
 
-function Chip({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "ice" }) {
-  return <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium",
-    tone === "ice" ? "border-ice/30 bg-ice/10 text-ice" : "border-border/60 bg-background/40 text-muted-foreground")}>{children}</span>;
+/**
+ * The page's buttons. Primary: a turquoise-to-cyan fill with a light sweep on
+ * hover, a lift and a glow; `ready` makes the glow breathe and the sweep run on
+ * its own, `nudge` makes the arrow lean forward. Secondary: glass with a glowing
+ * edge on hover.
+ */
+function GlowButton({ primary = false, ready = false, nudge = false, icon, disabled, onClick, children, size = "md" }: {
+  primary?: boolean; ready?: boolean; nudge?: boolean; icon?: "next" | "back" | "check" | "saving" | "edit" | "wand";
+  disabled?: boolean; onClick?: () => void; children: React.ReactNode; size?: "sm" | "md";
+}) {
+  const reduce = useReducedMotion();
+  const Icon = icon === "back" ? ArrowLeft : icon === "next" ? ArrowRight : icon === "check" ? Check : icon === "edit" ? Pencil : icon === "wand" ? Wand2 : icon === "saving" ? Loader2 : null;
+  const live = ready && !disabled && !reduce;
+  return <motion.button type="button" onClick={onClick} disabled={disabled} initial="rest" whileHover={disabled ? undefined : "hover"} whileTap={disabled ? undefined : { scale: 0.95, transition: PRESS }}
+    variants={{ rest: { y: 0 }, hover: { y: -2 } }}
+    transition={live ? { ...SPRING, boxShadow: { duration: 2.2, repeat: Infinity, ease: "easeInOut" } } : SPRING}
+    animate={live ? { boxShadow: ["0 0 0 0 rgba(20,184,166,0.0), 0 0 18px -6px rgba(20,184,166,0.55)", "0 0 0 4px rgba(20,184,166,0.16), 0 0 30px -4px rgba(20,184,166,0.8)", "0 0 0 0 rgba(20,184,166,0.0), 0 0 18px -6px rgba(20,184,166,0.55)"] } : undefined}
+    style={live ? undefined : { boxShadow: primary && !disabled ? "0 6px 22px -10px rgba(20,184,166,0.8)" : undefined }}
+    className={cn("group/glow relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-xl font-semibold transition-[opacity,color,border-color] duration-200 disabled:pointer-events-none disabled:opacity-40",
+      size === "sm" ? "px-3 py-1.5 text-[11px]" : "px-4 py-2.5 text-xs",
+      primary ? "bg-gradient-to-r from-primary to-[color-mix(in_oklab,var(--primary)_55%,var(--ice))] text-[var(--on-brand)]" : "pm-glass pm-glass--hover text-foreground")}>
+    {primary && <motion.span aria-hidden className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+      variants={{ rest: { x: "0%", opacity: 0 }, hover: { x: "320%", opacity: 1, transition: { duration: 0.7, ease: "easeOut" } } }}
+      animate={live ? { x: ["0%", "320%"], opacity: [0, 1, 0] } : undefined}
+      {...(live ? { transition: { duration: 1.6, repeat: Infinity, repeatDelay: 1.4, ease: "easeInOut" } } : {})} />}
+    {Icon && icon === "back" && <motion.span variants={{ rest: { x: 0 }, hover: { x: -3 } }} className="relative"><Icon className="h-3.5 w-3.5" /></motion.span>}
+    {Icon && (icon === "edit" || icon === "wand") && <motion.span variants={{ rest: { rotate: 0, scale: 1 }, hover: { rotate: -14, scale: 1.15 } }} className="relative"><Icon className="h-3.5 w-3.5" /></motion.span>}
+    <span className="relative">{children}</span>
+    {Icon && icon === "next" && <motion.span variants={{ rest: { x: 0 }, hover: { x: 3 } }} animate={nudge && !reduce ? { x: [0, 4, 0] } : undefined}
+      {...(nudge && !reduce ? { transition: { duration: 0.9, repeat: Infinity, repeatDelay: 0.6, ease: "easeInOut" } } : {})} className="relative"><Icon className="h-3.5 w-3.5" /></motion.span>}
+    {Icon && icon === "check" && <motion.span variants={{ rest: { scale: 1, rotate: 0 }, hover: { scale: 1.2, rotate: -8 } }} className="relative"><Icon className="h-3.5 w-3.5" strokeWidth={3} /></motion.span>}
+    {Icon && icon === "saving" && <Icon className="relative h-3.5 w-3.5 animate-spin" />}
+  </motion.button>;
 }
 
-function LibraryCard({ exercise, index, selected, suggested, yourFocus, onChoose }: {
-  exercise: PreMarketExerciseDefinition; index: number; selected: boolean; suggested: boolean; yourFocus: boolean; onChoose: () => void;
+function Chip({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "ice" }) {
+  return <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium backdrop-blur",
+    tone === "ice" ? "border-ice/30 bg-ice/10 text-ice shadow-[0_0_14px_-6px_var(--ice)]" : "border-white/10 bg-white/[.03] text-muted-foreground")}>{children}</span>;
+}
+
+function LibraryCard({ exercise, selected, suggested, yourFocus, onChoose }: {
+  exercise: PreMarketExerciseDefinition; selected: boolean; suggested: boolean; yourFocus: boolean; onChoose: () => void;
 }) {
-  const Icon = ICON[exercise.id];
-  return <motion.li layout initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}
-    transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.025, ease: EASE_OUT }} className="w-[240px] shrink-0 lg:w-auto">
-    <motion.button type="button" role="radio" aria-checked={selected} onClick={onChoose} whileHover={selected ? undefined : { x: 2 }} whileTap={{ scale: 0.98, transition: PRESS }}
-      className={cn("relative flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors duration-200", selected ? "border-primary/50" : "border-border/50 hover:border-primary/30")}>
-      {selected && <motion.span layoutId="pm-exercise" className="absolute inset-0 rounded-xl bg-primary/[.08]" transition={{ type: "spring", stiffness: 420, damping: 36 }} />}
-      <span className={cn("relative grid h-9 w-9 shrink-0 place-items-center rounded-lg border transition-colors", selected ? "border-primary/40 bg-primary/15 text-primary" : "border-border/60 bg-background/40 text-muted-foreground")}>
-        <Icon className="h-4 w-4" />
+  return <li className="min-w-0">
+    <motion.button type="button" role="radio" aria-checked={selected} onClick={onChoose}
+      initial="rest" animate={selected ? "active" : "rest"} whileHover={selected ? "active" : "hover"} whileTap={{ scale: 0.97, transition: PRESS }}
+      className={cn("pm-glass group flex h-full w-full items-start gap-3 p-3 text-left", selected ? "pm-glass--active" : "pm-glass--hover")}>
+      <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-[color,background-color,box-shadow] duration-300",
+        selected ? "bg-primary/15 text-primary shadow-[0_0_18px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)]" : "bg-white/[.04] text-muted-foreground group-hover:text-foreground")}>
+        <ExerciseIcon id={exercise.id} />
       </span>
-      <span className="relative min-w-0 flex-1">
+      <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <span className="truncate text-[13px] font-semibold">{exercise.title}</span>
-          {suggested && <span title="Suggested for today" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-ice/12 px-1.5 py-0.5 text-[9px] font-semibold text-ice"><Sparkles className="h-2.5 w-2.5" />For you</span>}
+          {suggested && <span title="Suggested for today" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-ice/12 px-1.5 py-0.5 text-[9px] font-semibold text-ice shadow-[0_0_10px_-4px_var(--ice)]"><Sparkles className="h-2.5 w-2.5" />For you</span>}
         </span>
         <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
           {yourFocus ? "Your Trade Profile focus" : exercise.category === "profile" ? CATEGORY_LABEL.profile : exercise.technique} · {exercise.minutes} min
         </span>
       </span>
     </motion.button>
-  </motion.li>;
+  </li>;
+}
+
+/** A textarea that grows with its content, so it never scrolls inside (works where CSS field-sizing does not). */
+function GrowingTextarea({ className, value, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { value: string }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  return <textarea ref={ref} value={value} className={cn(TEXTAREA, className)} {...props} />;
 }
 
 function Field({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn("rounded-xl border border-border/60 bg-background/35 transition-[border-color,box-shadow] duration-200 focus-within:border-primary/50 focus-within:shadow-[0_0_0_4px_color-mix(in_oklch,var(--primary)_12%,transparent)]", className)}>{children}</div>;
+  return <div className={cn("pm-well", className)}>{children}</div>;
 }
 
 function FieldLabel({ field }: { field: ExerciseField }) {
@@ -351,22 +400,22 @@ function ExerciseFieldInput({ field, value, trades, onChange, onView }: { field:
     const answers = (value ?? {}) as Record<string, string>;
     const tone = field.tradeResult === "loss" ? "var(--destructive)" : "var(--success)";
     return <div>
-      <div className="mb-3 flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: tone }} /><h4 className="text-sm font-semibold">{field.label}</h4></div>
-      {selected.length ? <div className="grid gap-3 xl:grid-cols-2">{selected.map((trade, index) => {
+      <div className="mb-3 flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: tone, boxShadow: `0 0 10px ${tone}` }} /><h4 className="text-sm font-semibold">{field.label}</h4></div>
+      {selected.length ? <div className="grid gap-3 xl:grid-cols-2">{selected.map((trade) => {
         const done = Boolean((answers[trade.id] ?? "").trim());
-        return <motion.div key={trade.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + index * 0.05, duration: 0.22, ease: EASE_OUT }}
-          className={cn("rounded-xl border bg-background/30 p-3.5 transition-colors duration-200", done ? "border-success/30" : "border-border/60")}>
+        return <div key={trade.id} className={cn("pm-glass p-3.5", done && "pm-glass--active")}>
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{instrumentName(trade.instrument)} <span className="font-normal capitalize text-muted-foreground">{trade.direction}</span></p>
               <p className="text-[11px] text-muted-foreground">{format(new Date(`${trade.date_time.slice(0, 10)}T12:00:00`), "EEE d MMM")} · {trade.session} · <span className="font-semibold" style={{ color: netRColor(tradeR(trade)) }}>{formatTotalR(tradeR(trade))}</span></p>
             </div>
-            <motion.button type="button" onClick={() => onView(trade)} whileTap={{ scale: 0.9, transition: PRESS }} aria-label="View trade" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"><Eye className="h-3.5 w-3.5" /></motion.button>
+            <motion.button type="button" onClick={() => onView(trade)} whileHover={{ scale: 1.1, rotate: -6 }} whileTap={{ scale: 0.9, transition: PRESS }} aria-label="View trade"
+              className="pm-glass pm-glass--hover flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground hover:text-primary"><Eye className="h-3.5 w-3.5" /></motion.button>
           </div>
           <Field className="mt-3">
-            <textarea value={answers[trade.id] ?? ""} onChange={(e) => onChange({ ...answers, [trade.id]: e.target.value })} placeholder={field.prompt} className={cn(TEXTAREA, "min-h-28 text-sm")} />
+            <GrowingTextarea value={answers[trade.id] ?? ""} onChange={(e) => onChange({ ...answers, [trade.id]: e.target.value })} placeholder={field.prompt} rows={4} className="min-h-28 text-sm" />
           </Field>
-        </motion.div>;
+        </div>;
       })}</div> : <p className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">No matching trades yet. You can still set today&apos;s focus and commitment.</p>}
     </div>;
   }
@@ -376,10 +425,11 @@ function ExerciseFieldInput({ field, value, trades, onChange, onView }: { field:
       <FieldLabel field={field} />
       <div className="mt-3 grid gap-2 sm:grid-cols-2">{field.options?.map((option) => {
         const on = value === option.value;
-        return <motion.button key={option.value} type="button" onClick={() => onChange(option.value)} whileTap={{ scale: 0.97, transition: PRESS }}
-          className={cn("relative rounded-xl border px-4 py-3.5 text-left text-sm font-medium transition-colors duration-200", on ? "border-primary/50 text-foreground" : "border-border/60 bg-background/30 text-muted-foreground hover:border-primary/35 hover:text-foreground")}>
-          {on && <motion.span layoutId={`choice-${field.id}`} className="absolute inset-0 rounded-xl bg-primary/[.09]" transition={{ type: "spring", stiffness: 420, damping: 36 }} />}
-          <span className="relative flex items-center justify-between gap-2">{option.label}{on && <Check className="h-4 w-4 text-primary" />}</span>
+        return <motion.button key={option.value} type="button" onClick={() => onChange(option.value)} whileHover={{ y: -2 }} whileTap={{ scale: 0.97, transition: PRESS }}
+          className={cn("pm-glass px-4 py-3.5 text-left text-sm font-medium transition-colors duration-200", on ? "pm-glass--active text-foreground" : "pm-glass--hover text-muted-foreground hover:text-foreground")}>
+          <span className="flex items-center justify-between gap-2">{option.label}
+            <AnimatePresence>{on && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}><Check className="h-4 w-4 text-primary" /></motion.span>}</AnimatePresence>
+          </span>
         </motion.button>;
       })}</div>
     </div>;
@@ -392,9 +442,10 @@ function ExerciseFieldInput({ field, value, trades, onChange, onView }: { field:
       <div className="mt-3 grid grid-cols-5 gap-1.5" role="radiogroup" aria-label={field.label}>
         {[1, 2, 3, 4, 5].map((n) => {
           const on = current === n;
-          return <motion.button key={n} type="button" role="radio" aria-checked={on} onClick={() => onChange(n)} whileTap={{ scale: 0.92, transition: PRESS }}
-            className={cn("relative h-12 rounded-xl border text-sm font-bold tabular-nums transition-colors", on ? "border-primary/60 text-primary-foreground" : n <= current ? "border-primary/30 bg-primary/10 text-primary" : "border-border/60 bg-background/30 text-muted-foreground hover:border-primary/35 hover:text-foreground")}>
-            {on && <motion.span layoutId={`scale-${field.id}`} className="absolute inset-0 rounded-xl bg-primary" transition={{ type: "spring", stiffness: 480, damping: 34 }} />}
+          return <motion.button key={n} type="button" role="radio" aria-checked={on} onClick={() => onChange(n)} whileHover={{ y: -2 }} whileTap={{ scale: 0.9, transition: PRESS }}
+            className={cn("pm-well relative h-12 text-sm font-bold tabular-nums transition-colors", on ? "text-[var(--on-brand)]" : n <= current ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+            {n <= current && !on && <span className="absolute inset-0 rounded-[inherit] bg-primary/10" />}
+            {on && <motion.span layoutId={`scale-${field.id}`} className="absolute inset-0 rounded-[inherit] bg-gradient-to-br from-primary to-[color-mix(in_oklab,var(--primary)_55%,var(--ice))] shadow-[0_0_20px_-4px_var(--primary)]" transition={SPRING} />}
             <span className="relative">{n}</span>
           </motion.button>;
         })}
@@ -409,7 +460,8 @@ function ExerciseFieldInput({ field, value, trades, onChange, onView }: { field:
       <FieldLabel field={field} />
       <ol className="mt-3 space-y-2">
         {lines.map((line, i) => <li key={i} className="flex items-center gap-3">
-          <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold tabular-nums transition-colors", line.trim() ? "bg-primary/15 text-primary" : "bg-muted/50 text-muted-foreground")}>{i + 1}</span>
+          <motion.span animate={{ scale: line.trim() ? 1.08 : 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}
+            className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold tabular-nums transition-[background-color,color,box-shadow]", line.trim() ? "bg-primary/20 text-primary shadow-[0_0_12px_-3px_var(--primary)]" : "bg-white/[.05] text-muted-foreground")}>{i + 1}</motion.span>
           <Field className="flex-1">
             <input value={line} onChange={(e) => { const next = [...lines]; next[i] = e.target.value; onChange(next); }} placeholder={`${field.placeholder ?? "Line"} ${i + 1}`} className="h-12 w-full bg-transparent px-4 text-[15px] outline-none placeholder:text-muted-foreground/60" />
           </Field>
@@ -422,7 +474,7 @@ function ExerciseFieldInput({ field, value, trades, onChange, onView }: { field:
     <FieldLabel field={field} />
     <Field className="mt-3">
       {field.kind === "textarea"
-        ? <textarea value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} className={cn(TEXTAREA, "min-h-36")} />
+        ? <GrowingTextarea value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} rows={5} className="min-h-36" />
         : <input type={field.kind === "number" ? "number" : "text"} min={field.kind === "number" ? 0 : undefined} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder}
           className="h-12 w-full bg-transparent px-4 text-[15px] outline-none placeholder:text-muted-foreground/60" />}
     </Field>
@@ -443,16 +495,21 @@ function FocusStep({ definition, draft, onChange }: { definition: PreMarketExerc
     <div>
       <p className="text-sm text-muted-foreground">What deserves your attention on every decision today? One thing, said plainly.</p>
       <Field className="mt-3">
-        <textarea autoFocus value={draft.focus} onChange={(e) => onChange(e.target.value)} placeholder="Wait for the close beyond the level before entering." className={cn(TEXTAREA, "min-h-44 text-base")} />
+        <GrowingTextarea value={draft.focus} onChange={(e) => onChange(e.target.value)} placeholder="Wait for the close beyond the level before entering." rows={6} className="min-h-44 text-base" />
       </Field>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {definition.focusIdeas.map((idea, i) => <motion.button key={idea} type="button" onClick={() => onChange(idea)} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 + i * 0.05 }} whileTap={{ scale: 0.95, transition: PRESS }}
-          className={cn("rounded-full border px-3 py-1.5 text-xs font-medium transition-colors", draft.focus === idea ? "border-primary/60 bg-primary/10 text-primary" : "border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground")}>
-          {idea}
-        </motion.button>)}
+      <p className="mt-4 text-[11px] font-medium text-muted-foreground">Or start from one of these</p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {definition.focusIdeas.map((idea) => {
+          const on = draft.focus === idea;
+          return <motion.button key={idea} type="button" onClick={() => onChange(idea)} whileHover={{ y: -2, scale: 1.03 }} whileTap={{ scale: 0.94, transition: PRESS }}
+            className={cn("rounded-full border px-3.5 py-1.5 text-xs font-medium backdrop-blur transition-[color,border-color,box-shadow,background-color] duration-200",
+              on ? "border-primary/60 bg-primary/15 text-primary shadow-[0_0_16px_-4px_var(--primary)]" : "border-white/10 bg-white/[.03] text-muted-foreground hover:border-primary/45 hover:text-foreground hover:shadow-[0_0_14px_-6px_var(--primary)]")}>
+            {idea}
+          </motion.button>;
+        })}
       </div>
     </div>
-    <div className="rounded-xl border border-border/50 bg-background/30 p-4">
+    <div className="pm-glass p-4">
       <p className="text-xs font-semibold text-foreground/80">From step 1</p>
       {recap.length ? <ul className="mt-2 space-y-2.5">
         {recap.map((r, i) => <li key={i} className="text-sm leading-relaxed"><span className="block text-[11px] font-medium text-muted-foreground">{r.label}</span>{r.text}</li>)}
@@ -471,14 +528,13 @@ function CommitStep({ definition, draft, onChange }: { definition: PreMarketExer
       <div className="mt-2 grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Commitment format">
         {(Object.keys(FORMAT_LABEL) as CommitmentFormat[]).map((f) => {
           const on = f === formatValue;
-          return <motion.button key={f} type="button" role="radio" aria-checked={on} onClick={() => onChange({ commitment_format: f })} whileTap={{ scale: 0.97, transition: PRESS }}
-            className={cn("relative rounded-xl border px-3.5 py-3 text-left transition-colors", on ? "border-primary/50" : "border-border/60 bg-background/30 hover:border-primary/35")}>
-            {on && <motion.span layoutId="pm-format" className="absolute inset-0 rounded-xl bg-primary/[.09]" transition={{ type: "spring", stiffness: 420, damping: 36 }} />}
-            <span className="relative flex items-center gap-2 text-sm font-semibold">
+          return <motion.button key={f} type="button" role="radio" aria-checked={on} onClick={() => onChange({ commitment_format: f })} whileHover={{ y: -2 }} whileTap={{ scale: 0.97, transition: PRESS }}
+            className={cn("pm-glass px-3.5 py-3 text-left", on ? "pm-glass--active" : "pm-glass--hover")}>
+            <span className="flex items-center gap-2 text-sm font-semibold">
               {FORMAT_LABEL[f]}
               {f === definition.suggestedCommitmentFormat && <span className="rounded-full bg-ice/12 px-1.5 py-0.5 text-[9px] font-semibold text-ice">Suggested</span>}
             </span>
-            <span className="relative mt-0.5 block text-[11px] text-muted-foreground">{FORMAT_HINT[f]}</span>
+            <span className="mt-0.5 block text-[11px] text-muted-foreground">{FORMAT_HINT[f]}</span>
           </motion.button>;
         })}
       </div>
@@ -486,21 +542,18 @@ function CommitStep({ definition, draft, onChange }: { definition: PreMarketExer
     <div>
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-semibold">Your commitment</p>
-        <button type="button" onClick={() => onChange({ commitment_text: definition.commitmentTemplate })} className="rounded-full border border-primary/40 px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/10">Use template</button>
+        <GlowButton size="sm" icon="wand" onClick={() => onChange({ commitment_text: definition.commitmentTemplate })}>Use template</GlowButton>
       </div>
       <Field className="mt-2">
-        <textarea value={draft.commitment_text} onChange={(e) => onChange({ commitment_text: e.target.value })} placeholder={definition.commitmentTemplate} className={cn(TEXTAREA, "min-h-36 text-base")} />
+        <GrowingTextarea value={draft.commitment_text} onChange={(e) => onChange({ commitment_text: e.target.value })} placeholder={definition.commitmentTemplate} rows={5} className="min-h-36 text-base" />
       </Field>
     </div>
-    <AnimatePresence initial={false}>
-      {draft.commitment_text.trim() && <motion.figure initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.2, ease: EASE_OUT }}
-        className="relative overflow-hidden rounded-2xl border border-primary/25 bg-primary/[.06] p-5">
-        <Quote className="absolute right-4 top-4 h-8 w-8 text-primary/20" />
-        <figcaption className="text-[10px] font-semibold uppercase tracking-[.16em] text-primary">Today, {FORMAT_LABEL[formatValue].toLowerCase()}</figcaption>
-        <blockquote className="mt-2 max-w-[60ch] font-heading text-lg font-semibold leading-snug tracking-tight">{draft.commitment_text}</blockquote>
-        {draft.focus.trim() && <p className="mt-3 text-xs text-muted-foreground">Focus: <span className="text-foreground/85">{draft.focus}</span></p>}
-      </motion.figure>}
-    </AnimatePresence>
+    {draft.commitment_text.trim() && <figure className="pm-glass pm-glass--active relative overflow-hidden p-5">
+      <Quote className="absolute right-4 top-4 h-8 w-8 text-primary/20" />
+      <figcaption className="text-[10px] font-semibold uppercase tracking-[.16em] text-primary">Today, {FORMAT_LABEL[formatValue].toLowerCase()}</figcaption>
+      <blockquote className="mt-2 max-w-[60ch] font-heading text-lg font-semibold leading-snug tracking-tight">{draft.commitment_text}</blockquote>
+      {draft.focus.trim() && <p className="mt-3 text-xs text-muted-foreground">Focus: <span className="text-foreground/85">{draft.focus}</span></p>}
+    </figure>}
   </div>;
 }
 
@@ -508,8 +561,8 @@ function ProgressRing({ done }: { done: number }) {
   const r = 14;
   const c = 2 * Math.PI * r;
   return <span className="relative grid h-9 w-9 shrink-0 place-items-center" aria-label={`${done} of 3 steps done`}>
-    <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90">
-      <circle cx="18" cy="18" r={r} fill="none" strokeWidth="3" className="stroke-border/60" />
+    <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90 drop-shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_60%,transparent)]">
+      <circle cx="18" cy="18" r={r} fill="none" strokeWidth="3" className="stroke-white/10" />
       <motion.circle cx="18" cy="18" r={r} fill="none" strokeWidth="3" strokeLinecap="round" className="stroke-primary"
         strokeDasharray={c} initial={false} animate={{ strokeDashoffset: c * (1 - done / 3) }} transition={{ duration: 0.45, ease: EASE_OUT }} />
     </svg>
@@ -521,24 +574,23 @@ function CompletedSummary({ draft, completedAt, onEdit }: { draft: Draft; comple
   return <div className="relative p-5 sm:p-7">
     <div className="flex flex-col items-center py-6 text-center">
       <motion.span initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }}
-        className="grid h-16 w-16 place-items-center rounded-full bg-success/15 text-success">
+        className="grid h-16 w-16 place-items-center rounded-full bg-success/15 text-success shadow-[0_0_30px_-6px_var(--success)]">
         <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <motion.path d="M5 12.5l4.5 4.5L19 7.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.15, duration: 0.45, ease: EASE_OUT }} />
         </svg>
       </motion.span>
-      <motion.h3 initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mt-4 font-heading text-xl font-bold tracking-tight">Ready for the open</motion.h3>
-      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.32 }} className="mt-1 text-xs text-muted-foreground">Completed at {format(new Date(completedAt), "HH:mm")}</motion.p>
+      <h3 className="mt-4 font-heading text-xl font-bold tracking-tight">Ready for the open</h3>
+      <p className="mt-1 text-xs text-muted-foreground">Completed at {format(new Date(completedAt), "HH:mm")}</p>
     </div>
     <div className="grid gap-3 md:grid-cols-2">
-      {[{ label: "Today's focus", text: draft.focus }, { label: `Commitment${draft.commitment_format ? ` · ${FORMAT_LABEL[draft.commitment_format]}` : ""}`, text: draft.commitment_text }].map((item, i) =>
-        <motion.div key={item.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + i * 0.08, duration: 0.25, ease: EASE_OUT }}
-          className="rounded-xl border border-border/60 bg-background/30 p-4">
+      {[{ label: "Today's focus", text: draft.focus }, { label: `Commitment${draft.commitment_format ? ` · ${FORMAT_LABEL[draft.commitment_format]}` : ""}`, text: draft.commitment_text }].map((item) =>
+        <div key={item.label} className="pm-glass p-4">
           <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-primary">{item.label}</p>
           <p className="mt-1.5 text-base font-semibold leading-snug">{item.text}</p>
-        </motion.div>)}
+        </div>)}
     </div>
     <div className="mt-5 flex justify-center">
-      <MotionButton arrow={false} onClick={onEdit}><Pencil className="mr-1 inline h-3.5 w-3.5" /> Edit today&apos;s exercise</MotionButton>
+      <GlowButton icon="edit" onClick={onEdit}>Edit today&apos;s exercise</GlowButton>
     </div>
   </div>;
 }
