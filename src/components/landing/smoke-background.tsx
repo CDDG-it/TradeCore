@@ -307,12 +307,12 @@ void main() {
 `;
 
 /**
- * The design system's palette, low to high: navy #0B1120 and deep blue #12264A
+ * The design system's palette, low to high: navy #0B1120 and blue #1A3A6E
  * carry the field, turquoise #14B8A6 and light cyan #A5F3FC only show in the
  * brighter wisps, so it reads as dark blue with turquoise and cyan details.
  * The other four slots are unused.
  */
-const BRAND = ["#0B1120", "#12264A", "#14B8A6", "#A5F3FC"];
+const BRAND = ["#0B1120", "#1A3A6E", "#14B8A6", "#A5F3FC"];
 const COLORS = new Float32Array(24);
 BRAND.forEach((hex, i) => {
   const n = parseInt(hex.slice(1), 16);
