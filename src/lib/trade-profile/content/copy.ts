@@ -40,7 +40,7 @@ export const copy = {
     title: "Know your traits. Train the ones that cost you.",
     lead: "A Big Five personality assessment, followed by a 12-week program of small, concrete challenges built around one trait you choose to develop.",
     steps: [
-      { title: "Take the assessment", body: "120 short statements from the IPIP-NEO-120. About 25-30 minutes; pause and resume any time." },
+      { title: "Take the assessment", body: "60 short statements from the IPIP-NEO-60. About 10-15 minutes; pause and resume any time." },
       { title: "See your profile", body: "Five traits and 30 facets in plain language, linked to how they can show up at the screen." },
       { title: "Choose one change goal", body: "You pick the trait and the direction. We suggest one; the choice is yours." },
       { title: "Train it for 12 weeks", body: "Two or three challenges a week, a 30-second daily check-in, and retests at weeks 6 and 12." },
@@ -78,9 +78,9 @@ export const copy = {
     finish: "See my results",
     unanswered: "Answer every statement on this page to continue.",
     fillRandom: "Fill randomly (development only)",
-    sourceNote: "Items: IPIP-NEO-120 (Johnson, 2014), public domain.",
+    sourceNote: "Items: IPIP-NEO-60 (Maples-Keller et al., 2019), public domain.",
     retestTitle: (week: number, domain: string) => `Week ${week} retest: ${domain}`,
-    retestInstructions: "These are the 24 statements for your goal trait. Answer them as you are now, without trying to remember your earlier answers.",
+    retestInstructions: "These are the 12 statements for your goal trait. Answer them as you are now, without trying to remember your earlier answers.",
     retestFinish: "Compare with my first result",
   },
   results: {
@@ -92,7 +92,7 @@ export const copy = {
     measurementTitle: "How to read this",
     measurement: [
       "Traits are tendencies, not fixed labels. Everybody behaves differently across situations.",
-      "Every questionnaire has measurement error. A few points of difference is usually not meaningful, especially for facets, which rest on four statements each.",
+      "Every questionnaire has measurement error. Trait scores rest on 12 statements each; facet scores on only two, so read facets as a rough indication, not a precise number.",
       "There are no good or bad scores. Every position has strengths and risks at the screen.",
     ],
     lowEnd: "Towards the low end",
@@ -171,7 +171,7 @@ export const copy = {
     logging: "How to log it",
     references: "Evidence",
     retestDue: (w: number) => `Your week ${w} retest is ready`,
-    retestCta: "24 statements, about 5 minutes",
+    retestCta: "12 statements, about 3 minutes",
     reflectionDue: (w: number) => `Week ${w} reflection`,
     reflectionCta: "Three short questions",
     plan: "All 12 weeks",
@@ -208,7 +208,7 @@ export const copy = {
     retests: "Retests",
     reflections: "Reflections",
     noProgram: "Progress appears once your program has started.",
-    retestsEmpty: (trait: string) => `At weeks 6 and 12 you retake the 24 ${trait} statements, and the change shows here.`,
+    retestsEmpty: (trait: string) => `At weeks 6 and 12 you retake the 12 ${trait} statements, and the change shows here.`,
     reflectionsEmpty: "Your weekly reflections collect here, from the end of week 1.",
   },
   retest: {
@@ -218,7 +218,7 @@ export const copy = {
     after: (w: number) => `Week ${w}`,
     caveatTitle: "Read with care",
     caveat: [
-      "Small differences, especially for facets (four statements each), can simply be noise.",
+      "Small differences can simply be noise, and facets (two statements each) move in steps of 12.5 points from a single changed answer.",
       "Taking the same questionnaire again can shift scores slightly on its own, even without real change.",
       "Changes that hold across weeks 6 and 12, and match what you notice at the screen, are the ones worth trusting.",
     ],

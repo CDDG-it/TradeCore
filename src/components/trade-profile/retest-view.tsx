@@ -19,7 +19,7 @@ import { Tile } from "@/components/trade-profile/primitives";
 import { useDerived, useTradeProfile } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
 
-/** Week 6 / 12: the goal domain's 24 items, then before vs. after. */
+/** Week 6 / 12: the goal domain's 12 items, then before vs. after. */
 export function RetestView({ week }: { week: number }) {
   const { state, todayKey, saveRetest, demo } = useTradeProfile();
   const { profile, goalTarget } = useDerived();

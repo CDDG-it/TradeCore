@@ -1,7 +1,7 @@
 /**
  * Plain-language explanations of the 5 domains and 30 facets.
  *
- * Domain and facet NAMES follow Johnson (2014) / ipip.ori.org. The explanations
+ * Domain and facet NAMES follow the IPIP NEO facet scales (ipip.ori.org). The explanations
  * and "for trading" lines are written for this prototype: they describe
  * tendencies, never verdicts, and are prototype hypotheses rather than findings
  * (see references.ts → proto-trading-links).
