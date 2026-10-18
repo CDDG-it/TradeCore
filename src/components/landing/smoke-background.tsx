@@ -307,22 +307,28 @@ void main() {
 `;
 
 /**
- * The design system's palette, low to high: navy #0B1120 and blue #1A3A6E
- * carry the field, turquoise #14B8A6 and light cyan #A5F3FC only show in the
- * brighter wisps, so it reads as dark blue with turquoise and cyan details.
- * The other four slots are unused.
+ * The colours as they should appear on screen, low to high: the page's deep
+ * navy (#060B16 to #0F2036, around the #08111E of the site's darkest surfaces)
+ * carries almost all of the smoke, and only the brightest wisps reach turquoise
+ * #14B8A6 and light cyan #A5F3FC.
  */
-const BRAND = ["#0B1120", "#1A3A6E", "#14B8A6", "#A5F3FC"];
+const BRAND = ["#060B16", "#0A1526", "#0F2036", "#14B8A6", "#A5F3FC"];
+const SURFACE = [2.4, 1.19, 0.0, 1.0] as const; // detail, contrast, brightness, saturation
+/**
+ * The shader stretches contrast after it picks a colour, which would crush
+ * navy to black, so each colour goes in pre-compensated: the inverse of
+ * (c - 0.5) * contrast + 0.5.
+ */
 const COLORS = new Float32Array(24);
 BRAND.forEach((hex, i) => {
   const n = parseInt(hex.slice(1), 16);
-  COLORS.set([((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255], i * 3);
+  const rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => (v / 255 - 0.5) / SURFACE[1] + 0.5);
+  COLORS.set(rgb, i * 3);
 });
 const COLOR_COUNT = BRAND.length;
 /** u_scene.z is seconds times this. */
 const TIME_SCALE = 0.63;
 const SHAPE = [1.96, 0.75, 0.5, 0.0] as const; // scale, intensity, paramA, warp
-const SURFACE = [2.4, 1.19, 0.0, 1.0] as const; // detail, contrast, brightness, saturation
 const FINISH = [0.0, 0.0, 0.0, 0.0] as const; // hue, vignette, blur, grain
 const TRANSFORM = [8835.0, 0.0, 0.0, 0.0] as const; // seed, rotation, drift, OKLab
 /** Cursor off: presence 0, the rest as exported. */
