@@ -185,8 +185,8 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
     <div ref={scroller} className="relative h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
       {/* Two soft brand glows behind the glass, so it has something to catch. */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[900px] overflow-hidden">
-        <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-primary/[.13] blur-[90px]" />
-        <div className="absolute right-0 top-64 h-96 w-96 rounded-full bg-ice/[.10] blur-[110px]" />
+        <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-primary/[.07] blur-[100px]" />
+        <div className="absolute right-0 top-64 h-96 w-96 rounded-full bg-ice/[.05] blur-[120px]" />
       </div>
 
       <div className="relative grid gap-4 pb-8 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:items-start">
@@ -203,7 +203,7 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
               const on = f.key === filter;
               return <motion.button key={f.key} type="button" role="tab" aria-selected={on} onClick={() => setFilter(f.key)} whileTap={{ scale: 0.94, transition: PRESS }}
                 className={cn("relative flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors", on ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
-                {on && <motion.span layoutId="pm-filter" className="absolute inset-0 rounded-lg bg-primary/15 shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_45%,transparent),0_0_16px_-4px_color-mix(in_oklab,var(--primary)_60%,transparent)]" transition={SPRING} />}
+                {on && <motion.span layoutId="pm-filter" className="absolute inset-0 rounded-lg bg-primary/15 shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_35%,transparent)]" transition={SPRING} />}
                 <span className="relative">{f.label}</span>
               </motion.button>;
             })}
@@ -258,9 +258,9 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
                   return <motion.button key={s} type="button" onClick={() => go(s)} aria-current={on ? "step" : undefined}
                     whileHover={on ? undefined : { y: -1.5 }} whileTap={{ scale: 0.96, transition: PRESS }}
                     className={cn("relative flex items-center justify-center gap-2 rounded-xl px-2 py-2.5 text-xs font-semibold transition-colors sm:justify-start sm:px-3", on ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
-                    {on && <motion.span layoutId="pm-step" className="absolute inset-0 rounded-xl bg-primary/[.12] shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_45%,transparent),0_0_22px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)]" transition={SPRING} />}
+                    {on && <motion.span layoutId="pm-step" className="absolute inset-0 rounded-xl bg-primary/[.12] shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_35%,transparent)]" transition={SPRING} />}
                     <motion.span key={String(done)} initial={done ? { scale: 0.4 } : false} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 16 }}
-                      className={cn("relative grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold tabular-nums", done ? "bg-primary text-primary-foreground shadow-[0_0_12px_-2px_var(--primary)]" : on ? "border border-primary text-primary" : "border border-border text-muted-foreground")}>
+                      className={cn("relative grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-bold tabular-nums", done ? "bg-primary text-primary-foreground" : on ? "border border-primary text-primary" : "border border-border text-muted-foreground")}>
                       {done ? <Check className="h-3 w-3" strokeWidth={3} /> : s}
                     </motion.span>
                     <span className="relative hidden sm:inline">{label}</span>
@@ -323,8 +323,8 @@ function GlowButton({ primary = false, ready = false, nudge = false, icon, disab
   return <motion.button type="button" onClick={onClick} disabled={disabled} initial="rest" whileHover={disabled ? undefined : "hover"} whileTap={disabled ? undefined : { scale: 0.95, transition: PRESS }}
     variants={{ rest: { y: 0 }, hover: { y: -2 } }}
     transition={live ? { ...SPRING, boxShadow: { duration: 2.2, repeat: Infinity, ease: "easeInOut" } } : SPRING}
-    animate={live ? { boxShadow: ["0 0 0 0 rgba(20,184,166,0.0), 0 0 18px -6px rgba(20,184,166,0.55)", "0 0 0 4px rgba(20,184,166,0.16), 0 0 30px -4px rgba(20,184,166,0.8)", "0 0 0 0 rgba(20,184,166,0.0), 0 0 18px -6px rgba(20,184,166,0.55)"] } : undefined}
-    style={live ? undefined : { boxShadow: primary && !disabled ? "0 6px 22px -10px rgba(20,184,166,0.8)" : undefined }}
+    animate={live ? { boxShadow: ["0 0 0 0 rgba(20,184,166,0), 0 6px 18px -10px rgba(20,184,166,0.5)", "0 0 0 3px rgba(20,184,166,0.12), 0 6px 22px -10px rgba(20,184,166,0.6)", "0 0 0 0 rgba(20,184,166,0), 0 6px 18px -10px rgba(20,184,166,0.5)"] } : undefined}
+    style={live ? undefined : { boxShadow: primary && !disabled ? "0 6px 18px -10px rgba(20,184,166,0.5)" : undefined }}
     className={cn("group/glow relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-xl font-semibold transition-[opacity,color,border-color] duration-200 disabled:pointer-events-none disabled:opacity-40",
       size === "sm" ? "px-3 py-1.5 text-[11px]" : "px-4 py-2.5 text-xs",
       primary ? "bg-gradient-to-r from-primary to-[color-mix(in_oklab,var(--primary)_55%,var(--ice))] text-[var(--on-brand)]" : "pm-glass pm-glass--hover text-foreground")}>
@@ -344,7 +344,7 @@ function GlowButton({ primary = false, ready = false, nudge = false, icon, disab
 
 function Chip({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "ice" }) {
   return <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium backdrop-blur",
-    tone === "ice" ? "border-ice/30 bg-ice/10 text-ice shadow-[0_0_14px_-6px_var(--ice)]" : "border-white/10 bg-white/[.03] text-muted-foreground")}>{children}</span>;
+    tone === "ice" ? "border-ice/30 bg-ice/10 text-ice" : "border-white/10 bg-white/[.03] text-muted-foreground")}>{children}</span>;
 }
 
 function LibraryCard({ exercise, selected, suggested, yourFocus, onChoose }: {
@@ -355,13 +355,13 @@ function LibraryCard({ exercise, selected, suggested, yourFocus, onChoose }: {
       initial="rest" animate={selected ? "active" : "rest"} whileHover={selected ? "active" : "hover"} whileTap={{ scale: 0.97, transition: PRESS }}
       className={cn("pm-glass group flex h-full w-full items-start gap-3 p-3 text-left", selected ? "pm-glass--active" : "pm-glass--hover")}>
       <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-[color,background-color,box-shadow] duration-300",
-        selected ? "bg-primary/15 text-primary shadow-[0_0_18px_-4px_color-mix(in_oklab,var(--primary)_70%,transparent)]" : "bg-white/[.04] text-muted-foreground group-hover:text-foreground")}>
+        selected ? "bg-primary/15 text-primary" : "bg-white/[.04] text-muted-foreground group-hover:text-foreground")}>
         <ExerciseIcon id={exercise.id} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <span className="truncate text-[13px] font-semibold">{exercise.title}</span>
-          {suggested && <span title="Suggested for today" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-ice/12 px-1.5 py-0.5 text-[9px] font-semibold text-ice shadow-[0_0_10px_-4px_var(--ice)]"><Sparkles className="h-2.5 w-2.5" />For you</span>}
+          {suggested && <span title="Suggested for today" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-ice/12 px-1.5 py-0.5 text-[9px] font-semibold text-ice"><Sparkles className="h-2.5 w-2.5" />For you</span>}
         </span>
         <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
           {yourFocus ? "Your Trade Profile focus" : exercise.category === "profile" ? CATEGORY_LABEL.profile : exercise.technique} · {exercise.minutes} min
@@ -400,7 +400,7 @@ function ExerciseFieldInput({ field, value, trades, onChange, onView }: { field:
     const answers = (value ?? {}) as Record<string, string>;
     const tone = field.tradeResult === "loss" ? "var(--destructive)" : "var(--success)";
     return <div>
-      <div className="mb-3 flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: tone, boxShadow: `0 0 10px ${tone}` }} /><h4 className="text-sm font-semibold">{field.label}</h4></div>
+      <div className="mb-3 flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: tone }} /><h4 className="text-sm font-semibold">{field.label}</h4></div>
       {selected.length ? <div className="grid gap-3 xl:grid-cols-2">{selected.map((trade) => {
         const done = Boolean((answers[trade.id] ?? "").trim());
         return <div key={trade.id} className={cn("pm-glass p-3.5", done && "pm-glass--active")}>
@@ -445,7 +445,7 @@ function ExerciseFieldInput({ field, value, trades, onChange, onView }: { field:
           return <motion.button key={n} type="button" role="radio" aria-checked={on} onClick={() => onChange(n)} whileHover={{ y: -2 }} whileTap={{ scale: 0.9, transition: PRESS }}
             className={cn("pm-well relative h-12 text-sm font-bold tabular-nums transition-colors", on ? "text-[var(--on-brand)]" : n <= current ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
             {n <= current && !on && <span className="absolute inset-0 rounded-[inherit] bg-primary/10" />}
-            {on && <motion.span layoutId={`scale-${field.id}`} className="absolute inset-0 rounded-[inherit] bg-gradient-to-br from-primary to-[color-mix(in_oklab,var(--primary)_55%,var(--ice))] shadow-[0_0_20px_-4px_var(--primary)]" transition={SPRING} />}
+            {on && <motion.span layoutId={`scale-${field.id}`} className="absolute inset-0 rounded-[inherit] bg-gradient-to-br from-primary to-[color-mix(in_oklab,var(--primary)_55%,var(--ice))]" transition={SPRING} />}
             <span className="relative">{n}</span>
           </motion.button>;
         })}
@@ -461,7 +461,7 @@ function ExerciseFieldInput({ field, value, trades, onChange, onView }: { field:
       <ol className="mt-3 space-y-2">
         {lines.map((line, i) => <li key={i} className="flex items-center gap-3">
           <motion.span animate={{ scale: line.trim() ? 1.08 : 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}
-            className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold tabular-nums transition-[background-color,color,box-shadow]", line.trim() ? "bg-primary/20 text-primary shadow-[0_0_12px_-3px_var(--primary)]" : "bg-white/[.05] text-muted-foreground")}>{i + 1}</motion.span>
+            className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold tabular-nums transition-[background-color,color,box-shadow]", line.trim() ? "bg-primary/20 text-primary" : "bg-white/[.05] text-muted-foreground")}>{i + 1}</motion.span>
           <Field className="flex-1">
             <input value={line} onChange={(e) => { const next = [...lines]; next[i] = e.target.value; onChange(next); }} placeholder={`${field.placeholder ?? "Line"} ${i + 1}`} className="h-12 w-full bg-transparent px-4 text-[15px] outline-none placeholder:text-muted-foreground/60" />
           </Field>
@@ -503,7 +503,7 @@ function FocusStep({ definition, draft, onChange }: { definition: PreMarketExerc
           const on = draft.focus === idea;
           return <motion.button key={idea} type="button" onClick={() => onChange(idea)} whileHover={{ y: -2, scale: 1.03 }} whileTap={{ scale: 0.94, transition: PRESS }}
             className={cn("rounded-full border px-3.5 py-1.5 text-xs font-medium backdrop-blur transition-[color,border-color,box-shadow,background-color] duration-200",
-              on ? "border-primary/60 bg-primary/15 text-primary shadow-[0_0_16px_-4px_var(--primary)]" : "border-white/10 bg-white/[.03] text-muted-foreground hover:border-primary/45 hover:text-foreground hover:shadow-[0_0_14px_-6px_var(--primary)]")}>
+              on ? "border-primary/60 bg-primary/15 text-primary" : "border-white/10 bg-white/[.03] text-muted-foreground hover:border-primary/45 hover:text-foreground")}>
             {idea}
           </motion.button>;
         })}
@@ -561,7 +561,7 @@ function ProgressRing({ done }: { done: number }) {
   const r = 14;
   const c = 2 * Math.PI * r;
   return <span className="relative grid h-9 w-9 shrink-0 place-items-center" aria-label={`${done} of 3 steps done`}>
-    <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90 drop-shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_60%,transparent)]">
+    <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90">
       <circle cx="18" cy="18" r={r} fill="none" strokeWidth="3" className="stroke-white/10" />
       <motion.circle cx="18" cy="18" r={r} fill="none" strokeWidth="3" strokeLinecap="round" className="stroke-primary"
         strokeDasharray={c} initial={false} animate={{ strokeDashoffset: c * (1 - done / 3) }} transition={{ duration: 0.45, ease: EASE_OUT }} />
@@ -574,7 +574,7 @@ function CompletedSummary({ draft, completedAt, onEdit }: { draft: Draft; comple
   return <div className="relative p-5 sm:p-7">
     <div className="flex flex-col items-center py-6 text-center">
       <motion.span initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 300, damping: 18 }}
-        className="grid h-16 w-16 place-items-center rounded-full bg-success/15 text-success shadow-[0_0_30px_-6px_var(--success)]">
+        className="grid h-16 w-16 place-items-center rounded-full bg-success/15 text-success">
         <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <motion.path d="M5 12.5l4.5 4.5L19 7.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.15, duration: 0.45, ease: EASE_OUT }} />
         </svg>
