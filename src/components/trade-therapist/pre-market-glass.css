@@ -1,0 +1,110 @@
+/*
+ * Glass surfaces for the pre-market exercises: a translucent card with a soft
+ * sheen, a gradient edge (turquoise into cyan) and a faint glow around it. The
+ * selected or active surface gets an edge that slowly travels round.
+ */
+
+@property --pm-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.pm-glass {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1rem;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.055), rgb(255 255 255 / 0.01) 40%, transparent 70%),
+    color-mix(in oklab, var(--card) 72%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    0 0 26px -12px color-mix(in oklab, var(--primary) 55%, transparent),
+    0 24px 60px -42px rgb(0 0 0 / 0.85);
+  transition: box-shadow 300ms ease;
+}
+
+/* The edge: a 1px gradient ring drawn with a mask, so the inside stays glass. */
+.pm-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--primary) 60%, transparent),
+    rgb(255 255 255 / 0.06) 35%,
+    rgb(255 255 255 / 0.04) 65%,
+    color-mix(in oklab, var(--ice) 50%, transparent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.pm-glass--hover:hover {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.09),
+    0 0 34px -10px color-mix(in oklab, var(--primary) 70%, transparent),
+    0 24px 60px -42px rgb(0 0 0 / 0.85);
+}
+
+/* Active: the edge brightens and a highlight travels round it. */
+.pm-glass--active {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    0 0 0 1px color-mix(in oklab, var(--primary) 25%, transparent),
+    0 0 40px -10px color-mix(in oklab, var(--primary) 75%, transparent),
+    0 24px 60px -42px rgb(0 0 0 / 0.85);
+}
+.pm-glass--active::before {
+  padding: 1.5px;
+  background: conic-gradient(from var(--pm-angle),
+    color-mix(in oklab, var(--primary) 35%, transparent),
+    var(--primary) 12%,
+    var(--ice) 22%,
+    color-mix(in oklab, var(--primary) 35%, transparent) 40%,
+    color-mix(in oklab, var(--ice) 30%, transparent) 70%,
+    color-mix(in oklab, var(--primary) 35%, transparent));
+  animation: pm-edge 6s linear infinite;
+}
+
+@keyframes pm-edge {
+  to { --pm-angle: 360deg; }
+}
+
+/* Writing surfaces: a darker glass well that glows when you type in it. */
+.pm-well {
+  border-radius: 0.875rem;
+  background: color-mix(in oklab, var(--background) 55%, transparent);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07), inset 0 2px 8px rgb(0 0 0 / 0.25);
+  transition: box-shadow 220ms ease, background-color 220ms ease;
+}
+.pm-well:focus-within {
+  background: color-mix(in oklab, var(--background) 70%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--primary) 70%, transparent),
+    0 0 0 4px color-mix(in oklab, var(--primary) 14%, transparent),
+    0 0 26px -6px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+
+html.light .pm-glass {
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.65)),
+    color-mix(in oklab, var(--card) 80%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 0 24px -12px color-mix(in oklab, var(--primary) 45%, transparent),
+    0 18px 40px -30px rgb(15 23 42 / 0.25);
+}
+html.light .pm-well {
+  background: rgb(248 250 252 / 0.9);
+  box-shadow: inset 0 0 0 1px rgb(15 23 42 / 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-glass--active::before { animation: none; }
+}
