@@ -4,7 +4,7 @@
  *
  * Each persona sets a target mean (1–5, after reverse keying) per facet;
  * unlisted facets sit at the neutral 3. The answers are built so that each
- * facet's four items hit that mean exactly.
+ * facet's items hit that mean exactly (with two items per facet, in steps of 0.5).
  */
 import type { FocusAreaId } from "@/lib/trade-profile/focus-rules";
 import { items } from "@/lib/trade-profile/items";
@@ -34,7 +34,7 @@ export interface Persona {
 export const personas: Persona[] = [
   {
     id: "anxiousScalper",
-    facetMeans: { N1: 4.5, N2: 4.25, N3: 3.5, N4: 3.5, N5: 3, N6: 4.25, C1: 3, C5: 3.25, C6: 3.5, E5: 2.75 },
+    facetMeans: { N1: 4.5, N2: 4, N3: 3.5, N4: 3.5, N5: 3, N6: 4.5, C1: 3, C5: 3.5, C6: 3.5, E5: 2.5 },
     expectedPrimary: "calm",
     goal: { trait: "N", direction: "decrease", area: "calm" },
     woop: {
@@ -49,7 +49,7 @@ export const personas: Persona[] = [
   },
   {
     id: "impulsiveOvertrader",
-    facetMeans: { N5: 4.5, C6: 1.75, E5: 4.5, E4: 4, C5: 2.5, N2: 3.5, N1: 2.75, O4: 3.5 },
+    facetMeans: { N5: 4.5, C6: 1.5, E5: 4.5, E4: 4, C5: 2.5, N2: 3.5, N1: 2.5, O4: 3.5 },
     expectedPrimary: "impulse",
     expectedSecondary: "thrill",
     goal: { trait: "C6", direction: "increase", area: "impulse" },
@@ -65,7 +65,7 @@ export const personas: Persona[] = [
   },
   {
     id: "disciplinedHesitant",
-    facetMeans: { C1: 2, C2: 4.25, C3: 4.5, C4: 4, C5: 4.25, C6: 4, N4: 4.25, N1: 3.5, N6: 3.25, E3: 2.5 },
+    facetMeans: { C1: 2, C2: 4.5, C3: 4.5, C4: 4, C5: 4.5, C6: 4, N4: 4.5, N1: 3.5, N6: 3.5, E3: 2.5 },
     expectedPrimary: "selfTrust",
     goal: { trait: "C1", direction: "increase", area: "selfTrust" },
     woop: {
@@ -80,7 +80,7 @@ export const personas: Persona[] = [
   },
   {
     id: "balanced",
-    facetMeans: { N1: 2.75, N2: 2.5, N6: 2.5, E5: 3.25, O4: 3.25, C1: 3.5, C2: 3.25, C3: 3.5, C5: 3.25, C6: 3.25, A1: 3.25 },
+    facetMeans: { N1: 2.5, N2: 2.5, N6: 2.5, E5: 3.5, O4: 3.5, C1: 3.5, C2: 3, C3: 3.5, C5: 3, C6: 3, A1: 3.5 },
     expectedPrimary: "maintain",
     goal: { trait: "C5", direction: "increase", area: "maintain" },
     woop: {
@@ -95,7 +95,7 @@ export const personas: Persona[] = [
   },
 ];
 
-/** Answers that make each facet's keyed mean equal its target (rounded to a quarter point). */
+/** Answers that make each facet's keyed mean equal its target (rounded to what the item count allows). */
 export function answersFromFacetMeans(itemList: Item[], means: Partial<Record<FacetCode, number>>): Answers {
   const answers: Answers = {};
   const byFacet = new Map<FacetCode, Item[]>();

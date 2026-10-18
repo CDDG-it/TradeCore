@@ -85,7 +85,11 @@ export function AssessmentView(props: {
 
   function finish() {
     if (props.onFinish) props.onFinish();
-    else store.completeAssessment();
+    else {
+      store.completeAssessment();
+      // Straight to the result, as its own history entry.
+      nav.goTab("profile");
+    }
     nav.scrollTop();
   }
 

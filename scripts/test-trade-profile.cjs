@@ -36,24 +36,41 @@ const { FACETS, DOMAINS } = lib('types');
 const all = (a) => Object.fromEntries(items.map((i) => [i.id, a]));
 const profileOf = (means) => scoreProfile(items, answersFromFacetMeans(items, means));
 
-// Per-facet [+ keyed, – keyed] counts, read off ipip.ori.org/30FacetNEO-PI-RItems.htm.
+// Per-facet [+ keyed, – keyed] counts, read off ipip.ori.org/IPIP-NEO-60ScoringKeys.htm.
 const KEYING = {
-  N1: [4, 0], N2: [3, 1], N3: [3, 1], N4: [3, 1], N5: [1, 3], N6: [3, 1],
-  E1: [2, 2], E2: [2, 2], E3: [3, 1], E4: [3, 1], E5: [4, 0], E6: [4, 0],
-  O1: [4, 0], O2: [2, 2], O3: [2, 2], O4: [1, 3], O5: [1, 3], O6: [2, 2],
-  A1: [3, 1], A2: [0, 4], A3: [2, 2], A4: [0, 4], A5: [0, 4], A6: [2, 2],
-  C1: [4, 0], C2: [1, 3], C3: [2, 2], C4: [2, 2], C5: [2, 2], C6: [0, 4],
+  N1: [2, 0], N2: [2, 0], N3: [2, 0], N4: [2, 0], N5: [0, 2], N6: [0, 2],
+  E1: [2, 0], E2: [1, 1], E3: [2, 0], E4: [2, 0], E5: [2, 0], E6: [2, 0],
+  O1: [2, 0], O2: [1, 1], O3: [1, 1], O4: [0, 2], O5: [0, 2], O6: [1, 1],
+  A1: [2, 0], A2: [0, 2], A3: [2, 0], A4: [0, 2], A5: [0, 2], A6: [2, 0],
+  C1: [2, 0], C2: [1, 1], C3: [1, 1], C4: [2, 0], C5: [1, 1], C6: [0, 2],
 };
 
-test('IPIP-NEO-120: 120 items, 4 per facet, published keying, sourced', () => {
-  assert.equal(items.length, 120);
-  assert.deepEqual(new Set(items.map((i) => i.id)), new Set(Array.from({ length: 120 }, (_, i) => i + 1)));
+test('IPIP-NEO-60: 60 items, 2 per facet, published keying, sourced', () => {
+  assert.equal(items.length, 60);
+  assert.deepEqual(new Set(items.map((i) => i.id)), new Set(Array.from({ length: 60 }, (_, i) => i + 201)));
   for (const f of FACETS) {
     const g = items.filter((i) => i.facet === f);
-    assert.equal(g.length, 4, f);
+    assert.equal(g.length, 2, f);
     assert.deepEqual([g.filter((i) => i.keyed === '+').length, g.filter((i) => i.keyed === '-').length], KEYING[f], f);
   }
-  for (const i of items) assert.match(i.source, /Johnson \(2014\)/);
+  for (const d of DOMAINS) assert.equal(items.filter((i) => i.domain === d).length, 12, d);
+  assert.equal(items.filter((i) => i.keyed === '+').length, 37);
+  for (const i of items) assert.match(i.source, /Maples-Keller et al\. \(2019\)/);
+});
+
+test('legacy IPIP-NEO-120 answers carry over only to identical items', () => {
+  const { toAnswers, rowsToState } = lib('rows');
+  const { LEGACY_120_TO_60 } = lib('legacy');
+  assert.equal(Object.keys(LEGACY_120_TO_60).length, 51);
+  // Old item 1 "Worry about things." is new item 201; old item 2 "Make friends easily." is 202.
+  assert.deepEqual(toAnswers({ 1: 4, 2: 2, 999: 5, 201: 3 }), { 201: 3, 202: 2 });
+  // A profile finished on the 120-item version reopens on the first page with a gap.
+  const legacyAll = Object.fromEntries(Object.keys(LEGACY_120_TO_60).map((k) => [k, 3]));
+  const row = { answers: legacyAll, page: 0, completed_on: '2026-10-01', goal_outcome: '', goal_obstacle: '', goal_if_cue: '', goal_then_action: '' };
+  const s = rowsToState(row, [], [], []);
+  assert.equal(s.completedOn, null);
+  assert.equal(Object.keys(s.answers).length, 51);
+  assert.ok(s.page >= 0 && s.page < 10);
 });
 
 test('scoring: reverse keys, POMP, neutral, extremes, partial domains', () => {
@@ -68,7 +85,8 @@ test('scoring: reverse keys, POMP, neutral, extremes, partial domains', () => {
   const fives = scoreProfile(items, all(5));
   assert.equal(fives.facets.C6, 0);
   assert.equal(fives.facets.N1, 100);
-  assert.equal(fives.facets.N2, 75);
+  assert.equal(fives.facets.N2, 100); // both + keyed
+  assert.equal(fives.facets.E2, 50); // one + and one - keyed
   const partial = all(3);
   delete partial[items.find((i) => i.facet === 'E3').id];
   const p = scoreProfile(items, partial);
@@ -97,10 +115,10 @@ test('focus: thresholds, all/any, ranking and support note', () => {
   assert.equal(rankFocusAreas(profileOf({ N5: 4.5, C6: 1.5 }))[0].id, 'impulse');
   assert.ok(rankFocusAreas(profileOf({ O4: 4.5, C5: 1.5 })).some((r) => r.id === 'curiosity'));
   assert.deepEqual(rankFocusAreas(profileOf({ C5: 1.5, E5: 4 })).map((r) => r.id), ['followThrough', 'thrill']);
-  const { primary } = placeInFocus(profileOf({ N1: 4, N6: 3.75 }));
-  assert.deepEqual(primary.hits.map((h) => [h.trait, h.score]), [['N1', 75], ['N6', 68.75]]);
+  const { primary } = placeInFocus(profileOf({ N1: 4, N6: 4.5 }));
+  assert.deepEqual(primary.hits.map((h) => [h.trait, h.score]), [['N1', 75], ['N6', 87.5]]);
   assert.equal(needsSupportNote(profileOf({ N6: 4 })), true);
-  assert.equal(needsSupportNote(profileOf({ N3: 3.75 })), false);
+  assert.equal(needsSupportNote(profileOf({ N3: 3.5 })), false); // 62.5
   assert.equal(needsSupportNote(profileOf({ N1: 5 })), false);
 });
 
@@ -156,7 +174,7 @@ test('progress: completion, streak, retest diff', () => {
 test('personas: complete profiles with three weeks of data', () => {
   for (const p of personas) {
     const s = personaState(p, '2026-03-01');
-    assert.equal(Object.keys(s.answers).length, 120);
+    assert.equal(Object.keys(s.answers).length, 60);
     assert.ok(Object.keys(s.checkins).length > 14);
     assert.equal(Object.keys(s.reflections).length, 3);
     assert.equal(s.programStart, '2026-02-08');

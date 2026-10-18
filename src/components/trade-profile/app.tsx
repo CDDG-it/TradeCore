@@ -42,7 +42,7 @@ function urlFor(view: View): URL {
 
 /**
  * My Trade Profile, as a section of MC Trade Therapist: a Big Five assessment
- * (IPIP-NEO-120) turned into a 12-week development program. Before the
+ * (IPIP-NEO-60) turned into a 12-week development program. Before the
  * assessment is done it is an onboarding flow; after it, six sub-sections.
  *
  * It fills the Therapist's viewport-high frame and scrolls inside it. Every
@@ -115,8 +115,9 @@ export function TradeProfileApp() {
 
   // Without a goal there is no program yet, so Today would be empty: show the profile first.
   const tabOf = (t: ProfileTab): ProfileTab => (t === "today" && !goalTarget ? "profile" : t);
-  const shownTab: ProfileTab = view.kind === "tab" ? tabOf(view.tab) : view.kind === "domain" ? "profile" : "today";
-  const inSection = view.kind === "tab" || view.kind === "domain";
+  const shownTab: ProfileTab = view.kind === "tab" ? tabOf(view.tab) : view.kind === "domain" ? "profile" : tabOf("today");
+  // Intro and assessment entries left in history after finishing show the sections too.
+  const inSection = view.kind !== "retest" && view.kind !== "reflection";
 
   let body: React.ReactNode;
   let viewKey: string;

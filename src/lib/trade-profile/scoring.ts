@@ -30,7 +30,7 @@ function meanIfComplete(group: Item[], answers: Answers): number | undefined {
 /**
  * Facet score = mean of its items; domain score = mean of all its items.
  * Only fully answered facets and domains are scored, so a partial retest
- * (one domain's 24 items) yields that domain and its six facets only.
+ * (one domain's items) yields that domain and its six facets only.
  */
 export function scoreProfile(items: Item[], answers: Answers): Profile {
   const profile: Profile = { domains: {}, facets: {} };

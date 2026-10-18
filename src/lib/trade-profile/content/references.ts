@@ -27,13 +27,23 @@ export interface Reference {
 
 export const references: Reference[] = [
   {
+    id: "maples2019",
+    citation:
+      "Maples-Keller, J. L., Williamson, R. L., Sleep, C. E., Carter, N. T., Campbell, W. K., & Miller, J. D. (2019). Using item response theory to develop a 60-item representation of the NEO PI-R using the International Personality Item Pool: Development of the IPIP-NEO-60. Journal of Personality Assessment, 101(1), 4-15.",
+    doi: "10.1080/00223891.2017.1381968",
+    status: "verified",
+    claim: "The source of the 60 items, their facet and domain assignment and their scoring keys used in the assessment.",
+    note:
+      "Items and keys transcribed from ipip.ori.org/IPIP-NEO-60ScoringKeys.htm, which cites this paper (it prints the pages as 4-5; Crossref gives 4-15). All 60 items were matched verbatim, with the same facet and keying, in the IPIP-NEO-300 key.",
+  },
+  {
     id: "johnson2014",
     citation:
       "Johnson, J. A. (2014). Measuring thirty facets of the Five Factor Model with a 120-item public domain inventory: Development of the IPIP-NEO-120. Journal of Research in Personality, 51, 78-89.",
     doi: "10.1016/j.jrp.2014.05.003",
     status: "verified",
-    claim: "The source of the 120 items, the 30 facet scales and their scoring keys used in the assessment.",
-    note: "Items and keys transcribed from ipip.ori.org/30FacetNEO-PI-RItems.htm, which cites this paper.",
+    claim: "The 30-facet IPIP structure and facet names the profile follows. The app used this 120-item version before switching to the 60-item one.",
+    note: "Citation confirmed via Crossref and the ipip.ori.org item page that cites it.",
   },
   {
     id: "stieger2021",
