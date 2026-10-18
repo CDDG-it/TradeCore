@@ -35,6 +35,11 @@ import type {
   TradeRuleCheck,
   RuleCheckStatus,
   ExerciseTypeId,
+  TradeProfileRow,
+  TradeProfileRowInput,
+  TradeProfileCheckinRow,
+  TradeProfileReflectionRow,
+  TradeProfileRetestRow,
 } from "@/lib/types";
 
 function now() {
@@ -1373,3 +1378,102 @@ export function getCommitmentAdherenceLogs(): Promise<CommitmentAdherenceLog[]> 
 export function getBestTradeOfDay(date: string): Promise<BestTradeOfDay | null> {
   return cachedRead(`bestTrade:${date}`, () => _getBestTradeOfDay(date));
 }
+
+// ── My Trade Profile ─────────────────────────────────────────────────
+// Fail-soft: until sql/trade_profile.sql is run, the bundle comes back with
+// `missingTable: true` so the page can show its setup notice instead of an error.
+
+function isMissingTable(error: { code?: string; message?: string } | null): boolean {
+  return !!error && (error.code === "42P01" || error.code === "PGRST205" || /does not exist|could not find the table/i.test(error.message ?? ""));
+}
+
+export interface TradeProfileBundle {
+  profile: TradeProfileRow | null;
+  checkins: TradeProfileCheckinRow[];
+  reflections: TradeProfileReflectionRow[];
+  retests: TradeProfileRetestRow[];
+  missingTable: boolean;
+}
+
+async function _getTradeProfileBundle(): Promise<TradeProfileBundle> {
+  const supabase = createClient();
+  const [profile, checkins, reflections, retests] = await Promise.all([
+    supabase.from("trade_profile").select("*").maybeSingle(),
+    // 12 weeks of one check-in a day is 84 rows; the limit leaves room for restarts.
+    supabase.from("trade_profile_checkins").select("*").limit(2000).order("date", { ascending: true }),
+    supabase.from("trade_profile_reflections").select("*").limit(200),
+    supabase.from("trade_profile_retests").select("*").limit(200),
+  ]);
+  const missingTable = [profile, checkins, reflections, retests].some((r) => isMissingTable(r.error));
+  return {
+    profile: profile.error ? null : ((profile.data as TradeProfileRow | null) ?? null),
+    checkins: checkins.error ? [] : ((checkins.data ?? []) as TradeProfileCheckinRow[]),
+    reflections: reflections.error ? [] : ((reflections.data ?? []) as TradeProfileReflectionRow[]),
+    retests: retests.error ? [] : ((retests.data ?? []) as TradeProfileRetestRow[]),
+    missingTable,
+  };
+}
+
+export function getTradeProfileBundle(): Promise<TradeProfileBundle> {
+  return cachedRead("tradeProfile", _getTradeProfileBundle);
+}
+
+/** Upsert the trader's single trade_profile row with the given columns. */
+export async function saveTradeProfile(input: TradeProfileRowInput): Promise<void> {
+  const supabase = createClient();
+  invalidateReads("tradeProfile");
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase
+    .from("trade_profile")
+    .upsert({ ...input, user_id: user.id, updated_at: now() }, { onConflict: "user_id" });
+  if (error) throw error;
+}
+
+export async function saveTradeProfileCheckin(
+  input: Pick<TradeProfileCheckinRow, "date" | "exercise_id" | "done" | "difficulty" | "state">
+): Promise<void> {
+  const supabase = createClient();
+  invalidateReads("tradeProfile");
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase
+    .from("trade_profile_checkins")
+    .upsert({ ...input, user_id: user.id, updated_at: now() }, { onConflict: "user_id,date" });
+  if (error) throw error;
+}
+
+export async function saveTradeProfileReflection(week: number, answers: string[]): Promise<void> {
+  const supabase = createClient();
+  invalidateReads("tradeProfile");
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase
+    .from("trade_profile_reflections")
+    .upsert({ week, answers, user_id: user.id, updated_at: now() }, { onConflict: "user_id,week" });
+  if (error) throw error;
+}
+
+export async function saveTradeProfileRetest(week: number, takenOn: string, answers: Record<string, number>): Promise<void> {
+  const supabase = createClient();
+  invalidateReads("tradeProfile");
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase
+    .from("trade_profile_retests")
+    .upsert({ week, taken_on: takenOn, answers, user_id: user.id, updated_at: now() }, { onConflict: "user_id,week" });
+  if (error) throw error;
+}
+
+/** Delete every My Trade Profile row for this trader: answers, goal, check-ins, reflections, retests. */
+export async function resetTradeProfile(): Promise<void> {
+  const supabase = createClient();
+  invalidateReads("tradeProfile");
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  for (const table of ["trade_profile_checkins", "trade_profile_reflections", "trade_profile_retests", "trade_profile"]) {
+    const { error } = await supabase.from(table).delete().eq("user_id", user.id);
+    if (error && !isMissingTable(error)) throw error;
+  }
+}
+
