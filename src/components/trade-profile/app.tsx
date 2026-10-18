@@ -7,7 +7,7 @@ import { copy } from "@/lib/trade-profile/content/copy";
 import { DemoBar } from "@/components/trade-profile/demo-bar";
 import { Onboarding } from "@/components/trade-profile/onboarding";
 import { AssessmentView } from "@/components/trade-profile/assessment";
-import { ProfileView } from "@/components/trade-profile/profile-view";
+import { DomainDetail, ProfileView } from "@/components/trade-profile/profile-view";
 import { FocusView } from "@/components/trade-profile/focus-view";
 import { GoalView } from "@/components/trade-profile/goal-view";
 import { TodayView } from "@/components/trade-profile/today-view";
@@ -18,72 +18,115 @@ import { ReflectionView } from "@/components/trade-profile/reflection-view";
 import { ExerciseSheet } from "@/components/trade-profile/exercise-sheet";
 import { SetupNotice } from "@/components/trade-profile/setup-notice";
 import { useDerived, useTradeProfile } from "@/components/trade-profile/store";
-import { ProfileNavContext, type ProfileNav, type ProfileTab } from "@/components/trade-profile/nav";
+import {
+  currentEntry,
+  ProfileNavContext,
+  pushEntry,
+  type ProfileNav,
+  type ProfileTab,
+  type ProfileView as View,
+} from "@/components/trade-profile/nav";
 
 const TABS: { key: ProfileTab; label: string }[] = (Object.keys(copy.tabs) as ProfileTab[]).map((key) => ({ key, label: copy.tabs[key] }));
-
-/** A view that replaces the tab content until the trader finishes or goes back. */
-type Overlay = { kind: "retest"; week: number } | { kind: "reflection"; week: number } | null;
-
+const TODAY: View = { kind: "tab", tab: "today" };
 const EASE = [0.23, 1, 0.32, 1] as const;
+
+/** The address bar only carries the tab; sub-views live in history.state. */
+function urlFor(view: View): URL {
+  const url = new URL(window.location.href);
+  if (view.kind === "tab" && view.tab !== "today") url.searchParams.set("tab", view.tab);
+  else if (view.kind === "tab") url.searchParams.delete("tab");
+  return url;
+}
 
 /**
  * My Trade Profile: a Big Five assessment (IPIP-NEO-120) turned into a
  * 12-week development program. Before the assessment is done the page is an
  * onboarding flow; after it, six sections behind the shared section picker.
+ *
+ * Every move (a section, a facet drill-down, a retest, an assessment page) is
+ * a browser history entry, so back always steps back one screen with the
+ * trader's answers intact, and never throws them off the page.
  */
 export function TradeProfileApp() {
   const store = useTradeProfile();
   const { finished, goalTarget } = useDerived();
-  const [tab, setTab] = useState<ProfileTab>("today");
-  const [overlay, setOverlay] = useState<Overlay>(null);
+  const [view, setView] = useState<View>(TODAY);
   const [exercise, setExercise] = useState<string | null>(null);
-  const [started, setStarted] = useState(false);
 
-  // Read the deep-linked tab after mount: the page is prerendered, so seeding
-  // state from the URL during render would make server and client disagree.
+  // Seed from the URL after mount (the page is prerendered, so reading it during
+  // render would make server and client disagree), then follow back/forward.
   useEffect(() => {
+    const entry = currentEntry();
     const t = new URLSearchParams(window.location.search).get("tab");
+    const initial: View = entry?.view ?? (TABS.some((x) => x.key === t) ? { kind: "tab", tab: t as ProfileTab } : TODAY);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
-    if (TABS.some((x) => x.key === t)) setTab(t as ProfileTab);
+    setView(initial);
+    if (!entry) pushEntry({ view: initial }, undefined, true);
+    const onPop = () => {
+      const e = currentEntry();
+      if (e) setView(e.view);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  function goTab(next: ProfileTab) {
-    setOverlay(null);
-    setTab(next);
-    const url = new URL(window.location.href);
-    if (next === "today") url.searchParams.delete("tab");
-    else url.searchParams.set("tab", next);
-    window.history.replaceState(window.history.state, "", url);
+  // A returning trader who already consented resumes straight into the questions:
+  // the entry they landed on becomes the assessment, so "Back" from the first
+  // question leads to the intro rather than into the same screen again.
+  const resume = store.status === "ready" && !finished && store.state.consentedOn !== null && view.kind === "tab";
+  useEffect(() => {
+    if (!resume) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot correction once the profile has loaded
+    setView({ kind: "assessment" });
+    pushEntry({ view: { kind: "assessment" } }, undefined, true);
+  }, [resume]);
+
+  function go(next: View) {
+    setView(next);
+    pushEntry({ view: next }, urlFor(next));
     window.scrollTo({ top: 0 });
   }
 
   const nav: ProfileNav = {
-    goTab,
-    openRetest: (week) => {
-      setOverlay({ kind: "retest", week });
-      window.scrollTo({ top: 0 });
-    },
-    openReflection: (week) => {
-      setOverlay({ kind: "reflection", week });
-      window.scrollTo({ top: 0 });
-    },
-    closeOverlay: () => setOverlay(null),
+    goTab: (tab) => go({ kind: "tab", tab }),
+    openDomain: (code) => go({ kind: "domain", code }),
+    openRetest: (week) => go({ kind: "retest", week }),
+    openReflection: (week) => go({ kind: "reflection", week }),
     openExercise: setExercise,
+    startAssessment: () => {
+      // Mark the entry the intro was shown on as the intro, so back returns here.
+      pushEntry({ view: { kind: "intro" } }, undefined, true);
+      go({ kind: "assessment" });
+    },
+    back: (fallback = TODAY) => {
+      if ((currentEntry()?.depth ?? 0) > 0) window.history.back();
+      else {
+        setView(fallback);
+        pushEntry({ view: fallback }, urlFor(fallback), true);
+        window.scrollTo({ top: 0 });
+      }
+    },
   };
 
   // Without a goal there is no program yet, so Today would be empty: show the profile first.
-  const shownTab: ProfileTab = tab === "today" && !goalTarget ? "profile" : tab;
+  const tabOf = (t: ProfileTab): ProfileTab => (t === "today" && !goalTarget ? "profile" : t);
+  const shownTab: ProfileTab = view.kind === "tab" ? tabOf(view.tab) : view.kind === "domain" ? "profile" : "today";
 
   let body: React.ReactNode;
-  if (store.status === "loading") body = <LoadingState />;
-  else if (store.status === "setup" && !store.demo) body = <SetupNotice />;
-  else if (store.status === "error" && !store.demo) body = <p className="text-sm text-muted-foreground">{copy.loadError}</p>;
+  let viewKey: string;
+  if (store.status === "loading") [body, viewKey] = [<LoadingState key="l" />, "loading"];
+  else if (store.status === "setup" && !store.demo) [body, viewKey] = [<SetupNotice key="s" />, "setup"];
+  else if (store.status === "error" && !store.demo) [body, viewKey] = [<p key="e" className="text-sm text-muted-foreground">{copy.loadError}</p>, "error"];
   else if (!finished) {
-    body = started || store.state.consentedOn ? <AssessmentView /> : <Onboarding onStart={() => setStarted(true)} />;
-  } else if (overlay?.kind === "retest") body = <RetestView week={overlay.week} />;
-  else if (overlay?.kind === "reflection") body = <ReflectionView week={overlay.week} />;
+    const assessing = view.kind === "assessment" || resume;
+    body = assessing ? <AssessmentView /> : <Onboarding onStart={nav.startAssessment} />;
+    viewKey = assessing ? "assessment" : "intro";
+  } else if (view.kind === "retest") [body, viewKey] = [<RetestView key="r" week={view.week} />, `retest-${view.week}`];
+  else if (view.kind === "reflection") [body, viewKey] = [<ReflectionView key="f" week={view.week} />, `reflection-${view.week}`];
+  else if (view.kind === "domain") [body, viewKey] = [<DomainDetail key="d" code={view.code} />, `domain-${view.code}`];
   else {
+    viewKey = shownTab;
     body = (
       <>
         {shownTab === "today" && <TodayView />}
@@ -96,8 +139,6 @@ export function TradeProfileApp() {
     );
   }
 
-  const viewKey = !finished ? "onboarding" : overlay ? `${overlay.kind}-${overlay.week}` : shownTab;
-
   return (
     <MotionConfig reducedMotion="user">
       <ProfileNavContext.Provider value={nav}>
@@ -109,7 +150,7 @@ export function TradeProfileApp() {
                 titleClassName="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none"
                 items={TABS}
                 value={shownTab}
-                onChange={goTab}
+                onChange={nav.goTab}
               />
             ) : (
               <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">{copy.title}</h1>

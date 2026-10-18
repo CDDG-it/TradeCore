@@ -6,7 +6,7 @@ import { AccentPanel } from "@/components/ui/accent-panel";
 import { Button } from "@/components/ui/button";
 import { copy } from "@/lib/trade-profile/content/copy";
 import { domains, facets, type TraitText } from "@/lib/trade-profile/content/traits";
-import { DOMAINS, type DomainCode, type FacetCode, type Profile } from "@/lib/trade-profile/types";
+import { DOMAINS, type DomainCode, type FacetCode } from "@/lib/trade-profile/types";
 import { DomainRadar } from "@/components/trade-profile/charts";
 import { Eyebrow, ScaleBar, Score, Segmented, Tile, traitColor } from "@/components/trade-profile/primitives";
 import { useDerived, useTradeProfile } from "@/components/trade-profile/store";
@@ -29,9 +29,7 @@ export function ProfileView() {
   const { restartAssessment, demo } = useTradeProfile();
   const nav = useProfileNav();
   const [view, setView] = useState<"bars" | "radar">("bars");
-  const [open, setOpen] = useState<DomainCode | null>(null);
   if (!profile) return null;
-  if (open) return <DomainDetail profile={profile} code={open} onBack={() => setOpen(null)} />;
   const t = copy.results;
 
   return (
@@ -63,7 +61,7 @@ export function ProfileView() {
             <ul className="-mx-2 space-y-0.5">
               {DOMAINS.map((d) => (
                 <li key={d}>
-                  <button type="button" onClick={() => setOpen(d)} className="group block w-full rounded-xl px-2 py-3 text-left transition-colors hover:bg-muted/40">
+                  <button type="button" onClick={() => nav.openDomain(d)} className="group block w-full rounded-xl px-2 py-3 text-left transition-colors hover:bg-muted/40">
                     <div className="mb-2 flex items-baseline justify-between gap-3">
                       <span className="inline-flex items-center gap-2 text-sm font-semibold">
                         <span className="size-2 rounded-full" style={{ background: traitColor[d] }} />
@@ -135,7 +133,11 @@ function Explainer({ text }: { text: TraitText }) {
   );
 }
 
-function DomainDetail({ profile, code, onBack }: { profile: Profile; code: DomainCode; onBack: () => void }) {
+export function DomainDetail({ code }: { code: DomainCode }) {
+  const { profile } = useDerived();
+  const nav = useProfileNav();
+  if (!profile) return null;
+  const onBack = () => nav.back({ kind: "tab", tab: "profile" });
   const text = domains[code];
   const color = traitColor[code];
   return (

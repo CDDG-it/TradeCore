@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { clearDraft, loadDraft, writeDraft } from "@/lib/drafts";
 import { Sparkles } from "lucide-react";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,9 @@ import { Eyebrow, ScaleBar, Score, Segmented, Tile } from "@/components/trade-pr
 import { useDerived, useTradeProfile } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
 
+const GOAL_DRAFT = "trade-profile:goal";
+type GoalDraft = { trait: TraitCode | ""; direction: Direction; outcome: string; obstacle: string; ifCue: string; thenAction: string };
+
 /** Excitement-Seeking can be channelled rather than raised or lowered. */
 const directionsFor = (trait: TraitCode): Direction[] => (trait === "E5" ? ["channel", "decrease", "increase"] : ["increase", "decrease"]);
 
@@ -29,7 +33,7 @@ function Field({ label, hint, value, onChange }: { label: string; hint: string; 
 }
 
 export function GoalView() {
-  const { state, saveGoal } = useTradeProfile();
+  const { state, saveGoal, demo } = useTradeProfile();
   const { profile, focus } = useDerived();
   const nav = useProfileNav();
   const t = copy.goal;
@@ -38,12 +42,18 @@ export function GoalView() {
   const recommended = primary ? suggestedGoalFor(primary.id) : null;
   const existing = state.goal;
 
-  const [trait, setTrait] = useState<TraitCode | "">(existing?.trait ?? recommended?.trait ?? "");
-  const [direction, setDirection] = useState<Direction>(existing?.direction ?? recommended?.direction ?? "increase");
-  const [outcome, setOutcome] = useState(existing?.outcome ?? "");
-  const [obstacle, setObstacle] = useState(existing?.obstacle ?? "");
-  const [ifCue, setIfCue] = useState(existing?.ifCue ?? "");
-  const [thenAction, setThenAction] = useState(existing?.thenAction ?? "");
+  // Unsaved goal text is kept as a local draft, so switching sections and coming back keeps it.
+  const draft = demo ? null : (loadDraft<GoalDraft>(GOAL_DRAFT)?.data ?? null);
+  const [trait, setTrait] = useState<TraitCode | "">(draft?.trait ?? existing?.trait ?? recommended?.trait ?? "");
+  const [direction, setDirection] = useState<Direction>(draft?.direction ?? existing?.direction ?? recommended?.direction ?? "increase");
+  const [outcome, setOutcome] = useState(draft?.outcome ?? existing?.outcome ?? "");
+  const [obstacle, setObstacle] = useState(draft?.obstacle ?? existing?.obstacle ?? "");
+  const [ifCue, setIfCue] = useState(draft?.ifCue ?? existing?.ifCue ?? "");
+  const [thenAction, setThenAction] = useState(draft?.thenAction ?? existing?.thenAction ?? "");
+  useEffect(() => {
+    if (demo || !(outcome || obstacle || ifCue || thenAction)) return;
+    writeDraft<GoalDraft>(GOAL_DRAFT, { trait, direction, outcome, obstacle, ifCue, thenAction });
+  }, [demo, trait, direction, outcome, obstacle, ifCue, thenAction]);
   const [tried, setTried] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -66,6 +76,7 @@ export function GoalView() {
     try {
       const tr = trait as TraitCode;
       await saveGoal({ trait: tr, direction, area: areaFor(tr, direction), outcome, obstacle, ifCue, thenAction });
+      clearDraft(GOAL_DRAFT);
       nav.goTab("today");
     } catch {
       // The store shows the save error banner; stay on the form.

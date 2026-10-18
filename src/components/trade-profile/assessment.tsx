@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { items as allItems } from "@/lib/trade-profile/items";
 import type { Answer, Answers, Item } from "@/lib/trade-profile/types";
 import { useTradeProfile } from "@/components/trade-profile/store";
 import { ProgressLine } from "@/components/trade-profile/primitives";
+import { currentEntry, pushEntry, useProfileNav, type ProfileView } from "@/components/trade-profile/nav";
 
 const SHOW_FILL = process.env.NODE_ENV !== "production";
 
@@ -26,8 +27,14 @@ export function AssessmentView(props: {
   title?: string;
   instructions?: string;
   finishLabel?: string;
+  /** The view this questionnaire is shown in; page turns are history entries of it. */
+  view?: ProfileView;
+  /** Where "Back" on the first page goes when there is no earlier entry. */
+  backTo?: ProfileView;
 }) {
   const store = useTradeProfile();
+  const nav = useProfileNav();
+  const view: ProfileView = props.view ?? { kind: "assessment" };
   const list = props.items ?? allItems;
   const answers = props.answers ?? store.state.answers;
   const pages = Math.ceil(list.length / thresholds.pageSize);
@@ -35,11 +42,40 @@ export function AssessmentView(props: {
   const page = props.items ? localPage : Math.min(store.state.page, pages - 1);
   const t = copy.assessment;
 
-  const setPage = (p: number) => {
+  const showPage = (p: number) => {
     if (props.items) setLocalPage(p);
     else store.setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  /** A page turn forward is a history entry, so the browser back button returns to the last page. */
+  const setPage = (p: number) => {
+    showPage(p);
+    pushEntry({ view, page: p });
+  };
+  /** Back one page: through history when the page was an entry, otherwise in place. */
+  const goBack = () => {
+    if (page === 0) return nav.back(props.backTo ?? { kind: "intro" });
+    if (currentEntry()?.page === page) window.history.back();
+    else {
+      showPage(page - 1);
+      pushEntry({ view, page: page - 1 }, undefined, true);
+    }
+  };
+
+  // Browser back/forward between pages: the entry carries the page to show.
+  const viewKey = JSON.stringify(view);
+  useEffect(() => {
+    const onPop = () => {
+      const e = currentEntry();
+      if (!e || JSON.stringify(e.view) !== viewKey) return;
+      const p = e.page ?? 0;
+      if (props.items) setLocalPage(p);
+      else store.setPage(p);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [viewKey, props.items, store]);
+
   const answer = (id: number, a: Answer) => (props.onAnswer ? props.onAnswer(id, a) : store.answer(id, a));
 
   const slice = list.slice(page * thresholds.pageSize, (page + 1) * thresholds.pageSize);
@@ -117,7 +153,7 @@ export function AssessmentView(props: {
       </ol>
 
       <div className="mt-5 flex items-center gap-2.5">
-        <Button variant="outline" size="lg" onClick={() => setPage(page - 1)} disabled={page === 0} aria-label={copy.common.back}>
+        <Button variant="outline" size="lg" onClick={goBack} aria-label={copy.common.back}>
           <ChevronLeft /> <span className="hidden sm:inline">{copy.common.back}</span>
         </Button>
         {last ? (

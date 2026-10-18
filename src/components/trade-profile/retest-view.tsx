@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { clearDraft, loadDraft, writeDraft } from "@/lib/drafts";
+import { toAnswers } from "@/lib/trade-profile/rows";
 import { ChevronLeft } from "lucide-react";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { Button } from "@/components/ui/button";
@@ -19,10 +21,16 @@ import { useProfileNav } from "@/components/trade-profile/nav";
 
 /** Week 6 / 12: the goal domain's 24 items, then before vs. after. */
 export function RetestView({ week }: { week: number }) {
-  const { state, todayKey, saveRetest } = useTradeProfile();
+  const { state, todayKey, saveRetest, demo } = useTradeProfile();
   const { profile, goalTarget } = useDerived();
   const nav = useProfileNav();
-  const [draft, setDraft] = useState<Answers>({});
+  // Retest answers are kept as a local draft until the retest is finished, so
+  // leaving and coming back (or a reload) never loses them.
+  const draftKey = `trade-profile:retest:${week}`;
+  const [draft, setDraft] = useState<Answers>(() => (demo ? {} : toAnswers(loadDraft<Record<string, number>>(draftKey)?.data)));
+  useEffect(() => {
+    if (!demo && Object.keys(draft).length) writeDraft(draftKey, draft);
+  }, [demo, draft, draftKey]);
   const domain = goalTarget ? domainOf(goalTarget.trait) : undefined;
   const list = useMemo(() => items.filter((i) => i.domain === domain), [domain]);
   const t = copy.retest;
@@ -35,7 +43,7 @@ export function RetestView({ week }: { week: number }) {
       return (
         <Tile>
           <p className="text-sm text-foreground/85">{t.notDue}</p>
-          <Button variant="outline" className="mt-3" onClick={nav.closeOverlay}>
+          <Button variant="outline" className="mt-3" onClick={() => nav.back()}>
             {copy.common.back}
           </Button>
         </Tile>
@@ -47,10 +55,16 @@ export function RetestView({ week }: { week: number }) {
         answers={draft}
         onAnswer={(id, a) => setDraft((d) => ({ ...d, [id]: a }))}
         onFill={setDraft}
-        onFinish={() => void saveRetest(week, draft).catch(() => {})}
+        onFinish={() =>
+          void saveRetest(week, draft)
+            .then(() => clearDraft(draftKey))
+            .catch(() => {})
+        }
         title={copy.assessment.retestTitle(week, traitName(domain))}
         instructions={copy.assessment.retestInstructions}
         finishLabel={copy.assessment.retestFinish}
+        view={{ kind: "retest", week }}
+        backTo={{ kind: "tab", tab: "today" }}
       />
     );
   }
@@ -61,7 +75,7 @@ export function RetestView({ week }: { week: number }) {
 
   return (
     <div className="space-y-4">
-      <button type="button" onClick={nav.closeOverlay} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
+      <button type="button" onClick={() => nav.back()} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
         <ChevronLeft className="size-3.5" /> {copy.common.back}
       </button>
       <AccentPanel accent="cyan" eyebrow={copy.common.positionOnScale} title={`${t.title(week)}: ${traitName(domain)}`}>
