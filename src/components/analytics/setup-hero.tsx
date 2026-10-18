@@ -82,8 +82,8 @@ function SetupCard({
       )}
       style={{
         backgroundImage: setup
-          ? `radial-gradient(120% 140% at 0% 0%, ${alpha(color, 12)}, transparent 55%), linear-gradient(145deg, color-mix(in oklch, var(--card) 88%, transparent), color-mix(in oklch, var(--background) 78%, transparent))`
-          : "linear-gradient(145deg, color-mix(in oklch, var(--card) 70%, transparent), transparent)",
+          ? `radial-gradient(120% 140% at 0% 0%, ${alpha(color, 12)}, transparent 55%), linear-gradient(145deg, var(--card), color-mix(in oklch, var(--card) 88%, var(--background)))`
+          : "linear-gradient(145deg, var(--card), color-mix(in oklch, var(--card) 88%, var(--background)))",
       }}
     >
       {body}

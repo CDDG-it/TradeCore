@@ -168,8 +168,8 @@ export function AnalyticsDesk({ trades: allTrades, ruleChecks, today = new Date(
   });
 
   const activeFilters = (drill.direction ? 1 : 0) + (drill.session ? 1 : 0);
-  const pane = "h-[24rem] lg:h-auto";
-  const full = "h-full w-full";
+  const pane = "analytics-solid-pane h-[24rem] lg:h-auto";
+  const full = "analytics-solid-pane h-full w-full";
   const timing = (defaultView: "hour" | "day") => (
     <TimingPane
       index="0"
@@ -280,7 +280,7 @@ export function AnalyticsDesk({ trades: allTrades, ruleChecks, today = new Date(
         </AnimatePresence>
 
         {base.length === 0 ? (
-          <div className="flex min-h-[20rem] flex-1 items-center justify-center rounded-[22px] border border-white/[.07] bg-card/60">
+          <div className="flex min-h-[20rem] flex-1 items-center justify-center rounded-[22px] border border-white/[.07] bg-card">
             <Empty
               label="No trades in this period"
               hint={allTrades.length ? "Pick a wider period, or All, to see your patterns." : "Log trades in the journal and this desk fills itself."}
