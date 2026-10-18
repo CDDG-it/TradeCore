@@ -34,7 +34,7 @@ export default function HomePage() {
           <div aria-hidden className="pointer-events-none absolute inset-0">
             <div className="sticky top-0 h-svh">
               <SmokeBackground className="absolute inset-0" />
-              <div className="absolute inset-0 bg-[#0b1120]/62" />
+              <div className="absolute inset-0 bg-[#0b1120]/30" />
             </div>
           </div>
           <section id="the-approach" className="marketing-section marketing-section--blue-glow px-6 pb-20 pt-16 sm:px-10 md:pb-28 md:pt-24 lg:px-12">

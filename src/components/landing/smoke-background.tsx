@@ -307,18 +307,18 @@ void main() {
 `;
 
 /**
- * The design system's palette in the builder's four slots, low to high: navy
- * ground #0B1120, turquoise #14B8A6 for the brightest smoke, cyan #06B6D4 for
- * the mid tones and deep teal #0F3B4A between them and the ground. The other
- * four slots are unused.
+ * The design system's palette, low to high: navy #0B1120 and deep blue #12264A
+ * carry the field, turquoise #14B8A6 and light cyan #A5F3FC only show in the
+ * brighter wisps, so it reads as dark blue with turquoise and cyan details.
+ * The other four slots are unused.
  */
-const BRAND = ["#0B1120", "#14B8A6", "#06B6D4", "#0F3B4A"];
+const BRAND = ["#0B1120", "#12264A", "#14B8A6", "#A5F3FC"];
 const COLORS = new Float32Array(24);
 BRAND.forEach((hex, i) => {
   const n = parseInt(hex.slice(1), 16);
   COLORS.set([((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255], i * 3);
 });
-const COLOR_COUNT = 4;
+const COLOR_COUNT = BRAND.length;
 /** u_scene.z is seconds times this. */
 const TIME_SCALE = 0.63;
 const SHAPE = [1.96, 0.75, 0.5, 0.0] as const; // scale, intensity, paramA, warp

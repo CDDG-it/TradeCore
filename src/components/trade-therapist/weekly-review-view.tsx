@@ -7,14 +7,13 @@ import {
   format, startOfWeek, addWeeks, subWeeks,
 } from "date-fns";
 import {
-  ArrowLeft, ChevronLeft, ChevronRight, Loader2, Check, Lock, CheckCircle2,
+  ArrowLeft, ChevronLeft, ChevronRight, Loader2, Check, Lock,
   ChevronDown, ChevronUp, Trophy, History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, getAllTradeRuleChecks, saveWeeklyTradeReview, type BestTradeListRow } from "@/lib/supabase/queries";
+import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, saveWeeklyTradeReview, type BestTradeListRow } from "@/lib/supabase/queries";
 import { getWeekGroup, tradeR, formatTotalR, reviewOpensOn, isReviewOpen } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
-import { mostBrokenItem } from "@/lib/reviews/rule-patterns";
 import { bestTradeLogged, buildDayRecaps, summarizeDayRecaps } from "@/lib/reviews/day-recap";
 import { DailyBreakdown } from "@/components/trade-therapist/daily-breakdown";
 
@@ -34,7 +33,6 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const [review, setReview] = useState<WeeklyTradeReview | null>(null);
   const [prevReview, setPrevReview] = useState<WeeklyTradeReview | null>(null);
   const [bestByDay, setBestByDay] = useState<Record<string, BestTradeListRow>>({});
-  const [ruleChecks, setRuleChecks] = useState<Awaited<ReturnType<typeof getAllTradeRuleChecks>>>([]);
 
   const [wentWell, setWentWell] = useState("");
   const [toImprove, setToImprove] = useState("");
@@ -49,7 +47,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const prevWeekKey = useMemo(() => format(subWeeks(monday, 1), "yyyy-MM-dd"), [monday]);
 
   useEffect(() => {
-    Promise.all([getTrades(), getWeeklyTradeReviews(), getBestTradesOfDay(), getAllTradeRuleChecks()]).then(([t, reviews, best, checks]) => {
+    Promise.all([getTrades(), getWeeklyTradeReviews(), getBestTradesOfDay()]).then(([t, reviews, best]) => {
       setTrades(t);
       const r = reviews.find((rev) => rev.week_start === weekStart) ?? null;
       setReview(r);
@@ -58,7 +56,6 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
       setToImprove(r?.mistakes ?? "");
       setFocus(r?.prevention_plan ?? "");
       setBestByDay(Object.fromEntries(best.map((b) => [b.date.slice(0, 10), b])));
-      setRuleChecks(checks);
     });
   }, [weekStart, prevWeekKey]);
 
@@ -68,11 +65,6 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const open = useMemo(() => isReviewOpen(weekStart), [weekStart]);
 
   const group = useMemo(() => (trades ? getWeekGroup(trades, weekStart) : null), [trades, weekStart]);
-  const mostBroken = useMemo(() => {
-    if (!group) return null;
-    const dateByTrade = new Map(group.days.flatMap((day) => day.trades.map((trade) => [trade.id, day.date] as const)));
-    return mostBrokenItem(ruleChecks.filter((check) => dateByTrade.has(check.trade_id)).map((check) => ({ ...check, date: dateByTrade.get(check.trade_id)! })));
-  }, [group, ruleChecks]);
   // What each day already says in the journal and the Post Market review, laid
   // out so the week's reflection can be written from it.
   const recaps = useMemo(() => {
@@ -125,7 +117,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         <Link href="/trade-therapist?tab=reviews" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to reviews
         </Link>
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end gap-4">
           <div className="flex items-center gap-2">
             <Link href={`/trade-therapist/review/${prevWeekKey}`} aria-label="Previous week"
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
@@ -145,55 +137,13 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
               </Link>
             )}
           </div>
-          <div className="flex items-start gap-5">
-            {/* How much of the week was traded to plan, beside what it paid:
-                the two halves of a week you can actually act on. */}
-            <div className="text-right">
-              <p
-                className={cn(
-                  "text-3xl font-black leading-none",
-                  group.execRate == null ? "text-muted-foreground/50"
-                    : group.execRate >= 70 ? "text-success"
-                    : group.execRate >= 40 ? "text-warning"
-                    : "text-destructive"
-                )}
-              >
-                {group.execRate == null ? "-" : `${group.execRate}%`}
-              </p>
-              <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                Execution
-                {group.goodExec + group.badExec > 0 && (
-                  <span className="ml-1 normal-case tracking-normal tabular-nums">
-                    {group.goodExec}/{group.goodExec + group.badExec}
-                  </span>
-                )}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className={cn("text-3xl font-black leading-none", rTone)}>{formatTotalR(group.totalR)}</p>
-              <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">Week R</p>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Status banner */}
-      <div className={cn("flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs",
-        open ? "border-success/25 bg-success/5" : "border-primary/25 bg-primary/5")}>
-        {open ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" /> : <Lock className="w-4 h-4 text-primary shrink-0" />}
-        <p className="text-muted-foreground">
-          {open
-            ? <>The trading week is done. {complete ? "Reflection complete: it counts toward your MC Mindscore." : "Add your reflection below to complete it and count it toward your MC Mindscore."}</>
-            : <>This week is still trading. The review unlocks on {format(opensOn, "EEEE d MMMM")}, once the week&apos;s last session is behind you. It counts toward your MC Mindscore from then.</>}
-        </p>
-      </div>
-
-      {mostBroken && <div className="rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-destructive">Most broken this week · {mostBroken.count}×</p><p className="mt-1 text-sm font-medium">{mostBroken.text}</p></div>}
-
       {/* Day by day: result + whether the best trade was taken */}
-      <div className="rounded-2xl border border-border/60 bg-card p-4">
-        <p className="text-sm font-semibold mb-3">Day by day</p>
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+      <div className="rounded-2xl border border-border/60 bg-card p-3 sm:p-4">
+        <p className="mb-2 text-sm font-semibold">Day by day</p>
+        <div className="grid grid-cols-5 gap-1.5 lg:grid-cols-[repeat(5,minmax(0,1fr))_minmax(10rem,auto)] lg:gap-2">
           {group.days.map((d, i) => {
             const has = d.trades.length > 0;
             const r = d.trades.reduce((s, t) => s + tradeR(t), 0);
@@ -205,7 +155,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
             // reviewed day's images. Words still count, as they did.
             const bestLogged = bestTradeLogged(best);
             return (
-              <div key={d.date} className={cn("rounded-xl border p-3 flex flex-col items-center gap-2",
+              <div key={d.date} className={cn("flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2",
                 outcome === "win" ? "border-success/25 bg-success/5"
                   : outcome === "loss" ? "border-destructive/25 bg-destructive/5"
                   : outcome === "be" ? "border-warning/25 bg-warning/5"
@@ -219,57 +169,53 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
                 ) : (
                   <span className="text-lg font-black leading-none text-muted-foreground/30">-</span>
                 )}
-                <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold leading-none",
+                <span className={cn("inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-none",
                   bestTaken ? "bg-success/15 text-success"
                     : bestLogged ? "bg-primary/12 text-primary"
                     : "bg-muted/40 text-muted-foreground/60")}>
-                  <Trophy className="w-2.5 h-2.5" />
-                  {bestTaken ? "Best taken" : bestLogged ? "Best logged" : "No best"}
+                  <Trophy className="size-2.5 shrink-0" />
+                  <span className="truncate">{bestTaken ? "Best taken" : bestLogged ? "Best logged" : "No best"}</span>
                 </span>
               </div>
             );
           })}
+          <div className="col-span-5 flex items-center justify-end gap-5 border-t border-border/50 pt-2 lg:col-span-1 lg:flex-col lg:items-end lg:justify-center lg:gap-2 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+            <div className="text-right">
+              <p className={cn("text-lg font-black leading-none tabular-nums", group.execRate == null ? "text-muted-foreground/50" : group.execRate >= 70 ? "text-success" : group.execRate >= 40 ? "text-warning" : "text-destructive")}>{group.execRate == null ? "-" : `${group.execRate}%`}</p>
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">Execution {group.goodExec + group.badExec > 0 && <span className="normal-case tracking-normal tabular-nums">{group.goodExec}/{group.goodExec + group.badExec}</span>}</p>
+            </div>
+            <div className="text-right">
+              <p className={cn("text-lg font-black leading-none tabular-nums", rTone)}>{formatTotalR(group.totalR)}</p>
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">Week R</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {recaps && <DailyBreakdown recaps={recaps} summary={summarizeDayRecaps(recaps)} />}
 
-      {/* Previous week reference: did I hold to it? */}
-      <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
-        <button onClick={() => setShowPrev((v) => !v)}
-          className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/30">
-          <History className="w-4 h-4 text-primary shrink-0" />
-          <span className="text-sm font-semibold flex-1">Last week&apos;s notes: did you hold to them?</span>
-          {showPrev ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-        </button>
+      {/* Reflection: compact, problem-first. One short line per field. */}
+      <div className="rounded-2xl border border-border/60 bg-card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold">Your reflection</p>
+          <button type="button" onClick={() => setShowPrev((v) => !v)} aria-expanded={showPrev}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground">
+            <History className="size-3.5 text-primary" /> Last week&apos;s notes
+            {showPrev ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+          </button>
+        </div>
         {showPrev && (
-          <div className="border-t border-border/50 px-4 py-3.5 text-xs">
-            {!prevWritten ? (
-              <p className="text-muted-foreground/70">No reflection was written for last week.</p>
-            ) : (
+          <div className="mt-3 rounded-xl border border-border/50 bg-background/40 p-3 text-xs">
+            {!prevWritten ? <p className="text-muted-foreground/70">No reflection was written for last week.</p> : (
               <div className="space-y-2">
-                {prevReview?.mistakes && (
-                  <p className="leading-snug"><span className="font-semibold text-destructive">The problem: </span><span className="text-muted-foreground">{prevReview.mistakes}</span></p>
-                )}
-                {prevReview?.prevention_plan && (
-                  <p className="leading-snug"><span className="font-semibold text-primary">Focus set: </span><span className="text-muted-foreground">{prevReview.prevention_plan}</span></p>
-                )}
-                {prevReview?.lessons && (
-                  <p className="leading-snug"><span className="font-semibold text-success">What worked: </span><span className="text-muted-foreground">{prevReview.lessons}</span></p>
-                )}
-                <p className="pt-1 text-[11px] text-muted-foreground/70">Note below whether you held to this.</p>
+                {prevReview?.mistakes && <p className="leading-snug"><span className="font-semibold text-destructive">The problem: </span><span className="text-muted-foreground">{prevReview.mistakes}</span></p>}
+                {prevReview?.prevention_plan && <p className="leading-snug"><span className="font-semibold text-primary">Focus set: </span><span className="text-muted-foreground">{prevReview.prevention_plan}</span></p>}
+                {prevReview?.lessons && <p className="leading-snug"><span className="font-semibold text-success">What worked: </span><span className="text-muted-foreground">{prevReview.lessons}</span></p>}
+                <p className="pt-1 text-[11px] text-muted-foreground/70">Did you hold to these? Use your reflection below to capture what changed.</p>
               </div>
             )}
           </div>
         )}
-      </div>
-
-      {/* Reflection: compact, problem-first. One short line per field. */}
-      <div className="rounded-2xl border border-border/60 bg-card p-4">
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="text-sm font-semibold">Your reflection</p>
-          <span className="text-[11px] text-muted-foreground/80">One line each</span>
-        </div>
         <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
           {[
             { label: "The problem", value: toImprove, set: setToImprove, ph: "The one mistake to fix...", tone: "var(--destructive)" },
