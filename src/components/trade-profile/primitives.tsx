@@ -16,11 +16,15 @@ export const traitColor: Record<DomainCode, string> = {
   C: "var(--trait-c)",
 };
 
+/**
+ * A small section label. Sentence case and normal tracking on purpose: an
+ * uppercase eyebrow above every block is the template look this page avoids.
+ */
 export function Eyebrow({ children, tone = "muted", className }: { children: ReactNode; tone?: "muted" | "primary" | "ice"; className?: string }) {
   return (
     <p
       className={cn(
-        "text-[10px] font-semibold uppercase tracking-[.18em]",
+        "text-xs font-semibold",
         tone === "muted" && "text-muted-foreground",
         tone === "primary" && "text-primary",
         tone === "ice" && "text-ice",

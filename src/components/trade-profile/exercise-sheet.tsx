@@ -41,7 +41,7 @@ export function ExerciseSheet({ id, onClose }: { id: string | null; onClose: () 
                   ] as const
                 ).map(([k, v]) => (
                   <div key={k}>
-                    <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{k}</dt>
+                    <dt className="text-xs font-semibold text-foreground/70">{k}</dt>
                     <dd className="mt-0.5 text-foreground/85">{v}</dd>
                   </div>
                 ))}

@@ -211,6 +211,8 @@ export const copy = {
     retests: "Retests",
     reflections: "Reflections",
     noProgram: "Progress appears once your program has started.",
+    retestsEmpty: (trait: string) => `At weeks 6 and 12 you retake the 24 ${trait} statements, and the change shows here.`,
+    reflectionsEmpty: "Your weekly reflections collect here, from the end of week 1.",
   },
   retest: {
     title: (w: number) => `Week ${w} retest`,

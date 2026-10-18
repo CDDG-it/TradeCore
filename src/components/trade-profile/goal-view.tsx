@@ -13,7 +13,7 @@ import { suggestedGoalFor } from "@/lib/trade-profile/focus";
 import type { FocusAreaId } from "@/lib/trade-profile/focus-rules";
 import { traitScore } from "@/lib/trade-profile/scoring";
 import { DOMAINS, type Direction, type FacetCode, type TraitCode } from "@/lib/trade-profile/types";
-import { Eyebrow, ScaleBar, Score, Segmented, Tile } from "@/components/trade-profile/primitives";
+import { ScaleBar, Score, Segmented } from "@/components/trade-profile/primitives";
 import { useDerived, useTradeProfile } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
 
@@ -95,108 +95,121 @@ export function GoalView() {
   const isRecommended = recommended && trait === recommended.trait && direction === recommended.direction;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <Eyebrow tone="primary">{t.eyebrow}</Eyebrow>
-        <h2 className="mt-1.5 font-heading text-xl font-bold tracking-tight">{t.title}</h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t.lead}</p>
-      </div>
-
-      <AccentPanel accent="primary" eyebrow={t.recommended}>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            {recommended ? (
-              <>
-                <p className="inline-flex items-center gap-2 font-heading text-lg font-bold tracking-tight">
-                  <Sparkles className="size-4 text-primary" />
-                  {t.directions[recommended.direction]} · {traitName(recommended.trait)}
-                </p>
-                <p className="mt-1 max-w-prose text-xs leading-relaxed text-muted-foreground">{focusAreas[primary!.id].goalRationale}</p>
-              </>
-            ) : (
-              <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">{focusAreas.maintain.goalRationale}</p>
-            )}
-            <p className="mt-2 text-[11px] text-muted-foreground">{t.recommendedNote}</p>
-          </div>
-          {recommended && !isRecommended && (
-            <Button variant="outline" onClick={() => {
-                setTrait(recommended.trait);
-                setDirection(recommended.direction);
-              }}>
-              {t.useSuggestion}
-            </Button>
-          )}
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start">
+      {/* ── What to train ───────────────────────────────────── */}
+      <div className="min-w-0 space-y-4">
+        <div className="px-1">
+          <h2 className="font-heading text-2xl font-bold tracking-tight">{t.title}</h2>
+          <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">{t.lead}</p>
         </div>
-      </AccentPanel>
 
-      <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold text-foreground/85">{t.traitLabel}</span>
-          <select
-            value={trait}
-            onChange={(e) => pickTrait(e.target.value as TraitCode)}
-            className="h-11 w-full rounded-xl border border-input bg-background/40 px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <option value="" disabled>
-              {t.pickTrait}
-            </option>
-            {DOMAINS.map((d) => (
-              <optgroup key={d} label={domains[d].name}>
-                <option value={d}>
-                  {domains[d].name} {t.wholeTrait}
-                </option>
-                {([1, 2, 3, 4, 5, 6] as const).map((n) => {
-                  const f = `${d}${n}` as FacetCode;
-                  return (
-                    <option key={f} value={f}>
-                      {facets[f].name}
-                    </option>
-                  );
-                })}
-              </optgroup>
-            ))}
-          </select>
-        </label>
-
-        {trait && (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:items-end">
-            <div>
-              <span className="mb-1.5 block text-xs font-semibold text-foreground/85">{t.directionLabel}</span>
-              <Segmented label={t.directionLabel} value={direction} onChange={setDirection} options={directionsFor(trait).map((d) => ({ value: d, label: d === "channel" ? t.channelShort : t.directions[d] }))} />
-            </div>
-            {current !== undefined && (
-              <Tile className="!p-3">
-                <div className="mb-1.5 flex justify-between text-xs">
-                  <span className="text-muted-foreground">{t.current}</span>
-                  <Score value={current} />
-                </div>
-                <ScaleBar value={current} size="sm" />
-              </Tile>
+        <AccentPanel accent="primary">
+          <p className="text-xs font-medium text-muted-foreground">{t.recommended}</p>
+          {recommended ? (
+            <>
+              <p className="mt-1.5 inline-flex items-center gap-2 font-heading text-lg font-bold tracking-tight">
+                <Sparkles className="size-4 text-primary" />
+                {t.directions[recommended.direction]} {traitName(recommended.trait)}
+              </p>
+              <p className="mt-1 max-w-prose text-xs leading-relaxed text-muted-foreground">{focusAreas[primary!.id].goalRationale}</p>
+            </>
+          ) : (
+            <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-foreground/85">{focusAreas.maintain.goalRationale}</p>
+          )}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] text-muted-foreground">{t.recommendedNote}</p>
+            {recommended && !isRecommended && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setTrait(recommended.trait);
+                  setDirection(recommended.direction);
+                }}
+              >
+                {t.useSuggestion}
+              </Button>
             )}
           </div>
-        )}
-        {direction === "channel" && <p className="mt-2 text-xs text-muted-foreground">{t.directions.channel}.</p>}
+        </AccentPanel>
+
+        <section className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-semibold text-foreground/85">{t.traitLabel}</span>
+            <select
+              value={trait}
+              onChange={(e) => pickTrait(e.target.value as TraitCode)}
+              className="h-11 w-full rounded-xl border border-input bg-background/40 px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="" disabled>
+                {t.pickTrait}
+              </option>
+              {DOMAINS.map((d) => (
+                <optgroup key={d} label={domains[d].name}>
+                  <option value={d}>
+                    {domains[d].name} {t.wholeTrait}
+                  </option>
+                  {([1, 2, 3, 4, 5, 6] as const).map((n) => {
+                    const f = `${d}${n}` as FacetCode;
+                    return (
+                      <option key={f} value={f}>
+                        {facets[f].name}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+
+          {trait && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <span className="mb-1.5 block text-xs font-semibold text-foreground/85">{t.directionLabel}</span>
+                <Segmented
+                  label={t.directionLabel}
+                  value={direction}
+                  onChange={setDirection}
+                  options={directionsFor(trait).map((d) => ({ value: d, label: d === "channel" ? t.channelShort : t.directions[d] }))}
+                />
+                {direction === "channel" && <p className="mt-1.5 text-xs text-muted-foreground">{t.directions.channel}.</p>}
+              </div>
+              {current !== undefined && (
+                <div>
+                  <div className="mb-1.5 flex justify-between text-xs">
+                    <span className="text-muted-foreground">{t.current}</span>
+                    <Score value={current} />
+                  </div>
+                  <ScaleBar value={current} size="sm" />
+                </div>
+              )}
+            </div>
+          )}
+        </section>
       </div>
 
-      <AccentPanel accent="cyan" eyebrow={t.woopTitle} subtitle={t.woopLead}>
-        <div className="mt-4 space-y-3.5">
+      {/* ── How it will happen ──────────────────────────────── */}
+      <section className="min-w-0 rounded-2xl border border-border/60 bg-card p-4 sm:p-6">
+        <h3 className="font-heading text-lg font-bold tracking-tight">{t.woopTitle}</h3>
+        <p className="mt-1 max-w-[60ch] text-xs leading-relaxed text-muted-foreground">{t.woopLead}</p>
+        <div className="mt-5 space-y-4">
           <Field label={t.outcome} hint={t.outcomeHint} value={outcome} onChange={setOutcome} />
           <Field label={t.obstacle} hint={t.obstacleHint} value={obstacle} onChange={setObstacle} />
-          <div className="rounded-xl border border-border/50 p-3.5">
-            <Eyebrow className="mb-3">{t.plan}</Eyebrow>
-            <div className="space-y-3">
-              <Field label={t.ifLabel} hint={t.ifHint} value={ifCue} onChange={setIfCue} />
-              <Field label={t.thenLabel} hint={t.thenHint} value={thenAction} onChange={setThenAction} />
-            </div>
-          </div>
+          <fieldset className="space-y-3 rounded-xl border border-primary/20 bg-primary/[0.03] p-3.5">
+            <legend className="px-1 text-xs font-semibold text-primary">{t.plan}</legend>
+            <Field label={t.ifLabel} hint={t.ifHint} value={ifCue} onChange={setIfCue} />
+            <Field label={t.thenLabel} hint={t.thenHint} value={thenAction} onChange={setThenAction} />
+          </fieldset>
         </div>
-      </AccentPanel>
 
-      {existing && <p className="text-xs text-muted-foreground">{t.restartWarning}</p>}
-      {tried && !valid && <p className="text-xs text-loss">{t.required}</p>}
-      <Button size="lg" className="w-full sm:w-auto" onClick={save} disabled={saving}>
-        {saving ? copy.common.saving : existing ? t.update : t.start}
-      </Button>
+        <div className="mt-5 space-y-2 border-t border-border/50 pt-4">
+          {existing && <p className="text-xs text-muted-foreground">{t.restartWarning}</p>}
+          {tried && !valid && <p className="text-xs text-loss">{t.required}</p>}
+          <Button size="lg" className="w-full" onClick={save} disabled={saving}>
+            {saving ? copy.common.saving : existing ? t.update : t.start}
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { PreMarketExercises } from "@/components/trade-therapist/pre-market-exer
 import { TherapistToday } from "@/components/trade-therapist/therapist-today";
 import type { TradeJournalEntry } from "@/lib/types";
 import { FeatureGate } from "@/components/access/access-provider";
+import { TradeProfileTab } from "@/components/trade-profile/trade-profile-tab";
 
 /**
  * MC Trade Therapist: the surface for getting better at trading. Four views:
@@ -22,14 +23,17 @@ import { FeatureGate } from "@/components/access/access-provider";
  *                  preventing and repeating them today.
  *   • Reviews:     the weekly and monthly write-ups, auto-synced and only
  *                  counted in the MC Mindscore once a week has closed.
+ *   • My Trade Profile: the Big Five assessment and the 12-week trait
+ *                  program built on it (src/components/trade-profile).
  * Every read is deterministic and traces back to the trader's own history.
  */
-type TherapistTab = "today" | "daily" | "premarket" | "reviews";
+type TherapistTab = "today" | "daily" | "premarket" | "reviews" | "profile";
 const TABS: { key: TherapistTab; label: string; short?: string }[] = [
   { key: "today", label: "Today" },
   { key: "daily", label: "Post Market", short: "Post Market" },
   { key: "premarket", label: "Pre-market exercises", short: "Pre-market" },
   { key: "reviews", label: "Reviews" },
+  { key: "profile", label: "My Trade Profile", short: "Trade Profile" },
 ];
 
 export default function TradeTherapistPage() {
@@ -119,6 +123,7 @@ export default function TradeTherapistPage() {
         )}
         {tab === "premarket" && <PreMarketExercises trades={trades} date={dailyDate} />}
         {tab === "reviews" && <FeatureGate feature="weeklyReviews"><ReviewsPanel /></FeatureGate>}
+        {tab === "profile" && <TradeProfileTab />}
       </PageWrapper>
     </div>
   );

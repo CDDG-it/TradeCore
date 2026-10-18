@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, ClipboardCheck, NotebookPen, Target } from "lucide-react";
+import { ArrowRight, ChevronRight, ClipboardCheck, NotebookPen } from "lucide-react";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -10,15 +10,20 @@ import { copy } from "@/lib/trade-profile/content/copy";
 import { exerciseById } from "@/lib/trade-profile/content/exercises";
 import { traitName } from "@/lib/trade-profile/content/traits";
 import { daysBetween, fromKey } from "@/lib/trade-profile/dates";
-import { dueRetests, exerciseForDay } from "@/lib/trade-profile/program";
+import { dueRetests, exerciseForDay, type ProgramWeek } from "@/lib/trade-profile/program";
 import { CheckinForm } from "@/components/trade-profile/checkin-form";
-import { DifficultyPill, Eyebrow, Pill, ProgressLine, Tile } from "@/components/trade-profile/primitives";
+import { DifficultyPill, Tile } from "@/components/trade-profile/primitives";
 import { useDerived, useTradeProfile } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
 
 const fmt = (k: string) => fromKey(k).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const RETEST_WEEKS = thresholds.retestWeeks as readonly number[];
 
-/** Where the program stands today: the goal, today's challenge, the check-in, and anything due. */
+/**
+ * Where the program stands today. A two-column workspace on desktop: the
+ * challenge and the week on the left, the trader's own levers (where they are,
+ * the check-in, anything due) in a rail on the right.
+ */
 export function TodayView() {
   const { state, todayKey } = useTradeProfile();
   const { goalTarget, schedule, position } = useDerived();
@@ -28,9 +33,9 @@ export function TodayView() {
 
   if (!state.goal || !goalTarget || !schedule || !state.programStart || !position) {
     return (
-      <AccentPanel accent="primary" eyebrow={t.noGoalTitle} subtitle={t.noGoal}>
+      <AccentPanel accent="primary" title={t.noGoalTitle} subtitle={t.noGoal}>
         <Button className="mt-4" onClick={() => nav.goTab("goal")}>
-          {t.chooseGoal} <ChevronRight />
+          {t.chooseGoal} <ArrowRight />
         </Button>
       </AccentPanel>
     );
@@ -50,167 +55,192 @@ export function TodayView() {
   const dayNo = Math.max(0, Math.min(position.dayIndex + 1, total));
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-[1.4fr_1fr]">
-        <Tile className="flex items-start gap-3">
-          <Target className="mt-0.5 size-4 shrink-0 text-primary" />
-          <div className="min-w-0 text-sm">
-            <p className="font-semibold">
-              {copy.goal.directions[goal.direction]} · {traitName(goal.trait)}
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start">
+      {/* ── The work ─────────────────────────────────────────── */}
+      <div className="min-w-0 space-y-4">
+        {today ? (
+          <AccentPanel accent="primary" className="sm:p-6 sm:pl-7">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-medium text-muted-foreground">{t.challenge}</p>
+              <DifficultyPill level={today.difficulty} />
+            </div>
+            <button type="button" onClick={() => nav.openExercise(today.id)} className="group mt-2 block text-left">
+              <h2 className="font-heading text-2xl font-bold leading-tight tracking-tight [text-wrap:balance] group-hover:text-primary sm:text-[28px]">
+                {today.title}
+              </h2>
+              <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">{today.goal}</p>
+            </button>
+
+            <div className="mt-5 rounded-xl border border-ice/15 bg-ice/[0.05] p-4">
+              <p className="text-xs font-semibold text-ice">{t.tradingVersion}</p>
+              <p className="mt-1.5 max-w-[65ch] text-[15px] leading-relaxed text-foreground/90">{today.tradingVersion}</p>
+            </div>
+            <p className="mt-3 max-w-[65ch] text-xs leading-relaxed text-muted-foreground">
+              <span className="font-medium text-foreground/70">{t.logging}.</span> {today.logging}
             </p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{goal.ifCue}</p>
-            <p className="text-xs leading-relaxed text-foreground/85">→ {goal.thenAction}</p>
-          </div>
-        </Tile>
-        <Tile>
-          <div className="mb-2 flex items-baseline justify-between text-xs">
-            <span className="font-semibold">
-              {copy.common.week} {position.week} <span className="font-normal text-muted-foreground">{copy.common.of} {thresholds.programWeeks}</span>
-            </span>
-            <span className="tabular-nums text-muted-foreground">
-              {copy.common.day} {dayNo} / {total}
-            </span>
-          </div>
-          <ProgressLine value={dayNo / total} />
-        </Tile>
+          </AccentPanel>
+        ) : (
+          <Tile>
+            <p className="text-sm text-foreground/85">{position.finished ? t.finished : `${t.notStarted} ${fmt(start)}.`}</p>
+          </Tile>
+        )}
+
+        {position.started && !position.finished && week && (
+          <section className="rounded-2xl border border-border/60 bg-card">
+            <h3 className="px-4 pt-4 font-heading text-sm font-bold tracking-tight sm:px-5">
+              {t.thisWeek} <span className="font-medium text-muted-foreground">· {copy.common.week} {position.week}</span>
+            </h3>
+            <ul className="mt-2 divide-y divide-border/50">
+              {week.exerciseIds.map((id) => {
+                const ex = exerciseById[id];
+                return (
+                  <li key={id}>
+                    <button
+                      type="button"
+                      onClick={() => nav.openExercise(id)}
+                      className="press flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/30 sm:px-5"
+                    >
+                      <span className={cn("size-1.5 shrink-0 rounded-full", id === todaysId ? "bg-primary" : "bg-transparent")} aria-hidden />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold">{ex.title}</span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {ex.frequency}, {ex.duration.toLowerCase()}
+                        </span>
+                      </span>
+                      <DifficultyPill level={ex.difficulty} />
+                      <ChevronRight className="size-4 text-muted-foreground" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setShowAll(!showAll)}
+              aria-expanded={showAll}
+              className="flex w-full items-center justify-between border-t border-border/50 px-4 py-3 text-left text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:px-5"
+            >
+              {t.plan}
+              <ChevronRight className={cn("size-4 transition-transform duration-200", showAll && "rotate-90")} />
+            </button>
+            {showAll && <WeekPlan schedule={schedule} current={position.week} onOpen={nav.openExercise} />}
+          </section>
+        )}
       </div>
 
-      {retests.map((w) => (
-        <button
-          key={w}
-          type="button"
-          onClick={() => nav.openRetest(w)}
-          className="press flex w-full items-center gap-3.5 rounded-2xl border border-ice/35 bg-ice/[0.07] p-4 text-left transition-colors hover:bg-ice/[0.12]"
-        >
-          <ClipboardCheck className="size-5 shrink-0 text-ice" />
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold">{t.retestDue(w)}</span>
-            <span className="text-xs text-muted-foreground">{t.retestCta}</span>
-          </span>
-          <ChevronRight className="size-4 text-ice" />
-        </button>
-      ))}
-
-      {!position.started && (
-        <Tile>
-          <p className="text-sm text-foreground/85">
-            {t.notStarted} {fmt(start)}.
-          </p>
-        </Tile>
-      )}
-      {position.finished && (
-        <Tile>
-          <p className="text-sm text-foreground/85">{t.finished}</p>
-        </Tile>
-      )}
-
-      {today && (
-        <AccentPanel
-          accent="primary"
-          eyebrow={t.challenge}
-          title={
-            <button type="button" onClick={() => nav.openExercise(today.id)} className="text-left hover:text-primary">
-              {today.title}
-            </button>
-          }
-          subtitle={today.goal}
-          headerRight={<DifficultyPill level={today.difficulty} />}
-        >
-          <div className="mt-4 rounded-xl border border-ice/15 bg-ice/[0.06] p-3.5">
-            <Eyebrow tone="ice">{t.tradingVersion}</Eyebrow>
-            <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">{today.tradingVersion}</p>
+      {/* ── The rail ─────────────────────────────────────────── */}
+      <aside className="min-w-0 space-y-4">
+        <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-heading text-[28px] font-bold leading-none tracking-tight tabular-nums">
+              {copy.common.week} {position.week}
+              <span className="ml-1 text-base font-semibold text-muted-foreground">/ {thresholds.programWeeks}</span>
+            </p>
+            <p className="text-xs tabular-nums text-muted-foreground">
+              {copy.common.day} {dayNo} {copy.common.of} {total}
+            </p>
           </div>
-          <p className="mt-2.5 text-[11px] leading-relaxed text-muted-foreground">
-            {t.logging}: {today.logging}
-          </p>
-          <div className="mt-5 border-t border-border/50 pt-4">
-            <div className="mb-3.5 flex items-baseline justify-between">
-              <span className="font-heading text-sm font-bold tracking-tight">{copy.checkin.title}</span>
+          <WeekStrip current={position.week} started={position.started} />
+          <div className="mt-4 border-t border-border/50 pt-3.5 text-sm">
+            <p className="font-semibold">
+              {copy.goal.directions[goal.direction]} {traitName(goal.trait)}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {goal.ifCue}
+              <br />
+              <span className="text-foreground/85">{goal.thenAction}</span>
+            </p>
+          </div>
+        </div>
+
+        {retests.map((w) => (
+          <DueRow key={w} icon={<ClipboardCheck className="size-4 text-ice" />} tone="ice" title={t.retestDue(w)} hint={t.retestCta} onClick={() => nav.openRetest(w)} />
+        ))}
+        {reflectionWeek && (
+          <DueRow
+            icon={<NotebookPen className="size-4 text-primary" />}
+            tone="primary"
+            title={t.reflectionDue(reflectionWeek)}
+            hint={t.reflectionCta}
+            onClick={() => nav.openReflection(reflectionWeek)}
+          />
+        )}
+
+        {today && (
+          <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
+            <div className="mb-4 flex items-baseline justify-between">
+              <h3 className="font-heading text-sm font-bold tracking-tight">{copy.checkin.title}</h3>
               <span className="text-[11px] text-muted-foreground">{copy.checkin.subtitle}</span>
             </div>
             <CheckinForm key={todayKey} date={todayKey} exerciseId={today.id} goal={goalTarget} />
           </div>
-        </AccentPanel>
-      )}
+        )}
+      </aside>
+    </div>
+  );
+}
 
-      {reflectionWeek && (
-        <button
-          type="button"
-          onClick={() => nav.openReflection(reflectionWeek)}
-          className="press flex w-full items-center gap-3.5 rounded-2xl border border-border/60 bg-card p-4 text-left transition-colors hover:border-primary/40"
-        >
-          <NotebookPen className="size-5 shrink-0 text-primary" />
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold">{t.reflectionDue(reflectionWeek)}</span>
-            <span className="text-xs text-muted-foreground">{t.reflectionCta}</span>
-          </span>
-          <ChevronRight className="size-4 text-muted-foreground" />
-        </button>
-      )}
+/** Twelve segments: done, this week, still to come. Retest weeks carry a notch. */
+function WeekStrip({ current, started }: { current: number; started: boolean }) {
+  return (
+    <div className="mt-4 grid grid-cols-12 gap-1" aria-hidden>
+      {Array.from({ length: thresholds.programWeeks }, (_, i) => i + 1).map((w) => (
+        <span key={w} className="relative">
+          <span
+            className={cn(
+              "block h-1.5 rounded-full transition-colors",
+              started && w < current ? "bg-primary/70" : started && w === current ? "bg-primary" : "bg-muted/70",
+            )}
+          />
+          {RETEST_WEEKS.includes(w) && <span className="absolute -top-1.5 left-1/2 h-1 w-px -translate-x-1/2 bg-ice" />}
+        </span>
+      ))}
+    </div>
+  );
+}
 
-      {position.started && !position.finished && week && (
-        <section>
-          <Eyebrow className="mb-2">{t.thisWeek}</Eyebrow>
-          <ul className="grid gap-2 sm:grid-cols-3">
-            {week.exerciseIds.map((id) => {
-              const ex = exerciseById[id];
-              return (
-                <li key={id}>
-                  <button
-                    type="button"
-                    onClick={() => nav.openExercise(id)}
-                    className={cn(
-                      "press flex h-full w-full flex-col items-start gap-2 rounded-xl border bg-card p-3.5 text-left transition-colors hover:border-primary/40",
-                      id === todaysId ? "border-primary/35" : "border-border/60",
-                    )}
-                  >
-                    <DifficultyPill level={ex.difficulty} />
-                    <span className="text-sm font-semibold leading-snug">{ex.title}</span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {ex.frequency} · {ex.duration}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+function DueRow({ icon, tone, title, hint, onClick }: { icon: React.ReactNode; tone: "ice" | "primary"; title: string; hint: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "press flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-colors",
+        tone === "ice" ? "border-ice/30 bg-ice/[0.06] hover:bg-ice/[0.1]" : "border-primary/25 bg-primary/[0.05] hover:bg-primary/[0.09]",
       )}
+    >
+      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-background/50">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold">{title}</span>
+        <span className="text-xs text-muted-foreground">{hint}</span>
+      </span>
+      <ArrowRight className="size-4 text-muted-foreground" />
+    </button>
+  );
+}
 
-      <section>
-        <button type="button" onClick={() => setShowAll(!showAll)} className="flex w-full items-center justify-between py-1 text-left">
-          <Eyebrow>{t.plan}</Eyebrow>
-          <ChevronRight className={cn("size-4 text-muted-foreground transition-transform", showAll && "rotate-90")} />
-        </button>
-        {showAll && (
-          <ol className="mt-2 grid gap-2 sm:grid-cols-2">
-            {schedule.map((w) => (
-              <li key={w.week} className={cn("rounded-xl border p-3.5", w.week === position.week ? "border-primary/40 bg-card" : "border-border/50 bg-card/50")}>
-                <p className="mb-2 flex items-center justify-between text-xs">
-                  <span className="font-semibold">
-                    {copy.common.week} {w.week}
-                    {(thresholds.retestWeeks as readonly number[]).includes(w.week) && (
-                      <Pill tone="ice" className="ml-2">
-                        {t.retestBadge}
-                      </Pill>
-                    )}
-                  </span>
-                  <DifficultyPill level={w.targetDifficulty} />
-                </p>
-                <ul className="space-y-1 text-xs text-muted-foreground">
-                  {w.exerciseIds.map((id) => (
-                    <li key={id}>
-                      <button type="button" onClick={() => nav.openExercise(id)} className="text-left hover:text-foreground">
-                        {exerciseById[id].title}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+function WeekPlan({ schedule, current, onOpen }: { schedule: ProgramWeek[]; current: number; onOpen: (id: string) => void }) {
+  return (
+    <ol className="grid gap-x-6 gap-y-4 border-t border-border/50 px-4 py-4 sm:grid-cols-2 sm:px-5">
+      {schedule.map((w) => (
+        <li key={w.week} className={cn(w.week < current && "opacity-60")}>
+          <p className="mb-1 flex items-center gap-2 text-xs font-semibold">
+            <span className={cn(w.week === current && "text-primary")}>
+              {copy.common.week} {w.week}
+            </span>
+            {RETEST_WEEKS.includes(w.week) && <span className="text-[11px] font-medium text-ice">{copy.today.retestBadge}</span>}
+          </p>
+          <ul className="space-y-0.5 text-xs text-muted-foreground">
+            {w.exerciseIds.map((id) => (
+              <li key={id}>
+                <button type="button" onClick={() => onOpen(id)} className="text-left hover:text-foreground">
+                  {exerciseById[id].title}
+                </button>
               </li>
             ))}
-          </ol>
-        )}
-      </section>
-    </div>
+          </ul>
+        </li>
+      ))}
+    </ol>
   );
 }
