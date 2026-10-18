@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { BehavioralInsights } from "@/components/analytics/behavioral-insights";
 import { sampleAnalyticsData } from "@/lib/journal/analytics-sample";
-import { addDays, format, startOfWeek, subWeeks } from "date-fns";
+import { addDays, format, startOfWeek } from "date-fns";
 import type { BestTradeOfDay, Habit, HabitCompletion, PreMarketExercise, WeeklyTradeReview } from "@/lib/types";
 
 export function PreviewBehavioralInsights() {
