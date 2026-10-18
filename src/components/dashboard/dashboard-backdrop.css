@@ -1,0 +1,89 @@
+/*
+ * Dashboard backdrop. Three blurred light fields drift on long, offset cycles
+ * (48s, 66s, 84s), so the light never repeats in an obvious loop; the contour
+ * map turns a few degrees over two minutes. Contrast stays low: the brightest
+ * field is turquoise at about 9% over navy.
+ */
+
+.dash-backdrop {
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--background) 92%, #12305a), var(--background) 70%);
+}
+
+.dash-aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(110px);
+  will-change: transform;
+}
+.dash-aurora--a {
+  width: 55vmax; height: 40vmax; left: -12vmax; top: -14vmax;
+  background: color-mix(in oklab, var(--primary) 9%, transparent);
+  animation: dash-drift-a 48s ease-in-out infinite alternate;
+}
+.dash-aurora--b {
+  width: 46vmax; height: 34vmax; right: -14vmax; top: 18vh;
+  background: color-mix(in oklab, var(--ice) 7%, transparent);
+  animation: dash-drift-b 66s ease-in-out infinite alternate;
+}
+.dash-aurora--c {
+  width: 60vmax; height: 36vmax; left: 20vw; bottom: -22vmax;
+  background: rgb(30 64 175 / 0.1);
+  animation: dash-drift-c 84s ease-in-out infinite alternate;
+}
+
+@keyframes dash-drift-a { to { transform: translate3d(14vw, 10vh, 0) scale(1.12); } }
+@keyframes dash-drift-b { to { transform: translate3d(-12vw, 14vh, 0) scale(0.92); } }
+@keyframes dash-drift-c { to { transform: translate3d(-10vw, -8vh, 0) scale(1.08); } }
+
+.dash-contours {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: rgb(165 243 252 / 0.065);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  /* Fade the map out towards the edges, so it reads as a texture, not a drawing. */
+  -webkit-mask-image: radial-gradient(95% 95% at 55% 45%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(95% 95% at 55% 45%, #000 40%, transparent 100%);
+}
+.dash-contours path { vector-effect: non-scaling-stroke; }
+.dash-contours__peak {
+  transform: translate(330px, -150px);
+}
+.dash-contours__peak, .dash-contours__valley {
+  animation: dash-turn 120s ease-in-out infinite alternate;
+}
+.dash-contours__valley {
+  transform: translate(-460px, 300px);
+  animation-duration: 150s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes dash-turn {
+  from { rotate: -4deg; scale: 1; }
+  to { rotate: 5deg; scale: 1.05; }
+}
+
+/* Film grain on its own fixed layer, never animated. */
+.dash-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+html.light .dash-backdrop {
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--background) 94%, #99f6e4), var(--background) 70%);
+}
+html.light .dash-aurora--a { background: color-mix(in oklab, var(--primary) 10%, transparent); }
+html.light .dash-aurora--b { background: color-mix(in oklab, var(--ice) 8%, transparent); }
+html.light .dash-aurora--c { background: rgb(59 130 246 / 0.06); }
+html.light .dash-contours { stroke: rgb(15 118 110 / 0.07); }
+html.light .dash-grain { opacity: 0.025; mix-blend-mode: multiply; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-aurora, .dash-contours__peak, .dash-contours__valley { animation: none; }
+}
