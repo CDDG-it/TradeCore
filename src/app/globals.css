@@ -1460,6 +1460,11 @@ html:has(.marketing-page) { position: relative; }
     #0b1120;
 }
 
+/* Over the smoke backdrop the sections keep their glow but drop their solid navy ground. */
+.marketing-dark-flow--smoke .marketing-section--blue-glow::before {
+  background: radial-gradient(ellipse 620px 440px at var(--glow-x, 72%) 28%, rgba(11, 103, 201, 0.20), transparent 76%);
+}
+
 .marketing-dark-flow .marketing-section--blue-glow:nth-child(even) {
   --glow-x: 24%;
 }
