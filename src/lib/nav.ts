@@ -24,6 +24,7 @@ export const APP_TABS: AppTab[] = [
   { label: "MC Trade Therapist", href: "/trade-therapist", group: "MC Mindset formula" },
   // Option Flow is not listed here: it lives as a subtab of Global Markets.
   { label: "Global Markets", href: "/news-city", group: "MC News Dashboard" },
+  { label: "My Trade Profile", href: "/trade-profile", group: "MC Mindset formula" },
 ];
 
 /**
@@ -40,4 +41,5 @@ export const PRIMARY_NAV: AppTab[] = [
   { label: "My Edge", href: "/psychological-edge", group: null, short: "My Edge" },
   { label: "MC Trade Therapist", href: "/trade-therapist", group: null, short: "Therapist" },
   { label: "Global Markets", href: "/news-city", group: null, short: "Markets" },
+  { label: "My Trade Profile", href: "/trade-profile", group: null, short: "Profile" },
 ];

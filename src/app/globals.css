@@ -145,6 +145,15 @@
   --chart-4: #EF4444;                          /* negative red */
   --chart-5: #EAB308;                          /* warning yellow */
 
+  /* ── Big Five domains (My Trade Profile) ─────────
+     Five distinct, non-semantic hues so a trait never reads as a win, a loss
+     or a warning. No orange. */
+  --trait-n: #60A5FA;
+  --trait-e: #14B8A6;
+  --trait-o: #A78BFA;
+  --trait-a: #F472B6;
+  --trait-c: #22D3EE;
+
   --radius: 0.75rem;
 
   /* ── Sidebar: rich navy blue ─────────────────── */
@@ -265,6 +274,12 @@ html.light {
   --accent-label-strength: 100%;
   --on-brand: #F8FAFC;
   --panel-shadow: 0 10px 26px -18px rgba(15, 23, 42, 0.28);
+
+  --trait-n: #2563EB;
+  --trait-e: #0D9488;
+  --trait-o: #7C3AED;
+  --trait-a: #DB2777;
+  --trait-c: #0891B2;
 }
 
 /* Light mode: liquid glass overrides */

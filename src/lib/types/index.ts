@@ -578,3 +578,65 @@ export interface TradingGoal {
   created_at: string;
   updated_at: string;
 }
+
+// ── My Trade Profile (sql/trade_profile.sql) ──────────────────────────
+// Raw rows only. Scores, focus areas and the program schedule are derived in
+// src/lib/trade-profile from these; see model.ts there for the in-app shape.
+
+export interface TradeProfileRow {
+  id: string;
+  user_id: string;
+  /** Item id ("1".."120") → answer 1–5 as given, before reverse keying. */
+  answers: Record<string, number>;
+  /** Assessment page to resume on. */
+  page: number;
+  consented_on?: string | null;
+  completed_on?: string | null;
+  /** A domain ("N") or facet ("N1"). */
+  goal_trait?: string | null;
+  goal_direction?: "increase" | "decrease" | "channel" | null;
+  goal_area?: string | null;
+  goal_outcome: string;
+  goal_obstacle: string;
+  goal_if_cue: string;
+  goal_then_action: string;
+  /** Day 1 of the 12-week program (yyyy-mm-dd). */
+  program_start?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TradeProfileRowInput = Partial<Omit<TradeProfileRow, "id" | "user_id" | "created_at" | "updated_at">>;
+
+export interface TradeProfileCheckinRow {
+  id: string;
+  user_id: string;
+  date: string;
+  exercise_id: string;
+  done: "yes" | "partly" | "no";
+  /** How hard it was, 1–5. */
+  difficulty: number;
+  /** State rating of the goal trait that day, 1–7. */
+  state: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TradeProfileReflectionRow {
+  id: string;
+  user_id: string;
+  week: number;
+  answers: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TradeProfileRetestRow {
+  id: string;
+  user_id: string;
+  week: number;
+  taken_on: string;
+  answers: Record<string, number>;
+  created_at: string;
+  updated_at: string;
+}

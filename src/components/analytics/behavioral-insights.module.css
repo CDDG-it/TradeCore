@@ -1,0 +1,46 @@
+.enter {
+  animation: enter 220ms var(--ease-out-strong) both;
+}
+
+.tab,
+.selectable,
+.evidence {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform var(--duration-press) var(--ease-out-strong);
+}
+
+.bar {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  transform-origin: left center;
+  transition: transform 240ms var(--ease-in-out-strong);
+}
+
+.rail::before {
+  content: "";
+  position: absolute;
+  top: 1.5rem;
+  bottom: 1.5rem;
+  left: 1.9rem;
+  width: 1px;
+  background: linear-gradient(to bottom, rgba(20, 184, 166, .42), rgba(20, 184, 166, .06));
+}
+
+@keyframes enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .selectable:hover,
+  .evidence:hover { transform: translateY(-1px); }
+  .tab:hover { background-color: rgba(20, 184, 166, .08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter { animation: none; }
+  .tab,
+  .selectable,
+  .evidence { transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+  .bar { transition: none; }
+}

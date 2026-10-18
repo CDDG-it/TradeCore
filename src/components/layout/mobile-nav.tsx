@@ -59,7 +59,7 @@ export function BottomNav() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="mx-auto grid h-14 max-w-md grid-cols-5 items-stretch px-2">
+      <div className="mx-auto grid h-14 max-w-md grid-cols-6 items-stretch px-1.5">
         {[first, second].map((tab) => <TabLabel key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
         <DropdownMenu open={createOpen} onOpenChange={setCreateOpen}>
           <DropdownMenuTrigger
