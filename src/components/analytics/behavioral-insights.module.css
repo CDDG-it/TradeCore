@@ -1,7 +1,16 @@
 .card,
 .footprint,
-.dayRow {
+.figure,
+.filter {
   transition: border-color 180ms ease, background-color 180ms ease, transform 180ms cubic-bezier(.2,.8,.2,1);
+}
+
+.ring {
+  transition: stroke-dasharray 350ms cubic-bezier(.2,.8,.2,1);
+}
+
+.bar {
+  transition: width 350ms cubic-bezier(.2,.8,.2,1);
 }
 
 .trail {
@@ -23,10 +32,10 @@
 
 @media (hover: hover) and (pointer: fine) {
   .footprint:hover { transform: translateY(-3px); }
-  .dayRow:hover { transform: translateX(2px); }
+  .figure:hover { transform: translateY(-2px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .footprint { animation: none; }
-  .card, .footprint, .dayRow { transition: none; }
+  .card, .footprint, .figure, .filter, .ring, .bar { transition: none; }
 }
