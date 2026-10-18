@@ -96,7 +96,7 @@ export function ContextStrip({
             transition={{ duration: 0.28, delay: reduce ? 0 : 0.3 + i * 0.04, ease: EASE }}
             whileHover={reduce ? undefined : { y: -2 }}
             whileTap={{ scale: 0.98, transition: PRESS }}
-            className="group relative flex min-w-0 flex-col justify-between gap-2 rounded-2xl border border-white/[.07] bg-card/60 px-3.5 py-3 text-left transition-[border-color,background-color] duration-300 hover:border-white/[.14] hover:bg-card/80"
+            className="group relative flex min-w-0 flex-col justify-between gap-2 rounded-2xl border border-white/[.07] bg-card px-3.5 py-3 text-left transition-[border-color,background-color] duration-300 hover:border-white/[.14] hover:bg-muted"
           >
             <span className="flex items-center justify-between gap-2">
               <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{t.label}</span>

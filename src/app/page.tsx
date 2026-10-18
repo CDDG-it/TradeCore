@@ -4,6 +4,7 @@ import { LandingFooter } from "@/components/landing/footer";
 import { DashboardScreenshot } from "@/components/landing/dashboard-sample";
 import { MarketContextVisual, ProcessCanvas, ReviewCanvas, TherapistVisual } from "@/components/landing/marketing-visuals";
 import { MindscoreAssembly, SectionHeader } from "@/components/landing/marketing-motion";
+import { SmokeBackground } from "@/components/landing/smoke-background";
 
 export default function HomePage() {
   return (
@@ -28,7 +29,14 @@ export default function HomePage() {
           </div>
         </section>
 
-        <div className="marketing-dark-flow text-white">
+        <div className="marketing-dark-flow marketing-dark-flow--smoke relative text-white">
+          {/* The smoke sits behind every section here: viewport-high and sticky, so it is always on screen without painting the whole run. */}
+          <div aria-hidden className="pointer-events-none absolute inset-0">
+            <div className="sticky top-0 h-svh">
+              <SmokeBackground className="absolute inset-0" />
+              <div className="absolute inset-0 bg-[#0b1120]/55" />
+            </div>
+          </div>
           <section id="the-approach" className="marketing-section marketing-section--blue-glow px-6 pb-20 pt-16 sm:px-10 md:pb-28 md:pt-24 lg:px-12">
             <div className="mx-auto max-w-[1260px]">
               <SectionHeader label="My Edge" title="Make your edge something you can repeat." tone="dark" className="mb-14 lg:mb-18">

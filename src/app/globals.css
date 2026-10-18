@@ -812,6 +812,14 @@ html:has(.trade-static-scroll) {
   background: color-mix(in oklch, var(--sidebar) 92%, transparent);
   box-shadow: 0 12px 32px -16px rgba(0, 0, 0, 0.6);
 }
+html.light .app-topbar {
+  background: linear-gradient(108deg, #d8f8f3 0%, #e6f5fb 52%, #eaf8f6 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85);
+}
+html.light .app-topbar[data-scrolled] {
+  background: linear-gradient(108deg, #d8f8f3 0%, #e6f5fb 52%, #eaf8f6 100%);
+  box-shadow: 0 12px 32px -20px rgba(15, 118, 110, .32), inset 0 1px 0 rgba(255, 255, 255, .85);
+}
 
 /* Press feedback: the interface acknowledges the tap. */
 .press {
@@ -1040,11 +1048,47 @@ html:has(.trade-static-scroll) {
 
 
 
-/* One section picker across My Edge, Trade Therapist and Global Markets. */
+/* The shared section picker: a luminous, solid liquid surface with a clear active state. */
 .section-nav-current {
-  border-color: color-mix(in oklch, var(--primary) 24%, transparent);
-  background: color-mix(in oklch, var(--primary) 8%, var(--background));
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: color-mix(in oklch, var(--primary) 42%, var(--card));
+  background: linear-gradient(135deg, color-mix(in oklch, var(--primary) 17%, var(--card)), color-mix(in oklch, var(--primary) 5%, var(--card)) 72%);
   color: var(--primary);
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 14%, transparent), 0 4px 18px -10px color-mix(in oklch, var(--primary) 75%, transparent);
+  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms var(--ease-out-strong);
+}
+.section-nav-current::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 65% 100% at 20% 0%, color-mix(in oklch, var(--primary) 20%, transparent), transparent 100%);
+  opacity: .6;
+  transform: translateX(-18%);
+  transition: opacity 300ms ease, transform 350ms var(--ease-out-strong);
+}
+.section-nav-current-dot {
+  background: currentColor;
+  box-shadow: 0 0 9px color-mix(in oklch, var(--primary) 75%, transparent);
+}
+.section-nav-trigger:hover .section-nav-current,
+.section-nav-trigger-open .section-nav-current {
+  border-color: color-mix(in oklch, var(--primary) 65%, var(--card));
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 20%, transparent), 0 8px 22px -10px color-mix(in oklch, var(--primary) 85%, transparent);
+}
+.section-nav-trigger:hover .section-nav-current::before,
+.section-nav-trigger-open .section-nav-current::before {
+  opacity: 1;
+  transform: translateX(0);
+}
+.section-nav-trigger:active .section-nav-current { transform: scale(.97); }
+.section-nav-menu {
+  border-color: color-mix(in oklch, var(--primary) 23%, var(--border));
+  background: linear-gradient(145deg, color-mix(in oklch, var(--primary) 7%, var(--popover)), var(--popover) 48%);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .45), inset 0 1px 0 color-mix(in oklch, white 8%, transparent);
 }
 .section-nav-chevron {
   opacity: .75;
@@ -1054,7 +1098,7 @@ html:has(.trade-static-scroll) {
 .section-nav-item {
   position: relative;
   isolation: isolate;
-  transition: transform 180ms var(--ease-out-strong);
+  transition: transform 180ms var(--ease-out-strong), color 180ms ease, border-color 180ms ease;
 }
 .section-nav-item::before {
   content: "";
@@ -1062,14 +1106,17 @@ html:has(.trade-static-scroll) {
   z-index: -1;
   inset: 0;
   border-radius: inherit;
-  background: color-mix(in oklch, var(--primary) 12%, var(--popover));
-  box-shadow: 0 0 22px rgba(20, 184, 166, .18);
+  background: linear-gradient(105deg, color-mix(in oklch, var(--primary) 17%, var(--popover)), color-mix(in oklch, var(--primary) 6%, var(--popover)));
   opacity: 0;
   pointer-events: none;
   transition: opacity 180ms var(--ease-out-strong);
 }
 .section-nav-item[data-highlighted] {
   color: var(--foreground);
+}
+.section-nav-item-active {
+  border-color: color-mix(in oklch, var(--primary) 28%, var(--popover));
+  background: color-mix(in oklch, var(--primary) 11%, var(--popover));
 }
 .section-nav-item[data-highlighted]::before { opacity: 1; }
 @media (hover: hover) and (pointer: fine) {
@@ -1085,7 +1132,11 @@ html:has(.trade-static-scroll) {
   opacity: 0;
   transform: translateY(-6px) scale(0.97);
 }
+.analytics-solid-pane.gmi-pane {
+  background: linear-gradient(145deg, var(--card), color-mix(in oklch, var(--card) 88%, var(--background)));
+}
 @media (prefers-reduced-motion: reduce) {
+  .section-nav-current, .section-nav-current::before { transition: none; }
   .section-nav-item { transition: none; }
   .section-nav-chevron { transition: opacity 180ms ease; }
   .section-nav-chevron-open { transform: none; }
@@ -1458,6 +1509,11 @@ html:has(.marketing-page) { position: relative; }
   background:
     radial-gradient(ellipse 620px 440px at var(--glow-x, 72%) 28%, rgba(11, 103, 201, 0.20), transparent 76%),
     #0b1120;
+}
+
+/* Over the smoke backdrop the sections keep their glow but drop their solid navy ground. */
+.marketing-dark-flow--smoke .marketing-section--blue-glow::before {
+  background: radial-gradient(ellipse 620px 440px at var(--glow-x, 72%) 28%, rgba(11, 103, 201, 0.20), transparent 76%);
 }
 
 .marketing-dark-flow .marketing-section--blue-glow:nth-child(even) {
