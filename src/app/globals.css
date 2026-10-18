@@ -1165,6 +1165,68 @@ html.light .app-topbar[data-scrolled] {
   .app-shell { padding-bottom: 0.5rem; }
 }
 
+/* The review title sits closer to the top navigation than dashboard sections. */
+.app-shell:has(.weekly-review-page) { padding-top: 0.5rem; }
+@media (min-width: 640px) {
+  .app-shell:has(.weekly-review-page) { padding-top: 1rem; }
+}
+
+/* Weekly review: dense glass panels with a result-colored edge. The edge
+   responds to hover and keyboard focus without moving the information. */
+.weekly-day-card {
+  --day-accent: var(--primary);
+  position: relative;
+  isolation: isolate;
+  border: 1px solid color-mix(in srgb, var(--day-accent) 18%, var(--border));
+  background:
+    linear-gradient(122deg, color-mix(in srgb, var(--day-accent) 5%, transparent), transparent 36%),
+    color-mix(in srgb, var(--card) 89%, transparent);
+  backdrop-filter: blur(16px) saturate(125%);
+  -webkit-backdrop-filter: blur(16px) saturate(125%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 7%, transparent), 0 12px 30px -26px rgba(0, 0, 0, .75);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+.weekly-day-card--win { --day-accent: var(--success); }
+.weekly-day-card--loss { --day-accent: var(--destructive); }
+.weekly-day-card--breakeven { --day-accent: var(--warning); }
+.weekly-day-card--quiet { --day-accent: var(--primary); }
+.weekly-day-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(115deg, color-mix(in srgb, var(--day-accent) 66%, white) 0%, color-mix(in srgb, var(--day-accent) 16%, transparent) 26%, transparent 65%, color-mix(in srgb, var(--day-accent) 38%, transparent) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: .32;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .weekly-day-card:hover {
+    border-color: color-mix(in srgb, var(--day-accent) 44%, var(--border));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 9%, transparent), 0 14px 34px -24px color-mix(in srgb, var(--day-accent) 28%, transparent);
+  }
+  .weekly-day-card:hover::before { opacity: .9; }
+}
+.weekly-day-card:focus-within {
+  border-color: color-mix(in srgb, var(--day-accent) 54%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--day-accent) 14%, transparent);
+}
+.weekly-day-card:focus-within::before { opacity: .9; }
+html.light .weekly-day-card {
+  background:
+    linear-gradient(122deg, color-mix(in srgb, var(--day-accent) 5%, transparent), transparent 38%),
+    color-mix(in srgb, var(--card) 93%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 10px 26px -22px rgba(15,23,42,.35);
+}
+@media (prefers-reduced-motion: reduce) {
+  .weekly-day-card, .weekly-day-card::before { transition-duration: 0ms; }
+}
+
 /* Phone tab bar: restrained press feedback on text labels and Create. */
 .mobile-tab > * {
   transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
