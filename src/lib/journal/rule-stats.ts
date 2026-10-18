@@ -92,6 +92,17 @@ function assessmentsByTrade(
   return out;
 }
 
+/** The assessed rules on each trade, with the same fallback and de-duplication as Analytics. */
+export function ruleAssessmentsByTrade(
+  trades: RuleTrade[],
+  ruleChecks: RuleCheckRow[] = []
+): Map<string, { label: string; passed: boolean }[]> {
+  return new Map([...assessmentsByTrade(trades, ruleChecks)].map(([trade, rows]) => [
+    trade.id,
+    rows.map(({ label, passed }) => ({ label, passed })),
+  ]));
+}
+
 /**
  * Each trade's kept/broken verdict per rule, keyed by trade id and rule label
  * (lower-cased). Same source and merging as the stats below, so a drill-down

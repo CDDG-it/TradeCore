@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { addMonths, format, parse } from "date-fns";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
@@ -204,6 +205,7 @@ export function AnalyticsDesk({ trades: allTrades, ruleChecks, today = new Date(
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Link href="/analytics/psychology" className="inline-flex h-7 items-center rounded-lg border border-primary/30 bg-primary/[.08] px-3 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/[.16]">Behavioral insights</Link>
             <AnimatePresence initial={false}>
               {mode === "month" && <MonthStepper key="m" month={shownMonth} first={bounds.first} last={bounds.last} onChange={setMonth} />}
             </AnimatePresence>
