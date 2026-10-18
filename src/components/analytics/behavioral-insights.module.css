@@ -1,36 +1,27 @@
-.footprint,
-.figure,
-.filter {
-  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms cubic-bezier(.2,.8,.2,1);
+.filter,
+.day {
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms cubic-bezier(.23, 1, .32, 1);
 }
 
-.largeFootprint {
-  animation: printIn 280ms cubic-bezier(.2,.8,.2,1) both;
-}
+.radarShape { animation: reveal 280ms cubic-bezier(.23, 1, .32, 1) both; }
 
 .trail {
   scrollbar-color: rgba(20, 184, 166, .35) transparent;
   scrollbar-width: thin;
 }
 
-.footprint {
-  animation: printIn 280ms cubic-bezier(.2,.8,.2,1) both;
-}
-
-.footprint:nth-child(2n) { animation-delay: 35ms; }
-.footprint:nth-child(3n) { animation-delay: 70ms; }
-
-@keyframes printIn {
-  from { opacity: 0; transform: translateY(5px) scale(.94); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes reveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .footprint:hover { transform: translateY(-3px); }
-  .figure:hover { transform: translateY(-2px); }
+  .day:hover { transform: translateY(-2px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .footprint, .largeFootprint { animation: none; }
-  .footprint, .figure, .filter { transition: none; }
+  .radarShape { animation: none; }
+  .filter, .day { transition: none; }
 }
+
+.radar text { fill: #94a3b8; font-size: 10px; font-weight: 600; }
