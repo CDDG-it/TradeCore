@@ -19,7 +19,7 @@ const draw = v({ pathLength: 1, opacity: 0.9 }, { pathLength: [0, 1], opacity: 1
 
 function Frame({ size, children }: { size: number; children: React.ReactNode }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       {children}
     </svg>
   );
@@ -32,15 +32,15 @@ const at = (x: number, y: number) => ({ transformBox: "view-box", transformOrigi
 const ICONS: Record<ExerciseTypeId, () => React.ReactNode> = {
   // A red candle and a green one, with the lesson arcing from one to the other.
   loss_win_review: () => <>
-    <path d="M7 4v16M5 9h4v7H5z" />
-    <path d="M17 3v15M15 6h4v7h-4z" />
-    <motion.path variants={v({ y: 0 }, { y: -1.5 })} d="M8.5 19.5c2.5 1.5 6 1.5 8-1.5" style={ACCENT} />
+    <path d="M7 5v3M7 15v3M5 8h4v7H5z" />
+    <path d="M17 3v3M17 12v3M15 6h4v6h-4z" />
+    <motion.path variants={v({ y: 0 }, { y: -1.2 })} d="M8 20.5c3 1 6 .5 8.5-2.5M16.5 18v-.1M14.6 18.2h2" style={ACCENT} />
   </>,
-  // The outcome is the flag; the bar in front is the obstacle you plan for.
+  // The outcome is the flag on the summit; the path up is where the obstacle sits.
   mental_contrasting: () => <>
-    <path d="M7 21V4" />
-    <motion.path variants={v({ rotate: 0 }, { rotate: -8 })} style={{ ...ACCENT, ...at(7, 5) }} d="M7 4.5h9l-2 3 2 3H7" />
-    <path d="M3 17h8M5 17v4M9 17v4" />
+    <path d="M3 20l6-8 3 3.5L15 11l6 9z" />
+    <path d="M15 11V4" />
+    <motion.path variants={v({ rotate: 0 }, { rotate: -10 })} style={{ ...ACCENT, ...at(15, 4.5) }} d="M15 4.5h4.5l-1.2 1.7 1.2 1.8H15" />
   </>,
   // A clock whose hand sweeps back: looking at the session from its end.
   pre_mortem: () => <>
@@ -89,17 +89,15 @@ const ICONS: Record<ExerciseTypeId, () => React.ReactNode> = {
       variants={v({ d: "M3 12c2-5 4-5 6 0s4 5 6 0 4-5 6 0" }, { d: "M3 12c2-0.6 4-0.6 6 0s4 0.6 6 0 4-0.6 6 0" })}
       style={ACCENT}
     />
-    <path d="M3 18h18" opacity={0.5} />
-    <path d="M3 6h18" opacity={0.5} />
+    <path d="M3 19h18" opacity={0.45} />
   </>,
   // A barrier that drops between the urge and the click.
   impulse_gate: () => <>
-    <path d="M5 21V8M19 21V8" />
-    <circle cx="5" cy="6.5" r="1.5" />
-    <motion.g variants={v({ rotate: -32 }, { rotate: 0 })} style={{ ...at(5, 11) }}>
-      <path d="M5 11h14" style={ACCENT} />
+    <path d="M5 20V9M19 20V9M3.5 20h3M17.5 20h3" />
+    <motion.g variants={v({ rotate: -30 }, { rotate: 0 })} style={at(5, 10)}>
+      <rect x="5" y="8.8" width="14" height="2.4" rx="1.2" style={ACCENT} />
+      <path d="M9 8.8l-1.2 2.4M13 8.8l-1.2 2.4M17 8.8l-1.2 2.4" style={ACCENT} />
     </motion.g>
-    <circle cx="19" cy="6.5" r="1.5" />
   </>,
   // A calendar with today's promise kept.
   follow_through: () => <>
