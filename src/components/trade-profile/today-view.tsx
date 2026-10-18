@@ -142,9 +142,14 @@ export function TodayView() {
           </div>
           <WeekStrip current={position.week} started={position.started} />
           <div className="mt-4 border-t border-border/50 pt-3.5 text-sm">
-            <p className="font-semibold">
-              {copy.goal.directions[goal.direction]} {traitName(goal.trait)}
-            </p>
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="font-semibold">
+                {copy.goal.directions[goal.direction]} {traitName(goal.trait)}
+              </p>
+              <button type="button" onClick={() => nav.goTab("goal")} className="shrink-0 text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+                {t.changeGoal}
+              </button>
+            </div>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               {goal.ifCue}
               <br />

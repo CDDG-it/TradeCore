@@ -1,40 +1,12 @@
 "use client";
 
-import { CartesianGrid, Line, LineChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { copy } from "@/lib/trade-profile/content/copy";
-import { domains, traitName } from "@/lib/trade-profile/content/traits";
+import { traitName } from "@/lib/trade-profile/content/traits";
 import type { DiffRow } from "@/lib/trade-profile/progress";
-import { DOMAINS, type Profile } from "@/lib/trade-profile/types";
 import { cn } from "@/lib/utils";
 
 const tick = { fontSize: 10, fill: "var(--color-muted-foreground)" };
-
-export function DomainRadar({ profile }: { profile: Profile }) {
-  // Letter + score on the axes so long names never clip on a phone; names in the legend.
-  const data = DOMAINS.map((d) => ({ trait: `${d} ${Math.round(profile.domains[d] ?? 0)}`, value: Math.round(profile.domains[d] ?? 0) }));
-  return (
-    <div>
-      <div className="h-64 w-full sm:h-72">
-        <ResponsiveContainer>
-          <RadarChart data={data} outerRadius="74%">
-            <PolarGrid stroke="var(--color-border)" />
-            <PolarAngleAxis dataKey="trait" tick={{ fontSize: 12, fontWeight: 700, fill: "var(--color-foreground)" }} />
-            <PolarRadiusAxis domain={[0, 100]} tickCount={5} tick={false} axisLine={false} />
-            <Radar dataKey="value" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.2} strokeWidth={2} animationDuration={600} />
-          </RadarChart>
-        </ResponsiveContainer>
-      </div>
-      <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-3">
-        {DOMAINS.map((d) => (
-          <li key={d}>
-            <span className="mr-1.5 font-semibold text-foreground">{d}</span>
-            {domains[d].name}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 export function StateLine({ data }: { data: { day: number; state: number }[] }) {
   return (

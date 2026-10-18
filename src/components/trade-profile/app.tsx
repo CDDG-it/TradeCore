@@ -8,7 +8,6 @@ import { DemoBar } from "@/components/trade-profile/demo-bar";
 import { Onboarding } from "@/components/trade-profile/onboarding";
 import { AssessmentView } from "@/components/trade-profile/assessment";
 import { DomainDetail, ProfileView } from "@/components/trade-profile/profile-view";
-import { FocusView } from "@/components/trade-profile/focus-view";
 import { GoalView } from "@/components/trade-profile/goal-view";
 import { TodayView } from "@/components/trade-profile/today-view";
 import { ProgressView } from "@/components/trade-profile/progress-view";
@@ -27,7 +26,12 @@ import {
   type ProfileView as View,
 } from "@/components/trade-profile/nav";
 
-const SECTIONS: { key: ProfileTab; label: string }[] = (Object.keys(copy.tabs) as ProfileTab[]).map((key) => ({ key, label: copy.tabs[key] }));
+const SECTIONS: { key: ProfileTab; label: string }[] = (Object.keys(copy.tabs) as (keyof typeof copy.tabs)[]).map((key) => ({ key, label: copy.tabs[key] }));
+const ALL_TABS: ProfileTab[] = ["today", "profile", "progress", "goal", "library"];
+/** The tab that stays underlined while a screen without its own tab is open. */
+const PARENT: Partial<Record<ProfileTab, ProfileTab>> = { goal: "today", library: "profile" };
+/** Older links pointed at sections that are now part of another one. */
+const RENAMED: Record<string, ProfileTab> = { focus: "profile" };
 const TODAY: View = { kind: "tab", tab: "today" };
 const EASE = [0.23, 1, 0.32, 1] as const;
 /** The Therapist owns `?tab=`; the section inside My Trade Profile rides on `?section=`. */
@@ -43,7 +47,8 @@ function urlFor(view: View): URL {
 /**
  * My Trade Profile, as a section of MC Trade Therapist: a Big Five assessment
  * (IPIP-NEO-60) turned into a 12-week development program. Before the
- * assessment is done it is an onboarding flow; after it, six sub-sections.
+ * assessment is done it is an onboarding flow; after it, three sections
+ * (Today, Profile, Progress), with the goal and the evidence one click away.
  *
  * It fills the Therapist's viewport-high frame and scrolls inside it. Every
  * move (a sub-section, a facet drill-down, a retest, an assessment page) is a
@@ -61,8 +66,9 @@ export function TradeProfileApp() {
   // render would make server and client disagree), then follow back/forward.
   useEffect(() => {
     const entry = currentEntry();
-    const t = new URLSearchParams(window.location.search).get(PARAM);
-    const initial: View = entry?.view ?? (SECTIONS.some((x) => x.key === t) ? { kind: "tab", tab: t as ProfileTab } : TODAY);
+    const raw = new URLSearchParams(window.location.search).get(PARAM) ?? "";
+    const t = RENAMED[raw] ?? raw;
+    const initial: View = entry?.view ?? (ALL_TABS.includes(t as ProfileTab) ? { kind: "tab", tab: t as ProfileTab } : TODAY);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
     setView(initial);
     if (!entry) pushEntry({ view: initial }, undefined, true);
@@ -114,7 +120,10 @@ export function TradeProfileApp() {
   };
 
   // Without a goal there is no program yet, so Today would be empty: show the profile first.
-  const tabOf = (t: ProfileTab): ProfileTab => (t === "today" && !goalTarget ? "profile" : t);
+  const tabOf = (raw: ProfileTab): ProfileTab => {
+    const t = RENAMED[raw] ?? raw;
+    return t === "today" && !goalTarget ? "profile" : t;
+  };
   const shownTab: ProfileTab = view.kind === "tab" ? tabOf(view.tab) : view.kind === "domain" ? "profile" : tabOf("today");
   // Intro and assessment entries left in history after finishing show the sections too.
   const inSection = view.kind !== "retest" && view.kind !== "reflection";
@@ -137,7 +146,6 @@ export function TradeProfileApp() {
       <>
         {shownTab === "today" && <TodayView />}
         {shownTab === "profile" && <ProfileView />}
-        {shownTab === "focus" && <FocusView />}
         {shownTab === "goal" && <GoalView />}
         {shownTab === "progress" && <ProgressView />}
         {shownTab === "library" && <LibraryView />}
@@ -150,7 +158,7 @@ export function TradeProfileApp() {
       <ProfileNavContext.Provider value={nav}>
         <div ref={frame} className="h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
           <div className="w-full space-y-5 pb-10">
-            {finished && inSection && <SectionTabs value={shownTab} onChange={nav.goTab} />}
+            {finished && inSection && <SectionTabs value={PARENT[shownTab] ?? shownTab} onChange={nav.goTab} />}
             {store.demo && <DemoBar />}
             {store.saveError && !store.demo && (
               <p role="status" className="rounded-xl border border-loss/30 bg-loss/10 px-3 py-2 text-xs text-loss">

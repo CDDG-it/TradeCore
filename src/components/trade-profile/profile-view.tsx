@@ -1,11 +1,13 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, ChevronRight, HeartHandshake } from "lucide-react";
+import { AccentPanel } from "@/components/ui/accent-panel";
 import { Button } from "@/components/ui/button";
 import { copy } from "@/lib/trade-profile/content/copy";
-import { domains, facets } from "@/lib/trade-profile/content/traits";
-import { DOMAINS, type DomainCode, type FacetCode } from "@/lib/trade-profile/types";
-import { DomainRadar } from "@/components/trade-profile/charts";
+import { focusAreas } from "@/lib/trade-profile/content/focus-areas";
+import { domains, facets, traitName } from "@/lib/trade-profile/content/traits";
+import type { Hit } from "@/lib/trade-profile/focus";
+import { DOMAINS, domainOf, type DomainCode, type FacetCode } from "@/lib/trade-profile/types";
 import { ScaleBar, Score, traitColor } from "@/components/trade-profile/primitives";
 import { useDerived, useTradeProfile } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
@@ -22,71 +24,111 @@ export function SupportNote() {
   );
 }
 
+/** The trigger, shown rather than told: each facet's score against the line it crossed. */
+function TriggerRow({ hit }: { hit: Hit }) {
+  return (
+    <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
+      <span className="text-sm font-medium">{traitName(hit.trait)}</span>
+      <span className="text-sm font-bold tabular-nums">
+        {Math.round(hit.score)}
+        <span className="ml-1 text-xs font-medium text-muted-foreground">
+          {hit.op === ">=" ? "≥" : "≤"} {hit.threshold}
+        </span>
+      </span>
+      <span className="relative col-span-2 h-1.5 rounded-full bg-muted/60">
+        <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${hit.score}%`, background: traitColor[domainOf(hit.trait)] }} />
+        <span className="absolute -inset-y-1 w-0.5 rounded-full bg-foreground/60" style={{ left: `${hit.threshold}%` }} aria-hidden />
+      </span>
+    </li>
+  );
+}
+
 /**
- * The five domains as a ranked reading list on the left, and their shape on
- * the right, so both views of the same profile sit side by side on desktop.
+ * One screen for the result: where the profile points (the focus area and the
+ * facets that put it there) beside the five traits, with the next step under
+ * the focus. Facets, evidence and data sit one click away.
  */
 export function ProfileView() {
-  const { profile, supportNote } = useDerived();
-  const { restartAssessment, demo } = useTradeProfile();
+  const { state, restartAssessment, demo } = useTradeProfile();
+  const { profile, focus, supportNote } = useDerived();
   const nav = useProfileNav();
-  if (!profile) return null;
+  if (!profile || !focus) return null;
   const t = copy.results;
+  const f = copy.focus;
+  const area = focusAreas[focus.primary.id];
+  const also = focus.secondary ? focusAreas[focus.secondary.id] : null;
 
   return (
     <div className="space-y-4">
       {supportNote && <SupportNote />}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start">
-        <section className="rounded-2xl border border-border/60 bg-card p-4 sm:p-6">
-          <h2 className="font-heading text-xl font-bold tracking-tight">{t.title}</h2>
-          <p className="mt-1 max-w-[60ch] text-sm text-muted-foreground">{t.lead}</p>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
+        <AccentPanel accent="primary" className="sm:p-6 sm:pl-7">
+          <p className="text-xs font-medium text-muted-foreground">{f.primary}</p>
+          <h2 className="mt-1.5 font-heading text-2xl font-bold tracking-tight">{area.title}</h2>
+          <p className="mt-1 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">{area.tradingProblem}</p>
+          {focus.primary.hits.length > 0 ? (
+            <ul className="mt-4 space-y-3">
+              {focus.primary.hits.map((h) => (
+                <TriggerRow key={h.trait} hit={h} />
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-sm text-foreground/85">{f.noTrigger}</p>
+          )}
+          {also && (
+            <p className="mt-4 border-t border-border/50 pt-3 text-xs text-muted-foreground">
+              {f.secondary}: <span className="font-semibold text-foreground/85">{also.title}</span>
+            </p>
+          )}
+          <Button className="mt-5" onClick={() => nav.goTab(state.goal ? "today" : "goal")}>
+            {state.goal ? f.toToday : f.cta} <ArrowRight />
+          </Button>
+          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{f.hypothesis}</p>
+        </AccentPanel>
 
-          <ul className="-mx-2 mt-4 space-y-0.5">
+        <section className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="font-heading text-sm font-bold tracking-tight">{t.title}</h3>
+            <span className="text-[11px] text-muted-foreground">{t.lead}</span>
+          </div>
+          <ul className="-mx-2 mt-2">
             {DOMAINS.map((d) => (
               <li key={d}>
-                <button type="button" onClick={() => nav.openDomain(d)} className="group block w-full rounded-xl px-2 py-3 text-left transition-colors hover:bg-muted/30">
-                  <div className="mb-2 flex items-baseline justify-between gap-3">
-                    <span className="text-[15px] font-semibold tracking-tight">{domains[d].name}</span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <Score value={profile.domains[d]!} className="text-xl" />
+                <button type="button" onClick={() => nav.openDomain(d)} className="group block w-full rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-muted/30">
+                  <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                    <span className="text-sm font-semibold tracking-tight">{domains[d].name}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Score value={profile.domains[d]!} className="text-base" />
                       <ChevronRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5" />
                     </span>
                   </div>
-                  <ScaleBar value={profile.domains[d]!} color={traitColor[d]} />
-                  <p className="mt-2 max-w-[62ch] text-xs leading-relaxed text-muted-foreground">{domains[d].about}</p>
+                  <ScaleBar value={profile.domains[d]!} color={traitColor[d]} size="sm" />
                 </button>
               </li>
             ))}
           </ul>
-          <p className="mt-2 px-0.5 text-[11px] text-muted-foreground">
-            {copy.common.positionOnScale}. {copy.common.low} 35 or below, {copy.common.high.toLowerCase()} 65 or above.
-          </p>
-        </section>
-
-        <aside className="space-y-4">
-          <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
-            <h3 className="font-heading text-sm font-bold tracking-tight">{t.radar}</h3>
-            <DomainRadar profile={profile} />
-          </div>
-          <div className="rounded-2xl border border-border/50 bg-background/30 p-4 text-xs leading-relaxed text-muted-foreground">
-            <p className="font-semibold text-foreground/85">{t.measurementTitle}</p>
-            <p className="mt-1.5">{t.scaleExplainer}</p>
+          <details className="group mt-2 border-t border-border/50 pt-3 text-xs leading-relaxed text-muted-foreground">
+            <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-foreground/75 hover:text-foreground">
+              {t.measurementTitle}
+              <ChevronRight className="size-3.5 transition-transform duration-200 group-open:rotate-90" />
+            </summary>
+            <p className="mt-2">{t.scaleExplainer}</p>
             <ul className="mt-2 list-disc space-y-1 pl-4">
               {t.measurement.map((m) => (
                 <li key={m}>{m}</li>
               ))}
             </ul>
-          </div>
-        </aside>
+          </details>
+        </section>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button size="lg" onClick={() => nav.goTab("focus")}>
-          {t.toFocus} <ArrowRight />
-        </Button>
+      <div className="flex flex-wrap gap-x-5 gap-y-2 px-1 text-xs font-medium text-muted-foreground">
+        <button type="button" onClick={() => nav.goTab("library")} className="underline-offset-4 hover:text-foreground hover:underline">
+          {t.evidenceLink}
+        </button>
         {!demo && (
-          <button type="button" onClick={() => confirm(t.retakeConfirm) && restartAssessment()} className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+          <button type="button" onClick={() => confirm(t.retakeConfirm) && restartAssessment()} className="underline-offset-4 hover:text-foreground hover:underline">
             {t.retake}
           </button>
         )}
