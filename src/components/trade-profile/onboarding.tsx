@@ -1,21 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check, FlaskConical } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/trade-profile/content/copy";
-import { personaText } from "@/lib/trade-profile/content/personas";
-import { personas } from "@/lib/trade-profile/personas";
 import { useTradeProfile } from "@/components/trade-profile/store";
 
 /**
  * The front door, as an asymmetric split: the promise and the one decision
  * (consent, start) on the left; how it works and what it is not on the right.
- * A demo trader stays one quiet click away for anyone not ready for 25 minutes.
  */
 export function Onboarding({ onStart }: { onStart: () => void }) {
-  const { state, consent, startDemo } = useTradeProfile();
+  const { state, consent } = useTradeProfile();
   const [agreed, setAgreed] = useState(state.consentedOn !== null);
   const started = Object.keys(state.answers).length > 0;
   const t = copy.welcome;
@@ -59,24 +56,6 @@ export function Onboarding({ onStart }: { onStart: () => void }) {
           </Button>
         </div>
 
-        <div className="mt-6 max-w-xl">
-          <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <FlaskConical className="size-3.5 text-ice" /> {t.demo}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {personas.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => startDemo(p.id)}
-                title={personaText[p.id].description}
-                className="press rounded-full border border-border/60 px-3 py-1.5 text-xs font-medium text-foreground/75 transition-colors hover:border-ice/40 hover:text-foreground"
-              >
-                {personaText[p.id].name}
-              </button>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* ── How it works, and what it is not ───────────────────── */}

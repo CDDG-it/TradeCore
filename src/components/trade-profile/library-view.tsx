@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, Download, FlaskConical, Trash2 } from "lucide-react";
+import { ChevronRight, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { copy } from "@/lib/trade-profile/content/copy";
 import { exercises, techniqueNames } from "@/lib/trade-profile/content/exercises";
 import { focusAreas } from "@/lib/trade-profile/content/focus-areas";
 import { references } from "@/lib/trade-profile/content/references";
 import { focusRules } from "@/lib/trade-profile/focus-rules";
-import { personas } from "@/lib/trade-profile/personas";
 import { DifficultyPill, Eyebrow, Segmented, StatusPill } from "@/components/trade-profile/primitives";
 import { useTradeProfile } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
@@ -17,7 +16,7 @@ type Section = "exercises" | "evidence" | "data";
 
 /** The exercise library, the evidence behind it, and the trader's own data. */
 export function LibraryView() {
-  const { state, demo, reset, startDemo } = useTradeProfile();
+  const { state, demo, reset } = useTradeProfile();
   const nav = useProfileNav();
   const [section, setSection] = useState<Section>("exercises");
   const t = copy.library;
@@ -112,15 +111,6 @@ export function LibraryView() {
               </Button>
             </div>
           </div>
-          {!demo && (
-            <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
-              <Eyebrow tone="ice">{copy.demo.pickTitle}</Eyebrow>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{copy.demo.pickLead}</p>
-              <Button variant="outline" className="mt-3" onClick={() => startDemo(personas[0].id)}>
-                <FlaskConical /> {copy.welcome.demo}
-              </Button>
-            </div>
-          )}
         </div>
       )}
     </div>

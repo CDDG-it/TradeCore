@@ -31,7 +31,7 @@ export const copy = {
   setup: {
     eyebrow: "Setup needed",
     title: "My Trade Profile needs its database tables",
-    body: "Run sql/trade_profile.sql once in the Supabase SQL editor. It creates four tables with row-level security, and is safe to re-run. Until then you can explore everything with a demo trader.",
+    body: "Run sql/trade_profile.sql once in the Supabase SQL editor. It creates four tables with row-level security, and is safe to re-run.",
   },
   loadError: "Could not load your profile. Check your connection and refresh.",
   saveError: "Could not save. Your last change is kept on screen; try again.",
@@ -56,7 +56,6 @@ export const copy = {
     consent: "I understand this is a self-report development tool, not a diagnosis.",
     start: "Start the assessment",
     resume: "Resume the assessment",
-    demo: "Preview with a demo trader",
   },
   demo: {
     banner: "Demo preview: nothing is saved.",
@@ -66,8 +65,6 @@ export const copy = {
     simulateHint: "Move “today” forward to see later weeks and the retests.",
     jump: (w: number) => `Week ${w}`,
     realDate: "Now",
-    pickTitle: "Preview with a demo trader",
-    pickLead: "Each demo trader has a full assessment, a goal and three weeks of check-ins. Nothing you do in the preview is saved.",
   },
   assessment: {
     title: "Personality assessment",
