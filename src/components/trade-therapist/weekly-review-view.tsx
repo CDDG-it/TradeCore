@@ -8,24 +8,20 @@ import {
 } from "date-fns";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Loader2, Check, Lock,
-  ChevronDown, ChevronUp, Trophy, History,
+  ChevronDown, ChevronUp, History,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, saveWeeklyTradeReview, type BestTradeListRow } from "@/lib/supabase/queries";
-import { getWeekGroup, tradeR, formatTotalR, reviewOpensOn, isReviewOpen } from "@/lib/journal/weeks";
+import { getWeekGroup, reviewOpensOn, isReviewOpen } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
-import { bestTradeLogged, buildDayRecaps, summarizeDayRecaps } from "@/lib/reviews/day-recap";
-import { DailyBreakdown } from "@/components/trade-therapist/daily-breakdown";
+import { buildDayRecaps } from "@/lib/reviews/day-recap";
+import { WeeklyDayTimeline } from "@/components/trade-therapist/weekly-day-timeline";
 
 const TURQUOISE = "var(--primary)";
-const DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
 /**
- * Weekly review: a day-by-day result strip (win / loss / break-even, and
- * whether the best trade was taken) plus the week's reflection. The numbers are
- * live until the week closes; the reflection is the only thing to fill in, and
- * completing it is what the MC Mindscore counts once the trading week is over. A
- * toggle brings up the previous week's notes so you can check you held to them.
+ * Weekly review: five chronological day stories, followed by one reflection.
+ * The day stories read existing Journal and Post Market records; the reflection
+ * is the only new writing and counts toward MC Mindscore after the week closes.
  */
 export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const router = useRouter();
@@ -106,7 +102,6 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
   }
 
-  const rTone = group.totalR > 0 ? "text-success" : group.totalR < 0 ? "text-destructive" : "text-warning";
   const nextWeek = format(addWeeks(monday, 1), "yyyy-MM-dd");
   const nextDisabled = startOfWeek(addWeeks(monday, 1), { weekStartsOn: 1 }) > new Date();
 
@@ -140,59 +135,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         </div>
       </div>
 
-      {/* Day by day: result + whether the best trade was taken */}
-      <div className="rounded-2xl border border-border/60 bg-card p-3 sm:p-4">
-        <p className="mb-2 text-sm font-semibold">Day by day</p>
-        <div className="grid grid-cols-5 gap-1.5 lg:grid-cols-[repeat(5,minmax(0,1fr))_minmax(10rem,auto)] lg:gap-2">
-          {group.days.map((d, i) => {
-            const has = d.trades.length > 0;
-            const r = d.trades.reduce((s, t) => s + tradeR(t), 0);
-            const outcome = !has ? null : r > 0 ? "win" : r < 0 ? "loss" : "be";
-            const best = bestByDay[d.date];
-            const bestTaken = best?.taken_was_best;
-            // Charts are not part of this test: the list read leaves
-            // `screenshot_groups` behind so a week strip never pulls every
-            // reviewed day's images. Words still count, as they did.
-            const bestLogged = bestTradeLogged(best);
-            return (
-              <div key={d.date} className={cn("flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2",
-                outcome === "win" ? "border-success/25 bg-success/5"
-                  : outcome === "loss" ? "border-destructive/25 bg-destructive/5"
-                  : outcome === "be" ? "border-warning/25 bg-warning/5"
-                  : "border-border/40 bg-muted/10")}>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{DAY_ABBR[i]}</p>
-                {outcome ? (
-                  <span className={cn("text-lg font-black leading-none",
-                    outcome === "win" ? "text-success" : outcome === "loss" ? "text-destructive" : "text-warning")}>
-                    {outcome === "win" ? "W" : outcome === "loss" ? "L" : "BE"}
-                  </span>
-                ) : (
-                  <span className="text-lg font-black leading-none text-muted-foreground/30">-</span>
-                )}
-                <span className={cn("inline-flex max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-none",
-                  bestTaken ? "bg-success/15 text-success"
-                    : bestLogged ? "bg-primary/12 text-primary"
-                    : "bg-muted/40 text-muted-foreground/60")}>
-                  <Trophy className="size-2.5 shrink-0" />
-                  <span className="truncate">{bestTaken ? "Best taken" : bestLogged ? "Best logged" : "No best"}</span>
-                </span>
-              </div>
-            );
-          })}
-          <div className="col-span-5 flex items-center justify-end gap-5 border-t border-border/50 pt-2 lg:col-span-1 lg:flex-col lg:items-end lg:justify-center lg:gap-2 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
-            <div className="text-right">
-              <p className={cn("text-lg font-black leading-none tabular-nums", group.execRate == null ? "text-muted-foreground/50" : group.execRate >= 70 ? "text-success" : group.execRate >= 40 ? "text-warning" : "text-destructive")}>{group.execRate == null ? "-" : `${group.execRate}%`}</p>
-              <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">Execution {group.goodExec + group.badExec > 0 && <span className="normal-case tracking-normal tabular-nums">{group.goodExec}/{group.goodExec + group.badExec}</span>}</p>
-            </div>
-            <div className="text-right">
-              <p className={cn("text-lg font-black leading-none tabular-nums", rTone)}>{formatTotalR(group.totalR)}</p>
-              <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/70">Week R</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {recaps && <DailyBreakdown recaps={recaps} summary={summarizeDayRecaps(recaps)} />}
+      {recaps && <WeeklyDayTimeline days={group.days} recaps={recaps} bestByDay={bestByDay} execRate={group.execRate} goodExec={group.goodExec} badExec={group.badExec} totalR={group.totalR} />}
 
       {/* Reflection: compact, problem-first. One short line per field. */}
       <div className="rounded-2xl border border-border/60 bg-card p-4">
