@@ -7,6 +7,7 @@ import { AccessProvider } from "@/components/access/access-provider";
 import { resolveAccess } from "@/lib/access/server";
 import { AppWelcome } from "@/components/dashboard/dashboard-welcome";
 import { createClient } from "@/lib/supabase/server";
+import "./opaque-surfaces.css";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -19,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const firstName = fullName.trim().split(/\s+/)[0] || null;
   return (
     <AppWelcome firstName={firstName}>
-      <div className="relative min-h-screen overflow-x-clip bg-background">
+      <div className="app-surface relative min-h-screen overflow-x-clip bg-background">
         <AppBackground />
         <AccessProvider value={access}>
           {/* Full-width top navigation: no fixed left sidebar */}

@@ -2,7 +2,7 @@
 
 // From GradFlow, animated WebGL gradients for React: https://gradflow.meerbahadin.dev
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, type CSSProperties } from "react"
 
 export interface GlassFoldProps {
   /** The body of each glass pane. */
@@ -20,6 +20,8 @@ export interface GlassFoldProps {
   /** Cap on the device pixel ratio. A soft full-screen backdrop looks the same at 1 and costs a quarter of the pixels. */
   maxDpr?: number
   className?: string
+  /** Extra inline style for the canvas, such as a CSS filter. */
+  style?: CSSProperties
 }
 
 const VERTEX = `
@@ -133,6 +135,7 @@ export function GlassFold({
   noise = 0.12,
   maxDpr = 2,
   className,
+  style,
 }: GlassFoldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // the draw loop reads the latest props from here, so changing one never
@@ -234,7 +237,7 @@ export function GlassFold({
       ref={canvasRef}
       aria-hidden="true"
       className={className}
-      style={{ display: "block", width: "100%", height: "100%" }}
+      style={{ display: "block", width: "100%", height: "100%", ...style }}
     />
   )
 }
