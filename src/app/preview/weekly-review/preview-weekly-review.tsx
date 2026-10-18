@@ -59,7 +59,7 @@ export function PreviewWeeklyReview() {
           <p className="text-sm text-muted-foreground">{group.rangeLabel}</p>
         </div>
         <WeeklyDayTimeline days={group.days} recaps={recaps} bestByDay={bestByDay} execRate={group.execRate} goodExec={group.goodExec} badExec={group.badExec} totalR={group.totalR} />
-        <section className="rounded-2xl border border-border/60 bg-card p-4">
+        <section className="weekly-day-card weekly-day-card--quiet rounded-2xl p-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold">Your reflection</h2>
             <button type="button" onClick={() => setShowPrevious(!showPrevious)} className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted/40">Last week&apos;s notes {showPrevious ? "⌃" : "⌄"}</button>

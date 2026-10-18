@@ -138,7 +138,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
       {recaps && <WeeklyDayTimeline days={group.days} recaps={recaps} bestByDay={bestByDay} execRate={group.execRate} goodExec={group.goodExec} badExec={group.badExec} totalR={group.totalR} />}
 
       {/* Reflection: compact, problem-first. One short line per field. */}
-      <div className="rounded-2xl border border-border/60 bg-card p-4">
+      <div className="weekly-day-card weekly-day-card--quiet rounded-2xl p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold">Your reflection</p>
           <button type="button" onClick={() => setShowPrev((v) => !v)} aria-expanded={showPrev}

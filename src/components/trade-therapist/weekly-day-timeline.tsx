@@ -102,7 +102,7 @@ export function WeeklyDayTimeline({ days, recaps, bestByDay, execRate, goodExec,
 }) {
   const recapByDate = new Map(recaps.map((recap) => [recap.date, recap]));
   return (
-    <section aria-label="Weekly review by day" className="space-y-3">
+    <section aria-label="Weekly review by day" className="weekly-review-timeline space-y-3">
       <div className="px-1">
         <p className="text-[10px] font-bold uppercase tracking-[.17em] text-primary">Monday to Friday</p>
         <h2 className="mt-1 font-heading text-lg font-semibold">Your trading week, day by day</h2>
