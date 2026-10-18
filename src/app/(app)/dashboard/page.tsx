@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { readDashboard } from "@/lib/dashboard/reads";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
-import { DashboardBackdrop } from "@/components/dashboard/dashboard-backdrop";
 
 /**
  * The desk is read on the server, so the HTML arrives with the numbers in it
@@ -12,10 +11,5 @@ import { DashboardBackdrop } from "@/components/dashboard/dashboard-backdrop";
 export default async function DashboardPage() {
   const supabase = await createClient();
   const data = await readDashboard(supabase);
-  return (
-    <>
-      <DashboardBackdrop />
-      <DashboardClient data={data} />
-    </>
-  );
+  return <DashboardClient data={data} />;
 }
