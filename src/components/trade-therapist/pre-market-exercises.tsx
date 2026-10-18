@@ -12,7 +12,7 @@ import { TradeDetailDialog } from "@/components/journal/trade-detail-dialog";
 import { MotionButton, PRESS, EASE_OUT } from "@/components/trade-therapist/motion-button";
 import { getPreMarketExercise, getRecentPreMarketExerciseTypes, getTradeProfileBundle, savePreMarketExercise } from "@/lib/supabase/queries";
 import {
-  aggregateSessions, CATEGORY_LABEL, exerciseDefinition, exerciseForFocusArea, PRE_MARKET_EXERCISES, selectExercise,
+  aggregateSessions, CATEGORY_LABEL, exerciseDefinition, PRE_MARKET_EXERCISES, selectExercise,
   type ExerciseCategory, type ExerciseField, type PreMarketExerciseDefinition,
 } from "@/lib/pre-market/exercises";
 import { focusAreas } from "@/lib/trade-profile/content/focus-areas";
@@ -183,7 +183,7 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
               {FILTERS.map((f) => {
                 const on = f.key === filter;
                 return <button key={f.key} type="button" role="tab" aria-selected={on} onClick={() => setFilter(f.key)}
-                  className={cn("relative shrink-0 flex-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-colors", on ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
+                  className={cn("relative flex-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-colors", on ? "text-foreground" : "text-muted-foreground hover:text-foreground")}>
                   {on && <motion.span layoutId="pm-filter" className="absolute inset-0 rounded-lg bg-card shadow-sm" transition={{ type: "spring", stiffness: 480, damping: 38 }} />}
                   <span className="relative">{f.label}</span>
                 </button>;

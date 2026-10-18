@@ -32,6 +32,23 @@ test('exercise selector prioritises two losing sessions then rotates', () => {
   assert.equal(selectExercise([{ date: '2026-09-29', session: 'New York', netR: -1 }, { date: '2026-09-28', session: 'London', netR: -2 }], 'mental_contrasting'), 'post_loss_reset');
   assert.equal(selectExercise([{ date: '2026-09-29', session: 'New York', netR: 1 }], 'loss_win_review'), 'mental_contrasting');
   assert.equal(selectExercise([], 'mental_contrasting'), 'loss_win_review');
+  // A My Trade Profile focus area picks its own exercise, unless it was the last one done.
+  assert.equal(selectExercise([], 'loss_win_review', 'impulse'), 'impulse_gate');
+  assert.equal(selectExercise([], 'impulse_gate', 'impulse'), 'loss_win_review');
+  assert.equal(selectExercise([], null, 'maintain'), 'loss_win_review');
+  assert.equal(selectExercise([{ date: '2026-09-29', session: 'New York', netR: -1 }, { date: '2026-09-28', session: 'London', netR: -2 }], null, 'calm'), 'post_loss_reset');
+});
+
+test('pre-market library: 14 unique exercises, one per Trade Profile focus area', () => {
+  const { PRE_MARKET_EXERCISES } = require('../src/lib/pre-market/exercises.ts');
+  assert.equal(PRE_MARKET_EXERCISES.length, 14);
+  assert.equal(new Set(PRE_MARKET_EXERCISES.map((e) => e.id)).size, 14);
+  const areas = PRE_MARKET_EXERCISES.filter((e) => e.category === 'profile').map((e) => e.focusArea).sort();
+  assert.deepEqual(areas, ['calm', 'curiosity', 'followThrough', 'impulse', 'selfTrust', 'thrill']);
+  for (const e of PRE_MARKET_EXERCISES) {
+    assert.ok(e.fields.length > 0 && e.focusIdeas.length > 0 && e.commitmentTemplate, e.id);
+    for (const t of [e.title, e.rationale, e.commitmentPrompt, ...e.focusIdeas, ...e.fields.flatMap((f) => [f.label, f.prompt, f.placeholder ?? ''])]) assert.ok(!/[\u2013\u2014\u2026]/.test(t), `${e.id}: ${t}`);
+  }
 });
 
 test('prices and entitlement limits match the launch matrix', () => {
