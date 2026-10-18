@@ -2,8 +2,9 @@ import { cn } from "@/lib/utils";
 
 /**
  * The panel treatment used across the discipline surfaces (My Edge, MC
- * Trade Therapist): a coloured spine down the left edge, a faint wash of that
- * same accent through the card ground, and a deep, soft shadow.
+ * Trade Therapist), in the dashboard's card design (see desk-cards.css): a
+ * wash of the accent in the top-left corner, a hairline across the top, and on
+ * hover a corner sheen and an underline that draws in.
  *
  * The accent is meant to carry meaning rather than decoration: turquoise for
  * discipline, cyan for analysis, green for what worked, red for what cost you.
@@ -40,18 +41,9 @@ export function AccentPanel({
   const c = ACCENT_VAR[accent];
   return (
     <div
-      className={cn("relative overflow-hidden rounded-2xl border border-border/60 p-4 pl-5 sm:p-5 sm:pl-6", className)}
-      style={{
-        background: `linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, ${c} 4%), var(--card) 55%)`,
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), var(--panel-shadow)",
-      }}
+      className={cn("desk-card overflow-hidden rounded-2xl border border-border/60 bg-card p-4 sm:p-5", className)}
+      style={{ ["--desk-accent" as string]: c }}
     >
-      <span
-        aria-hidden
-        className="absolute inset-y-0 left-0 w-1"
-        style={{ background: `linear-gradient(180deg, ${c}, color-mix(in oklch, ${c} 12%, transparent))` }}
-      />
-
       {(eyebrow || title || subtitle || headerRight) && (
         <div className="relative flex items-start justify-between gap-3">
           <div className="min-w-0">

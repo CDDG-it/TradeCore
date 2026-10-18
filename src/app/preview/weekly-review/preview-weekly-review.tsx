@@ -46,12 +46,18 @@ export function PreviewWeeklyReview() {
     return { group, recaps: buildDayRecaps(group.days, new Map(trades.map((item) => [item.id, item])), bestByDay) };
   }, []);
   const [showPrevious, setShowPrevious] = useState(false);
+  const [lightPreview, setLightPreview] = useState(false);
 
   return (
     <main className="min-h-screen bg-background px-3 py-5 text-foreground sm:px-6 sm:py-7">
       <div className="mx-auto max-w-[1200px] space-y-4">
-        <div className="rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-xs text-primary">
-          Local preview · Example trades only. Nothing here is saved or published.
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/10 px-4 py-2.5 text-xs text-primary">
+          <span>Local preview · Example trades only. Nothing here is saved or published.</span>
+          <button type="button" className="shrink-0 rounded-lg border border-primary/30 px-2 py-1" onClick={() => {
+            document.documentElement.classList.toggle("light", !lightPreview);
+            document.documentElement.classList.toggle("dark", lightPreview);
+            setLightPreview(!lightPreview);
+          }}>{lightPreview ? "Dark preview" : "Light preview"}</button>
         </div>
         <div>
           <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-widest text-primary">Week {group.weekNum} · {group.year}</span>
