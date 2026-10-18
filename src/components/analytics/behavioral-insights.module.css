@@ -1,16 +1,11 @@
-.card,
 .footprint,
 .figure,
 .filter {
   transition: border-color 180ms ease, background-color 180ms ease, transform 180ms cubic-bezier(.2,.8,.2,1);
 }
 
-.ring {
-  transition: stroke-dasharray 350ms cubic-bezier(.2,.8,.2,1);
-}
-
-.bar {
-  transition: width 350ms cubic-bezier(.2,.8,.2,1);
+.largeFootprint {
+  animation: printIn 280ms cubic-bezier(.2,.8,.2,1) both;
 }
 
 .trail {
@@ -36,6 +31,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .footprint { animation: none; }
-  .card, .footprint, .figure, .filter, .ring, .bar { transition: none; }
+  .footprint, .largeFootprint { animation: none; }
+  .footprint, .figure, .filter { transition: none; }
 }

@@ -1,5 +1,6 @@
 /**
- * Exercise library: at least 5 per focus area, with difficulty 1 (easy) to 3 (hard).
+ * Exercise library: three per focus area, one at each difficulty (1 easy, 2 medium,
+ * 3 hard), so each phase of the program has its own step. Kept small on purpose.
  *
  * The 12-week program picks from here by relevance to the trader's goal:
  * exact trait + direction first, then the same domain, then the goal's focus
@@ -28,40 +29,6 @@ export const exercises: Exercise[] = [
       "Set a check-in at the open, mid-session and the close. Write the word and the number in your journal next to the time, and note whether a position was open.",
     logging: "Done = three ratings written down. Partly = one or two.",
     referenceIds: ["stieger2021", "lo2005"],
-  },
-  {
-    id: "calm-breath-before-exit",
-    title: "One breath before the exit",
-    goal: "Put a physical pause between a jolt of fear and the exit button.",
-    target: { trait: "N6", direction: "decrease" },
-    focusArea: "calm",
-    technique: "implementationIntention",
-    difficulty: 1,
-    frequency: "Every trading day",
-    duration: "A few seconds per trade",
-    instructions:
-      "Write this plan down: “If I feel a jolt of fear, then I take one slow breath out before I do anything.” Read it once before you start the day.",
-    tradingVersion:
-      "“If price moves against me and I want to exit before my stop, then I breathe out slowly once and check whether my exit rule has actually been hit.” Exit only if it has.",
-    logging: "Done = the plan was used on every early-exit urge today. Partly = on some of them.",
-    referenceIds: ["gollwitzer2006", "lo2005"],
-  },
-  {
-    id: "calm-reframe-loss",
-    title: "Reframe the loss",
-    goal: "Practise seeing a loss as a cost of doing business, not as a threat.",
-    target: { trait: "N", direction: "decrease" },
-    focusArea: "calm",
-    technique: "cognitiveReappraisal",
-    difficulty: 2,
-    frequency: "After each losing trade",
-    duration: "3 minutes",
-    instructions:
-      "After a setback, write the first thought you had. Then write a second, more balanced way to see the same event, one that is still true. Notice whether the feeling shifts.",
-    tradingVersion:
-      "After each loss, write: “First thought: ...”. Then write: “Another true way to see it: this was a planned risk of 1R, inside my rules, and one trade out of the next hundred.” Rate the frustration before and after, from 0 to 10.",
-    logging: "Done = every loss today got a reframe. Partly = some did. No losses today = do one for yesterday’s worst trade.",
-    referenceIds: ["gross2002", "lo2005"],
   },
   {
     id: "calm-cooldown-rule",
@@ -97,24 +64,6 @@ export const exercises: Exercise[] = [
     logging: "Done = completed one step and wrote down the anxiety ratings. Partly = started but intervened early.",
     referenceIds: ["proto-graded-exposure", "lo2005"],
   },
-  {
-    id: "calm-worry-window",
-    title: "Worry window",
-    goal: "Contain worry to a set time, so that it does not run the session.",
-    target: { trait: "N1", direction: "decrease" },
-    focusArea: "calm",
-    technique: "habitStacking",
-    difficulty: 2,
-    frequency: "Daily",
-    duration: "10 minutes",
-    instructions:
-      "Choose a fixed 10-minute slot after an existing routine. When a worry comes up during the day, jot it down and save it for that slot. In the slot, go through the list.",
-    tradingVersion:
-      "Right after your pre-market routine, take 10 minutes to write every “what if” about today: news, levels, your account. Then close the note. During the session, add new worries to the note and return to the plan.",
-    logging:
-      "Done = the window was held and worries were parked in it. Partly = the window was held, but worries leaked into the session.",
-    referenceIds: ["proto-habit-stacking", "lally2010"],
-  },
 
   // ── Impulse control (increase Cautiousness) ──────────────────────────────
   {
@@ -134,22 +83,6 @@ export const exercises: Exercise[] = [
     referenceIds: ["gollwitzer2006"],
   },
   {
-    id: "impulse-urge-log",
-    title: "Urge log",
-    goal: "See your impulses before they become trades.",
-    target: { trait: "N5", direction: "decrease" },
-    focusArea: "impulse",
-    technique: "selfMonitoring",
-    difficulty: 1,
-    frequency: "Daily",
-    duration: "Throughout the session",
-    instructions: "Keep a tally of every urge you notice to do something unplanned today, whether or not you act on it.",
-    tradingVersion:
-      "Keep a sticky note by the screen. Make a mark for every urge to take an unplanned trade, and circle the mark if you took it. Count both at the close.",
-    logging: "Done = the tally was kept all session. Partly = kept for part of the session.",
-    referenceIds: ["stieger2021"],
-  },
-  {
     id: "impulse-checklist-gate",
     title: "Checklist gate",
     goal: "Make every entry pass a written checklist first.",
@@ -165,39 +98,6 @@ export const exercises: Exercise[] = [
       "Write a 3-line entry checklist (setup, risk in R, invalidation level). Tick all three on paper before any order goes in. If a box cannot be ticked, there is no trade.",
     logging: "Done = every trade had a ticked checklist. Partly = most did.",
     referenceIds: ["hudson2019", "hudsonFraley2015"],
-  },
-  {
-    id: "impulse-max-trades",
-    title: "Hard trade cap",
-    goal: "Decide your limit before the session, not during it.",
-    target: { trait: "C6", direction: "increase" },
-    focusArea: "impulse",
-    technique: "implementationIntention",
-    difficulty: 2,
-    frequency: "Every trading day",
-    duration: "1 minute before the open",
-    instructions:
-      "Before the day starts, write your maximum number of trades and your maximum size. Plan what you will do once you reach the cap.",
-    tradingVersion:
-      "“If I reach my maximum of N trades, then I close the platform and switch to review.” Write N on a note at the top of the screen.",
-    logging: "Done = the cap and size limits were kept. No = exceeded.",
-    referenceIds: ["gollwitzer2006"],
-  },
-  {
-    id: "impulse-chase-reframe",
-    title: "Missed move, new meaning",
-    goal: "Change how a missed move feels, so that you do not chase it.",
-    target: { trait: "N5", direction: "decrease" },
-    focusArea: "impulse",
-    technique: "cognitiveReappraisal",
-    difficulty: 2,
-    frequency: "When it happens",
-    duration: "2 minutes",
-    instructions: "When you feel you are “missing out”, write the thought down, then write a calmer and still accurate version.",
-    tradingVersion:
-      "When a move runs without you, write: “Missed it. Another true way to see it: chasing outside my plan has a worse expected value than waiting for the next setup.” Then mark the level where it would be a valid entry again.",
-    logging: "Done = every chase urge got a reframe. Partly = some did.",
-    referenceIds: ["gross2002"],
   },
   {
     id: "impulse-sim-only-hour",
@@ -235,38 +135,6 @@ export const exercises: Exercise[] = [
     referenceIds: ["lally2010", "proto-habit-stacking"],
   },
   {
-    id: "follow-promise-keep",
-    title: "One promise, kept",
-    goal: "Collect proof that you keep the rules you set yourself.",
-    target: { trait: "C3", direction: "increase" },
-    focusArea: "followThrough",
-    technique: "behaviouralActivation",
-    difficulty: 1,
-    frequency: "Daily",
-    duration: "All session",
-    instructions: "Choose one small rule for today and act as if you were someone who always keeps their word.",
-    tradingVersion:
-      "Pick one rule for today (for example: “no trades in the first 5 minutes”). Write it at the top of your journal. At the close, mark it kept or broken.",
-    logging: "Done = the rule was kept. No = broken. Log honestly; both answers are useful.",
-    referenceIds: ["hudson2019", "hudsonFraley2015"],
-  },
-  {
-    id: "follow-tidy-workspace",
-    title: "Clean slate",
-    goal: "Start each session from an orderly setup.",
-    target: { trait: "C2", direction: "increase" },
-    focusArea: "followThrough",
-    technique: "habitStacking",
-    difficulty: 1,
-    frequency: "Every trading day",
-    duration: "5 minutes",
-    instructions: "Reset your workspace at the same moment every day: clear the desk and close what you do not need.",
-    tradingVersion:
-      "After the close, remove old drawings from your charts, save the layout, and file today’s screenshots in a dated folder.",
-    logging: "Done = the workspace was reset after the session.",
-    referenceIds: ["lally2010", "proto-habit-stacking"],
-  },
-  {
     id: "follow-review-every-trade",
     title: "No trade left unreviewed",
     goal: "Close the loop on every trade the same day.",
@@ -281,22 +149,6 @@ export const exercises: Exercise[] = [
       "“If I close the platform, then I journal every trade from today before I leave the desk: setup, plan followed (yes/no), and one lesson.”",
     logging: "Done = every trade was journaled. Partly = some were.",
     referenceIds: ["gollwitzer2006"],
-  },
-  {
-    id: "follow-weekly-scorecard",
-    title: "Weekly plan-adherence scorecard",
-    goal: "Measure how often you follow your plan, not only P&L.",
-    target: { trait: "C", direction: "increase" },
-    focusArea: "followThrough",
-    technique: "reflection",
-    difficulty: 2,
-    frequency: "Weekly",
-    duration: "20 minutes",
-    instructions: "Once a week, score how often you did what you planned. Then choose one thing to improve next week.",
-    tradingVersion:
-      "Every Friday, go through the week’s trades and score each one as followed the plan or did not. Work out the percentage, and write down one rule to tighten for next week.",
-    logging: "Done = the scorecard was filled in and one improvement was chosen.",
-    referenceIds: ["stieger2021"],
   },
   {
     id: "follow-full-routine-week",
@@ -334,23 +186,6 @@ export const exercises: Exercise[] = [
     referenceIds: ["stieger2021"],
   },
   {
-    id: "thrill-outlet-plan",
-    title: "Plan your thrill elsewhere",
-    goal: "Schedule a real source of excitement outside the session.",
-    target: { trait: "E5", direction: "channel" },
-    focusArea: "thrill",
-    technique: "behaviouralActivation",
-    difficulty: 1,
-    frequency: "3 times this week",
-    duration: "30+ minutes",
-    instructions:
-      "Schedule an activity that gives you a real rush: a sport, a hard workout, a game or music. Put it in your calendar like a meeting.",
-    tradingVersion:
-      "Put the activity right after the session, so the reward comes after a calm, rule-based day rather than during it.",
-    logging: "Done = the activity happened as scheduled.",
-    referenceIds: ["hudson2019"],
-  },
-  {
     id: "thrill-quiet-market-rule",
     title: "Quiet market, quiet hands",
     goal: "Have a plan for slow markets that is not trading.",
@@ -365,22 +200,6 @@ export const exercises: Exercise[] = [
       "“If the market is range-bound and I feel the itch, then I open the replay tool and mark up yesterday’s chart for 15 minutes instead of entering.”",
     logging: "Done = every itch got the alternative. Partly = most did.",
     referenceIds: ["gollwitzer2006"],
-  },
-  {
-    id: "thrill-boring-on-purpose",
-    title: "Make it boring on purpose",
-    goal: "Reframe “boring” as the sign of a well-run session.",
-    target: { trait: "E5", direction: "channel" },
-    focusArea: "thrill",
-    technique: "cognitiveReappraisal",
-    difficulty: 2,
-    frequency: "Daily",
-    duration: "2 minutes",
-    instructions: "When something feels dull, write down a true reason why the dullness is useful.",
-    tradingVersion:
-      "At the close, finish this sentence: “Today was boring, and that is good because ...”. Examples: risk stayed in limits, the plan was followed, nothing was forced.",
-    logging: "Done = the sentence was written.",
-    referenceIds: ["gross2002"],
   },
   {
     id: "thrill-size-ladder",
@@ -417,22 +236,6 @@ export const exercises: Exercise[] = [
     referenceIds: ["gollwitzer2006"],
   },
   {
-    id: "curiosity-sample-counter",
-    title: "Count to fifty",
-    goal: "Make sample size visible, so that it is satisfying to build.",
-    target: { trait: "C5", direction: "increase" },
-    focusArea: "curiosity",
-    technique: "selfMonitoring",
-    difficulty: 1,
-    frequency: "Every trade",
-    duration: "10 seconds",
-    instructions: "Track how many repetitions you have done of one thing, with a visible counter.",
-    tradingVersion:
-      "Write “Strategy A: __ / 50” at the top of your journal. Add one for every trade taken by the rules, and do not change the rules before 50.",
-    logging: "Done = the counter was updated for every qualifying trade.",
-    referenceIds: ["stieger2021"],
-  },
-  {
     id: "curiosity-research-slot",
     title: "A home for curiosity",
     goal: "Give exploration a fixed, scheduled slot of its own.",
@@ -447,22 +250,6 @@ export const exercises: Exercise[] = [
       "Every Sunday after the weekly review, spend one hour testing ideas from the parking lot, only in a backtest or on replay. Live trading stays on the current strategy.",
     logging: "Done = the slot happened, and the live strategy stayed unchanged.",
     referenceIds: ["lally2010", "proto-habit-stacking"],
-  },
-  {
-    id: "curiosity-woop-strategy",
-    title: "WOOP your strategy",
-    goal: "Commit to one approach by naming the inner obstacle in advance.",
-    target: { trait: "C5", direction: "increase" },
-    focusArea: "curiosity",
-    technique: "mentalContrasting",
-    difficulty: 2,
-    frequency: "Once, then re-read daily",
-    duration: "10 minutes",
-    instructions: "Wish, Outcome, Obstacle, Plan. Write each one in a single sentence.",
-    tradingVersion:
-      "Wish: know whether this strategy works. Outcome: a clear answer after 50 trades. Obstacle: getting bored and adding a new filter. Plan: “If I want to change a rule, then I write it in the parking lot and trade the current rules.”",
-    logging: "Done = the WOOP was re-read before the session.",
-    referenceIds: ["oettingen2012"],
   },
   {
     id: "curiosity-one-market-month",
@@ -498,22 +285,6 @@ export const exercises: Exercise[] = [
     referenceIds: ["stieger2021"],
   },
   {
-    id: "trust-act-as-if",
-    title: "Trade as your confident self",
-    goal: "Practise acting with confidence before you fully feel it.",
-    target: { trait: "C1", direction: "increase" },
-    focusArea: "selfTrust",
-    technique: "behaviouralActivation",
-    difficulty: 1,
-    frequency: "Every trading day",
-    duration: "All session",
-    instructions: "Ask yourself: “What would a confident version of me do right now?” Then do that once today.",
-    tradingVersion:
-      "When a valid setup appears, ask: “What would I do if I trusted my analysis?” Take that one trade at your normal size, by the rules.",
-    logging: "Done = at least one valid setup was taken without hesitation. Partly = taken late.",
-    referenceIds: ["hudson2019", "hudsonFraley2015"],
-  },
-  {
     id: "trust-if-valid-then-enter",
     title: "If valid, then enter",
     goal: "Take the decision away from doubt in the moment.",
@@ -529,23 +300,6 @@ export const exercises: Exercise[] = [
       "“If all three checklist items are met, then I enter within 10 seconds at planned size, and my stop goes where the plan says.”",
     logging: "Done = every valid setup was entered on time. Partly = some were.",
     referenceIds: ["gollwitzer2006"],
-  },
-  {
-    id: "trust-stop-stays",
-    title: "The stop stays",
-    goal: "Stop managing fear by moving risk.",
-    target: { trait: "N4", direction: "decrease" },
-    focusArea: "selfTrust",
-    technique: "cognitiveReappraisal",
-    difficulty: 2,
-    frequency: "Every trade",
-    duration: "When tempted",
-    instructions:
-      "When you feel the urge to undo a decision out of fear, write the fearful thought down, then a balanced one that is still true.",
-    tradingVersion:
-      "When you want to move a stop, write: “Fear says: ... Another true way to see it: my stop marks where my idea is wrong; being stopped out is the plan working.” Leave the stop where it is.",
-    logging: "Done = no stop was moved against the plan today.",
-    referenceIds: ["gross2002"],
   },
   {
     id: "trust-share-a-trade",
@@ -582,22 +336,6 @@ export const exercises: Exercise[] = [
     referenceIds: ["gollwitzer2006", "oettingen2012"],
   },
   {
-    id: "general-end-of-day-three",
-    title: "Three-line close",
-    goal: "Close every session with a short, honest reflection.",
-    target: { trait: null, direction: null },
-    focusArea: "maintain",
-    technique: "reflection",
-    difficulty: 1,
-    frequency: "Daily",
-    duration: "3 minutes",
-    instructions: "Write three lines: what went well, what was hard, and one thing to repeat tomorrow.",
-    tradingVersion:
-      "In your journal, after the last trade: one decision you are proud of, one moment the goal was tested, and one adjustment for tomorrow.",
-    logging: "Done = three lines written.",
-    referenceIds: ["stieger2021"],
-  },
-  {
     id: "general-trigger-map",
     title: "Trigger map",
     goal: "Know in advance which situations test your goal.",
@@ -613,23 +351,6 @@ export const exercises: Exercise[] = [
       "Go through the last 20 journal entries. Mark when you broke a rule (time of day, after a win or loss, which news), and write an early-warning sign for each.",
     logging: "Done = the map was written with at least three triggers.",
     referenceIds: ["stieger2021"],
-  },
-  {
-    id: "general-woop-refresh",
-    title: "WOOP refresh",
-    goal: "Update your goal plan with what you have learned.",
-    target: { trait: null, direction: null },
-    focusArea: "maintain",
-    technique: "mentalContrasting",
-    difficulty: 2,
-    frequency: "Once this week",
-    duration: "10 minutes",
-    instructions:
-      "Revisit your Wish, Outcome, Obstacle and Plan. Is the obstacle still the main one? Rewrite the plan if needed.",
-    tradingVersion:
-      "Look at the trades where your goal was tested this month and check whether the obstacle you named is the one that showed up. If it is not, rewrite the if-then plan for the real one.",
-    logging: "Done = the WOOP was reviewed and is still current, or was rewritten.",
-    referenceIds: ["oettingen2012"],
   },
   {
     id: "general-teach-it",

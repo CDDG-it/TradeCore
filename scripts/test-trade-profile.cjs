@@ -122,9 +122,12 @@ test('focus: thresholds, all/any, ranking and support note', () => {
   assert.equal(needsSupportNote(profileOf({ N1: 5 })), false);
 });
 
-test('exercise library: ≥ 5 per area, valid references', () => {
-  assert.ok(exercises.length >= 35);
-  for (const r of focusRules) assert.ok(exercises.filter((e) => e.focusArea === r.id).length >= 5, r.id);
+test('exercise library: one easy, medium and hard per area, valid references', () => {
+  assert.equal(exercises.length, 21);
+  for (const r of focusRules) {
+    const own = exercises.filter((e) => e.focusArea === r.id).map((e) => e.difficulty).sort();
+    assert.deepEqual(own, [1, 2, 3], r.id);
+  }
   assert.equal(new Set(exercises.map((e) => e.id)).size, exercises.length);
   for (const e of exercises) {
     assert.ok(e.referenceIds.length > 0, e.id);
@@ -133,13 +136,13 @@ test('exercise library: ≥ 5 per area, valid references', () => {
   }
 });
 
-test('program: 12 weeks, 2 then 3 challenges, ramping, capped difficulty', () => {
+test('program: 12 weeks, 2 challenges a week, ramping, capped difficulty', () => {
   for (const r of focusRules) {
     const goal = r.suggestedGoal || { trait: 'C5', direction: 'increase' };
     const program = buildProgram(exercises, goal, r.id);
     assert.equal(program.length, 12);
     for (const w of program) {
-      assert.equal(w.exerciseIds.length, w.week <= 4 ? 2 : 3);
+      assert.equal(w.exerciseIds.length, 2);
       assert.equal(new Set(w.exerciseIds).size, w.exerciseIds.length);
       for (const id of w.exerciseIds) assert.ok(exerciseById[id].difficulty <= w.targetDifficulty + 1, `${r.id} w${w.week} ${id}`);
     }

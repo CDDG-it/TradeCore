@@ -3,7 +3,8 @@
 import { createContext, useContext } from "react";
 import type { DomainCode } from "@/lib/trade-profile/types";
 
-export type ProfileTab = "today" | "profile" | "focus" | "goal" | "progress" | "library";
+/** Today, Profile and Progress are the tabs; Goal and Library open from inside them. */
+export type ProfileTab = "today" | "profile" | "progress" | "goal" | "library";
 
 /**
  * Where the page is. Every change is a browser history entry (see app.tsx), so

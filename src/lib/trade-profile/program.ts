@@ -35,11 +35,12 @@ export interface ProgramWeek {
   exerciseIds: string[];
 }
 
-export const challengesPerWeek = (week: number) => (week <= 4 ? 2 : 3);
+/** Two a week throughout: few enough to remember without opening the app. */
+export const CHALLENGES_PER_WEEK = 2;
 export const targetDifficulty = (week: number): Difficulty => (week <= 4 ? 1 : week <= 8 ? 2 : 3);
 
 /**
- * Twelve weeks: two challenges a week for weeks 1–4, then three; difficulty
+ * Twelve weeks of two challenges a week; difficulty
  * steps from easy (1–4) to medium (5–8) to hard (9–12).
  *
  * Each week picks the exercises with the lowest cost, where cost weighs
@@ -59,7 +60,7 @@ export function buildProgram(library: Exercise[], goal: GoalTarget, area?: Focus
   let previous: string[] = [];
   for (let week = 1; week <= thresholds.programWeeks; week++) {
     const want = targetDifficulty(week);
-    const n = Math.min(challengesPerWeek(week), pool.length);
+    const n = Math.min(CHALLENGES_PER_WEEK, pool.length);
     const cost = (ex: Exercise) =>
       top - rel.get(ex.id)! + 2.5 * Math.abs(ex.difficulty - want) + (uses.get(ex.id) ?? 0) + (previous.includes(ex.id) ? 3 : 0);
     const eligible = pool.filter((ex) => ex.difficulty <= want + 1);
