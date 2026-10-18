@@ -17,7 +17,7 @@ function PsychologyContent() {
       .then(([trades, ruleChecks, exercises, habits, habitCompletions, weeklyReviews, recaps]) => setData({ trades, ruleChecks, exercises, habits, habitCompletions, weeklyReviews, recaps }))
       .catch(() => setError(true));
   }, []);
-  if (error) return <div className="rounded-2xl border border-border bg-card p-8 text-sm text-muted-foreground">Behavioral insights could not be loaded. Refresh this page to try again.</div>;
+  if (error) return <div className="rounded-2xl border border-border bg-card p-8 text-sm text-muted-foreground">Behavioral insights could not be loaded. Refresh the page and try again.</div>;
   if (!data) return <div className="space-y-4" aria-busy="true"><div className="h-20 animate-pulse rounded-2xl bg-card/60" /><div className="grid gap-3 sm:grid-cols-3">{[0, 1, 2].map((n) => <div key={n} className="h-36 animate-pulse rounded-2xl bg-card/60" />)}</div></div>;
   return <BehavioralInsights {...data} />;
 }
