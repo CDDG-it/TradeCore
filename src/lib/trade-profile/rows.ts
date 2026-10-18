@@ -7,7 +7,8 @@ import { items } from "@/lib/trade-profile/items";
 import { LEGACY_120_TO_60 } from "@/lib/trade-profile/legacy";
 import { emptyTradeProfile, type TradeProfileState } from "@/lib/trade-profile/model";
 import { thresholds } from "@/lib/trade-profile/config";
-import { isComplete } from "@/lib/trade-profile/scoring";
+import { isComplete, scoreProfile } from "@/lib/trade-profile/scoring";
+import { placeInFocus } from "@/lib/trade-profile/focus";
 import type { Answer, Answers, TraitCode } from "@/lib/trade-profile/types";
 import type {
   TradeProfileCheckinRow,
@@ -98,4 +99,16 @@ export function stateToRow(s: TradeProfileState): TradeProfileRowInput {
     goal_then_action: s.goal?.thenAction ?? "",
     program_start: s.programStart,
   };
+}
+
+/**
+ * The trader's focus areas from their saved answers, for other screens (the
+ * pre-market exercises) that want them without loading the whole program.
+ * Null until the assessment is complete.
+ */
+export function focusFromRow(row: TradeProfileRow | null) {
+  const answers = toAnswers(row?.answers);
+  if (!isComplete(items, answers)) return null;
+  const { primary, secondary } = placeInFocus(scoreProfile(items, answers));
+  return { primary: primary.id, secondary: secondary?.id ?? null };
 }

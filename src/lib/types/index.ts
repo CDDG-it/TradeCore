@@ -14,7 +14,10 @@ export type TraderType = "scalper" | "day_trader" | "swing" | "position" | "cust
 export type InsightType = "strength" | "weakness" | "pattern" | "suggestion" | "blind_spot";
 export type InsightCategory = "performance" | "discipline" | "psychology" | "market" | "habits";
 export type CommitmentFormat = "if_then" | "scope" | "rule";
-export type ExerciseTypeId = "loss_win_review" | "mental_contrasting" | "post_loss_reset";
+export type ExerciseTypeId =
+  | "loss_win_review" | "mental_contrasting" | "pre_mortem" | "mental_rehearsal" | "rules_recall" | "state_check" | "scenario_plan"
+  | "post_loss_reset"
+  | "calm_plan" | "impulse_gate" | "follow_through" | "thrill_outlet" | "idea_parking" | "evidence_file";
 export type RuleCheckStatus = "kept" | "broken" | "not_applicable";
 
 export interface User {
