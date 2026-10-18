@@ -8,6 +8,7 @@ import { resolveAccess } from "@/lib/access/server";
 import { AppWelcome } from "@/components/dashboard/dashboard-welcome";
 import { createClient } from "@/lib/supabase/server";
 import "./opaque-surfaces.css";
+import "./desk-cards.css";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();

@@ -26,6 +26,7 @@ export function CardFx({ accent }: { accent: string }) {
   return (
     <>
       <div
+        data-card-fx
         className="pointer-events-none absolute inset-0 transition-opacity duration-500 group-hover/card:opacity-100"
         style={{ background: `radial-gradient(115% 85% at 0% 0%, ${alpha(accent, 9)}, transparent 55%)`, opacity: 0.85 }}
       />

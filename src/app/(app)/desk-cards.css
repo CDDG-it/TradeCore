@@ -1,0 +1,85 @@
+/*
+ * The dashboard's card design, for every card in the app.
+ *
+ * On the dashboard a card is CARD_BASE plus <CardFx>: a soft shadow, an accent
+ * wash in the top-left corner, a hairline across the top that brightens on
+ * hover, a corner sheen that appears on hover and an underline that draws in.
+ * Here the same look is built from two pseudo-elements, so any card picks it up
+ * without extra markup:
+ *
+ *   - `.desk-card`, set by components (Card, AccentPanel) that are cards;
+ *   - any `rounded-2xl` / bordered `rounded-xl` surface on bg-card inside the
+ *     app shell, which is what a card is across these screens.
+ *
+ * The accent is --desk-accent (turquoise unless a component sets it). The
+ * dashboard's own cards already render <CardFx>, so they are left alone.
+ */
+
+@property --desk-h {
+  syntax: "<number>";
+  initial-value: 0;
+  inherits: false;
+}
+
+.desk-card,
+.app-surface :is(.rounded-2xl, .rounded-xl.border):is(.bg-card, [class*=" bg-card/"], [class^="bg-card/"]):not(button, a, input, select, textarea, .absolute, .fixed, .sticky, :has(> [data-card-fx])) {
+  --desk-accent: var(--primary);
+  position: relative;
+  isolation: isolate;
+  border-color: color-mix(in oklab, var(--border) 60%, transparent);
+  box-shadow: 0 4px 20px -10px rgb(0 0 0 / 0.25);
+  transition: box-shadow 300ms ease-out, border-color 300ms ease-out, --desk-h 500ms ease-out;
+}
+
+.desk-card:hover,
+.app-surface :is(.rounded-2xl, .rounded-xl.border):is(.bg-card, [class*=" bg-card/"], [class^="bg-card/"]):not(button, a, input, select, textarea, .absolute, .fixed, .sticky, :has(> [data-card-fx])):hover {
+  --desk-h: 1;
+  border-color: color-mix(in oklab, var(--border) 90%, transparent);
+  box-shadow: 0 10px 36px -14px rgb(0 0 0 / 0.45);
+}
+
+/* Wash, top hairline and corner sheen, under the content. */
+.desk-card::before,
+.app-surface :is(.rounded-2xl, .rounded-xl.border):is(.bg-card, [class*=" bg-card/"], [class^="bg-card/"]):not(button, a, input, select, textarea, .absolute, .fixed, .sticky, :has(> [data-card-fx]))::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in oklab, var(--desk-accent) calc(55% + var(--desk-h) * 40%), transparent), transparent) top / 100% 1px no-repeat,
+    radial-gradient(160px 160px at 100% 0%, color-mix(in oklab, var(--desk-accent) calc(var(--desk-h) * 22%), transparent), transparent 70%),
+    radial-gradient(115% 85% at 0% 0%, color-mix(in oklab, var(--desk-accent) calc(7.5% + var(--desk-h) * 1.5%), transparent), transparent 55%);
+}
+
+/* The underline that draws in from the left on hover. */
+.desk-card::after,
+.app-surface :is(.rounded-2xl, .rounded-xl.border):is(.bg-card, [class*=" bg-card/"], [class^="bg-card/"]):not(button, a, input, select, textarea, .absolute, .fixed, .sticky, :has(> [data-card-fx]))::after {
+  content: "";
+  position: absolute;
+  left: 1.5rem;
+  right: 1.5rem;
+  bottom: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--desk-accent) 65%, transparent), transparent);
+  transform: scaleX(var(--desk-h));
+  transform-origin: left;
+}
+
+html.light .desk-card,
+html.light .app-surface :is(.rounded-2xl, .rounded-xl.border):is(.bg-card, [class*=" bg-card/"], [class^="bg-card/"]):not(button, a, input, select, textarea, .absolute, .fixed, .sticky, :has(> [data-card-fx])) {
+  box-shadow: 0 4px 18px -12px rgb(15 23 42 / 0.18);
+}
+html.light .desk-card:hover,
+html.light .app-surface :is(.rounded-2xl, .rounded-xl.border):is(.bg-card, [class*=" bg-card/"], [class^="bg-card/"]):not(button, a, input, select, textarea, .absolute, .fixed, .sticky, :has(> [data-card-fx])):hover {
+  box-shadow: 0 10px 30px -16px rgb(15 23 42 / 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-card,
+  .app-surface :is(.rounded-2xl, .rounded-xl.border):is(.bg-card, [class*=" bg-card/"], [class^="bg-card/"]) {
+    transition: box-shadow 300ms ease-out, border-color 300ms ease-out;
+  }
+}
