@@ -12,10 +12,11 @@ import { useEffect, useRef } from "react";
  * pauses while the tab is hidden or the sections are off screen, and draws a
  * single still frame for reduced motion.
  *
- * Settings, as chosen in the builder: colours #101010, #F5F5F5, #B0B0B0,
- * #3A3A3A; speed 28, zoom 73, intensity 75, warp 0, contrast 66, brightness 50,
- * saturation 50, hue 0, vignette 0, grain 1; cursor off. They are baked into
- * the packed uniforms below exactly as the builder exported them.
+ * Settings, as chosen in the builder: speed 28, zoom 73, intensity 75, warp 0,
+ * contrast 66, brightness 50, saturation 50, hue 0, vignette 0, grain 1; cursor
+ * off. They are baked into the packed uniforms below exactly as the builder
+ * exported them. The colours are the TradingMC palette instead of the
+ * builder's greys (see COLORS).
  */
 
 const VERTEX = `
@@ -305,14 +306,18 @@ void main() {
 }
 `;
 
-/** Low to high: #101010, #F5F5F5, #B0B0B0, #3A3A3A; the other four slots are unused. */
-const COLORS = new Float32Array([
-  0.063, 0.063, 0.063,
-  0.961, 0.961, 0.961,
-  0.69, 0.69, 0.69,
-  0.227, 0.227, 0.227,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-]);
+/**
+ * The design system's palette in the builder's four slots, low to high: navy
+ * ground #0B1120, turquoise #14B8A6 for the brightest smoke, cyan #06B6D4 for
+ * the mid tones and deep teal #0F3B4A between them and the ground. The other
+ * four slots are unused.
+ */
+const BRAND = ["#0B1120", "#14B8A6", "#06B6D4", "#0F3B4A"];
+const COLORS = new Float32Array(24);
+BRAND.forEach((hex, i) => {
+  const n = parseInt(hex.slice(1), 16);
+  COLORS.set([((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255], i * 3);
+});
 const COLOR_COUNT = 4;
 /** u_scene.z is seconds times this. */
 const TIME_SCALE = 0.63;
