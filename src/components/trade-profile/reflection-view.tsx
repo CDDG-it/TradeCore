@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { clearDraft, loadDraft, writeDraft } from "@/lib/drafts";
 import { ChevronLeft } from "lucide-react";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { Button } from "@/components/ui/button";
@@ -11,9 +12,15 @@ import { useTradeProfile } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
 
 export function ReflectionView({ week }: { week: number }) {
-  const { state, saveReflection } = useTradeProfile();
+  const { state, saveReflection, demo } = useTradeProfile();
   const nav = useProfileNav();
-  const [answers, setAnswers] = useState<string[]>(state.reflections[week]?.answers ?? weeklyQuestions.map(() => ""));
+  const draftKey = `trade-profile:reflection:${week}`;
+  const [answers, setAnswers] = useState<string[]>(
+    () => (!demo && loadDraft<string[]>(draftKey)?.data) || state.reflections[week]?.answers || weeklyQuestions.map(() => ""),
+  );
+  useEffect(() => {
+    if (!demo && answers.some((a) => a.trim())) writeDraft(draftKey, answers);
+  }, [demo, answers, draftKey]);
   const [saving, setSaving] = useState(false);
   const t = copy.reflection;
 
@@ -21,7 +28,8 @@ export function ReflectionView({ week }: { week: number }) {
     setSaving(true);
     try {
       await saveReflection(week, answers);
-      nav.closeOverlay();
+      clearDraft(draftKey);
+      nav.back();
     } catch {
       // Banner shows the error; keep the answers on screen.
     } finally {
@@ -31,7 +39,7 @@ export function ReflectionView({ week }: { week: number }) {
 
   return (
     <div className="space-y-4">
-      <button type="button" onClick={nav.closeOverlay} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
+      <button type="button" onClick={() => nav.back()} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
         <ChevronLeft className="size-3.5" /> {copy.common.back}
       </button>
       <AccentPanel accent="primary" title={t.title(week)} subtitle={t.lead}>

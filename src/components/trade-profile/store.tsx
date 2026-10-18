@@ -17,7 +17,8 @@ import type { FocusAreaId } from "@/lib/trade-profile/focus-rules";
 import { emptyTradeProfile, type ProfileGoal, type TradeProfileState } from "@/lib/trade-profile/model";
 import { personas, personaState } from "@/lib/trade-profile/personas";
 import { buildProgram, programPosition } from "@/lib/trade-profile/program";
-import { rowsToState, stateToRow } from "@/lib/trade-profile/rows";
+import { rowsToState, stateToRow, toAnswers } from "@/lib/trade-profile/rows";
+import { clearDraft, loadDraft, writeDraft } from "@/lib/drafts";
 import { isComplete, scoreProfile } from "@/lib/trade-profile/scoring";
 import type { Answer, Answers, Checkin } from "@/lib/trade-profile/types";
 
@@ -61,7 +62,15 @@ export function useTradeProfile(): TradeProfileStore {
   return s;
 }
 
-const ANSWER_SAVE_DELAY = 600;
+const ANSWER_SAVE_DELAY = 300;
+
+/**
+ * Answers are also mirrored to a local draft on every click, so nothing is lost
+ * to a closed tab, a dropped connection or a save still in flight. The draft
+ * lives under the app's draft prefix, so signing out clears it.
+ */
+export const ANSWERS_DRAFT = "trade-profile:answers";
+type AnswersDraft = { answers: Record<string, number>; page: number };
 
 /** Demo id of the empty trader the dev preview starts over with. */
 export const FRESH = "fresh";
@@ -110,8 +119,20 @@ export function TradeProfileProvider({
         if (!alive) return;
         if (b.missingTable) setStatus("setup");
         else {
-          setLive(rowsToState(b.profile, b.checkins, b.reflections, b.retests));
+          const next = rowsToState(b.profile, b.checkins, b.reflections, b.retests);
+          // A local draft newer than the saved row holds answers that never reached
+          // the server (tab closed mid-save, offline): restore them and sync.
+          const draft = loadDraft<AnswersDraft>(ANSWERS_DRAFT);
+          const savedAt = b.profile ? Date.parse(b.profile.updated_at) : 0;
+          if (draft && !next.completedOn && draft.savedAt > savedAt) {
+            next.answers = { ...next.answers, ...toAnswers(draft.data.answers) };
+            next.page = Math.max(0, draft.data.page ?? next.page);
+            next.consentedOn ??= today();
+            pending.current = next;
+          }
+          setLive(next);
           setStatus("ready");
+          if (pending.current) flushRef.current();
         }
       })
       .catch(() => alive && setStatus("error"));
@@ -122,6 +143,7 @@ export function TradeProfileProvider({
 
   // Answers autosave on a short debounce; a page turn or leaving the tab flushes it.
   const pending = useRef<TradeProfileState | null>(null);
+  const flushRef = useRef<() => void>(() => {});
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flush = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -134,10 +156,13 @@ export function TradeProfileProvider({
       .catch(() => setSaveError(true));
   }, []);
   useEffect(() => {
+    flushRef.current = flush;
     const onHide = () => document.visibilityState === "hidden" && flush();
     document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", flush);
     return () => {
       document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", flush);
       flush();
     };
   }, [flush]);
@@ -177,6 +202,7 @@ export function TradeProfileProvider({
   const queueAnswers = useCallback(
     (next: TradeProfileState, immediate = false) => {
       if (isDemo || demoOnly) return;
+      if (!next.completedOn) writeDraft<AnswersDraft>(ANSWERS_DRAFT, { answers: next.answers, page: next.page });
       pending.current = next;
       if (timer.current) clearTimeout(timer.current);
       if (immediate) flush();
@@ -202,6 +228,7 @@ export function TradeProfileProvider({
     setPage: (page) => queueAnswers(apply((s) => void (s.page = page)), true),
     completeAssessment: () => {
       flush();
+      if (!isDemo) clearDraft(ANSWERS_DRAFT);
       const next = apply((s) => {
         s.completedOn = todayKey;
         s.page = 0;
@@ -209,6 +236,7 @@ export function TradeProfileProvider({
       void persist(() => saveTradeProfile({ answers: next.answers, page: 0, completed_on: next.completedOn })).catch(() => {});
     },
     restartAssessment: () => {
+      if (!isDemo) clearDraft(ANSWERS_DRAFT);
       const next = apply((s) => {
         s.answers = {};
         s.page = 0;
@@ -246,6 +274,7 @@ export function TradeProfileProvider({
         return;
       }
       await persist(resetTradeProfile);
+      clearDraft(ANSWERS_DRAFT);
       setLive(emptyTradeProfile());
     },
     startDemo: (personaId) => {
