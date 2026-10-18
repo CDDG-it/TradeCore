@@ -17,7 +17,7 @@ require.extensions['.ts'] = function (loaded, filename) {
   loaded._compile(result.outputText, filename);
 };
 
-const { buildTradingSessions, contextSummary, summarizeAdherence } = require('../src/lib/journal/behavioral-analytics.ts');
+const { buildTradingSessions, buildDayTransitions, contextSummary, summarizeAdherence } = require('../src/lib/journal/behavioral-analytics.ts');
 const trade = (id, start, end, result, account = 'a') => ({
   id, user_id: 'u', date_time: '2026-10-16', funded_account_id: account,
   instrument: 'NQ', market: 'futures', session: 'New York', timeframe: '5m',
@@ -52,4 +52,23 @@ test('sessions remain separate by account and unassessed trades are never clean'
   assert.equal(sessions.length, 2);
   assert.equal(sessions.every((session) => session.trades[0].context === 'other'), true);
   assert.deepEqual(summarizeAdherence(sessions.flatMap((session) => session.trades)), { assessed: 0, kept: 0, broken: 0, unassessed: 2, rate: null });
+});
+
+test('one trade per day compares with the prior recorded day on the same account', () => {
+  const prior = { ...trade('prior', undefined, undefined, 'loss', 'a'), date_time: '2026-10-15' };
+  const next = { ...trade('next', undefined, undefined, 'win', 'a'), date_time: '2026-10-16' };
+  const otherAccount = { ...trade('other', undefined, undefined, 'win', 'b'), date_time: '2026-10-16' };
+  const sessions = buildTradingSessions([next, otherAccount, prior], [check('next', 'broken')]);
+  const transitions = buildDayTransitions(sessions);
+  assert.equal(transitions.length, 1);
+  assert.equal(transitions[0].previousResult, 'loss');
+  assert.equal(transitions[0].current.trade.id, 'next');
+  assert.deepEqual(summarizeAdherence(transitions.map((item) => item.current)), { assessed: 1, kept: 0, broken: 1, unassessed: 0, rate: 0 });
+});
+
+test('ambiguous multi-trade days do not create a day transition', () => {
+  const previous = { ...trade('p', undefined, undefined, 'loss'), date_time: '2026-10-15' };
+  const ambiguous = { ...trade('q', undefined, undefined, 'win'), date_time: '2026-10-15' };
+  const next = { ...trade('r', '09:30', '09:40', 'win'), date_time: '2026-10-16' };
+  assert.deepEqual(buildDayTransitions(buildTradingSessions([next, previous, ambiguous])), []);
 });

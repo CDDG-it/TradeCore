@@ -6,6 +6,7 @@ export type ResponseContext = "after-loss" | "after-win" | "other" | "unknown";
 export type AssessedTrade = { trade: TradeJournalEntry; rules: { label: string; passed: boolean }[]; context: ResponseContext };
 export type Adherence = { assessed: number; kept: number; broken: number; unassessed: number; rate: number | null };
 export type TradingSession = { id: string; date: string; accountId: string | null; trades: AssessedTrade[]; orderReliable: boolean; firstBreachIndex: number | null };
+export type DayTransition = { date: string; accountId: string | null; current: AssessedTrade; previous: AssessedTrade; previousDate: string; previousResult: TradeJournalEntry["result"] };
 
 const groupKey = (trade: TradeJournalEntry) => `${trade.date_time.slice(0, 10)}|${trade.funded_account_id ?? "unlinked"}`;
 
@@ -60,6 +61,42 @@ export function buildTradingSessions(trades: TradeJournalEntry[], checks: RuleCh
 
 export function flattenSessions(sessions: TradingSession[]): AssessedTrade[] {
   return sessions.flatMap((session) => session.trades);
+}
+
+/**
+ * Compare the first decision of a trading day with the last closed decision
+ * on that account's previous recorded trading day. A one-trade day needs no
+ * intraday clock to establish its first/last trade. Multi-trade days do.
+ * The caller filters target dates afterwards, so the prior day can sit just
+ * outside the selected display period.
+ */
+export function buildDayTransitions(sessions: TradingSession[]): DayTransition[] {
+  const byAccount = new Map<string, TradingSession[]>();
+  for (const session of sessions) {
+    const key = session.accountId ?? "unlinked";
+    byAccount.set(key, [...(byAccount.get(key) ?? []), session]);
+  }
+  const transitions: DayTransition[] = [];
+  for (const accountSessions of byAccount.values()) {
+    const ordered = [...accountSessions].sort((a, b) => a.date.localeCompare(b.date));
+    for (let i = 1; i < ordered.length; i++) {
+      const previousDay = ordered[i - 1];
+      const currentDay = ordered[i];
+      if ((previousDay.trades.length > 1 && !previousDay.orderReliable) || (currentDay.trades.length > 1 && !currentDay.orderReliable)) continue;
+      const previous = previousDay.trades.at(-1);
+      const current = currentDay.trades[0];
+      if (!previous || !current) continue;
+      transitions.push({
+        date: currentDay.date,
+        accountId: currentDay.accountId,
+        current,
+        previous,
+        previousDate: previousDay.date,
+        previousResult: previous.trade.result,
+      });
+    }
+  }
+  return transitions.sort((a, b) => b.date.localeCompare(a.date) || (a.accountId ?? "").localeCompare(b.accountId ?? ""));
 }
 
 export function contextSummary(rows: AssessedTrade[], context: ResponseContext) {
