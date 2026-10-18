@@ -267,9 +267,8 @@ html.light {
   --sidebar-text-active: #030712;
   --sidebar-meta: oklch(0 0 0 / 40%);
 
-  /* Top-nav in light mode: solid white to match the cards and the rest of the
-     UI (opaque so no content bleeds through and tints the bar). */
-  --nav-bg: #FFFFFF;
+  /* The navigation stays navy in both themes. */
+  --nav-bg: #0B1120;
 
   --accent-label-strength: 100%;
   --on-brand: #F8FAFC;
@@ -813,12 +812,17 @@ html:has(.trade-static-scroll) {
   box-shadow: 0 12px 32px -16px rgba(0, 0, 0, 0.6);
 }
 html.light .app-topbar {
-  background: linear-gradient(108deg, #d8f8f3 0%, #e6f5fb 52%, #eaf8f6 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85);
+  --foreground: #F8FAFC;
+  --sidebar: #0B1120;
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --primary: #14B8A6;
+  background: var(--nav-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
 }
 html.light .app-topbar[data-scrolled] {
-  background: linear-gradient(108deg, #d8f8f3 0%, #e6f5fb 52%, #eaf8f6 100%);
-  box-shadow: 0 12px 32px -20px rgba(15, 118, 110, .32), inset 0 1px 0 rgba(255, 255, 255, .85);
+  background: var(--nav-bg);
+  box-shadow: 0 12px 32px -20px rgba(2, 6, 23, .4), inset 0 1px 0 rgba(255, 255, 255, .04);
 }
 
 /* Press feedback: the interface acknowledges the tap. */
