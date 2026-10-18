@@ -1,80 +1,101 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { Button } from "@/components/ui/button";
 import { copy } from "@/lib/trade-profile/content/copy";
 import { focusAreas } from "@/lib/trade-profile/content/focus-areas";
 import { traitName } from "@/lib/trade-profile/content/traits";
-import type { FocusResult } from "@/lib/trade-profile/focus";
-import { Pill, Tile } from "@/components/trade-profile/primitives";
+import type { FocusResult, Hit } from "@/lib/trade-profile/focus";
+import { domainOf } from "@/lib/trade-profile/types";
+import { traitColor } from "@/components/trade-profile/primitives";
 import { useDerived } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
 
-function because(r: FocusResult) {
-  const parts = r.hits.map((h) => `${traitName(h.trait)} = ${Math.round(h.score)}`);
-  return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} ${copy.common.and} ${parts.at(-1)}` : parts[0];
-}
-
-function AreaPanel({ result, rank }: { result: FocusResult; rank: "primary" | "secondary" }) {
-  const a = focusAreas[result.id];
-  const t = copy.focus;
+/** The trigger, shown rather than told: each facet's score against the line it crossed. */
+function TriggerRow({ hit }: { hit: Hit }) {
+  const color = traitColor[domainOf(hit.trait)];
   return (
-    <AccentPanel
-      accent={rank === "primary" ? "primary" : "cyan"}
-      eyebrow={rank === "primary" ? t.primary : t.secondary}
-      title={a.title}
-      subtitle={a.summary}
-    >
-      <Tile className="mt-4">
-        {result.hits.length ? (
-          <p className="text-sm text-foreground/85">
-            {t.because} <span className="font-semibold text-foreground">{because(result)}</span>
-            <span className="text-muted-foreground"> ({copy.common.positionShort})</span>.
-          </p>
-        ) : (
-          <p className="text-sm text-foreground/85">{t.noTrigger}</p>
-        )}
-        {result.hits.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            {result.hits.map((h) => (
-              <Pill key={h.trait} tone={rank === "primary" ? "primary" : "ice"}>
-                {traitName(h.trait)} {h.op === ">=" ? "≥" : "≤"} {h.threshold}
-              </Pill>
-            ))}
-          </div>
-        )}
-      </Tile>
-      <dl className="mt-4 grid gap-3 text-xs leading-relaxed sm:grid-cols-2">
-        <div>
-          <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{t.pattern}</dt>
-          <dd className="mt-0.5 text-foreground/80">{a.pattern}</dd>
-        </div>
-        <div>
-          <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{t.problem}</dt>
-          <dd className="mt-0.5 text-foreground/80">{a.tradingProblem}</dd>
-        </div>
-      </dl>
-    </AccentPanel>
+    <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5">
+      <span className="text-sm font-medium">{traitName(hit.trait)}</span>
+      <span className="text-sm font-bold tabular-nums">
+        {Math.round(hit.score)}
+        <span className="ml-1 text-xs font-medium text-muted-foreground">
+          {hit.op === ">=" ? "≥" : "≤"} {hit.threshold}
+        </span>
+      </span>
+      <span className="relative col-span-2 h-1.5 rounded-full bg-muted/60">
+        <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${hit.score}%`, background: color }} />
+        <span className="absolute -inset-y-1 w-0.5 rounded-full bg-foreground/60" style={{ left: `${hit.threshold}%` }} aria-hidden />
+      </span>
+    </li>
   );
 }
 
+function AreaBody({ result }: { result: FocusResult }) {
+  const a = focusAreas[result.id];
+  const t = copy.focus;
+  return (
+    <>
+      {result.hits.length > 0 ? (
+        <>
+          <p className="mt-4 text-xs font-medium text-muted-foreground">{t.because}</p>
+          <ul className="mt-3 space-y-3.5">
+            {result.hits.map((h) => (
+              <TriggerRow key={h.trait} hit={h} />
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="mt-4 text-sm text-foreground/85">{t.noTrigger}</p>
+      )}
+      <dl className="mt-5 grid gap-3 border-t border-border/50 pt-4 text-sm leading-relaxed sm:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold text-foreground/70">{t.pattern}</dt>
+          <dd className="mt-0.5 text-foreground/85">{a.pattern}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold text-foreground/70">{t.problem}</dt>
+          <dd className="mt-0.5 text-foreground/85">{a.tradingProblem}</dd>
+        </div>
+      </dl>
+    </>
+  );
+}
+
+/** Primary area as the main reading, the secondary beside it at a smaller voice. */
 export function FocusView() {
   const { focus } = useDerived();
   const nav = useProfileNav();
   if (!focus) return null;
   const t = copy.focus;
+  const p = focusAreas[focus.primary.id];
+  const s = focus.secondary ? focusAreas[focus.secondary.id] : null;
+
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="font-heading text-xl font-bold tracking-tight">{t.title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t.lead}</p>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
+        <AccentPanel accent="primary" eyebrow={t.primary} className="sm:p-6 sm:pl-7">
+          <h2 className="mt-2 font-heading text-2xl font-bold tracking-tight sm:text-[28px]">{p.title}</h2>
+          <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">{p.summary}</p>
+          <AreaBody result={focus.primary} />
+        </AccentPanel>
+
+        <div className="space-y-4">
+          {s && focus.secondary && (
+            <section className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
+              <p className="text-xs font-medium text-ice">{t.secondary}</p>
+              <h3 className="mt-1.5 font-heading text-lg font-bold tracking-tight">{s.title}</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{s.summary}</p>
+              <AreaBody result={focus.secondary} />
+            </section>
+          )}
+          <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">{t.hypothesis}</p>
+        </div>
       </div>
-      <AreaPanel result={focus.primary} rank="primary" />
-      {focus.secondary && <AreaPanel result={focus.secondary} rank="secondary" />}
-      <p className="text-[11px] leading-relaxed text-muted-foreground">{t.hypothesis}</p>
+
       <Button size="lg" onClick={() => nav.goTab("goal")}>
-        {t.cta} <ChevronRight />
+        {t.cta} <ArrowRight />
       </Button>
     </div>
   );

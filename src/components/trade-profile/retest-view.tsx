@@ -78,7 +78,7 @@ export function RetestView({ week }: { week: number }) {
       <button type="button" onClick={() => nav.back()} className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
         <ChevronLeft className="size-3.5" /> {copy.common.back}
       </button>
-      <AccentPanel accent="cyan" eyebrow={copy.common.positionOnScale} title={`${t.title(week)}: ${traitName(domain)}`}>
+      <AccentPanel accent="cyan" title={`${t.title(week)}: ${traitName(domain)}`} subtitle={copy.common.positionOnScale}>
         <div className="mt-4">
           <BeforeAfter rows={rows} afterLabel={t.after(week)} />
           {earlierRow && earlier && (
@@ -89,7 +89,7 @@ export function RetestView({ week }: { week: number }) {
         </div>
       </AccentPanel>
       <Tile>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{t.caveatTitle}</p>
+        <p className="text-xs font-semibold text-foreground/85">{t.caveatTitle}</p>
         <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
           {t.caveat.map((c) => (
             <li key={c}>{c}</li>

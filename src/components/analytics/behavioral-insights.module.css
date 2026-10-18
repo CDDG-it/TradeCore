@@ -4,16 +4,40 @@
 
 .tab,
 .selectable,
-.evidence {
+.footstep,
+.fingerprintPanel {
   transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform var(--duration-press) var(--ease-out-strong);
 }
 
-.bar {
-  height: 100%;
-  width: 100%;
-  border-radius: 999px;
-  transform-origin: left center;
-  transition: transform 240ms var(--ease-in-out-strong);
+.ridge {
+  animation: ridgeReveal 220ms var(--ease-out-strong) both;
+}
+
+.footprintViewport {
+  scrollbar-color: rgba(20, 184, 166, .3) transparent;
+  scrollbar-width: thin;
+}
+
+.footprintTrail::before {
+  content: "";
+  position: absolute;
+  right: 1rem;
+  left: 1rem;
+  top: 50%;
+  height: 1px;
+  background: repeating-linear-gradient(to right, rgba(20, 184, 166, .3) 0 5px, transparent 5px 12px);
+}
+
+.footstep {
+  transform: translateY(var(--step-y));
+}
+
+.stepHigh {
+  --step-y: -11px;
+}
+
+.stepLow {
+  --step-y: 11px;
 }
 
 .rail::before {
@@ -31,16 +55,23 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes ridgeReveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .selectable:hover,
-  .evidence:hover { transform: translateY(-1px); }
+  .fingerprintPanel:hover { border-color: rgba(20, 184, 166, .4); }
+  .footstep:hover { transform: translateY(calc(var(--step-y) - 2px)); }
   .tab:hover { background-color: rgba(20, 184, 166, .08); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .enter { animation: none; }
+  .ridge { animation: none; }
   .tab,
   .selectable,
-  .evidence { transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
-  .bar { transition: none; }
+  .footstep,
+  .fingerprintPanel { transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
 }

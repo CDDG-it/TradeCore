@@ -28,6 +28,8 @@ export interface ProfileNav {
   startAssessment: () => void;
   /** One step back: the previous history entry when it is ours, otherwise `fallback`. */
   back: (fallback?: ProfileView) => void;
+  /** Scroll the section's own scroll frame (not the window) back to the top. */
+  scrollTop: (smooth?: boolean) => void;
 }
 
 export const ProfileNavContext = createContext<ProfileNav | null>(null);

@@ -45,7 +45,7 @@ export function AssessmentView(props: {
   const showPage = (p: number) => {
     if (props.items) setLocalPage(p);
     else store.setPage(p);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    nav.scrollTop(true);
   };
   /** A page turn forward is a history entry, so the browser back button returns to the last page. */
   const setPage = (p: number) => {
@@ -86,7 +86,7 @@ export function AssessmentView(props: {
   function finish() {
     if (props.onFinish) props.onFinish();
     else store.completeAssessment();
-    window.scrollTo({ top: 0 });
+    nav.scrollTop();
   }
 
   function fillRandom() {
@@ -99,9 +99,9 @@ export function AssessmentView(props: {
 
   return (
     <div>
-      <div className="sticky top-14 z-20 -mx-3 mb-5 border-b border-border/40 bg-background/85 px-3 pb-3 pt-2 backdrop-blur-md sm:-mx-1 sm:px-1 lg:top-16">
+      <div className="sticky top-0 z-20 -mx-1 mb-6 border-b border-border/40 bg-background/90 px-1 pb-3 pt-1 backdrop-blur-md">
         <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
-          <span className="font-semibold uppercase tracking-wider">{t.page(page + 1, pages)}</span>
+          <span className="font-semibold">{t.page(page + 1, pages)}</span>
           <span className="tabular-nums">{t.progress(done, list.length)}</span>
         </div>
         <ProgressLine value={done / list.length} />

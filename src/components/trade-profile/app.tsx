@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MotionConfig, motion } from "motion/react";
-import { SectionNav } from "@/components/layout/section-nav";
+import { cn } from "@/lib/utils";
 import { copy } from "@/lib/trade-profile/content/copy";
 import { DemoBar } from "@/components/trade-profile/demo-bar";
 import { Onboarding } from "@/components/trade-profile/onboarding";
@@ -27,39 +27,42 @@ import {
   type ProfileView as View,
 } from "@/components/trade-profile/nav";
 
-const TABS: { key: ProfileTab; label: string }[] = (Object.keys(copy.tabs) as ProfileTab[]).map((key) => ({ key, label: copy.tabs[key] }));
+const SECTIONS: { key: ProfileTab; label: string }[] = (Object.keys(copy.tabs) as ProfileTab[]).map((key) => ({ key, label: copy.tabs[key] }));
 const TODAY: View = { kind: "tab", tab: "today" };
 const EASE = [0.23, 1, 0.32, 1] as const;
+/** The Therapist owns `?tab=`; the section inside My Trade Profile rides on `?section=`. */
+const PARAM = "section";
 
-/** The address bar only carries the tab; sub-views live in history.state. */
 function urlFor(view: View): URL {
   const url = new URL(window.location.href);
-  if (view.kind === "tab" && view.tab !== "today") url.searchParams.set("tab", view.tab);
-  else if (view.kind === "tab") url.searchParams.delete("tab");
+  if (view.kind === "tab" && view.tab !== "today") url.searchParams.set(PARAM, view.tab);
+  else if (view.kind === "tab") url.searchParams.delete(PARAM);
   return url;
 }
 
 /**
- * My Trade Profile: a Big Five assessment (IPIP-NEO-120) turned into a
- * 12-week development program. Before the assessment is done the page is an
- * onboarding flow; after it, six sections behind the shared section picker.
+ * My Trade Profile, as a section of MC Trade Therapist: a Big Five assessment
+ * (IPIP-NEO-120) turned into a 12-week development program. Before the
+ * assessment is done it is an onboarding flow; after it, six sub-sections.
  *
- * Every move (a section, a facet drill-down, a retest, an assessment page) is
- * a browser history entry, so back always steps back one screen with the
- * trader's answers intact, and never throws them off the page.
+ * It fills the Therapist's viewport-high frame and scrolls inside it. Every
+ * move (a sub-section, a facet drill-down, a retest, an assessment page) is a
+ * browser history entry, so back steps back one screen with answers intact.
  */
 export function TradeProfileApp() {
   const store = useTradeProfile();
   const { finished, goalTarget } = useDerived();
   const [view, setView] = useState<View>(TODAY);
   const [exercise, setExercise] = useState<string | null>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  const scrollTop = (smooth = false) => frame.current?.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
 
   // Seed from the URL after mount (the page is prerendered, so reading it during
   // render would make server and client disagree), then follow back/forward.
   useEffect(() => {
     const entry = currentEntry();
-    const t = new URLSearchParams(window.location.search).get("tab");
-    const initial: View = entry?.view ?? (TABS.some((x) => x.key === t) ? { kind: "tab", tab: t as ProfileTab } : TODAY);
+    const t = new URLSearchParams(window.location.search).get(PARAM);
+    const initial: View = entry?.view ?? (SECTIONS.some((x) => x.key === t) ? { kind: "tab", tab: t as ProfileTab } : TODAY);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
     setView(initial);
     if (!entry) pushEntry({ view: initial }, undefined, true);
@@ -85,7 +88,7 @@ export function TradeProfileApp() {
   function go(next: View) {
     setView(next);
     pushEntry({ view: next }, urlFor(next));
-    window.scrollTo({ top: 0 });
+    scrollTop();
   }
 
   const nav: ProfileNav = {
@@ -104,14 +107,16 @@ export function TradeProfileApp() {
       else {
         setView(fallback);
         pushEntry({ view: fallback }, urlFor(fallback), true);
-        window.scrollTo({ top: 0 });
+        scrollTop();
       }
     },
+    scrollTop,
   };
 
   // Without a goal there is no program yet, so Today would be empty: show the profile first.
   const tabOf = (t: ProfileTab): ProfileTab => (t === "today" && !goalTarget ? "profile" : t);
   const shownTab: ProfileTab = view.kind === "tab" ? tabOf(view.tab) : view.kind === "domain" ? "profile" : "today";
+  const inSection = view.kind === "tab" || view.kind === "domain";
 
   let body: React.ReactNode;
   let viewKey: string;
@@ -142,32 +147,20 @@ export function TradeProfileApp() {
   return (
     <MotionConfig reducedMotion="user">
       <ProfileNavContext.Provider value={nav}>
-        <div className="mx-auto w-full max-w-4xl space-y-5">
-          <div className="flex min-h-10 flex-wrap items-center justify-between gap-3">
-            {finished ? (
-              <SectionNav
-                title={copy.title}
-                titleClassName="font-heading font-bold text-lg md:text-xl text-foreground tracking-tight leading-none"
-                items={TABS}
-                value={shownTab}
-                onChange={nav.goTab}
-              />
-            ) : (
-              <h1 className="font-heading text-lg font-bold leading-none tracking-tight text-foreground md:text-xl">{copy.title}</h1>
+        <div ref={frame} className="h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+          <div className="mx-auto w-full max-w-6xl space-y-5 pb-10">
+            {finished && inSection && <SectionTabs value={shownTab} onChange={nav.goTab} />}
+            {store.demo && <DemoBar />}
+            {store.saveError && !store.demo && (
+              <p role="status" className="rounded-xl border border-loss/30 bg-loss/10 px-3 py-2 text-xs text-loss">
+                {copy.saveError}
+              </p>
             )}
+            {/* Enter-only fade, like PageWrapper: a section change never waits on the old one leaving. */}
+            <motion.div key={viewKey} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, ease: EASE }}>
+              {body}
+            </motion.div>
           </div>
-
-          {store.demo && <DemoBar />}
-          {store.saveError && !store.demo && (
-            <p role="status" className="rounded-xl border border-loss/30 bg-loss/10 px-3 py-2 text-xs text-loss">
-              {copy.saveError}
-            </p>
-          )}
-
-          {/* Enter-only fade, like PageWrapper: a section change never waits on the old one leaving. */}
-          <motion.div key={viewKey} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16, ease: EASE }}>
-            {body}
-          </motion.div>
         </div>
         <ExerciseSheet id={exercise} onClose={() => setExercise(null)} />
       </ProfileNavContext.Provider>
@@ -175,12 +168,52 @@ export function TradeProfileApp() {
   );
 }
 
+/**
+ * The sub-sections as one quiet text row with a sliding underline, rather than
+ * a second dropdown inside the Therapist's own section picker. It scrolls
+ * sideways on a phone instead of wrapping.
+ */
+function SectionTabs({ value, onChange }: { value: ProfileTab; onChange: (t: ProfileTab) => void }) {
+  return (
+    <nav aria-label={copy.title} className="sticky top-0 z-30 -mx-1 border-b border-border/50 bg-background/90 px-1 backdrop-blur-md">
+      <div className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {SECTIONS.map((s) => {
+          const on = s.key === value;
+          return (
+            <button
+              key={s.key}
+              type="button"
+              aria-current={on ? "page" : undefined}
+              onClick={() => onChange(s.key)}
+              className={cn(
+                "relative shrink-0 px-3 py-3 text-[13px] font-semibold tracking-tight transition-colors outline-none focus-visible:text-primary",
+                on ? "text-foreground" : "text-foreground/50 hover:text-foreground/80",
+              )}
+            >
+              {s.label}
+              {on && (
+                <motion.span
+                  layoutId="trade-profile-section"
+                  className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-primary"
+                  transition={{ type: "spring", stiffness: 480, damping: 38 }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 function LoadingState() {
   return (
-    <div className="space-y-3" aria-busy>
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="h-28 animate-pulse rounded-2xl border border-border/40 bg-card/60" />
-      ))}
+    <div className="grid gap-4 pt-2 lg:grid-cols-[1.35fr_1fr]" aria-busy>
+      <div className="h-80 animate-pulse rounded-2xl border border-border/40 bg-card/60" />
+      <div className="space-y-4">
+        <div className="h-36 animate-pulse rounded-2xl border border-border/40 bg-card/60" />
+        <div className="h-40 animate-pulse rounded-2xl border border-border/40 bg-card/60" />
+      </div>
     </div>
   );
 }

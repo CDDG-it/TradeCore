@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ChevronRight, CircleHelp, Clock3, Crosshair } from "lucide-react";
@@ -32,11 +32,32 @@ function Metric({ label, value, detail, accent = false }: { label: string; value
   </div>;
 }
 
-function ComparisonBar({ label, value, detail, highlight = false }: { label: string; value: number | null; detail: string; highlight?: boolean }) {
-  return <div className="space-y-2.5">
-    <div className="flex items-baseline justify-between gap-4"><span className={cn("text-sm font-medium", highlight ? "text-foreground" : "text-muted-foreground")}>{label}</span><strong className={cn("font-heading text-xl font-semibold tabular-nums", highlight && "text-primary")}>{rate(value)}</strong></div>
-    <div className="h-2 overflow-hidden rounded-full bg-white/[.07]" aria-hidden="true"><div className={cn(styles.bar, highlight ? "bg-primary" : "bg-ice/65")} style={{ transform: `scaleX(${(value ?? 0) / 100})` }} /></div>
-    <p className="text-xs text-muted-foreground">{detail}</p>
+function FootprintMark({ mirrored = false }: { mirrored?: boolean }) {
+  return <svg aria-hidden="true" viewBox="0 0 48 70" className={cn("h-11 w-8", mirrored && "-scale-x-100")} fill="currentColor">
+    <path d="M18.5 27.5C12 31 10.5 39 12.2 49.5c1.3 9.1 6.2 15.1 13 15.1 7.7 0 11.7-7 10.4-17.2-.8-7.6-3.6-14.1-8.1-18.5-2.7-2.7-5.9-3.3-9.3-1.4Z" />
+    <circle cx="11" cy="22" r="4.1" /><circle cx="17" cy="15" r="4.6" /><circle cx="24.5" cy="11" r="4.4" /><circle cx="32" cy="12" r="3.8" /><circle cx="38" cy="18" r="3" />
+  </svg>;
+}
+
+function FingerprintFigure({ loss, win, lossRate, winRate, focus, onFocus }: { loss: DayTransition[]; win: DayTransition[]; lossRate: number | null; winRate: number | null; focus: Focus; onFocus: (focus: Focus) => void }) {
+  const groups = [
+    { key: "loss" as const, label: "After a loss", rows: loss, value: lossRate },
+    { key: "win" as const, label: "After a win", rows: win, value: winRate },
+  ];
+  return <div className="grid gap-3 sm:grid-cols-2" aria-label="Visual fingerprint of recorded first trades">
+    {groups.map((group) => <button key={group.key} type="button" onClick={() => onFocus(focus === group.key ? "all" : group.key)} aria-pressed={focus === group.key} aria-label={`${group.label}: ${rate(group.value)} rule adherence across ${group.rows.length} recorded days. Show these days in the evidence list.`} className={cn(styles.fingerprintPanel, "relative overflow-hidden rounded-[22px] border bg-background/45 px-4 pb-5 pt-2 text-left", focus === group.key ? "border-primary/50" : "border-white/[.08]")}>
+      <svg viewBox="0 0 200 200" className="mx-auto h-44 w-full max-w-52 sm:h-48" aria-hidden="true">
+        <defs><radialGradient id={`fingerprint-glow-${group.key}`}><stop stopColor="#14B8A6" stopOpacity=".14" /><stop offset="1" stopColor="#14B8A6" stopOpacity="0" /></radialGradient></defs>
+        <circle cx="100" cy="100" r="96" fill={`url(#fingerprint-glow-${group.key})`} />
+        {Array.from({ length: 9 }, (_, index) => {
+          const row = group.rows[index]?.current;
+          const color = !row ? "rgba(148,163,184,.11)" : !row.rules.length ? "rgba(148,163,184,.5)" : isBroken(row) ? "var(--destructive)" : "var(--primary)";
+          return <ellipse key={index} cx="100" cy="100" rx={18 + index * 8} ry={27 + index * 8} fill="none" stroke={color} strokeWidth={index === 8 ? 2.2 : 2.5} strokeLinecap="round" strokeDasharray={row ? undefined : "3 7"} className={styles.ridge} style={{ animationDelay: `${index * 30}ms` }} />;
+        })}
+        <path d="M100 76c-9 0-17 9-17 20 0 10 6 19 17 27 11-8 17-17 17-27 0-11-8-20-17-20Z" fill="none" stroke="rgba(255,255,255,.22)" strokeWidth="1.5" />
+      </svg>
+      <div className="relative -mt-1 flex items-end justify-between gap-3 border-t border-white/[.08] pt-4"><div><p className="text-xs font-semibold text-foreground">{group.label}</p><p className="mt-1 text-[11px] text-muted-foreground">{group.rows.length} first trades / up to 9 recent ridges</p></div><strong className="font-heading text-3xl font-semibold tabular-nums tracking-tight text-primary">{rate(group.value)}</strong></div>
+    </button>)}
   </div>;
 }
 
@@ -59,15 +80,28 @@ function DecisionDetail({ row, transition, number }: { row: AssessedTrade; trans
 }
 
 function DailyRhythm({ rows, transitions, selectedId, onSelect }: { rows: AssessedTrade[]; transitions: DayTransition[]; selectedId: string | null; onSelect: (id: string) => void }) {
-  const recent = rows.slice(0, 35);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const recent = [...rows.slice(0, 18)].reverse();
   const selectedOlder = rows.find((row) => row.trade.id === selectedId && !recent.some((item) => item.trade.id === row.trade.id));
-  const displayed = selectedOlder ? [...recent, selectedOlder] : recent;
-  return <Surface className="p-5 sm:p-6">
-    <div className="flex flex-wrap items-end justify-between gap-3"><div><Kicker>Decision rhythm</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">The first decision, day by day</h3></div><span className="text-xs text-muted-foreground">{rows.length} ordered trading days</span></div>
-    <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">Each tile is the first trade of one recorded trading day. Select a day to see its rules and the previous result.</p>
-    {displayed.length ? <div className="mt-6 flex flex-wrap gap-2" aria-label="First trades by day">{displayed.map((row) => { const prior = transitions.find((item) => item.current.trade.id === row.trade.id); const active = (selectedId ?? rows[0]?.trade.id) === row.trade.id; return <button key={row.trade.id} type="button" onClick={() => onSelect(row.trade.id)} aria-label={`${dayLabel(row.trade.date_time.slice(0, 10))}, ${statusLabel(row)}${prior ? `, after a ${prior.previousResult}` : ""}`} aria-pressed={active} className={cn(styles.evidence, "flex h-12 w-12 flex-col items-center justify-center rounded-lg border text-[10px] font-semibold", active ? "border-primary bg-primary/15 text-primary" : isBroken(row) ? "border-destructive/25 bg-destructive/[.07] text-destructive" : row.rules.length ? "border-primary/20 bg-primary/[.07] text-primary" : "border-white/[.08] bg-background/50 text-muted-foreground")}><span className="tabular-nums">{row.trade.date_time.slice(8, 10)}</span><span className="mt-0.5 text-[8px] uppercase opacity-70">{format(new Date(`${row.trade.date_time.slice(0, 10)}T12:00:00`), "MMM")}</span></button>; })}</div> : <p className="mt-6 text-sm text-muted-foreground">No day has a reliable first trade yet.</p>}
-    <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/[.08] pt-4 text-[11px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-primary" /> Checks kept</span><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-destructive" /> Rule broken</span><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-muted-foreground" /> Not assessed</span></div>
-    {rows.length > recent.length && <p className="mt-3 text-xs text-muted-foreground">Showing the 35 most recent days{selectedOlder ? " and the selected day" : ""}.</p>}
+  const displayed = selectedOlder ? [selectedOlder, ...recent] : recent;
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const activeId = selectedId ?? rows[0]?.trade.id;
+    const button = Array.from(viewport?.querySelectorAll<HTMLButtonElement>("button[data-trade-id]") ?? []).find((item) => item.dataset.tradeId === activeId);
+    if (viewport && button) viewport.scrollLeft += button.getBoundingClientRect().left - viewport.getBoundingClientRect().left - viewport.clientWidth / 2 + button.clientWidth / 2;
+  }, [rows, selectedId]);
+  return <Surface className="overflow-hidden p-5 sm:p-6">
+    <div className="flex flex-wrap items-end justify-between gap-3"><div><Kicker>02 / Decision footprints</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">Every day leaves a mark</h3></div><span className="text-xs text-muted-foreground">{rows.length} ordered trading days</span></div>
+    <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">Each footprint is the first trade of a day. Its color shows whether the checked rules were kept, broken or not assessed. Select a step to inspect the decision.</p>
+    {displayed.length ? <div ref={viewportRef} className={cn(styles.footprintViewport, "mt-5 overflow-x-auto pb-4")}><div className={cn(styles.footprintTrail, "relative flex w-max min-w-full items-center gap-1.5 px-2 py-5")} aria-label="First trades by day">{displayed.map((row, index) => {
+      const prior = transitions.find((item) => item.current.trade.id === row.trade.id);
+      const active = (selectedId ?? rows[0]?.trade.id) === row.trade.id;
+      return <button key={row.trade.id} data-trade-id={row.trade.id} type="button" onClick={() => onSelect(row.trade.id)} aria-label={`${dayLabel(row.trade.date_time.slice(0, 10))}, ${statusLabel(row)}${prior ? `, after a ${prior.previousResult}` : ""}`} aria-pressed={active} className={cn(styles.footstep, "relative z-10 flex h-[102px] w-[66px] shrink-0 flex-col items-center justify-center rounded-2xl border text-[10px] font-semibold", index % 2 ? styles.stepHigh : styles.stepLow, active ? "border-primary/70 bg-primary/[.1] shadow-[0_0_28px_rgba(20,184,166,.12)]" : "border-white/[.07] bg-background/70", row.rules.length === 0 ? "text-muted-foreground" : isBroken(row) ? "text-destructive" : "text-primary") }>
+        <FootprintMark mirrored={index % 2 === 1} /><span className="mt-1 tabular-nums text-foreground/75">{format(new Date(`${row.trade.date_time.slice(0, 10)}T12:00:00`), "d MMM")}</span>
+      </button>;
+    })}</div></div> : <p className="mt-6 text-sm text-muted-foreground">No day has a reliable first trade yet.</p>}
+    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/[.08] pt-4 text-[11px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-primary" /> Checks kept</span><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-destructive" /> Rule broken</span><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-muted-foreground" /> Not assessed</span></div>
+    {rows.length > 18 && <p className="mt-3 text-xs text-muted-foreground">Showing the 18 most recent days{selectedOlder ? " and the selected day" : ""}. Scroll horizontally to follow the trail.</p>}
   </Surface>;
 }
 
@@ -132,14 +166,19 @@ export function BehavioralInsights({ trades, ruleChecks, accounts, exercises }: 
     </div>
 
     {filtered.length === 0 ? <Surface className="p-12 text-center"><CircleHelp className="mx-auto size-7 text-primary" /><h2 className="mt-4 font-heading text-xl font-semibold">No trades in this selection</h2><p className="mt-2 text-sm text-muted-foreground">Choose a wider period or another account, or add trades in Journal.</p><Link href="/journal" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">Open Journal <ArrowRight className="size-4" /></Link></Surface> : <div className={cn(styles.enter, "space-y-5")}>
-      <Surface className="relative overflow-hidden border-primary/20 bg-[radial-gradient(ellipse_at_85%_5%,rgba(20,184,166,.15),transparent_48%),linear-gradient(135deg,rgba(20,184,166,.055),rgba(11,17,32,.25))] p-6 sm:p-8">
-        <Kicker>01 / The next trading day</Kicker><h2 className="mt-4 max-w-3xl font-heading text-3xl font-semibold leading-tight tracking-[-.04em] sm:text-[40px]">Does yesterday&apos;s result<br /><span className="text-primary">change today&apos;s discipline?</span></h2><p className="mt-4 max-w-2xl text-sm leading-relaxed text-foreground/65">We compare the first trade of a recorded trading day after a prior loss with the first trade after a prior win. Days are linked within the same account. A skipped calendar day does not break the sequence.</p>
-        <div className="mt-8 grid gap-6 border-t border-white/[.1] pt-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center"><div className="flex items-baseline gap-2"><strong className={cn("font-heading text-5xl font-semibold leading-none tabular-nums tracking-[-.06em] sm:text-6xl", delta !== null && delta < 0 ? "text-destructive" : "text-primary")}>{delta === null ? "--" : `${delta > 0 ? "+" : ""}${delta}`}</strong><span className="text-sm text-muted-foreground">pts</span></div><div><p className="text-sm font-medium">{delta === null ? "Comparison needs assessed trades after both a loss and a win" : delta === 0 ? "Same recorded rule adherence after wins and losses" : `${Math.abs(delta)} percentage points ${delta < 0 ? "lower" : "higher"} after a loss`}</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{enough ? "A descriptive pattern, not evidence that the previous result caused it." : "Early observation: fewer than five assessed trades in at least one group."}</p></div></div>
+      <Surface className="relative overflow-hidden border-primary/20 bg-[radial-gradient(ellipse_at_85%_5%,rgba(20,184,166,.15),transparent_48%),linear-gradient(135deg,rgba(20,184,166,.055),rgba(11,17,32,.25))] p-5 sm:p-7">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,.88fr)_minmax(430px,1.12fr)] lg:items-center">
+          <div><Kicker>01 / Day-to-day fingerprint</Kicker><h2 className="mt-4 max-w-xl font-heading text-3xl font-semibold leading-tight tracking-[-.04em] sm:text-[38px]">Does yesterday&apos;s result<br /><span className="text-primary">leave a mark?</span></h2><p className="mt-4 max-w-xl text-sm leading-relaxed text-foreground/65">The first decision of each day becomes part of your fingerprint. Compare days after a loss with days after a win, on the same account.</p>
+            <div className="mt-7 flex items-center gap-4 border-t border-white/[.1] pt-5"><strong className={cn("font-heading text-4xl font-semibold tabular-nums tracking-tight", delta !== null && delta < 0 ? "text-destructive" : "text-primary")}>{delta === null ? "--" : `${delta > 0 ? "+" : ""}${delta}`}<span className="ml-1 text-sm font-medium text-muted-foreground">pts</span></strong><p className="max-w-xs text-xs leading-relaxed text-foreground/75">{delta === null ? "A comparison needs assessed trades after both results." : delta === 0 ? "The recorded rule adherence is equal in both groups." : `${Math.abs(delta)} points ${delta < 0 ? "lower" : "higher"} after a loss.`}<span className="mt-1 block text-muted-foreground">{enough ? "A descriptive pattern, not a cause." : "Small sample on at least one side."}</span></p></div>
+          </div>
+          <FingerprintFigure loss={lossTransitions} win={winTransitions} lossRate={afterLoss.rate} winRate={afterWin.rate} focus={focus} onFocus={setFocus} />
+        </div>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/[.08] pt-4 text-[11px] text-muted-foreground"><span>Select an imprint to filter the day-pair evidence below. Each colored ridge is one recent first trade.</span><span className="flex flex-wrap gap-3"><span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-primary" /> Kept</span><span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-destructive" /> Broken</span><span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-muted-foreground" /> Unknown</span></span></div>
       </Surface>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,.75fr)]">
-        <Surface className="p-5 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><Kicker>Day-to-day fingerprint</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">Rule adherence after a result</h3></div><span className="rounded-full border border-white/[.08] px-2.5 py-1 text-[10px] text-muted-foreground">{afterLoss.assessed + afterWin.assessed} assessed days</span></div><div className="mt-7 space-y-7"><ComparisonBar label="After a loss" value={afterLoss.rate} detail={`${afterLoss.kept} of ${afterLoss.assessed} assessed first trades kept every checked rule`} highlight /><ComparisonBar label="After a win" value={afterWin.rate} detail={`${afterWin.kept} of ${afterWin.assessed} assessed first trades kept every checked rule`} /></div><div className="mt-7 grid grid-cols-2 gap-5 border-t border-white/[.08] pt-5"><Metric label="Daily consistency" value={rate(dailySummary.rate)} detail={`${dailySummary.kept}/${dailySummary.assessed} assessed first trades`} /><Metric label="Unknown" value={String(dailySummary.unassessed)} detail="First trades without rule checks" /></div></Surface>
-        <Surface className="p-5 sm:p-6"><Kicker>What this measures</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">Same process, different day</h3><p className="mt-4 text-sm leading-relaxed text-foreground/80">A day counts as compliant only when every checked rule on its first trade was kept. Trade profit, R and strategy outcome do not decide the verdict.</p><div className="mt-6 grid grid-cols-2 gap-5"><Metric label="Day pairs" value={String(transitions.length)} detail="Previous recorded day available" accent /><Metric label="Multi-trade days" value={String(multiSessions.length)} detail="Also explored below" /></div><p className="mt-5 border-t border-white/[.08] pt-4 text-xs leading-relaxed text-muted-foreground">{ambiguousDays} days have an uncertain intraday order. A prior day can sit just outside the selected period. Break-even days appear in the evidence but not the win/loss comparison. Unlinked trades form one separate stream; link accounts if you trade several.</p></Surface>
+        <Surface className="p-5 sm:p-6"><Kicker>The pattern in context</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">Process before outcome</h3><p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80">A day counts as compliant only when every checked rule on its first trade was kept. Profit, R and the strategy outcome do not decide the verdict.</p><div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-4"><Metric label="After loss" value={rate(afterLoss.rate)} detail={`${afterLoss.kept}/${afterLoss.assessed} assessed`} accent /><Metric label="After win" value={rate(afterWin.rate)} detail={`${afterWin.kept}/${afterWin.assessed} assessed`} /><Metric label="All first trades" value={rate(dailySummary.rate)} detail={`${dailySummary.kept}/${dailySummary.assessed} assessed`} /><Metric label="Unknown" value={String(dailySummary.unassessed)} detail="No rule checks" /></div></Surface>
+        <Surface className="p-5 sm:p-6"><Kicker>Data coverage</Kicker><h3 className="mt-2 font-heading text-xl font-semibold tracking-tight">What the trail can show</h3><div className="mt-5 grid grid-cols-2 gap-5"><Metric label="Day pairs" value={String(transitions.length)} detail="Prior recorded day available" accent /><Metric label="Multi-trade days" value={String(multiSessions.length)} detail="Explored below" /></div><p className="mt-5 border-t border-white/[.08] pt-4 text-xs leading-relaxed text-muted-foreground">{ambiguousDays} days have an uncertain intraday order. A prior day can sit outside this period. Break-even days appear in the trail but not the win/loss comparison. Unlinked trades form one separate stream; link accounts if you trade several.</p></Surface>
       </div>
 
       <div id="decision-rhythm" className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,.75fr)]"><DailyRhythm rows={dailyRows} transitions={transitions} selectedId={dailyId} onSelect={setDailyId} />{selectedDaily ? <DecisionDetail key={selectedDaily.trade.id} row={selectedDaily} transition={selectedTransition} /> : <Surface className="p-5 sm:p-6"><Kicker>Decision detail</Kicker><p className="mt-4 text-sm text-muted-foreground">No first trade has a reliable order in this selection.</p></Surface>}</div>
