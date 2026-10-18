@@ -1165,6 +1165,12 @@ html.light .app-topbar[data-scrolled] {
   .app-shell { padding-bottom: 0.5rem; }
 }
 
+/* The review title sits closer to the top navigation than dashboard sections. */
+.app-shell:has(.weekly-review-page) { padding-top: 0.5rem; }
+@media (min-width: 640px) {
+  .app-shell:has(.weekly-review-page) { padding-top: 1rem; }
+}
+
 /* Phone tab bar: restrained press feedback on text labels and Create. */
 .mobile-tab > * {
   transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);

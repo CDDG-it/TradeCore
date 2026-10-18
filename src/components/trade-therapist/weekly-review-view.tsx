@@ -111,7 +111,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const nextDisabled = startOfWeek(addWeeks(monday, 1), { weekStartsOn: 1 }) > new Date();
 
   return (
-    <div className="space-y-4">
+    <div className="weekly-review-page space-y-4">
       {/* Header */}
       <div>
         <Link href="/trade-therapist?tab=reviews" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3">
