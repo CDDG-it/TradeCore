@@ -1,13 +1,11 @@
 import { TopNav } from "@/components/layout/top-nav";
 import { BottomNav } from "@/components/layout/mobile-nav";
-import { AppBackground } from "@/components/layout/app-background";
 import { WarmReads } from "@/components/layout/warm-reads";
 import { TransitionLayout } from "@/components/layout/transition-layout";
 import { AccessProvider } from "@/components/access/access-provider";
 import { resolveAccess } from "@/lib/access/server";
 import { AppWelcome } from "@/components/dashboard/dashboard-welcome";
 import { createClient } from "@/lib/supabase/server";
-import "./opaque-surfaces.css";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -20,8 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const firstName = fullName.trim().split(/\s+/)[0] || null;
   return (
     <AppWelcome firstName={firstName}>
-      <div className="app-surface relative min-h-screen overflow-x-clip bg-background">
-        <AppBackground />
+      <div className="relative min-h-screen overflow-x-clip bg-background">
         <AccessProvider value={access}>
           {/* Full-width top navigation: no fixed left sidebar */}
           <TopNav />
