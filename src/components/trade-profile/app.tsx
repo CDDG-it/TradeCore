@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MotionConfig, motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/trade-profile/content/copy";
@@ -60,10 +60,6 @@ export function TradeProfileApp() {
   const [view, setView] = useState<View>(TODAY);
   const [exercise, setExercise] = useState<string | null>(null);
   const frame = useRef<HTMLDivElement>(null);
-  // The same frame as a value, for the scroll-driven motion that measures against it.
-  const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
-  // Stable, so React attaches it once instead of detaching and reattaching it on every render.
-  const attachFrame = useCallback((el: HTMLDivElement | null) => { frame.current = el; setScroller(el); }, []);
   const scrollTop = (smooth = false) => frame.current?.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
 
   // Seed from the URL after mount (the page is prerendered, so reading it during
@@ -121,7 +117,6 @@ export function TradeProfileApp() {
       }
     },
     scrollTop,
-    scroller,
   };
 
   // Without a goal there is no program yet, so Today would be empty: show the profile first.
@@ -169,8 +164,9 @@ export function TradeProfileApp() {
             <div className="absolute -right-32 top-1/3 size-[28rem] rounded-full bg-ice/[0.05] blur-[120px]" />
             <div className="tp-grain absolute inset-0" />
           </div>
-        <div ref={attachFrame} className="h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
-          <div className="w-full space-y-6 pb-12">
+        <div ref={frame} className="h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+          {/* A column that is at least the frame's height, so a view can fill the rest of it (the profile does). */}
+          <div className="flex min-h-full w-full flex-col gap-4 pb-3">
             {finished && inSection && <SectionTabs value={PARENT[shownTab] ?? shownTab} onChange={nav.goTab} />}
             {store.demo && <DemoBar />}
             {store.saveError && !store.demo && (
@@ -179,7 +175,7 @@ export function TradeProfileApp() {
               </p>
             )}
             {/* Enter-only fade, like PageWrapper: a section change never waits on the old one leaving. */}
-            <motion.div key={viewKey} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, ease: EASE }}>
+            <motion.div key={viewKey} className="flex min-h-0 flex-1 flex-col" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, ease: EASE }}>
               {body}
             </motion.div>
           </div>

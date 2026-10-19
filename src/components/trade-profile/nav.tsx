@@ -31,8 +31,6 @@ export interface ProfileNav {
   back: (fallback?: ProfileView) => void;
   /** Scroll the section's own scroll frame (not the window) back to the top. */
   scrollTop: (smooth?: boolean) => void;
-  /** That frame: scroll-driven motion (pinning, scrubbing) is measured against it, not the window. */
-  scroller: HTMLDivElement | null;
 }
 
 export const ProfileNavContext = createContext<ProfileNav | null>(null);

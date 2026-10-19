@@ -183,3 +183,30 @@ test('personas: complete profiles with three weeks of data', () => {
     assert.equal(s.programStart, '2026-02-08');
   }
 });
+
+// ── Trader types ─────────────────────────────────────────────────────────
+const { patternGroups, readTraderTypes } = lib('trader-types');
+
+test('trader type patterns: all-groups split, any-groups stay together', () => {
+  const curiosity = focusRules.find((r) => r.id === 'curiosity');
+  const groups = patternGroups(curiosity.rule);
+  assert.equal(groups.length, 2);
+  assert.deepEqual(groups[0].map((c) => c.trait), ['O', 'O4']);
+  assert.deepEqual(groups[1].map((c) => c.trait), ['C5']);
+  const calm = focusRules.find((r) => r.id === 'calm');
+  assert.deepEqual(patternGroups(calm.rule).map((g) => g.map((c) => c.trait)), [['N1', 'N2', 'N6']]);
+});
+
+test('trader types: matched types lead in focus order, the rest by closeness', () => {
+  for (const persona of personas) {
+    const profile = scoreProfile(items, answersFromFacetMeans(items, persona.facetMeans));
+    const readings = readTraderTypes(profile);
+    const ranked = rankFocusAreas(profile).map((r) => r.id);
+    assert.deepEqual(readings.filter((r) => r.matched).map((r) => r.id), ranked);
+    assert.equal(readings.length, focusRules.length);
+    readings.filter((r) => r.matched).forEach((r) => assert.equal(r.closeness, 1));
+    const rest = readings.filter((r) => !r.matched);
+    for (let i = 1; i < rest.length; i++) assert.ok(rest[i - 1].closeness >= rest[i].closeness);
+    rest.forEach((r) => assert.ok(r.closeness >= 0 && r.closeness < 1));
+  }
+});
