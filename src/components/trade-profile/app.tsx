@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MotionConfig, motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/trade-profile/content/copy";
@@ -60,6 +60,10 @@ export function TradeProfileApp() {
   const [view, setView] = useState<View>(TODAY);
   const [exercise, setExercise] = useState<string | null>(null);
   const frame = useRef<HTMLDivElement>(null);
+  // The same frame as a value, for the scroll-driven motion that measures against it.
+  const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
+  // Stable, so React attaches it once instead of detaching and reattaching it on every render.
+  const attachFrame = useCallback((el: HTMLDivElement | null) => { frame.current = el; setScroller(el); }, []);
   const scrollTop = (smooth = false) => frame.current?.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
 
   // Seed from the URL after mount (the page is prerendered, so reading it during
@@ -117,6 +121,7 @@ export function TradeProfileApp() {
       }
     },
     scrollTop,
+    scroller,
   };
 
   // Without a goal there is no program yet, so Today would be empty: show the profile first.
@@ -156,8 +161,16 @@ export function TradeProfileApp() {
   return (
     <MotionConfig reducedMotion="user">
       <ProfileNavContext.Provider value={nav}>
-        <div ref={frame} className="h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
-          <div className="w-full space-y-5 pb-10">
+        <div className="relative isolate h-full">
+          {/* The backdrop: two slow brand washes and a little grain, held still
+              behind the scrolling content so the sections read as one surface. */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-2xl">
+            <div className="absolute -left-40 -top-48 size-[34rem] rounded-full bg-primary/[0.07] blur-[110px]" />
+            <div className="absolute -right-32 top-1/3 size-[28rem] rounded-full bg-ice/[0.05] blur-[120px]" />
+            <div className="tp-grain absolute inset-0" />
+          </div>
+        <div ref={attachFrame} className="h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+          <div className="w-full space-y-6 pb-12">
             {finished && inSection && <SectionTabs value={PARENT[shownTab] ?? shownTab} onChange={nav.goTab} />}
             {store.demo && <DemoBar />}
             {store.saveError && !store.demo && (
@@ -171,6 +184,7 @@ export function TradeProfileApp() {
             </motion.div>
           </div>
         </div>
+        </div>
         <ExerciseSheet id={exercise} onClose={() => setExercise(null)} />
       </ProfileNavContext.Provider>
     </MotionConfig>
@@ -178,14 +192,14 @@ export function TradeProfileApp() {
 }
 
 /**
- * The sub-sections as one quiet text row with a sliding underline, rather than
- * a second dropdown inside the Therapist's own section picker. It scrolls
- * sideways on a phone instead of wrapping.
+ * The sub-sections as a floating glass pill: it stays at the top of the frame
+ * while the section scrolls under it, and the selection slides from one
+ * section to the next. It scrolls sideways on a phone instead of wrapping.
  */
 function SectionTabs({ value, onChange }: { value: ProfileTab; onChange: (t: ProfileTab) => void }) {
   return (
-    <nav aria-label={copy.title} className="sticky top-0 z-30 -mx-1 border-b border-border/50 bg-background/90 px-1 backdrop-blur-md">
-      <div className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <nav aria-label={copy.title} className="sticky top-0 z-30 flex pt-1">
+      <div className="flex max-w-full gap-0.5 overflow-x-auto rounded-full border border-white/[0.08] bg-card/70 p-1 shadow-[0_10px_30px_-18px_rgba(0,0,0,.9)] backdrop-blur-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {SECTIONS.map((s) => {
           const on = s.key === value;
           return (
@@ -195,18 +209,18 @@ function SectionTabs({ value, onChange }: { value: ProfileTab; onChange: (t: Pro
               aria-current={on ? "page" : undefined}
               onClick={() => onChange(s.key)}
               className={cn(
-                "relative shrink-0 px-3 py-3 text-[13px] font-semibold tracking-tight transition-colors outline-none focus-visible:text-primary",
-                on ? "text-foreground" : "text-foreground/50 hover:text-foreground/80",
+                "relative isolate shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold tracking-tight transition-[color,transform] duration-150 outline-none active:scale-[.97] focus-visible:ring-2 focus-visible:ring-primary/40",
+                on ? "text-primary-foreground" : "text-foreground/55 hover:text-foreground",
               )}
             >
-              {s.label}
               {on && (
                 <motion.span
                   layoutId="trade-profile-section"
-                  className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-primary"
-                  transition={{ type: "spring", stiffness: 480, damping: 38 }}
+                  className="absolute inset-0 -z-10 rounded-full bg-primary shadow-[0_0_20px_rgba(20,184,166,.25)]"
+                  transition={{ type: "spring", stiffness: 420, damping: 36 }}
                 />
               )}
+              {s.label}
             </button>
           );
         })}

@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { ArrowRight, ChevronRight, ClipboardCheck, NotebookPen } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { AccentPanel } from "@/components/ui/accent-panel";
+import { EASE_OUT } from "@/lib/motion";
+import { CountUp } from "@/components/ui/count-up";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { thresholds } from "@/lib/trade-profile/config";
@@ -65,8 +68,9 @@ export function TodayView() {
               <DifficultyPill level={today.difficulty} />
             </div>
             <button type="button" onClick={() => nav.openExercise(today.id)} className="group mt-2 block text-left">
-              <h2 className="font-heading text-2xl font-bold leading-tight tracking-tight [text-wrap:balance] group-hover:text-primary sm:text-[28px]">
+              <h2 className="font-heading text-[clamp(1.5rem,2.6vw,2rem)] font-bold leading-[1.1] tracking-[-0.025em] [text-wrap:balance] transition-colors duration-200 group-hover:text-primary">
                 {today.title}
+                <ArrowRight className="ml-2 inline size-5 -translate-x-1 align-baseline opacity-0 transition-[transform,opacity] duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
               </h2>
               <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">{today.goal}</p>
             </button>
@@ -98,7 +102,7 @@ export function TodayView() {
                     <button
                       type="button"
                       onClick={() => nav.openExercise(id)}
-                      className="press flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/30 sm:px-5"
+                      className="press group flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/30 sm:px-5"
                     >
                       <span className={cn("size-1.5 shrink-0 rounded-full", id === todaysId ? "bg-primary" : "bg-transparent")} aria-hidden />
                       <span className="min-w-0 flex-1">
@@ -108,7 +112,7 @@ export function TodayView() {
                         </span>
                       </span>
                       <DifficultyPill level={ex.difficulty} />
-                      <ChevronRight className="size-4 text-muted-foreground" />
+                      <ChevronRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5" />
                     </button>
                   </li>
                 );
@@ -123,7 +127,13 @@ export function TodayView() {
               {t.plan}
               <ChevronRight className={cn("size-4 transition-transform duration-200", showAll && "rotate-90")} />
             </button>
-            {showAll && <WeekPlan schedule={schedule} current={position.week} onOpen={nav.openExercise} />}
+            <AnimatePresence initial={false}>
+              {showAll && (
+                <motion.div key="plan" className="overflow-hidden" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.26, ease: EASE_OUT }}>
+                  <WeekPlan schedule={schedule} current={position.week} onOpen={nav.openExercise} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </section>
         )}
       </div>
@@ -133,7 +143,7 @@ export function TodayView() {
         <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
           <div className="flex items-baseline justify-between gap-3">
             <p className="font-heading text-[28px] font-bold leading-none tracking-tight tabular-nums">
-              {copy.common.week} {position.week}
+              {copy.common.week} <CountUp value={position.week} duration={0.6} />
               <span className="ml-1 text-base font-semibold text-muted-foreground">/ {thresholds.programWeeks}</span>
             </p>
             <p className="text-xs tabular-nums text-muted-foreground">
@@ -191,12 +201,16 @@ function WeekStrip({ current, started }: { current: number; started: boolean }) 
     <div className="mt-4 grid grid-cols-12 gap-1" aria-hidden>
       {Array.from({ length: thresholds.programWeeks }, (_, i) => i + 1).map((w) => (
         <span key={w} className="relative">
-          <span
-            className={cn(
-              "block h-1.5 rounded-full transition-colors",
-              started && w < current ? "bg-primary/70" : started && w === current ? "bg-primary" : "bg-muted/70",
+          <span className="block h-1.5 overflow-hidden rounded-full bg-muted/70">
+            {started && w <= current && (
+              <motion.span
+                className={cn("block h-full w-full origin-left rounded-full", w < current ? "bg-primary/70" : "bg-primary shadow-[0_0_10px_rgba(20,184,166,.6)]")}
+                initial={{ transform: "scaleX(0)" }}
+                animate={{ transform: "scaleX(1)" }}
+                transition={{ duration: 0.35, delay: 0.1 + (w - 1) * 0.045, ease: EASE_OUT }}
+              />
             )}
-          />
+          </span>
           {RETEST_WEEKS.includes(w) && <span className="absolute -top-1.5 left-1/2 h-1 w-px -translate-x-1/2 bg-ice" />}
         </span>
       ))}
@@ -210,16 +224,16 @@ function DueRow({ icon, tone, title, hint, onClick }: { icon: React.ReactNode; t
       type="button"
       onClick={onClick}
       className={cn(
-        "press flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-colors",
+        "press group flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-[background-color,transform] duration-200 hover:-translate-y-px",
         tone === "ice" ? "border-ice/30 bg-ice/[0.06] hover:bg-ice/[0.1]" : "border-primary/25 bg-primary/[0.05] hover:bg-primary/[0.09]",
       )}
     >
-      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-background/50">{icon}</span>
+      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-background/50 transition-transform duration-200 group-hover:scale-110">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold">{title}</span>
         <span className="text-xs text-muted-foreground">{hint}</span>
       </span>
-      <ArrowRight className="size-4 text-muted-foreground" />
+      <ArrowRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5" />
     </button>
   );
 }

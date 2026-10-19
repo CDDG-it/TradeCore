@@ -1823,3 +1823,32 @@ html:has(.marketing-page) { position: relative; }
   figcaption .marketing-callout:not(:first-child) { opacity: 0; }
 }
 
+
+/* ── My Trade Profile: ambient motion ──────────────────────────────────── */
+/* The facet band on the front door: two copies of the list slide by half the
+   track's width, so the loop never shows a seam. Slow on purpose: it sets a
+   mood, it is not something to read. */
+@keyframes tp-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.tp-marquee {
+  animation: tp-marquee 60s linear infinite;
+}
+.tp-marquee-mask {
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .tp-marquee-mask:hover .tp-marquee { animation-play-state: paused; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-marquee { animation: none; }
+}
+
+/* Grain over the profile's backdrop, so the brand washes read as a surface
+   rather than flat colour. Static, and too faint to compete with the text. */
+.tp-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  opacity: .035;
+  mix-blend-mode: overlay;
+}

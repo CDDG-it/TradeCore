@@ -1,6 +1,10 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, ChevronRight, HeartHandshake } from "lucide-react";
+import { motion } from "motion/react";
+import { EASE_OUT } from "@/lib/motion";
+import { thresholds } from "@/lib/trade-profile/config";
+import { InlinePill, PinnedSplit, ScrubText, TraitCarousel } from "@/components/trade-profile/motion-bits";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { Button } from "@/components/ui/button";
 import { copy } from "@/lib/trade-profile/content/copy";
@@ -36,17 +40,24 @@ function TriggerRow({ hit }: { hit: Hit }) {
         </span>
       </span>
       <span className="relative col-span-2 h-1.5 rounded-full bg-muted/60">
-        <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${hit.score}%`, background: traitColor[domainOf(hit.trait)] }} />
-        <span className="absolute -inset-y-1 w-0.5 rounded-full bg-foreground/60" style={{ left: `${hit.threshold}%` }} aria-hidden />
+        <span className="absolute inset-0 overflow-hidden rounded-full">
+          <motion.span className="absolute inset-0 rounded-full" style={{ background: traitColor[domainOf(hit.trait)] }}
+            initial={{ transform: "translateX(-100%)" }} animate={{ transform: `translateX(${hit.score - 100}%)` }} transition={{ duration: 0.8, delay: 0.2, ease: EASE_OUT }} />
+        </span>
+        <motion.span className="absolute -inset-y-1 w-0.5 rounded-full bg-foreground/60" style={{ left: `${hit.threshold}%` }} aria-hidden
+          initial={{ opacity: 0, transform: "scaleY(0.3)" }} animate={{ opacity: 1, transform: "scaleY(1)" }} transition={{ duration: 0.3, delay: 0.85, ease: EASE_OUT }} />
       </span>
     </li>
   );
 }
 
+/** Where a score sits, in words, for the carousel's caption. */
+const band = (score: number) => (score <= thresholds.low ? "toward the low end" : score >= thresholds.high ? "toward the high end" : "in the middle range");
+
 /**
- * One screen for the result: where the profile points (the focus area and the
- * facets that put it there) beside the five traits, with the next step under
- * the focus. Facets, evidence and data sit one click away.
+ * One screen for the result. On a wide screen the focus (where the profile
+ * points and the next step) holds still on the left while the five traits,
+ * how they show up at the screen, and why this focus scroll past on the right.
  */
 export function ProfileView() {
   const { state, restartAssessment, demo } = useTradeProfile();
@@ -57,72 +68,102 @@ export function ProfileView() {
   const f = copy.focus;
   const area = focusAreas[focus.primary.id];
   const also = focus.secondary ? focusAreas[focus.secondary.id] : null;
+  const lead = focus.primary.hits[0];
+  const leadDomain = lead ? domainOf(lead.trait) : undefined;
+
+  const focusPanel = (
+    <AccentPanel accent="primary" className="sm:p-7 sm:pl-8">
+      <p className="text-xs font-medium text-muted-foreground">{f.primary}</p>
+      <h2 className="mt-2 font-heading text-[clamp(1.6rem,2.6vw,2.2rem)] font-bold leading-[1.08] tracking-[-0.03em] [text-wrap:balance]">
+        {area.title}
+        {lead && leadDomain && <InlinePill code={leadDomain} value={lead.score} />}
+      </h2>
+      <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">{area.tradingProblem}</p>
+      {focus.primary.hits.length > 0 ? (
+        <ul className="mt-5 space-y-3.5">
+          {focus.primary.hits.map((h) => (
+            <TriggerRow key={h.trait} hit={h} />
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-4 text-sm text-foreground/85">{f.noTrigger}</p>
+      )}
+      {also && (
+        <p className="mt-5 border-t border-border/50 pt-3 text-xs text-muted-foreground">
+          {f.secondary}: <span className="font-semibold text-foreground/85">{also.title}</span>
+        </p>
+      )}
+      <Button size="lg" className="group mt-6" onClick={() => nav.goTab(state.goal ? "today" : "goal")}>
+        {state.goal ? f.toToday : f.cta} <ArrowRight className="transition-transform duration-200 group-hover:translate-x-0.5" />
+      </Button>
+      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{f.hypothesis}</p>
+    </AccentPanel>
+  );
+
+  const traits = (
+    <div className="space-y-4">
+      <section className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="font-heading text-sm font-bold tracking-tight">{t.title}</h3>
+          <span className="text-[11px] text-muted-foreground">{t.lead}</span>
+        </div>
+        <ul className="-mx-2 mt-2">
+          {DOMAINS.map((d, i) => (
+            <motion.li key={d} initial={{ opacity: 0, transform: "translateY(6px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} transition={{ duration: 0.3, delay: 0.05 + i * 0.05, ease: EASE_OUT }}>
+              <button type="button" onClick={() => nav.openDomain(d)} className="group relative block w-full overflow-hidden rounded-xl px-2 py-2.5 text-left transition-[background-color,transform] duration-200 hover:bg-muted/30 active:scale-[.99]">
+                {/* A wash of the trait's colour, sweeping in under the pointer. */}
+                <span aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full opacity-0 transition-[transform,opacity] duration-500 ease-out group-hover:translate-x-0 group-hover:opacity-100" style={{ background: `linear-gradient(90deg, color-mix(in oklch, ${traitColor[d]} 10%, transparent), transparent 70%)` }} />
+                <div className="relative mb-1.5 flex items-baseline justify-between gap-3">
+                  <span className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+                    <span className="size-2 rounded-full transition-transform duration-200 group-hover:scale-125" style={{ background: traitColor[d] }} />
+                    {domains[d].name}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Score value={profile.domains[d]!} className="text-base" />
+                    <ChevronRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+                <div className="relative"><ScaleBar value={profile.domains[d]!} color={traitColor[d]} size="sm" delay={0.15 + i * 0.06} /></div>
+              </button>
+            </motion.li>
+          ))}
+        </ul>
+        <details className="group mt-2 border-t border-border/50 pt-3 text-xs leading-relaxed text-muted-foreground">
+          <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-foreground/75 hover:text-foreground">
+            {t.measurementTitle}
+            <ChevronRight className="size-3.5 transition-transform duration-200 group-open:rotate-90" />
+          </summary>
+          <p className="mt-2">{t.scaleExplainer}</p>
+          <ul className="mt-2 list-disc space-y-1 pl-4">
+            {t.measurement.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        </details>
+      </section>
+
+      <TraitCarousel
+        title={t.trading}
+        slides={DOMAINS.map((d) => ({
+          key: d,
+          quote: domains[d].trading,
+          name: domains[d].name,
+          detail: `${Math.round(profile.domains[d]!)}, ${band(profile.domains[d]!)}`,
+          color: traitColor[d],
+        }))}
+      />
+
+      {/* Why this focus, read in as it scrolls up. */}
+      <section className="rounded-2xl border border-white/[0.06] bg-[radial-gradient(ellipse_at_0%_0%,rgba(20,184,166,.08),transparent_60%)] px-5 py-8 sm:px-7 sm:py-10">
+        <ScrubText text={`${area.summary} ${area.goalRationale}`} className="font-heading text-[clamp(1.25rem,2vw,1.65rem)] font-semibold leading-snug tracking-[-0.02em] text-foreground" />
+      </section>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
       {supportNote && <SupportNote />}
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
-        <AccentPanel accent="primary" className="sm:p-6 sm:pl-7">
-          <p className="text-xs font-medium text-muted-foreground">{f.primary}</p>
-          <h2 className="mt-1.5 font-heading text-2xl font-bold tracking-tight">{area.title}</h2>
-          <p className="mt-1 max-w-[60ch] text-sm leading-relaxed text-muted-foreground">{area.tradingProblem}</p>
-          {focus.primary.hits.length > 0 ? (
-            <ul className="mt-4 space-y-3">
-              {focus.primary.hits.map((h) => (
-                <TriggerRow key={h.trait} hit={h} />
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-4 text-sm text-foreground/85">{f.noTrigger}</p>
-          )}
-          {also && (
-            <p className="mt-4 border-t border-border/50 pt-3 text-xs text-muted-foreground">
-              {f.secondary}: <span className="font-semibold text-foreground/85">{also.title}</span>
-            </p>
-          )}
-          <Button className="mt-5" onClick={() => nav.goTab(state.goal ? "today" : "goal")}>
-            {state.goal ? f.toToday : f.cta} <ArrowRight />
-          </Button>
-          <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{f.hypothesis}</p>
-        </AccentPanel>
-
-        <section className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="font-heading text-sm font-bold tracking-tight">{t.title}</h3>
-            <span className="text-[11px] text-muted-foreground">{t.lead}</span>
-          </div>
-          <ul className="-mx-2 mt-2">
-            {DOMAINS.map((d) => (
-              <li key={d}>
-                <button type="button" onClick={() => nav.openDomain(d)} className="group block w-full rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-muted/30">
-                  <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                    <span className="text-sm font-semibold tracking-tight">{domains[d].name}</span>
-                    <span className="inline-flex items-center gap-1">
-                      <Score value={profile.domains[d]!} className="text-base" />
-                      <ChevronRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5" />
-                    </span>
-                  </div>
-                  <ScaleBar value={profile.domains[d]!} color={traitColor[d]} size="sm" />
-                </button>
-              </li>
-            ))}
-          </ul>
-          <details className="group mt-2 border-t border-border/50 pt-3 text-xs leading-relaxed text-muted-foreground">
-            <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-foreground/75 hover:text-foreground">
-              {t.measurementTitle}
-              <ChevronRight className="size-3.5 transition-transform duration-200 group-open:rotate-90" />
-            </summary>
-            <p className="mt-2">{t.scaleExplainer}</p>
-            <ul className="mt-2 list-disc space-y-1 pl-4">
-              {t.measurement.map((m) => (
-                <li key={m}>{m}</li>
-              ))}
-            </ul>
-          </details>
-        </section>
-      </div>
-
+      <PinnedSplit left={focusPanel} right={traits} deps={[focus.primary.id]} />
       <div className="flex flex-wrap gap-x-5 gap-y-2 px-1 text-xs font-medium text-muted-foreground">
         <button type="button" onClick={() => nav.goTab("library")} className="underline-offset-4 hover:text-foreground hover:underline">
           {t.evidenceLink}
@@ -155,7 +196,7 @@ export function DomainDetail({ code }: { code: DomainCode }) {
       <section className="grid gap-5 rounded-2xl border border-border/60 bg-card p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <div>
           <div className="flex items-baseline justify-between gap-4">
-            <h2 className="font-heading text-2xl font-bold tracking-tight">{text.name}</h2>
+            <h2 className="font-heading text-2xl font-bold tracking-tight">{text.name}<InlinePill code={code} value={profile.domains[code]!} /></h2>
             <Score value={profile.domains[code]!} className="font-heading text-4xl tracking-tight" />
           </div>
           <div className="mt-3">
@@ -182,16 +223,16 @@ export function DomainDetail({ code }: { code: DomainCode }) {
       <section className="rounded-2xl border border-border/60 bg-card p-4 sm:p-6">
         <h3 className="font-heading text-sm font-bold tracking-tight">{t.facets}</h3>
         <div className="mt-4 grid gap-x-8 gap-y-6 md:grid-cols-2">
-          {([1, 2, 3, 4, 5, 6] as const).map((n) => {
+          {([1, 2, 3, 4, 5, 6] as const).map((n, i) => {
             const f = `${code}${n}` as FacetCode;
             const ft = facets[f];
             return (
-              <article key={f}>
+              <article key={f} className="rise-in" style={{ ["--i" as string]: i }}>
                 <div className="mb-2 flex items-baseline justify-between gap-3">
                   <h4 className="text-[15px] font-semibold tracking-tight">{ft.name}</h4>
                   <Score value={profile.facets[f]!} className="text-lg" />
                 </div>
-                <ScaleBar value={profile.facets[f]!} color={color} size="sm" />
+                <ScaleBar value={profile.facets[f]!} color={color} size="sm" delay={0.15 + i * 0.06} />
                 <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">{ft.about}</p>
                 <p className="mt-1.5 text-xs leading-relaxed text-foreground/85">
                   <span className="font-semibold text-ice">{t.trading}. </span>
