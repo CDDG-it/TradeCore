@@ -2,15 +2,22 @@
 
 import { useId, useRef, useState, type PointerEvent } from "react";
 import { format, parseISO } from "date-fns";
+import { motion, useReducedMotion } from "motion/react";
 import type { MindTrendPoint } from "@/lib/mind-score/trend";
 
+const EASE_OUT = [0.23, 1, 0.32, 1] as const;
+
 /** A focused score chart: the vertical range follows this trader's readings. */
-export function MindscoreTrend({ points, color = "var(--primary)", light = false, interactive = false }: {
+export function MindscoreTrend({ points, color = "var(--primary)", light = false, interactive = false, animateIn = false }: {
   points: MindTrendPoint[];
   color?: string;
   light?: boolean;
   interactive?: boolean;
+  /** Draw the line in on mount (remount it to draw again, e.g. on a period switch). */
+  animateIn?: boolean;
 }) {
+  const reduce = useReducedMotion();
+  const draw = animateIn && !reduce;
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const gradientId = useId().replaceAll(":", "");
@@ -41,6 +48,9 @@ export function MindscoreTrend({ points, color = "var(--primary)", light = false
   const labelColor = light ? "#68848b" : "var(--muted-foreground)";
   const gridColor = light ? "#c2dcda" : "var(--border)";
   const hoveredPoint = hoveredIndex === null ? null : points[hoveredIndex];
+  // The change since the reading before it, so a hover reads as movement, not just a number.
+  const previousValue = hoveredIndex === null ? null : points.slice(0, hoveredIndex).reverse().find((point) => point.value !== null)?.value ?? null;
+  const change = hoveredPoint?.value != null && previousValue !== null ? hoveredPoint.value - previousValue : null;
   const tooltipLeft = hoveredIndex === null || points.length <= 1
     ? 50
     : 8 + hoveredIndex / (points.length - 1) * 84;
@@ -62,18 +72,31 @@ export function MindscoreTrend({ points, color = "var(--primary)", light = false
           <text x="0" y={y(value) + 4} fill={labelColor} fontSize="12" fontWeight="600">{value}</text>
         </g>)}
         {runs.map((run, index) => <g key={index}>
-          {run.length > 1 && <path d={`${pathFor(run)} L ${x(run.at(-1)!.index)} ${bottom} L ${x(run[0].index)} ${bottom} Z`} fill={`url(#${gradientId})`} />}
-          <path d={pathFor(run)} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          {run.length > 1 && <motion.path d={`${pathFor(run)} L ${x(run.at(-1)!.index)} ${bottom} L ${x(run[0].index)} ${bottom} Z`} fill={`url(#${gradientId})`}
+            initial={draw ? { opacity: 0 } : false} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.35, ease: EASE_OUT }} />}
+          <motion.path d={pathFor(run)} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+            initial={draw ? { pathLength: 0 } : false} animate={{ pathLength: 1 }} transition={{ duration: 0.9, ease: EASE_OUT }} />
         </g>)}
         {interactive && hoveredPoint && <>
           <line x1={x(hoveredIndex!)} x2={x(hoveredIndex!)} y1={top} y2={bottom} stroke={color} strokeWidth="1.5" strokeDasharray="4 4" opacity="0.65" />
-          {hoveredPoint.value !== null && <circle cx={x(hoveredIndex!)} cy={y(hoveredPoint.value)} r="6" fill={color} stroke={light ? "#edf7f5" : "var(--card)"} strokeWidth="3" />}
+          {hoveredPoint.value !== null && <motion.circle r="6" fill={color} stroke={light ? "#edf7f5" : "var(--card)"} strokeWidth="3"
+            initial={false} animate={{ cx: x(hoveredIndex!), cy: y(hoveredPoint.value) }} transition={{ duration: reduce ? 0 : 0.12, ease: EASE_OUT }} />}
         </>}
-        {last && <circle cx={x(lastIndex)} cy={y(last.value!)} r="7" fill={color} stroke={light ? "#edf7f5" : "var(--card)"} strokeWidth="3" />}
+        {last && <>
+          {/* The latest reading: lands when the line arrives, with one soft ripple. */}
+          {draw && <motion.circle cx={x(lastIndex)} cy={y(last.value!)} r="7" fill="none" stroke={color} strokeWidth="2"
+            style={{ transformBox: "fill-box", transformOrigin: "center" }}
+            initial={{ opacity: 0.6, transform: "scale(1)" }} animate={{ opacity: 0, transform: "scale(3)" }} transition={{ duration: 0.9, delay: 0.85, ease: EASE_OUT }} />}
+          <motion.circle cx={x(lastIndex)} cy={y(last.value!)} r="7" fill={color} stroke={light ? "#edf7f5" : "var(--card)"} strokeWidth="3"
+            style={{ transformBox: "fill-box", transformOrigin: "center" }}
+            initial={draw ? { opacity: 0, transform: "scale(0.6)" } : false} animate={{ opacity: 1, transform: "scale(1)" }} transition={{ duration: 0.25, delay: draw ? 0.75 : 0, ease: EASE_OUT }} />
+        </>}
       </svg>
       {interactive && hoveredPoint && <div className="pointer-events-none absolute top-2 z-10 -translate-x-1/2 rounded-lg border border-border/70 bg-card/95 px-2.5 py-1.5 text-[11px] shadow-lg backdrop-blur-sm" style={{ left: `${tooltipLeft}%` }}>
         <p className="font-semibold text-foreground">{format(parseISO(hoveredPoint.date), "d MMM yyyy")}</p>
-        <p className="tabular-nums text-muted-foreground">Score: <span className="font-bold text-foreground">{hoveredPoint.value === null ? "—" : hoveredPoint.value}</span></p>
+        <p className="tabular-nums text-muted-foreground">Score: <span className="font-bold text-foreground">{hoveredPoint.value === null ? "—" : hoveredPoint.value}</span>
+          {change !== null && change !== 0 && <span className={change > 0 ? "ml-1.5 font-semibold text-success" : "ml-1.5 font-semibold text-destructive"}>{change > 0 ? "▲" : "▼"} {Math.abs(change)}</span>}
+        </p>
       </div>}
       <div className="flex justify-between text-[10px] font-medium tabular-nums" style={{ color: labelColor }}>
         <span>{points[0] ? format(parseISO(points[0].date), "d MMM yyyy") : ""}</span>

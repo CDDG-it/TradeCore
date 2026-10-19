@@ -57,8 +57,8 @@ function useSeed() {
   }, []);
 }
 
-export function PreviewEdge() {
-  const [tab, setTab] = useState<Tab>("reviews");
+export function PreviewEdge({ initialTab = "reviews" }: { initialTab?: Tab } = {}) {
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [mindScenario, setMindScenario] = useState<MindScenario>("sample");
   const seed = useSeed();
   const mindSeed = useMemo<MindInputs>(() => {
