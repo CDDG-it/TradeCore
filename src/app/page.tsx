@@ -5,7 +5,6 @@ import { DashboardScreenshot } from "@/components/landing/dashboard-sample";
 import { MarketContextVisual, ProcessCanvas, ReviewCanvas, TherapistVisual } from "@/components/landing/marketing-visuals";
 import { MindscoreAssembly, SectionHeader } from "@/components/landing/marketing-motion";
 import { SmokeBackground } from "@/components/landing/smoke-background";
-import { FluidFieldBackground } from "@/components/ui/fluid-field";
 
 export default function HomePage() {
   return (
@@ -14,9 +13,6 @@ export default function HomePage() {
       <LandingNav />
       <main id="main">
         <section id="dashboard" className="marketing-hero relative flex min-h-[calc(100svh-72px)] flex-col justify-center overflow-hidden px-6 py-16 sm:px-10 sm:py-20 lg:px-12 lg:py-24">
-          <FluidFieldBackground animated={false} className="absolute inset-0 -z-10" />
-          {/* Keeps the headline side calm: the beams fade back under the copy and stay bright behind the dashboard. */}
-          <div aria-hidden className="marketing-hero-scrim pointer-events-none absolute inset-0 -z-10" />
           <div className="relative mx-auto grid w-full max-w-[1500px] grid-cols-[minmax(0,1fr)] items-center gap-14 lg:grid-cols-[0.94fr_1.06fr] lg:gap-16">
             <div className="marketing-hero-copy relative z-10 min-w-0 max-w-[720px]">
               <h1 className="font-display max-w-[720px] text-balance text-[clamp(2.6rem,11vw,3.7rem)] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[clamp(3.9rem,5.7vw,6rem)]">Journal for <span className="marketing-hero-word italic">extraordinary</span> traders</h1>
