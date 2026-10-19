@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { animate, useReducedMotion } from "motion/react";
+import { EASE_OUT } from "@/lib/motion";
 
-/** The app's strong ease-out, for Motion's `animate` and `transition` props. */
-export const EASE_OUT = [0.23, 1, 0.32, 1] as const;
+/** Re-exported for the surfaces that already import it from here. */
+export { EASE_OUT };
 
 /**
  * A number that runs up to its value instead of appearing at it. Used for the
@@ -15,23 +16,29 @@ export const EASE_OUT = [0.23, 1, 0.32, 1] as const;
  * motion shows the value at once.
  */
 export function CountUp({
-  value, format = (n) => String(Math.round(n)), duration = 0.8, className,
+  value, format = (n) => String(Math.round(n)), duration = 0.8, changeDuration, className,
 }: {
   value: number;
   format?: (n: number) => string;
+  /** The first run, up from zero. */
   duration?: number;
+  /** Later runs, from one value to the next; quicker keeps a switch responsive. Defaults to `duration`. */
+  changeDuration?: number;
   className?: string;
 }) {
   const reduce = useReducedMotion();
   const [shown, setShown] = useState(() => (reduce ? value : 0));
+  const first = useRef(true);
 
   useEffect(() => {
+    const length = first.current ? duration : changeDuration ?? duration;
+    first.current = false;
     if (reduce) {
       setShown(value);
       return;
     }
     const controls = animate(shown, value, {
-      duration,
+      duration: length,
       ease: EASE_OUT,
       onUpdate: (v) => setShown(v),
     });
@@ -39,7 +46,7 @@ export function CountUp({
     // `shown` is the tween's starting point, not a trigger: re-running on every
     // frame would restart the tween from itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, reduce, duration]);
+  }, [value, reduce, duration, changeDuration]);
 
   return <span className={className}>{format(shown)}</span>;
 }

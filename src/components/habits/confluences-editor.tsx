@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Plus, Check, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { getProfile, upsertProfile } from "@/lib/supabase/queries";
 import { DEFAULT_CONFLUENCES } from "@/lib/journal/confluences";
+import { AnimatePresence, motion } from "motion/react";
+import { EASE_OUT, SPRING } from "@/lib/motion";
 
 /**
  * Confluences editor. This is the trader's saved confluence library: the
@@ -64,7 +66,8 @@ export function ConfluencesEditor() {
 
   function saveEdit(idx: number) {
     const t = editText.trim();
-    if (!t) { setEditingIdx(null); return; }
+    // Empty, or the name of another confluence: keep the list as it was.
+    if (!t || items.some((c, i) => i !== idx && c.toLowerCase() === t.toLowerCase())) { setEditingIdx(null); return; }
     mutate(items.map((c, i) => (i === idx ? t : c)));
     setEditingIdx(null);
   }
@@ -125,10 +128,13 @@ export function ConfluencesEditor() {
             </div>
           ) : (
             <div className="mt-5 flex flex-wrap gap-2 border-y border-border/40 py-4">
+              {/* Keyed by name (names are unique), so an added chip pops in, a
+                  removed one pops out, and the rest slide to close the gap. */}
+              <AnimatePresence mode="popLayout" initial={false}>
               {items.map((c, idx) =>
-                editingIdx === idx ? (
+                <motion.div key={c} layout className="inline-flex" initial={{ opacity: 0, transform: "scale(0.9)" }} animate={{ opacity: 1, transform: "scale(1)" }} exit={{ opacity: 0, transform: "scale(0.9)", transition: { duration: 0.12 } }} transition={{ duration: 0.18, ease: EASE_OUT, layout: SPRING }}>
+                {editingIdx === idx ? (
                   <div
-                    key={idx}
                     className="inline-flex items-center gap-1 rounded-lg border bg-background py-1.5 pl-2.5 pr-1.5"
                     style={{ borderColor: "color-mix(in oklch, var(--ice) 50%, transparent)" }}
                   >
@@ -152,8 +158,7 @@ export function ConfluencesEditor() {
                   </div>
                 ) : (
                   <span
-                    key={idx}
-                    className="group inline-flex items-center gap-1.5 rounded-lg border border-border/60 py-2 pl-3.5 pr-2 text-sm transition-all hover:-translate-y-px"
+                    className="group inline-flex items-center gap-1.5 rounded-lg border border-border/60 py-2 pl-3.5 pr-2 text-sm transition-[transform,border-color] duration-150 hover:-translate-y-px hover:border-border"
                     style={{ background: "linear-gradient(180deg, color-mix(in oklch, var(--ice) 10%, transparent), color-mix(in oklch, var(--ice) 3%, transparent))" }}
                   >
                     <button
@@ -173,14 +178,16 @@ export function ConfluencesEditor() {
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </span>
-                )
+                )}
+                </motion.div>
               )}
+              </AnimatePresence>
             </div>
           )}
 
           {/* Composer */}
           <div
-            className="mt-4 flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-2 transition-all focus-within:ring-2"
+            className="mt-4 flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-2 transition-[border-color,box-shadow] duration-150 focus-within:ring-2"
             style={{ ["--tw-ring-color" as string]: "color-mix(in oklch, var(--ice) 12%, transparent)" }}
           >
             <input
@@ -194,7 +201,7 @@ export function ConfluencesEditor() {
               type="button"
               onClick={addNew}
               disabled={!newItem.trim()}
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-xs font-bold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-xs font-bold text-white transition-[transform,opacity] duration-150 hover:-translate-y-px active:scale-[.97] disabled:opacity-40 disabled:hover:translate-y-0"
               style={{ background: "var(--ice)" }}
             >
               <Plus className="h-3.5 w-3.5" /> Add
@@ -223,21 +230,23 @@ export function ConfluencesEditor() {
           {/* Save row */}
           <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/40 pt-3 sm:mt-4 sm:pt-4">
             <div className="text-xs">
-              {saveState === "saved" && (
-                <span className="flex items-center gap-1.5 text-success"><CheckCircle2 className="h-3.5 w-3.5" /> Saved</span>
-              )}
-              {saveState === "error" && (
-                <span className="flex items-center gap-1.5 text-destructive"><AlertCircle className="h-3.5 w-3.5" /> Failed to save</span>
-              )}
-              {saveState !== "saved" && saveState !== "error" && dirty && (
-                <span className="text-muted-foreground">Unsaved changes</span>
-              )}
+              <AnimatePresence mode="wait" initial={false}>
+                {saveState === "saved" ? (
+                  <motion.span key="saved" className="flex items-center gap-1.5 text-success" initial={{ opacity: 0, transform: "translateY(3px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} exit={{ opacity: 0 }} transition={{ duration: 0.16, ease: EASE_OUT }}>
+                    <motion.span className="flex" initial={{ transform: "scale(0.5)" }} animate={{ transform: "scale(1)" }} transition={SPRING}><CheckCircle2 className="h-3.5 w-3.5" /></motion.span> Saved
+                  </motion.span>
+                ) : saveState === "error" ? (
+                  <motion.span key="error" className="flex items-center gap-1.5 text-destructive" initial={{ opacity: 0, transform: "translateY(3px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} exit={{ opacity: 0 }} transition={{ duration: 0.16, ease: EASE_OUT }}><AlertCircle className="h-3.5 w-3.5" /> Failed to save</motion.span>
+                ) : dirty ? (
+                  <motion.span key="dirty" className="text-muted-foreground" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>Unsaved changes</motion.span>
+                ) : null}
+              </AnimatePresence>
             </div>
             <button
               type="button"
               onClick={persist}
               disabled={!dirty || saveState === "saving"}
-              className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
+              className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-[transform,opacity] duration-150 hover:-translate-y-px active:scale-[.97] disabled:opacity-40 disabled:hover:translate-y-0"
               style={{ background: "var(--ice)" }}
             >
               {saveState === "saving" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</> : "Save confluences"}

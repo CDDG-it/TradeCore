@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { addMonths, addWeeks, eachDayOfInterval, endOfMonth, endOfWeek, format, isAfter, isSameDay, startOfDay, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
 import { AlertCircle, Brain, BookOpen, Check, ChevronLeft, ChevronRight, Circle, Coffee, Dumbbell, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EASE_OUT, SPRING } from "@/lib/motion";
+import { CountUp } from "@/components/ui/count-up";
+import { Segmented } from "@/components/ui/segmented";
+import { GrowBar } from "@/components/ui/grow-bar";
 import { frequencyApplies, CATEGORY_ACCENT } from "@/lib/habits";
 import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -39,6 +44,19 @@ function appliesOn(habit: Habit, date: Date) {
   return frequencyApplies(habit.frequency, date.getDay()) && startOfDay(date).getTime() >= startOfDay(new Date(habit.created_at)).getTime();
 }
 
+/** The tick box: the check pops in when a habit is done, the glyph returns when it is undone. */
+function TickBox({ done, habit }: { done: boolean; habit: Habit }) {
+  return (
+    <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-[background-color,border-color] duration-200", done && "border-transparent bg-primary text-primary-foreground")}>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span key={done ? "done" : "todo"} className="flex" initial={{ opacity: 0, transform: "scale(0.5)" }} animate={{ opacity: 1, transform: "scale(1)" }} exit={{ opacity: 0, transform: "scale(0.6)", transition: { duration: 0.08 } }} transition={SPRING}>
+          {done ? <Check className="h-3 w-3" strokeWidth={3} /> : <HabitGlyph icon={habit.icon} className="h-3 w-3" style={{ color: habitColor(habit) }} />}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
+
 interface NewHabitForm { name: string; description: string; category: HabitCategory; frequency: "daily" | "weekdays" | "weekends"; icon: string; }
 const EMPTY_NEW_HABIT: NewHabitForm = { name: "", description: "", category: "routine", frequency: "daily", icon: "checklist" };
 
@@ -58,6 +76,9 @@ export function HabitsView() {
   const [newHabit, setNewHabit] = useState<NewHabitForm>(EMPTY_NEW_HABIT);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  // Which way the calendar last moved, so the next period slides in from that side.
+  const [direction, setDirection] = useState(0);
+  const toggling = useRef(new Set<string>());
 
   const refresh = async () => {
     const [nextHabits, nextCompletions] = await Promise.all([getHabits(), getHabitCompletions()]);
@@ -97,11 +118,34 @@ export function HabitsView() {
   const selectedDayHabits = habits.filter((habit) => appliesOn(habit, selectedDay));
   const title = range === "week" ? `${format(startOfWeek(cursor, { weekStartsOn: 1 }), "d MMM")} – ${format(endOfWeek(cursor, { weekStartsOn: 1 }), "d MMM yyyy")}` : range === "month" ? format(cursor, "MMMM yyyy") : "All time";
 
-  function move(direction: -1 | 1) {
-    if (range === "week") setCursor((current) => direction < 0 ? subWeeks(current, 1) : addWeeks(current, 1));
-    if (range === "month") setCursor((current) => direction < 0 ? subMonths(current, 1) : addMonths(current, 1));
+  function move(step: -1 | 1) {
+    setDirection(step);
+    if (range === "week") setCursor((current) => step < 0 ? subWeeks(current, 1) : addWeeks(current, 1));
+    if (range === "month") setCursor((current) => step < 0 ? subMonths(current, 1) : addMonths(current, 1));
   }
-  async function handleToggle(habitId: string, date: string) { await toggleHabitCompletion(habitId, date); setCompletions(await getHabitCompletions()); }
+  function changeRange(next: CalendarRange) { setDirection(0); setRange(next); }
+  /* The tick shows at once and the save follows. It used to wait for the
+     write and a full re-read before anything changed on screen. A failed
+     save flips it back. */
+  async function handleToggle(habitId: string, date: string) {
+    const key = `${habitId}|${date}`;
+    if (toggling.current.has(key)) return;
+    toggling.current.add(key);
+    const flip = (list: HabitCompletion[]) => {
+      const index = list.findIndex((item) => item.habit_id === habitId && item.date === date);
+      if (index >= 0) return list.map((item, i) => (i === index ? { ...item, completed: !item.completed } : item));
+      return [...list, { id: `pending-${key}`, habit_id: habitId, date, completed: true }];
+    };
+    setCompletions(flip);
+    try {
+      const saved = await toggleHabitCompletion(habitId, date);
+      setCompletions((list) => [...list.filter((item) => !(item.habit_id === habitId && item.date === date)), saved]);
+    } catch {
+      setCompletions(flip);
+    } finally {
+      toggling.current.delete(key);
+    }
+  }
   function openEdit(habit: Habit) {
     setEditingId(habit.id); setCreateError(null);
     setNewHabit({ name: habit.name, description: habit.description ?? "", category: habit.category, frequency: habit.frequency, icon: habit.icon });
@@ -122,6 +166,7 @@ export function HabitsView() {
   async function handleDeleteHabit(id: string) { await deleteHabit(id); if (selectedHabitId === id) setSelectedHabitId("all"); await refresh(); setDeletingHabit(null); }
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="flex h-[calc(100dvh-9.5rem)] min-h-[34rem] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[var(--panel-shadow)]">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/60 px-4 py-3 sm:px-5">
         <div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">{format(now, "EEEE, d MMMM")}</p><h2 className="mt-1 font-heading text-xl font-bold tracking-tight">Build the standard. Repeat it.</h2></div>
@@ -134,17 +179,17 @@ export function HabitsView() {
         <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-12">
           <aside className="flex min-h-0 flex-col border-b border-border/60 lg:col-span-4 lg:border-b-0 lg:border-r">
             <div className="shrink-0 border-b border-border/50 p-4">
-              <div className="flex items-end justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Today</p><p className="mt-1 text-3xl font-black tabular-nums tracking-[-0.05em]">{doneToday}<span className="text-lg text-muted-foreground/45">/{todayHabits.length}</span></p></div><div className="w-24 text-right"><p className="text-xs font-semibold text-muted-foreground">{todayHabits.length === doneToday ? "Day complete" : `${todayHabits.length - doneToday} remaining`}</p><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary"><span className="block h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${todayHabits.length ? (doneToday / todayHabits.length) * 100 : 0}%` }} /></div></div></div>
+              <div className="flex items-end justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Today</p><p className="mt-1 text-3xl font-black tabular-nums tracking-[-0.05em]"><CountUp value={doneToday} duration={0.6} changeDuration={0.25} /><span className="text-lg text-muted-foreground/45">/{todayHabits.length}</span></p></div><div className="w-24 text-right"><p className="text-xs font-semibold text-muted-foreground">{todayHabits.length === doneToday ? "Day complete" : `${todayHabits.length - doneToday} remaining`}</p><GrowBar className="mt-2 h-1.5 bg-secondary" fillClassName="bg-primary" value={todayHabits.length ? doneToday / todayHabits.length : 0} duration={0.5} /></div></div>
               <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
-                {todayHabits.map((habit) => { const done = doneSet.has(`${habit.id}|${today}`); return <button key={habit.id} onClick={() => handleToggle(habit.id, today)} className={cn("group flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-all", done ? "border-primary/25 bg-primary/[0.08]" : "border-border/60 bg-secondary/35 hover:border-primary/35")}><span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-md border", done && "border-transparent bg-primary text-primary-foreground")}>{done ? <Check className="h-3 w-3" strokeWidth={3} /> : <HabitGlyph icon={habit.icon} className="h-3 w-3" style={{ color: habitColor(habit) }} />}</span><span className={cn("truncate text-[11px] font-semibold", done ? "text-foreground" : "text-muted-foreground")}>{habit.name}</span></button>; })}
+                {todayHabits.map((habit) => { const done = doneSet.has(`${habit.id}|${today}`); return <button key={habit.id} onClick={() => handleToggle(habit.id, today)} aria-pressed={done} className={cn("group flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-[border-color,background-color,transform] duration-200 active:scale-[.97]", done ? "border-primary/25 bg-primary/[0.08]" : "border-border/60 bg-secondary/35 hover:border-primary/35")}><TickBox done={done} habit={habit} /><span className={cn("truncate text-[11px] font-semibold transition-colors duration-200", done ? "text-foreground" : "text-muted-foreground")}>{habit.name}</span></button>; })}
               </div>
             </div>
             <div className="flex shrink-0 items-center justify-between px-4 pb-2 pt-3"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Your habits</p><button onClick={() => setSelectedHabitId("all")} className={cn("text-[10px] font-bold transition-colors", selectedHabitId === "all" ? "text-primary" : "text-muted-foreground hover:text-foreground")}>Show all</button></div>
             <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-3">
               {habits.map((habit) => {
                 const active = selectedHabitId === habit.id; const stat = periodStat([habit]); const streak = streaks[habit.id] ?? 0;
-                return <div key={habit.id} className={cn("group relative flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all", active ? "border-primary/30 bg-primary/[0.07]" : "border-transparent hover:border-border/60 hover:bg-secondary/35")}>
-                  <button onClick={() => setSelectedHabitId(active ? "all" : habit.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: fade(habitColor(habit), 0.12), color: habitColor(habit) }}><HabitGlyph icon={habit.icon} className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="flex items-center gap-2"><span className="truncate text-xs font-semibold">{habit.name}</span>{streak > 0 && <span className="shrink-0 text-[9px] font-bold tabular-nums text-muted-foreground">{streak}d</span>}</span><span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-secondary"><span className="block h-full rounded-full" style={{ width: `${stat.rate}%`, background: habitColor(habit) }} /></span></span><span className="w-9 shrink-0 text-right text-xs font-black tabular-nums" style={{ color: habitColor(habit) }}>{stat.completed}</span></button>
+                return <div key={habit.id} className={cn("group relative flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-[border-color,background-color] duration-150", active ? "border-primary/30 bg-primary/[0.07]" : "border-transparent hover:border-border/60 hover:bg-secondary/35")}>
+                  <button onClick={() => setSelectedHabitId(active ? "all" : habit.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ background: fade(habitColor(habit), 0.12), color: habitColor(habit) }}><HabitGlyph icon={habit.icon} className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="flex items-center gap-2"><span className="truncate text-xs font-semibold">{habit.name}</span>{streak > 0 && <span className="shrink-0 text-[9px] font-bold tabular-nums text-muted-foreground">{streak}d</span>}</span><GrowBar className="mt-1.5 bg-secondary" value={stat.rate / 100} color={habitColor(habit)} duration={0.5} /></span><span className="w-9 shrink-0 text-right text-xs font-black tabular-nums" style={{ color: habitColor(habit) }}><CountUp value={stat.completed} duration={0.6} changeDuration={0.3} /></span></button>
                   {deletingHabit === habit.id ? <span className="absolute inset-y-1 right-1 flex items-center gap-1 rounded-lg bg-card px-2 text-[10px] shadow-lg"><button onClick={() => handleDeleteHabit(habit.id)} className="font-bold text-destructive">Delete</button><button onClick={() => setDeletingHabit(null)} className="text-muted-foreground">Cancel</button></span> : <span className="absolute right-2 flex items-center gap-1 rounded-md bg-card/95 p-1 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"><button onClick={() => openEdit(habit)} aria-label="Edit habit" className="rounded p-1 text-muted-foreground hover:text-primary"><Pencil className="h-3 w-3" /></button><button onClick={() => setDeletingHabit(habit.id)} aria-label="Delete habit" className="rounded p-1 text-muted-foreground hover:text-destructive"><Trash2 className="h-3 w-3" /></button></span>}
                 </div>;
               })}
@@ -154,22 +199,24 @@ export function HabitsView() {
           <section className="flex min-h-0 flex-col lg:col-span-8">
             <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/50 px-4 py-3 sm:px-5">
               <div className="flex items-center gap-2">{range !== "all" && <button onClick={() => move(-1)} aria-label="Previous period" className="rounded-lg border border-border/60 p-1.5 text-muted-foreground hover:border-primary/30 hover:text-primary"><ChevronLeft className="h-4 w-4" /></button>}<div className="w-36 text-center"><p className="text-sm font-bold">{title}</p><p className="mt-0.5 truncate text-[10px] text-muted-foreground">{selectedHabitId === "all" ? "All habits" : habits.find((habit) => habit.id === selectedHabitId)?.name}</p></div>{range !== "all" && <button onClick={() => move(1)} aria-label="Next period" className="rounded-lg border border-border/60 p-1.5 text-muted-foreground hover:border-primary/30 hover:text-primary"><ChevronRight className="h-4 w-4" /></button>}</div>
-              <div className="flex rounded-lg border border-border/60 bg-secondary/40 p-0.5">{(["week", "month", "all"] as CalendarRange[]).map((option) => <button key={option} onClick={() => setRange(option)} className={cn("rounded-md px-3 py-1.5 text-[10px] font-bold capitalize transition-all", range === option ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{option === "all" ? "All time" : option}</button>)}</div>
+              <Segmented label="Calendar range" shape="rounded" size="sm" value={range} onChange={changeRange} className="border-border/60 bg-secondary/40" buttonClassName="rounded-md text-[10px] font-bold capitalize" activeClassName="text-foreground" pillClassName="rounded-md bg-card shadow-sm"
+                options={(["week", "month", "all"] as CalendarRange[]).map((option) => ({ value: option, label: option === "all" ? "All time" : option }))} />
             </div>
-            <div className="grid shrink-0 grid-cols-3 border-b border-border/50"><div className="px-4 py-3"><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Completed</p><p className="mt-0.5 text-xl font-black tabular-nums">{summary.completed}</p></div><div className="border-x border-border/50 px-4 py-3"><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Scheduled</p><p className="mt-0.5 text-xl font-black tabular-nums">{summary.expected}</p></div><div className="px-4 py-3"><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Consistency</p><p className="mt-0.5 text-xl font-black tabular-nums text-primary">{summary.rate}%</p></div></div>
+            <div className="grid shrink-0 grid-cols-3 border-b border-border/50"><div className="px-4 py-3"><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Completed</p><p className="mt-0.5 text-xl font-black tabular-nums"><CountUp value={summary.completed} changeDuration={0.35} /></p></div><div className="border-x border-border/50 px-4 py-3"><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Scheduled</p><p className="mt-0.5 text-xl font-black tabular-nums"><CountUp value={summary.expected} changeDuration={0.35} /></p></div><div className="px-4 py-3"><p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Consistency</p><p className="mt-0.5 text-xl font-black tabular-nums text-primary"><CountUp value={summary.rate} changeDuration={0.35} />%</p></div></div>
 
             <div className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_13rem]">
-              <div className="flex min-h-0 flex-col p-4 sm:p-5">
+              <motion.div key={`${range}:${title}`} className="flex min-h-0 flex-col p-4 sm:p-5"
+                initial={{ opacity: 0, transform: `translateX(${direction * 16}px)` }} animate={{ opacity: 1, transform: "translateX(0px)" }} transition={{ duration: 0.2, ease: EASE_OUT }}>
                 {range === "all" ? (
                   <div className="flex min-h-0 flex-1 flex-col justify-center"><div className="mb-3 flex items-center justify-between"><p className="text-xs font-semibold">Every day since you started</p><p className="text-[10px] text-muted-foreground">Less <span className="mx-1 inline-block h-2.5 w-2.5 rounded-sm bg-secondary align-middle" /> <span className="inline-block h-2.5 w-2.5 rounded-sm bg-primary align-middle" /> More</p></div><div className="grid grid-flow-col grid-rows-7 gap-1 overflow-hidden">{visibleDays.map((day) => { const stat = statsFor(day); return <button key={day.toISOString()} onClick={() => setSelectedDate(format(day, "yyyy-MM-dd"))} title={`${format(day, "d MMM yyyy")} · ${stat.completed}/${stat.expected}`} className={cn("aspect-square min-w-0 rounded-[3px] border transition-transform hover:scale-125", isSameDay(day, selectedDay) ? "border-primary" : "border-transparent")} style={{ background: stat.expected ? fade("var(--primary)", 0.12 + stat.rate * 0.82) : "var(--secondary)" }} />; })}</div></div>
                 ) : (
                   <><div className="mb-2 grid grid-cols-7">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <span key={day} className="text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/60">{day}</span>)}</div><div className={cn("grid min-h-0 flex-1 grid-cols-7", range === "week" ? "gap-2" : "gap-1.5")}>
                     {range === "month" && Array.from({ length: (startOfMonth(cursor).getDay() + 6) % 7 }, (_, index) => <span key={`month-pad-${index}`} aria-hidden />)}
-                    {visibleDays.map((day) => { const stat = statsFor(day); const key = format(day, "yyyy-MM-dd"); const future = isAfter(startOfDay(day), startOfDay(now)); const selected = key === selectedDate; return <button key={key} onClick={() => setSelectedDate(key)} disabled={future} className={cn("group relative min-h-10 overflow-hidden rounded-lg border p-1.5 text-left transition-all", selected ? "border-primary ring-1 ring-primary/25" : "border-border/50 hover:border-primary/35", future && "cursor-default opacity-25", range === "week" && "flex flex-col justify-between p-3")} style={{ background: stat.expected && stat.completed ? `linear-gradient(145deg, ${fade("var(--primary)", 0.06 + stat.rate * 0.17)}, var(--card))` : "var(--card)" }}><span className={cn("relative z-10 text-[10px] font-bold tabular-nums", isSameDay(day, now) ? "text-primary" : "text-muted-foreground", range === "week" && "text-sm")}>{format(day, "d")}</span>{stat.expected > 0 && <><span className={cn("relative z-10 mt-1 block text-[9px] font-bold tabular-nums", range === "week" && "text-xs")}>{stat.completed}/{stat.expected}</span><span className="absolute inset-x-0 bottom-0 h-1 bg-secondary"><span className="block h-full bg-primary transition-[width]" style={{ width: `${stat.rate * 100}%` }} /></span></>}</button>; })}
+                    {visibleDays.map((day) => { const stat = statsFor(day); const key = format(day, "yyyy-MM-dd"); const future = isAfter(startOfDay(day), startOfDay(now)); const selected = key === selectedDate; return <button key={key} onClick={() => setSelectedDate(key)} disabled={future} className={cn("group relative min-h-10 overflow-hidden rounded-lg border p-1.5 text-left transition-[border-color,box-shadow,transform] duration-150 active:scale-[.97]", selected ? "border-primary ring-1 ring-primary/25" : "border-border/50 hover:border-primary/35", future && "cursor-default opacity-25", range === "week" && "flex flex-col justify-between p-3")} style={{ background: stat.expected && stat.completed ? `linear-gradient(145deg, ${fade("var(--primary)", 0.06 + stat.rate * 0.17)}, var(--card))` : "var(--card)" }}><span className={cn("relative z-10 text-[10px] font-bold tabular-nums", isSameDay(day, now) ? "text-primary" : "text-muted-foreground", range === "week" && "text-sm")}>{format(day, "d")}</span>{stat.expected > 0 && <><span className={cn("relative z-10 mt-1 block text-[9px] font-bold tabular-nums", range === "week" && "text-xs")}>{stat.completed}/{stat.expected}</span><GrowBar className="absolute inset-x-0 bottom-0 h-1 rounded-none bg-secondary" fillClassName="rounded-none bg-primary" value={stat.rate} duration={0.45} /></>}</button>; })}
                   </div></>
                 )}
-              </div>
-              <div className="min-h-0 border-t border-border/50 p-4 xl:border-l xl:border-t-0"><div className="flex items-start justify-between gap-2"><div><p className="text-sm font-bold">{format(selectedDay, "EEEE")}</p><p className="text-[10px] text-muted-foreground">{format(selectedDay, "d MMMM yyyy")}</p></div><span className="text-xs font-black tabular-nums text-primary">{statsFor(selectedDay, selectedDayHabits).completed}/{selectedDayHabits.length}</span></div><div className="mt-3 max-h-[13rem] space-y-1.5 overflow-y-auto xl:max-h-[calc(100%-2.5rem)]">{selectedDayHabits.length === 0 ? <p className="text-xs text-muted-foreground">Nothing scheduled.</p> : selectedDayHabits.map((habit) => { const done = doneSet.has(`${habit.id}|${selectedDate}`); return <button key={habit.id} onClick={() => handleToggle(habit.id, selectedDate)} className={cn("flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors", done ? "border-primary/20 bg-primary/[0.07]" : "border-border/50 hover:border-primary/30")}><span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-md border", done && "border-transparent bg-primary text-primary-foreground")}>{done ? <Check className="h-3 w-3" strokeWidth={3} /> : <HabitGlyph icon={habit.icon} className="h-3 w-3" style={{ color: habitColor(habit) }} />}</span><span className="truncate text-[10px] font-semibold">{habit.name}</span></button>; })}</div></div>
+              </motion.div>
+              <div className="min-h-0 border-t border-border/50 p-4 xl:border-l xl:border-t-0"><motion.div key={selectedDate} className="h-full" initial={{ opacity: 0, transform: "translateY(4px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} transition={{ duration: 0.16, ease: EASE_OUT }}><div className="flex items-start justify-between gap-2"><div><p className="text-sm font-bold">{format(selectedDay, "EEEE")}</p><p className="text-[10px] text-muted-foreground">{format(selectedDay, "d MMMM yyyy")}</p></div><span className="text-xs font-black tabular-nums text-primary">{statsFor(selectedDay, selectedDayHabits).completed}/{selectedDayHabits.length}</span></div><div className="mt-3 max-h-[13rem] space-y-1.5 overflow-y-auto xl:max-h-[calc(100%-2.5rem)]">{selectedDayHabits.length === 0 ? <p className="text-xs text-muted-foreground">Nothing scheduled.</p> : selectedDayHabits.map((habit) => { const done = doneSet.has(`${habit.id}|${selectedDate}`); return <button key={habit.id} onClick={() => handleToggle(habit.id, selectedDate)} aria-pressed={done} className={cn("flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-[border-color,background-color,transform] duration-200 active:scale-[.98]", done ? "border-primary/20 bg-primary/[0.07]" : "border-border/50 hover:border-primary/30")}><TickBox done={done} habit={habit} /><span className="truncate text-[10px] font-semibold">{habit.name}</span></button>; })}</div></motion.div></div>
             </div>
           </section>
         </div>
@@ -189,5 +236,6 @@ export function HabitsView() {
         </DialogContent>
       </Dialog>
     </div>
+    </MotionConfig>
   );
 }

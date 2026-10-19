@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Check, Loader2, Save } from "lucide-react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { EASE_OUT, SPRING, rise } from "@/lib/motion";
+import { CountUp } from "@/components/ui/count-up";
+import { Segmented } from "@/components/ui/segmented";
 import { runMonteCarlo, type DrawdownMode, type MonteCarloInputs } from "@/lib/strategy/monte-carlo";
 import { getMonteCarloSettings, getTrades, saveMonteCarloSettings } from "@/lib/supabase/queries";
 import type { TradeJournalEntry } from "@/lib/types";
@@ -21,6 +25,8 @@ const DEFAULTS: MonteCarloInputs = {
 type JournalStats = { winRate: number; avgRR: number; decisive: number; total: number; pace: number; activeDays: number };
 
 function pct(value: number) { return `${(value * 100).toFixed(1)}%`; }
+/** The chart follows a change instead of jumping to it; quick, so dragging a slider stays responsive. */
+const CHART_MOTION = { isAnimationActive: true, animationDuration: 350, animationEasing: "ease-out" } as const;
 function money(value: number) { return `$${Math.round(value).toLocaleString()}`; }
 function dayKey(trade: TradeJournalEntry) { return trade.date_time.slice(0, 10); }
 
@@ -109,21 +115,33 @@ export function MonteCarloSimulator() {
     setSaveState("idle");
   }
 
+  // The outcome bar: pass, then timeout, then breach, laid end to end.
+  const outcomes = [
+    { key: "pass", share: result.passRate, color: PRIMARY, opacity: 1 },
+    { key: "timeout", share: result.timeoutRate, color: CYAN, opacity: 0.8 },
+    { key: "breach", share: result.failRate, color: SLATE, opacity: 0.45 },
+  ].map((item, index, list) => ({ ...item, start: list.slice(0, index).reduce((sum, previous) => sum + previous.share, 0) }));
+
   return (
+    <MotionConfig reducedMotion="user">
     <div className="flex w-full max-w-full flex-col gap-2 overflow-x-hidden xl:h-[calc(100dvh-8.5rem)] xl:min-h-[680px] xl:overflow-hidden">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div><h2 className="text-base font-semibold tracking-tight">Monte Carlo simulation</h2><p className="mt-0.5 text-xs text-muted-foreground">Pressure-test your current edge against your evaluation rules.</p></div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={reset} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground">Reset</button>
           <button type="button" onClick={save} disabled={saveState === "saving"} className="inline-flex items-center gap-1.5 rounded-lg border border-primary/35 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 disabled:opacity-60">
-            {saveState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saveState === "saved" ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.span key={saveState === "saved" ? "saved" : saveState === "saving" ? "saving" : "idle"} className="flex" initial={{ opacity: 0, transform: "scale(0.6)" }} animate={{ opacity: 1, transform: "scale(1)" }} exit={{ opacity: 0, transition: { duration: 0.08 } }} transition={SPRING}>
+                {saveState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saveState === "saved" ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
+              </motion.span>
+            </AnimatePresence>
             {saveState === "saving" ? "Saving" : saveState === "saved" ? "Saved" : saveState === "error" ? "Save failed" : "Save setup"}
           </button>
         </div>
       </div>
 
       <div className="grid min-h-0 flex-1 items-start gap-2 xl:grid-cols-[332px_minmax(0,1fr)]">
-        <aside className="space-y-3 rounded-2xl border border-border/60 bg-card p-4 xl:h-full xl:overflow-y-auto">
+        <motion.aside {...rise(0)} className="space-y-3 rounded-2xl border border-border/60 bg-card p-4 xl:h-full xl:overflow-y-auto">
           <FieldGroup title="Journal data">
             <select value={journalPeriod} onChange={(event) => { setJournalPeriod(event.target.value); setAppliedStats(false); }} className="h-9 w-full rounded-lg border border-border bg-input px-3 text-xs font-semibold text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15">
               <option value="all">All-time stats</option>
@@ -137,28 +155,34 @@ export function MonteCarloSimulator() {
           <FieldGroup title="Risk & pace"><NumberField label="Risk per trade" value={input.riskPerTrade} unit="$" step={50} onChange={(value) => set("riskPerTrade", value)} /><NumberField label="Trades per day" value={input.tradesPerDay} step={1} onChange={(value) => set("tradesPerDay", Math.max(1, Math.round(value)))} /></FieldGroup>
           <FieldGroup title="Account rules"><NumberField label="Account size" value={input.accountSize} unit="$" step={5000} onChange={(value) => set("accountSize", value)} /><NumberField label="Profit target" value={input.profitTarget} unit="$" step={500} onChange={(value) => set("profitTarget", value)} /><NumberField label="Max drawdown" value={input.maxDrawdown} unit="$" step={250} onChange={(value) => set("maxDrawdown", value)} /><ToggleField value={input.drawdownMode} onChange={(value) => set("drawdownMode", value)} /><NumberField label="Daily loss limit" value={input.dailyLossLimit} unit="$" step={250} hint="0 = off" onChange={(value) => set("dailyLossLimit", Math.max(0, value))} /><NumberField label="Deadline" value={input.maxDays} unit="days" step={1} hint="0 = no limit" onChange={(value) => set("maxDays", Math.max(0, Math.round(value)))} /></FieldGroup>
           <FieldGroup title="Simulation"><SliderField label="Runs" value={input.simulations} min={500} max={10000} step={500} onChange={(value) => set("simulations", Math.round(value))} /></FieldGroup>
-        </aside>
+        </motion.aside>
 
         <section className="min-w-0 space-y-2 xl:grid xl:h-full xl:min-h-0 xl:grid-rows-[auto_minmax(260px,1fr)] xl:space-y-0 xl:gap-2">
           <div className="grid gap-2 lg:grid-cols-[minmax(0,1.45fr)_minmax(330px,.55fr)]">
-            <div className="rounded-2xl border border-primary/25 bg-[radial-gradient(circle_at_82%_0%,color-mix(in_oklch,var(--ice)_14%,transparent),transparent_34%),color-mix(in_oklch,var(--primary)_6%,var(--card))] p-3">
-              <div className="flex items-center justify-between gap-4"><div><p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Probability of passing</p><p className="mt-0.5 text-4xl font-black leading-none tracking-[-.06em] text-primary tabular-nums">{pct(result.passRate)}</p></div><div className="grid grid-cols-4 gap-4"><Stat label="Pass time" value={result.medianDaysToPass === null ? "—" : `${result.medianDaysToPass}d`} /><Stat label="Finish" value={money(result.medianEndBalance)} /><Stat label="Non-pass" value={pct(result.failRate + result.timeoutRate)} /><Stat label="Runs" value={input.simulations.toLocaleString()} /></div></div>
-              <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-muted/50"><span style={{ width: pct(result.passRate), background: PRIMARY }} /><span style={{ width: pct(result.timeoutRate), background: CYAN, opacity: 0.8 }} /><span style={{ width: pct(result.failRate), background: SLATE, opacity: 0.45 }} /></div>
+            <motion.div {...rise(1)} className="rounded-2xl border border-primary/25 bg-[radial-gradient(circle_at_82%_0%,color-mix(in_oklch,var(--ice)_14%,transparent),transparent_34%),color-mix(in_oklch,var(--primary)_6%,var(--card))] p-3">
+              <div className="flex items-center justify-between gap-4"><div><p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Probability of passing</p><p className="mt-0.5 text-4xl font-black leading-none tracking-[-.06em] text-primary tabular-nums"><CountUp value={result.passRate * 100} format={(n) => `${n.toFixed(1)}%`} duration={0.9} changeDuration={0.3} /></p></div><div className="grid grid-cols-4 gap-4"><Stat label="Pass time" value={result.medianDaysToPass === null ? "—" : <CountUp value={result.medianDaysToPass} format={(n) => `${Math.round(n)}d`} changeDuration={0.3} />} /><Stat label="Finish" value={<CountUp value={result.medianEndBalance} format={money} changeDuration={0.3} />} /><Stat label="Non-pass" value={<CountUp value={(result.failRate + result.timeoutRate) * 100} format={(n) => `${n.toFixed(1)}%`} changeDuration={0.3} />} /><Stat label="Runs" value={input.simulations.toLocaleString()} /></div></div>
+              <div className="relative mt-2 h-1.5 overflow-hidden rounded-full bg-muted/50">
+                {outcomes.map((item, index) => <motion.span key={item.key} className="absolute inset-0 origin-left" style={{ backgroundColor: item.color }}
+                  initial={{ transform: `translateX(${item.start * 100}%) scaleX(0)`, opacity: item.opacity }}
+                  animate={{ transform: `translateX(${item.start * 100}%) scaleX(${item.share})`, opacity: item.opacity }}
+                  transition={{ duration: 0.45, delay: 0.15 + index * 0.06, ease: EASE_OUT }} />)}
+              </div>
               <div className="mt-1 flex flex-wrap gap-x-3 text-[9px] text-muted-foreground"><span>Pass {pct(result.passRate)}</span><span>Timeout {pct(result.timeoutRate)}</span><span>Breach {pct(result.failRate)}</span></div>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-card p-3"><div className="grid h-full grid-cols-3 items-center gap-3"><Insight label="Expected value" value={`${result.expectancyR >= 0 ? "+" : ""}${result.expectancyR.toFixed(2)}R`} detail={`${money(result.expectancyMoney)} / trade`} accent={edgePositive ? PRIMARY : CYAN} /><Insight label="Risk window" value={money(input.maxDrawdown)} detail={input.drawdownMode === "trailing" ? "Trailing" : "Static"} accent={CYAN} /><Insight label="Target" value={`${(input.profitTarget / input.riskPerTrade).toFixed(1)}R`} detail={money(input.profitTarget)} accent={PRIMARY} /></div></div>
+            </motion.div>
+            <motion.div {...rise(2)} className="rounded-2xl border border-border/60 bg-card p-3"><div className="grid h-full grid-cols-3 items-center gap-3"><Insight label="Expected value" value={`${result.expectancyR >= 0 ? "+" : ""}${result.expectancyR.toFixed(2)}R`} detail={`${money(result.expectancyMoney)} / trade`} accent={edgePositive ? PRIMARY : CYAN} /><Insight label="Risk window" value={money(input.maxDrawdown)} detail={input.drawdownMode === "trailing" ? "Trailing" : "Static"} accent={CYAN} /><Insight label="Target" value={`${(input.profitTarget / input.riskPerTrade).toFixed(1)}R`} detail={money(input.profitTarget)} accent={PRIMARY} /></div></motion.div>
           </div>
 
-          <div className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card p-3">
+          <motion.div {...rise(3)} className="flex min-h-0 flex-col rounded-2xl border border-border/60 bg-card p-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2"><div><h3 className="text-sm font-semibold">Projected equity range</h3><p className="mt-0.5 text-xs text-muted-foreground">The central line is the median attempt; bands show the spread across active simulations.</p></div><span className="text-xs font-semibold text-primary">{input.simulations.toLocaleString()} simulations</span></div>
             <div className="mt-2 h-52 min-h-0 w-full xl:h-auto xl:flex-1">
-              <ResponsiveContainer width="100%" height="100%"><AreaChart data={envelopeData} margin={{ top: 10, right: 12, left: 4, bottom: 0 }}><defs><linearGradient id="mcOuter" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--ice)" stopOpacity=".18" /><stop offset="1" stopColor="var(--ice)" stopOpacity=".02" /></linearGradient><linearGradient id="mcInner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--primary)" stopOpacity=".28" /><stop offset="1" stopColor="var(--primary)" stopOpacity=".06" /></linearGradient></defs><CartesianGrid stroke="color-mix(in oklch,var(--border) 65%,transparent)" strokeDasharray="3 4" vertical={false} /><XAxis dataKey="trade" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} tickFormatter={(value) => `T${value}`} /><YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={48} tickFormatter={(value) => `${Math.round(value / 1000)}k`} domain={[chartFloor, "dataMax"]} allowDataOverflow /><Tooltip content={<EnvelopeTooltip />} /><ReferenceLine y={target} stroke="var(--primary)" strokeDasharray="5 4" label={{ value: "Target", fill: "var(--primary)", fontSize: 10, position: "insideTopRight" }} /><ReferenceLine y={floor} stroke="var(--ice)" strokeOpacity={.7} strokeDasharray="5 4" label={{ value: "Drawdown", fill: "var(--ice)", fontSize: 10, position: "insideBottomRight" }} /><ReferenceLine y={input.accountSize} stroke="var(--muted-foreground)" strokeOpacity={.45} strokeDasharray="2 4" /><Area dataKey="p10" stackId="outer" stroke="none" fill="transparent" isAnimationActive={false} /><Area dataKey="outerBand" stackId="outer" stroke="none" fill="url(#mcOuter)" isAnimationActive={false} /><Area dataKey="p25" stackId="inner" stroke="none" fill="transparent" isAnimationActive={false} /><Area dataKey="innerBand" stackId="inner" stroke="none" fill="url(#mcInner)" isAnimationActive={false} /><Line type="monotone" dataKey="p50" stroke="var(--primary)" strokeWidth={2.5} dot={false} isAnimationActive={false} /></AreaChart></ResponsiveContainer>
+              <ResponsiveContainer width="100%" height="100%"><AreaChart data={envelopeData} margin={{ top: 10, right: 12, left: 4, bottom: 0 }}><defs><linearGradient id="mcOuter" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--ice)" stopOpacity=".18" /><stop offset="1" stopColor="var(--ice)" stopOpacity=".02" /></linearGradient><linearGradient id="mcInner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--primary)" stopOpacity=".28" /><stop offset="1" stopColor="var(--primary)" stopOpacity=".06" /></linearGradient></defs><CartesianGrid stroke="color-mix(in oklch,var(--border) 65%,transparent)" strokeDasharray="3 4" vertical={false} /><XAxis dataKey="trade" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} tickFormatter={(value) => `T${value}`} /><YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} width={48} tickFormatter={(value) => `${Math.round(value / 1000)}k`} domain={[chartFloor, "dataMax"]} allowDataOverflow /><Tooltip content={<EnvelopeTooltip />} /><ReferenceLine y={target} stroke="var(--primary)" strokeDasharray="5 4" label={{ value: "Target", fill: "var(--primary)", fontSize: 10, position: "insideTopRight" }} /><ReferenceLine y={floor} stroke="var(--ice)" strokeOpacity={.7} strokeDasharray="5 4" label={{ value: "Drawdown", fill: "var(--ice)", fontSize: 10, position: "insideBottomRight" }} /><ReferenceLine y={input.accountSize} stroke="var(--muted-foreground)" strokeOpacity={.45} strokeDasharray="2 4" /><Area dataKey="p10" stackId="outer" stroke="none" fill="transparent" {...CHART_MOTION} /><Area dataKey="outerBand" stackId="outer" stroke="none" fill="url(#mcOuter)" {...CHART_MOTION} /><Area dataKey="p25" stackId="inner" stroke="none" fill="transparent" {...CHART_MOTION} /><Area dataKey="innerBand" stackId="inner" stroke="none" fill="url(#mcInner)" {...CHART_MOTION} /><Line type="monotone" dataKey="p50" stroke="var(--primary)" strokeWidth={2.5} dot={false} {...CHART_MOTION} /></AreaChart></ResponsiveContainer>
             </div>
-          </div>
+          </motion.div>
 
         </section>
       </div>
     </div>
+    </MotionConfig>
   );
 }
 
@@ -170,8 +194,8 @@ function EnvelopeTooltip({ active, payload }: { active?: boolean; payload?: { pa
 
 function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) { return <div className="space-y-1.5"><p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">{title}</p>{children}</div>; }
 function MetricLine({ label, value, emphasis }: { label: string; value: string; emphasis: boolean }) { return <div className="flex items-center justify-between text-[13px]"><span className="text-muted-foreground">{label}</span><span className={cn("font-semibold tabular-nums", emphasis ? "text-primary" : "text-foreground")}>{value}</span></div>; }
-function Stat({ label, value }: { label: string; value: string }) { return <div><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p><p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">{value}</p></div>; }
+function Stat({ label, value }: { label: string; value: React.ReactNode }) { return <div><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p><p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">{value}</p></div>; }
 function Insight({ label, value, detail, accent }: { label: string; value: string; detail: string; accent: string }) { return <div className="border-l-2 pl-3" style={{ borderColor: accent }}><p className="text-xs text-muted-foreground">{label}</p><p className="mt-0.5 text-xl font-black leading-none tabular-nums" style={{ color: accent }}>{value}</p><p className="mt-1 text-[11px] text-muted-foreground">{detail}</p></div>; }
-function ToggleField({ value, onChange }: { value: DrawdownMode; onChange: (value: DrawdownMode) => void }) { return <div className="flex items-center justify-between gap-2"><span className="text-xs text-muted-foreground">Drawdown</span><div className="flex w-32 overflow-hidden rounded-md border border-border">{(["trailing", "static"] as DrawdownMode[]).map((option) => <button key={option} type="button" onClick={() => onChange(option)} className={cn("flex-1 px-2 py-1.5 text-[11px] font-semibold capitalize transition-colors", value === option ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>{option}</button>)}</div></div>; }
+function ToggleField({ value, onChange }: { value: DrawdownMode; onChange: (value: DrawdownMode) => void }) { return <div className="flex items-center justify-between gap-2"><span className="text-xs text-muted-foreground">Drawdown</span><Segmented label="Drawdown mode" shape="rounded" size="sm" value={value} onChange={onChange} className="w-32" buttonClassName="flex-1 rounded-md capitalize" pillClassName="rounded-md bg-primary" options={(["trailing", "static"] as DrawdownMode[]).map((option) => ({ value: option, label: option }))} /></div>; }
 function NumberField({ label, value, onChange, unit, step = 1, hint }: { label: string; value: number; onChange: (value: number) => void; unit?: string; step?: number; hint?: string }) { return <label className="flex items-center justify-between gap-2"><span className="min-w-0 truncate text-xs text-muted-foreground" title={hint ? `${label} (${hint})` : label}>{label}{hint && <span className="ml-1 text-muted-foreground/50">({hint})</span>}</span><span className="relative shrink-0">{unit && <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground/60">{unit === "days" ? "" : unit}</span>}<input type="number" value={value} step={step} onChange={(event) => onChange(Number(event.target.value))} className={cn("h-8 w-28 rounded-md border border-border bg-input text-right text-xs text-foreground outline-none transition-colors tabular-nums focus:border-primary/50 focus:ring-2 focus:ring-primary/15", unit === "$" ? "pl-6 pr-2.5" : "px-2.5")} /></span></label>; }
 function SliderField({ label, value, min, max, step, unit = "", onChange }: { label: string; value: number; min: number; max: number; step: number; unit?: string; onChange: (value: number) => void }) { return <div className="space-y-1"><div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">{label}</span><span className="text-xs font-semibold tabular-nums text-foreground">{step < 1 ? value.toFixed(1) : value.toLocaleString()}{unit}</span></div><input type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} className="mc-range block w-full" /></div>; }

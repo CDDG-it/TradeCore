@@ -4,6 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { Plus, Trash2, Pencil, Check, X, CheckCircle2, AlertCircle, Loader2, GripVertical } from "lucide-react";
 import { getStandingRules, replaceStandingRules } from "@/lib/supabase/queries";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "motion/react";
+import { EASE_OUT, SPRING } from "@/lib/motion";
+import { CountUp } from "@/components/ui/count-up";
 
 /** Move an item to another index, without mutating the original array. */
 function moveItem<T>(list: T[], from: number, to: number): T[] {
@@ -45,6 +48,9 @@ export function TradingRulesEditor() {
   // Which grip to put focus back on after a keyboard move, applied once React
   // has actually committed the new order.
   const focusAfterMove = useRef<number | null>(null);
+  // The row just added, which rises into the list. Rows are keyed by position
+  // (see the list), so only a fresh row is animated; a removal stays instant.
+  const [addedIdx, setAddedIdx] = useState<number | null>(null);
 
   useEffect(() => {
     getStandingRules()
@@ -71,6 +77,7 @@ export function TradingRulesEditor() {
     const t = newRule.trim();
     if (!t) return;
     mutate([...rules, t]);
+    setAddedIdx(rules.length);
     setNewRule("");
   }
 
@@ -166,7 +173,7 @@ export function TradingRulesEditor() {
           aria-hidden
           className="pointer-events-none absolute -top-5 right-3 select-none text-[92px] font-black leading-none tracking-tighter text-primary/[0.07]"
         >
-          {rules.length}
+          <CountUp value={rules.length} duration={0.6} changeDuration={0.3} />
         </span>
       )}
 
@@ -203,6 +210,7 @@ export function TradingRulesEditor() {
                   data-idx={idx}
                   className={cn(
                     "group relative -mx-2 flex select-none items-center gap-2.5 rounded-lg px-2 py-2.5 transition-colors sm:py-3",
+                    addedIdx === idx && "rise-in",
                     dragIdx === idx
                       ? "z-10 bg-primary/[0.09] shadow-[0_8px_24px_-14px_rgba(0,0,0,0.8)] ring-1 ring-primary/30"
                       : "hover:bg-primary/[0.05]"
@@ -281,7 +289,7 @@ export function TradingRulesEditor() {
           )}
 
           {/* Composer */}
-          <div className="mt-3 flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-2 transition-all focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 sm:mt-4">
+          <div className="mt-3 flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-2 transition-[border-color,box-shadow] duration-150 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 sm:mt-4">
             <input
               value={newRule}
               onChange={(e) => setNewRule(e.target.value)}
@@ -293,7 +301,7 @@ export function TradingRulesEditor() {
               type="button"
               onClick={addRule}
               disabled={!newRule.trim()}
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-xs font-bold transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-xs font-bold transition-[transform,opacity] duration-150 hover:-translate-y-px active:scale-[.97] disabled:opacity-40 disabled:hover:translate-y-0"
               style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
             >
               <Plus className="h-3.5 w-3.5" /> Add
@@ -303,21 +311,23 @@ export function TradingRulesEditor() {
           {/* Save row */}
           <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/40 pt-3 sm:mt-4 sm:pt-4">
             <div className="text-xs">
-              {saveState === "saved" && (
-                <span className="flex items-center gap-1.5 text-success"><CheckCircle2 className="h-3.5 w-3.5" /> Saved</span>
-              )}
-              {saveState === "error" && (
-                <span className="flex items-center gap-1.5 text-destructive"><AlertCircle className="h-3.5 w-3.5" /> Failed to save</span>
-              )}
-              {saveState !== "saved" && saveState !== "error" && dirty && (
-                <span className="text-muted-foreground">Unsaved changes</span>
-              )}
+              <AnimatePresence mode="wait" initial={false}>
+                {saveState === "saved" ? (
+                  <motion.span key="saved" className="flex items-center gap-1.5 text-success" initial={{ opacity: 0, transform: "translateY(3px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} exit={{ opacity: 0 }} transition={{ duration: 0.16, ease: EASE_OUT }}>
+                    <motion.span className="flex" initial={{ transform: "scale(0.5)" }} animate={{ transform: "scale(1)" }} transition={SPRING}><CheckCircle2 className="h-3.5 w-3.5" /></motion.span> Saved
+                  </motion.span>
+                ) : saveState === "error" ? (
+                  <motion.span key="error" className="flex items-center gap-1.5 text-destructive" initial={{ opacity: 0, transform: "translateY(3px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} exit={{ opacity: 0 }} transition={{ duration: 0.16, ease: EASE_OUT }}><AlertCircle className="h-3.5 w-3.5" /> Failed to save</motion.span>
+                ) : dirty ? (
+                  <motion.span key="dirty" className="text-muted-foreground" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>Unsaved changes</motion.span>
+                ) : null}
+              </AnimatePresence>
             </div>
             <button
               type="button"
               onClick={persist}
               disabled={!dirty || saveState === "saving"}
-              className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
+              className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold transition-[transform,opacity] duration-150 hover:-translate-y-px active:scale-[.97] disabled:opacity-40 disabled:hover:translate-y-0"
               style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
             >
               {saveState === "saving" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</> : "Save rules"}

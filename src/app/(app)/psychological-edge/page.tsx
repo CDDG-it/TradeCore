@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { EASE_OUT } from "@/lib/motion";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { SectionNav } from "@/components/layout/section-nav";
 import { HabitsView } from "@/components/habits/habits-view";
@@ -89,16 +91,29 @@ export default function MyEdgePage() {
       </div>
 
       <PageWrapper>
-        {tab === "habits" && <HabitsView />}
-        {tab === "goals" && <FeatureGate feature="goals"><GoalsView /></FeatureGate>}
-        {tab === "mindscore" && <MindScoreBreakdown />}
-        {tab === "rules" && <FeatureGate feature="standingRules">
-          <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 sm:gap-6 lg:grid-cols-2">
-            <TradingRulesEditor />
-            <ConfluencesEditor />
-          </div>
-        </FeatureGate>}
-        {tab === "simulator" && <FeatureGate feature="monteCarlo"><MonteCarloSimulator /></FeatureGate>}
+        {/* One view hands over to the next instead of swapping in place. */}
+        <MotionConfig reducedMotion="user">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, transform: "translateY(6px)" }}
+              animate={{ opacity: 1, transform: "translateY(0px)" }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
+              transition={{ duration: 0.18, ease: EASE_OUT }}
+            >
+              {tab === "habits" && <HabitsView />}
+              {tab === "goals" && <FeatureGate feature="goals"><GoalsView /></FeatureGate>}
+              {tab === "mindscore" && <MindScoreBreakdown />}
+              {tab === "rules" && <FeatureGate feature="standingRules">
+                <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 sm:gap-6 lg:grid-cols-2">
+                  <TradingRulesEditor />
+                  <ConfluencesEditor />
+                </div>
+              </FeatureGate>}
+              {tab === "simulator" && <FeatureGate feature="monteCarlo"><MonteCarloSimulator /></FeatureGate>}
+            </motion.div>
+          </AnimatePresence>
+        </MotionConfig>
       </PageWrapper>
     </div>
   );

@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Loader2 } from "lucide-react";
-import { AnimatePresence, MotionConfig, animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { EASE_OUT, SPRING, rise } from "@/lib/motion";
+import { CountUp } from "@/components/ui/count-up";
+import { Segmented } from "@/components/ui/segmented";
+import { GrowBar } from "@/components/ui/grow-bar";
 import { BrainScore } from "@/components/mind-score/brain-score";
 import { MindscoreTrend } from "@/components/mind-score/mindscore-trend";
 import { computeMindScoreTrend } from "@/lib/mind-score/trend";
@@ -23,36 +27,8 @@ const PART_META: Record<MindComponent["key"], string> = {
   rules: "Rule adherence", execution: "Execution", habits: "Daily habits",
   objectives: "Reflection work", goals: "Goal progress",
 };
-const EASE_OUT = [0.23, 1, 0.32, 1] as const;
-const SPRING = { type: "spring", stiffness: 420, damping: 36 } as const;
 /** How strongly each signal's share of the score is drawn, in breakdown order. */
 const SHADE = [1, 0.78, 0.6, 0.46, 0.34];
-
-/**
- * A number that counts to its value: up from zero when it first appears, then
- * quickly from one value to the next. Reduced motion shows the value at once.
- */
-function CountUp({ value, duration = 0.9 }: { value: number; duration?: number }) {
-  const reduce = useReducedMotion();
-  const current = useMotionValue(0);
-  const text = useTransform(current, (v) => String(Math.round(v)));
-  const first = useRef(true);
-  useEffect(() => {
-    const length = first.current ? duration : Math.min(0.45, duration);
-    first.current = false;
-    if (reduce) { current.set(value); return; }
-    const controls = animate(current, value, { duration: length, ease: EASE_OUT });
-    return () => controls.stop();
-  }, [value, duration, reduce, current]);
-  return <motion.span>{text}</motion.span>;
-}
-
-/** Sections rise in one after another the first time the page shows. */
-const rise = (index: number) => ({
-  initial: { opacity: 0, transform: "translateY(10px)" },
-  animate: { opacity: 1, transform: "translateY(0px)" },
-  transition: { duration: 0.35, delay: index * 0.07, ease: EASE_OUT },
-});
 
 export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
   const { entitlements } = useAccess();
@@ -106,20 +82,8 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
 
         <div className="relative flex flex-wrap items-center justify-between gap-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">MC Mindscore</p>
-          <div className="flex items-center gap-1 rounded-full border border-border/70 bg-muted/25 p-1" role="group" aria-label="Mindscore period">
-            {(["week", "month", "all"] as MindPeriod[]).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setPeriod(option)}
-                aria-pressed={period === option}
-                className={cn("relative isolate rounded-full px-3 py-1.5 text-[11px] font-semibold transition-[color,transform] duration-150 active:scale-[.96]", period === option ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                {period === option && <motion.span layoutId="mindscore-period" className="absolute inset-0 -z-10 rounded-full bg-primary shadow-[0_0_18px_rgba(20,184,166,.25)]" transition={SPRING} />}
-                {PERIOD_LABEL[option]}
-              </button>
-            ))}
-          </div>
+          <Segmented label="Mindscore period" value={period} onChange={setPeriod}
+            options={(["week", "month", "all"] as MindPeriod[]).map((option) => ({ value: option, label: PERIOD_LABEL[option] }))} />
         </div>
 
         <div className="relative border-b border-border/60 py-4">
@@ -128,7 +92,7 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
             <div className="min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="font-heading text-[clamp(3.5rem,7vw,6rem)] font-black leading-none tracking-[-0.07em] tabular-nums transition-colors duration-500" style={{ color }}>
-                  {current === null ? "·" : <CountUp value={current} />}
+                  {current === null ? "·" : <CountUp value={current} duration={0.9} changeDuration={0.45} />}
                 </span>
                 {current !== null && <span className="text-xs font-semibold text-muted-foreground">MC</span>}
               </div>
@@ -197,17 +161,9 @@ export function MindScoreBreakdown({ seed }: { seed?: MindInputs } = {}) {
               >
                 <div className="flex items-center justify-between gap-3 text-xs">
                   <span className="truncate font-medium text-foreground/85">{PART_META[part.key]}</span>
-                  <span className="shrink-0 font-bold tabular-nums" style={{ color: value === null ? "var(--muted-foreground)" : color }}>{value === null ? "—" : <><CountUp value={value} duration={0.8} />%</>}</span>
+                  <span className="shrink-0 font-bold tabular-nums" style={{ color: value === null ? "var(--muted-foreground)" : color }}>{value === null ? "—" : <><CountUp value={value} duration={0.8} changeDuration={0.45} />%</>}</span>
                 </div>
-                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted-foreground/15">
-                  <motion.div
-                    className="h-full w-full origin-left rounded-full"
-                    style={{ backgroundColor: color }}
-                    initial={{ transform: "scaleX(0)" }}
-                    animate={{ transform: `scaleX(${(value ?? 0) / 100})` }}
-                    transition={{ duration: intro ? 0.7 : 0.45, delay: stagger(0.2 + index * 0.06), ease: EASE_OUT }}
-                  />
-                </div>
+                <GrowBar className="mt-1.5" value={(value ?? 0) / 100} color={color} duration={intro ? 0.7 : 0.45} delay={stagger(0.2 + index * 0.06)} />
                 {part.key === "execution" && value !== null && (
                   <p className="mt-1 text-[10px] tabular-nums text-muted-foreground">
                     {score.execution.good} good · {score.execution.bad} bad (counts double){score.execution.unrated > 0 && ` · ${score.execution.unrated} unrated (counts as neutral)`}
