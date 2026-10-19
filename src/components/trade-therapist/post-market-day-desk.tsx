@@ -51,7 +51,12 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
   const { entitlements } = useAccess();
   const [draft, setDraft] = useState<Draft>(blank);
   const [knownVerdict, setKnownVerdict] = useState(false);
-  const [loading, setLoading] = useState(true);
+  /* The day whose review is on screen. Switching days keeps the desk mounted
+     and the previous day visible (dimmed) until the next one has loaded, so
+     the layout never collapses to a loading line and rebuilds. */
+  const [loadedDate, setLoadedDate] = useState<string | null>(null);
+  const loading = loadedDate === null;
+  const switching = !loading && loadedDate !== date;
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [reviews, setReviews] = useState<Record<string, BestTradeListRow>>({});
   const [observations, setObservations] = useState<Record<string, RPotentialAnalysis>>({});
@@ -95,7 +100,9 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
       setDraft(value);
       setKnownVerdict(Boolean(entry && (entry.review_step !== null || entry.taken_was_best || entry.notes.trim() || entry.screenshot_groups?.some((group) => group.urls.length))));
       setStep(autoStart ? initialPostMarketStep(entry, entitlements.bestTrade) : "complete");
-    }).catch(() => setSaveState("error")).finally(() => { if (active) setLoading(false); });
+      setJustFinished(false);
+      setSaveState("idle");
+    }).catch(() => { if (active) setSaveState("error"); }).finally(() => { if (active) setLoadedDate(date); });
     return () => {
       active = false;
       if (timer.current) {
@@ -196,7 +203,7 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
 
   // Keyboard: Y / N answers the verdict, Ctrl/⌘ + Enter moves on from a written step.
   useEffect(() => {
-    if (loading || currentStep === "complete") return;
+    if (loading || switching || currentStep === "complete") return;
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       const typing = target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.isContentEditable);
@@ -243,7 +250,7 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
     const textField = currentStep === "why" ? "notes" : currentStep === "market" ? "post_market_analysis" : null;
     const text = textField ? draft[textField] : "";
 
-    return <div className="flex h-full min-h-0 gap-3">
+    return <div aria-busy={switching} className={cn("flex h-full min-h-0 gap-3 transition-opacity duration-200", switching && "pointer-events-none opacity-60")}>
       {/* Step rail: where you are, what is done, jump back to any answered step. */}
       <aside className="hidden w-60 shrink-0 flex-col gap-3 lg:flex">
         <div className="rounded-2xl border border-border/60 bg-card/65 p-4">
@@ -369,7 +376,7 @@ export function PostMarketDayDesk({ date, trades, onDateChange, autoStart = fals
     .map((group) => ({ label: dayTrades.length > 1 ? `${instrumentName(trade.instrument)} · ${group.label}` : group.label, urls: group.urls })));
   const reviewButton = <button disabled={saveState === "saving" || uploading} onClick={() => void move(resumeStep ?? steps[0])} className={cn("inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-colors disabled:opacity-40", hasReview ? "border border-border/60 text-foreground hover:border-primary/40 hover:text-primary" : "bg-primary text-primary-foreground hover:bg-primary/90")}>{hasReview ? "Edit review" : resumeStep ? "Continue review" : "Start review"}<ArrowRight className="h-3.5 w-3.5" /></button>;
 
-  return <div className="h-full overflow-y-auto lg:overflow-hidden">
+  return <div aria-busy={switching} className={cn("h-full overflow-y-auto transition-opacity duration-200 lg:overflow-hidden", switching && "pointer-events-none opacity-60")}>
     <div className="flex min-h-full flex-col gap-3 lg:h-full">
       <header className="flex shrink-0 flex-wrap items-end justify-between gap-3 px-0.5">
         <div className="min-w-0">

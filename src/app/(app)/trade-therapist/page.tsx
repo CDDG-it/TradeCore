@@ -114,7 +114,6 @@ export default function TradeTherapistPage() {
         )}
         {tab === "daily" && (
           <PostMarketDayDesk
-            key={dailyDate}
             date={dailyDate}
             trades={trades}
             onDateChange={changeDate}
