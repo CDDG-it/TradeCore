@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { AccentPanel } from "@/components/ui/accent-panel";
 import { EASE_OUT } from "@/lib/motion";
 import { CountUp } from "@/components/ui/count-up";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { thresholds } from "@/lib/trade-profile/config";
 import { copy } from "@/lib/trade-profile/content/copy";
@@ -16,6 +15,7 @@ import { daysBetween, fromKey } from "@/lib/trade-profile/dates";
 import { dueRetests, exerciseForDay, type ProgramWeek } from "@/lib/trade-profile/program";
 import { CheckinForm } from "@/components/trade-profile/checkin-form";
 import { ForYourType } from "@/components/trade-profile/for-your-type";
+import { StartProgram } from "@/components/trade-profile/start-program";
 import { DifficultyPill, Tile } from "@/components/trade-profile/primitives";
 import { useDerived, useTradeProfile } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
@@ -49,15 +49,8 @@ function ProgramToday() {
   const [showAll, setShowAll] = useState(false);
   const t = copy.today;
 
-  if (!state.goal || !goalTarget || !schedule || !state.programStart || !position) {
-    return (
-      <AccentPanel accent="primary" title={t.noGoalTitle} subtitle={t.noGoal}>
-        <Button className="mt-4" onClick={() => nav.goTab("goal")}>
-          {t.chooseGoal} <ArrowRight />
-        </Button>
-      </AccentPanel>
-    );
-  }
+  // No goal yet: show what the program would be, and something to do today regardless.
+  if (!state.goal || !goalTarget || !schedule || !state.programStart || !position) return <StartProgram />;
 
   const start = state.programStart;
   const goal = state.goal;
