@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/broker/route-utils";
 import { TRADOVATE_STATE_COOKIE } from "@/lib/broker/oauth-constants";
 
 // Where Tradovate returns the trader after they authorise. Exchanges the code
-// for tokens, stores only the refresh token, and sends them back to Accounts.
+// for encrypted refresh and short-lived access tokens, then redirects to Accounts.
 export const dynamic = "force-dynamic";
 
 function back(request: Request, params: Record<string, string>) {

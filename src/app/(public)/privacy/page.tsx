@@ -7,7 +7,7 @@ export default function PrivacyPage() {
         <div>
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">← Back</Link>
           <h1 className="text-3xl font-bold mt-4">Privacy Policy</h1>
-          <p className="text-muted-foreground text-sm mt-1">Last updated: June 2026</p>
+          <p className="text-muted-foreground text-sm mt-1">Last updated: October 2026</p>
         </div>
 
         <section className="space-y-3">
@@ -20,10 +20,25 @@ export default function PrivacyPage() {
             <li>Trade journal entries including instrument, result, R:R, session, notes, and execution details</li>
             <li>Pre-market analyses including bias, thesis, and chart notes</li>
             <li>Funded account records including firm name, account size, and payout history</li>
+            <li>Connected broker account snapshots and imported trade details, including account, instrument, execution times, quantity, costs, and P&amp;L where available</li>
+            <li>Encrypted, revocable Tradovate OAuth tokens needed to refresh a connection</li>
             <li>Daily self-improvement data including journal entries, mental state scores, and sleep data</li>
             <li>Habit completion data</li>
             <li>Chart screenshots uploaded to trade journal and analysis entries</li>
           </ul>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Broker connections and imports</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Tradovate connections use OAuth access configured for reading accounts, orders, and fills. We do not store
+            broker passwords or trading-capable API keys. Broker tokens are stored encrypted on the server and are never
+            returned to your browser. Disconnecting a broker removes its stored tokens and connected account history.
+          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            CSV exports are parsed in your browser. We receive only the trade records you select for import, not the
+            original file. You can review imported records before adding them to your journal.
+          </p>
         </section>
 
         <section className="space-y-3">
@@ -39,9 +54,9 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Data isolation</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            All database tables use Row Level Security (RLS). Your data is strictly isolated from other users&apos;
-            data at the database level: every query is automatically scoped to your user ID. No other user can
-            read, write, or delete your records.
+            User-facing data is protected with Row Level Security (RLS). Broker credentials are accessible only to
+            authenticated server routes, which check your identity and filter records by your user ID. Other users
+            cannot read, write, or delete your records through the app.
           </p>
         </section>
 
