@@ -11,6 +11,7 @@ import { DomainDetail, ProfileView } from "@/components/trade-profile/profile-vi
 import { GoalView } from "@/components/trade-profile/goal-view";
 import { TodayView } from "@/components/trade-profile/today-view";
 import { ProgressView } from "@/components/trade-profile/progress-view";
+import { PsychologyView } from "@/components/trade-profile/psychology-view";
 import { LibraryView } from "@/components/trade-profile/library-view";
 import { RetestView } from "@/components/trade-profile/retest-view";
 import { ReflectionView } from "@/components/trade-profile/reflection-view";
@@ -27,7 +28,7 @@ import {
 } from "@/components/trade-profile/nav";
 
 const SECTIONS: { key: ProfileTab; label: string }[] = (Object.keys(copy.tabs) as (keyof typeof copy.tabs)[]).map((key) => ({ key, label: copy.tabs[key] }));
-const ALL_TABS: ProfileTab[] = ["today", "profile", "progress", "goal", "library"];
+const ALL_TABS: ProfileTab[] = ["today", "profile", "psychology", "progress", "goal", "library"];
 /** The tab that stays underlined while a screen without its own tab is open. */
 const PARENT: Partial<Record<ProfileTab, ProfileTab>> = { goal: "today", library: "profile" };
 /** Older links pointed at sections that are now part of another one. */
@@ -47,8 +48,9 @@ function urlFor(view: View): URL {
 /**
  * My Trade Profile, as a section of MC Trade Therapist: a Big Five assessment
  * (IPIP-NEO-60) turned into a 12-week development program. Before the
- * assessment is done it is an onboarding flow; after it, three sections
- * (Today, Profile, Progress), with the goal and the evidence one click away.
+ * assessment is done it is an onboarding flow; after it, four sections
+ * (Today, Profile, Psychology, Progress), with the goal and the evidence one
+ * click away.
  *
  * It fills the Therapist's viewport-high frame and scrolls inside it. Every
  * move (a sub-section, a facet drill-down, a retest, an assessment page) is a
@@ -147,6 +149,7 @@ export function TradeProfileApp() {
         {shownTab === "today" && <TodayView />}
         {shownTab === "profile" && <ProfileView />}
         {shownTab === "goal" && <GoalView />}
+        {shownTab === "psychology" && <PsychologyView />}
         {shownTab === "progress" && <ProgressView />}
         {shownTab === "library" && <LibraryView />}
       </>
