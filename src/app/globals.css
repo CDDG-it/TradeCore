@@ -1571,6 +1571,16 @@ html:has(.marketing-page) { position: relative; }
     #0b1120;
 }
 
+.marketing-hero-scrim {
+  background:
+    linear-gradient(90deg, rgba(11, 17, 32, 0.72) 0%, rgba(11, 17, 32, 0.38) 42%, transparent 70%),
+    linear-gradient(180deg, rgba(11, 17, 32, 0.45) 0%, transparent 22%);
+}
+
+@media (max-width: 1023px) {
+  .marketing-hero-scrim { background: rgba(11, 17, 32, 0.5); }
+}
+
 .marketing-hero::after {
   content: "";
   position: absolute;
