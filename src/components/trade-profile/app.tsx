@@ -58,7 +58,7 @@ function urlFor(view: View): URL {
  */
 export function TradeProfileApp() {
   const store = useTradeProfile();
-  const { finished, goalTarget } = useDerived();
+  const { finished } = useDerived();
   const [view, setView] = useState<View>(TODAY);
   const [exercise, setExercise] = useState<string | null>(null);
   const frame = useRef<HTMLDivElement>(null);
@@ -121,11 +121,10 @@ export function TradeProfileApp() {
     scrollTop,
   };
 
-  // Without a goal there is no program yet, so Today would be empty: show the profile first.
-  const tabOf = (raw: ProfileTab): ProfileTab => {
-    const t = RENAMED[raw] ?? raw;
-    return t === "today" && !goalTarget ? "profile" : t;
-  };
+  // Today always opens Today: without a goal it shows what the program would be
+  // and a drill for the day, so it is never empty (it used to redirect to Profile,
+  // which made the Today tab look dead to a trader without a goal).
+  const tabOf = (raw: ProfileTab): ProfileTab => RENAMED[raw] ?? raw;
   const shownTab: ProfileTab = view.kind === "tab" ? tabOf(view.tab) : view.kind === "domain" ? "profile" : tabOf("today");
   // Intro and assessment entries left in history after finishing show the sections too.
   const inSection = view.kind !== "retest" && view.kind !== "reflection";
