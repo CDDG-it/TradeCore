@@ -12,7 +12,7 @@ import {
 import { Plus, ChevronLeft, ChevronRight, LayoutGrid, ImageIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getTrades } from "@/lib/supabase/queries";
-import { getScreenshotUrls } from "@/lib/supabase/storage";
+import { useScreenshots } from "@/lib/supabase/use-screenshots";
 import { MonthAnalytics } from "@/components/journal/month-analytics";
 import { DayTradesDialog } from "@/components/journal/day-trades-dialog";
 import type { TradeJournalEntry } from "@/lib/types";
@@ -56,33 +56,10 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
   const [calendarMonth, setCalendarMonth] = useState(sampleMonth ?? new Date());
   const [calendarView, setCalendarView] = useState<CalendarView>("results");
 
-  /* Calendar thumbnails. A screenshot is a storage path, which is not a URL a
-     browser can load, so each one is signed before it is rendered. They are
-     asked for at thumbnail size: the tile is never larger than a few hundred
-     pixels, and the original is often several megabytes. Legacy base64 entries
-     pass through untouched. */
-  const [shotUrls, setShotUrls] = useState<Map<string, string>>(new Map());
-
   useEffect(() => {
     if (preview) return;
     getTrades().then(setAllTrades).finally(() => setLoading(false));
   }, [preview]);
-
-  useEffect(() => {
-    const paths = [...new Set(allTrades.flatMap((t) => (t.screenshot_groups ?? []).flatMap((g) => g.urls ?? [])))]
-      .filter((u) => u && !u.startsWith("data:") && !u.startsWith("http"));
-    if (!paths.length) return;
-    let cancelled = false;
-    getScreenshotUrls(paths, "thumb")
-      .then((signed) => {
-        if (cancelled) return;
-        setShotUrls(new Map(paths.map((p, i) => [p, signed[i]])));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [allTrades]);
 
   // Deep link from the dashboard: /journal?day=YYYY-MM-DD jumps straight to that
   // day's log: through to the entry when the day holds one trade, to the day
@@ -117,6 +94,14 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
     for (const key of Object.keys(map)) map[key] = inOrder(map[key]);
     return map;
   }, [allTrades]);
+
+  /* Calendar thumbnails. A screenshot is a storage path, which is not a URL a
+     browser can load, so it is signed before it is rendered, at thumbnail size:
+     a tile is never larger than a few hundred pixels and an original is often
+     several megabytes. Only the chart a tile shows (the day's first) is signed,
+     through the shared hook, so one missing file no longer blanks every tile. */
+  const dayShots = useMemo(() => Object.values(tradesByDay).map(firstShot).filter((url): url is string => !!url), [tradesByDay]);
+  const { display: shotUrl, failed: shotFailed, onLoadError: onShotError } = useScreenshots(null, dayShots, "thumb");
 
   // The month laid out as weeks (rows of 7), with leading/trailing pads so every
   // row is full. Each row carries a summary cell on the right, so the calendar
@@ -206,11 +191,7 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
     const rawShot = screens ? firstShot(dayTrades) : undefined;
     /* A storage path only becomes usable once signed. Until then the day
        renders as an ordinary tile rather than a broken image. */
-    const shot = !rawShot
-      ? undefined
-      : rawShot.startsWith("data:") || rawShot.startsWith("http")
-      ? rawShot
-      : shotUrls.get(rawShot);
+    const shot = rawShot && !shotFailed(rawShot) ? shotUrl(rawShot) ?? undefined : undefined;
 
     const tileClass = cn(
       "journal-day group/day relative flex flex-col overflow-hidden rounded-xl border text-left",
@@ -288,7 +269,7 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
         {shot ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={shot} alt="" loading="lazy"
+            <img src={shot} alt="" loading="lazy" onError={() => rawShot && onShotError(rawShot)}
               className="absolute inset-0 h-full w-full object-cover transition-[filter] duration-150 group-hover/day:brightness-110" />
             <span aria-hidden className="absolute inset-0"
               style={{ background: "linear-gradient(180deg, rgba(4,8,17,0.35) 0%, transparent 32%, transparent 55%, rgba(4,8,17,0.78) 100%)" }} />

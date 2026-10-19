@@ -41,7 +41,8 @@ export function AnalysisOverview({ analyses, previewDetails }: { analyses: Analy
   const [weekDate, setWeekDate] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<PreTradeAnalysis | null>(null);
+  // Every analysis opened on this page, by id: going back to one shows it at once.
+  const [details, setDetails] = useState<Record<string, PreTradeAnalysis>>({});
   const [detailFailedId, setDetailFailedId] = useState<string | null>(null);
   const weekStart = startOfISOWeek(weekDate);
   const weekEnd = addDays(weekStart, 6);
@@ -61,17 +62,17 @@ export function AnalysisOverview({ analyses, previewDetails }: { analyses: Analy
   useEffect(() => {
     if (!activeId) return;
     const sample = previewDetails?.find((item) => item.id === activeId);
-    if (sample) return;
+    if (sample || details[activeId]) return;
     let cancelled = false;
     getAnalysisById(activeId).then((value) => {
       if (cancelled) return;
       if (!value) { setDetailFailedId(activeId); return; }
-      setDetail(value);
+      setDetails((old) => ({ ...old, [value.id]: value }));
     }).catch(() => { if (!cancelled) setDetailFailedId(activeId); });
     return () => { cancelled = true; };
-  }, [activeId, previewDetails]);
+  }, [activeId, previewDetails, details]);
 
-  const selected = previewDetails?.find((item) => item.id === activeId) ?? (detail?.id === activeId ? detail : null);
+  const selected = previewDetails?.find((item) => item.id === activeId) ?? (activeId ? details[activeId] ?? null : null);
   const waitingForDetail = Boolean(activeId && !selected && !previewDetails && detailFailedId !== activeId);
   const preview = Boolean(previewDetails);
   const detailHref = activeRow ? preview ? `/preview/analysis?view=review&id=${activeRow.id}` : `/analysis/${activeRow.id}` : "/analysis";
@@ -80,7 +81,6 @@ export function AnalysisOverview({ analyses, previewDetails }: { analyses: Analy
     setWeekDate((date) => direction < 0 ? subWeeks(date, 1) : addWeeks(date, 1));
     setSelectedDay(null);
     setSelectedId(null);
-    setDetail(null);
   }
 
   return <div className="flex flex-col gap-3 lg:h-[calc(100dvh-7.5rem)] lg:min-h-[40rem] lg:overflow-hidden">
@@ -131,7 +131,11 @@ export function AnalysisOverview({ analyses, previewDetails }: { analyses: Analy
             <AnimatePresence mode="wait" initial={false}>
               <motion.div key={activeRow.id} initial={{ opacity: 0, transform: reduce ? "none" : "translateY(8px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }} className="space-y-4">
                 <div className="flex items-center gap-2 text-[11px] text-muted-foreground"><CalendarDays className="size-3.5" />{format(new Date(`${activeRow.date}T12:00:00`), "EEEE, d MMMM yyyy")}<span className="text-border">·</span>{activeRow.session}</div>
-                {waitingForDetail ? <div className="space-y-3"><div className="h-36 animate-pulse rounded-xl bg-white/[.04]" /><div className="h-28 animate-pulse rounded-xl bg-white/[.04]" /></div> : <>
+                {waitingForDetail ? <div className="space-y-3">
+                  {/* The thesis is already in the list row: show it now, so only the rest fills in. */}
+                  <article className="rounded-xl border border-border/70 bg-background/35 p-4"><h3 className="text-[10px] font-semibold uppercase tracking-[.14em] text-primary">Market thesis</h3><p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">{activeRow.thesis}</p></article>
+                  <div className="h-28 animate-pulse rounded-xl bg-white/[.04]" />
+                </div> : <>
                   <div className={cn("grid gap-3", selected?.screenshot_groups?.some((group) => group.urls.length) && "md:grid-cols-[minmax(0,1fr)_minmax(12rem,.8fr)]")}>
                     <article className="rounded-xl border border-border/70 bg-background/35 p-4"><h3 className="text-[10px] font-semibold uppercase tracking-[.14em] text-primary">Market thesis</h3><p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/85">{activeRow.thesis}</p></article>
                     {selected && <ChartPeek analysis={selected} preview={preview} />}

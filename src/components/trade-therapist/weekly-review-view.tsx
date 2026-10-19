@@ -11,12 +11,20 @@ import {
   ChevronDown, ChevronUp, History,
 } from "lucide-react";
 import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, saveWeeklyTradeReview, type BestTradeListRow } from "@/lib/supabase/queries";
+import { peekRead } from "@/lib/supabase/cache";
 import { getWeekGroup, reviewOpensOn, isReviewOpen } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
 import { buildDayRecaps } from "@/lib/reviews/day-recap";
 import { WeeklyDayTimeline } from "@/components/trade-therapist/weekly-day-timeline";
 
 const TURQUOISE = "var(--primary)";
+
+/* Moving to another week mounts this view afresh. Starting from the reads
+   already cached renders that week at once, instead of flashing a spinner and
+   rebuilding the page; the effect below still loads fresh data. */
+const cachedTrades = () => peekRead<TradeJournalEntry[]>("trades") ?? null;
+const cachedBest = () => peekRead<BestTradeListRow[]>("bestTrades") ?? [];
+const reviewFor = (week: string) => peekRead<WeeklyTradeReview[]>("weeklyReviews")?.find((rev) => rev.week_start === week) ?? null;
 
 /**
  * Weekly review: five chronological day stories, followed by one reflection.
@@ -25,14 +33,14 @@ const TURQUOISE = "var(--primary)";
  */
 export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const router = useRouter();
-  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
-  const [review, setReview] = useState<WeeklyTradeReview | null>(null);
-  const [prevReview, setPrevReview] = useState<WeeklyTradeReview | null>(null);
-  const [bestByDay, setBestByDay] = useState<Record<string, BestTradeListRow>>({});
+  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(cachedTrades);
+  const [review, setReview] = useState<WeeklyTradeReview | null>(() => reviewFor(weekStart));
+  const [prevReview, setPrevReview] = useState<WeeklyTradeReview | null>(() => /^\d{4}-\d{2}-\d{2}$/.test(weekStart) ? reviewFor(format(subWeeks(new Date(weekStart + "T12:00:00"), 1), "yyyy-MM-dd")) : null);
+  const [bestByDay, setBestByDay] = useState<Record<string, BestTradeListRow>>(() => Object.fromEntries(cachedBest().map((b) => [b.date.slice(0, 10), b])));
 
-  const [wentWell, setWentWell] = useState("");
-  const [toImprove, setToImprove] = useState("");
-  const [focus, setFocus] = useState("");
+  const [wentWell, setWentWell] = useState(() => reviewFor(weekStart)?.lessons ?? "");
+  const [toImprove, setToImprove] = useState(() => reviewFor(weekStart)?.mistakes ?? "");
+  const [focus, setFocus] = useState(() => reviewFor(weekStart)?.prevention_plan ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(false);

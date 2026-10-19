@@ -49,6 +49,16 @@ export function primeRead<T>(key: string, data: T): void {
 }
 
 /**
+ * What is cached under `key` right now, however old, or undefined. For a view
+ * that wants to paint at once from the last known data while a fresh read
+ * runs. Mutations and account switches clear entries, so this never shows
+ * rows a write has changed or another account's data.
+ */
+export function peekRead<T>(key: string): T | undefined {
+  return store.get(key)?.data as T | undefined;
+}
+
+/**
  * Drop cached reads. Called by every mutation so writes are never masked.
  * With prefixes, only keys starting with one of them are dropped; a write to
  * one table then leaves every other table's cached rows in place.

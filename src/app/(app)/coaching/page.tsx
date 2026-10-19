@@ -185,20 +185,28 @@ export default function CoachingPage() {
   const [tradeCount, setTradeCount] = useState(0);
   const [avgDiscipline, setAvgDiscipline] = useState(0);
   const [loading, setLoading] = useState(true);
+  // After the first load, a refresh keeps the current insights on screen
+  // instead of swapping the whole list for a loading line.
+  const [loaded, setLoaded] = useState(false);
 
   async function loadInsights() {
     setLoading(true);
-    const [trades, habits, completions, playbook] = await Promise.all([
-      getTrades(), getHabits(), getHabitCompletions(), getPlaybook(),
-    ]);
-    const generated = generateCoachingInsights(trades, habits, completions, playbook);
-    setInsights(generated);
-    setTradeCount(trades.length);
-    setAvgDiscipline(getAvgDisciplineScore(trades));
-    setLoading(false);
+    try {
+      const [trades, habits, completions, playbook] = await Promise.all([
+        getTrades(), getHabits(), getHabitCompletions(), getPlaybook(),
+      ]);
+      const generated = generateCoachingInsights(trades, habits, completions, playbook);
+      setInsights(generated);
+      setTradeCount(trades.length);
+      setAvgDiscipline(getAvgDisciplineScore(trades));
+    } catch {
+      // Keep whatever is on screen; a failed read must not leave the page loading forever.
+    } finally {
+      setLoading(false);
+      setLoaded(true);
+    }
   }
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- first load of the page's data
   useEffect(() => { loadInsights(); }, []);
 
   const filtered = insights.filter((i) => {
@@ -228,9 +236,10 @@ export default function CoachingPage() {
             variant="outline"
             size="sm"
             onClick={loadInsights}
+            disabled={loading}
             className="gap-1.5 shrink-0"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
           </Button>
         }
       />
@@ -328,7 +337,7 @@ export default function CoachingPage() {
       </div>
 
       {/* Insights list */}
-      {loading ? (
+      {loading && !loaded ? (
         <div className="text-center py-16">
           <p className="text-sm text-muted-foreground animate-pulse">Analyzing your trading data...</p>
         </div>

@@ -8,6 +8,7 @@ import {
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ArrowRight, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getTrades, getWeeklyTradeReviews, getAllTradeRuleChecks } from "@/lib/supabase/queries";
+import { peekRead, primeRead } from "@/lib/supabase/cache";
 import { getWeekGroup, tradeR, formatTotalR, instrumentName, tradesWinRate } from "@/lib/journal/weeks";
 import type { TradeJournalEntry, WeeklyTradeReview } from "@/lib/types";
 import { persistentBrokenPatterns } from "@/lib/reviews/rule-patterns";
@@ -29,13 +30,23 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
  * into each week's review. Nothing to fill in here: the month is the sum of its
  * weeks, so completion is tracked at the weekly level.
  */
+/* Moving to another month mounts this view afresh. Starting from the reads
+   already cached renders that month at once, instead of flashing a spinner
+   and rebuilding the page; fresh data still replaces it. Rule checks are not
+   a cached read, so they are kept under a `trades` key: any trade write
+   (which is what changes them) and any account switch drops them. */
+const RULE_CHECKS_KEY = "trades:allRuleChecks";
+
 export function MonthlyReviewView({ month }: { month: string }) {
-  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(null);
-  const [reviews, setReviews] = useState<WeeklyTradeReview[]>([]);
-  const [ruleChecks, setRuleChecks] = useState<Awaited<ReturnType<typeof getAllTradeRuleChecks>>>([]);
+  const [trades, setTrades] = useState<TradeJournalEntry[] | null>(() => peekRead<TradeJournalEntry[]>("trades") ?? null);
+  const [reviews, setReviews] = useState<WeeklyTradeReview[]>(() => peekRead<WeeklyTradeReview[]>("weeklyReviews") ?? []);
+  const [ruleChecks, setRuleChecks] = useState<Awaited<ReturnType<typeof getAllTradeRuleChecks>>>(() => peekRead<Awaited<ReturnType<typeof getAllTradeRuleChecks>>>(RULE_CHECKS_KEY) ?? []);
 
   useEffect(() => {
-    Promise.all([getTrades(), getWeeklyTradeReviews(), getAllTradeRuleChecks()]).then(([t, r, checks]) => { setTrades(t); setReviews(r); setRuleChecks(checks); });
+    Promise.all([getTrades(), getWeeklyTradeReviews(), getAllTradeRuleChecks()]).then(([t, r, checks]) => {
+      primeRead(RULE_CHECKS_KEY, checks);
+      setTrades(t); setReviews(r); setRuleChecks(checks);
+    });
   }, []);
 
   const valid = /^\d{4}-\d{2}$/.test(month);

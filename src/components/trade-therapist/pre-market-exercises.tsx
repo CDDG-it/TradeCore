@@ -74,6 +74,10 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
   const [profileFocus, setProfileFocus] = useState<{ primary: FocusAreaId; secondary: FocusAreaId | null } | null>(null);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  /* Set once the first day has loaded. After that a day switch keeps the
+     exercise on screen (dimmed and inert) until the next day is in, instead
+     of collapsing the page to a spinner and rebuilding it. */
+  const [shown, setShown] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<TradeJournalEntry | null>(null);
@@ -101,7 +105,7 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
       setSuggested(pick);
       setCompletedAt(exercise?.completed_at ?? null);
       setLoaded(stored); setDraft(local ?? stored);
-    }).catch(() => setError("Could not load today's exercise.")).finally(() => active && setLoading(false));
+    }).catch(() => setError("Could not load today's exercise.")).finally(() => { if (active) { setLoading(false); setShown(true); } });
     return () => { active = false; };
   }, [date, draftKey, trades]);
 
@@ -176,13 +180,13 @@ export function PreMarketExercises({ trades, date }: { trades: TradeJournalEntry
 
   const filtered = useMemo(() => PRE_MARKET_EXERCISES.filter((exercise) => filter === "all" || exercise.category === filter), [filter]);
 
-  if (loading) return <div className="flex h-full items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
+  if (loading && !shown) return <div className="flex h-full items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
 
   const trains = definition.focusArea ? focusAreas[definition.focusArea] : null;
   const stepDone = doneFlags[step - 1];
 
   return <MotionConfig reducedMotion="user">
-    <div ref={scroller} className="relative h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+    <div ref={scroller} aria-busy={loading} className={cn("relative h-full overflow-y-auto overscroll-contain transition-opacity duration-200 [scrollbar-gutter:stable]", loading && "pointer-events-none opacity-60")}>
       {/* Two soft brand glows behind the glass, so it has something to catch. */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[900px] overflow-hidden">
         <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-primary/[.07] blur-[100px]" />
