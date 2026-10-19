@@ -555,7 +555,7 @@ export type CommitmentAdherenceLogInput = Omit<CommitmentAdherenceLog, "id" | "u
  * across an arbitrary window would mean inventing targets it never had. Its
  * two behavioural inputs (execution and rule adherence) are here instead.
  */
-export type GoalMetric =
+export type AutomaticGoalMetric =
   | "execution_rate"   // % of rated trades executed to plan
   | "clean_days"       // days traded with no bad execution on them
   | "rule_adherence"   // average per-trade discipline checklist score
@@ -564,6 +564,8 @@ export type GoalMetric =
   | "net_r"            // total R banked
   | "trades_logged";   // trades written up
 
+export type GoalMetric = AutomaticGoalMetric | "manual" | "milestone";
+
 export interface TradingGoal {
   id: string;
   user_id: string;
@@ -571,6 +573,10 @@ export interface TradingGoal {
   title: string;
   metric: GoalMetric;
   target: number;
+  /** Personal goals can be measured by hand or completed as a milestone. */
+  description?: string;
+  progress_value?: number;
+  unit?: string;
   /** Where they were starting from, so progress reads as a journey. */
   baseline?: number | null;
   /** Inclusive ISO dates (yyyy-mm-dd). */

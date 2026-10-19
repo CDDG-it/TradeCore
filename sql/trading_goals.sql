@@ -2,12 +2,8 @@
 -- Run this once in the Supabase SQL editor to enable the "My Goals" tab in
 -- My Edge → Mind Edge.
 --
--- A goal is a target on a number the app already computes: execution rate,
--- clean days, rule adherence, habit consistency, win rate, net R, trades
--- logged. It is measured over a window you pick. Progress is never stored: it
--- is recomputed from your trades and habits every time the tab is opened, so a goal can
--- never drift out of step with the data behind it. The row only holds the
--- intent: what you are aiming at, from where, and by when.
+-- Journal goals are measured from trades and habits. Personal goals store
+-- progress entered by the trader.
 --
 -- Safe to re-run: creates the table only if it does not exist yet.
 
@@ -25,6 +21,9 @@ create table if not exists trading_goals (
   -- Where the trader was starting from, so progress can be read as a journey
   -- rather than an absolute. Null when they did not record one.
   baseline    numeric,
+  description text not null default '',
+  progress_value numeric not null default 0,
+  unit        text not null default '',
   -- The window the metric is measured over, as inclusive ISO dates.
   start_date  text not null,
   end_date    text not null,
@@ -34,6 +33,10 @@ create table if not exists trading_goals (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
+alter table trading_goals add column if not exists description text not null default '';
+alter table trading_goals add column if not exists progress_value numeric not null default 0;
+alter table trading_goals add column if not exists unit text not null default '';
 
 create index if not exists trading_goals_user_idx on trading_goals (user_id, end_date desc);
 

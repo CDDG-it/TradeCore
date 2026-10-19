@@ -2,13 +2,13 @@
 /* eslint-disable @next/next/no-img-element -- Signed storage URLs and local previews need their original chart pixels. */
 
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, ImagePlus, Maximize2, Plus, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { ScreenshotGroup } from "@/lib/types";
 import { normalizeTimeframe } from "@/lib/timeframes";
 import { useScreenshots, type ScreenshotTarget } from "@/lib/supabase/use-screenshots";
 import { deleteScreenshot } from "@/lib/supabase/storage";
+import { Lightbox } from "@/components/screenshot-upload";
 import { cn } from "@/lib/utils";
 
 const PRESETS = ["Weekly", "Daily", "4H", "1H", "15m", "5m", "1m"];
@@ -40,16 +40,11 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
   const url = group?.urls[safeShot];
   const chartSequence = visibleGroups.flatMap((item, groupIndex) => item.urls.map((_, shotIndex) => ({ groupIndex, shotIndex })));
   const sequenceIndex = chartSequence.findIndex((item) => item.groupIndex === safeActive && item.shotIndex === safeShot);
-  const { display, upload, fullSize, uploading, error } = useScreenshots(target, group?.urls ?? []);
+  // The originals, not a resized copy: this is where the chart is read.
+  const { display, upload, fullSize, uploading, error } = useScreenshots(target, group?.urls ?? [], "full");
   const preview = url ? display(url) : null;
 
   useEffect(() => onUploadingChange?.(uploading), [uploading, onUploadingChange]);
-  useEffect(() => {
-    if (!lightbox) return;
-    function escape(event: KeyboardEvent) { if (event.key === "Escape") setLightbox(null); }
-    document.addEventListener("keydown", escape);
-    return () => document.removeEventListener("keydown", escape);
-  }, [lightbox]);
 
   function choose(index: number) { setActive(index); setShot(0); }
   function moveChart(direction: -1 | 1) {
@@ -149,7 +144,7 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(20,184,166,.09),transparent_58%)]" />
         <AnimatePresence mode="wait" initial={false}>
           {url ? <motion.div key={`${group.label}:${safeShot}`} className="relative flex h-full w-full items-center justify-center p-3 sm:p-5"
-            initial={{ opacity: 0, transform: reduce ? "none" : "scale(.985)" }} animate={{ opacity: 1, transform: "scale(1)" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }}>
+            initial={{ opacity: 0, transform: reduce ? "none" : "scale(.985)" }} animate={{ opacity: 1, transform: "none" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }}>
             {preview ?
               <img src={preview} alt={`${group.label} chart ${safeShot + 1}`} className="max-h-full max-w-full rounded-lg object-contain shadow-[0_16px_45px_rgba(0,0,0,.35)]" />
               : <div className="h-4/5 w-4/5 animate-pulse rounded-xl bg-white/[.04]" />}
@@ -184,10 +179,7 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
       </div>}
       {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
       {!readOnly && <input ref={inputRef} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} onChange={(event) => { if (event.target.files) void addFiles(event.target.files); event.target.value = ""; }} />}
-      {lightbox && createPortal(<div role="dialog" aria-modal="true" aria-label="Chart full size" className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050a15]/95 p-4" onClick={() => setLightbox(null)}>
-        <button type="button" aria-label="Close chart" onClick={() => setLightbox(null)} className="absolute right-5 top-5 flex size-10 items-center justify-center rounded-full border border-white/15 text-white"><X className="size-5" /></button>
-        <img src={lightbox} alt="Chart full size" className="max-h-full max-w-full object-contain" onClick={(event) => event.stopPropagation()} />
-      </div>, document.body)}
+      <Lightbox src={lightbox} onClose={() => setLightbox(null)} />
     </div>
   );
 }

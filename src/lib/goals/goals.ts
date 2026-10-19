@@ -11,10 +11,10 @@ import {
   computeExecutionScore, computeTradeRulesScore, computeHabitScore,
 } from "@/lib/discipline";
 import { tradeR } from "@/lib/journal/weeks";
-import type { GoalMetric, TradingGoal, TradeSummary, Habit, HabitCompletion } from "@/lib/types";
+import type { AutomaticGoalMetric, GoalMetric, TradingGoal, TradeSummary, Habit, HabitCompletion } from "@/lib/types";
 
 export interface GoalMetricMeta {
-  key: GoalMetric;
+  key: AutomaticGoalMetric;
   label: string;
   /**
    * The metric as it reads inside a sentence ("Get my net R to 25R"). Not
@@ -106,12 +106,26 @@ export const GOAL_METRICS: GoalMetricMeta[] = [
   },
 ];
 
-export const METRIC_META: Record<GoalMetric, GoalMetricMeta> = Object.fromEntries(
+export const METRIC_META: Record<AutomaticGoalMetric, GoalMetricMeta> = Object.fromEntries(
   GOAL_METRICS.map((m) => [m.key, m])
-) as Record<GoalMetric, GoalMetricMeta>;
+) as Record<AutomaticGoalMetric, GoalMetricMeta>;
+
+export function isPersonalGoal(goal: TradingGoal): boolean {
+  return goal.metric === "manual" || goal.metric === "milestone";
+}
+
+export function formatGoalReading(goal: TradingGoal, value: number | null): string {
+  if (goal.metric === "milestone") return value && value >= 1 ? "Complete" : "Not done";
+  if (goal.metric === "manual") {
+    if (value == null) return "–";
+    const amount = Number.isInteger(value) ? String(value) : String(Number(value.toFixed(2)));
+    return `${amount}${goal.unit?.trim() ? ` ${goal.unit.trim()}` : ""}`;
+  }
+  return formatGoalValue(goal.metric, value);
+}
 
 /** Format a metric's value in its own unit. */
-export function formatGoalValue(metric: GoalMetric, value: number | null): string {
+export function formatGoalValue(metric: AutomaticGoalMetric, value: number | null): string {
   if (value == null) return "-";
   const { unit } = METRIC_META[metric];
   if (unit === "percent") return `${Math.round(value)}%`;
@@ -170,7 +184,7 @@ function cleanDays(trades: TradeSummary[]): number {
 
 /** Where a metric stands over [start, end]. Null when there is nothing to measure. */
 export function measureMetric(
-  metric: GoalMetric,
+  metric: AutomaticGoalMetric,
   input: GoalInputs,
   start: Date,
   end: Date
@@ -221,11 +235,13 @@ export function computeGoalProgress(goal: TradingGoal, input: GoalInputs): GoalP
   const end = endOfDay(new Date(goal.end_date + "T12:00:00"));
 
   // A future-dated trade or completion must not advance a goal today.
-  const current = now < start ? null : measureMetric(goal.metric, input, start, now < end ? endOfDay(now) : end);
+  const current = now < start ? null : isPersonalGoal(goal)
+    ? Math.max(0, goal.progress_value ?? 0)
+    : measureMetric(goal.metric as AutomaticGoalMetric, input, start, now < end ? endOfDay(now) : end);
 
   // An accumulating metric never subtracts a baseline: what is already in the
   // window counts towards the target rather than against it.
-  const from = METRIC_META[goal.metric].accumulates ? 0 : (goal.baseline ?? 0);
+  const from = isPersonalGoal(goal) || METRIC_META[goal.metric as AutomaticGoalMetric].accumulates ? 0 : (goal.baseline ?? 0);
   const span = goal.target - from;
   const ratio =
     current == null
@@ -245,8 +261,10 @@ export function computeGoalProgress(goal: TradingGoal, input: GoalInputs): GoalP
     ? "achieved"
     : closed
       ? "missed"
-      : current == null
+      : current == null || (isPersonalGoal(goal) && current === 0)
         ? "no-data"
+        : goal.metric === "milestone"
+          ? "no-data"
         // A little slack: a goal is not "behind" for being a nose off the pace.
         : ratio + 0.1 >= timeElapsed
           ? "on-track"

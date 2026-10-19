@@ -71,50 +71,6 @@ export async function deleteAvatar(userId: string, storedAvatar?: string): Promi
 }
 
 /**
- * Above this, a screenshot is re-encoded before it is stored. Below it, the
- * file goes up untouched.
- *
- * The threshold exists so the common case keeps its exact pixels: a normal
- * chart capture is a few hundred kilobytes and re-encoding it would only lose
- * detail in the thin lines and small text that make a chart readable. What it
- * catches is the pathological case, a lossless 4K PNG of several megabytes,
- * where the file is large because of how it was saved rather than what it
- * shows.
- */
-const RECOMPRESS_ABOVE_BYTES = 1_500_000;
-const MAX_STORED_WIDTH = 2560;
-
-/**
- * Re-encode an oversized image, or hand back the original.
- *
- * Never throws: if a browser cannot do the work, storing the file as it came
- * is a worse outcome than storing nothing, so the original is returned.
- */
-async function shrinkIfHuge(file: File): Promise<Blob> {
-  if (file.size <= RECOMPRESS_ABOVE_BYTES || typeof document === "undefined") return file;
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = bitmap.width > MAX_STORED_WIDTH ? MAX_STORED_WIDTH / bitmap.width : 1;
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    const ctx = canvas.getContext("2d", { alpha: false });
-    if (!ctx) return file;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.92)
-    );
-    // Only take the re-encode if it actually helped.
-    return blob && blob.size < file.size ? blob : file;
-  } catch {
-    return file;
-  }
-}
-
-/**
  * Upload a file and return its storage path (not a public URL).
  *
  * This is the only way an image is stored. Nothing writes a picture into a
@@ -128,22 +84,22 @@ export async function uploadScreenshot(
   file: File
 ): Promise<string> {
   const supabase = createClient();
-  const body = await shrinkIfHuge(file);
-  // A re-encoded file is a JPEG whatever it started as, so the extension has
-  // to follow the bytes rather than the original name.
-  const ext = body === file ? file.name.split(".").pop() ?? "jpg" : "jpg";
+  // The original goes up byte for byte, whatever its size: a chart is thin
+  // lines and small text, and any re-encode or downscale softens exactly that.
+  // The smaller renditions below are the place for saving bytes, not this.
+  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
   const path = `${userId}/${entityType}/${entityId}/${filename}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, body, {
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
     cacheControl: "3600",
-    contentType: body.type || file.type || "image/jpeg",
+    contentType: file.type || "image/png",
     upsert: false,
   });
   if (error) throw error;
   // The original is safely stored; renditions are a bonus. If one fails, that
   // size falls back to the original when it is shown.
-  await storeRenditions(path, body);
+  await storeRenditions(path, file);
   return path;
 }
 
@@ -152,8 +108,8 @@ export async function uploadScreenshot(
  *
  * "thumb" and "preview" are smaller copies made in the browser at upload time
  * and stored beside the original, so the grid and the calendar never download
- * a full-size chart. "full" is the untouched file, for the lightbox, where the
- * trader is deliberately looking at detail.
+ * a full-size chart. "full" is the untouched file, for the journal's chart
+ * views and the lightbox, where the trader is reading detail.
  *
  * Why the browser and not Supabase: Supabase can resize on the way out (Image
  * Transformations), but only on the Pro plan, and even there it is metered per

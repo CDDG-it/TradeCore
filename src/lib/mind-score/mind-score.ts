@@ -332,7 +332,9 @@ export function computeMindScore(input: MindInputs, period: MindPeriod): MindSco
   // periods, while the other components use their selected period's window.
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const goalReadings = (input.goals ?? [])
-    .filter((goal) => !goal.archived_at && goal.start_date <= today && goal.end_date >= today)
+    // The Mind Score uses journal evidence; manually reported progress stays
+    // visible in My Goals but does not change this objective score.
+    .filter((goal) => goal.metric !== "manual" && goal.metric !== "milestone" && !goal.archived_at && goal.start_date <= today && goal.end_date >= today)
     .map((goal) => ({ goal, progress: computeGoalProgress(goal, { trades: input.trades, habits: input.habits, completions: input.completions, now }) }))
     .filter(({ goal, progress }) => {
       if (progress.current == null || progress.timeElapsed <= 0) return false;

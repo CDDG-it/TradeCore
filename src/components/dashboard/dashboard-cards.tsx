@@ -5,7 +5,7 @@ import Link from "next/link";
 import { format, isToday } from "date-fns";
 import { Loader2, Plus } from "lucide-react";
 import { bandColorFor, type MindScore } from "@/lib/mind-score/mind-score";
-import { formatGoalValue, METRIC_META, type GoalProgress } from "@/lib/goals/goals";
+import { formatGoalReading, isPersonalGoal, METRIC_META, type GoalProgress } from "@/lib/goals/goals";
 import { instrumentName } from "@/lib/journal/weeks";
 import { resultColor, resultBands, netRColor, inOrder, alpha } from "@/lib/journal/colors";
 import { habitAccent } from "@/lib/habits";
@@ -198,18 +198,22 @@ export function GoalsCard({ goals, progress, className, compactNumbers = false }
       {shown.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-1 py-3 text-center">
           <p className="text-xs text-muted-foreground">No goals running.</p>
-          <p className="text-[11px] text-muted-foreground/60">Name one in Mind Edge and it tracks itself.</p>
+          <p className="text-[11px] text-muted-foreground/60">Set a personal goal or track one from your journal.</p>
         </div>
       ) : (
         <ul className="mt-2.5 space-y-2 md:min-h-0 md:flex-1 md:overflow-hidden">
           {shown.map(({ goal, p }) => {
-            const meta = METRIC_META[goal.metric];
+            const personal = isPersonalGoal(goal);
+            const meta = personal ? null : METRIC_META[goal.metric as keyof typeof METRIC_META];
             const tone = GOAL_STATE[p.state];
             const named = goal.title.trim();
             // What is being moved is the goal: "Execution rate 64% / 80%" says
             // it, where the trader's own name for it ("Stop revenge trading")
             // does not. The name is kept, but on the tooltip.
-            const tip = `${named ? `${named}. ` : ""}${meta.label}: now ${formatGoalValue(goal.metric, p.current)}, target ${formatGoalValue(goal.metric, goal.target)}. ${meta.help}`;
+            const label = personal ? named : meta!.label;
+            const tip = personal
+              ? `${named}. ${goal.description?.trim() ?? ""}`
+              : `${named ? `${named}. ` : ""}${meta!.label}: now ${formatGoalReading(goal, p.current)}, target ${formatGoalReading(goal, goal.target)}. ${meta!.help}`;
             return (
               <li key={goal.id}>
                 <Link
@@ -219,11 +223,11 @@ export function GoalsCard({ goals, progress, className, compactNumbers = false }
                 >
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="min-w-0 truncate text-[11px] font-semibold text-foreground/85">
-                      {meta.label}
+                      {label}
                     </span>
                     <span className={cn("shrink-0 font-bold tabular-nums", compactNumbers ? "text-[10px]" : "text-[11px]")} style={{ color: tone.color }}>
-                      {formatGoalValue(goal.metric, p.current)}
-                      <span className="font-medium text-muted-foreground/60"> / {formatGoalValue(goal.metric, goal.target)}</span>
+                      {formatGoalReading(goal, p.current)}
+                      {goal.metric !== "milestone" && <span className="font-medium text-muted-foreground/60"> / {formatGoalReading(goal, goal.target)}</span>}
                     </span>
                   </div>
                   {/* The fill is the goal, the tick is the calendar: the gap

@@ -71,8 +71,9 @@ export function ScreenshotUpload({
   const [activeShot, setActiveShot] = useState(0);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
-  /* The grid holds preview-sized URLs. Opening the lightbox is the one moment
-     the original is worth fetching, so it is signed on demand. */
+  /* The grid shows the stored originals: a resized copy softens the thin lines
+     and small text a chart is read by. The lightbox signs its own link, so it
+     still opens if the grid's link has expired. */
   async function openFullSize(url: string) {
     if (url.startsWith("data:") || url.startsWith("http")) {
       setLightbox(url);
@@ -81,7 +82,7 @@ export function ScreenshotUpload({
     try {
       setLightbox(await getScreenshotUrl(url, 3600, "full"));
     } catch {
-      // Fall back to the preview-sized URL, but only if we have one: opening
+      // Fall back to the URL the grid already has, but only if there is one: opening
       // the lightbox on nothing would show an empty black sheet.
       const preview = display(url);
       if (preview) setLightbox(preview);
@@ -118,7 +119,7 @@ export function ScreenshotUpload({
     if (!paths.length) return;
     const unresolved = paths.filter((p) => !resolvedUrls.has(p));
     if (!unresolved.length) return;
-    getScreenshotUrls(unresolved, "preview").then((signed) => {
+    getScreenshotUrls(unresolved, "full").then((signed) => {
       setResolvedUrls((prev) => {
         const next = new Map(prev);
         unresolved.forEach((p, i) => next.set(p, signed[i]));
@@ -569,25 +570,96 @@ export function ScreenshotUpload({
  * The full-size viewer, portalled to the document body: a transformed ancestor
  * (a dialog, say) would otherwise become the containing block for the fixed
  * overlay and crop the chart to the panel it was opened from.
+ *
+ * It opens fitted to the screen. A chart larger than the screen can be clicked
+ * to show it at its real pixels (one image pixel per screen pixel), centred on
+ * the spot that was clicked, and scrolled around; a second click fits it again.
  */
 export function Lightbox({ src, onClose }: { src: string | null; onClose: () => void }) {
   if (!src || typeof document === "undefined") return null;
+  // Keyed by the image, so each chart opens fitted, with its own measurements.
+  return <LightboxView key={src} src={src} onClose={onClose} />;
+}
+
+function LightboxView({ src, onClose }: { src: string; onClose: () => void }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [actual, setActual] = useState(false);
+  const [canZoom, setCanZoom] = useState(false);
+  const [naturalWidth, setNaturalWidth] = useState(0);
+  const focus = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  // After switching to real size, bring the clicked point to the middle.
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    const point = focus.current;
+    if (!actual || !scroller || !point) return;
+    scroller.scrollLeft = point.x * scroller.scrollWidth - scroller.clientWidth / 2;
+    scroller.scrollTop = point.y * scroller.scrollHeight - scroller.clientHeight / 2;
+    focus.current = null;
+  }, [actual]);
+
+  /** Real pixels only help when the screen is showing the chart smaller than it is. */
+  function measure(image: HTMLImageElement) {
+    const dpr = window.devicePixelRatio || 1;
+    setNaturalWidth(image.naturalWidth);
+    setCanZoom(image.naturalWidth > image.clientWidth * dpr + 1 || image.naturalHeight > image.clientHeight * dpr + 1);
+  }
+
+  function toggle(event: React.MouseEvent<HTMLImageElement>) {
+    event.stopPropagation();
+    if (!actual && !canZoom) return;
+    if (!actual) {
+      const box = event.currentTarget.getBoundingClientRect();
+      focus.current = { x: (event.clientX - box.left) / box.width, y: (event.clientY - box.top) / box.height };
+    }
+    setActual((value) => !value);
+  }
+
+  // Real size is the natural width divided by the pixel ratio, so a 2560px
+  // capture on a 2x screen fills 1280 CSS px: every image pixel gets exactly
+  // one screen pixel and nothing is resampled.
+  const dpr = window.devicePixelRatio || 1;
+
   return createPortal(
-    <div className="screenshot-lightbox-overlay" onClick={onClose}>
+    <div className="screenshot-lightbox-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Screenshot full size">
       <button
         type="button"
-        className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+        aria-label="Close screenshot"
+        className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
         onClick={onClose}
       >
         <X className="w-4 h-4" />
       </button>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt="Screenshot full size"
-        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      />
+      <div
+        ref={scrollerRef}
+        className={cn("h-full w-full", actual ? "overflow-auto overscroll-contain" : "flex items-center justify-center")}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt="Screenshot full size"
+          decoding="async"
+          onLoad={(event) => measure(event.currentTarget)}
+          onClick={toggle}
+          style={actual && naturalWidth ? { width: naturalWidth / dpr } : undefined}
+          className={cn(
+            "rounded-lg shadow-2xl",
+            actual ? "m-auto block max-w-none cursor-zoom-out" : "max-h-full max-w-full object-contain",
+            !actual && canZoom && "cursor-zoom-in",
+          )}
+        />
+      </div>
+      {canZoom && (
+        <p className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-3 py-1 text-[11px] font-medium text-white/75 backdrop-blur-sm">
+          {actual ? "Actual size · click to fit" : "Click to view at actual size"}
+        </p>
+      )}
     </div>,
     document.body
   );
