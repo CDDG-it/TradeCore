@@ -210,7 +210,7 @@ export function GoalsCard({ goals, progress, className, compactNumbers = false }
             // What is being moved is the goal: "Execution rate 64% / 80%" says
             // it, where the trader's own name for it ("Stop revenge trading")
             // does not. The name is kept, but on the tooltip.
-            const label = personal ? named : meta!.label;
+            const label = personal ? (named || "Personal goal") : meta!.label;
             const tip = personal
               ? `${named}. ${goal.description?.trim() ?? ""}`
               : `${named ? `${named}. ` : ""}${meta!.label}: now ${formatGoalReading(goal, p.current)}, target ${formatGoalReading(goal, goal.target)}. ${meta!.help}`;

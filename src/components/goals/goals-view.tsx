@@ -134,6 +134,7 @@ export function GoalsView({ seed }: { seed?: GoalsSeed } = {}) {
         : await createTradingGoal(draft);
       setGoals((prev) => [saved, ...(prev ?? [])]);
       setAdding(false);
+      setShowArchived(false);
     } catch {
       setError("Could not save this goal. If this is a personal goal, make sure the personal goals SQL has been added to Supabase.");
     } finally {

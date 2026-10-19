@@ -115,7 +115,8 @@ export function formatGoalReading(goal: TradingGoal, value: number | null): stri
   if (goal.metric === "manual") {
     if (value == null) return "–";
     const amount = Number.isInteger(value) ? String(value) : String(Number(value.toFixed(2)));
-    return `${amount}${goal.unit?.trim() ? ` ${goal.unit.trim()}` : ""}`;
+    const unit = goal.unit?.trim() ?? "";
+    return `${amount}${unit ? `${unit === "%" ? "" : " "}${unit}` : ""}`;
   }
   return formatGoalValue(goal.metric, value);
 }
