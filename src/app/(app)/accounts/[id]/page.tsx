@@ -25,6 +25,11 @@ import { getAccountById, getPayoutsByAccountId, deleteAccount, createPayout, del
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PayoutStatus, FundedAccount, PayoutEvent } from "@/lib/types";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { EASE_OUT } from "@/lib/motion";
+import { CountUp } from "@/components/ui/count-up";
+
+const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
 function roiGreenDetail(roi: number): string {
   if (roi >= 5) return "oklch(0.38 0.14 145)";
@@ -179,9 +184,9 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Account Size", value: `$${account.account_size.toLocaleString()}`, color: undefined },
-          { label: "Total Costs", value: `$${account.purchase_cost.toLocaleString()}`, color: "var(--primary)" },
-          { label: "Total Payouts", value: `$${totalPaidOut.toLocaleString()}`, color: "var(--ice)" },
+          { label: "Account Size", value: <CountUp value={account.account_size} format={money} />, color: undefined },
+          { label: "Total Costs", value: <CountUp value={account.purchase_cost} format={money} />, color: "var(--primary)" },
+          { label: "Total Payouts", value: <CountUp value={totalPaidOut} format={money} changeDuration={0.4} />, color: "var(--ice)" },
         ].map(({ label, value, color }) => (
           <Card key={label} className="bg-card border-border/50">
             <CardContent className="p-4">
@@ -212,7 +217,10 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </CardHeader>
 
+        <MotionConfig reducedMotion="user">
+        <AnimatePresence initial={false}>
         {showAddPayout && (
+          <motion.div key="add-payout" className="overflow-hidden" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22, ease: EASE_OUT }}>
           <CardContent className="border-t border-border/40 pt-4">
             <form onSubmit={handleAddPayout} className="space-y-3">
               <div className="grid sm:grid-cols-3 gap-3">
@@ -255,7 +263,10 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </form>
           </CardContent>
+          </motion.div>
         )}
+        </AnimatePresence>
+        </MotionConfig>
 
         <CardContent className="p-0">
           {payouts.length === 0 ? (
@@ -266,8 +277,11 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
           ) : (
             <>
               <div className="divide-y divide-border/40">
+                <AnimatePresence initial={false}>
                 {payouts.map((payout) => (
-                  <div key={payout.id} className="flex items-center gap-4 px-5 py-4">
+                  <motion.div key={payout.id} className="flex items-center gap-4 overflow-hidden px-5 py-4"
+                    initial={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }} animate={{ opacity: 1, height: "auto", paddingTop: 16, paddingBottom: 16 }}
+                    exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }} transition={{ duration: 0.22, ease: EASE_OUT }}>
                     <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">
@@ -288,12 +302,13 @@ export default function AccountDetailPage({ params }: { params: Promise<{ id: st
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  </div>
+                  </motion.div>
                 ))}
+                </AnimatePresence>
               </div>
               <div className="px-5 py-3 border-t border-border/40 flex justify-between text-sm">
                 <span className="text-muted-foreground">Total received</span>
-                <span className="font-bold text-success">${totalPaidOut.toLocaleString()}</span>
+                <span className="font-bold tabular-nums text-success"><CountUp value={totalPaidOut} format={money} changeDuration={0.4} /></span>
               </div>
             </>
           )}

@@ -16,6 +16,10 @@ import { cn } from "@/lib/utils";
 import type { FundedAccount, PayoutEvent } from "@/lib/types";
 import { PerformanceOverview } from "@/components/accounts/performance-overview";
 import { LiveBrokerPanel } from "@/components/accounts/live-broker-panel";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { EASE_OUT, SPRING } from "@/lib/motion";
+import { CountUp } from "@/components/ui/count-up";
+import { Segmented } from "@/components/ui/segmented";
 
 type StatusFilter = "all" | "active" | "inactive";
 type PhaseFilter = "all" | "evaluation" | "funded";
@@ -28,6 +32,26 @@ function matchesPhase(acct: FundedAccount, filter: PhaseFilter): boolean {
   if (filter === "evaluation") return acct.phase === "evaluation";
   return acct.phase === "funded" || acct.phase === "payout";
 }
+
+/**
+ * A figure that privacy mode can hide. Hiding and showing cross over with a
+ * short blur, but the real figure is never itself drawn blurred: privacy mode
+ * is for screens other people can see, and a blurred number still gives away
+ * its length and shape.
+ */
+function Masked({ hidden, children }: { hidden: boolean; children: React.ReactNode }) {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.span key={hidden ? "hidden" : "shown"} className="inline-block"
+        initial={{ opacity: 0, filter: "blur(4px)" }} animate={{ opacity: 1, filter: "blur(0px)" }} exit={{ opacity: 0, filter: "blur(4px)" }}
+        transition={{ duration: 0.14, ease: EASE_OUT }}>
+        {hidden ? mask("", true) : children}
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
+const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
 function roiGreen(roi: number): string {
   if (roi >= 5) return "oklch(0.38 0.14 145)";
@@ -48,6 +72,8 @@ export default function AccountsPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [perfOpen, setPerfOpen] = useState(false);
   const [, startNav] = useTransition();
+  // Cards stagger in on the first showing only; filtering afterwards just moves them.
+  const [intro, setIntro] = useState(true);
 
   useEffect(() => {
     getAccounts().then(async (accts) => {
@@ -92,7 +118,7 @@ export default function AccountsPage() {
       return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
     });
 
-  const filterBtnBase = "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all";
+  const filterBtnBase = "rounded-lg border px-3 py-1.5 text-xs font-medium transition-[border-color,background-color,color]";
   const filterBtnInactive = "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground";
 
   /* One-click toggles on the cards. The card itself is a link, so the badge
@@ -195,50 +221,20 @@ export default function AccountsPage() {
             {allFirms.length > 0 && <div className="h-4 w-px bg-border" />}
 
             {/* Status filter */}
-            <div className="flex gap-1.5">
-              {(["all", "active", "inactive"] as StatusFilter[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStatusFilter(s)}
-                  className={cn(
-                    filterBtnBase, "capitalize",
-                    statusFilter === s
-                      ? s === "active"
-                        ? "border-success bg-success/10 text-success"
-                        : s === "inactive"
-                        ? "border-destructive/50 bg-destructive/10 text-destructive"
-                        : "border-primary bg-primary text-primary-foreground"
-                      : filterBtnInactive
-                  )}
-                >
-                  {s === "all" ? "All status" : s}
-                </button>
-              ))}
-            </div>
+            <Segmented label="Account status" shape="rounded" size="sm" value={statusFilter} onChange={setStatusFilter}
+              className="bg-card" buttonClassName="capitalize font-medium text-xs px-3"
+              activeClassName={statusFilter === "active" ? "text-success" : statusFilter === "inactive" ? "text-destructive" : "text-primary-foreground"}
+              pillClassName={statusFilter === "active" ? "bg-success/12 ring-1 ring-success/50" : statusFilter === "inactive" ? "bg-destructive/10 ring-1 ring-destructive/40" : "bg-primary"}
+              options={(["all", "active", "inactive"] as StatusFilter[]).map((s) => ({ value: s, label: s === "all" ? "All status" : s }))} />
 
             <div className="h-4 w-px bg-border" />
 
             {/* Phase filter: evaluation vs funded */}
-            <div className="flex gap-1.5">
-              {(["all", "evaluation", "funded"] as PhaseFilter[]).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPhaseFilter(p)}
-                  className={cn(
-                    filterBtnBase, "capitalize",
-                    phaseFilter === p
-                      ? p === "evaluation"
-                        ? "border-warning bg-warning/10 text-warning"
-                        : p === "funded"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-primary bg-primary text-primary-foreground"
-                      : filterBtnInactive
-                  )}
-                >
-                  {p === "all" ? "All phases" : p === "evaluation" ? "Evaluation" : "Funded"}
-                </button>
-              ))}
-            </div>
+            <Segmented label="Account phase" shape="rounded" size="sm" value={phaseFilter} onChange={setPhaseFilter}
+              className="bg-card" buttonClassName="font-medium text-xs px-3"
+              activeClassName={phaseFilter === "evaluation" ? "text-warning" : phaseFilter === "funded" ? "text-primary" : "text-primary-foreground"}
+              pillClassName={phaseFilter === "evaluation" ? "bg-warning/12 ring-1 ring-warning/50" : phaseFilter === "funded" ? "bg-primary/12 ring-1 ring-primary/50" : "bg-primary"}
+              options={(["all", "evaluation", "funded"] as PhaseFilter[]).map((p) => ({ value: p, label: p === "all" ? "All phases" : p === "evaluation" ? "Evaluation" : "Funded" }))} />
 
             <div className="h-4 w-px bg-border" />
 
@@ -247,7 +243,7 @@ export default function AccountsPage() {
               onClick={() => setSortOrder(sortOrder === "newest" ? "oldest" : "newest")}
               className={cn(filterBtnBase, "flex items-center gap-1.5", filterBtnInactive)}
             >
-              <ArrowUpDown className="w-3 h-3" />
+              <ArrowUpDown className={cn("w-3 h-3 transition-transform duration-200", sortOrder === "oldest" && "rotate-180")} />
               {sortOrder === "newest" ? "Newest first" : "Oldest first"}
             </button>
 
@@ -274,10 +270,10 @@ export default function AccountsPage() {
         {/* ── Summary stats ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: "Total Costs", value: mask(`$${totalFeePaid.toLocaleString()}`, hidden), note: "all accounts", type: "cost" },
-            { label: "Total Payouts", value: mask(`$${totalPayouts.toLocaleString()}`, hidden), note: "all accounts", type: "payout" },
-            { label: "Active Capital", value: mask(`$${activeCapital.toLocaleString()}`, hidden), note: "active only", type: "capital" },
-            { label: "Return on Cost", value: mask(`${overallRoi}x`, hidden), note: "all accounts", type: "roi" },
+            { label: "Total Costs", value: <CountUp value={totalFeePaid} format={money} changeDuration={0.4} />, note: "all accounts", type: "cost" },
+            { label: "Total Payouts", value: <CountUp value={totalPayouts} format={money} changeDuration={0.4} />, note: "all accounts", type: "payout" },
+            { label: "Active Capital", value: <CountUp value={activeCapital} format={money} changeDuration={0.4} />, note: "active only", type: "capital" },
+            { label: "Return on Cost", value: <CountUp value={overallRoi} format={(n) => `${Math.round(n * 10) / 10}x`} changeDuration={0.4} />, note: "all accounts", type: "roi" },
           ].map(({ label, value, note, type }) => {
             const roiColor = type === "roi"
               ? overallRoi >= 5 ? "oklch(0.38 0.14 145)"
@@ -293,7 +289,7 @@ export default function AccountsPage() {
               type === "capital" ? "border-success/30" : "border-border/50"
             )}>
               <p
-                className="text-xl font-bold"
+                className="text-xl font-bold tabular-nums"
                 style={{
                   color: type === "cost" ? "var(--primary)"
                     : type === "payout" ? "var(--ice)"
@@ -301,7 +297,7 @@ export default function AccountsPage() {
                     : type === "capital" ? "var(--win)"
                     : undefined,
                 }}
-              >{value}</p>
+              ><Masked hidden={hidden}>{value}</Masked></p>
               <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
               <p className="text-[10px] text-muted-foreground/50 mt-0.5">{note}</p>
             </div>
@@ -324,8 +320,12 @@ export default function AccountsPage() {
             )}
           </div>
         ) : (
+          <MotionConfig reducedMotion="user">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filtered.map((acct) => {
+            {/* Filtering or sorting moves cards to their new place; ones that
+                leave fade out, ones that join fade in. */}
+            <AnimatePresence mode="popLayout" initial={false}>
+            {filtered.map((acct, index) => {
               const payouts = payoutMap[acct.id] ?? [];
               const totalPaid = payouts.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
               const roi = computeAccountROI(totalPaid, acct.purchase_cost);
@@ -337,8 +337,14 @@ export default function AccountsPage() {
                 // :hover (an absolute overlay link would steal it and the card would
                 // feel dead). Interactive controls inside stopPropagation, so the
                 // phase/status toggles and the footer links never trigger navigation.
-                <div
+                <motion.div
                   key={acct.id}
+                  layout
+                  initial={{ opacity: 0, transform: "translateY(8px)" }}
+                  animate={{ opacity: 1, transform: "translateY(0px)" }}
+                  exit={{ opacity: 0, transform: "scale(0.97)", transition: { duration: 0.14 } }}
+                  transition={{ duration: 0.28, delay: intro ? Math.min(index, 8) * 0.04 : 0, ease: EASE_OUT, layout: SPRING }}
+                  onAnimationComplete={index === 0 && intro ? () => setIntro(false) : undefined}
                   role="link"
                   tabIndex={0}
                   onMouseEnter={() => router.prefetch(`/accounts/${acct.id}`)}
@@ -367,7 +373,7 @@ export default function AccountsPage() {
                           <div className="flex items-baseline gap-2">
                             <p className="font-semibold text-sm truncate">{acct.firm_name}</p>
                             <span className="text-xs text-muted-foreground font-mono shrink-0">
-                              {mask(`$${(acct.account_size / 1000).toFixed(0)}K`, hidden)}
+                              <Masked hidden={hidden}>{`$${(acct.account_size / 1000).toFixed(0)}K`}</Masked>
                             </span>
                           </div>
                         </div>
@@ -377,7 +383,7 @@ export default function AccountsPage() {
                             onClick={(e) => togglePhase(e, acct)}
                             title={acct.phase === "evaluation" ? "Click to mark as funded" : "Click to move back to evaluation"}
                             className={cn(
-                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full cursor-pointer transition-all hover:ring-1",
+                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full cursor-pointer transition-[background-color,color,box-shadow] duration-150 hover:ring-1",
                               acct.phase === "evaluation"
                                 ? "bg-warning/15 text-warning hover:ring-warning/50"
                                 : "bg-primary/15 text-primary hover:ring-primary/50"
@@ -390,7 +396,7 @@ export default function AccountsPage() {
                             onClick={(e) => toggleStatus(e, acct)}
                             title={isActive ? "Click to mark as inactive" : "Click to reactivate"}
                             className={cn(
-                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full cursor-pointer transition-all hover:ring-1",
+                              "text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full cursor-pointer transition-[background-color,color,box-shadow] duration-150 hover:ring-1",
                               isActive
                                 ? "bg-success/10 text-success hover:ring-success/50"
                                 : isBlown
@@ -408,18 +414,18 @@ export default function AccountsPage() {
                       <div className="grid grid-cols-2 gap-2.5 mb-3">
                         <div>
                           <p className="text-xs text-muted-foreground mb-0.5">Total Costs</p>
-                          <p className="text-sm font-semibold font-mono" style={{ color: "var(--primary)" }}>{mask(`$${acct.purchase_cost.toLocaleString()}`, hidden)}</p>
+                          <p className="text-sm font-semibold font-mono" style={{ color: "var(--primary)" }}><Masked hidden={hidden}>{`$${acct.purchase_cost.toLocaleString()}`}</Masked></p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-0.5">Total Payout</p>
-                          <p className="text-sm font-semibold font-mono" style={{ color: "var(--ice)" }}>{mask(`$${totalPaid.toLocaleString()}`, hidden)}</p>
+                          <p className="text-sm font-semibold font-mono" style={{ color: "var(--ice)" }}><Masked hidden={hidden}>{`$${totalPaid.toLocaleString()}`}</Masked></p>
                         </div>
                         <div className="col-span-2">
                           <p className="text-xs text-muted-foreground mb-0.5">Return on Cost</p>
                           <div className="flex items-center gap-1">
                             {roi >= 0 ? <TrendingUp className="w-3.5 h-3.5" style={{ color: roi >= 1 ? roiGreen(roi) : "var(--be)" }} /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
                             <span className="text-sm font-bold" style={{ color: roi >= 1 ? roiGreen(roi) : roi > 0 ? "var(--be)" : "var(--loss)" }}>
-                              {mask(`${roi}x`, hidden)}
+                              <Masked hidden={hidden}>{`${roi}x`}</Masked>
                             </span>
                           </div>
                         </div>
@@ -451,10 +457,12 @@ export default function AccountsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </motion.div>
               );
             })}
+            </AnimatePresence>
           </div>
+          </MotionConfig>
         )}
       </PageWrapper>
     </div>
