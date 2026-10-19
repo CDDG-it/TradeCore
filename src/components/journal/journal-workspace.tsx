@@ -13,9 +13,10 @@ import { Plus, ChevronLeft, ChevronRight, LayoutGrid, ImageIcon } from "lucide-r
 import { Card, CardContent } from "@/components/ui/card";
 import { getTrades } from "@/lib/supabase/queries";
 import { useScreenshots } from "@/lib/supabase/use-screenshots";
+import { getScreenshotUrl } from "@/lib/supabase/storage";
 import { MonthAnalytics } from "@/components/journal/month-analytics";
 import { DayTradesDialog } from "@/components/journal/day-trades-dialog";
-import { HOVER_PREVIEW_DELAY_MS, ScreenshotHoverPreview, type HoverPreviewTarget } from "@/components/journal/screenshot-hover-preview";
+import { HOVER_PREVIEW_DELAY_MS, preloadImage, ScreenshotHoverPreview, type HoverPreviewTarget } from "@/components/journal/screenshot-hover-preview";
 import type { TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
@@ -77,26 +78,42 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
 
   /* Rest the pointer on a chart tile and it opens large, mid-screen. `arming`
      is the tile whose timer is running (it shows a filling bar), `hovered`
-     the open preview. Mouse only: a touch tap still just opens the day. */
+     the open preview. The sharp copy is downloaded and decoded while the bar
+     fills, and the preview only opens once it is ready, so it never appears
+     soft first. Mouse only: a touch tap still just opens the day. */
   const [arming, setArming] = useState<string | null>(null);
   const [hovered, setHovered] = useState<HoverPreviewTarget | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const endHover = useCallback(() => {
+  // Bumped on every start and stop, so a preload that finishes late is ignored.
+  const hoverRun = useRef(0);
+  const cancelArming = useCallback(() => {
+    hoverRun.current += 1;
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
     hoverTimer.current = null;
     setArming(null);
-    setHovered(null);
   }, []);
+  const endHover = useCallback(() => {
+    cancelArming();
+    setHovered(null);
+  }, [cancelArming]);
   useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
-  function startHover(key: string, preview: HoverPreviewTarget) {
+  function startHover(key: string, tile: HTMLElement, path: string, preview: Omit<HoverPreviewTarget, "src" | "tile">) {
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    endHover();
+    cancelArming();
+    const run = hoverRun.current;
     setArming(key);
-    hoverTimer.current = setTimeout(() => {
+    const sharp = (async () => {
+      const src = previewUrl(path) ?? await getScreenshotUrl(path, undefined, "preview").catch(() => null);
+      if (src) await preloadImage(src);
+      return src;
+    })();
+    const delay = new Promise((resolve) => { hoverTimer.current = setTimeout(resolve, HOVER_PREVIEW_DELAY_MS); });
+    void Promise.all([sharp, delay]).then(([src]) => {
+      if (run !== hoverRun.current || !src) return;
       hoverTimer.current = null;
       setArming(null);
-      setHovered(preview);
-    }, HOVER_PREVIEW_DELAY_MS);
+      setHovered({ ...preview, src, tile: tile.getBoundingClientRect() });
+    });
   }
 
   useEffect(() => {
@@ -145,6 +162,8 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
      through the shared hook, so one missing file no longer blanks every tile. */
   const dayShots = useMemo(() => Object.values(tradesByDay).map(firstShot).filter((url): url is string => !!url), [tradesByDay]);
   const { display: shotUrl, failed: shotFailed, onLoadError: onShotError } = useScreenshots(null, dayShots, "thumb");
+  // The sharp copies the hover preview opens with; signed only in the Screens view.
+  const { display: previewUrl } = useScreenshots(null, calendarView === "screens" && !preview ? dayShots : [], "preview");
 
   // The month laid out as weeks (rows of 7), with leading/trailing pads so every
   // row is full. Each row carries a summary cell on the right, so the calendar
@@ -364,16 +383,21 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
 
     const inner = screens ? screensInner : resultsInner;
     const bg = !screens && has ? { background: resultBands(dayTrades, 12) } : undefined;
+    const openDay = () => {
+      if (dayTrades.length === 1 && !preview) router.push(`/journal/${dayTrades[0].id}`);
+      else if (dayTrades.length > 0) setDayTradesDate(key);
+    };
     const hover = screens && shot && rawShot ? {
-      onMouseEnter: () => startHover(key, {
-        path: rawShot,
-        thumb: shot,
+      onMouseEnter: (event: React.MouseEvent<HTMLElement>) => startHover(key, event.currentTarget, rawShot, {
         title: `${format(day, "EEEE d MMMM")} · ${[...new Set(dayTrades.map((t) => instrumentName(t.instrument)))].join(", ")}`,
         detail: `${verdict ? `${verdict.letter} · ` : ""}${formatTotalR(dayR)}`,
         detailColor: netColor,
+        onOpen: openDay,
       }),
-      onMouseLeave: endHover,
-      onMouseDown: endHover,
+      // Leaving the tile only stops a preview that has not opened yet; an open
+      // one decides for itself when the pointer has left it.
+      onMouseLeave: cancelArming,
+      onMouseDown: cancelArming,
     } : {};
 
     if (dayTrades.length === 1 && !preview) {
