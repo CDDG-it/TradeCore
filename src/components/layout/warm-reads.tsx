@@ -19,13 +19,12 @@
  * nothing on every session. The profile took its place because it is a single
  * row read by four screens.
  *
- * `getTrades()` is the expensive one left, and it is fetched whole. Narrowing
- * it means splitting the read that fifteen screens share, which is a larger
- * job than it looks and has not been done yet.
+ * The journal calendar is the common first stop from the desk. Warm its
+ * compact rows rather than the full trade history with notes and context.
  */
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { getTrades, getAccounts, getHabits, getProfile } from "@/lib/supabase/queries";
+import { getJournalTrades, getAccounts, getHabits, getProfile } from "@/lib/supabase/queries";
 
 export function WarmReads() {
   const { user } = useAuth();
@@ -35,7 +34,7 @@ export function WarmReads() {
     let cancelled = false;
     const warm = () => {
       if (cancelled) return;
-      void Promise.allSettled([getTrades(), getAccounts(), getHabits(), getProfile()]);
+      void Promise.allSettled([getJournalTrades(), getAccounts(), getHabits(), getProfile()]);
     };
     // After paint, so the visible page always wins the network.
     const idle = window.requestIdleCallback?.(warm, { timeout: 1500 }) ?? window.setTimeout(warm, 400);

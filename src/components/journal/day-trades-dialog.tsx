@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
-import type { TradeJournalEntry } from "@/lib/types";
+import type { JournalTrade } from "@/lib/types";
 
 /** R for a single trade, formatted the way the rest of the journal shows it. */
-function tradeRLabel(t: TradeJournalEntry): string {
+function tradeRLabel(t: JournalTrade): string {
   return t.result === "win" ? `+${t.rr}R` : t.result === "loss" ? "-1R" : "0R";
 }
 
@@ -28,7 +28,7 @@ export function DayTradesDialog({
   preview = false,
 }: {
   date: string; // yyyy-MM-dd
-  trades: TradeJournalEntry[];
+  trades: JournalTrade[];
   open: boolean;
   onOpenChange: (v: boolean) => void;
   preview?: boolean;

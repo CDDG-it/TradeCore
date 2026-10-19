@@ -210,3 +210,49 @@ test('trader types: matched types lead in focus order, the rest by closeness', (
     rest.forEach((r) => assert.ok(r.closeness >= 0 && r.closeness < 1));
   }
 });
+
+// ── Psychology dashboard model ───────────────────────────────────────────
+const { FEARS, fearIntensity, readFears, readPatterns, demoJournal, MIN_CASES } = lib('psychology');
+
+test('fear intensity: high facets count up, low facets count down', () => {
+  const profile = { domains: {}, facets: { N1: 90, N6: 70, C5: 20, C3: 30, C2: 10 } };
+  assert.equal(fearIntensity(profile, FEARS.find((f) => f.id === 'lossFear')), 80);
+  assert.equal(fearIntensity(profile, FEARS.find((f) => f.id === 'drift')), 80);
+  const read = readFears(profile, 'calm');
+  assert.ok(read[0].ofType, 'the type\'s own fears come first');
+});
+
+test('patterns: quick re-entry, rules after a loss, overtrading and missed trades', () => {
+  const T = (id, date, result, start, end, q) => ({ id, date_time: date, result, execution_time: start, execution_end_time: end, execution_quality: q });
+  const trades = [];
+  const ruleChecks = [];
+  // Five days, each: a loss, then a trade 10 minutes after its exit with a broken rule.
+  for (let d = 1; d <= 5; d++) {
+    const date = `2026-10-0${d}`;
+    trades.push(T(`l${d}`, date, 'loss', '09:30', '09:40', 'good'), T(`n${d}`, date, 'win', '09:50', '10:05', 'bad'));
+    ruleChecks.push({ trade_id: `n${d}`, status: 'broken' });
+  }
+  const recaps = [1, 2, 3, 4, 5].map((d) => ({ date: `2026-10-0${d}`, taken_was_best: d > 2, review_step: 'complete' }));
+  const p = readPatterns({ trades, ruleChecks, recaps }, '2026-10-06');
+  assert.equal(p.quickReentry.value, 1);
+  assert.equal(p.rulesAfterLoss.value, 0);
+  assert.equal(p.missedBetter.value, 2 / 5);
+  assert.equal(p.badAfterLoss.value, 1);
+  assert.equal(p.overtrading.value, 0);
+});
+
+test('patterns: too few cases give no figure', () => {
+  const p = readPatterns({ trades: [{ id: 'a', date_time: '2026-10-01', result: 'loss' }], ruleChecks: [], recaps: [] }, '2026-10-02');
+  assert.equal(p.quickReentry.value, null);
+  assert.ok(p.quickReentry.n < MIN_CASES);
+});
+
+test('demo journals lean the way their trader does', () => {
+  const today = '2026-10-19';
+  const anxious = readPatterns(demoJournal('anxiousScalper', today), today);
+  const balanced = readPatterns(demoJournal('balanced', today), today);
+  const hesitant = readPatterns(demoJournal('disciplinedHesitant', today), today);
+  assert.ok(anxious.quickReentry.value > balanced.quickReentry.value);
+  assert.ok(hesitant.missedBetter.value > balanced.missedBetter.value);
+  assert.deepEqual(demoJournal('balanced', today), demoJournal('balanced', today), 'deterministic');
+});

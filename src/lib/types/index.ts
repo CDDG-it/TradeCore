@@ -267,6 +267,9 @@ export type TradeSummary = Omit<
   | "updated_at"
 >;
 
+/** Calendar rows keep screenshot paths for the Screens view, without trade prose. */
+export type JournalTrade = TradeSummary & Pick<TradeJournalEntry, "screenshot_groups">;
+
 export interface FundedAccount {
   id: string;
   user_id: string;

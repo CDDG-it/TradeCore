@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { getTrades } from "@/lib/supabase/queries";
 import { PRIMARY_NAV } from "@/lib/nav";
 import { NavIcon } from "@/lib/nav-icons";
 import { isActive } from "@/components/layout/mobile-nav";
@@ -101,12 +102,21 @@ function RailItem({ href, label, active, soon, instant, hovered, onHover }: {
 
 export function TopNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, signOut, avatarUrl } = useAuth();
   const avatar = avatarUrl ?? undefined;
   const [open, setOpen] = useState(false);
   const reduce = useReducedMotion();
   // Which rail item the pointer is over, for the hover pill.
   const [hovered, setHovered] = useState<string | null>(null);
+  const prefetched = useRef(new Set<string>());
+  const hoverItem = (href: string) => {
+    setHovered(href);
+    if (prefetched.current.has(href)) return;
+    prefetched.current.add(href);
+    router.prefetch(href);
+    if (href === "/trade-therapist") void getTrades().catch(() => {});
+  };
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -137,7 +147,7 @@ export function TopNav() {
             className="hidden min-w-0 max-w-full items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:flex">
             {PRIMARY_NAV.map((tab) => (
               <RailItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} soon={tab.soon} instant={!!reduce}
-                hovered={hovered === tab.href} onHover={setHovered} />
+                hovered={hovered === tab.href} onHover={hoverItem} />
             ))}
           </nav>
 

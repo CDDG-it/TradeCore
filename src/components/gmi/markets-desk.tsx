@@ -5,10 +5,10 @@
  * the viewport. Shared by the real page and the dev-only preview, which is why
  * the address it writes section changes to is a prop.
  */
-import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { MotionConfig, motion } from "motion/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useAccess } from "@/components/access/access-provider";
 import { SectionNav } from "@/components/layout/section-nav";
 import { marketsSection, type MarketsSection } from "@/lib/gmi/news-view";
@@ -25,7 +25,6 @@ const sections: { key: MarketsSection; label: string }[] = [
 
 export function MarketsDesk({ basePath = "/news-city" }: { basePath?: string }) {
   const params = useSearchParams();
-  const router = useRouter();
   const { entitlements } = useAccess();
   const section = marketsSection(params.get("tab"), entitlements.globalMarkets === "calendar");
   const rank = { calendar: 0, markets: 1, full: 2 };
@@ -35,7 +34,7 @@ export function MarketsDesk({ basePath = "/news-city" }: { basePath?: string }) 
   function selectSection(next: MarketsSection) {
     const query = new URLSearchParams(params.toString());
     query.set("tab", next);
-    router.push(`${basePath}?${query}`, { scroll: false });
+    window.history.pushState(window.history.state, "", `${basePath}?${query}`);
   }
 
   const subtitle = section === "news" ? "Only new, market-moving U.S. releases" : section === "calendar" ? "Releases, Fed dates and market holidays" : section === "markets" ? "Futures, yields and rates" : "CFTC positioning";
@@ -54,25 +53,19 @@ export function MarketsDesk({ basePath = "/news-city" }: { basePath?: string }) 
             value={section}
             onChange={selectSection}
           />
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.p key={subtitle} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.16 }} className="text-xs text-muted-foreground">
-              {subtitle}
-            </motion.p>
-          </AnimatePresence>
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto lg:overflow-hidden">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={section} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }} className="h-full">
-              {locked ? <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-border/60 bg-card/50 px-6 py-12 text-center">
-                <h2 className="text-lg font-semibold">{section === "positioning" ? "Pro" : "Plus"} includes this view</h2>
-                <p className="mt-2 text-sm text-muted-foreground">Your economic calendar remains available.</p>
-                <div className="mt-5 flex items-center gap-6">
-                  <Link href="/news-city?tab=calendar" className="text-sm font-medium text-primary">Open calendar</Link>
-                  <Link href="/pricing" className="text-sm text-muted-foreground underline underline-offset-4">Compare plans</Link>
-                </div>
-              </div> : section === "news" ? <NewsTab /> : section === "calendar" ? <CalendarTab /> : section === "markets" ? <MarketsTab /> : <PositioningTab />}
-            </motion.div>
-          </AnimatePresence>
+          <motion.div key={section} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.12 }} className="h-full">
+            {locked ? <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-border/60 bg-card/50 px-6 py-12 text-center">
+              <h2 className="text-lg font-semibold">{section === "positioning" ? "Pro" : "Plus"} includes this view</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Your economic calendar remains available.</p>
+              <div className="mt-5 flex items-center gap-6">
+                <Link href="/news-city?tab=calendar" className="text-sm font-medium text-primary">Open calendar</Link>
+                <Link href="/pricing" className="text-sm text-muted-foreground underline underline-offset-4">Compare plans</Link>
+              </div>
+            </div> : section === "news" ? <NewsTab /> : section === "calendar" ? <CalendarTab /> : section === "markets" ? <MarketsTab /> : <PositioningTab />}
+          </motion.div>
         </div>
       </div>
     </MotionConfig>

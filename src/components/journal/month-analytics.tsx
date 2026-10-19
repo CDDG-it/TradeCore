@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { tradeR, formatTotalR, instrumentName, winRateOf, tradesWinRate } from "@/lib/journal/weeks";
-import type { TradeJournalEntry } from "@/lib/types";
+import type { JournalTrade } from "@/lib/types";
 
 const TURQUOISE = "var(--primary)";
 
@@ -33,7 +33,7 @@ function Bar({ label, value, total, color }: { label: string; value: number; tot
 }
 
 /** Cumulative-R sparkline across the month, with a zero baseline. */
-function RCurve({ trades }: { trades: TradeJournalEntry[] }) {
+function RCurve({ trades }: { trades: JournalTrade[] }) {
   const pts = useMemo(() => {
     const sorted = [...trades].sort((a, b) => a.date_time.localeCompare(b.date_time));
     const out: number[] = [];
@@ -84,7 +84,7 @@ function RCurve({ trades }: { trades: TradeJournalEntry[] }) {
  * the two halves of the page can never disagree. Sized to sit beside the grid
  * without scrolling.
  */
-export function MonthAnalytics({ trades, monthLabel, preview = false }: { trades: TradeJournalEntry[]; monthLabel: string; preview?: boolean }) {
+export function MonthAnalytics({ trades, monthLabel, preview = false }: { trades: JournalTrade[]; monthLabel: string; preview?: boolean }) {
   const wins = trades.filter((t) => t.result === "win");
   const losses = trades.filter((t) => t.result === "loss");
   const bes = trades.filter((t) => t.result === "break-even");
@@ -98,7 +98,7 @@ export function MonthAnalytics({ trades, monthLabel, preview = false }: { trades
   // Long vs short: count, win rate and R for each side.
   const longs = trades.filter((t) => t.direction === "long");
   const shorts = trades.filter((t) => t.direction === "short");
-  const sideWinRate = (list: TradeJournalEntry[]) => tradesWinRate(list) ?? 0;
+  const sideWinRate = (list: JournalTrade[]) => tradesWinRate(list) ?? 0;
   const longWinRate = sideWinRate(longs);
   const shortWinRate = sideWinRate(shorts);
   const longR = longs.reduce((s, t) => s + tradeR(t), 0);

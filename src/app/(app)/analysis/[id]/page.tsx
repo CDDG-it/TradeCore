@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { AnalysisReview } from "@/components/analysis/analysis-review";
-import { getAnalysisById, getTrades } from "@/lib/supabase/queries";
+import { getAnalysisById, getTradeByAnalysisId } from "@/lib/supabase/queries";
 import type { PreTradeAnalysis, TradeJournalEntry } from "@/lib/types";
 
 export default function AnalysisDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,10 +14,10 @@ export default function AnalysisDetailPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getAnalysisById(id), getTrades()]).then(([value, trades]) => {
+    Promise.all([getAnalysisById(id), getTradeByAnalysisId(id)]).then(([value, trade]) => {
       if (cancelled) return;
       setAnalysis(value);
-      setLinkedTrade(trades.find((trade) => trade.linked_analysis_id === id) ?? null);
+      setLinkedTrade(trade);
     }).catch(() => { if (!cancelled) setAnalysis(null); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

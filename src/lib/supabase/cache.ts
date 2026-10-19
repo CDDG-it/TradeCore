@@ -28,14 +28,18 @@ export async function cachedRead<T>(key: string, fetcher: () => Promise<T>, ttl 
   const existing = inflight.get(key);
   if (existing) return existing as Promise<T>;
 
-  const p = fetcher()
+  const p: Promise<T> = fetcher()
     .then((data) => {
-      store.set(key, { at: Date.now(), data });
-      inflight.delete(key);
+      // An invalidation or account switch may have removed this request while
+      // it was running. Never let an old response refill the new owner's cache.
+      if (inflight.get(key) === p) {
+        store.set(key, { at: Date.now(), data });
+        inflight.delete(key);
+      }
       return data;
     })
     .catch((err) => {
-      inflight.delete(key);
+      if (inflight.get(key) === p) inflight.delete(key);
       throw err;
     });
   inflight.set(key, p);

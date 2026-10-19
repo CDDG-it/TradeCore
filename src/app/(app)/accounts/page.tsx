@@ -3,23 +3,28 @@
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays, ArrowUpDown, Eye, EyeOff, BarChart3, FileUp } from "lucide-react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getAccounts, computeAccountROI, getPayoutsByAccountId, updateAccount } from "@/lib/supabase/queries";
+import { getAccounts, computeAccountROI, getPayoutsForAccounts, updateAccount } from "@/lib/supabase/queries";
 import { PROP_FIRMS } from "@/lib/accounts-constants";
 import { usePrivacy, mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import type { FundedAccount, PayoutEvent } from "@/lib/types";
-import { PerformanceOverview } from "@/components/accounts/performance-overview";
 import { LiveBrokerPanel } from "@/components/accounts/live-broker-panel";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { EASE_OUT, SPRING } from "@/lib/motion";
 import { CountUp } from "@/components/ui/count-up";
 import { Segmented } from "@/components/ui/segmented";
+
+const PerformanceOverview = dynamic(
+  () => import("@/components/accounts/performance-overview").then((m) => m.PerformanceOverview),
+  { loading: () => <div className="fixed inset-0 z-50 grid place-items-center bg-background/50" role="status" aria-label="Loading performance"><span className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div> },
+);
 
 type StatusFilter = "all" | "active" | "inactive";
 type PhaseFilter = "all" | "evaluation" | "funded";
@@ -78,10 +83,9 @@ export default function AccountsPage() {
   useEffect(() => {
     getAccounts().then(async (accts) => {
       setAccounts(accts);
-      const map: Record<string, PayoutEvent[]> = {};
-      await Promise.all(accts.map(async (a) => {
-        map[a.id] = await getPayoutsByAccountId(a.id);
-      }));
+      const payouts = await getPayoutsForAccounts(accts.map((a) => a.id));
+      const map: Record<string, PayoutEvent[]> = Object.fromEntries(accts.map((a) => [a.id, []]));
+      for (const payout of payouts) map[payout.funded_account_id]?.push(payout);
       setPayoutMap(map);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -191,12 +195,12 @@ export default function AccountsPage() {
           </div>
         }
       />
-      <PerformanceOverview
+      {perfOpen && <PerformanceOverview
         accounts={accounts}
         payoutMap={payoutMap}
         open={perfOpen}
         onOpenChange={setPerfOpen}
-      />
+      />}
       <PageWrapper>
         {/* ── Live balances from connected Tradovate logins ── */}
         <LiveBrokerPanel hidden={hidden} />

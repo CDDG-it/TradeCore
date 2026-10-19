@@ -1,17 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { format } from "date-fns";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { SectionNav } from "@/components/layout/section-nav";
 import { getTrades } from "@/lib/supabase/queries";
-import { PostMarketDayDesk } from "@/components/trade-therapist/post-market-day-desk";
-import { ReviewsPanel } from "@/components/trade-therapist/reviews-panel";
-import { PreMarketExercises } from "@/components/trade-therapist/pre-market-exercises";
 import { TherapistToday } from "@/components/trade-therapist/therapist-today";
 import type { TradeJournalEntry } from "@/lib/types";
 import { FeatureGate } from "@/components/access/access-provider";
-import { TradeProfileTab } from "@/components/trade-profile/trade-profile-tab";
+
+const tabLoading = () => <div className="h-48 animate-pulse rounded-2xl bg-card/60" role="status" aria-label="Loading section" />;
+const PostMarketDayDesk = dynamic(() => import("@/components/trade-therapist/post-market-day-desk").then((m) => m.PostMarketDayDesk), { loading: tabLoading });
+const ReviewsPanel = dynamic(() => import("@/components/trade-therapist/reviews-panel").then((m) => m.ReviewsPanel), { loading: tabLoading });
+const PreMarketExercises = dynamic(() => import("@/components/trade-therapist/pre-market-exercises").then((m) => m.PreMarketExercises), { loading: tabLoading });
+const TradeProfileTab = dynamic(() => import("@/components/trade-profile/trade-profile-tab").then((m) => m.TradeProfileTab), { loading: tabLoading });
 
 /**
  * MC Trade Therapist: the surface for getting better at trading. Four views:
@@ -38,6 +41,7 @@ const TABS: { key: TherapistTab; label: string; short?: string }[] = [
 
 export default function TradeTherapistPage() {
   const [tab, setTab] = useState<TherapistTab>("today");
+  const [ready, setReady] = useState(false);
   // Only true when the trader asked to start the review (from Today, or a
   // `?start=1` link): the Post Market desk otherwise opens on the day overview.
   const [startReview, setStartReview] = useState(false);
@@ -61,8 +65,15 @@ export default function TradeTherapistPage() {
       window.history.replaceState(window.history.state, "", url);
     }
     if (selectedDate && /^\d{4}-\d{2}-\d{2}$/.test(selectedDate) && !Number.isNaN(Date.parse(`${selectedDate}T12:00:00`)) && selectedDate <= format(new Date(), "yyyy-MM-dd")) setDailyDate(selectedDate);
-    getTrades().then(setTrades).catch(() => {});
+    setReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!ready || (tab !== "today" && tab !== "daily" && tab !== "premarket")) return;
+    let active = true;
+    getTrades().then((rows) => { if (active) setTrades(rows); }).catch(() => {});
+    return () => { active = false; };
+  }, [ready, tab]);
 
   // Keep the address bar in step with what is on screen, without the one-shot
   // `start` flag: a refresh or a shared link reopens the view, never a question.
@@ -95,6 +106,8 @@ export default function TradeTherapistPage() {
     setDailyDate(date);
     syncUrl({ date });
   }
+
+  if (!ready) return tabLoading();
 
   return (
     <div className="flex h-[calc(100dvh-8.5rem)] min-h-[30rem] flex-col gap-3 sm:h-[calc(100dvh-9.5rem)] lg:h-[calc(100dvh-7.25rem)] lg:min-h-[35rem]">

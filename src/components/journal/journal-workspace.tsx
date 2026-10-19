@@ -11,13 +11,13 @@ import {
 } from "date-fns";
 import { Plus, ChevronLeft, ChevronRight, LayoutGrid, ImageIcon, FileUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { getTrades } from "@/lib/supabase/queries";
+import { getJournalTrades } from "@/lib/supabase/queries";
 import { useScreenshots } from "@/lib/supabase/use-screenshots";
 import { getScreenshotUrl } from "@/lib/supabase/storage";
 import { MonthAnalytics } from "@/components/journal/month-analytics";
 import { DayTradesDialog } from "@/components/journal/day-trades-dialog";
 import { HOVER_PREVIEW_DELAY_MS, preloadImage, ScreenshotHoverPreview, type HoverPreviewTarget } from "@/components/journal/screenshot-hover-preview";
-import type { TradeJournalEntry } from "@/lib/types";
+import type { JournalTrade, TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
 import {
@@ -50,7 +50,7 @@ function dayVerdict(dayR: number, hasTrades: boolean) {
 }
 
 /** The first chart screenshot across a day's trades, if any was attached. */
-function firstShot(trades: TradeJournalEntry[]): string | undefined {
+function firstShot(trades: JournalTrade[]): string | undefined {
   for (const t of trades) {
     for (const g of t.screenshot_groups ?? []) {
       if (g.urls?.[0]) return g.urls[0];
@@ -61,7 +61,7 @@ function firstShot(trades: TradeJournalEntry[]): string | undefined {
 
 export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMonth }: { preview?: boolean; sampleTrades?: TradeJournalEntry[]; sampleMonth?: Date }) {
   const router = useRouter();
-  const [allTrades, setAllTrades] = useState<TradeJournalEntry[]>(preview ? sampleTrades : []);
+  const [allTrades, setAllTrades] = useState<JournalTrade[]>(preview ? sampleTrades : []);
   const [loading, setLoading] = useState(!preview);
 
   const [dayTradesDate, setDayTradesDate] = useState<string | null>(null); // inspect a day's trades
@@ -118,7 +118,7 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
 
   useEffect(() => {
     if (preview) return;
-    getTrades().then(setAllTrades).finally(() => setLoading(false));
+    getJournalTrades().then(setAllTrades).finally(() => setLoading(false));
   }, [preview]);
 
   // Deep link from the dashboard: /journal?day=YYYY-MM-DD jumps straight to that

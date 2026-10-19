@@ -13,6 +13,7 @@ import type {
   PreTradeAnalysis,
   PreTradeAnalysisInput,
   TradeJournalEntry,
+  JournalTrade,
   TradeJournalEntryInput,
   FundedAccount,
   FundedAccountInput,
@@ -54,9 +55,7 @@ function now() {
  *
  * `long_scenario`, `short_scenario`, `notes` and `screenshot_groups` are
  * deliberately absent. They are read only on the detail and edit screens, which
- * go through `getAnalysisById` and still fetch the whole row. This list is the
- * single most expensive read in the app, because the app shell warms it for
- * every signed-in session whether or not the analysis screen is ever opened.
+ * go through `getAnalysisById` and still fetch the whole row.
  *
  * `thesis` stays because the list renders it as a two-line clamp.
  */
@@ -176,6 +175,24 @@ async function _getTrades(): Promise<TradeJournalEntry[]> {
   return (data ?? []) as TradeJournalEntry[];
 }
 
+const JOURNAL_TRADES = columns<TradeJournalEntry>()(
+  "id", "user_id", "linked_analysis_id", "funded_account_id", "date_time",
+  "instrument", "market", "session", "timeframe", "direction", "confluences",
+  "rr", "result", "screenshot_groups", "execution_time", "execution_end_time",
+  "execution_quality", "discipline", "created_at",
+);
+
+async function _getJournalTrades(): Promise<JournalTrade[]> {
+  const { data, error } = await createClient()
+    .from("trades")
+    .select(JOURNAL_TRADES.select)
+    .limit(5000)
+    .order("date_time", { ascending: false });
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as (typeof JOURNAL_TRADES.row)[];
+  return rows;
+}
+
 /** Lightweight history for the new-trade timeframe picker. */
 export async function getUsedTradeTimeframes(): Promise<string[]> {
   const supabase = createClient();
@@ -199,6 +216,19 @@ export async function getTradeById(id: string): Promise<TradeJournalEntry | null
     .single();
   if (error) return null;
   return data as TradeJournalEntry;
+}
+
+/** Analysis detail needs one linked trade, not the complete journal. */
+export async function getTradeByAnalysisId(analysisId: string): Promise<TradeJournalEntry | null> {
+  const { data, error } = await createClient()
+    .from("trades")
+    .select("*")
+    .eq("linked_analysis_id", analysisId)
+    .order("date_time", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data as TradeJournalEntry | null;
 }
 
 export async function createTrade(
@@ -344,6 +374,23 @@ export async function getPayoutsByAccountId(accountId: string): Promise<PayoutEv
     .order("payout_date", { ascending: false });
   if (error) throw error;
   return (data ?? []) as PayoutEvent[];
+}
+
+/** Batch the Accounts overview payouts while keeping request URLs bounded. */
+export async function getPayoutsForAccounts(accountIds: string[]): Promise<PayoutEvent[]> {
+  if (accountIds.length === 0) return [];
+  const supabase = createClient();
+  const batches = Array.from({ length: Math.ceil(accountIds.length / 75) }, (_, index) => accountIds.slice(index * 75, (index + 1) * 75));
+  const results = await Promise.all(batches.map(async (ids) => {
+    const { data, error } = await supabase
+      .from("payout_events")
+      .select("*")
+      .in("funded_account_id", ids)
+      .order("payout_date", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as PayoutEvent[];
+  }));
+  return results.flat();
 }
 
 export async function createPayout(input: Omit<PayoutEvent, "id">): Promise<PayoutEvent> {
@@ -1265,6 +1312,10 @@ export function updateRuleCheck(checks: RuleCheckDraft[], sourceId: string, stat
 // ── Cached wrappers for the hot, cross-page reads ─────────────────────
 export function getTrades(): Promise<TradeJournalEntry[]> {
   return cachedRead("trades", _getTrades);
+}
+
+export function getJournalTrades(): Promise<JournalTrade[]> {
+  return cachedRead("trades:journal", _getJournalTrades);
 }
 
 export function getProfile(): Promise<UserProfile | null> {

@@ -1,17 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import dynamic from "next/dynamic";
+import { MotionConfig, motion } from "motion/react";
 import { EASE_OUT } from "@/lib/motion";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { SectionNav } from "@/components/layout/section-nav";
 import { HabitsView } from "@/components/habits/habits-view";
-import { MindScoreBreakdown } from "@/components/mind-score/mindscore-breakdown";
-import { GoalsView } from "@/components/goals/goals-view";
-import { TradingRulesEditor } from "@/components/habits/trading-rules";
-import { ConfluencesEditor } from "@/components/habits/confluences-editor";
-import { MonteCarloSimulator } from "@/components/strategy/monte-carlo";
 import { FeatureGate } from "@/components/access/access-provider";
+
+const tabLoading = () => <div className="h-48 animate-pulse rounded-2xl bg-card/60" role="status" aria-label="Loading section" />;
+const GoalsView = dynamic(() => import("@/components/goals/goals-view").then((m) => m.GoalsView), { loading: tabLoading });
+const MindScoreBreakdown = dynamic(() => import("@/components/mind-score/mindscore-breakdown").then((m) => m.MindScoreBreakdown), { loading: tabLoading });
+const TradingRulesEditor = dynamic(() => import("@/components/habits/trading-rules").then((m) => m.TradingRulesEditor), { loading: tabLoading });
+const ConfluencesEditor = dynamic(() => import("@/components/habits/confluences-editor").then((m) => m.ConfluencesEditor), { loading: tabLoading });
+const MonteCarloSimulator = dynamic(() => import("@/components/strategy/monte-carlo").then((m) => m.MonteCarloSimulator), { loading: tabLoading });
 
 /**
  * My Edge: everything the trader controls away from the chart, in one place.
@@ -63,12 +66,14 @@ const EDGE_TABS: { key: EdgeTab; group: EdgeGroup; label: string; short?: string
 export default function MyEdgePage() {
   // Habits is the landing tab: it's the daily-touch surface of My Edge.
   const [tab, setTab] = useState<EdgeTab>("habits");
+  const [ready, setReady] = useState(false);
 
   // Deep-linking, including /strategy redirecting into the Strategy half.
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tab");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot sync from the URL, not a render loop
     if (EDGE_TABS.some((x) => x.key === t)) setTab(t as EdgeTab);
+    setReady(true);
   }, []);
 
   // Switching half or view starts at the top: these pages are tall enough that
@@ -77,6 +82,8 @@ export default function MyEdgePage() {
     if (next !== tab) window.scrollTo({ top: 0, behavior: "instant" });
     setTab(next);
   }
+
+  if (!ready) return tabLoading();
 
   return (
     <div className="space-y-3 sm:space-y-5">
@@ -93,26 +100,23 @@ export default function MyEdgePage() {
       <PageWrapper>
         {/* One view hands over to the next instead of swapping in place. */}
         <MotionConfig reducedMotion="user">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={tab}
-              initial={{ opacity: 0, transform: "translateY(6px)" }}
-              animate={{ opacity: 1, transform: "translateY(0px)" }}
-              exit={{ opacity: 0, transition: { duration: 0.1 } }}
-              transition={{ duration: 0.18, ease: EASE_OUT }}
-            >
-              {tab === "habits" && <HabitsView />}
-              {tab === "goals" && <FeatureGate feature="goals"><GoalsView /></FeatureGate>}
-              {tab === "mindscore" && <MindScoreBreakdown />}
-              {tab === "rules" && <FeatureGate feature="standingRules">
-                <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 sm:gap-6 lg:grid-cols-2">
-                  <TradingRulesEditor />
-                  <ConfluencesEditor />
-                </div>
-              </FeatureGate>}
-              {tab === "simulator" && <FeatureGate feature="monteCarlo"><MonteCarloSimulator /></FeatureGate>}
-            </motion.div>
-          </AnimatePresence>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.12, ease: EASE_OUT }}
+          >
+            {tab === "habits" && <HabitsView />}
+            {tab === "goals" && <FeatureGate feature="goals"><GoalsView /></FeatureGate>}
+            {tab === "mindscore" && <MindScoreBreakdown />}
+            {tab === "rules" && <FeatureGate feature="standingRules">
+              <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 sm:gap-6 lg:grid-cols-2">
+                <TradingRulesEditor />
+                <ConfluencesEditor />
+              </div>
+            </FeatureGate>}
+            {tab === "simulator" && <FeatureGate feature="monteCarlo"><MonteCarloSimulator /></FeatureGate>}
+          </motion.div>
         </MotionConfig>
       </PageWrapper>
     </div>

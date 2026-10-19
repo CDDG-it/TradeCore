@@ -1,12 +1,11 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 
 /**
- * Pathname-keyed page transition: the incoming page fades up over its own
- * 160ms: short enough that navigation reads as instant, long enough that
- * content doesn't visibly pop into place.
+ * Pathname-keyed page transition: a short opacity handoff avoids a hard pop
+ * without delaying the first visible content or moving the layout.
  *
  * Deliberately no `AnimatePresence`. An exit animation keeps the outgoing page
  * mounted while the new one arrives, and the two then stack in normal flow: the
@@ -17,6 +16,7 @@ import { usePathname } from "next/navigation";
  */
 export function TransitionLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const reduceMotion = useReducedMotion();
   const staticTradePage = pathname === "/journal/new" || /^\/journal\/[^/]+$/.test(pathname);
 
   if (staticTradePage) return <div>{children}</div>;
@@ -24,9 +24,9 @@ export function TransitionLayout({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       key={pathname}
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+      initial={reduceMotion ? false : { opacity: 0.7 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.1, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
     </motion.div>

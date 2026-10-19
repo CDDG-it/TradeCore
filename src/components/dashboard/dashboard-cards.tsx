@@ -9,6 +9,7 @@ import { formatGoalReading, isPersonalGoal, METRIC_META, type GoalProgress } fro
 import { instrumentName } from "@/lib/journal/weeks";
 import { resultColor, resultBands, netRColor, inOrder, alpha } from "@/lib/journal/colors";
 import { habitAccent } from "@/lib/habits";
+import { getTrades } from "@/lib/supabase/queries";
 import { mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import { BrainScore } from "@/components/mind-score/brain-score";
@@ -387,7 +388,7 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
         </div>
       </div>
 
-      <Link href="/analytics" className="mt-1.5 text-[11px] font-semibold text-primary hover:underline short:mt-1">
+      <Link href="/analytics" onMouseEnter={() => { void getTrades().catch(() => {}); }} onFocus={() => { void getTrades().catch(() => {}); }} className="mt-1.5 text-[11px] font-semibold text-primary hover:underline short:mt-1">
         View full analytics →
       </Link>
     </div>
