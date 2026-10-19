@@ -42,10 +42,15 @@ export function ImportWorkspace() {
   const [edit, setEdit] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
-    const response = await fetch("/api/broker/imports", { cache: "no-store" });
-    if (!response.ok) throw new Error("Import inbox is not available. Run broker_trade_imports.sql in Supabase.");
-    const data = await response.json();
-    setImports(data.trades);
+    const all: ImportedTrade[] = [];
+    for (let offset = 0; offset < 5000; offset += 500) {
+      const response = await fetch(`/api/broker/imports?offset=${offset}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Import inbox is not available. Run broker_trade_imports.sql in Supabase.");
+      const data = await response.json();
+      all.push(...data.trades);
+      if (!data.has_more) break;
+    }
+    setImports(all);
   }, []);
   useEffect(() => { void load().catch((e) => setMessage(e.message)); void getAccounts().then(setAccounts).catch(() => {}); }, [load]);
 
@@ -144,6 +149,7 @@ export function ImportWorkspace() {
         <div>
           <h2 className="text-sm font-semibold">Upload a broker export</h2>
           <p className="mt-1 text-xs text-muted-foreground">The CSV is read in your browser. Only mapped trade fields are saved. No file or login is stored.</p>
+          <p className="mt-2 text-xs text-primary/90">{source === "topstepx" ? "In TopstepX, open Orders or Trades, choose Export, and upload that file here. No ProjectX API key is needed." : source === "rithmic" ? "Use a trade or fill history export from your Rithmic platform. Direct Rithmic login is not requested." : "Use a CSV trade export from your futures platform and map its columns below."}</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="grid gap-1 text-xs">Platform

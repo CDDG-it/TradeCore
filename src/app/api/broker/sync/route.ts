@@ -2,6 +2,7 @@ import { syncTradovateTrades } from "@/lib/broker/service";
 import { errorResponse, json, requireUser, sameOrigin } from "@/lib/broker/route-utils";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return json({ error: "Forbidden" }, 403);

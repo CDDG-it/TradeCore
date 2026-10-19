@@ -7,13 +7,16 @@ import { json, requireUser, sameOrigin } from "@/lib/broker/route-utils";
 export const dynamic = "force-dynamic";
 const COLUMNS = "id, source, source_key, external_account, broker_account_id, funded_account_id, instrument, direction, quantity, entry_time, exit_time, entry_price, exit_price, fees, pnl, status, journal_trade_id, created_at";
 
-export async function GET() {
+export async function GET(req: Request) {
   const auth = await requireUser();
   if (!auth) return json({ error: "Not signed in" }, 401);
+  const offset = Number(new URL(req.url).searchParams.get("offset") ?? 0);
+  if (!Number.isInteger(offset) || offset < 0 || offset > 50_000) return json({ error: "Invalid offset" }, 400);
   const { data, error } = await auth.supabase.from("broker_trade_imports").select(COLUMNS)
-    .eq("status", "pending").order("created_at", { ascending: false }).limit(500);
+    .eq("status", "pending").order("created_at", { ascending: false }).order("id", { ascending: false })
+    .range(offset, offset + 499);
   if (error) return json({ error: "Could not load imported trades. Run broker_trade_imports.sql first." }, 503);
-  return json({ trades: (data ?? []) as ImportedTrade[] });
+  return json({ trades: (data ?? []) as ImportedTrade[], has_more: (data ?? []).length === 500 });
 }
 
 export async function POST(req: Request) {

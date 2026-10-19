@@ -36,7 +36,7 @@ create table if not exists broker_trade_imports (
   unique (user_id, source, external_account, source_key)
 );
 create index if not exists broker_trade_imports_user_status_idx
-  on broker_trade_imports (user_id, status, exit_time desc);
+  on broker_trade_imports (user_id, status, created_at desc, id desc);
 alter table broker_trade_imports enable row level security;
 drop policy if exists "Users read own imported trades" on broker_trade_imports;
 create policy "Users read own imported trades" on broker_trade_imports
