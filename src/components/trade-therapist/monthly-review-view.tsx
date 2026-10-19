@@ -6,7 +6,11 @@ import {
   format, startOfMonth, endOfMonth, startOfISOWeek, addMonths, subMonths, isWithinInterval,
 } from "date-fns";
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, ArrowRight, CheckCircle2 } from "lucide-react";
+import { MotionConfig, motion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { EASE_OUT, rise } from "@/lib/motion";
+import { CountUp } from "@/components/ui/count-up";
+import { GrowBar } from "@/components/ui/grow-bar";
 import { getTrades, getWeeklyTradeReviews, getAllTradeRuleChecks } from "@/lib/supabase/queries";
 import { peekRead, primeRead } from "@/lib/supabase/cache";
 import { getWeekGroup, tradeR, formatTotalR, instrumentName, tradesWinRate } from "@/lib/journal/weeks";
@@ -15,7 +19,11 @@ import { persistentBrokenPatterns } from "@/lib/reviews/rule-patterns";
 
 const TURQUOISE = "var(--primary)";
 
-function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
+/* Which way the last month step went, so the next month slides in from that
+   side (each month is its own route, so the view mounts anew). */
+let lastStep = 0;
+
+function Metric({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
     <div className="rounded-xl border border-border/50 bg-muted/15 px-3 py-2.5 text-center">
       <p className={cn("text-xl font-black tabular-nums leading-none", tone)} style={!tone ? { color: TURQUOISE } : undefined}>{value}</p>
@@ -41,6 +49,9 @@ export function MonthlyReviewView({ month }: { month: string }) {
   const [trades, setTrades] = useState<TradeJournalEntry[] | null>(() => peekRead<TradeJournalEntry[]>("trades") ?? null);
   const [reviews, setReviews] = useState<WeeklyTradeReview[]>(() => peekRead<WeeklyTradeReview[]>("weeklyReviews") ?? []);
   const [ruleChecks, setRuleChecks] = useState<Awaited<ReturnType<typeof getAllTradeRuleChecks>>>(() => peekRead<Awaited<ReturnType<typeof getAllTradeRuleChecks>>>(RULE_CHECKS_KEY) ?? []);
+
+  // The step is used once, by this mount's entrance.
+  useEffect(() => { lastStep = 0; }, []);
 
   useEffect(() => {
     Promise.all([getTrades(), getWeeklyTradeReviews(), getAllTradeRuleChecks()]).then(([t, r, checks]) => {
@@ -99,15 +110,17 @@ export function MonthlyReviewView({ month }: { month: string }) {
     return persistentBrokenPatterns(ruleChecks.filter((check) => dateByTrade.has(check.trade_id)).map((check) => ({ ...check, date: dateByTrade.get(check.trade_id)! })));
   })();
 
+  const step = lastStep;
   return (
-    <div className="space-y-4">
+    <MotionConfig reducedMotion="user">
+    <motion.div className="space-y-4" initial={{ opacity: 0, transform: `translateX(${step * 18}px)` }} animate={{ opacity: 1, transform: "translateX(0px)" }} transition={{ duration: 0.22, ease: EASE_OUT }}>
       <div>
         <Link href="/trade-therapist?tab=reviews" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to reviews
         </Link>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Link href={`/trade-therapist/review/month/${prevMonth}`} aria-label="Previous month"
+            <Link href={`/trade-therapist/review/month/${prevMonth}`} aria-label="Previous month" onClick={() => { lastStep = -1; }}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
               <ChevronLeft className="w-4 h-4" />
             </Link>
@@ -117,31 +130,31 @@ export function MonthlyReviewView({ month }: { month: string }) {
               <p className="text-sm text-muted-foreground">{data.inMonth.length} trade{data.inMonth.length !== 1 ? "s" : ""} across {data.weeks.length} week{data.weeks.length !== 1 ? "s" : ""}</p>
             </div>
             {!nextDisabled && (
-              <Link href={`/trade-therapist/review/month/${nextMonth}`} aria-label="Next month"
+              <Link href={`/trade-therapist/review/month/${nextMonth}`} aria-label="Next month" onClick={() => { lastStep = 1; }}
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
                 <ChevronRight className="w-4 h-4" />
               </Link>
             )}
           </div>
           <div className="text-right">
-            <p className={cn("text-3xl font-black leading-none", rTone)}>{formatTotalR(data.totalR)}</p>
+            <p className={cn("text-3xl font-black leading-none tabular-nums", rTone)}><CountUp value={data.totalR} format={formatTotalR} duration={0.9} /></p>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70 mt-1">Month R</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-        <Metric label="Trades" value={String(data.inMonth.length)} tone="text-foreground" />
-        <Metric label="Win rate" value={data.winRate == null ? "-" : `${data.winRate}%`} />
-        <Metric label="Avg R:R" value={data.avgRR === "-" ? "-" : `${data.avgRR}R`} tone="text-primary" />
-        <Metric label="Wins" value={String(data.wins)} tone="text-success" />
-        <Metric label="Losses" value={String(data.losses)} tone="text-destructive" />
-        <Metric label="Best week" value={data.bestWeek ? formatTotalR(data.bestWeek.totalR) : "-"} tone="text-success" />
-      </div>
+      <motion.div {...rise(1)} className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        <Metric label="Trades" value={<CountUp value={data.inMonth.length} />} tone="text-foreground" />
+        <Metric label="Win rate" value={data.winRate == null ? "-" : <CountUp value={data.winRate} format={(n) => `${Math.round(n)}%`} />} />
+        <Metric label="Avg R:R" value={data.avgRR === "-" ? "-" : <CountUp value={Number(data.avgRR)} format={(n) => `${n.toFixed(1)}R`} />} tone="text-primary" />
+        <Metric label="Wins" value={<CountUp value={data.wins} />} tone="text-success" />
+        <Metric label="Losses" value={<CountUp value={data.losses} />} tone="text-destructive" />
+        <Metric label="Best week" value={data.bestWeek ? <CountUp value={data.bestWeek.totalR} format={formatTotalR} /> : "-"} tone="text-success" />
+      </motion.div>
 
       {persistentPatterns.length > 0 && <div className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4"><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-destructive">Persistent pattern</p>{persistentPatterns.map((pattern) => <div key={pattern.text} className="mt-2 flex items-start justify-between gap-3 text-sm"><span className="font-medium">{pattern.text}</span><span className="shrink-0 text-xs font-semibold text-destructive">broken across {pattern.weeks} weeks</span></div>)}</div>}
 
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 lg:grid-cols-2">
+      <motion.div {...rise(2)} className="grid grid-cols-[minmax(0,1fr)] items-start gap-3 lg:grid-cols-2">
         {/* Weeks */}
         <div className="rounded-2xl border border-border/60 bg-card p-4">
           <p className="text-sm font-semibold mb-2.5">Weeks</p>
@@ -149,14 +162,15 @@ export function MonthlyReviewView({ month }: { month: string }) {
             <p className="py-6 text-center text-xs text-muted-foreground/70">No trades this month.</p>
           ) : (
             <div className="space-y-1.5">
-              {data.weeks.map((w) => (
+              {data.weeks.map((w, index) => {
+                const best = data.weeks.length > 1 && w.weekStart === data.bestWeek?.weekStart && w.totalR > 0;
+                return <motion.div key={w.weekStart} initial={{ opacity: 0, transform: "translateY(6px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} transition={{ duration: 0.3, delay: 0.2 + index * 0.05, ease: EASE_OUT }}>
                 <Link
-                  key={w.weekStart}
                   href={`/trade-therapist/review/${w.weekStart}`}
-                  className="group flex items-center gap-3 rounded-lg border border-border/60 px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30"
+                  className={cn("group flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/30", best ? "border-success/35 bg-success/[.05]" : "border-border/60")}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold leading-none transition-colors group-hover:text-primary">Week {w.weekNum}</p>
+                    <p className="flex items-center gap-1.5 text-xs font-bold leading-none transition-colors group-hover:text-primary">Week {w.weekNum}{best && <span className="rounded-full bg-success/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-success">Best</span>}</p>
                     <p className="mt-1 text-[10px] text-muted-foreground leading-none">{w.rangeLabel}</p>
                   </div>
                   {reviewedWeeks.has(w.weekStart) && (
@@ -169,7 +183,8 @@ export function MonthlyReviewView({ month }: { month: string }) {
                   </span>
                   <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
                 </Link>
-              ))}
+                </motion.div>;
+              })}
             </div>
           )}
         </div>
@@ -182,12 +197,10 @@ export function MonthlyReviewView({ month }: { month: string }) {
               <p className="text-xs text-muted-foreground/70">No trades this month.</p>
             ) : (
               <div className="space-y-1.5">
-                {data.topInstruments.map(([name, count]) => (
+                {data.topInstruments.map(([name, count], index) => (
                   <div key={name} className="flex items-center gap-2">
                     <span className="w-16 shrink-0 truncate text-[11px] text-muted-foreground">{name}</span>
-                    <div className="h-1.5 flex-1 rounded-full bg-muted/40 overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${(count / data.inMonth.length) * 100}%`, background: TURQUOISE }} />
-                    </div>
+                    <GrowBar className="h-1.5 flex-1 bg-muted/40" value={count / data.inMonth.length} color={TURQUOISE} delay={0.25 + index * 0.06} />
                     <span className="w-6 shrink-0 text-right text-[11px] font-bold tabular-nums text-foreground/70">{count}</span>
                   </div>
                 ))}
@@ -195,7 +208,8 @@ export function MonthlyReviewView({ month }: { month: string }) {
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+    </MotionConfig>
   );
 }

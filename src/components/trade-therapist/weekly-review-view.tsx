@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { EASE_OUT, SPRING, rise } from "@/lib/motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,7 +10,7 @@ import {
 } from "date-fns";
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Loader2, Check, Lock,
-  ChevronDown, ChevronUp, History,
+  ChevronDown, History,
 } from "lucide-react";
 import { getTrades, getWeeklyTradeReviews, getBestTradesOfDay, saveWeeklyTradeReview, type BestTradeListRow } from "@/lib/supabase/queries";
 import { peekRead } from "@/lib/supabase/cache";
@@ -18,6 +20,11 @@ import { buildDayRecaps } from "@/lib/reviews/day-recap";
 import { WeeklyDayTimeline } from "@/components/trade-therapist/weekly-day-timeline";
 
 const TURQUOISE = "var(--primary)";
+
+/* Which way the last week step went (-1 back, 1 forward, 0 opened fresh).
+   Each week is its own route, so the view mounts anew; this lets the new
+   week slide in from the side the trader stepped towards. */
+let lastStep = 0;
 
 /* Moving to another week mounts this view afresh. Starting from the reads
    already cached renders that week at once, instead of flashing a spinner and
@@ -45,6 +52,8 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(false);
   const [showPrev, setShowPrev] = useState(false);
+  // The step is used once, by this mount's entrance; a later fresh open starts still.
+  useEffect(() => { lastStep = 0; }, []);
 
   const valid = /^\d{4}-\d{2}-\d{2}$/.test(weekStart);
   const monday = useMemo(() => (valid ? new Date(weekStart + "T12:00:00") : new Date()), [weekStart, valid]);
@@ -92,9 +101,12 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         prevention_plan: focus, best_trade_days: review?.best_trade_days ?? {},
       });
       setReview(rev);
+      setSaving(false);
+      setSaved(true);
       // Done here: send them back to the reviews overview rather than leaving
-      // them parked on the review they just finished.
-      router.push("/trade-therapist?tab=reviews");
+      // them parked on the review they just finished, after a beat to see the
+      // check land.
+      window.setTimeout(() => router.push("/trade-therapist?tab=reviews"), 650);
     } catch { setError(true); setSaving(false); }
   }
 
@@ -112,9 +124,12 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
 
   const nextWeek = format(addWeeks(monday, 1), "yyyy-MM-dd");
   const nextDisabled = startOfWeek(addWeeks(monday, 1), { weekStartsOn: 1 }) > new Date();
+  const step = lastStep;
 
   return (
-    <div className="weekly-review-page space-y-4">
+    <MotionConfig reducedMotion="user">
+    <motion.div className="weekly-review-page space-y-4"
+      initial={{ opacity: 0, transform: `translateX(${step * 18}px)` }} animate={{ opacity: 1, transform: "translateX(0px)" }} transition={{ duration: 0.22, ease: EASE_OUT }}>
       {/* Header */}
       <div>
         <Link href="/trade-therapist?tab=reviews" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3">
@@ -122,7 +137,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         </Link>
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex items-center gap-2">
-            <Link href={`/trade-therapist/review/${prevWeekKey}`} aria-label="Previous week"
+            <Link href={`/trade-therapist/review/${prevWeekKey}`} aria-label="Previous week" onClick={() => { lastStep = -1; }}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
               <ChevronLeft className="w-4 h-4" />
             </Link>
@@ -134,7 +149,7 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
               <p className="text-sm text-muted-foreground">{group.rangeLabel}</p>
             </div>
             {!nextDisabled && (
-              <Link href={`/trade-therapist/review/${nextWeek}`} aria-label="Next week"
+              <Link href={`/trade-therapist/review/${nextWeek}`} aria-label="Next week" onClick={() => { lastStep = 1; }}
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary">
                 <ChevronRight className="w-4 h-4" />
               </Link>
@@ -146,16 +161,18 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
       {recaps && <WeeklyDayTimeline days={group.days} recaps={recaps} bestByDay={bestByDay} execRate={group.execRate} goodExec={group.goodExec} badExec={group.badExec} totalR={group.totalR} />}
 
       {/* Reflection: compact, problem-first. One short line per field. */}
-      <div className="weekly-day-card weekly-day-card--quiet rounded-2xl p-4">
+      <motion.div {...rise(2)} className="weekly-day-card weekly-day-card--quiet rounded-2xl p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold">Your reflection</p>
           <button type="button" onClick={() => setShowPrev((v) => !v)} aria-expanded={showPrev}
             className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground">
             <History className="size-3.5 text-primary" /> Last week&apos;s notes
-            {showPrev ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+            <ChevronDown className={`size-3.5 transition-transform duration-200 ${showPrev ? "rotate-180" : ""}`} />
           </button>
         </div>
+        <AnimatePresence initial={false}>
         {showPrev && (
+          <motion.div key="previous" className="overflow-hidden" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22, ease: EASE_OUT }}>
           <div className="mt-3 rounded-xl border border-border/50 bg-background/40 p-3 text-xs">
             {!prevWritten ? <p className="text-muted-foreground/70">No reflection was written for last week.</p> : (
               <div className="space-y-2">
@@ -166,7 +183,9 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
               </div>
             )}
           </div>
+          </motion.div>
         )}
+        </AnimatePresence>
         <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
           {[
             { label: "The problem", value: toImprove, set: setToImprove, ph: "The one mistake to fix...", tone: "var(--destructive)" },
@@ -194,23 +213,26 @@ export function WeeklyReviewView({ weekStart }: { weekStart: string }) {
         </div>
         <div className="mt-3 flex items-center justify-between gap-3">
           <span className="text-xs">
-            {error ? <span className="text-destructive">Could not save.</span>
-              : saved ? <span className="inline-flex items-center gap-1.5 text-success"><Check className="w-3.5 h-3.5" /> Saved</span>
-              : !open ? <span className="inline-flex items-center gap-1.5 text-muted-foreground"><Lock className="w-3.5 h-3.5" /> Unlocks {format(opensOn, "EEE d MMM")}</span>
-              : null}
+            <AnimatePresence mode="wait" initial={false}>
+              {error ? <motion.span key="error" className="text-destructive" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>Could not save.</motion.span>
+                : saved ? <motion.span key="saved" className="inline-flex items-center gap-1.5 text-success" initial={{ opacity: 0, transform: "translateY(3px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} exit={{ opacity: 0 }} transition={{ duration: 0.16, ease: EASE_OUT }}><motion.span className="flex" initial={{ transform: "scale(0.5)" }} animate={{ transform: "scale(1)" }} transition={SPRING}><Check className="w-3.5 h-3.5" /></motion.span> Saved</motion.span>
+                : !open ? <motion.span key="locked" className="inline-flex items-center gap-1.5 text-muted-foreground" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}><Lock className="w-3.5 h-3.5" /> Unlocks {format(opensOn, "EEE d MMM")}</motion.span>
+                : null}
+            </AnimatePresence>
           </span>
           <button
             onClick={save}
             title={open ? undefined : `The review opens on ${format(opensOn, "EEEE d MMMM")}, once the trading week is over`}
-            disabled={saving || !dirty || !open}
-            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
+            disabled={saving || saved || !dirty || !open}
+            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-[transform,opacity] duration-150 hover:-translate-y-px active:scale-[.97] disabled:opacity-40 disabled:hover:translate-y-0"
             style={{ background: TURQUOISE, boxShadow: "0 2px 12px color-mix(in oklch, var(--primary) 26%, transparent)" }}
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {!open ? "Opens Friday" : complete ? "Save reflection" : "Complete review"}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+    </MotionConfig>
   );
 }
