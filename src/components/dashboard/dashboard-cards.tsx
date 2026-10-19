@@ -264,7 +264,7 @@ export function GoalsCard({ goals, progress, className, compactNumbers = false }
   );
 }
 
-/* ── Win rate: outcome ring and the same W/L/BE split + net R ─────────── */
+/* ── Win rate: hero donut of the month's W/L/BE split + net R ─────────── */
 export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, badExec, period, onPeriodChange, className, compactNumbers = false }: {
   winRate: number | null; wins: number; losses: number; be: number; total: number; netR: number;
   goodExec: number; badExec: number;
@@ -293,8 +293,8 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
     return () => cancelAnimationFrame(raf.current);
   }, [targetWr]);
 
-  // Each arc still represents its exact share of all trades.
-  const R = 49, SW = 7, C = 2 * Math.PI * R;
+  // A measured ring split into W / BE / L arcs by share of trades.
+  const R = 46, SW = 11, C = 2 * Math.PI * R;
   const segs = [
     { v: wins, c: GREEN },
     { v: be, c: AMBER },
@@ -310,35 +310,40 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
         <PeriodToggle value={period} onChange={onPeriodChange} accent={CYAN} />
       </div>
 
-      <div className="flex min-h-[clamp(116px,15vh,150px)] flex-1 items-center justify-center py-1 short:min-h-[92px] short:py-0">
-        <div className="relative aspect-square h-[clamp(114px,15vh,148px)] shrink-0 short:h-[92px]">
-          <svg viewBox="0 0 128 128" className="block h-full w-full" aria-hidden="true">
-            <circle cx={64} cy={64} r={49} fill="none" stroke={alpha("var(--muted-foreground)", 11)} strokeWidth={SW} />
-            <circle cx={64} cy={64} r={38} fill="none" stroke={alpha("var(--muted-foreground)", 7)} strokeWidth={1} />
+      {/* Donut: sized from the viewport height rather than just the leftover
+          card space, so a short laptop viewport gets a proportionate ring
+          instead of one that crowds out the legend. The floor keeps it a proper
+          ring (not a dot) on phones, where the column is not height-capped. */}
+      <div className="flex min-h-[clamp(72px,8vh,96px)] flex-1 items-center justify-center gap-4 py-1 short:min-h-[58px] short:gap-3 short:py-0">
+        <div className="relative aspect-square h-full max-h-[clamp(76px,10.5vh,112px)] w-auto shrink-0 short:max-h-[64px]">
+          <svg viewBox="0 0 116 116" className="block h-full w-full">
+            {/* Track */}
+            <circle cx={58} cy={58} r={R} fill="none" stroke={alpha("var(--muted-foreground)", 14)} strokeWidth={SW} />
+            {/* Small gaps separate the outcomes without changing their proportions. */}
             {total > 0 && segs.map((s, i) => {
               if (s.v === 0) return null;
               const frac = s.v / total;
-              const gap = segs.filter((segment) => segment.v > 0).length > 1 ? Math.min(9, frac * C * 0.25) : 0;
+              const gap = segs.filter((segment) => segment.v > 0).length > 1 ? Math.min(3, frac * C * 0.25) : 0;
               const dash = Math.max(0, frac * C - gap);
               const rot = (acc + gap / (2 * C)) * 360 - 90;
               acc += frac;
               return (
-                <circle key={i} cx={64} cy={64} r={R} fill="none" stroke={s.c} strokeWidth={SW}
-                  strokeLinecap="round"
+                <circle key={i} cx={58} cy={58} r={R} fill="none" stroke={s.c} strokeWidth={SW}
+                  strokeLinecap="butt"
                   strokeDasharray={`${dash} ${C - dash}`}
-                  transform={`rotate(${rot} 64 64)`}
+                  transform={`rotate(${rot} 58 58)`}
                 />
               );
             })}
           </svg>
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <p className={cn("font-black tabular-nums leading-none tracking-[-.055em] text-foreground", compactNumbers ? "text-[26px] short:text-[20px]" : "text-[32px] short:text-[22px]")}>
-              {winRate === null ? "-" : `${display}%`}
-            </p>
-            <p className="mt-1 whitespace-nowrap text-[10px] font-semibold text-muted-foreground short:mt-0 short:text-[8px]">
-              {total > 0 ? `${total} trade${total !== 1 ? "s" : ""}` : "No trades"}
-            </p>
-          </div>
+        </div>
+        <div className="min-w-0 border-l border-border/50 pl-4 short:pl-3">
+          <p className={cn("font-black tabular-nums leading-none tracking-[-.055em] text-foreground", compactNumbers ? "text-[26px] short:text-[22px]" : "text-[36px] short:text-[28px]")}>
+            {winRate === null ? "-" : `${display}%`}
+          </p>
+          <p className="mt-1 whitespace-nowrap text-[11px] font-semibold text-muted-foreground short:text-[10px]">
+            {total > 0 ? `${total} trade${total !== 1 ? "s" : ""}` : "No trades yet"}
+          </p>
         </div>
       </div>
 
