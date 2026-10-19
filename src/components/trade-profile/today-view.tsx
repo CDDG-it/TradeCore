@@ -15,6 +15,7 @@ import { traitName } from "@/lib/trade-profile/content/traits";
 import { daysBetween, fromKey } from "@/lib/trade-profile/dates";
 import { dueRetests, exerciseForDay, type ProgramWeek } from "@/lib/trade-profile/program";
 import { CheckinForm } from "@/components/trade-profile/checkin-form";
+import { ForYourType } from "@/components/trade-profile/for-your-type";
 import { DifficultyPill, Tile } from "@/components/trade-profile/primitives";
 import { useDerived, useTradeProfile } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
@@ -23,11 +24,25 @@ const fmt = (k: string) => fromKey(k).toLocaleDateString("en-GB", { weekday: "sh
 const RETEST_WEEKS = thresholds.retestWeeks as readonly number[];
 
 /**
+ * Today: the program's workspace on top, then what fits the trader's type
+ * (drills, reads, research and news) underneath.
+ */
+export function TodayView() {
+  const { focus } = useDerived();
+  return (
+    <div className="space-y-8">
+      <ProgramToday />
+      {focus && <ForYourType type={focus.primary.id} />}
+    </div>
+  );
+}
+
+/**
  * Where the program stands today. A two-column workspace on desktop: the
  * challenge and the week on the left, the trader's own levers (where they are,
  * the check-in, anything due) in a rail on the right.
  */
-export function TodayView() {
+function ProgramToday() {
   const { state, todayKey } = useTradeProfile();
   const { goalTarget, schedule, position } = useDerived();
   const nav = useProfileNav();

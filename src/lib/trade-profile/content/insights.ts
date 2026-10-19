@@ -50,7 +50,7 @@ export interface TypeInsights {
   reads: Read[];
   facts: Fact[];
   drills: Drill[];
-  /** Google News search for this type's theme. */
+  /** Marketaux search for this type's theme: quoted phrases joined with "|" (OR). Bare words match company names. */
   newsQuery: string;
 }
 
@@ -157,7 +157,7 @@ export const insights: Record<FocusAreaId, TypeInsights> = {
       { text: "Putting a feeling into words reduced the amygdala's response to negative images in an fMRI study.", ref: "lieberman2007" },
     ],
     drills: [SIGH, SLOW, LABEL],
-    newsQuery: "trading psychology fear OR stress OR panic",
+    newsQuery: '"trading psychology" | "trader anxiety" | "panic selling" | "fear of losing"',
   },
   impulse: {
     reads: [
@@ -218,7 +218,7 @@ export const insights: Record<FocusAreaId, TypeInsights> = {
       },
       FRESH,
     ],
-    newsQuery: "impulsive trading OR overtrading psychology",
+    newsQuery: '"revenge trading" | "overtrading" | "impulsive trading" | "trading psychology"',
   },
   followThrough: {
     reads: [
@@ -267,7 +267,7 @@ export const insights: Record<FocusAreaId, TypeInsights> = {
       },
       LABEL,
     ],
-    newsQuery: "trading discipline routine psychology",
+    newsQuery: '"trading discipline" | "trading plan" | "trading psychology"',
   },
   thrill: {
     reads: [
@@ -340,7 +340,7 @@ export const insights: Record<FocusAreaId, TypeInsights> = {
         refs: ["proto-friction"],
       },
     ],
-    newsQuery: "overtrading OR \"day trading\" gambling psychology",
+    newsQuery: '"overtrading" | "trading addiction" | "fear of missing out" | "day trading"',
   },
   curiosity: {
     reads: [
@@ -401,7 +401,7 @@ export const insights: Record<FocusAreaId, TypeInsights> = {
       },
       FRESH,
     ],
-    newsQuery: "trading strategy discipline psychology",
+    newsQuery: '"trading strategy" | "backtesting" | "trading discipline"',
   },
   selfTrust: {
     reads: [
@@ -462,7 +462,7 @@ export const insights: Record<FocusAreaId, TypeInsights> = {
       },
       SIGH,
     ],
-    newsQuery: "trader confidence OR hesitation psychology",
+    newsQuery: '"trading psychology" | "trader confidence" | "self-doubt"',
   },
   maintain: {
     reads: [
@@ -511,6 +511,6 @@ export const insights: Record<FocusAreaId, TypeInsights> = {
       LABEL,
       FRESH,
     ],
-    newsQuery: "trading psychology",
+    newsQuery: '"trading psychology" | "behavioral finance"',
   },
 };
