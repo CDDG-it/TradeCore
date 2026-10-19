@@ -4,6 +4,7 @@
  * Never import or use the service_role key in this file.
  */
 import { createClient } from "@/lib/supabase/client";
+import { deleteScreenshotsOf } from "@/lib/supabase/storage";
 import { cachedRead, invalidateReads } from "@/lib/supabase/cache";
 import { columns } from "@/lib/supabase/columns";
 import { winRateOf } from "@/lib/journal/weeks";
@@ -154,6 +155,8 @@ export async function deleteAnalysis(id: string): Promise<void> {
   if (!user) throw new Error("Not authenticated");
   const { error } = await supabase.from("analyses").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw error;
+  // Its charts go with it, or they sit in Storage for good.
+  await deleteScreenshotsOf(user.id, "analyses", id);
 }
 
 // ── Trade Journal ────────────────────────────────────────────────────
@@ -249,6 +252,8 @@ export async function deleteTrade(id: string): Promise<void> {
   if (!user) throw new Error("Not authenticated");
   const { error } = await supabase.from("trades").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw error;
+  // Its charts go with it, or they sit in Storage for good.
+  await deleteScreenshotsOf(user.id, "trades", id);
 }
 
 // ── Funded Accounts ──────────────────────────────────────────────────
@@ -1067,8 +1072,12 @@ export async function saveBestTradeOfDay(
 export async function deleteBestTradeOfDay(date: string): Promise<void> {
   const supabase = createClient();
   invalidateReads("bestTrade");
-  const { error } = await supabase.from("best_trade_of_day").delete().eq("date", date);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase.from("best_trade_of_day").delete().eq("date", date).eq("user_id", user.id);
   if (error) throw error;
+  // Its charts are filed by date; they go with it.
+  await deleteScreenshotsOf(user.id, "best-trade", date);
 }
 
 // One observation per journal trade. RLS also checks that the linked trade

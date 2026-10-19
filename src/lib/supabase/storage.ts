@@ -70,12 +70,82 @@ export async function deleteAvatar(userId: string, storedAvatar?: string): Promi
   if (error) throw error;
 }
 
+/* Stored screenshots never change: every upload gets a new, unique path, and
+   a rendition is written once next to it. So the browser may keep them as long
+   as it likes, and a chart opened twice is downloaded once. */
+const IMMUTABLE = "31536000";
+
+/** The largest screenshot that is stored, after the lossless pass below. */
+export const MAX_SCREENSHOT_BYTES = 10 * 1024 * 1024;
+
+/** Thrown for a file over MAX_SCREENSHOT_BYTES, so the caller can say why. */
+export class ScreenshotTooLargeError extends Error {
+  constructor() {
+    super(`Screenshot is larger than ${MAX_SCREENSHOT_BYTES / 1024 / 1024} MB. Save it as PNG or JPEG at screen size and try again.`);
+    this.name = "ScreenshotTooLargeError";
+  }
+}
+
+/**
+ * Above this, a screenshot is re-encoded as lossless WebP before it is stored.
+ * Below it, the file goes up untouched. A normal chart capture is a few hundred
+ * kilobytes; what this catches is a 4K PNG of several megabytes, which costs
+ * that much storage once and that much bandwidth every time it is opened.
+ */
+const LOSSLESS_ABOVE_BYTES = 1_500_000;
+
+/**
+ * The same pixels in fewer bytes, or the original.
+ *
+ * Lossless WebP keeps every pixel exactly and is typically several times
+ * smaller than PNG on flat-colour charts. The result is decoded again and
+ * compared with the source pixel by pixel; it is only used if every value
+ * matches and it actually came out smaller. A browser that cannot encode WebP
+ * (it silently returns PNG), cannot decode the file, or produces anything that
+ * differs keeps the original. Never throws.
+ */
+async function losslessIfHuge(file: File): Promise<Blob> {
+  if (file.size <= LOSSLESS_ABOVE_BYTES || typeof document === "undefined") return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    const source = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+    // Quality 1 is the lossless encoder for WebP in canvas.
+    const webp = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 1));
+    if (!webp || webp.type !== "image/webp" || webp.size >= file.size) return file;
+
+    const check = await createImageBitmap(webp);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(check, 0, 0);
+    check.close();
+    const decoded = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    if (decoded.length !== source.length) return file;
+    const a = new Uint32Array(source.buffer);
+    const b = new Uint32Array(decoded.buffer);
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return file;
+    return webp;
+  } catch {
+    return file;
+  }
+}
+
 /**
  * Upload a file and return its storage path (not a public URL).
  *
  * This is the only way an image is stored. Nothing writes a picture into a
  * database row: a row holds this path, and the bytes live in Storage, next to
  * the smaller renditions made here for the grid and the calendar.
+ *
+ * The stored original keeps every pixel of what was uploaded: a chart is thin
+ * lines and small text, and any lossy re-encode or downscale softens exactly
+ * that. Only a very large file is repacked, losslessly (see losslessIfHuge).
  */
 export async function uploadScreenshot(
   userId: string,
@@ -84,22 +154,22 @@ export async function uploadScreenshot(
   file: File
 ): Promise<string> {
   const supabase = createClient();
-  // The original goes up byte for byte, whatever its size: a chart is thin
-  // lines and small text, and any re-encode or downscale softens exactly that.
-  // The smaller renditions below are the place for saving bytes, not this.
-  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+  const body = await losslessIfHuge(file);
+  if (body.size > MAX_SCREENSHOT_BYTES) throw new ScreenshotTooLargeError();
+  // A repacked file is WebP whatever it started as, so the extension follows the bytes.
+  const ext = body === file ? file.name.split(".").pop()?.toLowerCase() || "png" : "webp";
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
   const path = `${userId}/${entityType}/${entityId}/${filename}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-    cacheControl: "3600",
-    contentType: file.type || "image/png",
+  const { error } = await supabase.storage.from(BUCKET).upload(path, body, {
+    cacheControl: IMMUTABLE,
+    contentType: body.type || file.type || "image/png",
     upsert: false,
   });
   if (error) throw error;
   // The original is safely stored; renditions are a bonus. If one fails, that
   // size falls back to the original when it is shown.
-  await storeRenditions(path, file);
+  await storeRenditions(path, body);
   return path;
 }
 
@@ -176,7 +246,7 @@ async function storeRenditions(path: string, source: Blob): Promise<void> {
       const blob = await encodeRendition(source, width, quality);
       if (!blob) return;
       const { error } = await supabase.storage.from(BUCKET).upload(renditionPath(path, size), blob, {
-        cacheControl: "3600",
+        cacheControl: IMMUTABLE,
         contentType: blob.type,
         // Same as the original: the bucket grants insert, not update. A copy
         // that already exists (another tab got there first) is simply kept.
@@ -220,6 +290,41 @@ function pumpBackfill() {
   }
 }
 
+/* ── Signed links, reused ───────────────────────────────────────────────
+   A signed link carries a fresh token every time it is made, and the browser
+   caches by the full link. Signing again on every page view therefore meant
+   downloading every chart again on every page view, which is most of what
+   screenshots cost in bandwidth. Links are kept for this tab session instead,
+   and handed out again while they have a comfortable margin left, so the
+   browser's own cache (the files are marked immutable) serves repeat views. */
+const SIGNED_LINK_SECONDS = 6 * 60 * 60;
+const REUSE_MARGIN_MS = 15 * 60 * 1000;
+const LINK_STORE = "tmc:screenshot-links";
+
+type CachedLink = { url: string; until: number };
+let links: Map<string, CachedLink> | null = null;
+
+function linkCache(): Map<string, CachedLink> {
+  if (links) return links;
+  links = new Map();
+  try {
+    const raw = window.sessionStorage.getItem(LINK_STORE);
+    const now = Date.now();
+    if (raw) for (const [key, link] of JSON.parse(raw) as [string, CachedLink][]) if (link.until - now > REUSE_MARGIN_MS) links.set(key, link);
+  } catch { /* No storage (private mode, blocked): links live for this page only. */ }
+  return links;
+}
+
+function saveLinks() {
+  try { window.sessionStorage.setItem(LINK_STORE, JSON.stringify([...linkCache()])); } catch { /* best effort */ }
+}
+
+function forgetLinks(keys: string[]) {
+  const cache = linkCache();
+  keys.forEach((key) => cache.delete(key));
+  saveLinks();
+}
+
 /**
  * Sign several screenshots at once, all at the same size, in order.
  *
@@ -229,7 +334,8 @@ function pumpBackfill() {
 export async function getScreenshotUrls(
   paths: string[],
   size: ScreenshotSize = "full",
-  expiresIn = 3600
+  /** The shortest life the links may have; reused links always have more. */
+  expiresIn = SIGNED_LINK_SECONDS
 ): Promise<string[]> {
   if (!paths.length) return [];
   const out: (string | null)[] = paths.map((p) => (p.startsWith("data:") || p.startsWith("http") ? p : null));
@@ -243,15 +349,29 @@ export async function getScreenshotUrls(
      separately (a missing object is a per-item error, not a failed call) and
      does not promise to keep the order it was asked in. */
   const signAll = async (keys: string[]) => {
-    const { data, error } = await bucket.createSignedUrls(keys, expiresIn);
-    if (error) throw error;
+    const cache = linkCache();
+    const now = Date.now();
     const byPath = new Map<string, string>();
+    const fresh = keys.filter((key) => {
+      const hit = cache.get(key);
+      if (hit && hit.until - now > REUSE_MARGIN_MS) byPath.set(key, hit.url);
+      return !byPath.has(key);
+    });
+    if (!fresh.length) return byPath;
+
+    const seconds = Math.max(expiresIn, SIGNED_LINK_SECONDS);
+    const { data, error } = await bucket.createSignedUrls(fresh, seconds);
+    if (error) throw error;
+    const until = now + seconds * 1000;
     (data ?? []).forEach((item, k) => {
       if (item.error || !item.signedUrl) return;
       // Fall back to the position if a path ever comes back missing or prefixed.
-      const path = item.path?.replace(new RegExp(`^${BUCKET}/`), "") ?? keys[k];
-      byPath.set(keys.includes(path) ? path : keys[k], item.signedUrl);
+      const path = item.path?.replace(new RegExp(`^${BUCKET}/`), "") ?? fresh[k];
+      const key = fresh.includes(path) ? path : fresh[k];
+      byPath.set(key, item.signedUrl);
+      cache.set(key, { url: item.signedUrl, until });
     });
+    saveLinks();
     return byPath;
   };
 
@@ -278,24 +398,56 @@ export async function getScreenshotUrls(
 }
 
 /**
- * Generate a signed URL for a private screenshot path.
- * Expires in 1 hour (3600s). Call this when rendering, not in storage.
+ * A signed URL for a private screenshot path. Call this when rendering, never
+ * store the result: it expires (see SIGNED_LINK_SECONDS).
  */
 export async function getScreenshotUrl(
   path: string,
-  expiresIn = 3600,
+  expiresIn = SIGNED_LINK_SECONDS,
   size: ScreenshotSize = "full"
 ): Promise<string> {
   const [url] = await getScreenshotUrls([path], size, expiresIn);
   return url;
 }
 
+/** Every stored key for one screenshot: the original and its renditions. */
+const keysOf = (path: string) => [path, ...(Object.keys(RENDITIONS) as Rendition[]).map((size) => renditionPath(path, size))];
+
 /** Delete a screenshot, and its renditions, from storage. */
 export async function deleteScreenshot(path: string): Promise<void> {
   if (path.startsWith("data:") || path.startsWith("http")) return; // legacy, skip
   const supabase = createClient();
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .remove([path, ...(Object.keys(RENDITIONS) as Rendition[]).map((size) => renditionPath(path, size))]);
+  forgetLinks(keysOf(path));
+  const { error } = await supabase.storage.from(BUCKET).remove(keysOf(path));
   if (error) console.warn("Failed to delete screenshot:", error.message);
+}
+
+/**
+ * Delete every screenshot filed under one row, for when the row itself is
+ * deleted. Without this a deleted trade left its charts in Storage for good,
+ * quietly filling the plan's quota with files nothing can reach any more.
+ *
+ * Never throws: the row is already gone, and a leftover file is a cost, not an
+ * error the trader can act on.
+ */
+export async function deleteScreenshotsOf(
+  userId: string,
+  entityType: "trades" | "analyses" | "best-trade",
+  entityId: string
+): Promise<void> {
+  const folder = `${userId}/${entityType}/${entityId}`;
+  const bucket = createClient().storage.from(BUCKET);
+  try {
+    for (;;) {
+      const { data, error } = await bucket.list(folder, { limit: 1000 });
+      if (error || !data?.length) return;
+      const keys = data.map((item) => `${folder}/${item.name}`);
+      forgetLinks(keys);
+      const { error: removeError } = await bucket.remove(keys);
+      if (removeError) return console.warn("Failed to delete screenshots:", removeError.message);
+      if (data.length < 1000) return;
+    }
+  } catch {
+    /* best effort */
+  }
 }

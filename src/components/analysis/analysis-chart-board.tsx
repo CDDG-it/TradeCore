@@ -42,6 +42,8 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
   const sequenceIndex = chartSequence.findIndex((item) => item.groupIndex === safeActive && item.shotIndex === safeShot);
   // The originals, not a resized copy: this is where the chart is read.
   const { display, upload, fullSize, uploading, error } = useScreenshots(target, group?.urls ?? [], "full");
+  // The rail is 96px wide: its small copies, so five originals are not fetched to draw five stamps.
+  const { display: thumb } = useScreenshots(null, group?.urls ?? [], "thumb");
   const preview = url ? display(url) : null;
 
   useEffect(() => onUploadingChange?.(uploading), [uploading, onUploadingChange]);
@@ -171,7 +173,7 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
       {(group?.urls.length ?? 0) > 0 && <div className="flex min-h-14 shrink-0 items-center gap-2 overflow-x-auto pb-1">
         {group?.urls.map((item, index) => <div key={`${item}:${index}`} className={cn("group relative h-14 w-24 shrink-0 overflow-hidden rounded-lg border bg-muted/20", safeShot === index ? "border-primary" : "border-border/60")}>
           <button type="button" onClick={() => setShot(index)} aria-label={`Show ${group.label} chart ${index + 1}`} className="h-full w-full">
-            {display(item) ? <img src={display(item)!} alt="" className="h-full w-full object-cover" /> : <span className="block h-full w-full animate-pulse bg-white/[.04]" />}
+            {thumb(item) ? <img src={thumb(item)!} alt="" className="h-full w-full object-cover" /> : <span className="block h-full w-full animate-pulse bg-white/[.04]" />}
           </button>
           {!readOnly && <button type="button" onClick={() => removeShot(index)} aria-label={`Remove chart ${index + 1}`} className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-[#0b1120]/85 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"><X className="size-3" /></button>}
         </div>)}

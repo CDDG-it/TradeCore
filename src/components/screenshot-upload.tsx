@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { ImagePlus, X, ZoomIn, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScreenshotGroup } from "@/lib/types";
-import { uploadScreenshot, deleteScreenshot, getScreenshotUrl, getScreenshotUrls } from "@/lib/supabase/storage";
+import { uploadScreenshot, deleteScreenshot, getScreenshotUrl, getScreenshotUrls, ScreenshotTooLargeError } from "@/lib/supabase/storage";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -214,8 +214,8 @@ export function ScreenshotUpload({
         i === safeTab ? { ...g, urls: [...g.urls, ...newUrls] } : g
       );
       onChange(newGroups);
-    } catch {
-      setUploadError("Upload failed. Check your connection and try again.");
+    } catch (err) {
+      setUploadError(err instanceof ScreenshotTooLargeError ? err.message : "Upload failed. Check your connection and try again.");
     } finally {
       activeUploads.current -= 1;
       if (activeUploads.current === 0) {

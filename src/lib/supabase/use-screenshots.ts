@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getScreenshotUrl, getScreenshotUrls, uploadScreenshot } from "@/lib/supabase/storage";
+import { getScreenshotUrl, getScreenshotUrls, ScreenshotTooLargeError, uploadScreenshot } from "@/lib/supabase/storage";
 
 /**
  * The one place a screenshot enters or leaves Storage.
@@ -119,7 +119,7 @@ export function useScreenshots(
           files.map((f) => uploadScreenshot(user.id, target.entityType, target.entityId, f))
         );
       } catch (err) {
-        setError("Upload failed. Check your connection and try again.");
+        setError(err instanceof ScreenshotTooLargeError ? err.message : "Upload failed. Check your connection and try again.");
         throw err;
       } finally {
         setUploading(false);
