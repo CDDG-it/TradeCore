@@ -28,7 +28,10 @@ export interface OAuthConfig {
 }
 
 export function oauthConfig(): OAuthConfig | null {
-  const { TRADOVATE_CLIENT_ID, TRADOVATE_CLIENT_SECRET, NEXT_PUBLIC_SITE_URL } = process.env;
+  const { TRADOVATE_CLIENT_ID, TRADOVATE_CLIENT_SECRET, NEXT_PUBLIC_SITE_URL, TRADOVATE_OAUTH_READ_ONLY_CONFIRMED } = process.env;
+  // Tradovate permissions belong to the OAuth application registration. Never
+  // enable the flow until its Orders permission is denied and data is read-only.
+  if (TRADOVATE_OAUTH_READ_ONLY_CONFIRMED !== "true") return null;
   if (!TRADOVATE_CLIENT_ID || !TRADOVATE_CLIENT_SECRET) return null;
   const site = NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   if (!site) return null;

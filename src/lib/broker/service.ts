@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createDataKey, hasEncryptionKey, open, seal, secretKey } from "./crypto";
-import * as mock from "./mock";
+import { credentialStore, hasCredentialStore } from "./admin";
+import { sourceKey } from "./source-key";
 import * as tradovate from "./tradovate";
 import { oauthConfig, refreshTokens, type OAuthTokens } from "./tradovate-oauth";
 import { TradovateAuthError, type TradovateToken } from "./tradovate";
@@ -9,7 +10,6 @@ import type {
   AccountSnapshot,
   BrokerAccountsResponse,
   BrokerConnectionView,
-  BrokerKind,
   BrokerSetupIssue,
 } from "./types";
 
@@ -21,16 +21,13 @@ import type {
  * Guarantees:
  *  - Credentials and tokens are sealed before they touch the database and are
  *    opened only in memory for the duration of one request.
- *  - A connection whose password was rejected is never retried automatically
- *    (repeated bad logins can lock the Tradovate account); the trader has to
- *    enter the password again.
+ *  - Legacy password connections cannot authenticate and must reconnect via OAuth.
  *  - One failing connection or account never fails the others.
  */
 
-type Adapter = Pick<typeof tradovate, "login" | "renew" | "listAccounts" | "cashBalance" | "openPositionCounts">;
-const ADAPTERS: Record<BrokerKind, Adapter> = { tradovate, mock };
+type Adapter = Pick<typeof tradovate, "renew" | "listAccounts" | "cashBalance" | "openPositionCounts">;
 
-const CONNECTION_COLUMNS = "id, broker, auth_method, label, username_hint, state, last_error, last_sync_at, created_at";
+const CONNECTION_COLUMNS = "id, broker, auth_method, label, username_hint, state, last_error, last_sync_at, trades_synced_at, created_at";
 const RENEW_WINDOW_MS = 15 * 60_000;
 const HISTORY_BUCKET_MS = 5 * 60_000;
 
@@ -40,19 +37,11 @@ export class BrokerError extends Error {
   }
 }
 
-/** Which broker a new connection uses: real Tradovate when configured, the mock only in development. */
-function newConnectionBroker(): BrokerKind | null {
-  if (tradovate.appCredentials()) return "tradovate";
-  if (process.env.NODE_ENV !== "production") return "mock";
-  return null;
-}
-
-/** OAuth is the route to offer other people: it never stores a password. */
+/** Only an explicitly confirmed read-only OAuth app can be offered. */
 export function oauthAvailable(): boolean {
   return oauthConfig() !== null;
 }
 
-const secretContext = (userId: string, connectionId: string) => `broker:${userId}:${connectionId}:login`;
 const tokenContext = (userId: string, connectionId: string) => `broker:${userId}:${connectionId}:token`;
 const keyContext = (userId: string, connectionId: string) => `broker:${userId}:${connectionId}:key`;
 const refreshContext = (userId: string, connectionId: string) => `broker:${userId}:${connectionId}:refresh`;
@@ -68,12 +57,6 @@ async function audit(supabase: SupabaseClient, action: string, connectionId: str
     .then(undefined, () => {});
 }
 
-function usernameHint(username: string): string {
-  const u = username.trim();
-  if (u.length <= 4) return `${u.slice(0, 1)}•••`;
-  return `${u.slice(0, 3)}•••${u.slice(-2)}`;
-}
-
 function isMissingTable(error: { code?: string; message?: string } | null): boolean {
   return !!error && (error.code === "42P01" || error.code === "PGRST205" || /does not exist|could not find the table/i.test(error.message ?? ""));
 }
@@ -83,45 +66,24 @@ function isMissingColumn(error: { code?: string } | null): boolean {
   return error?.code === "42703";
 }
 
-/* ── Login rate limit ──────────────────────────────────────────────────
-   Each connect / password update is a real Tradovate login. Capping them per
-   user protects the trader's Tradovate account from lockout and stops this
-   endpoint being used to guess passwords.
-
-   Counted in the database, not in memory: serverless runs many instances, and
-   a per-instance counter barely limits anything. The table is reachable only
-   through a security-definer function, so a stolen browser token cannot clear
-   its own attempts to reset the cap. */
-const LOGIN_WINDOW_MINUTES = 15;
-const LOGIN_MAX = 5;
-
-async function takeLoginAttempt(supabase: SupabaseClient) {
-  const { data, error } = await supabase.rpc("broker_take_login_attempt", {
-    max_attempts: LOGIN_MAX,
-    window_minutes: LOGIN_WINDOW_MINUTES,
-  });
-  // A missing function means the hardening migration has not been run: fail
-  // closed rather than silently dropping the limit.
-  if (error) throw new BrokerError("Login protection is not configured on this server yet.", 503);
-  if (data === false) throw new BrokerError("Too many login attempts. Wait a few minutes and try again.", 429);
-}
-
 /* ── Reads ─────────────────────────────────────────────────────────── */
 
 export async function setupIssue(supabase: SupabaseClient): Promise<BrokerSetupIssue | null> {
   if (!hasEncryptionKey()) return "missing_key";
+  if (!hasCredentialStore()) return "missing_service_key";
   // Probe every table and column this code reads. A half-applied migration
   // would otherwise surface as a failed load with nothing to act on; this way
   // the panel says which file still has to be run.
-  const [connections, credentials, audit] = await Promise.all([
-    supabase.from("broker_connections").select("id, auth_method").limit(1),
-    supabase.from("broker_credentials").select("connection_id, refresh_token, wrapped_key").limit(1),
+  const [connections, credentials, audit, imports] = await Promise.all([
+    supabase.from("broker_connections").select("id, auth_method, trades_synced_at").limit(1),
+    credentialStore().from("broker_credentials").select("connection_id, refresh_token, wrapped_key").limit(1),
     supabase.from("broker_audit_log").select("id").limit(1),
+    supabase.from("broker_trade_imports").select("id").limit(1),
   ]);
-  for (const { error } of [connections, credentials, audit]) {
+  for (const { error } of [connections, credentials, audit, imports]) {
     if (isMissingTable(error) || isMissingColumn(error)) return "missing_tables";
   }
-  if (!newConnectionBroker() && !oauthAvailable()) return "not_configured";
+  if (!oauthAvailable()) return "not_configured";
   return null;
 }
 
@@ -176,67 +138,6 @@ async function dropEmptyConnections(supabase: SupabaseClient, keepId: string) {
   if (stale.length > 0) await supabase.from("broker_connections").delete().in("id", stale);
 }
 
-export async function createConnection(
-  supabase: SupabaseClient,
-  userId: string,
-  input: { label: string; username: string; password: string }
-): Promise<BrokerConnectionView> {
-  const broker = newConnectionBroker();
-  if (!broker) throw new BrokerError("The Tradovate integration is not configured on this server yet.", 503);
-  if (!hasEncryptionKey()) throw new BrokerError("Secure storage is not configured on this server yet.", 503);
-  await takeLoginAttempt(supabase);
-
-  // Log in before anything is stored, so a wrong password is never saved.
-  const id = randomUUID();
-  const adapter = ADAPTERS[broker];
-  let token: TradovateToken;
-  try {
-    token = await adapter.login(input.username, input.password, id);
-  } catch (err) {
-    if (err instanceof TradovateAuthError) throw new BrokerError(err.message, 400);
-    throw new BrokerError("Could not reach Tradovate. Try again shortly.", 502);
-  }
-
-  const { data: conn, error } = await supabase
-    .from("broker_connections")
-    .insert({
-      id,
-      user_id: userId,
-      broker,
-      auth_method: "password",
-      label: input.label.trim() || "Tradovate",
-      username_hint: usernameHint(input.username),
-      state: "connected",
-      last_sync_at: new Date().toISOString(),
-    })
-    .select(CONNECTION_COLUMNS)
-    .single();
-  if (error || !conn) throw new BrokerError(isMissingTable(error) ? "Run broker_connections.sql in Supabase first." : "Could not save the connection", 500);
-
-  // This connection's own key. The master key only ever sees the wrapped form.
-  const { key, wrapped } = createDataKey(keyContext(userId, id));
-  const { error: credError } = await supabase.from("broker_credentials").insert({
-    connection_id: id,
-    user_id: userId,
-    wrapped_key: wrapped,
-    secret: seal(JSON.stringify({ u: input.username, p: input.password }), key, secretContext(userId, id)),
-    token: seal(token.accessToken, key, tokenContext(userId, id)),
-    token_expires_at: token.expiresAt,
-  });
-  if (credError) {
-    await supabase.from("broker_connections").delete().eq("id", id);
-    throw new BrokerError("Could not store the credentials securely", 500);
-  }
-
-  try {
-    await discoverAccounts(supabase, adapter, userId, id, token.accessToken);
-  } catch {
-    await supabase.from("broker_connections").update({ state: "error", last_error: "Logged in, but the account list could not be read yet" }).eq("id", id);
-  }
-  await audit(supabase, "connection.created", id, conn.label);
-  return conn as BrokerConnectionView;
-}
-
 /**
  * Completes an OAuth authorisation: stores the refresh token Tradovate handed
  * back and discovers the accounts it covers. No password is involved at any
@@ -248,6 +149,7 @@ export async function createOAuthConnection(
   tokens: OAuthTokens
 ): Promise<string> {
   if (!hasEncryptionKey()) throw new BrokerError("Secure storage is not configured on this server yet.", 503);
+  if (!hasCredentialStore()) throw new BrokerError("Server-only credential storage is not configured yet.", 503);
   if (!tokens.refreshToken) {
     throw new BrokerError("Tradovate did not return a refresh token, so this connection could not be kept alive.", 502);
   }
@@ -272,7 +174,7 @@ export async function createOAuthConnection(
   }
 
   const { key, wrapped } = createDataKey(keyContext(userId, id));
-  const { error: credError } = await supabase.from("broker_credentials").insert({
+  const { error: credError } = await credentialStore().from("broker_credentials").insert({
     connection_id: id,
     user_id: userId,
     wrapped_key: wrapped,
@@ -296,47 +198,6 @@ export async function createOAuthConnection(
   return id;
 }
 
-export async function updatePassword(supabase: SupabaseClient, userId: string, connectionId: string, password: string) {
-  if (!hasEncryptionKey()) throw new BrokerError("Secure storage is not configured on this server yet.", 503);
-  const { data: conn } = await supabase.from("broker_connections").select("id, broker, auth_method").eq("id", connectionId).maybeSingle();
-  if (conn?.auth_method === "oauth") {
-    throw new BrokerError("This login uses Tradovate authorisation and has no password here.", 400);
-  }
-  const { data: cred } = await supabase.from("broker_credentials").select("secret, wrapped_key").eq("connection_id", connectionId).maybeSingle();
-  if (!conn || !cred) throw new BrokerError("Connection not found", 404);
-  await takeLoginAttempt(supabase);
-
-  const oldKey = secretKey(cred.wrapped_key, keyContext(userId, connectionId));
-  const { u: username } = JSON.parse(open(cred.secret, oldKey, secretContext(userId, connectionId))) as { u: string };
-  const adapter = ADAPTERS[conn.broker as BrokerKind];
-  let token: TradovateToken;
-  try {
-    token = await adapter.login(username, password, connectionId);
-  } catch (err) {
-    if (err instanceof TradovateAuthError) throw new BrokerError(err.message, 400);
-    throw new BrokerError("Could not reach Tradovate. Try again shortly.", 502);
-  }
-
-  // A new password gets a new data key, so the old one is retired with it.
-  const { key, wrapped } = createDataKey(keyContext(userId, connectionId));
-  await supabase
-    .from("broker_credentials")
-    .update({
-      wrapped_key: wrapped,
-      secret: seal(JSON.stringify({ u: username, p: password }), key, secretContext(userId, connectionId)),
-      token: seal(token.accessToken, key, tokenContext(userId, connectionId)),
-      token_expires_at: token.expiresAt,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("connection_id", connectionId);
-  await supabase
-    .from("broker_connections")
-    .update({ state: "connected", last_error: null, updated_at: new Date().toISOString() })
-    .eq("id", connectionId);
-  await discoverAccounts(supabase, adapter, userId, connectionId, token.accessToken).catch(() => {});
-  await audit(supabase, "password.updated", connectionId);
-}
-
 export async function deleteConnection(supabase: SupabaseClient, connectionId: string) {
   // Credentials, accounts and history cascade with the connection row.
   const { error, count } = await supabase.from("broker_connections").delete({ count: "exact" }).eq("id", connectionId);
@@ -358,7 +219,6 @@ interface AccountRow {
 
 interface CredentialRow {
   connection_id: string;
-  secret: string | null;
   refresh_token: string | null;
   wrapped_key: string | null;
   token: string | null;
@@ -397,16 +257,8 @@ async function accessToken(
     next = tokens;
     fresh = true;
   }
-  if (!next) {
-    // The stored password itself is being used. That is the event worth
-    // recording; a token refresh is routine and would only flood the log.
-    if (!cred.secret) throw new TradovateAuthError("Reconnect this Tradovate login.", true);
-    const { u, p } = JSON.parse(open(cred.secret, key, secretContext(userId, conn.id))) as { u: string; p: string };
-    await audit(supabase, "password.used", conn.id, "login to refresh balances");
-    next = await adapter.login(u, p, conn.id);
-    fresh = true;
-  }
-  await supabase
+  if (!next) throw new TradovateAuthError("Reconnect this Tradovate login with OAuth.", true);
+  const { error: saveError } = await credentialStore()
     .from("broker_credentials")
     .update({
       token: seal(next.accessToken, key, ctx),
@@ -414,7 +266,9 @@ async function accessToken(
       ...(rotatedRefresh ? { refresh_token: seal(rotatedRefresh, key, refreshContext(userId, conn.id)) } : {}),
       updated_at: new Date().toISOString(),
     })
-    .eq("connection_id", conn.id);
+    .eq("connection_id", conn.id)
+    .eq("user_id", userId);
+  if (saveError) throw new TradovateAuthError("Could not update broker authorisation. Reconnect this login.", false);
   return { token: next.accessToken, fresh };
 }
 
@@ -445,11 +299,12 @@ async function connectionSnapshots(
   accounts: AccountRow[]
 ): Promise<AccountSnapshot[]> {
   if (conn.state === "auth_failed") {
-    return accounts.map((a) => emptySnapshot(a, conn.last_error ?? "Login rejected. Enter the password again."));
+    return accounts.map((a) => emptySnapshot(a, conn.last_error ?? "Reconnect this login with OAuth."));
   }
   if (!cred) return accounts.map((a) => emptySnapshot(a, "Credentials missing. Remove and add this login again."));
 
-  const adapter = ADAPTERS[conn.broker];
+  if (conn.auth_method !== "oauth") return accounts.map((a) => emptySnapshot(a, "Reconnect this login with OAuth."));
+  const adapter = tradovate;
   let token: string;
   try {
     const t = await accessToken(supabase, adapter, userId, conn, cred);
@@ -503,7 +358,7 @@ async function connectionSnapshots(
   }
   // A token Tradovate no longer accepts: drop it so the next poll logs in again.
   if (sessionExpired) {
-    await supabase.from("broker_credentials").update({ token: null, token_expires_at: null }).eq("connection_id", conn.id);
+    await credentialStore().from("broker_credentials").update({ token: null, token_expires_at: null }).eq("connection_id", conn.id).eq("user_id", userId);
   }
   return snapshots;
 }
@@ -519,13 +374,14 @@ async function recordHistory(supabase: SupabaseClient, userId: string, snapshots
 
 export async function readLiveAccounts(supabase: SupabaseClient, userId: string): Promise<BrokerAccountsResponse> {
   const setup = await setupIssue(supabase);
-  if (setup === "missing_tables" || setup === "missing_key") return { setup, oauth_available: false, connections: [], accounts: [] };
+  if (setup === "missing_tables" || setup === "missing_key" || setup === "missing_service_key") return { setup, oauth_available: false, connections: [], accounts: [] };
 
-  const [connections, { data: accountRows }, { data: credRows }] = await Promise.all([
+  const [connections, { data: accountRows, error: accountError }, { data: credRows, error: credentialError }] = await Promise.all([
     listConnections(supabase),
     supabase.from("broker_accounts").select("id, connection_id, environment, external_id, name").order("name"),
-    supabase.from("broker_credentials").select("connection_id, secret, refresh_token, wrapped_key, token, token_expires_at"),
+    credentialStore().from("broker_credentials").select("connection_id, refresh_token, wrapped_key, token, token_expires_at").eq("user_id", userId),
   ]);
+  if (accountError || credentialError) throw new BrokerError("Could not load broker accounts securely", 500);
   const accounts = (accountRows ?? []) as AccountRow[];
   const creds = new Map(((credRows ?? []) as CredentialRow[]).map((c) => [c.connection_id, c]));
 
@@ -561,4 +417,56 @@ export async function readHistory(supabase: SupabaseClient, accountId: string, f
     .limit(2000);
   if (error) throw new BrokerError("Could not load history", 500);
   return data ?? [];
+}
+
+/** Refresh completed Tradovate executions at most once per five minutes per connection. */
+export async function syncTradovateTrades(supabase: SupabaseClient, userId: string) {
+  if (!hasCredentialStore() || !hasEncryptionKey()) throw new BrokerError("Broker sync is not configured", 503);
+  const connections = (await listConnections(supabase)).filter((c) => c.broker === "tradovate" && c.auth_method === "oauth");
+  let imported = 0;
+  const errors: string[] = [];
+  for (const conn of connections) {
+    if (conn.trades_synced_at && Date.now() - Date.parse(conn.trades_synced_at) < 5 * 60_000) continue;
+    const { data: cred } = await credentialStore().from("broker_credentials")
+      .select("connection_id, refresh_token, wrapped_key, token, token_expires_at")
+      .eq("connection_id", conn.id).eq("user_id", userId).maybeSingle();
+    if (!cred) { errors.push(`${conn.label}: reconnect required`); continue; }
+    const { data: accounts } = await supabase.from("broker_accounts")
+      .select("id, external_id, environment, name").eq("connection_id", conn.id);
+    if (!accounts?.length) continue;
+    try {
+      const { token } = await accessToken(supabase, tradovate, userId, conn, cred as CredentialRow);
+      for (const env of ["live", "demo"] as const) {
+        const inEnv = accounts.filter((a) => a.environment === env);
+        if (!inEnv.length) continue;
+        const byExternalId = new Map(inEnv.map((a) => [a.external_id, a]));
+        const closed = await tradovate.listClosedTrades(token, env);
+        const rows = closed.flatMap((trade) => {
+          const account = byExternalId.get(trade.account_id);
+          if (!account) return [];
+          const input = {
+            source_id: `${env}:${trade.source_id}`,
+            external_account: `${env}:${trade.account_id}`,
+            instrument: trade.instrument, direction: trade.direction, quantity: trade.quantity,
+            entry_time: trade.entry_time, exit_time: trade.exit_time,
+            entry_price: trade.entry_price, exit_price: trade.exit_price,
+            fees: null, pnl: trade.pnl,
+          };
+          return [{ ...input, user_id: userId, source: "tradovate", source_key: sourceKey(input), broker_account_id: account.id }];
+        });
+        for (let i = 0; i < rows.length; i += 500) {
+          const { error } = await credentialStore().from("broker_trade_imports").upsert(rows.slice(i, i + 500), {
+            onConflict: "user_id,source,external_account,source_key", ignoreDuplicates: true,
+          });
+          if (error) throw error;
+          imported += Math.min(500, rows.length - i);
+        }
+      }
+      await supabase.from("broker_connections").update({ trades_synced_at: new Date().toISOString() })
+        .eq("id", conn.id);
+    } catch {
+      errors.push(`${conn.label}: trade sync failed`);
+    }
+  }
+  return { processed: imported, errors };
 }

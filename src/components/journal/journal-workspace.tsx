@@ -9,7 +9,7 @@ import {
   format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth,
   addMonths, subMonths, getDay, isToday,
 } from "date-fns";
-import { Plus, ChevronLeft, ChevronRight, LayoutGrid, ImageIcon } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, LayoutGrid, ImageIcon, FileUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getTrades } from "@/lib/supabase/queries";
 import { useScreenshots } from "@/lib/supabase/use-screenshots";
@@ -495,6 +495,8 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
         title="Journal"
         subtitle="Your complete trade history"
         action={
+          <div className="flex items-center gap-2">
+          {!preview && <Link href="/journal/import" className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3 py-2 text-sm font-medium hover:border-primary/40"><FileUp className="size-4" /> Import</Link>}
           <Link
             href={preview ? "/preview/trade" : "/journal/new"}
             className="press inline-flex shrink-0 items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold"
@@ -506,6 +508,7 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
           >
             <Plus className="w-4 h-4" /> Log trade
           </Link>
+          </div>
         }
       />
       <PageWrapper>

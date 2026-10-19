@@ -24,6 +24,9 @@ export const READ_ONLY_PATHS = [
   "/account/list",
   "/cashBalance/getCashBalanceSnapshot",
   "/position/list",
+  "/order/list",
+  "/fill/list",
+  "/contract/list",
 ] as const;
 type ReadOnlyPath = (typeof READ_ONLY_PATHS)[number];
 
@@ -202,4 +205,67 @@ export async function openPositionCounts(token: string, env: BrokerEnvironment):
     if (p.netPos) counts.set(p.accountId, (counts.get(p.accountId) ?? 0) + 1);
   }
   return counts;
+}
+
+interface BrokerFill { id: number; orderId: number; contractId: number; timestamp: string; action: "Buy" | "Sell"; qty: number; price: number; active?: boolean }
+interface BrokerOrder { id: number; accountId: number }
+interface BrokerContract { id: number; name: string }
+export interface ClosedBrokerTrade {
+  source_id: string;
+  account_id: number;
+  instrument: string;
+  direction: "long" | "short";
+  quantity: number;
+  entry_time: string;
+  exit_time: string;
+  entry_price: number;
+  exit_price: number;
+  pnl: number | null;
+}
+
+/** Pairs execution quantities FIFO. Unmatched openings never enter the journal inbox. */
+export function pairFills(
+  fills: BrokerFill[], orders: BrokerOrder[], contracts: BrokerContract[]
+): ClosedBrokerTrade[] {
+  const orderAccount = new Map(orders.map((o) => [o.id, o.accountId]));
+  const contractById = new Map(contracts.map((c) => [c.id, c]));
+  type Open = { fill: BrokerFill; remaining: number };
+  const open = new Map<string, Open[]>();
+  const trades: ClosedBrokerTrade[] = [];
+  for (const fill of [...fills].filter((f) => f.active !== false && f.qty > 0 && Number.isFinite(f.price))
+    .sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.id - b.id)) {
+    const account = orderAccount.get(fill.orderId);
+    const contract = contractById.get(fill.contractId);
+    if (account === undefined || !contract || Number.isNaN(Date.parse(fill.timestamp))) continue;
+    const key = `${account}:${fill.contractId}`;
+    const queue = open.get(key) ?? [];
+    let remaining = fill.qty;
+    while (remaining > 0 && queue.length && queue[0].fill.action !== fill.action) {
+      const entry = queue[0];
+      const quantity = Math.min(remaining, entry.remaining);
+      const direction = entry.fill.action === "Buy" ? "long" : "short";
+      trades.push({
+        source_id: `${entry.fill.id}:${fill.id}`,
+        account_id: account, instrument: contract.name, direction, quantity,
+        entry_time: new Date(entry.fill.timestamp).toISOString(),
+        exit_time: new Date(fill.timestamp).toISOString(),
+        // Fill prices do not include account-specific fees; net P&L requires review.
+        entry_price: entry.fill.price, exit_price: fill.price, pnl: null,
+      });
+      entry.remaining -= quantity; remaining -= quantity;
+      if (entry.remaining <= 0) queue.shift();
+    }
+    if (remaining > 0) queue.push({ fill, remaining });
+    open.set(key, queue);
+  }
+  return trades;
+}
+
+export async function listClosedTrades(token: string, env: BrokerEnvironment): Promise<ClosedBrokerTrade[]> {
+  const [fills, orders, contracts] = await Promise.all([
+    call<BrokerFill[]>(env, "/fill/list", { method: "GET", token }),
+    call<BrokerOrder[]>(env, "/order/list", { method: "GET", token }),
+    call<BrokerContract[]>(env, "/contract/list", { method: "GET", token }),
+  ]);
+  return pairFills(fills, orders, contracts);
 }

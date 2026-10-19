@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays, ArrowUpDown, Eye, EyeOff, BarChart3 } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, ArrowRight, CalendarDays, ArrowUpDown, Eye, EyeOff, BarChart3, FileUp } from "lucide-react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageWrapper } from "@/components/ui/page-wrapper";
@@ -170,6 +170,7 @@ export default function AccountsPage() {
         subtitle="Funded prop firm accounts"
         action={
           <div className="flex items-center gap-2 shrink-0">
+            <Link href="/journal/import" className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3.5 py-2 text-sm font-semibold"><FileUp className="size-4 text-primary" /> Import trades</Link>
             <button
               type="button"
               onClick={() => setPerfOpen(true)}

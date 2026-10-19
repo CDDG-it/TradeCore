@@ -1,11 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { KeyRound, Link2, Loader2, Lock, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Link2, Loader2, Lock, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import { BrokerEquityChart, type HistoryLoader } from "./broker-equity-chart";
@@ -63,9 +60,8 @@ export function LiveBrokerPanel({
   const [lastGood, setLastGood] = useState<Record<string, AccountSnapshot>>({});
   const [loadError, setLoadError] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const [connectOpen, setConnectOpen] = useState(false);
   const [outcome, setOutcome] = useState<{ ok: boolean; text: string } | null>(null);
-  const [passwordFor, setPasswordFor] = useState<BrokerConnectionView | null>(null);
+  const lastTradeSync = useRef(0);
   // Which account's equity curve is open. Clicking its card toggles it.
   const [chartFor, setChartFor] = useState<string | null>(null);
   const inFlight = useRef(false);
@@ -131,6 +127,13 @@ export function LiveBrokerPanel({
     };
   }, [refresh]);
 
+  useEffect(() => {
+    if (load || !data?.oauth_available || !data.connections.some((c) => c.auth_method === "oauth")) return;
+    if (Date.now() - lastTradeSync.current < 5 * 60_000) return;
+    lastTradeSync.current = Date.now();
+    void fetch("/api/broker/sync", { method: "POST" }).then(() => refresh()).catch(() => {});
+  }, [data?.oauth_available, data?.connections, load, refresh]);
+
   const connections = data?.connections ?? [];
   const accounts = (data?.accounts ?? []).map((s) => {
     const shown = lastGood[s.account_id] ?? s;
@@ -144,7 +147,7 @@ export function LiveBrokerPanel({
 
   const setup = data?.setup ?? null;
   const oauthAvailable = data?.oauth_available ?? false;
-  const canConnect = data !== null && setup === null;
+  const canConnect = data !== null && setup === null && oauthAvailable;
 
   return (
     <section className="space-y-3">
@@ -173,10 +176,7 @@ export function LiveBrokerPanel({
           <button
             type="button"
             onClick={() => {
-              // OAuth leaves the app: the trader signs in at Tradovate itself
-              // and we never see the password.
-              if (oauthAvailable) window.location.href = "/api/broker/oauth/start";
-              else setConnectOpen(true);
+              window.location.href = "/api/broker/oauth/start";
             }}
             disabled={!canConnect}
             className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-all hover:-translate-y-px hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
@@ -220,8 +220,8 @@ export function LiveBrokerPanel({
           <p className="text-sm font-medium">See every prop account live, in one place</p>
           <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
             {oauthAvailable
-              ? "You sign in at Tradovate itself and authorise TradingMC there, so your password never reaches us. Balances, equity and P&L update every 15 seconds. Read-only: nothing here can place or change an order."
-              : "Connect the Tradovate login your firm gave you. Balances, equity and P&L update every 15 seconds. Read-only: nothing here can place or change an order."}
+              ? "Sign in at Tradovate and authorise read-only access. Your password never reaches us. Balances, P&L and completed trades sync while you use this page."
+              : "Tradovate OAuth must be configured before live accounts can be connected. You can still import trades from a CSV export."}
           </p>
         </div>
       )}
@@ -308,13 +308,11 @@ export function LiveBrokerPanel({
       {connections.length > 0 && (
         <ConnectionList
           connections={connections}
-          onPassword={setPasswordFor}
+          now={now}
           onChanged={refresh}
         />
       )}
 
-      <ConnectDialog open={connectOpen} onOpenChange={setConnectOpen} onConnected={refresh} />
-      <PasswordDialog connection={passwordFor} onClose={() => setPasswordFor(null)} onSaved={refresh} />
     </section>
   );
 }
@@ -330,8 +328,9 @@ function Figure({ label, value, color }: { label: string; value: string; color?:
 
 function SetupNotice({ issue }: { issue: NonNullable<BrokerAccountsResponse["setup"]> }) {
   const text = {
-    missing_tables: "Live accounts need a database update. Run broker_connections.sql, broker_hardening.sql and broker_oauth.sql from the sql folder in the Supabase SQL editor.",
+    missing_tables: "Broker integrations need a database update. Run broker_trade_imports.sql in the Supabase SQL editor after the existing broker migrations.",
     missing_key: "Secure credential storage is not configured on the server yet (BROKER_ENCRYPTION_KEY).",
+    missing_service_key: "Server-only credential access is not configured (SUPABASE_SERVICE_ROLE_KEY).",
     not_configured: "The Tradovate app credentials are not configured on the server yet.",
   }[issue];
   return <div className="rounded-xl border border-border/50 bg-card p-4 text-xs text-muted-foreground">{text}</div>;
@@ -345,11 +344,11 @@ const STATE_STYLE: Record<BrokerConnectionView["state"], { label: string; classN
 
 function ConnectionList({
   connections,
-  onPassword,
+  now,
   onChanged,
 }: {
   connections: BrokerConnectionView[];
-  onPassword: (c: BrokerConnectionView) => void;
+  now: number;
   onChanged: () => void;
 }) {
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -387,6 +386,7 @@ function ConnectionList({
                 <p className="text-[11px]">
                   <span className={state.className}>{state.label}</span>
                   {c.last_error && c.state !== "connected" && <span className="text-muted-foreground"> · {c.last_error}</span>}
+                  {c.trades_synced_at && <span className="text-muted-foreground"> · Trades synced {ago(c.trades_synced_at, now)}</span>}
                 </p>
               </div>
               <div className="flex items-center gap-1.5">
@@ -408,11 +408,7 @@ function ConnectionList({
                       >
                         <ShieldCheck /> Reauthorise
                       </Button>
-                    ) : (
-                      <Button size="xs" variant={c.state === "auth_failed" ? "default" : "ghost"} onClick={() => onPassword(c)}>
-                        <KeyRound /> {c.state === "auth_failed" ? "Re-enter password" : "Password"}
-                      </Button>
-                    )}
+                    ) : <span className="text-[11px] text-warning">Reconnect with OAuth</span>}
                     <Button size="icon-xs" variant="ghost" onClick={() => setConfirming(c.id)} aria-label={`Remove ${c.label}`}>
                       <Trash2 />
                     </Button>
@@ -428,149 +424,3 @@ function ConnectionList({
   );
 }
 
-function SecurityNotes() {
-  return (
-    <ul className="space-y-1.5 rounded-lg border border-border/50 bg-muted/30 p-3 text-[11px] text-muted-foreground">
-      <li className="flex gap-2"><Lock className="mt-0.5 size-3 shrink-0 text-primary" /> Encrypted with AES-256 before it is stored. The key never leaves the server.</li>
-      <li className="flex gap-2"><ShieldCheck className="mt-0.5 size-3 shrink-0 text-primary" /> Read-only: TradingMC can see balances and P&L, never place or change orders.</li>
-      <li className="flex gap-2"><Trash2 className="mt-0.5 size-3 shrink-0 text-primary" /> Remove the login any time; the stored credentials are deleted with it.</li>
-    </ul>
-  );
-}
-
-function ConnectDialog({
-  open,
-  onOpenChange,
-  onConnected,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  onConnected: () => void;
-}) {
-  const [label, setLabel] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  function close(o: boolean) {
-    onOpenChange(o);
-    if (!o) {
-      // Never keep a password in memory longer than the dialog.
-      setPassword("");
-      setError(null);
-    }
-  }
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    const err = await send("/api/broker/connections", "POST", { label, username, password });
-    setBusy(false);
-    if (err) {
-      setError(err);
-      return;
-    }
-    setLabel("");
-    setUsername("");
-    close(false);
-    onConnected();
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={submit} className="grid gap-4">
-          <DialogHeader>
-            <DialogTitle>Connect Tradovate</DialogTitle>
-            <DialogDescription>
-              Use the Tradovate login from your prop firm (Lucid, MyFundedFutures and others). Every account under it shows up automatically.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-2">
-            <Label htmlFor="bk-label">Name</Label>
-            <Input id="bk-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. MFF 100k" maxLength={60} autoComplete="off" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="bk-user">Tradovate username</Label>
-            <Input id="bk-user" value={username} onChange={(e) => setUsername(e.target.value)} required maxLength={120} autoComplete="off" spellCheck={false} autoCapitalize="none" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="bk-pass">Tradovate password</Label>
-            <Input id="bk-pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required maxLength={200} autoComplete="off" />
-          </div>
-          <SecurityNotes />
-          {error && <p className="text-xs text-destructive">{error}</p>}
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => close(false)}>Cancel</Button>
-            <Button type="submit" disabled={busy || !username || !password}>
-              {busy ? <Loader2 className="animate-spin" /> : <Plus />} Connect
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function PasswordDialog({
-  connection,
-  onClose,
-  onSaved,
-}: {
-  connection: BrokerConnectionView | null;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  function close() {
-    setPassword("");
-    setError(null);
-    onClose();
-  }
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!connection) return;
-    setBusy(true);
-    setError(null);
-    const err = await send(`/api/broker/connections/${connection.id}`, "PATCH", { password });
-    setBusy(false);
-    if (err) {
-      setError(err);
-      return;
-    }
-    close();
-    onSaved();
-  }
-
-  return (
-    <Dialog open={connection !== null} onOpenChange={(o) => !o && close()}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={submit} className="grid gap-4">
-          <DialogHeader>
-            <DialogTitle>Update password</DialogTitle>
-            <DialogDescription>
-              {connection?.label} <span className="font-mono">{connection?.username_hint}</span>. The new password is checked with Tradovate before it is saved.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-2">
-            <Label htmlFor="bk-newpass">Tradovate password</Label>
-            <Input id="bk-newpass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required maxLength={200} autoComplete="off" />
-          </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={close}>Cancel</Button>
-            <Button type="submit" disabled={busy || !password}>
-              {busy ? <Loader2 className="animate-spin" /> : <KeyRound />} Save
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}

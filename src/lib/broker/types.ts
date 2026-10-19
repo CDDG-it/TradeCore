@@ -17,6 +17,7 @@ export interface BrokerConnectionView {
   state: ConnectionState;
   last_error: string | null;
   last_sync_at: string | null;
+  trades_synced_at?: string | null;
   created_at: string;
 }
 
@@ -39,7 +40,7 @@ export interface AccountSnapshot {
 }
 
 /** Why the feature cannot run yet, so the UI can say so instead of failing. */
-export type BrokerSetupIssue = "missing_tables" | "missing_key" | "not_configured";
+export type BrokerSetupIssue = "missing_tables" | "missing_key" | "missing_service_key" | "not_configured";
 
 export interface BrokerAccountsResponse {
   setup: BrokerSetupIssue | null;
