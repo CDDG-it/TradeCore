@@ -5,6 +5,7 @@ import { DashboardScreenshot } from "@/components/landing/dashboard-sample";
 import { MarketContextVisual, ProcessCanvas, ReviewCanvas, TherapistVisual } from "@/components/landing/marketing-visuals";
 import { MindscoreAssembly, SectionHeader } from "@/components/landing/marketing-motion";
 import { SmokeBackground } from "@/components/landing/smoke-background";
+import { SectionLink } from "@/components/landing/section-link";
 
 export default function HomePage() {
   return (
@@ -22,7 +23,7 @@ export default function HomePage() {
                   Start building your process
                   <span aria-hidden="true" className="transition-transform duration-200 ease-out group-hover:translate-x-0.5">&#8594;</span>
                 </Link>
-                <a href="#the-approach" className="marketing-cta inline-flex min-h-14 items-center justify-center rounded-2xl border border-[#5a7f87] px-8 py-4 text-base font-medium text-[#d9e8e9] hover:border-[#a9ddd8] hover:bg-white/5 hover:text-white">See how it works</a>
+                <SectionLink href="/#the-approach" className="marketing-cta inline-flex min-h-14 items-center justify-center rounded-2xl border border-[#5a7f87] px-8 py-4 text-base font-medium text-[#d9e8e9] hover:border-[#a9ddd8] hover:bg-white/5 hover:text-white">See how it works</SectionLink>
               </div>
             </div>
             <div className="relative z-10 min-w-0"><DashboardScreenshot /></div>

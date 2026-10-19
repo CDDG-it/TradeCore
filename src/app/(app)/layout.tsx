@@ -32,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <main className="relative z-10">
             {/* `app-shell` reserves room for the fixed phone primary bar.
                 Section menus open from each page title and add no content row. */}
-            <div className="app-shell mx-auto w-full max-w-[1700px] px-3 py-4 sm:px-6 sm:py-8 lg:px-10">
+            <div className="app-shell mx-auto w-full max-w-[1700px] px-3 pt-2 pb-4 sm:px-6 sm:pt-4 sm:pb-8 lg:px-10">
               <TransitionLayout>{children}</TransitionLayout>
             </div>
           </main>

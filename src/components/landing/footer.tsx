@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { PRODUCTS, TRADER_LEVELS } from "@/lib/landing/nav";
+import { sectionLinkClick } from "@/components/landing/section-link";
 import { cn } from "@/lib/utils";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -131,7 +132,7 @@ export function LandingFooter() {
             <ul>
               {PRODUCTS.map((product) => (
                 <li key={product.href}>
-                  <Link href={product.href} className={linkClass}>
+                  <Link href={product.href} onClick={sectionLinkClick(product.href)} className={linkClass}>
                     {product.name}
                   </Link>
                 </li>

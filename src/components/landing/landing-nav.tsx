@@ -6,7 +6,10 @@ import Link from "next/link";
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
 import { motion, useReducedMotion } from "motion/react";
 import { PRODUCTS, TRADER_LEVELS } from "@/lib/landing/nav";
+import { landingSectionId, scrollToSection } from "@/lib/landing/scroll-to-section";
+import { sectionLinkClick } from "@/components/landing/section-link";
 import { useScrollNav } from "@/lib/ui/use-scroll-nav";
+
 
 function AccountCta({ onClick, className }: { onClick?: () => void; className?: string }) {
   const reduceMotion = useReducedMotion();
@@ -20,14 +23,14 @@ function AccountCta({ onClick, className }: { onClick?: () => void; className?: 
 // Matches the signed-in app's top-nav rail items: a pill inside a glass rail.
 const triggerClass = "marketing-nav-trigger inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[13px] font-semibold text-[#d0dfe1] hover:bg-white/[0.06] hover:text-white data-[popup-open]:bg-white/[0.06] data-[popup-open]:text-white";
 
-function ProductsPanel() {
+function ProductsPanel({ onNavigate }: { onNavigate: () => void }) {
   return (
     <div className="w-[min(92vw,640px)] p-4">
       <p className="marketing-nav-label px-3 pt-2">Four products, one process</p>
       <ul className="mt-3 grid gap-2 sm:grid-cols-2">
         {PRODUCTS.map((product) => (
             <li key={product.href}>
-              <NavigationMenu.Link render={<Link href={product.href} />} className="marketing-nav-card group flex h-full rounded-2xl border border-white/10 bg-white/[0.03] p-4 hover:border-[#14b8a6]/50 hover:bg-[#14b8a6]/[0.08]">
+              <NavigationMenu.Link render={<Link href={product.href} onClick={sectionLinkClick(product.href, onNavigate)} />} className="marketing-nav-card group flex h-full rounded-2xl border border-white/10 bg-white/[0.03] p-4 hover:border-[#14b8a6]/50 hover:bg-[#14b8a6]/[0.08]">
                 <span className="min-w-0"><span className="block text-sm font-semibold text-white">{product.name}</span><span className="mt-1 block text-xs leading-relaxed text-[#9db6bb]">{product.tagline}</span></span>
               </NavigationMenu.Link>
             </li>
@@ -55,14 +58,20 @@ function LevelsPanel() {
 }
 
 function DesktopMenu({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
+  // Controlled so a product link that scrolls in place (no navigation) can close the panel.
+  const [value, setValue] = useState<string | null>(null);
+  const change = (next: string | null) => {
+    setValue(next);
+    onOpenChange(next != null);
+  };
   return (
-    <NavigationMenu.Root className="hidden lg:block" delay={80} closeDelay={120} onValueChange={(value) => onOpenChange(value != null)}>
+    <NavigationMenu.Root className="hidden lg:block" delay={80} closeDelay={120} value={value} onValueChange={change}>
       <NavigationMenu.List className="flex items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-        <NavigationMenu.Item>
+        <NavigationMenu.Item value="products">
           <NavigationMenu.Trigger className={triggerClass}>Products</NavigationMenu.Trigger>
-          <NavigationMenu.Content className="marketing-nav-content"><ProductsPanel /></NavigationMenu.Content>
+          <NavigationMenu.Content className="marketing-nav-content"><ProductsPanel onNavigate={() => change(null)} /></NavigationMenu.Content>
         </NavigationMenu.Item>
-        <NavigationMenu.Item>
+        <NavigationMenu.Item value="traders">
           <NavigationMenu.Trigger className={triggerClass}>For traders</NavigationMenu.Trigger>
           <NavigationMenu.Content className="marketing-nav-content"><LevelsPanel /></NavigationMenu.Content>
         </NavigationMenu.Item>
@@ -90,7 +99,7 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
           <p className="marketing-nav-label">Products</p>
           <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
             {PRODUCTS.map((product) => (
-              <li key={product.href}><Link href={product.href} onClick={onClose} className="block py-3.5"><span className="block text-[15px] font-medium text-white">{product.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#8aa5ab]">{product.tagline}</span></Link></li>
+              <li key={product.href}><Link href={product.href} onClick={(event) => { onClose(); sectionLinkClick(product.href)(event); }} className="block py-3.5"><span className="block text-[15px] font-medium text-white">{product.name}</span><span className="mt-0.5 block text-xs leading-relaxed text-[#8aa5ab]">{product.tagline}</span></Link></li>
             ))}
           </ul>
         </div>
@@ -116,6 +125,15 @@ export function LandingNav() {
   const [open, setOpen] = useState(false);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
   const { visible, show } = useScrollNav(open || desktopMenuOpen);
+
+  // Arriving on the landing page with a product hash (from another page or a
+  // shared link): line the section up once the browser's own jump has happened.
+  useEffect(() => {
+    const id = landingSectionId(window.location.hash);
+    if (!id || window.location.pathname !== "/") return;
+    const timer = window.setTimeout(() => scrollToSection(id, { updateHash: false, instant: true }), 60);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // Every link in the panel closes it on click; growing past the phone breakpoint closes it too.
   useEffect(() => {
