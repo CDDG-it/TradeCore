@@ -75,7 +75,7 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
     try { window.localStorage.setItem(VIEW_KEY, view); } catch { /* storage blocked: the choice lasts this visit */ }
   }
 
-  /* Rest the pointer on a chart tile and it opens large beside it. `arming`
+  /* Rest the pointer on a chart tile and it opens large, mid-screen. `arming`
      is the tile whose timer is running (it shows a filling bar), `hovered`
      the open preview. Mouse only: a touch tap still just opens the day. */
   const [arming, setArming] = useState<string | null>(null);
@@ -88,14 +88,14 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
     setHovered(null);
   }, []);
   useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
-  function startHover(key: string, tile: HTMLElement, preview: Omit<HoverPreviewTarget, "rect">) {
+  function startHover(key: string, preview: HoverPreviewTarget) {
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
     endHover();
     setArming(key);
     hoverTimer.current = setTimeout(() => {
       hoverTimer.current = null;
       setArming(null);
-      setHovered({ ...preview, rect: tile.getBoundingClientRect() });
+      setHovered(preview);
     }, HOVER_PREVIEW_DELAY_MS);
   }
 
@@ -365,7 +365,7 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
     const inner = screens ? screensInner : resultsInner;
     const bg = !screens && has ? { background: resultBands(dayTrades, 12) } : undefined;
     const hover = screens && shot && rawShot ? {
-      onMouseEnter: (event: React.MouseEvent<HTMLElement>) => startHover(key, event.currentTarget, {
+      onMouseEnter: () => startHover(key, {
         path: rawShot,
         thumb: shot,
         title: `${format(day, "EEEE d MMMM")} · ${[...new Set(dayTrades.map((t) => instrumentName(t.instrument)))].join(", ")}`,

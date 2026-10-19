@@ -1332,7 +1332,7 @@ html.light .weekly-day-card::after {
    as HOVER_PREVIEW_DELAY_MS in screenshot-hover-preview.tsx. */
 .journal-hover-arm {
   transform-origin: left center;
-  animation: journal-hover-arm 1200ms linear both;
+  animation: journal-hover-arm 800ms linear both;
 }
 @keyframes journal-hover-arm {
   from { transform: scaleX(0); opacity: .55; }
