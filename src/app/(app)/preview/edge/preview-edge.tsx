@@ -44,6 +44,8 @@ function useSeed() {
 
     const goals: TradingGoal[] = [
       ...base.goals,
+      { id: "g-personal", user_id: "sample", title: "Wait for my best setup", description: "No entry until my plan and market context agree.", metric: "manual", target: 20, progress_value: 8, unit: "sessions", baseline: null, start_date: format(monday, "yyyy-MM-dd"), end_date: format(addDays(monday, 30), "yyyy-MM-dd"), created_at: stamp(monday), updated_at: stamp(monday) },
+      { id: "g-milestone", user_id: "sample", title: "Write a trading plan I can follow", description: "Keep it short enough to check before each session.", metric: "milestone", target: 1, progress_value: 0, unit: "", baseline: null, start_date: format(monday, "yyyy-MM-dd"), end_date: format(addDays(monday, 21), "yyyy-MM-dd"), created_at: stamp(monday), updated_at: stamp(monday) },
       { id: "g2", user_id: "sample", title: "Fifteen clean days", metric: "clean_days", target: 15, baseline: null, start_date: format(addDays(monday, -14), "yyyy-MM-dd"), end_date: format(addDays(monday, 16), "yyyy-MM-dd"), created_at: stamp(monday), updated_at: stamp(monday) },
       { id: "g3", user_id: "sample", title: "", metric: "net_r", target: 10, baseline: null, start_date: format(addDays(monday, -28), "yyyy-MM-dd"), end_date: format(addDays(monday, -1), "yyyy-MM-dd"), created_at: stamp(monday), updated_at: stamp(monday) },
     ];

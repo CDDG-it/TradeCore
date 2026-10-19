@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import {
-  format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter,
+  addMonths, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter,
 } from "date-fns";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -12,10 +12,10 @@ import {
   getTrades, getHabits, getHabitCompletions,
 } from "@/lib/supabase/queries";
 import {
-  GOAL_METRICS, METRIC_META, computeGoalProgress, formatGoalValue,
+  GOAL_METRICS, METRIC_META, computeGoalProgress, formatGoalValue, formatGoalReading, isPersonalGoal,
   measureMetric, type GoalInputs, type GoalProgress,
 } from "@/lib/goals/goals";
-import type { GoalMetric, TradingGoal } from "@/lib/types";
+import type { AutomaticGoalMetric, TradingGoal } from "@/lib/types";
 
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 
@@ -63,7 +63,7 @@ function windowLabel(start: Date, end: Date, now: Date): string {
  * picked (or the window changes) the suggestion is nudged past the current
  * reading: a round step up for percentages, a quarter more for counts and R.
  */
-function suggestTarget(metric: GoalMetric, baseline: number | null): number {
+function suggestTarget(metric: AutomaticGoalMetric, baseline: number | null): number {
   const { defaultTarget, unit } = METRIC_META[metric];
   if (baseline == null || baseline < defaultTarget) return defaultTarget;
   if (unit === "percent") return Math.min(100, Math.ceil((baseline + 5) / 5) * 5);
@@ -75,7 +75,9 @@ export function GoalsView({ seed }: { seed?: GoalsSeed } = {}) {
   const [goals, setGoals] = useState<TradingGoal[] | null>(seed?.goals ?? null);
   const [data, setData] = useState<GoalInputs | null>(seed?.data ?? null);
   const [adding, setAdding] = useState(false);
+  const [goalMode, setGoalMode] = useState<"personal" | "journal">("personal");
   const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const reduce = useReducedMotion();
 
@@ -125,33 +127,47 @@ export function GoalsView({ seed }: { seed?: GoalsSeed } = {}) {
 
   async function add(draft: Omit<TradingGoal, "id" | "user_id" | "created_at" | "updated_at">) {
     setBusy("new");
+    setError("");
     try {
       const saved = seed
         ? { ...draft, id: `local-${Date.now()}`, user_id: "preview", created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
         : await createTradingGoal(draft);
       setGoals((prev) => [saved, ...(prev ?? [])]);
       setAdding(false);
+    } catch {
+      setError("Could not save this goal. If this is a personal goal, make sure the personal goals SQL has been added to Supabase.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function edit(goal: TradingGoal, patch: Partial<TradingGoal>): Promise<boolean> {
+    setBusy(goal.id);
+    setError("");
+    try {
+      const saved = seed ? { ...goal, ...patch } : await updateTradingGoal(goal.id, patch);
+      setGoals((prev) => (prev ?? []).map((g) => (g.id === goal.id ? saved : g)));
+      return true;
+    } catch {
+      setError("Could not update this goal. Please try again.");
+      return false;
     } finally {
       setBusy(null);
     }
   }
 
   async function archive(goal: TradingGoal) {
-    setBusy(goal.id);
-    try {
-      const patch = { archived_at: goal.archived_at ? null : new Date().toISOString() };
-      const saved = seed ? { ...goal, ...patch } : await updateTradingGoal(goal.id, patch);
-      setGoals((prev) => (prev ?? []).map((g) => (g.id === goal.id ? saved : g)));
-    } finally {
-      setBusy(null);
-    }
+    await edit(goal, { archived_at: goal.archived_at ? null : new Date().toISOString() });
   }
 
   async function remove(goal: TradingGoal) {
     setBusy(goal.id);
+    setError("");
     try {
       if (!seed) await deleteTradingGoal(goal.id);
       setGoals((prev) => (prev ?? []).filter((g) => g.id !== goal.id));
+    } catch {
+      setError("Could not delete this goal. Please try again.");
     } finally {
       setBusy(null);
     }
@@ -164,7 +180,16 @@ export function GoalsView({ seed }: { seed?: GoalsSeed } = {}) {
   }
 
   return (
-    <section className="mx-auto w-full max-w-5xl">
+    <section className="mx-auto w-full max-w-6xl">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className={cn(EYEBROW, "text-primary")}>YOUR DIRECTION</p>
+          <h2 className="mt-1 font-heading text-2xl font-semibold tracking-tight sm:text-[1.8rem]">Set a goal that is yours.</h2>
+          <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+            Define your own milestone or number to work towards. Journal targets can still update automatically from your trades.
+          </p>
+        </div>
+      </div>
       {/* One line: where the goals stand, and the two things you can do. The
           tab above already says "My Goals", so the page does not say it twice. */}
       <header className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-foreground/15 pb-3">
@@ -198,7 +223,7 @@ export function GoalsView({ seed }: { seed?: GoalsSeed } = {}) {
           )}
           <button
             type="button"
-            onClick={() => setAdding((v) => !v)}
+            onClick={() => { setAdding((v) => !v); setGoalMode("personal"); setError(""); }}
             className={cn(
               EYEBROW,
               "press border-b-2 pb-0.5",
@@ -212,6 +237,8 @@ export function GoalsView({ seed }: { seed?: GoalsSeed } = {}) {
         </div>
       </header>
 
+      {error && <p role="alert" className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-[13px] text-destructive">{error}</p>}
+
       {/* The form opens like a drawer under the header: height is the one
           property with no transform equivalent here, so it is the exception. */}
       <AnimatePresence initial={false}>
@@ -224,7 +251,16 @@ export function GoalsView({ seed }: { seed?: GoalsSeed } = {}) {
             transition={{ duration: reduce ? 0 : 0.28, ease: EASE_OUT }}
             className="overflow-hidden"
           >
-            <GoalForm data={data} busy={busy === "new"} onSave={add} />
+            <div className="border-b border-border/60 py-5">
+              <div className="mb-5 inline-flex rounded-xl border border-border/70 bg-card/70 p-1">
+                {([ ["personal", "My own goal"], ["journal", "Journal target"] ] as const).map(([key, label]) => (
+                  <button key={key} type="button" onClick={() => setGoalMode(key)}
+                    className={cn("rounded-lg px-4 py-2 text-[12px] font-semibold transition-colors", goalMode === key ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground")}
+                    aria-pressed={goalMode === key}>{label}</button>
+                ))}
+              </div>
+              {goalMode === "personal" ? <PersonalGoalForm busy={busy === "new"} onSave={add} /> : <GoalForm data={data} busy={busy === "new"} onSave={add} />}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -235,7 +271,15 @@ export function GoalsView({ seed }: { seed?: GoalsSeed } = {}) {
         <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
           <AnimatePresence initial={false} mode="popLayout">
             {visible.map((goal, i) => (
-              <GoalCard
+              isPersonalGoal(goal) ? <PersonalGoalCard
+                key={goal.id}
+                goal={goal}
+                data={data}
+                busy={busy === goal.id}
+                onUpdate={(patch) => edit(goal, patch)}
+                onArchive={() => archive(goal)}
+                onDelete={() => remove(goal)}
+              /> : <GoalCard
                 key={goal.id}
                 index={i}
                 goal={goal}
@@ -260,10 +304,9 @@ function Empty({ archived, onStart }: { archived: boolean; onStart: () => void }
     <div className="max-w-xl py-12">
       <p className="font-heading text-base font-semibold">Set something you can actually move.</p>
       <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-        Getting your execution from where it is now to where you want it. Stringing
-        together days without a single trade you had to talk yourself into. Every
-        number here is read straight out of your journal, so there is nothing to
-        keep up to date afterwards. You either did it or you did not.
+        Write down a milestone you care about, or give yourself a number to reach.
+        You can update personal progress as you go. If your goal is tied to trading
+        data, choose a journal target and it will update from your trades.
       </p>
       <button
         type="button"
@@ -274,6 +317,194 @@ function Empty({ archived, onStart }: { archived: boolean; onStart: () => void }
       </button>
     </div>
   );
+}
+
+const FIELD = "w-full rounded-xl border border-border/70 bg-background/45 px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary";
+
+function PersonalGoalForm({ busy, onSave }: {
+  busy: boolean;
+  onSave: (draft: Omit<TradingGoal, "id" | "user_id" | "created_at" | "updated_at">) => void;
+}) {
+  const now = new Date();
+  const [kind, setKind] = useState<"milestone" | "manual">("milestone");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [target, setTarget] = useState("");
+  const [unit, setUnit] = useState("");
+  const [startDate, setStartDate] = useState(iso(now));
+  const [endDate, setEndDate] = useState(iso(addMonths(now, 1)));
+  const [validation, setValidation] = useState("");
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = title.trim();
+    const amount = Number(target);
+    if (!name || name.length > 120) { setValidation("Give your goal a name of up to 120 characters."); return; }
+    if (kind === "manual" && (!target.trim() || !Number.isFinite(amount) || amount <= 0 || amount > 1_000_000_000)) {
+      setValidation("Choose a target greater than zero."); return;
+    }
+    if (!startDate || !endDate || endDate < startDate) { setValidation("Choose an end date on or after the start date."); return; }
+    setValidation("");
+    onSave({
+      title: name,
+      description: description.trim().slice(0, 500),
+      metric: kind,
+      target: kind === "milestone" ? 1 : amount,
+      progress_value: 0,
+      unit: kind === "milestone" ? "" : unit.trim().slice(0, 24),
+      baseline: null,
+      start_date: startDate,
+      end_date: endDate,
+      archived_at: null,
+    });
+  }
+
+  return <form onSubmit={submit} className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(17rem,.85fr)]">
+    <div className="space-y-4">
+      <div>
+        <label htmlFor="personal-goal-title" className={cn(EYEBROW, "mb-1.5 block text-muted-foreground")}>What do you want to achieve?</label>
+        <input id="personal-goal-title" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120}
+          placeholder="e.g. Follow my plan for 20 trading sessions" className={FIELD} />
+      </div>
+      <div>
+        <label htmlFor="personal-goal-description" className={cn(EYEBROW, "mb-1.5 block text-muted-foreground")}>Why it matters or what counts <span className="normal-case tracking-normal">(optional)</span></label>
+        <textarea id="personal-goal-description" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} rows={3}
+          placeholder="Write the rule you want to follow, or what success will look like." className={cn(FIELD, "resize-y")} />
+      </div>
+      <div>
+        <p className={cn(EYEBROW, "mb-2 text-muted-foreground")}>How will you track it?</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {([ ["milestone", "A milestone", "Mark it complete when you reach it."], ["manual", "A number", "Update your own total along the way."] ] as const).map(([value, label, help]) => (
+            <button type="button" key={value} onClick={() => setKind(value)} aria-pressed={kind === value}
+              className={cn("rounded-xl border px-4 py-3 text-left transition-colors", kind === value ? "border-primary/70 bg-primary/10" : "border-border/70 bg-card/40 hover:border-primary/40") }>
+              <span className="block text-[13px] font-semibold">{label}</span>
+              <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{help}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/45 p-4 sm:p-5">
+      {kind === "manual" && <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+        <div><label htmlFor="personal-goal-target" className={cn(EYEBROW, "mb-1.5 block text-muted-foreground")}>Target</label>
+          <input id="personal-goal-target" type="number" min="0.01" step="any" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="20" className={FIELD} /></div>
+        <div><label htmlFor="personal-goal-unit" className={cn(EYEBROW, "mb-1.5 block text-muted-foreground")}>Unit <span className="normal-case tracking-normal">(optional)</span></label>
+          <input id="personal-goal-unit" value={unit} onChange={(e) => setUnit(e.target.value)} maxLength={24} placeholder="sessions" className={FIELD} /></div>
+      </div>}
+      <div className="grid grid-cols-2 gap-3">
+        <div><label htmlFor="personal-goal-start" className={cn(EYEBROW, "mb-1.5 block text-muted-foreground")}>Start</label>
+          <input id="personal-goal-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={FIELD} /></div>
+        <div><label htmlFor="personal-goal-end" className={cn(EYEBROW, "mb-1.5 block text-muted-foreground")}>Target date</label>
+          <input id="personal-goal-end" type="date" min={startDate} value={endDate} onChange={(e) => setEndDate(e.target.value)} className={FIELD} /></div>
+      </div>
+      <p className="text-[12px] leading-relaxed text-muted-foreground">Your goal is yours to define. You can change the details and update progress whenever you need to.</p>
+      {validation && <p role="alert" className="text-[12px] text-destructive">{validation}</p>}
+      <button type="submit" disabled={busy} className="mt-auto rounded-xl bg-primary px-4 py-2.5 text-[13px] font-semibold text-primary-foreground hover:brightness-110 disabled:opacity-50">
+        {busy ? "Saving goal..." : "Create my goal"}
+      </button>
+    </div>
+  </form>;
+}
+
+function PersonalGoalCard({ goal, data, busy, onUpdate, onArchive, onDelete }: {
+  goal: TradingGoal;
+  data: GoalInputs;
+  busy: boolean;
+  onUpdate: (patch: Partial<TradingGoal>) => Promise<boolean>;
+  onArchive: () => void;
+  onDelete: () => void;
+}) {
+  const p = computeGoalProgress(goal, data);
+  const milestone = goal.metric === "milestone";
+  const archived = !!goal.archived_at;
+  const tone = archived ? "var(--muted-foreground)" : STATE[p.state].color;
+  const [panel, setPanel] = useState<"progress" | "edit" | null>(null);
+  const [value, setValue] = useState(String(goal.progress_value ?? 0));
+  const [title, setTitle] = useState(goal.title);
+  const [description, setDescription] = useState(goal.description ?? "");
+  const [target, setTarget] = useState(String(goal.target));
+  const [unit, setUnit] = useState(goal.unit ?? "");
+  const [startDate, setStartDate] = useState(goal.start_date);
+  const [endDate, setEndDate] = useState(goal.end_date);
+  const [validation, setValidation] = useState("");
+  const [confirming, setConfirming] = useState(false);
+
+  function openEdit() {
+    setTitle(goal.title); setDescription(goal.description ?? ""); setTarget(String(goal.target));
+    setUnit(goal.unit ?? ""); setStartDate(goal.start_date); setEndDate(goal.end_date);
+    setValidation(""); setPanel("edit");
+  }
+
+  async function saveProgress(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const next = Number(value);
+    if (!value.trim() || !Number.isFinite(next) || next < 0 || next > 1_000_000_000) { setValidation("Enter a number of zero or more."); return; }
+    if (await onUpdate({ progress_value: next })) { setPanel(null); setValidation(""); }
+  }
+
+  async function saveEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextTarget = Number(target);
+    if (!title.trim() || title.trim().length > 120) { setValidation("Give this goal a name of up to 120 characters."); return; }
+    if (!milestone && (!target.trim() || !Number.isFinite(nextTarget) || nextTarget <= 0 || nextTarget > 1_000_000_000)) { setValidation("Choose a target greater than zero."); return; }
+    if (!startDate || !endDate || endDate < startDate) { setValidation("Choose an end date on or after the start date."); return; }
+    const ok = await onUpdate({ title: title.trim(), description: description.trim(), target: milestone ? 1 : nextTarget,
+      unit: milestone ? "" : unit.trim(), start_date: startDate, end_date: endDate });
+    if (ok) { setPanel(null); setValidation(""); }
+  }
+
+  return <motion.article layout initial={false} exit={{ opacity: 0, scale: 0.98 }}
+    className="relative flex min-w-0 flex-col rounded-2xl border border-border/70 bg-card p-5 shadow-[0_8px_35px_-25px_rgba(0,0,0,.7)]">
+    <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] rounded-l-2xl" style={{ background: tone }} />
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <span className={cn(EYEBROW, "text-primary")}>{milestone ? "Personal milestone" : "Personal target"}</span>
+      <span className="text-[11px] tabular-nums text-muted-foreground">{windowLabel(new Date(goal.start_date + "T12:00:00"), new Date(goal.end_date + "T12:00:00"), new Date())}</span>
+    </div>
+    <h3 className="mt-3 font-heading text-lg font-semibold leading-snug tracking-tight sm:text-xl">{goal.title}</h3>
+    {goal.description?.trim() && <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{goal.description}</p>}
+    <div className="mt-5 flex flex-wrap items-end justify-between gap-2">
+      <div>
+        <p className="font-heading text-[1.65rem] font-bold leading-none tabular-nums" style={{ color: tone }}>
+          {milestone ? (p.state === "achieved" ? "Completed" : "In progress") : formatGoalReading(goal, p.current)}
+        </p>
+        {!milestone && <p className="mt-1 text-[11px] text-muted-foreground">of {formatGoalReading(goal, goal.target)}</p>}
+      </div>
+      <span className="text-[11px] font-semibold" style={{ color: tone }}>{archived ? "Archived" : STATE[p.state].word}</span>
+    </div>
+    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-foreground/10" role="progressbar" aria-label={`${goal.title} progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(p.ratio * 100)}>
+      <span className="block h-full rounded-full transition-[width] duration-300" style={{ width: `${Math.round(p.ratio * 100)}%`, background: tone }} />
+    </div>
+    <p className="mt-2 text-[11px] text-muted-foreground">{p.closed ? "Goal period ended" : `${p.daysLeft} ${p.daysLeft === 1 ? "day" : "days"} left`}</p>
+
+    {panel === "progress" && !milestone && <form onSubmit={saveProgress} className="mt-4 flex flex-wrap items-end gap-2 rounded-xl border border-border/60 bg-background/30 p-3">
+      <label className="min-w-[8rem] flex-1 text-[11px] font-semibold text-muted-foreground">Current total
+        <input type="number" min="0" step="any" value={value} onChange={(e) => setValue(e.target.value)} className={cn(FIELD, "mt-1")} /></label>
+      <button type="submit" disabled={busy} className="rounded-lg bg-primary px-3 py-2.5 text-[12px] font-semibold text-primary-foreground disabled:opacity-50">Save progress</button>
+      {validation && <p role="alert" className="w-full text-[11px] text-destructive">{validation}</p>}
+    </form>}
+
+    {panel === "edit" && <form onSubmit={saveEdit} className="mt-4 grid gap-3 rounded-xl border border-border/60 bg-background/30 p-3 sm:grid-cols-2">
+      <label className="text-[11px] font-semibold text-muted-foreground sm:col-span-2">Goal name<input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} className={cn(FIELD, "mt-1")} /></label>
+      <label className="text-[11px] font-semibold text-muted-foreground sm:col-span-2">Why it matters<textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={500} rows={2} className={cn(FIELD, "mt-1 resize-y")} /></label>
+      {!milestone && <><label className="text-[11px] font-semibold text-muted-foreground">Target<input type="number" min="0.01" step="any" value={target} onChange={(e) => setTarget(e.target.value)} className={cn(FIELD, "mt-1")} /></label>
+        <label className="text-[11px] font-semibold text-muted-foreground">Unit<input value={unit} onChange={(e) => setUnit(e.target.value)} maxLength={24} className={cn(FIELD, "mt-1")} /></label></>}
+      <label className="text-[11px] font-semibold text-muted-foreground">Start<input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={cn(FIELD, "mt-1")} /></label>
+      <label className="text-[11px] font-semibold text-muted-foreground">Target date<input type="date" min={startDate} value={endDate} onChange={(e) => setEndDate(e.target.value)} className={cn(FIELD, "mt-1")} /></label>
+      {validation && <p role="alert" className="text-[11px] text-destructive sm:col-span-2">{validation}</p>}
+      <button type="submit" disabled={busy} className="rounded-lg bg-primary px-3 py-2.5 text-[12px] font-semibold text-primary-foreground disabled:opacity-50 sm:col-span-2">Save changes</button>
+    </form>}
+
+    <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-5 text-[11px] font-semibold">
+      {!archived && (milestone ? <button type="button" disabled={busy} onClick={() => onUpdate({ progress_value: p.state === "achieved" ? 0 : 1 })} className="text-primary hover:underline disabled:opacity-50">
+        {p.state === "achieved" ? "Mark not done" : "Mark complete"}
+      </button> : <button type="button" onClick={() => { setValue(String(goal.progress_value ?? 0)); setValidation(""); setPanel(panel === "progress" ? null : "progress"); }} className="text-primary hover:underline">Update progress</button>)}
+      <button type="button" onClick={() => panel === "edit" ? setPanel(null) : openEdit()} className="text-muted-foreground hover:text-foreground">{panel === "edit" ? "Cancel edit" : "Edit goal"}</button>
+      <button type="button" disabled={busy} onClick={onArchive} className="text-muted-foreground hover:text-foreground disabled:opacity-50">{archived ? "Restore" : "Archive"}</button>
+      {confirming ? <><button type="button" disabled={busy} onClick={onDelete} className="text-destructive disabled:opacity-50">Delete for good</button>
+        <button type="button" onClick={() => setConfirming(false)} className="text-muted-foreground">Keep</button></> :
+        <button type="button" onClick={() => setConfirming(true)} className="text-muted-foreground hover:text-destructive">Delete</button>}
+    </div>
+  </motion.article>;
 }
 
 /* ── One goal ──────────────────────────────────────────────────────────── */
@@ -289,7 +520,7 @@ function Empty({ archived, onStart }: { archived: boolean; onStart: () => void }
 function verdict(goal: TradingGoal, p: GoalProgress, slipped: boolean): string {
   const pct = Math.round(p.ratio * 100);
   const gone = Math.round(p.timeElapsed * 100);
-  const short = formatGoalValue(goal.metric, goal.target - (p.current ?? 0));
+  const short = formatGoalValue(goal.metric as AutomaticGoalMetric, goal.target - (p.current ?? 0));
 
   switch (p.state) {
     case "no-data":
@@ -302,7 +533,7 @@ function verdict(goal: TradingGoal, p: GoalProgress, slipped: boolean): string {
       return `The window closed ${short} short.`;
     case "behind":
       return slipped
-        ? `Under the ${formatGoalValue(goal.metric, goal.baseline ?? 0)} you started from, with ${gone}% of the window gone.`
+        ? `Under the ${formatGoalValue(goal.metric as AutomaticGoalMetric, goal.baseline ?? 0)} you started from, with ${gone}% of the window gone.`
         : `${pct}% of the way, with ${gone}% of the window gone.`;
     case "on-track":
       return pct >= gone
@@ -323,7 +554,7 @@ function GoalCard({
 }) {
   const [confirming, setConfirming] = useState(false);
   const p = useMemo(() => computeGoalProgress(goal, data), [goal, data]);
-  const meta = METRIC_META[goal.metric];
+  const meta = METRIC_META[goal.metric as AutomaticGoalMetric];
 
   // A goal that has been put aside is not in a race any more: it keeps its
   // reading but loses the countdown, the pace tick and the live verdict, and
@@ -339,7 +570,7 @@ function GoalCard({
   const ratio = Math.round(p.ratio * 100);
   const gone = Math.round(p.timeElapsed * 100);
   const shortfall = !parked && !p.closed && gone > ratio;
-  const format_ = (n: number) => formatGoalValue(goal.metric, n);
+  const format_ = (n: number) => formatGoalValue(goal.metric as AutomaticGoalMetric, n);
 
   return (
     <motion.article
@@ -512,7 +743,7 @@ function GoalForm({
   onSave: (draft: Omit<TradingGoal, "id" | "user_id" | "created_at" | "updated_at">) => void;
 }) {
   const now = new Date();
-  const [metric, setMetric] = useState<GoalMetric>("execution_rate");
+  const [metric, setMetric] = useState<AutomaticGoalMetric>("execution_rate");
   const [windowKey, setWindowKey] = useState<WindowKey>("month");
   const [title, setTitle] = useState("");
   const [target, setTarget] = useState<string>(() =>
@@ -552,7 +783,7 @@ function GoalForm({
   const accumulates = METRIC_META[metric].accumulates;
   const unit = METRIC_META[metric].unit;
 
-  function pickMetric(next: GoalMetric) {
+  function pickMetric(next: AutomaticGoalMetric) {
     setMetric(next);
     setTarget(String(suggestTarget(next, measureMetric(next, data, range.start, range.end))));
   }
@@ -580,7 +811,7 @@ function GoalForm({
   }
 
   return (
-    <div className="border-b border-border/60 py-6">
+    <div className="py-1">
       {/* The form is the sentence you are about to commit to, with the parts
           you choose left blank. Nothing to scan, nothing to label. */}
       <p className="font-heading text-lg leading-relaxed tracking-tight sm:text-xl">

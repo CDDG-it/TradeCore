@@ -20,7 +20,7 @@ require.extensions['.ts'] = function (loaded, filename) {
 };
 
 const { computeMindScore, MIND_WEIGHTS } = require('../src/lib/mind-score/mind-score.ts');
-const { GOAL_METRICS, computeGoalProgress } = require('../src/lib/goals/goals.ts');
+const { GOAL_METRICS, computeGoalProgress, formatGoalReading } = require('../src/lib/goals/goals.ts');
 const now = new Date(2026, 8, 17, 12);
 const stamp = '2026-09-17T12:00:00';
 const trade = (id, day, result, quality = 'good') => ({
@@ -78,4 +78,20 @@ test('future trade data cannot advance a current goal', () => {
   const future = trade('future', '2026-09-25', 'win');
   const p = computeGoalProgress(g, input([g], { trades: [...trades, future] }));
   assert.equal(p.current, trades.length);
+});
+
+test('personal numeric goals use the trader-entered progress and unit', () => {
+  const g = goal('manual', { title: 'Stick to my plan', target: 20, progress_value: 8, unit: 'sessions' });
+  const p = computeGoalProgress(g, input([g], { trades: [] }));
+  assert.equal(p.current, 8);
+  assert.equal(p.ratio, 0.4);
+  assert.equal(formatGoalReading(g, p.current), '8 sessions');
+});
+
+test('personal milestones can be completed and reopened without changing Mind Score', () => {
+  const g = goal('milestone', { title: 'Write my trading plan', target: 1, progress_value: 0 });
+  assert.equal(computeGoalProgress(g, input([g])).state, 'no-data');
+  assert.equal(computeGoalProgress({ ...g, progress_value: 1 }, input([g])).state, 'achieved');
+  assert.equal(part(computeMindScore(input([{ ...g, progress_value: 1 }]), 'week')).value, null);
+  assert.equal(part(computeMindScore(input([goal('manual', { progress_value: 8 })]), 'week')).value, null);
 });

@@ -1,17 +1,13 @@
 /**
- * My Goals: targets on the numbers the app already measures.
- *
- * Nothing about a goal's progress is stored. The row holds the intent (what
- * you are aiming at, from where, over which window) and everything else is
- * recomputed from trades and habits on read, so a goal can never quietly
- * disagree with the journal behind it.
+ * Journal targets are recomputed from trades and habits. Personal targets
+ * carry progress entered by the trader and are never inferred from a preset.
  */
 import { startOfDay, endOfDay, differenceInCalendarDays } from "date-fns";
 import {
   computeExecutionScore, computeTradeRulesScore, computeHabitScore,
 } from "@/lib/discipline";
 import { tradeR } from "@/lib/journal/weeks";
-import type { AutomaticGoalMetric, GoalMetric, TradingGoal, TradeSummary, Habit, HabitCompletion } from "@/lib/types";
+import type { AutomaticGoalMetric, TradingGoal, TradeSummary, Habit, HabitCompletion } from "@/lib/types";
 
 export interface GoalMetricMeta {
   key: AutomaticGoalMetric;
@@ -234,10 +230,11 @@ export function computeGoalProgress(goal: TradingGoal, input: GoalInputs): GoalP
   const start = startOfDay(new Date(goal.start_date + "T12:00:00"));
   const end = endOfDay(new Date(goal.end_date + "T12:00:00"));
 
-  // A future-dated trade or completion must not advance a goal today.
-  const current = now < start ? null : isPersonalGoal(goal)
+  // Personal progress is explicitly entered by the trader. A future-dated
+  // trade or completion must not advance an automatic target today.
+  const current = isPersonalGoal(goal)
     ? Math.max(0, goal.progress_value ?? 0)
-    : measureMetric(goal.metric as AutomaticGoalMetric, input, start, now < end ? endOfDay(now) : end);
+    : now < start ? null : measureMetric(goal.metric as AutomaticGoalMetric, input, start, now < end ? endOfDay(now) : end);
 
   // An accumulating metric never subtracts a baseline: what is already in the
   // window counts towards the target rather than against it.
