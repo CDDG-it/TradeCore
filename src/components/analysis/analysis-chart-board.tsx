@@ -40,11 +40,16 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
   const url = group?.urls[safeShot];
   const chartSequence = visibleGroups.flatMap((item, groupIndex) => item.urls.map((_, shotIndex) => ({ groupIndex, shotIndex })));
   const sequenceIndex = chartSequence.findIndex((item) => item.groupIndex === safeActive && item.shotIndex === safeShot);
-  // The originals, not a resized copy: this is where the chart is read.
-  const { display, failed, onLoadError, retry, upload, fullSize, uploading, error } = useScreenshots(target, group?.urls ?? [], "full");
+  // The 1600px copy: sharp at this size and a fraction of the original download.
+  // The original is only fetched when the chart is opened full size.
+  const { display, failed, onLoadError, retry, upload, fullSize, uploading, error } = useScreenshots(target, group?.urls ?? [], "preview");
   // The rail is 96px wide: its small copies, so five originals are not fetched to draw five stamps.
   const { display: thumb, failed: thumbFailed, onLoadError: onThumbError } = useScreenshots(null, group?.urls ?? [], "thumb");
   const preview = url ? display(url) : null;
+  const placeholder = url ? thumb(url) : null;
+  // Links whose large copy has finished downloading; until then the small copy stands in.
+  const [loaded, setLoaded] = useState<Set<string>>(() => new Set());
+  const ready = !!preview && loaded.has(preview);
   const canAdd = !readOnly && !!group && !!onChange && group.urls.length < MAX_IMAGES;
 
   useEffect(() => onUploadingChange?.(uploading), [uploading, onUploadingChange]);
@@ -175,7 +180,13 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
                 <button type="button" onClick={() => retry(url)} className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"><RotateCw className="size-3.5" /> Try again</button>
               </div>
               : preview ?
-              <img src={preview} alt={`${group.label} chart ${safeShot + 1}`} onError={() => onLoadError(url)} className="max-h-full max-w-full rounded-lg object-contain shadow-[0_16px_45px_rgba(0,0,0,.35)]" />
+              <>
+                {!ready && placeholder && <img src={placeholder} alt="" aria-hidden className="max-h-full max-w-full rounded-lg object-contain shadow-[0_16px_45px_rgba(0,0,0,.35)]" />}
+                <img src={preview} alt={`${group.label} chart ${safeShot + 1}`}
+                  onLoad={() => setLoaded((prev) => prev.has(preview) ? prev : new Set(prev).add(preview))}
+                  onError={() => onLoadError(url)}
+                  className={cn("max-h-full max-w-full rounded-lg object-contain shadow-[0_16px_45px_rgba(0,0,0,.35)]", !ready && (placeholder ? "pointer-events-none absolute opacity-0" : "opacity-0"))} />
+              </>
               : <div className="h-4/5 w-4/5 animate-pulse rounded-xl bg-white/[.04]" />}
           </motion.div> : <motion.div key="empty" className="relative flex max-w-sm flex-col items-center px-6 py-10 text-center"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }}>
