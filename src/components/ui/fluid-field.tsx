@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
  * navy #0B1120 ground. The grain and the fine diagonal grid sit on top as CSS.
  *
  * The loop pauses while the tab is hidden or the canvas is off screen, and
- * draws a single still frame for reduced motion.
+ * draws a single still frame when `animated` is off or for reduced motion.
  */
 
 const VERTEX = `
@@ -104,6 +104,8 @@ const GRAIN: CSSProperties = {
 export type FluidFieldBackgroundProps = {
   /** Strength of the turquoise/cyan beams over the navy, 0–1. */
   intensity?: number;
+  /** Let the beams flow; off draws one still frame. */
+  animated?: boolean;
   /** Seconds-per-second of the flow; 1 is the original pace. */
   speed?: number;
   /** Draw the grain and diagonal grid textures on top. */
@@ -112,7 +114,7 @@ export type FluidFieldBackgroundProps = {
   style?: CSSProperties;
 };
 
-export function FluidFieldBackground({ intensity = 0.6, speed = 1, texture = true, className, style }: FluidFieldBackgroundProps) {
+export function FluidFieldBackground({ intensity = 0.6, animated = true, speed = 1, texture = true, className, style }: FluidFieldBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -169,7 +171,7 @@ export function FluidFieldBackground({ intensity = 0.6, speed = 1, texture = tru
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const still = !animated || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let frame = 0;
     let onScreen = true;
     const loop = (now: number) => {
@@ -206,7 +208,7 @@ export function FluidFieldBackground({ intensity = 0.6, speed = 1, texture = tru
       gl.deleteShader(vs);
       gl.deleteShader(fs);
     };
-  }, [intensity, speed]);
+  }, [intensity, animated, speed]);
 
   return (
     <div aria-hidden="true" className={cn("pointer-events-none relative overflow-hidden bg-[#0b1120]", className)} style={style}>

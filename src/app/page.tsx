@@ -14,7 +14,7 @@ export default function HomePage() {
       <LandingNav />
       <main id="main">
         <section id="dashboard" className="marketing-hero relative flex min-h-[calc(100svh-72px)] flex-col justify-center overflow-hidden px-6 py-16 sm:px-10 sm:py-20 lg:px-12 lg:py-24">
-          <FluidFieldBackground className="absolute inset-0 -z-10" />
+          <FluidFieldBackground animated={false} className="absolute inset-0 -z-10" />
           {/* Keeps the headline side calm: the beams fade back under the copy and stay bright behind the dashboard. */}
           <div aria-hidden className="marketing-hero-scrim pointer-events-none absolute inset-0 -z-10" />
           <div className="relative mx-auto grid w-full max-w-[1500px] grid-cols-[minmax(0,1fr)] items-center gap-14 lg:grid-cols-[0.94fr_1.06fr] lg:gap-16">
