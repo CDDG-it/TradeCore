@@ -8,14 +8,18 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { PRIMARY_NAV } from "@/lib/nav";
+import { NAV_ICON_ASSETS } from "@/lib/nav-icons";
 import { isActive } from "@/components/layout/mobile-nav";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 /**
- * The signed-in top bar. A text rail holds the four destinations. The bar
- * stays available as a stable edge of the workspace.
+ * The signed-in top bar. A rail holds the four destinations, each with the
+ * product's own illustrated icon (the same set the marketing site uses), so
+ * the bar reads as TradingMC rather than a generic icon font.
  *
- * Motion stays short: the active pill uses its existing spring.
+ * Motion: the active pill springs to the current page and its icon lifts; a
+ * softer hover pill follows the pointer from item to item, and the icon under
+ * it grows a little, like a dock. All of it is skipped under reduced motion.
  */
 const MENU_MOTION = "duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]";
 const MENU_SURFACE = "rounded-2xl border border-border/60 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,.45)] backdrop-blur-md";
@@ -29,10 +33,18 @@ function SoonBadge() {
   );
 }
 
-function RailItem({ href, label, active, soon, instant }: { href: string; label: string; active: boolean; soon?: boolean; instant: boolean }) {
+const PILL_SPRING = { type: "spring", stiffness: 480, damping: 38 } as const;
+
+function RailItem({ href, label, active, soon, instant, hovered, onHover }: {
+  href: string; label: string; active: boolean; soon?: boolean; instant: boolean;
+  /** The pointer is over this item: the hover pill sits here. */
+  hovered: boolean;
+  onHover: (href: string) => void;
+}) {
+  const icon = NAV_ICON_ASSETS[href];
   if (soon) {
     return (
-      <span aria-disabled title="Coming soon" className="relative flex h-8 cursor-default items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-semibold text-sidebar-foreground/35">
+      <span aria-disabled title="Coming soon" className="relative flex h-9 cursor-default items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-semibold text-sidebar-foreground/35">
         {label}
         <SoonBadge />
       </span>
@@ -42,22 +54,57 @@ function RailItem({ href, label, active, soon, instant }: { href: string; label:
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
+      onMouseEnter={() => onHover(href)}
+      onFocus={() => onHover(href)}
       className={cn(
-        "press relative flex h-8 items-center whitespace-nowrap rounded-full px-3.5 text-xs font-semibold",
-        active ? "text-foreground" : "text-sidebar-foreground/60 hover:bg-white/[0.04] hover:text-sidebar-foreground"
+        "group/rail press relative flex h-9 items-center gap-2 whitespace-nowrap rounded-full pl-2 pr-3.5 text-xs font-semibold transition-colors duration-150",
+        active ? "text-foreground" : "text-sidebar-foreground/60 hover:text-sidebar-foreground"
       )}
     >
+      {/* The hover pill: one element, handed from item to item as the pointer moves. */}
+      {hovered && !active && (
+        <motion.span
+          layoutId="nav-hover-pill"
+          aria-hidden
+          className="absolute inset-0 rounded-full bg-white/[0.045]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={instant ? { duration: 0 } : PILL_SPRING}
+        />
+      )}
       {active && (
         <motion.span
           layoutId="nav-active-pill"
           aria-hidden
           className="absolute inset-0 overflow-hidden rounded-full border border-white/10 bg-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
-          transition={instant ? { duration: 0 } : { type: "spring", stiffness: 480, damping: 38 }}
+          transition={instant ? { duration: 0 } : PILL_SPRING}
         >
           {/* The turquoise underline rides inside the pill, so one spring moves both. */}
           <span
             className="absolute inset-x-4 bottom-0 h-[2px] rounded-full"
             style={{ background: "var(--primary)", boxShadow: "0 0 10px color-mix(in oklch, var(--primary) 70%, transparent)" }}
+          />
+        </motion.span>
+      )}
+      {icon && (
+        <motion.span
+          className="relative z-10 grid size-6 shrink-0 place-items-center"
+          // Lifts when it becomes the current page; grows under the pointer.
+          animate={{ transform: active ? "translateY(-1px) scale(1.08)" : hovered ? "scale(1.14)" : "scale(1)" }}
+          transition={instant ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 22 }}
+        >
+          <Image
+            src={icon}
+            alt=""
+            width={48}
+            height={48}
+            sizes="24px"
+            loading="eager"
+            className={cn(
+              "size-6 object-contain transition-[filter,opacity] duration-200",
+              active ? "opacity-100 drop-shadow-[0_2px_8px_rgba(20,184,166,.45)]" : "opacity-60 saturate-[.6] group-hover/rail:opacity-100 group-hover/rail:saturate-100"
+            )}
           />
         </motion.span>
       )}
@@ -72,6 +119,8 @@ export function TopNav() {
   const avatar = avatarUrl ?? undefined;
   const [open, setOpen] = useState(false);
   const reduce = useReducedMotion();
+  // Which rail item the pointer is over, for the hover pill.
+  const [hovered, setHovered] = useState<string | null>(null);
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Trader";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -98,9 +147,11 @@ export function TopNav() {
             </Link>
           </div>
 
-          <nav aria-label="Primary" className="hidden min-w-0 max-w-full items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:flex">
+          <nav aria-label="Primary" onMouseLeave={() => setHovered(null)} onBlur={() => setHovered(null)}
+            className="hidden min-w-0 max-w-full items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.03] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:flex">
             {PRIMARY_NAV.map((tab) => (
-              <RailItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} soon={tab.soon} instant={!!reduce} />
+              <RailItem key={tab.href} href={tab.href} label={tab.label} active={isActive(pathname, tab.href)} soon={tab.soon} instant={!!reduce}
+                hovered={hovered === tab.href} onHover={setHovered} />
             ))}
           </nav>
 

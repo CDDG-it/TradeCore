@@ -3,19 +3,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { addMonths, addWeeks, eachDayOfInterval, endOfMonth, endOfWeek, format, isAfter, isSameDay, startOfDay, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
-import { AlertCircle, Brain, BookOpen, Check, ChevronLeft, ChevronRight, Circle, Coffee, Dumbbell, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EASE_OUT, SPRING } from "@/lib/motion";
 import { CountUp } from "@/components/ui/count-up";
 import { Segmented } from "@/components/ui/segmented";
 import { GrowBar } from "@/components/ui/grow-bar";
-import { frequencyApplies, CATEGORY_ACCENT } from "@/lib/habits";
-import { HABIT_ICONS, HabitGlyph } from "@/components/habit-glyph";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { frequencyApplies, habitAccent } from "@/lib/habits";
+import { HabitGlyph } from "@/components/habit-glyph";
+import { HabitComposer, type HabitForm } from "@/components/habits/habit-composer";
 import { createHabit, deleteHabit, getHabitCompletions, getHabits, getHabitStreak, toggleHabitCompletion, updateHabit } from "@/lib/supabase/queries";
-import type { Habit, HabitCategory, HabitCompletion } from "@/lib/types";
+import type { Habit, HabitCompletion } from "@/lib/types";
 
-type IconComponent = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 type CalendarRange = "week" | "month" | "all";
 
 function fade(color: string, alpha: number): string {
@@ -30,16 +29,8 @@ function fade(color: string, alpha: number): string {
   return `color-mix(in oklch, ${value} ${Math.round(alpha * 100)}%, transparent)`;
 }
 
-const CATEGORY_COLORS: Record<HabitCategory, { accent: string; bg: string; label: string; Icon: IconComponent }> = {
-  mindset: { accent: CATEGORY_ACCENT.mindset, bg: fade(CATEGORY_ACCENT.mindset, 0.12), label: "Mindset", Icon: Brain },
-  routine: { accent: CATEGORY_ACCENT.routine, bg: fade(CATEGORY_ACCENT.routine, 0.12), label: "Routine", Icon: Coffee },
-  research: { accent: CATEGORY_ACCENT.research, bg: fade(CATEGORY_ACCENT.research, 0.12), label: "Research", Icon: Search },
-  health: { accent: CATEGORY_ACCENT.health, bg: fade(CATEGORY_ACCENT.health, 0.12), label: "Health", Icon: Dumbbell },
-  review: { accent: CATEGORY_ACCENT.review, bg: fade(CATEGORY_ACCENT.review, 0.12), label: "Review", Icon: BookOpen },
-  other: { accent: CATEGORY_ACCENT.other, bg: fade(CATEGORY_ACCENT.other, 0.12), label: "Other", Icon: Circle },
-};
-
-function habitColor(habit: Pick<Habit, "category">) { return CATEGORY_COLORS[habit.category].accent; }
+/** A habit's colour: its own palette colour, else its category's (see lib/habits). */
+function habitColor(habit: Pick<Habit, "category" | "color">) { return habitAccent(habit); }
 function appliesOn(habit: Habit, date: Date) {
   return frequencyApplies(habit.frequency, date.getDay()) && startOfDay(date).getTime() >= startOfDay(new Date(habit.created_at)).getTime();
 }
@@ -57,8 +48,6 @@ function TickBox({ done, habit }: { done: boolean; habit: Habit }) {
   );
 }
 
-interface NewHabitForm { name: string; description: string; category: HabitCategory; frequency: "daily" | "weekdays" | "weekends"; icon: string; }
-const EMPTY_NEW_HABIT: NewHabitForm = { name: "", description: "", category: "routine", frequency: "daily", icon: "checklist" };
 
 export function HabitsView() {
   const today = format(new Date(), "yyyy-MM-dd");
@@ -71,11 +60,8 @@ export function HabitsView() {
   const [selectedHabitId, setSelectedHabitId] = useState("all");
   const [selectedDate, setSelectedDate] = useState(today);
   const [showNewHabit, setShowNewHabit] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [deletingHabit, setDeletingHabit] = useState<string | null>(null);
-  const [newHabit, setNewHabit] = useState<NewHabitForm>(EMPTY_NEW_HABIT);
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
   // Which way the calendar last moved, so the next period slides in from that side.
   const [direction, setDirection] = useState(0);
   const toggling = useRef(new Set<string>());
@@ -146,22 +132,18 @@ export function HabitsView() {
       toggling.current.delete(key);
     }
   }
-  function openEdit(habit: Habit) {
-    setEditingId(habit.id); setCreateError(null);
-    setNewHabit({ name: habit.name, description: habit.description ?? "", category: habit.category, frequency: habit.frequency, icon: habit.icon });
-    setShowNewHabit(true);
-  }
-  function closeNewHabit() { if (creating) return; setShowNewHabit(false); setEditingId(null); setCreateError(null); setNewHabit(EMPTY_NEW_HABIT); }
-  async function handleSaveHabit() {
-    if (!newHabit.name.trim() || creating) return;
-    setCreating(true); setCreateError(null);
-    try {
-      const payload = { name: newHabit.name.trim(), description: newHabit.description.trim(), category: newHabit.category, frequency: newHabit.frequency, target_days: newHabit.frequency === "daily" ? 7 : newHabit.frequency === "weekdays" ? 5 : 2, color: CATEGORY_COLORS[newHabit.category].accent, icon: newHabit.icon };
-      if (editingId) await updateHabit(editingId, payload); else await createHabit(payload);
-      await refresh();
-      setShowNewHabit(false); setEditingId(null); setNewHabit(EMPTY_NEW_HABIT);
-    } catch (error) { console.error("Failed to save habit:", error); setCreateError(`Could not ${editingId ? "update" : "create"} habit. Please try again.`); }
-    finally { setCreating(false); }
+  function openNew() { setEditingHabit(null); setShowNewHabit(true); }
+  function openEdit(habit: Habit) { setEditingHabit(habit); setShowNewHabit(true); }
+  /** Saves the composer's form; a failure throws, and the composer shows it and stays open. */
+  async function handleSaveHabit(form: HabitForm) {
+    const payload = {
+      name: form.name, description: form.description, category: form.category, frequency: form.frequency,
+      target_days: form.frequency === "daily" ? 7 : form.frequency === "weekdays" ? 5 : 2,
+      color: form.color, icon: form.icon,
+    };
+    if (editingHabit) await updateHabit(editingHabit.id, payload); else await createHabit(payload);
+    await refresh();
+    setShowNewHabit(false);
   }
   async function handleDeleteHabit(id: string) { await deleteHabit(id); if (selectedHabitId === id) setSelectedHabitId("all"); await refresh(); setDeletingHabit(null); }
 
@@ -170,11 +152,11 @@ export function HabitsView() {
     <div className="flex h-[calc(100dvh-9.5rem)] min-h-[34rem] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[var(--panel-shadow)]">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/60 px-4 py-3 sm:px-5">
         <div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">{format(now, "EEEE, d MMMM")}</p><h2 className="mt-1 font-heading text-xl font-bold tracking-tight">Build the standard. Repeat it.</h2></div>
-        <button onClick={() => setShowNewHabit(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-[0_8px_24px_color-mix(in_oklch,var(--primary)_22%,transparent)] transition-transform hover:-translate-y-0.5 active:translate-y-0"><Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> Add habit</button>
+        <button onClick={openNew} className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-[0_8px_24px_color-mix(in_oklch,var(--primary)_22%,transparent)] transition-transform hover:-translate-y-0.5 active:translate-y-0"><Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> Add habit</button>
       </div>
 
       {habits.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-6 text-center"><span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary"><Plus className="h-5 w-5" /></span><h3 className="mt-4 text-base font-bold">Your standard starts with one habit</h3><p className="mt-1 max-w-sm text-sm text-muted-foreground">Add the routine you want to make visible, then check it off here every day.</p><button onClick={() => setShowNewHabit(true)} className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Create first habit</button></div>
+        <div className="flex flex-1 flex-col items-center justify-center px-6 text-center"><span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary"><Plus className="h-5 w-5" /></span><h3 className="mt-4 text-base font-bold">Your standard starts with one habit</h3><p className="mt-1 max-w-sm text-sm text-muted-foreground">Add the routine you want to make visible, then check it off here every day.</p><button onClick={openNew} className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Create first habit</button></div>
       ) : (
         <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-12">
           <aside className="flex min-h-0 flex-col border-b border-border/60 lg:col-span-4 lg:border-b-0 lg:border-r">
@@ -222,19 +204,7 @@ export function HabitsView() {
         </div>
       )}
 
-      <Dialog open={showNewHabit} onOpenChange={(open) => open ? setShowNewHabit(true) : closeNewHabit()}>
-        <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>{editingId ? "Edit habit" : "New habit"}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5"><label className="text-xs font-medium text-muted-foreground">Habit name *</label><input type="text" value={newHabit.name} onChange={(event) => setNewHabit({ ...newHabit, name: event.target.value })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void handleSaveHabit(); } }} placeholder="e.g. Morning journaling" className="w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary/50" autoFocus /></div>
-            <div className="space-y-1.5"><label className="text-xs font-medium text-muted-foreground">Description</label><input type="text" value={newHabit.description} onChange={(event) => setNewHabit({ ...newHabit, description: event.target.value })} placeholder="Optional description..." className="w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary/50" /></div>
-            <div className="space-y-1.5"><label className="text-xs font-medium text-muted-foreground">Icon</label><div className="flex flex-wrap gap-2">{HABIT_ICONS.map(({ key, Icon }) => { const active = newHabit.icon === key; return <button key={key} type="button" title={key} onClick={() => setNewHabit({ ...newHabit, icon: key })} className={cn("flex h-9 w-9 items-center justify-center rounded-lg border transition-all", active ? "border-primary/50 bg-primary/15 text-primary" : "border-border bg-secondary text-muted-foreground")}><Icon className="h-4 w-4" /></button>; })}</div></div>
-            <div className="space-y-1.5"><label className="text-xs font-medium text-muted-foreground">Category</label><div className="flex flex-wrap gap-1.5">{(Object.keys(CATEGORY_COLORS) as HabitCategory[]).map((category) => { const item = CATEGORY_COLORS[category]; const active = newHabit.category === category; return <button key={category} type="button" onClick={() => setNewHabit({ ...newHabit, category })} className="rounded-lg border px-3 py-1 text-xs font-semibold transition-all" style={active ? { background: item.bg, color: item.accent, borderColor: fade(item.accent, 0.4) } : { background: "var(--secondary)", color: "var(--muted-foreground)", borderColor: "var(--border)" }}>{item.label}</button>; })}</div></div>
-            <div className="space-y-1.5"><label className="text-xs font-medium text-muted-foreground">Frequency</label><div className="flex gap-2">{(["daily", "weekdays", "weekends"] as const).map((frequency) => <button key={frequency} type="button" onClick={() => setNewHabit({ ...newHabit, frequency })} className={cn("flex-1 rounded-lg border py-2 text-xs font-semibold capitalize transition-all", newHabit.frequency === frequency ? "border-primary/40 bg-primary/15 text-primary" : "border-border bg-secondary text-muted-foreground")}>{frequency}</button>)}</div></div>
-            {createError && <p className="flex items-center gap-1.5 text-xs text-destructive"><AlertCircle className="h-3.5 w-3.5 shrink-0" />{createError}</p>}
-          </div>
-          <DialogFooter><button type="button" onClick={closeNewHabit} disabled={creating} className="rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm font-medium text-muted-foreground disabled:opacity-40">Cancel</button><button type="button" onClick={() => void handleSaveHabit()} disabled={!newHabit.name.trim() || creating} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-[0_4px_14px_color-mix(in_oklch,var(--primary)_28%,transparent)] disabled:opacity-40">{creating ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />{editingId ? "Saving..." : "Creating..."}</> : editingId ? "Save changes" : "Create habit"}</button></DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <HabitComposer open={showNewHabit} habit={editingHabit} onOpenChange={setShowNewHabit} onSubmit={handleSaveHabit} />
     </div>
     </MotionConfig>
   );

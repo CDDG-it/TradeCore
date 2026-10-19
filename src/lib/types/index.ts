@@ -321,7 +321,7 @@ export interface NewsItem {
 
 // ── Habit Tracker ────────────────────────────────────────────────────────────
 export type HabitFrequency = "daily" | "weekdays" | "weekends";
-export type HabitCategory = "mindset" | "routine" | "research" | "health" | "review" | "other";
+export type HabitCategory = "mindset" | "routine" | "research" | "review" | "risk" | "focus" | "learning" | "health" | "other";
 
 export interface Habit {
   id: string;

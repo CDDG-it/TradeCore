@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/lib/nav";
+import { NAV_ICON_ASSETS } from "@/lib/nav-icons";
 
-/** Text-first phone navigation, always available at the workspace edge. */
+/** Phone navigation, always available at the workspace edge: the product's own icons over short labels. */
 
 /** What the create pill offers: the two things a trader starts from the desk. */
 export const CREATE = [
@@ -29,22 +32,42 @@ export const isActive = (pathname: string, href: string) =>
   pathname.startsWith(href + "/") ||
   (ALSO_UNDER[href] ?? []).some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-function TabLabel({ tab, active }: { tab: (typeof PRIMARY_NAV)[number]; active: boolean }) {
+function TabLabel({ tab, active, instant }: { tab: (typeof PRIMARY_NAV)[number]; active: boolean; instant: boolean }) {
+  const icon = NAV_ICON_ASSETS[tab.href];
   return (
     <Link
       href={tab.href}
       aria-label={tab.label}
       aria-current={active ? "page" : undefined}
-      className={cn("mobile-tab relative flex h-full min-w-0 items-center justify-center px-1 text-center text-[11px] font-semibold leading-tight tracking-tight transition-colors", active ? "text-foreground" : "text-foreground/55")}
+      className={cn("mobile-tab relative flex h-full min-w-0 flex-col items-center justify-center gap-0.5 px-1 text-center text-[10px] font-semibold leading-tight tracking-tight transition-colors", active ? "text-foreground" : "text-foreground/55")}
     >
+      {/* One indicator for the whole bar, sliding to the current tab. */}
+      {active && (
+        <motion.span
+          layoutId="mobile-tab-indicator"
+          aria-hidden
+          className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-primary shadow-[0_0_10px_rgba(20,184,166,.7)]"
+          transition={instant ? { duration: 0 } : { type: "spring", stiffness: 480, damping: 38 }}
+        />
+      )}
+      {icon && (
+        <motion.span
+          className="relative z-10 grid size-6 place-items-center"
+          animate={{ transform: active ? "translateY(-1px) scale(1.1)" : "scale(1)" }}
+          transition={instant ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 22 }}
+        >
+          <Image src={icon} alt="" width={48} height={48} sizes="24px" loading="eager"
+            className={cn("size-6 object-contain transition-[filter,opacity] duration-200", active ? "opacity-100 drop-shadow-[0_2px_8px_rgba(20,184,166,.45)]" : "opacity-55 saturate-[.6]")} />
+        </motion.span>
+      )}
       <span className="relative z-10">{tab.short ?? tab.label}</span>
-      <span aria-hidden className={cn("absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-primary transition-opacity duration-200", active ? "opacity-100" : "opacity-0")} />
     </Link>
   );
 }
 
 export function BottomNav() {
   const pathname = usePathname();
+  const reduce = useReducedMotion();
   const [createOpen, setCreateOpen] = useState(false);
   const [first, second, ...rest] = PRIMARY_NAV;
 
@@ -59,8 +82,8 @@ export function BottomNav() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="mx-auto grid h-14 max-w-md grid-cols-5 items-stretch px-2">
-        {[first, second].map((tab) => <TabLabel key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
+      <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-stretch px-2">
+        {[first, second].map((tab) => <TabLabel key={tab.href} tab={tab} active={isActive(pathname, tab.href)} instant={!!reduce} />)}
         <DropdownMenu open={createOpen} onOpenChange={setCreateOpen}>
           <DropdownMenuTrigger
             aria-label="Create"
@@ -80,7 +103,7 @@ export function BottomNav() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        {rest.map((tab) => <TabLabel key={tab.href} tab={tab} active={isActive(pathname, tab.href)} />)}
+        {rest.map((tab) => <TabLabel key={tab.href} tab={tab} active={isActive(pathname, tab.href)} instant={!!reduce} />)}
       </div>
     </nav>
   );
