@@ -1,16 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { PRIMARY_NAV } from "@/lib/nav";
-import { NAV_ICON_ASSETS } from "@/lib/nav-icons";
+import { NavIcon } from "@/lib/nav-icons";
 
-/** Phone navigation, always available at the workspace edge: the product's own icons over short labels. */
+/** Phone navigation, always available at the workspace edge: the same icons as the desktop rail. */
 
 /** What the create pill offers: the two things a trader starts from the desk. */
 export const CREATE = [
@@ -33,7 +32,6 @@ export const isActive = (pathname: string, href: string) =>
   (ALSO_UNDER[href] ?? []).some((p) => pathname === p || pathname.startsWith(p + "/"));
 
 function TabLabel({ tab, active, instant }: { tab: (typeof PRIMARY_NAV)[number]; active: boolean; instant: boolean }) {
-  const icon = NAV_ICON_ASSETS[tab.href];
   return (
     <Link
       href={tab.href}
@@ -50,16 +48,13 @@ function TabLabel({ tab, active, instant }: { tab: (typeof PRIMARY_NAV)[number];
           transition={instant ? { duration: 0 } : { type: "spring", stiffness: 480, damping: 38 }}
         />
       )}
-      {icon && (
-        <motion.span
-          className="relative z-10 grid size-6 place-items-center"
-          animate={{ transform: active ? "translateY(-1px) scale(1.1)" : "scale(1)" }}
-          transition={instant ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 22 }}
-        >
-          <Image src={icon} alt="" width={48} height={48} sizes="24px" loading="eager"
-            className={cn("size-6 object-contain transition-[filter,opacity] duration-200", active ? "opacity-100 drop-shadow-[0_2px_8px_rgba(20,184,166,.45)]" : "opacity-55 saturate-[.6]")} />
-        </motion.span>
-      )}
+      <motion.span
+        className={cn("relative z-10 grid size-6 place-items-center", active ? "text-primary" : "text-foreground/55")}
+        animate={{ transform: active ? "translateY(-1px) scale(1.1)" : "scale(1)" }}
+        transition={instant ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 22 }}
+      >
+        <NavIcon href={tab.href} active={active} className="size-6" />
+      </motion.span>
       <span className="relative z-10">{tab.short ?? tab.label}</span>
     </Link>
   );
@@ -87,9 +82,14 @@ export function BottomNav() {
         <DropdownMenu open={createOpen} onOpenChange={setCreateOpen}>
           <DropdownMenuTrigger
             aria-label="Create"
-            className="group/create mobile-tab mobile-tab-create flex items-center justify-center text-[11px] font-semibold text-primary outline-none"
+            className="group/create mobile-tab mobile-tab-create flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold leading-tight text-primary outline-none"
           >
-            <span className="rounded-full border border-primary/35 bg-primary/10 px-2.5 py-1.5">Create</span>
+            <span className="grid size-7 place-items-center rounded-full border border-primary/35 bg-primary/10 transition-colors group-hover/create:bg-primary/15">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true" className="size-5">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </span>
+            <span>Create</span>
           </DropdownMenuTrigger>
           {/* Opens upward out of the pill: two large rows, thumb-sized. */}
           <DropdownMenuContent side="top" align="center" sideOffset={14} className="w-64 rounded-2xl border border-border/60 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,.45)]">

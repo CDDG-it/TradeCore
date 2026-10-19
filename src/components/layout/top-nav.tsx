@@ -8,13 +8,13 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { PRIMARY_NAV } from "@/lib/nav";
-import { NAV_ICON_ASSETS } from "@/lib/nav-icons";
+import { NavIcon } from "@/lib/nav-icons";
 import { isActive } from "@/components/layout/mobile-nav";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 /**
  * The signed-in top bar. A rail holds the four destinations, each with the
- * product's own illustrated icon (the same set the marketing site uses), so
+ * product's own minimal icon set, so
  * the bar reads as TradingMC rather than a generic icon font.
  *
  * Motion: the active pill springs to the current page and its icon lifts; a
@@ -41,7 +41,6 @@ function RailItem({ href, label, active, soon, instant, hovered, onHover }: {
   hovered: boolean;
   onHover: (href: string) => void;
 }) {
-  const icon = NAV_ICON_ASSETS[href];
   if (soon) {
     return (
       <span aria-disabled title="Coming soon" className="relative flex h-9 cursor-default items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-semibold text-sidebar-foreground/35">
@@ -87,27 +86,14 @@ function RailItem({ href, label, active, soon, instant, hovered, onHover }: {
           />
         </motion.span>
       )}
-      {icon && (
-        <motion.span
-          className="relative z-10 grid size-6 shrink-0 place-items-center"
-          // Lifts when it becomes the current page; grows under the pointer.
-          animate={{ transform: active ? "translateY(-1px) scale(1.08)" : hovered ? "scale(1.14)" : "scale(1)" }}
-          transition={instant ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 22 }}
-        >
-          <Image
-            src={icon}
-            alt=""
-            width={48}
-            height={48}
-            sizes="24px"
-            loading="eager"
-            className={cn(
-              "size-6 object-contain transition-[filter,opacity] duration-200",
-              active ? "opacity-100 drop-shadow-[0_2px_8px_rgba(20,184,166,.45)]" : "opacity-60 saturate-[.6] group-hover/rail:opacity-100 group-hover/rail:saturate-100"
-            )}
-          />
-        </motion.span>
-      )}
+      <motion.span
+        className={cn("relative z-10 grid size-5 shrink-0 place-items-center", active ? "text-primary" : "text-sidebar-foreground/65 group-hover/rail:text-sidebar-foreground")}
+        // Lifts when it becomes the current page; grows under the pointer.
+        animate={{ transform: active ? "translateY(-1px) scale(1.08)" : hovered ? "scale(1.14)" : "scale(1)" }}
+        transition={instant ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 22 }}
+      >
+        <NavIcon href={href} active={active} className="size-5 transition-colors duration-150" />
+      </motion.span>
       <span className="relative z-10">{label}</span>
     </Link>
   );
