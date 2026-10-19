@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
@@ -15,6 +15,7 @@ import { getTrades } from "@/lib/supabase/queries";
 import { useScreenshots } from "@/lib/supabase/use-screenshots";
 import { MonthAnalytics } from "@/components/journal/month-analytics";
 import { DayTradesDialog } from "@/components/journal/day-trades-dialog";
+import { HOVER_PREVIEW_DELAY_MS, ScreenshotHoverPreview, type HoverPreviewTarget } from "@/components/journal/screenshot-hover-preview";
 import type { TradeJournalEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { tradeR, formatTotalR, instrumentName } from "@/lib/journal/weeks";
@@ -26,6 +27,17 @@ import {
 /** The two calendar readings of the same month: the numbers (net R per day) and
  *  the charts (a screenshot per day with its W/L/BE verdict). */
 type CalendarView = "results" | "screens";
+
+/* The calendar remembers how it was last read, so choosing Screens once
+   keeps it on Screens across pages and visits. Per browser, best effort. */
+const VIEW_KEY = "tmc:journal-calendar-view";
+function storedView(): CalendarView {
+  try {
+    return typeof window !== "undefined" && window.localStorage.getItem(VIEW_KEY) === "screens" ? "screens" : "results";
+  } catch {
+    return "results";
+  }
+}
 
 /** The day's verdict letter and colour, from its net R. A traded day is always
  *  one of the three; an untraded day has none. */
@@ -54,7 +66,38 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
   const [dayTradesDate, setDayTradesDate] = useState<string | null>(null); // inspect a day's trades
 
   const [calendarMonth, setCalendarMonth] = useState(sampleMonth ?? new Date());
-  const [calendarView, setCalendarView] = useState<CalendarView>("results");
+  // Read on the client only: the first render is the loading state either way,
+  // so the server's default and the stored choice never disagree on screen.
+  const [calendarView, setCalendarViewState] = useState<CalendarView>(() => (preview ? "results" : storedView()));
+  function setCalendarView(view: CalendarView) {
+    setCalendarViewState(view);
+    if (preview) return;
+    try { window.localStorage.setItem(VIEW_KEY, view); } catch { /* storage blocked: the choice lasts this visit */ }
+  }
+
+  /* Rest the pointer on a chart tile and it opens large beside it. `arming`
+     is the tile whose timer is running (it shows a filling bar), `hovered`
+     the open preview. Mouse only: a touch tap still just opens the day. */
+  const [arming, setArming] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<HoverPreviewTarget | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const endHover = useCallback(() => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
+    setArming(null);
+    setHovered(null);
+  }, []);
+  useEffect(() => () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); }, []);
+  function startHover(key: string, tile: HTMLElement, preview: Omit<HoverPreviewTarget, "rect">) {
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    endHover();
+    setArming(key);
+    hoverTimer.current = setTimeout(() => {
+      hoverTimer.current = null;
+      setArming(null);
+      setHovered({ ...preview, rect: tile.getBoundingClientRect() });
+    }, HOVER_PREVIEW_DELAY_MS);
+  }
 
   useEffect(() => {
     if (preview) return;
@@ -277,6 +320,8 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
         ) : (
           has && <span aria-hidden className="absolute inset-0" style={{ background: resultBands(dayTrades, 14) }} />
         )}
+        {/* Fills while the pointer rests here; when full, the chart opens large. */}
+        {arming === key && <span aria-hidden className="journal-hover-arm pointer-events-none absolute inset-x-0 bottom-0 z-10 h-0.5 bg-primary motion-reduce:hidden" />}
 
         <div className="relative flex h-full flex-col p-1.5">
           <div className="flex items-start justify-between gap-1 leading-none">
@@ -319,12 +364,23 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
 
     const inner = screens ? screensInner : resultsInner;
     const bg = !screens && has ? { background: resultBands(dayTrades, 12) } : undefined;
+    const hover = screens && shot && rawShot ? {
+      onMouseEnter: (event: React.MouseEvent<HTMLElement>) => startHover(key, event.currentTarget, {
+        path: rawShot,
+        thumb: shot,
+        title: `${format(day, "EEEE d MMMM")} · ${[...new Set(dayTrades.map((t) => instrumentName(t.instrument)))].join(", ")}`,
+        detail: `${verdict ? `${verdict.letter} · ` : ""}${formatTotalR(dayR)}`,
+        detailColor: netColor,
+      }),
+      onMouseLeave: endHover,
+      onMouseDown: endHover,
+    } : {};
 
     if (dayTrades.length === 1 && !preview) {
       const only = dayTrades[0];
       return (
-        <Link key={key} href={`/journal/${only.id}`} title={`Open ${instrumentName(only.instrument)} log`}
-          className={tileClass} style={bg}>
+        <Link key={key} href={`/journal/${only.id}`} title={shot ? undefined : `Open ${instrumentName(only.instrument)} log`}
+          aria-label={`Open ${instrumentName(only.instrument)} log`} className={tileClass} style={bg} {...hover}>
           {inner}
         </Link>
       );
@@ -332,7 +388,8 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
     if (dayTrades.length > 0) {
       return (
         <button key={key} type="button" onClick={() => setDayTradesDate(key)}
-          title={`${dayTrades.length} trade${dayTrades.length === 1 ? "" : "s"}: open the day`} className={tileClass} style={bg}>
+          title={shot ? undefined : `${dayTrades.length} trade${dayTrades.length === 1 ? "" : "s"}: open the day`}
+          aria-label={`${dayTrades.length} trade${dayTrades.length === 1 ? "" : "s"}: open the day`} className={tileClass} style={bg} {...hover}>
           {inner}
         </button>
       );
@@ -449,6 +506,8 @@ export function JournalWorkspace({ preview = false, sampleTrades = [], sampleMon
           preview={preview}
         />
       )}
+
+      <ScreenshotHoverPreview target={calendarView === "screens" ? hovered : null} onClose={endHover} />
     </div>
   );
 }
