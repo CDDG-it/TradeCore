@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getTradeById, updateTrade, getAnalyses, getProfile, getAccounts, getTradeRuleChecks, getRuleSourcesForDate, saveTradeRuleChecks, type AnalysisListRow, type RuleCheckDraft } from "@/lib/supabase/queries";
 import { invalidateReads } from "@/lib/supabase/cache";
-import { ScreenshotUpload } from "@/components/screenshot-upload";
+import { AnalysisChartBoard } from "@/components/analysis/analysis-chart-board";
 import type { Direction, TradeResult, Session, TradeDiscipline, TradeJournalEntry, FundedAccount } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AnalysisPicker } from "@/components/journal/analysis-picker";
@@ -530,12 +530,13 @@ export default function EditTradePage({ params }: { params: Promise<{ id: string
 
         {/* Screenshots */}
         {entitlements.screenshots ? <Card className="bg-card border-border/50 shadow-sm">
-          <CardHeader className="pb-2.5"><CardTitle className="text-sm font-semibold">Screenshots</CardTitle></CardHeader>
-          <CardContent>
-            <ScreenshotUpload
+          {/* The same chart board as a new trade and as analysis: paste, drop or upload. */}
+          <CardContent className="h-[min(28rem,60dvh)] min-h-0 p-3">
+            <AnalysisChartBoard
               groups={form.screenshot_groups}
               onChange={(g) => set("screenshot_groups", g)}
-              storageConfig={{ entityType: "trades", entityId: id }}
+              target={{ entityType: "trades", entityId: id }}
+              hideDescription
             />
           </CardContent>
         </Card> : <Card className="border-border/50 bg-card"><CardContent className="flex items-center justify-between gap-4 p-4"><div><p className="text-sm font-semibold">Trade screenshots</p><p className="mt-0.5 text-xs text-muted-foreground">Plus unlocks screenshots and advanced analytics.</p></div><Link href="/pricing" className="shrink-0 text-xs font-semibold text-primary hover:underline">Compare plans</Link></CardContent></Card>}

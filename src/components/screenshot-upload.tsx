@@ -2,10 +2,11 @@
 
 import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ImagePlus, X, ZoomIn, Plus } from "lucide-react";
+import { ImageOff, ImagePlus, X, ZoomIn, Plus, RotateCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ScreenshotGroup } from "@/lib/types";
-import { uploadScreenshot, deleteScreenshot, getScreenshotUrl, getScreenshotUrls, ScreenshotTooLargeError } from "@/lib/supabase/storage";
+import { uploadScreenshot, deleteScreenshot, getScreenshotUrl, ScreenshotTooLargeError } from "@/lib/supabase/storage";
+import { useScreenshots } from "@/lib/supabase/use-screenshots";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -93,8 +94,6 @@ export function ScreenshotUpload({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [addingGroup, setAddingGroup] = useState(false);
   const [customLabel, setCustomLabel] = useState("");
-  // Maps storage paths → temporary signed URLs for display
-  const [resolvedUrls, setResolvedUrls] = useState<Map<string, string>>(new Map());
 
   const safeTab = Math.min(activeTab, Math.max(0, groups.length - 1));
   const currentGroup = groups[safeTab];
@@ -111,47 +110,16 @@ export function ScreenshotUpload({
     return () => document.removeEventListener("keydown", onKey);
   }, [lightbox]);
 
-  // Resolve storage paths → signed URLs whenever groups change
-  useEffect(() => {
-    const paths = groups
-      .flatMap((g) => g.urls)
-      .filter((u) => !u.startsWith("data:") && !u.startsWith("http") && u.length > 0);
-    if (!paths.length) return;
-    const unresolved = paths.filter((p) => !resolvedUrls.has(p));
-    if (!unresolved.length) return;
-    getScreenshotUrls(unresolved, "full").then((signed) => {
-      setResolvedUrls((prev) => {
-        const next = new Map(prev);
-        unresolved.forEach((p, i) => next.set(p, signed[i]));
-        return next;
-      });
-    }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups]);
-
-  /**
-   * A displayable URL, or null while a storage path is still being signed.
-   *
-   * It used to fall back to the raw path. A path is not a URL, so the browser
-   * resolved it against the current page and fetched something that cannot
-   * exist: one 404 per screenshot on every page load, and a red line in the
-   * console that makes a real failure harder to notice. Returning null lets the
-   * caller show that the image is coming instead of pretending it is here.
-   *
-   * `data:` is a legacy branch. Every screenshot now lives in Storage, so it
-   * only matters for a row written before that migration.
-   */
-  function display(url: string): string | null {
-    if (url.startsWith("data:") || url.startsWith("http")) return url;
-    return resolvedUrls.get(url) ?? null;
-  }
+  /* Signing goes through the shared hook: one bad path no longer hides every
+     chart, a stale link is re-signed once, and what still fails says so.
+     `display` is null while a path is being signed, never the raw path, which
+     the browser would fetch as a URL that cannot exist. */
+  const { display, failed, onLoadError, retry } = useScreenshots(null, groups.flatMap((g) => g.urls), "full");
 
   // Paste (Ctrl+V / Cmd+V): only active in edit mode when a group exists
   useEffect(() => {
     if (readOnly || !currentGroup) return;
     const handler = (e: ClipboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
       const items = e.clipboardData?.items;
       if (!items) return;
       const imageFiles: File[] = [];
@@ -275,11 +243,14 @@ export function ScreenshotUpload({
                   style={{ background: "#0b1120" }}
                   title="View full size"
                 >
-                  {src ? (
+                  {failed(url) ? (
+                    <FailedShot onRetry={() => retry(url)} />
+                  ) : src ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={src}
                       alt={`${group.label} ${i + 1}`}
+                      onError={() => onLoadError(url)}
                       className="w-full h-auto max-h-[540px] object-contain"
                     />
                   ) : (
@@ -457,11 +428,14 @@ export function ScreenshotUpload({
                   className="relative group overflow-hidden rounded-xl border border-border/60"
                   style={{ background: "#0b1120" }}
                 >
-                  {src ? (
+                  {failed(url) ? (
+                    <FailedShot onRetry={() => retry(url)} />
+                  ) : src ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={src}
                       alt={`${currentGroup.label} ${compact ? safeShot + 1 : i + 1}`}
+                      onError={() => onLoadError(url)}
                       className={cn("w-full h-auto object-contain", compact ? "max-h-[min(30dvh,240px)]" : "max-h-[320px]")}
                     />
                   ) : (
@@ -662,5 +636,24 @@ function LightboxView({ src, onClose }: { src: string; onClose: () => void }) {
       )}
     </div>,
     document.body
+  );
+}
+
+/** A chart whose link could not be signed or loaded, with a way to try again. */
+function FailedShot({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 px-4 text-center">
+      <ImageOff className="h-5 w-5 text-muted-foreground" />
+      <p className="text-xs font-medium text-foreground/85">This chart could not be loaded</p>
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(e) => { e.stopPropagation(); onRetry(); }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onRetry(); } }}
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/15"
+      >
+        <RotateCw className="h-3 w-3" /> Try again
+      </span>
+    </div>
   );
 }
