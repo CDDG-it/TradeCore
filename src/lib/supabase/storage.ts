@@ -413,6 +413,17 @@ export async function getScreenshotUrl(
 /** Every stored key for one screenshot: the original and its renditions. */
 const keysOf = (path: string) => [path, ...(Object.keys(RENDITIONS) as Rendition[]).map((size) => renditionPath(path, size))];
 
+/**
+ * Drop the reused links for one screenshot, so the next request signs fresh
+ * ones. For a link the browser could not load: a link kept from earlier in the
+ * session stops working when the project's signing key changes, and handing
+ * it out again would keep the chart broken until the tab is closed.
+ */
+export function forgetScreenshotLinks(path: string): void {
+  if (path.startsWith("data:") || path.startsWith("http")) return;
+  forgetLinks(keysOf(path));
+}
+
 /** Delete a screenshot, and its renditions, from storage. */
 export async function deleteScreenshot(path: string): Promise<void> {
   if (path.startsWith("data:") || path.startsWith("http")) return; // legacy, skip

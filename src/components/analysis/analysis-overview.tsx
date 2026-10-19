@@ -26,11 +26,11 @@ function Bias({ bias }: { bias: Bias }) {
 function ChartPeek({ analysis, preview }: { analysis: PreTradeAnalysis; preview: boolean }) {
   const first = analysis.screenshot_groups?.find((group) => group.urls.length)?.urls[0];
   const label = analysis.screenshot_groups?.find((group) => group.urls.length)?.label;
-  const { display } = useScreenshots(null, first ? [first] : []);
+  const { display, onLoadError } = useScreenshots(null, first ? [first] : []);
   const image = first ? display(first) : null;
   if (!first) return null;
   return <Link href={preview ? `/preview/analysis?view=review&id=${analysis.id}` : `/analysis/${analysis.id}`} aria-label={`Open ${analysis.instrument} charts`} className="group relative block min-h-44 overflow-hidden rounded-xl border border-border/60 bg-[#0a1323]">
-    {image ? <img src={image} alt={`${analysis.instrument} ${label} chart`} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.035]" /> : <div className="h-full w-full animate-pulse bg-white/[.04]" />}
+    {image ? <img src={image} alt={`${analysis.instrument} ${label} chart`} onError={() => onLoadError(first)} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.035]" /> : <div className="h-full w-full animate-pulse bg-white/[.04]" />}
     <span className="absolute bottom-2 left-2 rounded-md border border-white/15 bg-[#0b1120]/85 px-2 py-1 text-[10px] font-semibold text-white/85">{label} chart</span>
     <span className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-md bg-[#0b1120]/80 text-white/85"><ArrowRight className="size-3.5" /></span>
   </Link>;
