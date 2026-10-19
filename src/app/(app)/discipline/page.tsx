@@ -47,7 +47,7 @@ export default function DisciplinePage() {
   return (
     <div className="w-full space-y-10">
       {/* Header */}
-      <div>
+      <div className="rise-in" style={{ "--i": 0 } as React.CSSProperties}>
         <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to dashboard
         </Link>
@@ -68,7 +68,7 @@ export default function DisciplinePage() {
       </p>
 
       {/* The two components */}
-      <div className="grid sm:grid-cols-2 gap-5">
+      <div className="grid sm:grid-cols-2 gap-5 rise-in" style={{ "--i": 1 } as React.CSSProperties}>
         <div className="rounded-2xl p-6 sm:p-7 border border-border bg-card">
           <div className="flex items-center justify-between mb-4">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12">
@@ -101,7 +101,7 @@ export default function DisciplinePage() {
       </div>
 
       {/* Formula */}
-      <div className="rounded-2xl p-6 sm:p-8 text-center bg-muted/40 border border-border">
+      <div className="rounded-2xl p-6 sm:p-8 text-center bg-muted/40 border border-border rise-in" style={{ "--i": 2 } as React.CSSProperties}>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">The formula</p>
         <p className="text-base md:text-xl font-semibold">
           Discipline&nbsp;=&nbsp;
@@ -117,7 +117,7 @@ export default function DisciplinePage() {
       </div>
 
       {/* Why habits matter */}
-      <div className="rounded-2xl p-6 sm:p-8 bg-primary/6 border border-primary/20">
+      <div className="rounded-2xl p-6 sm:p-8 bg-primary/6 border border-primary/20 rise-in" style={{ "--i": 3 } as React.CSSProperties}>
         <p className="text-sm font-semibold uppercase tracking-wider mb-3 text-primary">
           Why habits make you a better trader
         </p>
@@ -130,7 +130,7 @@ export default function DisciplinePage() {
       </div>
 
       {/* The science */}
-      <div className="space-y-5">
+      <div className="space-y-5 rise-in" style={{ "--i": 4 } as React.CSSProperties}>
         <div className="flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary" />
           <h2 className="text-xl font-bold">The science behind it</h2>
@@ -140,8 +140,8 @@ export default function DisciplinePage() {
           and on how discipline and habits are built. Here is why it matters for traders.
         </p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {SCIENCE.map((s) => (
-            <div key={s.title} className="rounded-2xl p-6 border border-border bg-card flex flex-col">
+          {SCIENCE.map((s, index) => (
+            <div key={s.title} className="rise-in rounded-2xl p-6 border border-border bg-card flex flex-col" style={{ "--i": 5 + index } as React.CSSProperties}>
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12 mb-4">
                 <s.icon className="w-5 h-5 text-primary" />
               </span>
@@ -162,7 +162,7 @@ export default function DisciplinePage() {
       </div>
 
       {/* Links to the two inputs */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 rise-in" style={{ "--i": 5 } as React.CSSProperties}>
         <Link href="/habits" className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary">
           Go to Habits <ArrowRight className="w-3.5 h-3.5" />
         </Link>

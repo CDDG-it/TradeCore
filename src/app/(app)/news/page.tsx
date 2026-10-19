@@ -109,10 +109,11 @@ export default function NewsPage() {
             <h2 className="text-sm font-semibold">Featured</h2>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            {featured.map((item) => (
+            {featured.map((item, index) => (
               <Card
                 key={item.id}
-                className="bg-card border-border/50 hover:border-primary/30 transition-colors"
+                className="rise-in bg-card border-border/50 hover:border-primary/30 transition-colors"
+                style={{ "--i": index } as React.CSSProperties}
               >
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-3 mb-3">
@@ -153,10 +154,11 @@ export default function NewsPage() {
         ) : (
           <Card className="bg-card border-border/50">
             <div className="divide-y divide-border/40">
-              {(showFeatured ? regularNews : allNews).map((item) => (
+              {(showFeatured ? regularNews : allNews).map((item, index) => (
                 <div
                   key={item.id}
-                  className="flex items-start gap-4 px-5 py-4 hover:bg-muted/20 transition-colors"
+                  className="rise-in flex items-start gap-4 px-5 py-4 hover:bg-muted/20 transition-colors"
+                  style={{ "--i": Math.min(index, 12) } as React.CSSProperties}
                 >
                   {/* Impact indicator */}
                   <div

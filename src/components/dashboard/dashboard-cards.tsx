@@ -12,6 +12,7 @@ import { habitAccent } from "@/lib/habits";
 import { mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import { BrainScore } from "@/components/mind-score/brain-score";
+import { Segmented } from "@/components/ui/segmented";
 import type { TradingGoal, TradeSummary, Habit } from "@/lib/types";
 
 const TURQUOISE = "var(--primary)";
@@ -58,29 +59,13 @@ const PERIOD_LABEL: Record<Period, string> = { week: "week", month: "month" };
 function PeriodToggle({ value, onChange, accent }: {
   value: Period; onChange: (p: Period) => void; accent: string;
 }) {
+  // `ml-auto` so the toggle still sits at the right edge on a narrow card
+  // where the header has wrapped it onto its own line. `isolate` keeps a
+  // choice from also opening the card it sits on.
   return (
-    // `ml-auto` so the toggle still sits at the right edge on a narrow card
-    // where the header has wrapped it onto its own line.
-    <div className="ml-auto flex shrink-0 items-center gap-0.5 rounded-lg border border-border/60 bg-muted/25 p-0.5">
-      {(["week", "month"] as Period[]).map((p) => {
-        const active = value === p;
-        return (
-          <button
-            key={p}
-            type="button"
-            aria-pressed={active}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(p); }}
-            className={cn(
-              "rounded-md px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider transition-colors sm:px-2 sm:text-[10px]",
-              active ? "text-white" : "text-muted-foreground hover:text-foreground"
-            )}
-            style={active ? { background: accent } : undefined}
-          >
-            {p}
-          </button>
-        );
-      })}
-    </div>
+    <Segmented label="Period" size="xs" shape="rounded" value={value} onChange={onChange} isolate
+      className="ml-auto shrink-0 border-border/60" activeClassName="text-white" pillClassName="" pillStyle={{ background: accent }}
+      options={(["week", "month"] as Period[]).map((p) => ({ value: p, label: PERIOD_LABEL[p] }))} />
   );
 }
 
@@ -233,9 +218,10 @@ export function GoalsCard({ goals, progress, className, compactNumbers = false }
                   {/* The fill is the goal, the tick is the calendar: the gap
                       between them is exactly how far off the pace it is. */}
                   <div className="relative mt-1 h-[5px] overflow-hidden rounded-full" style={{ background: alpha("var(--muted-foreground)", 12) }}>
+                    {/* Slid in from the left rather than sized: a transform skips layout, and the rounded end stays round. */}
                     <span
-                      className="absolute inset-y-0 left-0 rounded-full transition-[width,filter] duration-700 ease-out group-hover/goal:brightness-125"
-                      style={{ width: `${Math.round(p.ratio * 100)}%`, background: tone.color, boxShadow: `0 0 8px ${alpha(tone.color, 30)}` }}
+                      className="absolute inset-0 rounded-full transition-[transform,filter] duration-700 ease-[var(--ease-out-strong)] group-hover/goal:brightness-125"
+                      style={{ transform: `translateX(${Math.round(p.ratio * 100) - 100}%)`, background: tone.color, boxShadow: `0 0 8px ${alpha(tone.color, 30)}` }}
                     />
                     {!p.closed && (
                       <span
@@ -447,21 +433,21 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, c
                 onClick={() => onToggle(habit.id)}
                 disabled={pending}
                 className={cn(
-                  "group/habit relative w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-all duration-300 disabled:opacity-60 short:gap-2 short:py-1",
+                  "group/habit relative w-full flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-[background-color,transform,opacity] duration-300 disabled:opacity-60 short:gap-2 short:py-1",
                   done ? "bg-success/8" : "hover:bg-muted/50 hover:translate-x-0.5"
                 )}
               >
                 {/* Left accent bar: draws in on hover, stays lit when done */}
                 <span
                   className={cn(
-                    "absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full transition-all duration-300",
+                    "absolute left-0 top-1.5 bottom-1.5 w-[2px] rounded-full transition-[opacity,transform] duration-300",
                     done ? "opacity-90 scale-y-100" : "opacity-0 scale-y-50 group-hover/habit:opacity-70 group-hover/habit:scale-y-100"
                   )}
                   style={{ background: color }}
                 />
                 <span
                   className={cn(
-                    "h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-all duration-300 short:h-3.5 short:w-3.5",
+                    "h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center transition-[transform,background-color,border-color,box-shadow] duration-300 short:h-3.5 short:w-3.5",
                     done ? "scale-105" : "group-hover/habit:scale-110"
                   )}
                   style={done
