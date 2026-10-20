@@ -1585,30 +1585,29 @@ html:has(.marketing-page) { position: relative; }
 .marketing-hero-primary,
 .marketing-hero-secondary {
   border: 1px solid;
-  border-radius: 12px;
+  border-radius: 999px;
 }
 
 .marketing-hero-primary {
-  border-color: rgba(112, 231, 216, 0.65);
-  background: linear-gradient(135deg, #18c5b5, #119d99);
-  box-shadow: inset 0 1px rgba(226, 255, 251, 0.3), 0 10px 30px rgba(5, 122, 120, 0.22);
-  color: #061a24;
+  border-color: transparent;
+  background: #14b8a6;
+  box-shadow: 0 6px 22px rgba(20, 184, 166, 0.28), inset 0 1px rgba(255, 255, 255, 0.42);
+  color: #081721;
 }
 
 .marketing-hero-primary:hover {
-  background: linear-gradient(135deg, #52dbce, #14b8a6);
+  background: #70d9cf;
 }
 
 .marketing-hero-secondary {
-  border-color: rgba(95, 155, 168, 0.45);
-  background: linear-gradient(180deg, rgba(28, 47, 67, 0.88), rgba(15, 31, 49, 0.88));
-  box-shadow: inset 0 1px rgba(194, 232, 238, 0.08), 0 8px 24px rgba(0, 0, 0, 0.14);
-  color: #e0eff0;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+  color: #d0dfe1;
 }
 
 .marketing-hero-secondary:hover {
-  border-color: rgba(125, 215, 211, 0.65);
-  background: #1b3945;
+  background: rgba(255, 255, 255, 0.09);
   color: #fff;
 }
 
