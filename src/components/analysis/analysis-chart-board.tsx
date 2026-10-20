@@ -40,14 +40,14 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
   const url = group?.urls[safeShot];
   const chartSequence = visibleGroups.flatMap((item, groupIndex) => item.urls.map((_, shotIndex) => ({ groupIndex, shotIndex })));
   const sequenceIndex = chartSequence.findIndex((item) => item.groupIndex === safeActive && item.shotIndex === safeShot);
-  // The 1600px copy: sharp at this size and a fraction of the original download.
-  // The original is only fetched when the chart is opened full size.
-  const { display, failed, onLoadError, retry, upload, fullSize, uploading, error } = useScreenshots(target, group?.urls ?? [], "preview");
+  // The main viewer is where traders read chart detail. Load the original for
+  // the selected chart only; the remaining charts stay as small thumbnails.
+  const { display, failed, onLoadError, retry, upload, fullSize, uploading, error } = useScreenshots(target, url ? [url] : [], "full");
   // The rail is 96px wide: its small copies, so five originals are not fetched to draw five stamps.
   const { display: thumb, failed: thumbFailed, onLoadError: onThumbError } = useScreenshots(null, group?.urls ?? [], "thumb");
   const preview = url ? display(url) : null;
   const placeholder = url ? thumb(url) : null;
-  // Links whose large copy has finished downloading; until then the small copy stands in.
+  // Links whose original has finished downloading; until then the thumbnail stands in.
   const [loaded, setLoaded] = useState<Set<string>>(() => new Set());
   const ready = !!preview && loaded.has(preview);
   const canAdd = !readOnly && !!group && !!onChange && group.urls.length < MAX_IMAGES;
@@ -171,7 +171,7 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
         onDrop={!readOnly ? (event) => { event.preventDefault(); setDragging(false); void addFiles(event.dataTransfer.files); } : undefined}>
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(20,184,166,.09),transparent_58%)]" />
         <AnimatePresence mode="wait" initial={false}>
-          {url ? <motion.div key={`${group.label}:${safeShot}`} className="relative flex h-full w-full items-center justify-center p-3 sm:p-5"
+          {url ? <motion.div key={`${group.label}:${safeShot}`} className="relative h-full w-full"
             initial={{ opacity: 0, transform: reduce ? "none" : "scale(.985)" }} animate={{ opacity: 1, transform: "none" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }}>
             {failed(url) ? <div className="flex max-w-xs flex-col items-center text-center">
                 <ImageOff className="size-6 text-muted-foreground" />
@@ -181,13 +181,14 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
               </div>
               : preview ?
               <>
-                {!ready && placeholder && <img src={placeholder} alt="" aria-hidden className="max-h-full max-w-full rounded-lg object-contain shadow-[0_16px_45px_rgba(0,0,0,.35)]" />}
+                {!ready && placeholder && <img src={placeholder} alt="" aria-hidden className="absolute inset-0 h-full w-full object-contain" />}
                 <img src={preview} alt={`${group.label} chart ${safeShot + 1}`}
                   onLoad={() => setLoaded((prev) => prev.has(preview) ? prev : new Set(prev).add(preview))}
                   onError={() => onLoadError(url)}
-                  className={cn("max-h-full max-w-full rounded-lg object-contain shadow-[0_16px_45px_rgba(0,0,0,.35)]", !ready && (placeholder ? "pointer-events-none absolute opacity-0" : "opacity-0"))} />
+                  className={cn("absolute inset-0 h-full w-full object-contain", !ready && "opacity-0")} />
               </>
-              : <div className="h-4/5 w-4/5 animate-pulse rounded-xl bg-white/[.04]" />}
+              : placeholder ? <img src={placeholder} alt="" aria-hidden className="absolute inset-0 h-full w-full object-contain" />
+              : <div className="absolute inset-4 animate-pulse rounded-xl bg-white/[.04]" />}
           </motion.div> : <motion.div key="empty" className="relative flex max-w-sm flex-col items-center px-6 py-10 text-center"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }}>
             <div className="mb-4 flex size-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary"><ImagePlus className="size-6" /></div>
