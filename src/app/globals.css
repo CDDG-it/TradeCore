@@ -1723,15 +1723,15 @@ html:has(.marketing-page) { position: relative; }
 }
 
 .marketing-laptop {
-  width: 77%;
+  width: 76%;
 }
 
 .marketing-phone {
   position: absolute;
   z-index: 2;
-  top: 12%;
+  top: 8%;
   right: 0;
-  width: 21%;
+  width: 25%;
   aspect-ratio: 0.42;
   padding: 4px;
   border: 1px solid #3a536c;
@@ -1828,9 +1828,9 @@ html:has(.marketing-page) { position: relative; }
 .marketing-phone-bottomnav b { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid rgba(20, 184, 166, 0.35); border-radius: 50%; color: #14b8a6; font-size: 20px; font-weight: 400; }
 
 @media (max-width: 639px) {
-  .marketing-device-scene { display: flex; flex-direction: column; align-items: center; }
-  .marketing-laptop { width: 100%; }
-  .marketing-phone { position: relative; top: auto; right: auto; width: 170px; margin-top: 24px; }
+  .marketing-laptop { width: 83%; }
+  .marketing-laptop figcaption { margin-top: 5rem; }
+  .marketing-phone { top: 8%; width: 30%; }
 }
 
 .marketing-screen-frame {
