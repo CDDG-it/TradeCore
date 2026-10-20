@@ -1576,22 +1576,47 @@ html:has(.marketing-page) { position: relative; }
 
 .marketing-hero--home {
   background:
-    radial-gradient(ellipse 36% 49% at 78% 46%, rgba(20, 184, 166, 0.19), transparent 76%),
-    radial-gradient(ellipse 28% 35% at 90% 72%, rgba(6, 182, 212, 0.10), transparent 82%),
-    radial-gradient(ellipse 48% 58% at 4% -16%, rgba(6, 182, 212, 0.085), transparent 78%),
-    linear-gradient(120deg, #0b1120 17%, #102132 61%, #0b1120 100%);
+    radial-gradient(ellipse 39% 52% at 77% 44%, rgba(20, 184, 166, 0.20), transparent 76%),
+    radial-gradient(ellipse 31% 42% at 91% 78%, rgba(6, 182, 212, 0.13), transparent 82%),
+    radial-gradient(ellipse 42% 55% at 5% -18%, rgba(6, 182, 212, 0.085), transparent 78%),
+    linear-gradient(125deg, #0b1120 16%, #102033 65%, #0b1120 100%);
 }
 
-.marketing-hero--home::before {
-  content: "";
-  position: absolute;
-  inset: 0;
+.marketing-hero-contours {
   pointer-events: none;
-  background-image:
-    linear-gradient(rgba(132, 205, 209, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(132, 205, 209, 0.07) 1px, transparent 1px);
-  background-size: 76px 76px;
-  mask-image: radial-gradient(ellipse 57% 67% at 77% 49%, #000 0%, transparent 90%);
+  stroke: rgba(93, 194, 193, 0.22);
+  stroke-width: 1;
+  mask-image: linear-gradient(90deg, transparent 8%, #000 45%, #000 84%, transparent 100%);
+}
+
+.marketing-hero-primary,
+.marketing-hero-secondary {
+  border: 1px solid;
+  border-radius: 12px;
+}
+
+.marketing-hero-primary {
+  border-color: rgba(112, 231, 216, 0.65);
+  background: linear-gradient(135deg, #18c5b5, #119d99);
+  box-shadow: inset 0 1px rgba(226, 255, 251, 0.3), 0 10px 30px rgba(5, 122, 120, 0.22);
+  color: #061a24;
+}
+
+.marketing-hero-primary:hover {
+  background: linear-gradient(135deg, #52dbce, #14b8a6);
+}
+
+.marketing-hero-secondary {
+  border-color: rgba(95, 155, 168, 0.45);
+  background: linear-gradient(180deg, rgba(28, 47, 67, 0.88), rgba(15, 31, 49, 0.88));
+  box-shadow: inset 0 1px rgba(194, 232, 238, 0.08), 0 8px 24px rgba(0, 0, 0, 0.14);
+  color: #e0eff0;
+}
+
+.marketing-hero-secondary:hover {
+  border-color: rgba(125, 215, 211, 0.65);
+  background: #1b3945;
+  color: #fff;
 }
 
 .marketing-hero::after {
@@ -1700,6 +1725,175 @@ html:has(.marketing-page) { position: relative; }
 }
 
 /* The hero screenshot: a thin frame, a soft product glow, no device chrome. */
+.marketing-device-scene {
+  position: relative;
+  min-width: 0;
+}
+
+.marketing-laptop {
+  width: 77%;
+}
+
+.marketing-phone {
+  position: absolute;
+  z-index: 2;
+  top: 12%;
+  right: 0;
+  width: 21%;
+  aspect-ratio: 0.42;
+  padding: 4px;
+  border: 1px solid #3a536c;
+  border-radius: 30px;
+  background: linear-gradient(145deg, #233b53, #070e1b 35%, #182c40 85%, #3b5a67);
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.62), 0 0 0 1px rgba(155, 210, 213, 0.12), 0 0 60px rgba(20, 184, 166, 0.12);
+}
+
+.marketing-phone-screen {
+  height: 100%;
+  overflow: hidden;
+  border-radius: 25px;
+  background: #0b1120;
+  color: #f8fafc;
+}
+
+.marketing-phone-status {
+  display: flex;
+  height: 22px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  color: #b4c6cb;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.marketing-phone-camera {
+  width: 35%;
+  height: 10px;
+  border-radius: 999px;
+  background: #050a13;
+}
+
+.marketing-phone-content {
+  display: flex;
+  height: calc(100% - 22px);
+  flex-direction: column;
+  gap: 5px;
+  justify-content: space-between;
+  padding: 1px 8px 5px;
+}
+
+.marketing-phone-topbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #d8e9eb;
+  font-size: 7px;
+  font-weight: 600;
+}
+
+.marketing-phone-mark {
+  margin-right: auto;
+  color: #43d4c8;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.12em;
+}
+
+.marketing-phone-avatar {
+  display: grid;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+  border-radius: 50%;
+  background: #1d4c52;
+  font-size: 6px;
+}
+
+.marketing-phone-greeting {
+  margin: 1px 0 0;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.marketing-phone-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(95, 139, 161, 0.18);
+  border-radius: 10px;
+  background: #131b2e;
+  padding: 7px;
+}
+
+.marketing-phone-label {
+  display: flex;
+  justify-content: space-between;
+  color: #8198a7;
+  font-size: 6px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+
+.marketing-phone-label span { color: #4cd4c7; }
+.marketing-phone-meta { color: #9cb3bc; font-size: 7px; }
+
+.marketing-phone-score {
+  background: radial-gradient(circle at 78% 27%, rgba(20, 184, 166, 0.12), transparent 55%), #131b2e;
+}
+
+.marketing-phone-score-value {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.marketing-phone-score-value strong {
+  color: #3ed1c4;
+  font-size: 34px;
+  font-weight: 750;
+  letter-spacing: -0.07em;
+  line-height: 1.1;
+}
+
+.marketing-phone-score-value span {
+  color: #b7cbcd;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.marketing-phone-progress {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #26364a;
+}
+
+.marketing-phone-progress span { display: block; width: 64%; height: 100%; background: #14b8a6; }
+
+.marketing-phone-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.marketing-phone-stats .marketing-phone-card { gap: 3px; }
+.marketing-phone-stats strong { color: #45d5c8; font-size: 15px; line-height: 1.1; }
+.marketing-phone-stats .marketing-phone-card + .marketing-phone-card strong { color: #f8fafc; }
+
+.marketing-phone-habits { gap: 5px; }
+.marketing-phone-habits > span:not(:first-child) { display: flex; align-items: center; gap: 5px; color: #c3d4d7; font-size: 7px; white-space: nowrap; }
+.marketing-phone-habits i { display: block; width: 7px; height: 7px; flex: none; border-radius: 50%; background: #14b8a6; box-shadow: 0 0 6px rgba(20, 184, 166, 0.5); }
+
+@media (max-width: 639px) {
+  .marketing-device-scene { display: flex; flex-direction: column; align-items: center; }
+  .marketing-laptop { width: 100%; }
+  .marketing-phone { position: relative; top: auto; right: auto; width: 170px; margin-top: 24px; }
+}
+
 .marketing-screen-frame {
   box-shadow:
     0 0 0 1px rgba(20, 184, 166, 0.12),

@@ -14,16 +14,22 @@ export default function HomePage() {
       <LandingNav />
       <main id="main">
         <section id="dashboard" className="marketing-hero marketing-hero--home relative flex min-h-[calc(100svh-72px)] flex-col justify-center overflow-hidden px-6 py-16 sm:px-10 sm:py-20 lg:px-12 lg:py-24">
-          <div className="relative mx-auto grid w-full max-w-[1500px] grid-cols-[minmax(0,1fr)] items-center gap-14 lg:grid-cols-[0.94fr_1.06fr] lg:gap-16">
+          <svg aria-hidden="true" className="marketing-hero-contours absolute inset-0 h-full w-full" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" fill="none">
+            <path d="M 260 980 C 490 750 650 805 865 713 S 1275 570 1540 200" />
+            <path d="M 205 1025 C 455 785 640 850 875 755 S 1300 612 1575 255" />
+            <path d="M 150 1070 C 420 820 620 895 885 798 S 1330 655 1610 310" />
+            <path d="M 95 1115 C 390 860 610 940 895 840 S 1360 700 1645 365" />
+          </svg>
+          <div className="relative mx-auto grid w-full max-w-[1500px] grid-cols-[minmax(0,1fr)] items-center gap-14 xl:grid-cols-[0.84fr_1.16fr] xl:gap-10">
             <div className="marketing-hero-copy relative z-10 min-w-0 max-w-[720px]">
               <h1 className="font-display max-w-[720px] text-balance text-[clamp(2.6rem,11vw,3.7rem)] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[clamp(3.9rem,5.7vw,6rem)]">Journal for <span className="marketing-hero-word italic">extraordinary</span> traders</h1>
               <p className="mt-8 max-w-[500px] text-lg leading-[1.65] text-[#b8ccd0] sm:text-xl">A journal shows what happened. TradingMC helps you shape what happens next: write the plan, keep the commitments and review the decisions behind every session.</p>
-              <div className="mt-11 flex flex-wrap items-center gap-4">
-                <Link href="/signup" className="marketing-cta group inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#14b8a6] px-9 py-4 text-base font-semibold text-[#081721] hover:bg-[#70d9cf]">
+              <div className="mt-11 flex flex-wrap items-center gap-3">
+                <Link href="/signup" className="marketing-cta marketing-hero-primary group inline-flex min-h-14 items-center justify-center gap-2 px-7 py-4 text-[15px] font-semibold">
                   Start building your process
                   <span aria-hidden="true" className="transition-transform duration-200 ease-out group-hover:translate-x-0.5">&#8594;</span>
                 </Link>
-                <SectionLink href="/#the-approach" className="marketing-cta inline-flex min-h-14 items-center justify-center rounded-2xl border border-[#5a7f87] px-8 py-4 text-base font-medium text-[#d9e8e9] hover:border-[#a9ddd8] hover:bg-white/5 hover:text-white">See how it works</SectionLink>
+                <SectionLink href="/#the-approach" className="marketing-cta marketing-hero-secondary inline-flex min-h-14 items-center justify-center px-6 py-4 text-[15px] font-medium">See how it works</SectionLink>
               </div>
             </div>
             <div className="relative z-10 min-w-0"><DashboardScreenshot /></div>

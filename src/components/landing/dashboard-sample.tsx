@@ -25,7 +25,7 @@ const weekDays = eachDayOfInterval({ start: startOfWeek(sampleNow, { weekStartsO
 /* What the visitor should notice, in reading order. Each callout rings the card
    it explains while its caption reads below the frame. */
 const callouts = [
-  { title: "MC Mindscore 74", body: "one explainable score from five parts of your process." },
+  { title: "MC Mindscore 64", body: "one explainable score from five parts of your process." },
   { title: "This week +4.5R", body: "three of four trades followed the written plan." },
   { title: "Habits 3/3", body: "plan written, last trade reviewed, pause kept." },
 ] as const;
@@ -44,6 +44,40 @@ function Ringed({ index, className, children }: { index: number; className?: str
   );
 }
 
+function PhoneDashboard() {
+  return (
+    <div className="marketing-phone" aria-hidden="true">
+      <div className="marketing-phone-screen">
+        <div className="marketing-phone-status"><span>9:41</span><span className="marketing-phone-camera" /><span>••• ▰</span></div>
+        <div className="marketing-phone-content">
+          <div className="marketing-phone-topbar">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/tradingmc-logo.png" alt="" width={25} height={13} loading="eager" className="marketing-phone-mark" />
+            <span>Dashboard</span><span className="marketing-phone-avatar">AL</span>
+          </div>
+          <p className="marketing-phone-greeting">Good morning, Alex</p>
+          <div className="marketing-phone-card marketing-phone-score">
+            <span className="marketing-phone-label">MC MINDSCORE <span>WEEK</span></span>
+            <div className="marketing-phone-score-value"><strong>64</strong><span>Solid<br />process</span></div>
+            <div className="marketing-phone-progress"><span /></div>
+            <span className="marketing-phone-meta">Your edge is taking shape</span>
+          </div>
+          <div className="marketing-phone-stats">
+            <div className="marketing-phone-card"><span className="marketing-phone-label">NET R</span><strong>+4.5R</strong><span className="marketing-phone-meta">This week</span></div>
+            <div className="marketing-phone-card"><span className="marketing-phone-label">WIN RATE</span><strong>75%</strong><span className="marketing-phone-meta">4 trades</span></div>
+          </div>
+          <div className="marketing-phone-card marketing-phone-habits">
+            <span className="marketing-phone-label">TODAY&apos;S HABITS <span>3/3</span></span>
+            <span><i />Write the session plan</span>
+            <span><i />Review the last trade</span>
+            <span><i />Pause after a loss</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardScreenshot() {
   const screenRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<number | null>(null);
@@ -51,7 +85,9 @@ export function DashboardScreenshot() {
   useEffect(() => {
     const screen = screenRef.current;
     if (!screen) return;
-    const measure = () => setScale(screen.clientWidth / 980);
+    const measure = () => {
+      if (screen.clientWidth > 0) setScale(screen.clientWidth / 980);
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(screen);
@@ -59,7 +95,8 @@ export function DashboardScreenshot() {
   }, []);
 
   return (
-    <figure className="marketing-screen marketing-laptop mx-auto w-full min-w-0 max-w-[1020px]" aria-label="The TradingMC dashboard layout with local illustrative data">
+    <div className="marketing-device-scene mx-auto w-full max-w-[1020px]">
+    <figure className="marketing-screen marketing-laptop min-w-0" aria-label="The TradingMC dashboard layout with local illustrative data">
       <div className="marketing-laptop-device">
       <div className="marketing-laptop-lid">
       <span aria-hidden="true" className="marketing-laptop-cam" />
@@ -69,7 +106,7 @@ export function DashboardScreenshot() {
           <div className="flex h-12 items-center justify-between border-b border-white/10 bg-[#0b1120] px-4">
             {/* Match the current TradingMC mark used by the authenticated navigation. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tradingmc-logo.png" alt="" width={55} height={28} className="h-7 w-auto object-contain" />
+            <img src="/tradingmc-logo.png" alt="" width={55} height={28} loading="eager" className="h-7 w-auto object-contain" />
             <div className="flex gap-1">{PRIMARY_NAV.map((item) => <span key={item.href} className={`rounded-md px-2 py-1 text-[10px] font-semibold ${item.href === "/dashboard" ? "bg-[#1d4c52] text-white" : "text-[#7b91a0]"}`}>{item.label}</span>)}</div>
             <span className="grid h-6 w-6 place-items-center rounded-full bg-[#173b43] text-[9px] font-semibold text-white">AL</span>
           </div>
@@ -100,5 +137,7 @@ export function DashboardScreenshot() {
         ))}
       </figcaption>
     </figure>
+    <PhoneDashboard />
+    </div>
   );
 }
