@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { copy } from "@/lib/trade-profile/content/copy";
 import { exercises } from "@/lib/trade-profile/content/exercises";
 import { references } from "@/lib/trade-profile/content/references";
-import { StatusPill } from "@/components/trade-profile/primitives";
+import { SourceLink, StatusPill } from "@/components/trade-profile/primitives";
 import { useTradeProfile } from "@/components/trade-profile/store";
 import { useProfileNav } from "@/components/trade-profile/nav";
 
@@ -49,7 +49,12 @@ export function LibraryView() {
                   {n > 0 && <span className="text-[11px] text-muted-foreground">{t.usedBy(n)}</span>}
                 </div>
                 <p className="mt-2 text-sm leading-relaxed">{r.citation}</p>
-                {r.doi && <p className="mt-1 text-[11px] text-muted-foreground">doi: <span className="select-all">{r.doi}</span></p>}
+                {r.doi && (
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+                    <SourceLink reference={r} />
+                    <span className="text-muted-foreground">doi: <span className="select-all">{r.doi}</span></span>
+                  </p>
+                )}
                 <p className="mt-2 text-xs leading-relaxed text-foreground/80">{r.claim}</p>
               </article>
             );

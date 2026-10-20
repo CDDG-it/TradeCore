@@ -4,10 +4,9 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { copy } from "@/lib/trade-profile/content/copy";
 import { exerciseById, techniqueNames } from "@/lib/trade-profile/content/exercises";
 import { focusAreas } from "@/lib/trade-profile/content/focus-areas";
-import { referenceById } from "@/lib/trade-profile/content/references";
 import { traitName } from "@/lib/trade-profile/content/traits";
 import type { FocusAreaId } from "@/lib/trade-profile/focus-rules";
-import { DifficultyPill, Eyebrow, Pill, StatusPill } from "@/components/trade-profile/primitives";
+import { DifficultyPill, Eyebrow, Pill, SourceList } from "@/components/trade-profile/primitives";
 
 /** Full detail of one exercise, including the evidence behind it and its status. */
 export function ExerciseSheet({ id, onClose }: { id: string | null; onClose: () => void }) {
@@ -58,21 +57,7 @@ export function ExerciseSheet({ id, onClose }: { id: string | null; onClose: () 
                 <Eyebrow>{t.logging}</Eyebrow>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/85">{ex.logging}</p>
               </section>
-              <section>
-                <Eyebrow className="mb-2">{t.references}</Eyebrow>
-                <ul className="space-y-3.5">
-                  {ex.referenceIds.map((rid) => {
-                    const r = referenceById[rid];
-                    return (
-                      <li key={rid} className="text-xs">
-                        <StatusPill status={r.status} />
-                        <p className="mt-1.5 leading-relaxed text-foreground/85">{r.claim}</p>
-                        <p className="mt-1 leading-relaxed text-muted-foreground">{r.citation}</p>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
+              <SourceList ids={ex.referenceIds} title={t.references} />
             </div>
           </>
         )}

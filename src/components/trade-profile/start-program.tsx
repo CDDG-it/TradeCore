@@ -11,13 +11,13 @@ import { copy } from "@/lib/trade-profile/content/copy";
 import { exerciseById, exercises } from "@/lib/trade-profile/content/exercises";
 import { focusAreas } from "@/lib/trade-profile/content/focus-areas";
 import { insights, type Drill } from "@/lib/trade-profile/content/insights";
-import { referenceById } from "@/lib/trade-profile/content/references";
+import { referenceById, shortCite } from "@/lib/trade-profile/content/references";
 import { traitName } from "@/lib/trade-profile/content/traits";
 import { daysBetween } from "@/lib/trade-profile/dates";
 import { suggestedGoalFor } from "@/lib/trade-profile/focus";
 import { buildProgram } from "@/lib/trade-profile/program";
 import { domainOf } from "@/lib/trade-profile/types";
-import { DifficultyPill, StatusPill, traitColor } from "@/components/trade-profile/primitives";
+import { DifficultyPill, SourceLink, StatusPill, traitColor } from "@/components/trade-profile/primitives";
 import { DrillSheet } from "@/components/trade-profile/for-your-type";
 import { InlinePill } from "@/components/trade-profile/motion-bits";
 import { useDerived, useTradeProfile } from "@/components/trade-profile/store";
@@ -155,7 +155,12 @@ export function StartProgram() {
         <motion.div {...rise(3)} className="rounded-2xl border border-border/60 bg-card p-4">
           <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-ice"><Lightbulb className="size-3.5" />{t.factOfDay}</p>
           <p className="mt-2 font-heading text-[15px] font-semibold leading-snug tracking-tight">{fact.text}</p>
-          {ref && <div className="mt-2.5"><StatusPill status={ref.status} /></div>}
+          {ref && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px]">
+              <StatusPill status={ref.status} />
+              <SourceLink reference={ref} className="text-muted-foreground hover:text-foreground"><span className="truncate">{shortCite(ref.citation)}</span></SourceLink>
+            </div>
+          )}
         </motion.div>
       </aside>
 
