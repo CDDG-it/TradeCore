@@ -47,9 +47,6 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
   const { display: thumb, failed: thumbFailed, onLoadError: onThumbError } = useScreenshots(null, group?.urls ?? [], "thumb");
   const preview = url ? display(url) : null;
   const placeholder = url ? thumb(url) : null;
-  // Links whose original has finished downloading; until then the thumbnail stands in.
-  const [loaded, setLoaded] = useState<Set<string>>(() => new Set());
-  const ready = !!preview && loaded.has(preview);
   const canAdd = !readOnly && !!group && !!onChange && group.urls.length < MAX_IMAGES;
 
   useEffect(() => onUploadingChange?.(uploading), [uploading, onUploadingChange]);
@@ -173,19 +170,18 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
         <AnimatePresence mode="wait" initial={false}>
           {url ? <motion.div key={`${group.label}:${safeShot}`} className="relative h-full w-full"
             initial={{ opacity: 0, transform: reduce ? "none" : "scale(.985)" }} animate={{ opacity: 1, transform: "none" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }}>
-            {failed(url) ? <div className="flex max-w-xs flex-col items-center text-center">
+            {failed(url) && !placeholder ? <div className="flex max-w-xs flex-col items-center text-center">
                 <ImageOff className="size-6 text-muted-foreground" />
                 <p className="mt-3 text-sm font-semibold text-foreground">This chart could not be loaded</p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Check your connection, then try again.</p>
                 <button type="button" onClick={() => retry(url)} className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"><RotateCw className="size-3.5" /> Try again</button>
               </div>
-              : preview ?
+              : preview && !failed(url) ?
               <>
-                {!ready && placeholder && <img src={placeholder} alt="" aria-hidden className="absolute inset-0 h-full w-full object-contain" />}
+                {placeholder && <img src={placeholder} alt="" aria-hidden className="absolute inset-0 h-full w-full object-contain" />}
                 <img src={preview} alt={`${group.label} chart ${safeShot + 1}`}
-                  onLoad={() => setLoaded((prev) => prev.has(preview) ? prev : new Set(prev).add(preview))}
                   onError={() => onLoadError(url)}
-                  className={cn("absolute inset-0 h-full w-full object-contain", !ready && "opacity-0")} />
+                  className="absolute inset-0 h-full w-full object-contain" />
               </>
               : placeholder ? <img src={placeholder} alt="" aria-hidden className="absolute inset-0 h-full w-full object-contain" />
               : <div className="absolute inset-4 animate-pulse rounded-xl bg-white/[.04]" />}
