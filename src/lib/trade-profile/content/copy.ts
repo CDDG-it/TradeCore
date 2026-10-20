@@ -332,6 +332,7 @@ export const copy = {
       "Verified: the citation was confirmed and the claim matches the published abstract. To verify: the paper exists, but the claim is not yet checked. Prototype hypothesis: a design assumption with no source behind it.",
     status: { verified: "Verified", "to verify": "To verify", "prototype hypothesis": "Prototype hypothesis" },
     usedBy: (n: number) => `Used by ${n} exercise${n === 1 ? "" : "s"}`,
+    openSource: "Read the original",
     dataTitle: "Your data",
     dataLead: "Your answers and check-ins are stored in your account and visible only to you.",
     export: "Export JSON",

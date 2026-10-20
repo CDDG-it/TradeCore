@@ -9,21 +9,11 @@ import { EASE_OUT, rise } from "@/lib/motion";
 import { copy } from "@/lib/trade-profile/content/copy";
 import { focusAreas } from "@/lib/trade-profile/content/focus-areas";
 import { insights, type Drill, type Read } from "@/lib/trade-profile/content/insights";
-import { referenceById } from "@/lib/trade-profile/content/references";
+import { referenceById, shortCite } from "@/lib/trade-profile/content/references";
 import type { FocusAreaId } from "@/lib/trade-profile/focus-rules";
-import { Eyebrow, Pill, StatusPill } from "@/components/trade-profile/primitives";
+import { Eyebrow, Pill, SourceLink, SourceList, StatusPill } from "@/components/trade-profile/primitives";
 
 interface NewsItem { title: string; url: string; source: string; publishedAt: string }
-
-/** "Lo, A. W., Repin, D. V., & Steenbarger, B. N. (2005). ..." becomes "Lo et al. (2005)". */
-function shortCite(citation: string): string {
-  const match = citation.match(/^(.*?)\s\((\d{4})\)/);
-  if (!match) return citation;
-  const [, authors, year] = match;
-  const first = authors.split(",")[0].trim();
-  const many = (authors.match(/,/g) ?? []).length > 1 || authors.includes("&");
-  return `${first}${many ? " et al." : ""} (${year})`;
-}
 
 /**
  * The part of Today that is about the trader's type rather than the program:
@@ -147,7 +137,7 @@ function FactCarousel({ type }: { type: FocusAreaId }) {
             {ref && (
               <p className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                 <StatusPill status={ref.status} />
-                <span className="line-clamp-1">{shortCite(ref.citation)}</span>
+                <SourceLink reference={ref} className="text-muted-foreground hover:text-foreground"><span className="truncate">{shortCite(ref.citation)}</span></SourceLink>
               </p>
             )}
           </motion.div>
@@ -231,7 +221,7 @@ export function DrillSheet({ drill, onClose }: { drill: Drill | null; onClose: (
                 <Eyebrow tone="ice">{t.why}</Eyebrow>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">{drill.why}</p>
               </section>
-              <Sources ids={drill.refs} />
+              <SourceList ids={drill.refs} title={t.sources} />
             </div>
           </>
         )}
@@ -256,33 +246,12 @@ function ReadSheet({ read, onClose }: { read: Read | null; onClose: () => void }
               {read.paragraphs.map((p, i) => (
                 <motion.p key={p} className="text-[15px] leading-relaxed text-foreground/90" initial={{ opacity: 0, transform: "translateY(6px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} transition={{ duration: 0.3, delay: 0.05 + i * 0.07, ease: EASE_OUT }}>{p}</motion.p>
               ))}
-              <Sources ids={read.refs} />
+              <SourceList ids={read.refs} title={t.sources} />
             </div>
           </>
         )}
       </SheetContent>
     </Sheet>
-  );
-}
-
-function Sources({ ids }: { ids: string[] }) {
-  return (
-    <section>
-      <Eyebrow className="mb-2">{copy.forType.sources}</Eyebrow>
-      <ul className="space-y-3.5">
-        {ids.map((rid) => {
-          const r = referenceById[rid];
-          if (!r) return null;
-          return (
-            <li key={rid} className="text-xs">
-              <StatusPill status={r.status} />
-              <p className="mt-1.5 leading-relaxed text-foreground/85">{r.claim}</p>
-              <p className="mt-1 leading-relaxed text-muted-foreground">{r.citation}</p>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
   );
 }
 

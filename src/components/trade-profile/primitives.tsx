@@ -1,13 +1,14 @@
 "use client";
 
 import { useId, type ReactNode } from "react";
+import { ArrowUpRight } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { EASE_OUT, SPRING } from "@/lib/motion";
 import { CountUp } from "@/components/ui/count-up";
 import { thresholds } from "@/lib/trade-profile/config";
 import type { DomainCode, Difficulty } from "@/lib/trade-profile/types";
-import type { RefStatus } from "@/lib/trade-profile/content/references";
+import { referenceById, sourceUrl, type Reference, type RefStatus } from "@/lib/trade-profile/content/references";
 import { copy } from "@/lib/trade-profile/content/copy";
 
 /** Domain hues from globals.css (--trait-*): distinct, non-semantic, no orange. */
@@ -99,6 +100,42 @@ export function DifficultyPill({ level }: { level: Difficulty }) {
 
 export function StatusPill({ status }: { status: RefStatus }) {
   return <Pill tone={status === "verified" ? "win" : status === "to verify" ? "be" : "ice"}>{copy.library.status[status]}</Pill>;
+}
+
+/** The way out to the original article, in a new tab. Sources without one (prototype hypotheses) show their label unlinked. */
+export function SourceLink({ reference, children, className }: { reference: Reference; children?: ReactNode; className?: string }) {
+  const href = sourceUrl(reference);
+  if (!href) return children ? <span className={className}>{children}</span> : null;
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+      className={cn("group/source inline-flex min-w-0 items-center gap-1 font-medium text-primary underline-offset-4 transition-colors duration-150 hover:underline", className)}>
+      {children ?? copy.library.openSource}
+      <ArrowUpRight aria-hidden className="size-3 shrink-0 transition-transform duration-200 group-hover/source:-translate-y-px group-hover/source:translate-x-px" />
+    </a>
+  );
+}
+
+/** The sources under a read, drill or exercise: how far each is checked, what we rely on it for, the citation and a link to the original. */
+export function SourceList({ ids, title }: { ids: readonly string[]; title: string }) {
+  return (
+    <section>
+      <Eyebrow className="mb-2">{title}</Eyebrow>
+      <ul className="space-y-3.5">
+        {ids.map((rid) => {
+          const r = referenceById[rid];
+          if (!r) return null;
+          return (
+            <li key={rid} className="text-xs">
+              <StatusPill status={r.status} />
+              <p className="mt-1.5 leading-relaxed text-foreground/85">{r.claim}</p>
+              <p className="mt-1 leading-relaxed text-muted-foreground">{r.citation}</p>
+              {sourceUrl(r) && <p className="mt-1.5"><SourceLink reference={r} /></p>}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
 }
 
 /** A row of equal-width choices (radio semantics), sized for thumbs. */

@@ -10,6 +10,10 @@
  * - 'prototype hypothesis': a design assumption made for this prototype, with no
  *   paper behind it.
  *
+ * Links to the original go through the DOI resolver (doi.org), which forwards
+ * to the publisher's page. On 2026-10-19 every DOI below was checked to
+ * resolve and to land on the paper with the cited title.
+ *
  * Never add a DOI, effect size or finding that has not been checked.
  */
 export type RefStatus = "verified" | "to verify" | "prototype hypothesis";
@@ -350,3 +354,18 @@ export const references: Reference[] = [
 ];
 
 export const referenceById = Object.fromEntries(references.map((r) => [r.id, r])) as Record<string, Reference>;
+
+/** The original article, via its DOI. Prototype hypotheses have none. */
+export function sourceUrl(r: Reference): string | undefined {
+  return r.doi ? `https://doi.org/${r.doi}` : undefined;
+}
+
+/** "Lo, A. W., Repin, D. V., & Steenbarger, B. N. (2005). ..." becomes "Lo et al. (2005)". */
+export function shortCite(citation: string): string {
+  const match = citation.match(/^(.*?)\s\((\d{4})\)/);
+  if (!match) return citation;
+  const [, authors, year] = match;
+  const first = authors.split(",")[0].trim();
+  const many = (authors.match(/,/g) ?? []).length > 1 || authors.includes("&");
+  return `${first}${many ? " et al." : ""} (${year})`;
+}
