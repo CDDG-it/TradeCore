@@ -14,12 +14,6 @@ export default function HomePage() {
       <LandingNav />
       <main id="main">
         <section id="dashboard" className="marketing-hero marketing-hero--home relative flex min-h-[calc(100svh-72px)] flex-col justify-center overflow-hidden px-6 py-16 sm:px-10 sm:py-20 lg:px-12 lg:py-24">
-          <svg aria-hidden="true" className="marketing-hero-contours absolute inset-0 h-full w-full" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" fill="none">
-            <path d="M 260 980 C 490 750 650 805 865 713 S 1275 570 1540 200" />
-            <path d="M 205 1025 C 455 785 640 850 875 755 S 1300 612 1575 255" />
-            <path d="M 150 1070 C 420 820 620 895 885 798 S 1330 655 1610 310" />
-            <path d="M 95 1115 C 390 860 610 940 895 840 S 1360 700 1645 365" />
-          </svg>
           <div className="relative mx-auto grid w-full max-w-[1500px] grid-cols-[minmax(0,1fr)] items-center gap-14 xl:grid-cols-[0.84fr_1.16fr] xl:gap-10">
             <div className="marketing-hero-copy relative z-10 min-w-0 max-w-[720px]">
               <h1 className="font-display max-w-[720px] text-balance text-[clamp(2.6rem,11vw,3.7rem)] font-semibold leading-[0.96] tracking-[-0.06em] sm:text-[clamp(3.9rem,5.7vw,6rem)]">Journal for <span className="marketing-hero-word italic">extraordinary</span> traders</h1>

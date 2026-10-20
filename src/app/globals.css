@@ -1582,13 +1582,6 @@ html:has(.marketing-page) { position: relative; }
     linear-gradient(125deg, #0b1120 16%, #102033 65%, #0b1120 100%);
 }
 
-.marketing-hero-contours {
-  pointer-events: none;
-  stroke: rgba(93, 194, 193, 0.22);
-  stroke-width: 1;
-  mask-image: linear-gradient(90deg, transparent 8%, #000 45%, #000 84%, transparent 100%);
-}
-
 .marketing-hero-primary,
 .marketing-hero-secondary {
   border: 1px solid;
@@ -1756,137 +1749,84 @@ html:has(.marketing-page) { position: relative; }
   color: #f8fafc;
 }
 
+.marketing-phone-app {
+  position: relative;
+  width: 360px;
+  height: 885px;
+  transform-origin: top left;
+}
+
 .marketing-phone-status {
   display: flex;
-  height: 22px;
+  height: 26px;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
-  color: #b4c6cb;
-  font-size: 7px;
-  font-weight: 700;
-}
-
-.marketing-phone-camera {
-  width: 35%;
-  height: 10px;
-  border-radius: 999px;
-  background: #050a13;
-}
-
-.marketing-phone-content {
-  display: flex;
-  height: calc(100% - 22px);
-  flex-direction: column;
-  gap: 5px;
-  justify-content: space-between;
-  padding: 1px 8px 5px;
-}
-
-.marketing-phone-topbar {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #d8e9eb;
-  font-size: 7px;
-  font-weight: 600;
-}
-
-.marketing-phone-mark {
-  margin-right: auto;
-  color: #43d4c8;
-  font-size: 11px;
-  font-style: italic;
-  font-weight: 800;
-  letter-spacing: -0.12em;
-}
-
-.marketing-phone-avatar {
-  display: grid;
-  width: 15px;
-  height: 15px;
-  place-items: center;
-  border-radius: 50%;
-  background: #1d4c52;
-  font-size: 6px;
-}
-
-.marketing-phone-greeting {
-  margin: 1px 0 0;
+  padding: 0 15px;
+  color: #d5e1e5;
   font-size: 10px;
   font-weight: 700;
 }
 
-.marketing-phone-card {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 4px;
-  border: 1px solid rgba(95, 139, 161, 0.18);
-  border-radius: 10px;
-  background: #131b2e;
-  padding: 7px;
+.marketing-phone-camera {
+  width: 76px;
+  height: 12px;
+  border-radius: 999px;
+  background: #050a13;
 }
 
-.marketing-phone-label {
+.marketing-phone-appbar {
   display: flex;
-  justify-content: space-between;
-  color: #8198a7;
-  font-size: 6px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  white-space: nowrap;
-}
-
-.marketing-phone-label span { color: #4cd4c7; }
-.marketing-phone-meta { color: #9cb3bc; font-size: 7px; }
-
-.marketing-phone-score {
-  background: radial-gradient(circle at 78% 27%, rgba(20, 184, 166, 0.12), transparent 55%), #131b2e;
-}
-
-.marketing-phone-score-value {
-  display: flex;
+  height: 56px;
   align-items: center;
-  gap: 9px;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(148, 183, 199, 0.14);
+  padding: 0 15px;
 }
 
-.marketing-phone-score-value strong {
-  color: #3ed1c4;
-  font-size: 34px;
-  font-weight: 750;
-  letter-spacing: -0.07em;
-  line-height: 1.1;
-}
+.marketing-phone-appbar img { width: 48px; height: auto; }
 
-.marketing-phone-score-value span {
-  color: #b7cbcd;
-  font-size: 8px;
-  line-height: 1.35;
-}
-
-.marketing-phone-progress {
-  height: 3px;
-  overflow: hidden;
-  border-radius: 10px;
-  background: #26364a;
-}
-
-.marketing-phone-progress span { display: block; width: 64%; height: 100%; background: #14b8a6; }
-
-.marketing-phone-stats {
+.marketing-phone-avatar {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: #1d4c52;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
 }
 
-.marketing-phone-stats .marketing-phone-card { gap: 3px; }
-.marketing-phone-stats strong { color: #45d5c8; font-size: 15px; line-height: 1.1; }
-.marketing-phone-stats .marketing-phone-card + .marketing-phone-card strong { color: #f8fafc; }
+.marketing-phone-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 12px 80px;
+}
 
-.marketing-phone-habits { gap: 5px; }
-.marketing-phone-habits > span:not(:first-child) { display: flex; align-items: center; gap: 5px; color: #c3d4d7; font-size: 7px; white-space: nowrap; }
-.marketing-phone-habits i { display: block; width: 7px; height: 7px; flex: none; border-radius: 50%; background: #14b8a6; box-shadow: 0 0 6px rgba(20, 184, 166, 0.5); }
+.marketing-phone-bottomnav {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  height: 62px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-top: 1px solid rgba(148, 183, 199, 0.18);
+  background: #101a2b;
+}
+
+.marketing-phone-bottomnav span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #879eaa;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.marketing-phone-bottomnav .is-active { color: #14b8a6; }
+.marketing-phone-bottomnav b { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid rgba(20, 184, 166, 0.35); border-radius: 50%; color: #14b8a6; font-size: 20px; font-weight: 400; }
 
 @media (max-width: 639px) {
   .marketing-device-scene { display: flex; flex-direction: column; align-items: center; }

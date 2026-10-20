@@ -8,6 +8,7 @@ import { computeMindScore } from "@/lib/mind-score/mind-score";
 import { computeGoalProgress } from "@/lib/goals/goals";
 import { tradeR } from "@/lib/journal/weeks";
 import { PRIMARY_NAV } from "@/lib/nav";
+import { NavIcon } from "@/lib/nav-icons";
 import { sampleDashboardData } from "@/lib/dashboard/sample";
 
 const sampleNow = new Date("2026-09-17T12:00:00");
@@ -45,32 +46,41 @@ function Ringed({ index, className, children }: { index: number; className?: str
 }
 
 function PhoneDashboard() {
+  const screenRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState<number | null>(null);
+
+  useEffect(() => {
+    const screen = screenRef.current;
+    if (!screen) return;
+    const measure = () => {
+      if (screen.clientWidth > 0) setScale(screen.clientWidth / 360);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(screen);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="marketing-phone" aria-hidden="true">
-      <div className="marketing-phone-screen">
-        <div className="marketing-phone-status"><span>9:41</span><span className="marketing-phone-camera" /><span>••• ▰</span></div>
-        <div className="marketing-phone-content">
-          <div className="marketing-phone-topbar">
+      <div ref={screenRef} className="marketing-phone-screen marketing-dashboard">
+        <div inert className="marketing-phone-app" style={{ transform: `scale(${scale ?? 1})`, visibility: scale === null ? "hidden" : "visible" }}>
+          <div className="marketing-phone-status"><span>9:41</span><span className="marketing-phone-camera" /><span>••• ▰</span></div>
+          <div className="marketing-phone-appbar">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tradingmc-logo.png" alt="" width={25} height={13} loading="eager" className="marketing-phone-mark" />
-            <span>Dashboard</span><span className="marketing-phone-avatar">AL</span>
+            <img src="/tradingmc-logo.png" alt="" width={48} height={25} loading="eager" />
+            <span className="marketing-phone-avatar">AL</span>
           </div>
-          <p className="marketing-phone-greeting">Good morning, Alex</p>
-          <div className="marketing-phone-card marketing-phone-score">
-            <span className="marketing-phone-label">MC MINDSCORE <span>WEEK</span></span>
-            <div className="marketing-phone-score-value"><strong>64</strong><span>Solid<br />process</span></div>
-            <div className="marketing-phone-progress"><span /></div>
-            <span className="marketing-phone-meta">Your edge is taking shape</span>
+          <div className="marketing-phone-cards">
+            <MindScoreOrb score={mindScore} period="week" onPeriodChange={() => {}} capital={52840} count={2} hidden={false} onToggle={() => {}} />
+            <WinRateCard winRate={75} wins={3} losses={1} be={0} total={4} netR={4.5} goodExec={3} badExec={1} period="week" onPeriodChange={() => {}} />
+            <WeekStrip days={weekDays} today={format(sampleNow, "yyyy-MM-dd")} />
+            <HabitsCard habits={habits} doneToday={new Set(["plan", "review", "pause"])} pendingHabit={null} onToggle={() => {}} />
           </div>
-          <div className="marketing-phone-stats">
-            <div className="marketing-phone-card"><span className="marketing-phone-label">NET R</span><strong>+4.5R</strong><span className="marketing-phone-meta">This week</span></div>
-            <div className="marketing-phone-card"><span className="marketing-phone-label">WIN RATE</span><strong>75%</strong><span className="marketing-phone-meta">4 trades</span></div>
-          </div>
-          <div className="marketing-phone-card marketing-phone-habits">
-            <span className="marketing-phone-label">TODAY&apos;S HABITS <span>3/3</span></span>
-            <span><i />Write the session plan</span>
-            <span><i />Review the last trade</span>
-            <span><i />Pause after a loss</span>
+          <div className="marketing-phone-bottomnav">
+            {PRIMARY_NAV.slice(0, 2).map((item) => <span key={item.href} className={item.href === "/dashboard" ? "is-active" : ""}><NavIcon href={item.href} active={item.href === "/dashboard"} className="size-6" />{item.short ?? item.label}</span>)}
+            <span><b>+</b>Create</span>
+            {PRIMARY_NAV.slice(2).map((item) => <span key={item.href}><NavIcon href={item.href} active={false} className="size-6" />{item.short ?? item.label}</span>)}
           </div>
         </div>
       </div>
