@@ -64,7 +64,7 @@ function PhoneDashboard() {
   return (
     <div className="marketing-phone" aria-hidden="true">
       <div ref={screenRef} className="marketing-phone-screen marketing-dashboard">
-        <div inert className="marketing-phone-app" style={{ transform: `scale(${scale ?? 1})`, visibility: scale === null ? "hidden" : "visible" }}>
+        <div inert className="marketing-phone-app" style={{ zoom: scale ?? 1, visibility: scale === null ? "hidden" : "visible" }}>
           <div className="marketing-phone-status"><span>9:41</span><span className="marketing-phone-camera" /><span>••• ▰</span></div>
           <div className="marketing-phone-appbar">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -112,7 +112,7 @@ export function DashboardScreenshot() {
       <span aria-hidden="true" className="marketing-laptop-cam" />
       <div className="marketing-screen-frame rounded-[22px] border border-white/10 bg-[#0b1120] p-1.5 sm:rounded-[26px] sm:p-2">
         <div ref={screenRef} className="marketing-dashboard relative aspect-[980/650] overflow-hidden rounded-[16px] bg-[#0b1120] sm:rounded-[18px]">
-        <div inert className="marketing-dashboard-inner absolute left-0 top-0 h-[650px] w-[980px] overflow-hidden" style={{ transform: `scale(${scale ?? 1})`, transformOrigin: "top left", visibility: scale === null ? "hidden" : "visible" }}>
+        <div inert className="marketing-dashboard-inner absolute left-0 top-0 h-[650px] w-[980px] overflow-hidden" style={{ zoom: scale ?? 1, visibility: scale === null ? "hidden" : "visible" }}>
           <div className="flex h-12 items-center justify-between border-b border-white/10 bg-[#0b1120] px-4">
             {/* Match the current TradingMC mark used by the authenticated navigation. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
