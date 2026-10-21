@@ -5,7 +5,7 @@ import { ArrowUpRight, BookOpen, ChevronLeft, ChevronRight, Clock, Play, Square,
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { EASE_OUT, rise } from "@/lib/motion";
+import { EASE_OUT } from "@/lib/motion";
 import { copy } from "@/lib/trade-profile/content/copy";
 import { focusAreas } from "@/lib/trade-profile/content/focus-areas";
 import { insights, type Drill, type Read } from "@/lib/trade-profile/content/insights";
@@ -25,89 +25,69 @@ export function ForYourType({ type }: { type: FocusAreaId }) {
   const content = insights[type];
   const [drill, setDrill] = useState<Drill | null>(null);
   const [read, setRead] = useState<Read | null>(null);
+  const [panel, setPanel] = useState<"drills" | "reads" | "research" | "news">("drills");
+  const panels = [
+    { key: "drills", label: t.drills },
+    { key: "reads", label: t.reads },
+    { key: "research", label: copy.forType.facts },
+    { key: "news", label: t.news },
+  ] as const;
 
   return (
-    <section aria-label={t.title(focusAreas[type].traderType)} className="space-y-4 pt-2">
-      <motion.div {...rise(0)} className="flex flex-wrap items-end justify-between gap-3">
+    <section aria-label={t.title(focusAreas[type].traderType)} className="flex min-h-0 flex-1 flex-col gap-2 rounded-2xl border border-border/60 bg-card/45 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="font-heading text-xl font-bold tracking-tight">{t.title(focusAreas[type].traderType)}</h2>
-          <p className="mt-1 max-w-[62ch] text-sm text-muted-foreground">{t.lead}</p>
+          <h2 className="font-heading text-base font-bold tracking-tight">{t.title(focusAreas[type].traderType)}</h2>
+          <p className="text-xs text-muted-foreground">{t.lead}</p>
         </div>
-      </motion.div>
-
-      {/* Drills: three cards, the breathing ones with a live preview of their rhythm. */}
-      <div>
-        <div className="mb-2.5 flex items-baseline justify-between gap-3">
-          <h3 className="font-heading text-sm font-bold tracking-tight">{t.drills}</h3>
-          <span className="text-[11px] text-muted-foreground">{t.drillsHint}</span>
-        </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          {content.drills.map((d, i) => (
-            <motion.button
-              key={d.id}
-              type="button"
-              onClick={() => setDrill(d)}
-              {...rise(i + 1, 0.06)}
-              className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card p-4 text-left transition-[border-color,box-shadow] duration-300 hover:border-primary/35 hover:shadow-[0_18px_40px_-28px_rgba(20,184,166,.5)]"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
-                  {d.breath ? <Wind className="size-4" /> : <Zap className="size-4" />}
-                </span>
-                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Clock className="size-3" />{d.duration}</span>
-              </div>
-              <p className="mt-3 font-heading text-[15px] font-bold tracking-tight">{d.title}</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{d.when}</p>
-              {d.breath && <BreathPreview drill={d} />}
-              <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
-                {t.open} <ArrowUpRight className="size-3 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-              </span>
-            </motion.button>
+        <div role="group" aria-label={t.title(focusAreas[type].traderType)} className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-border/60 bg-background/40 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {panels.map(({ key, label }) => (
+            <button key={key} type="button" aria-pressed={panel === key} onClick={() => setPanel(key)}
+              className={cn("shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors", panel === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>{label}</button>
           ))}
         </div>
       </div>
 
-      {/* Reads beside the facts, then the news across the width. */}
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-        <div>
-          <h3 className="mb-2.5 font-heading text-sm font-bold tracking-tight">{t.reads}</h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {content.reads.map((r, i) => (
-              <motion.button key={r.id} type="button" onClick={() => setRead(r)} {...rise(i + 4, 0.06)}
-                className="group flex flex-col rounded-2xl border border-border/60 bg-card p-4 text-left transition-[border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/35">
+      <div className="min-h-0 flex-1">
+        {panel === "drills" && (
+          <div className="flex h-full flex-col gap-1">
+            <p className="text-[11px] text-muted-foreground">{t.drillsHint}</p>
+            <div className="grid min-h-0 flex-1 gap-2 sm:grid-cols-3">
+            {content.drills.map((d) => (
+              <button key={d.id} type="button" onClick={() => setDrill(d)}
+                className="group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-background/40 p-3 text-left transition-colors hover:border-primary/35">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">{d.breath ? <Wind className="size-4" /> : <Zap className="size-4" />}</span>
+                  <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Clock className="size-3" />{d.duration}</span>
+                </span>
+                <span className="mt-2 font-heading text-sm font-bold tracking-tight">{d.title}</span>
+                <span className="mt-0.5 text-xs leading-snug text-muted-foreground">{d.when}</span>
+                <span className="mt-auto inline-flex items-center gap-1 pt-2 text-[11px] font-semibold text-primary">{t.open} <ArrowUpRight className="size-3" /></span>
+              </button>
+            ))}
+            </div>
+          </div>
+        )}
+        {panel === "reads" && (
+          <div className="grid h-full gap-2 sm:grid-cols-2">
+            {content.reads.map((r) => (
+              <button key={r.id} type="button" onClick={() => setRead(r)}
+                className="group flex min-w-0 flex-col rounded-xl border border-border/60 bg-background/40 p-3 text-left transition-colors hover:border-primary/35">
                 <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground"><BookOpen className="size-3.5 text-ice" />{t.minutes(r.minutes)}</span>
-                <p className="mt-2 font-heading text-[15px] font-bold leading-snug tracking-tight">{r.title}</p>
-                <p className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-muted-foreground">{r.paragraphs[0]}</p>
-                <span className="mt-auto pt-3 text-[11px] font-semibold text-primary">{t.open}</span>
-              </motion.button>
+                <span className="mt-1.5 font-heading text-sm font-bold leading-snug tracking-tight">{r.title}</span>
+                <span className="mt-1 line-clamp-3 text-xs leading-relaxed text-muted-foreground">{r.paragraphs[0]}</span>
+                <span className="mt-auto pt-2 text-[11px] font-semibold text-primary">{t.open}</span>
+              </button>
             ))}
           </div>
-        </div>
-        <FactCarousel type={type} />
+        )}
+        {panel === "research" && <FactCarousel type={type} />}
+        {panel === "news" && <NewsList type={type} />}
       </div>
-
-      <NewsList type={type} />
 
       <DrillSheet drill={drill} onClose={() => setDrill(null)} />
       <ReadSheet read={read} onClose={() => setRead(null)} />
     </section>
-  );
-}
-
-/** A small dot breathing in the drill's rhythm, so the card shows what it asks for. */
-function BreathPreview({ drill }: { drill: Drill }) {
-  const reduce = useReducedMotion();
-  if (!drill.breath || reduce) return null;
-  const phases = drill.breath.phases;
-  const total = phases.reduce((s, p) => s + p.seconds, 0);
-  // Where each phase ends, as a share of the whole cycle.
-  const times = [0, ...phases.map((_, i) => phases.slice(0, i + 1).reduce((sum, p) => sum + p.seconds, 0) / total)];
-  const sizes = [phases[phases.length - 1].size, ...phases.map((p) => p.size)];
-  return (
-    <span aria-hidden className="absolute right-4 top-14 grid size-10 place-items-center">
-      <motion.span className="size-10 rounded-full bg-primary/25" animate={{ transform: sizes.map((s) => `scale(${0.35 + s * 0.65})`) }}
-        transition={{ duration: total, times, ease: "easeInOut", repeat: Infinity }} />
-    </span>
   );
 }
 
@@ -120,7 +100,7 @@ function FactCarousel({ type }: { type: FocusAreaId }) {
   const ref = referenceById[fact.ref];
   const step = (by: number) => { setDir(by); setI((x) => (x + by + facts.length) % facts.length); };
   return (
-    <motion.section {...rise(6, 0.06)} className="flex flex-col rounded-2xl border border-border/60 bg-card p-4" aria-roledescription="carousel" aria-label={copy.forType.facts}>
+    <section className="flex h-full flex-col rounded-xl border border-border/60 bg-background/40 p-3" aria-roledescription="carousel" aria-label={copy.forType.facts}>
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-heading text-sm font-bold tracking-tight">{copy.forType.facts}</h3>
         <div className="flex items-center gap-1">
@@ -129,13 +109,13 @@ function FactCarousel({ type }: { type: FocusAreaId }) {
           <button type="button" aria-label="Next fact" onClick={() => step(1)} className="press grid size-7 place-items-center rounded-full border border-border/60 text-muted-foreground hover:text-foreground"><ChevronRight className="size-3.5" /></button>
         </div>
       </div>
-      <div className="relative mt-3 min-h-[7.5rem] flex-1 overflow-hidden">
+      <div className="relative mt-2 min-h-16 flex-1 overflow-hidden">
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.div key={fact.text} initial={{ opacity: 0, transform: `translateX(${dir * 24}px)` }} animate={{ opacity: 1, transform: "translateX(0px)" }}
             exit={{ opacity: 0, transform: `translateX(${dir * -24}px)`, transition: { duration: 0.12 } }} transition={{ duration: 0.24, ease: EASE_OUT }}>
-            <p className="font-heading text-[17px] font-semibold leading-snug tracking-tight [text-wrap:pretty]">{fact.text}</p>
+            <p className="font-heading text-[15px] font-semibold leading-snug tracking-tight [text-wrap:pretty]">{fact.text}</p>
             {ref && (
-              <p className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                 <StatusPill status={ref.status} />
                 <SourceLink reference={ref} className="text-muted-foreground hover:text-foreground"><span className="truncate">{shortCite(ref.citation)}</span></SourceLink>
               </p>
@@ -143,7 +123,7 @@ function FactCarousel({ type }: { type: FocusAreaId }) {
           </motion.div>
         </AnimatePresence>
       </div>
-    </motion.section>
+    </section>
   );
 }
 
@@ -161,7 +141,7 @@ function NewsList({ type }: { type: FocusAreaId }) {
   }, [type]);
 
   return (
-    <motion.section {...rise(7, 0.06)} className="rounded-2xl border border-border/60 bg-card p-4" aria-label={t.news}>
+    <section className="h-full rounded-xl border border-border/60 bg-background/40 p-3" aria-label={t.news}>
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-heading text-sm font-bold tracking-tight">{t.news}</h3>
         <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary">
@@ -170,25 +150,25 @@ function NewsList({ type }: { type: FocusAreaId }) {
         </span>
       </div>
       {state.status === "loading" ? (
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">{[0, 1, 2].map((k) => <div key={k} className="h-20 animate-pulse rounded-xl bg-muted/30" />)}</div>
+        <div className="mt-2 grid gap-2 sm:grid-cols-3">{[0, 1, 2].map((k) => <div key={k} className="h-16 animate-pulse rounded-xl bg-muted/30" />)}</div>
       ) : state.items.length ? (
-        <ul className="mt-3 grid gap-2 sm:grid-cols-3">
-          {state.items.map((n, k) => (
-            <motion.li key={n.url} initial={{ opacity: 0, transform: "translateY(6px)" }} animate={{ opacity: 1, transform: "translateY(0px)" }} transition={{ duration: 0.28, delay: k * 0.06, ease: EASE_OUT }}>
-              <a href={n.url} target="_blank" rel="noopener noreferrer" className="group flex h-full flex-col rounded-xl border border-border/50 bg-background/30 p-3 transition-colors hover:border-primary/35">
-                <span className="line-clamp-3 text-[13px] font-semibold leading-snug group-hover:text-primary">{n.title}</span>
+        <ul className="mt-2 grid gap-2 sm:grid-cols-3">
+          {state.items.map((n) => (
+            <li key={n.url}>
+              <a href={n.url} target="_blank" rel="noopener noreferrer" className="group flex h-full flex-col rounded-xl border border-border/50 bg-background/30 p-2.5 transition-colors hover:border-primary/35">
+                <span className="line-clamp-2 text-[13px] font-semibold leading-snug group-hover:text-primary">{n.title}</span>
                 <span className="mt-auto flex items-center justify-between gap-2 pt-2 text-[10px] text-muted-foreground">
                   <span className="truncate">{n.source}</span>
                   <span className="inline-flex shrink-0 items-center gap-1">{n.publishedAt ? new Date(n.publishedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ""}<ArrowUpRight className="size-3" /></span>
                 </span>
               </a>
-            </motion.li>
+            </li>
           ))}
         </ul>
       ) : (
         <p className="mt-3 text-xs text-muted-foreground">{state.status === "ok" ? t.newsEmpty : t.newsUnavailable}</p>
       )}
-    </motion.section>
+    </section>
   );
 }
 

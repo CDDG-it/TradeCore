@@ -187,7 +187,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       <DashboardDesk
         mindScore={<MindScoreOrb score={mcMind} period={mindPeriod} onPeriodChange={setMindPeriod} capital={activeCapital} count={activeAccounts.length} hidden={hidden} onToggle={toggle} />}
         winRate={<WinRateCard winRate={winRate} wins={wins} losses={losses} be={be} total={periodTrades.length} netR={periodR} goodExec={goodExec} badExec={badExec} period={wrPeriod} onPeriodChange={setWrPeriod} className="h-full" />}
-        journal={<WeekStrip days={weekDays} today={today} />}
+        journal={<WeekStrip days={weekDays} today={today} showAnalysisLink />}
         habits={
           <HabitsCard
             habits={habits} doneToday={doneToday} pendingHabit={pendingHabit} onToggle={handleToggleHabit}

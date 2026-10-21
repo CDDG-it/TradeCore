@@ -29,8 +29,9 @@ const RETEST_WEEKS = thresholds.retestWeeks as readonly number[];
  */
 export function TodayView() {
   const { focus } = useDerived();
+  const { state } = useTradeProfile();
   return (
-    <div className="space-y-8">
+    <div className={cn("mx-auto flex w-full max-w-[1240px] flex-col gap-5 lg:min-h-0 lg:gap-3", !state.goal && "lg:h-full")}>
       <ProgramToday />
       {focus && <ForYourType type={focus.primary.id} />}
     </div>
@@ -38,9 +39,8 @@ export function TodayView() {
 }
 
 /**
- * Where the program stands today. A two-column workspace on desktop: the
- * challenge and the week on the left, the trader's own levers (where they are,
- * the check-in, anything due) in a rail on the right.
+ * Where the program stands today. The challenge and weekly plan sit beside
+ * progress and check-ins when the viewport has room.
  */
 function ProgramToday() {
   const { state, todayKey } = useTradeProfile();
@@ -146,7 +146,7 @@ function ProgramToday() {
         )}
       </div>
 
-      {/* ── The rail ─────────────────────────────────────────── */}
+      {/* ── Progress and check-in ─────────────────────────────── */}
       <aside className="min-w-0 space-y-4">
         <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
           <div className="flex items-baseline justify-between gap-3">

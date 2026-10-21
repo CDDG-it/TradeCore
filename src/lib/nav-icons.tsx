@@ -28,16 +28,16 @@ export function NavIcon({ href, active = false, ...props }: NavIconProps) {
     case "/psychological-edge":
       return (
         <svg {...base}>
-          <circle cx="12" cy="12" r="8.5" />
-          <circle cx="12" cy="12" r="4.5" />
-          <circle cx="12" cy="12" r="1.35" fill="currentColor" stroke="none" opacity={active ? 1 : 0.7} />
+          <path d="m12 2.75 8 5.1v8.3l-8 5.1-8-5.1v-8.3l8-5.1Z" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.1 : 0} />
+          <path d="m7.5 14.5 3.2-3.5 2.2 1.8 3.6-3.9" />
+          <path d="M13.8 8.9h2.7v2.7" />
         </svg>
       );
     case "/trade-therapist":
       return (
         <svg {...base}>
-          <path d="M20.25 11.5a8.25 8.25 0 0 1-8.25 8.25 8.4 8.4 0 0 1-3.1-.59L4 20l.84-4.9A8.25 8.25 0 1 1 20.25 11.5Z" />
-          <path d="M8.4 10h7.2M8.4 13.5h4.8" />
+          <circle cx="12" cy="12" r="8.5" fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.1 : 0} />
+          <path d="M4.5 12h3.1l2.1-3.4 3.1 6.5 2-3.1h4.7" />
         </svg>
       );
     case "/news-city":

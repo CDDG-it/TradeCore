@@ -64,6 +64,7 @@
 .app-surface :is(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-primary\/\[\.075\]:not([class*="hover:bg-"]) { background-color: color-mix(in oklab, var(--color-primary) 7.5%, var(--color-card)); }
 .app-surface :is(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-primary\/\[0\.1\]:not([class*="hover:bg-"]) { background-color: color-mix(in oklab, var(--color-primary) 10%, var(--color-card)); }
 .app-surface :is(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-primary\/\[0\.03\]:not([class*="hover:bg-"]) { background-color: color-mix(in oklab, var(--color-primary) 3%, var(--color-card)); }
+.app-surface :is(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-primary\/\[0\.04\]:not([class*="hover:bg-"]) { background-color: color-mix(in oklab, var(--color-primary) 4%, var(--color-card)); }
 .app-surface :is(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-primary\/\[0\.05\]:not([class*="hover:bg-"]) { background-color: color-mix(in oklab, var(--color-primary) 5%, var(--color-card)); }
 .app-surface :is(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-primary\/\[0\.07\]:not([class*="hover:bg-"]) { background-color: color-mix(in oklab, var(--color-primary) 7%, var(--color-card)); }
 .app-surface :is(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-primary\/\[0\.08\]:not([class*="hover:bg-"]) { background-color: color-mix(in oklab, var(--color-primary) 8%, var(--color-card)); }

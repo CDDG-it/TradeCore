@@ -45,7 +45,7 @@ export function AssessmentView(props: {
   const showPage = (p: number) => {
     if (props.items) setLocalPage(p);
     else store.setPage(p);
-    nav.scrollTop(true);
+    nav.scrollTop();
   };
   /** A page turn forward is a history entry, so the browser back button returns to the last page. */
   const setPage = (p: number) => {

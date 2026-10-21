@@ -483,12 +483,13 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, c
    a loss reads as half amber, half red, so a mixed day can never be mistaken
    for a single result. The net R keeps its own colour. */
 
-export function WeekStrip({ days, today, compactNumbers = false }: {
+export function WeekStrip({ days, today, compactNumbers = false, showAnalysisLink = false }: {
   days: { date: Date; trades: TradeSummary[]; r: number }[];
   /** Today's "yyyy-MM-dd" on the reader's clock. The desk passes the key it
    *  hydrated with, so the server and the browser agree on which day is lit. */
   today?: string;
   compactNumbers?: boolean;
+  showAnalysisLink?: boolean;
 }) {
   return (
     <div className={cn(CARD_BASE, "flex h-full flex-col p-3 sm:p-4 short:p-3")}>
@@ -500,10 +501,13 @@ export function WeekStrip({ days, today, compactNumbers = false }: {
             {format(days[0].date, "MMM d")} - {format(days[6].date, "MMM d")}
           </span>
         </div>
-        <Link href="/journal" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">
-          <span className="sm:hidden">Open →</span>
-          <span className="hidden sm:inline">Open journal →</span>
-        </Link>
+        <div className="flex shrink-0 items-center gap-3 text-[11px] font-semibold text-primary">
+          {showAnalysisLink && <Link href="/analysis" className="whitespace-nowrap hover:underline">Analyses →</Link>}
+          <Link href="/journal" className="whitespace-nowrap hover:underline">
+            <span className="sm:hidden">Journal →</span>
+            <span className="hidden sm:inline">Open journal →</span>
+          </Link>
+        </div>
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-7 gap-1 sm:gap-2 short:gap-1">
@@ -627,6 +631,10 @@ export function WeekStrip({ days, today, compactNumbers = false }: {
         {/* The week is where you notice a trade is missing, and where the next
             session gets planned, so both ways in sit right under it. */}
         <span className="ml-auto flex items-center gap-2">
+          {showAnalysisLink && <Link
+            href="/analysis"
+            className="inline-flex items-center rounded-lg border border-border/70 bg-background/35 px-2.5 py-1.5 text-[11px] font-semibold text-foreground/85 transition-[border-color,background-color] hover:border-primary/40 hover:bg-primary/10"
+          >View analyses</Link>}
           <Link
             href="/analysis/new"
             className="inline-flex items-center gap-1.5 rounded-lg border border-primary/35 bg-primary/10 px-2.5 py-1.5 text-[11px] font-semibold text-primary transition-[transform,border-color,background-color] duration-200 hover:-translate-y-px hover:border-primary/55 hover:bg-primary/15 active:translate-y-0"

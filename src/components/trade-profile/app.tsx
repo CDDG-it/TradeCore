@@ -62,7 +62,7 @@ export function TradeProfileApp() {
   const [view, setView] = useState<View>(TODAY);
   const [exercise, setExercise] = useState<string | null>(null);
   const frame = useRef<HTMLDivElement>(null);
-  const scrollTop = (smooth = false) => frame.current?.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
+  const scrollTop = () => frame.current?.scrollTo({ top: 0, behavior: "auto" });
 
   // Seed from the URL after mount (the page is prerendered, so reading it during
   // render would make server and client disagree), then follow back/forward.
@@ -126,6 +126,7 @@ export function TradeProfileApp() {
   // which made the Today tab look dead to a trader without a goal).
   const tabOf = (raw: ProfileTab): ProfileTab => RENAMED[raw] ?? raw;
   const shownTab: ProfileTab = view.kind === "tab" ? tabOf(view.tab) : view.kind === "domain" ? "profile" : tabOf("today");
+  const compactToday = finished && shownTab === "today" && !store.state.goal;
   // Intro and assessment entries left in history after finishing show the sections too.
   const inSection = view.kind !== "retest" && view.kind !== "reflection";
 
@@ -168,7 +169,7 @@ export function TradeProfileApp() {
           </div>
         <div ref={frame} className="h-full overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
           {/* A column that is at least the frame's height, so a view can fill the rest of it (the profile does). */}
-          <div className="flex min-h-full w-full flex-col gap-4 pb-3">
+          <div className={cn("flex min-h-full w-full flex-col gap-4 pb-3", compactToday && "lg:h-full lg:min-h-0 lg:gap-2 lg:pb-0")}>
             {finished && inSection && <SectionTabs value={PARENT[shownTab] ?? shownTab} onChange={nav.goTab} />}
             {store.demo && <DemoBar />}
             {store.saveError && !store.demo && (
@@ -176,8 +177,8 @@ export function TradeProfileApp() {
                 {copy.saveError}
               </p>
             )}
-            {/* Enter-only fade, like PageWrapper: a section change never waits on the old one leaving. */}
-            <motion.div key={viewKey} className="flex min-h-0 flex-1 flex-col" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, ease: EASE }}>
+            {/* A short fade keeps tab changes legible without moving reading content. */}
+            <motion.div key={viewKey} className="flex min-h-0 flex-1 flex-col" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: EASE }}>
               {body}
             </motion.div>
           </div>
