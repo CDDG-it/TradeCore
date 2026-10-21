@@ -13,6 +13,7 @@ import { getTrades } from "@/lib/supabase/queries";
 import { mask } from "@/lib/use-privacy";
 import { cn } from "@/lib/utils";
 import { BrainScore } from "@/components/mind-score/brain-score";
+import { DashboardPageLink } from "@/components/dashboard/dashboard-page-link";
 import { Segmented } from "@/components/ui/segmented";
 import type { TradingGoal, TradeSummary, Habit } from "@/lib/types";
 
@@ -131,7 +132,7 @@ export function MindScoreOrb({ score, period, onPeriodChange, capital, count, hi
         </p>
       )}
 
-      <Link href="/psychological-edge?tab=mindscore" className="relative z-10 mb-3 text-right text-[11px] font-semibold text-primary hover:underline">Score breakdown →</Link>
+      <DashboardPageLink href="/psychological-edge?tab=mindscore" className="mb-3 self-end">Score breakdown</DashboardPageLink>
 
       <div className="relative z-10 border-t border-border/60 pt-3">
         <div className="flex items-center justify-between gap-2">
@@ -140,7 +141,7 @@ export function MindScoreOrb({ score, period, onPeriodChange, capital, count, hi
         </div>
         <div className="mt-2 flex items-end justify-between gap-3">
           <div><p className={cn("font-black tabular-nums leading-none", compactNumbers ? "text-lg" : "text-xl")} style={{ color: TURQUOISE }}>{capital > 0 ? mask(`$${capital.toLocaleString("en-US")}`, hidden) : "-"}</p><p className="mt-1 text-[11px] text-muted-foreground">{count} active account{count !== 1 ? "s" : ""}</p></div>
-          <Link href="/accounts" className="shrink-0 text-[11px] font-semibold text-primary hover:underline">View →</Link>
+          <DashboardPageLink href="/accounts">View</DashboardPageLink>
         </div>
       </div>
     </div>
@@ -176,9 +177,9 @@ export function GoalsCard({ goals, progress, className, compactNumbers = false }
           would cost is the height the third goal needs to sit complete. */}
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Goals</p>
-        <Link href="/psychological-edge?tab=goals" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">
+        <DashboardPageLink href="/psychological-edge?tab=goals">
           {goals.length > 0 ? "All goals" : "Set one"}
-        </Link>
+        </DashboardPageLink>
       </div>
 
       {shown.length === 0 ? (
@@ -388,9 +389,9 @@ export function WinRateCard({ winRate, wins, losses, be, total, netR, goodExec, 
         </div>
       </div>
 
-      <Link href="/analytics" onMouseEnter={() => { void getTrades().catch(() => {}); }} onFocus={() => { void getTrades().catch(() => {}); }} className="mt-1.5 text-[11px] font-semibold text-primary hover:underline short:mt-1">
-        View full analytics →
-      </Link>
+      <DashboardPageLink href="/analytics" onMouseEnter={() => { void getTrades().catch(() => {}); }} onFocus={() => { void getTrades().catch(() => {}); }} className="mt-1.5 self-start short:mt-1">
+        View full analytics
+      </DashboardPageLink>
     </div>
   );
 }
@@ -413,13 +414,13 @@ export function HabitsCard({ habits, doneToday, pendingHabit, onToggle, error, c
         </p>
         <div className="flex shrink-0 items-center gap-2">
           <span className="text-[11px] font-semibold tabular-nums text-primary">{doneToday.size}/{habits.length}</span>
-          <Link href="/habits" className="whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">Open →</Link>
+          <DashboardPageLink href="/habits">Open</DashboardPageLink>
         </div>
       </div>
       {habits.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center py-2">
           <p className="text-xs text-muted-foreground mb-1.5">No habits yet.</p>
-          <Link href="/habits" className="text-xs font-semibold text-primary hover:underline">Add habits</Link>
+          <DashboardPageLink href="/habits">Add habits</DashboardPageLink>
         </div>
       ) : (
         <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-0.5 short:space-y-0">
@@ -494,19 +495,19 @@ export function WeekStrip({ days, today, compactNumbers = false, showAnalysisLin
   return (
     <div className={cn(CARD_BASE, "flex h-full flex-col p-3 sm:p-4 short:p-3")}>
       <CardFx accent={TURQUOISE} />
-      <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 sm:mb-3">
         <div className="flex min-w-0 items-baseline gap-2">
           <p className="whitespace-nowrap text-[13px] font-semibold sm:text-sm">This week</p>
           <span className={cn("truncate tabular-nums text-muted-foreground/70", compactNumbers ? "text-[10px]" : "text-[11px]")}>
             {format(days[0].date, "MMM d")} - {format(days[6].date, "MMM d")}
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-3 text-[11px] font-semibold text-primary">
-          {showAnalysisLink && <Link href="/analysis" className="whitespace-nowrap hover:underline">Analyses →</Link>}
-          <Link href="/journal" className="whitespace-nowrap hover:underline">
-            <span className="sm:hidden">Journal →</span>
-            <span className="hidden sm:inline">Open journal →</span>
-          </Link>
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          {showAnalysisLink && <DashboardPageLink href="/analysis">Analyses</DashboardPageLink>}
+          <DashboardPageLink href="/journal">
+            <span className="sm:hidden">Journal</span>
+            <span className="hidden sm:inline">Open journal</span>
+          </DashboardPageLink>
         </div>
       </div>
 

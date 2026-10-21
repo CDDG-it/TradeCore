@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useCallback, useSyncExternalStore } from "react";
-import Link from "next/link";
 import {
   format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay,
   startOfMonth, endOfMonth, isWithinInterval, addWeeks,
@@ -24,6 +23,7 @@ import {
   MindScoreOrb, GoalsCard, WinRateCard, HabitsCard, WeekStrip, CARD_BASE, CardFx,
 } from "@/components/dashboard/dashboard-cards";
 import { DashboardDesk } from "@/components/dashboard/dashboard-desk";
+import { DashboardPageLink } from "@/components/dashboard/dashboard-page-link";
 
 const CYAN = "var(--ice)";
 const RED = "var(--loss)";
@@ -289,9 +289,7 @@ function NewsHub({ today, className }: { today: string; className?: string }) {
 
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">The week ahead</p>
-        <Link href="/news-city?tab=calendar" className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-primary hover:underline">
-          Full calendar →
-        </Link>
+        <DashboardPageLink href="/news-city?tab=calendar">Full calendar</DashboardPageLink>
       </div>
 
       {days.length === 0 ? (
