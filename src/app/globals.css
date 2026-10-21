@@ -1704,7 +1704,7 @@ html:has(.marketing-page) { position: relative; }
 /* The hero screenshot: a thin frame, a soft product glow, no device chrome. */
 .marketing-device-scene {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 7%;
   min-width: 0;
 }
@@ -1717,9 +1717,10 @@ html:has(.marketing-page) { position: relative; }
 .marketing-phone {
   position: relative;
   z-index: 2;
-  width: 23%;
+  width: 19%;
   flex: none;
-  margin-top: 4%;
+  /* The laptop figure includes a 28px gap and 24px caption below its base. */
+  margin-bottom: 52px;
   aspect-ratio: 0.42;
   padding: 4px;
   border: 1px solid #3a536c;
@@ -1815,8 +1816,8 @@ html:has(.marketing-page) { position: relative; }
 .marketing-phone-bottomnav b { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid rgba(20, 184, 166, 0.35); border-radius: 50%; color: #14b8a6; font-size: 20px; font-weight: 400; }
 
 @media (max-width: 639px) {
-  .marketing-laptop { width: 62%; }
-  .marketing-phone { width: 31%; margin-top: 7%; }
+  /* The caption is 48px tall on small screens. */
+  .marketing-phone { margin-bottom: 76px; }
 }
 
 .marketing-screen-frame {
