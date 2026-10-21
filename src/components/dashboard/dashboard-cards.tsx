@@ -631,10 +631,6 @@ export function WeekStrip({ days, today, compactNumbers = false, showAnalysisLin
         {/* The week is where you notice a trade is missing, and where the next
             session gets planned, so both ways in sit right under it. */}
         <span className="ml-auto flex items-center gap-2">
-          {showAnalysisLink && <Link
-            href="/analysis"
-            className="inline-flex items-center rounded-lg border border-border/70 bg-background/35 px-2.5 py-1.5 text-[11px] font-semibold text-foreground/85 transition-[border-color,background-color] hover:border-primary/40 hover:bg-primary/10"
-          >View analyses</Link>}
           <Link
             href="/analysis/new"
             className="inline-flex items-center gap-1.5 rounded-lg border border-primary/35 bg-primary/10 px-2.5 py-1.5 text-[11px] font-semibold text-primary transition-[transform,border-color,background-color] duration-200 hover:-translate-y-px hover:border-primary/55 hover:bg-primary/15 active:translate-y-0"
