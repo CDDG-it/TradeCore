@@ -169,7 +169,7 @@ export function AnalysisChartBoard({ groups, onChange, target, readOnly = false,
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(20,184,166,.09),transparent_58%)]" />
         <AnimatePresence mode="wait" initial={false}>
           {url ? <motion.div key={`${group.label}:${safeShot}`} className="relative h-full w-full"
-            initial={{ opacity: 0, transform: reduce ? "none" : "scale(.985)" }} animate={{ opacity: 1, transform: "none" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }}>
+            initial={{ opacity: 0, transform: reduce ? "scale(1)" : "scale(.985)" }} animate={{ opacity: 1, transform: "scale(1)" }} exit={{ opacity: 0 }} transition={{ duration: .18, ease: [.23, 1, .32, 1] }}>
             {failed(url) && !placeholder ? <div className="flex max-w-xs flex-col items-center text-center">
                 <ImageOff className="size-6 text-muted-foreground" />
                 <p className="mt-3 text-sm font-semibold text-foreground">This chart could not be loaded</p>
